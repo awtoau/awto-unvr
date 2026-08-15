@@ -1,0 +1,25 @@
+# Mapfile. Created by GNU ddrescue version 1.30
+# Command line: ddrescue --idirect -b 512 -v -r3 --timeout=300 /dev/sdd /mnt/2tb/git/awto-unvr/images/unvr-usb-07190176402AEE98.img /mnt/2tb/git/awto-unvr/images/unvr-usb-07190176402AEE98.map
+# Start time:   2026-08-15 16:20:28
+# Current time: 2026-08-15 16:51:47
+# Finished
+# current_pos  current_status  current_pass
+0xC1827E00     +               3
+#      pos        size  status
+0x00000000  0x1B020000  +
+0x1B020000  0x00000200  -
+0x1B020200  0x00000200  +
+0x1B020400  0x00000200  -
+0x1B020600  0x00000C00  +
+0x1B021200  0x00000200  -
+0x1B021400  0xA6803000  +
+0xC1824400  0x00000200  -
+0xC1824600  0x00001800  +
+0xC1825E00  0x00000200  -
+0xC1826000  0x00000A00  +
+0xC1826A00  0x00000400  -
+0xC1826E00  0x00000200  +
+0xC1827000  0x00000200  -
+0xC1827200  0x00000800  +
+0xC1827A00  0x00000200  -
+0xC1827C00  0x116FD8400  +

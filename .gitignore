@@ -1,0 +1,51 @@
+# Disk images - too big to track. images/README.md records the sha256 and
+# images/*.map records which sectors were recoverable.
+images/*.img
+
+# Downloaded vendor artifacts. sources/README.md is the tracked manifest.
+sources/*.bin
+sources/*.pdf
+
+# ---------------------------------------------------------------------------
+# MTD dumps: NOTHING is tracked.
+#
+# The earlier rule here was "unique to this unit -> tracked, re-obtainable ->
+# ignored". That was wrong, and dangerously so: the partitions unique to this
+# unit are exactly the ones carrying secrets. A verification pass found
+#
+#   mtd09 EEPROM  - a 2048-bit RSA PRIVATE KEY at 0xe004 (verified: p*q == n,
+#                   e*d mod lambda(n) == 1). The device's own secret.
+#   mtd11 config  - two root password hashes ($6$ SHA-512, $5$ SHA-256) plus
+#                   the prior LAN topology, recoverable from unallocated blocks
+#                   with plain `strings` despite the live tree holding only
+#                   lost+found and a version file.
+#   mtd04 chike   - a personal photograph: a selfie of two identifiable people,
+#                   Samsung SM-G975F, 2019-06-07, shipped as NAND filler.
+#
+# and the old rule selected precisely those three for committing. Ignore the
+# lot; images/mtd/*/README.md carries sizes and hashes, which is the useful part.
+# ---------------------------------------------------------------------------
+images/mtd/**/*.img
+
+# TFTP staging area: vendor firmware copies (hundreds of MB each) plus scratch
+# partition dumps. All regenerable - sources/README.md has the URLs and hashes.
+images/tftp/
+
+# Unpacked partition contents. Same reasoning as the raw .img files above, and
+# it already bit once: an `unpacked/` tree held mtd "config" (root password
+# hashes) and mtd "chike" (a personal photograph of two identifiable people).
+# Neither is ours to publish. README.md per dump dir carries the useful part.
+images/**/unpacked/
+
+# Credentials - never committed. Nothing in the repo reads these; they are for
+# the human. Kept broad on purpose: a secrets file that slips into a public repo
+# cannot be un-published.
+secrets.yaml
+secrets.yml
+secrets/
+*.secret
+.env
+.netrc
+
+tmp/
+__pycache__/

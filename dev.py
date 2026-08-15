@@ -1,0 +1,549 @@
+#!/usr/bin/env python3
+"""dev.py — canonical entry point for awto-unvr (awto dev.py convention).
+
+AI agents: run `./dev.py describe` for machine-readable JSON help.
+Humans: run `./dev.py --help`.
+
+All output is timestamped in LOCAL time and mirrored to ./tmp/logs/dev.log.
+
+Repurposing a Ubiquiti UNVR (Annapurna Labs Alpine V2, aarch64). Board sysid
+0xea16 - "UNVR without eMMC": kernel/rootfs in NAND, USERDEV on an internal USB
+stick. Boot chain in docs/boot-flow.md, prior art in docs/sources.md.
+
+Console model: ONE tio owns the serial port and exposes a unix socket. Humans
+and agents both attach to the socket instead of fighting over /dev/ttyUSB*.
+tio does the logging (-L --log-strip -t), so there is no tmux and no pane
+lifecycle to supervise.
+"""
+
+from __future__ import annotations
+
+import json
+import os
+import shutil
+import socket
+import subprocess
+import sys
+from collections import deque
+from datetime import datetime
+from pathlib import Path
+
+PROJECT = "awto-unvr"
+
+REPO = Path(__file__).resolve().parent
+TMP = REPO / "tmp"
+LOGS = TMP / "logs"
+LOG = LOGS / "dev.log"
+
+# --------------------------------------------------------------------------
+# Hardware / console constants - the only device-specific configuration.
+# --------------------------------------------------------------------------
+# 115200 8N1 is not a guess: U-Boot's own `loadbootargs` sets
+# console=ttyS0,115200. Confirmed by baud sweep against the live unit.
+CONSOLE_BAUD = 115200
+# Prefer the CP2102: Silicon Labs boards are 3.3 V logic natively, which is what
+# the UNVR UART wants. PL2303 cables vary and some are 5 V.
+CONSOLE_PORTS = [
+    "/dev/serial/by-id/usb-Silicon_Labs_CP2102_USB_to_UART_Bridge_Controller_0001-if00-port0",
+    "/dev/ttyUSB1",
+    "/dev/ttyUSB0",
+]
+CONSOLE_SOCK = Path(os.environ.get("XDG_RUNTIME_DIR", "/tmp")) / "tio-unvr.sock"
+CONSOLE_LOG = LOGS / "unvr-console.log"
+CONSOLE_TAIL = LOGS / "unvr-console-tail.log"
+CONSOLE_PID = TMP / "tio-unvr.pid"
+# tio runs with --log-append and never truncates, so the log grows across every
+# session. Roll at 20 MB - the size an editor tokenising the whole file on open
+# starts choking on, and ~250k lines, deeper than any grep here reaches back.
+CONSOLE_ROLL_BYTES = 20 * 1024 * 1024
+# Keep 3 generations (.1-.3): a few sessions of history, 60 MB worst case in
+# tmp/, which `clean` wipes anyway.
+CONSOLE_ROLL_KEEP = 3
+# console-peek default. 500 lines is a few screens - a boot sequence or the tail
+# of a failing command - and small enough that the slice opens instantly.
+CONSOLE_PEEK_LINES = 500
+
+BOARD_SYSID = "0xea16"
+BOARD_MAC = "74:ac:b9:41:a8:11"
+
+# --------------------------------------------------------------------------
+# STEPS - the only project-specific build table. This repo has no compiled
+# artefact; the work is analysis and hardware bring-up, so build/run stay
+# unconfigured and SKIP by design.
+# --------------------------------------------------------------------------
+STEPS: dict[str, tuple[str, list[str], bool]] = {
+    "build":     ("compile the project (n/a - analysis repo)", [], True),
+    "test":      ("run the test suite", [sys.executable, "-m", "pytest", "-q"], True),
+    "lint":      ("static analysis", ["ruff", "check", "."], True),
+    "fmt-check": ("formatting check (no writes)", ["ruff", "format", "--check", "."], False),
+    "fmt":       ("reformat in place", ["ruff", "format", "."], False),
+    "run":       ("build + execute (n/a)", [], True),
+}
+
+GATE = ["fmt-check", "lint", "test"]
+CI = ["fmt-check", "lint", "test"]
+
+# --------------------------------------------------------------------------
+# Logging - Tier A (dev tooling): local time, stderr + ./tmp/logs/dev.log,
+# colour on TTY only, file copy always plain.
+# --------------------------------------------------------------------------
+_COLOR = {
+    "FATAL": "\033[1;91m", "ERROR": "\033[31m", "WARN": "\033[33m",
+    "INFO": "\033[97m", "DEBUG": "\033[94m", "ALERT": "\033[92m",
+}
+_RESET = "\033[0m"
+_USE_COLOR = (
+    sys.stderr.isatty()
+    and not os.environ.get("NO_COLOR")
+    and os.environ.get("CLICOLOR") != "0"
+)
+
+
+def _stamp() -> str:
+    # Local zone incl. DST (AEST +1000 / AEDT +1100). Never hardcode the offset
+    # and never use UTC here: a human reads these live.
+    return datetime.now().astimezone().strftime("%H:%M:%S.%f%z")
+
+
+def log(msg: str, level: str = "INFO") -> None:
+    line = f"{_stamp()}  {level:<5} [dev.py] {msg}"
+    if _USE_COLOR:
+        sys.stderr.write(f"{_COLOR.get(level, '')}{line}{_RESET}\n")
+    else:
+        sys.stderr.write(line + "\n")
+    sys.stderr.flush()
+    try:
+        LOGS.mkdir(parents=True, exist_ok=True)
+        with LOG.open("a", encoding="utf-8") as fh:
+            fh.write(line + "\n")          # file copy is ALWAYS plain
+    except OSError:
+        pass                                # never let logging kill the run
+
+
+SKIPPED = 125   # distinct from any real tool's exit code
+
+
+def run_step(name: str, extra: list[str] | None = None) -> int:
+    """Run one STEPS entry. Returns its exit code, or SKIPPED."""
+    _summary, argv, takes_extra = STEPS[name]
+    if not argv:
+        log(f"{name}: not configured for this project - skipped", "WARN")
+        return SKIPPED
+    if not shutil.which(argv[0]) and argv[0] != sys.executable:
+        log(f"{name}: {argv[0]} not on PATH - skipped", "WARN")
+        return SKIPPED
+    cmd = argv + (list(extra) if (extra and takes_extra) else [])
+    log("run: " + " ".join(cmd))
+    rc = subprocess.call(cmd, cwd=REPO)
+    log(f"rc={rc}: " + " ".join(cmd), "INFO" if rc == 0 else "ERROR")
+    return rc
+
+
+# --------------------------------------------------------------------------
+# Command registry - ONE source of truth. The decorator populates the table
+# that drives dispatch, --help AND describe, so they cannot drift apart.
+# --------------------------------------------------------------------------
+COMMANDS: dict[str, dict] = {}
+
+
+def command(summary: str, *, args: str = "", kind: str = "action"):
+    def deco(fn):
+        COMMANDS[fn.__name__.replace("cmd_", "").replace("_", "-")] = {
+            "summary": summary, "args": args, "kind": kind, "fn": fn,
+        }
+        return fn
+    return deco
+
+
+# --------------------------------------------------------------------------
+# Console lifecycle
+# --------------------------------------------------------------------------
+def _console_port() -> str | None:
+    for cand in CONSOLE_PORTS:
+        if Path(cand).exists():
+            return cand
+    return None
+
+
+def _console_pid() -> int | None:
+    """PID of the live tio, or None. Clears a stale pidfile.
+
+    We record the `setsid script` wrapper's pid, but that is not what we need to
+    signal or test - find the real tio by name. Falls back to the recorded pid so
+    a stale pidfile is still cleaned up."""
+    p = subprocess.run(["pgrep", "-x", "tio"], capture_output=True, text=True)
+    if p.returncode == 0 and p.stdout.strip():
+        return int(p.stdout.split()[0])
+    CONSOLE_PID.unlink(missing_ok=True)
+    return None
+
+
+def _roll_console_log() -> Path | None:
+    """Roll CONSOLE_LOG to .1 (shifting .1->.2 ...) if it is over the cap.
+
+    Returns the rolled-to path, else None (absent, or under cap). Only safe
+    while nothing holds the file open, so callers roll BEFORE starting tio -
+    renaming underneath a live tio loses every line it writes after."""
+    try:
+        size = CONSOLE_LOG.stat().st_size
+    except FileNotFoundError:
+        return None
+    if size <= CONSOLE_ROLL_BYTES:
+        return None
+    def gen(n: int) -> Path:
+        return CONSOLE_LOG.parent / f"{CONSOLE_LOG.name}.{n}"
+
+    gen(CONSOLE_ROLL_KEEP).unlink(missing_ok=True)   # past the keep window
+    for n in range(CONSOLE_ROLL_KEEP - 1, 0, -1):
+        if gen(n).exists():
+            gen(n).rename(gen(n + 1))
+    CONSOLE_LOG.rename(gen(1))
+    log(f"rolled {CONSOLE_LOG.relative_to(REPO)} ({size / (1024 * 1024):.1f} MB)"
+        f" -> {gen(1).relative_to(REPO)}", "WARN")
+    return gen(1)
+
+
+@command("start tio owning the serial port, exposing a socket + log", kind="action")
+def cmd_console(_extra: list[str]) -> int:
+    if not shutil.which("tio"):
+        log("tio not on PATH", "ERROR")
+        return 1
+    pid = _console_pid()
+    if pid:
+        log(f"already running (pid {pid}) on {CONSOLE_SOCK}", "ALERT")
+        return 0
+    port = _console_port()
+    if not port:
+        log("no serial adapter found. Tried:", "ERROR")
+        for c in CONSOLE_PORTS:
+            log(f"  {c}", "ERROR")
+        return 1
+    CONSOLE_SOCK.unlink(missing_ok=True)
+    LOGS.mkdir(parents=True, exist_ok=True)
+    TMP.mkdir(parents=True, exist_ok=True)
+    _roll_console_log()     # startup is the one moment no tio holds the log
+    tio_cmd = " ".join([
+        "tio", "-b", str(CONSOLE_BAUD),
+        "--socket", f"unix:{CONSOLE_SOCK}",
+        "-L", "--log-file", str(CONSOLE_LOG), "--log-append",
+        # --log-strip keeps the on-disk copy plain: ANSI in a log file ruins
+        # every later grep, which is the Tier A rule.
+        "--log-strip",
+        "-t",
+        port,
+    ])
+    # tio MUST have a tty on stdin. With a pipe or /dev/null it takes the
+    # documented "echo cmd | tio" pipe mode instead: sends stdin to the device,
+    # sees EOF, exits 0 immediately, and never creates the socket. `script`
+    # allocates the pty; setsid detaches it so it outlives this process.
+    cmd = ["setsid", "script", "-qec", tio_cmd, "/dev/null"]
+    log("run: " + " ".join(cmd))
+    proc = subprocess.Popen(
+        cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+        stdin=subprocess.DEVNULL, start_new_session=True, cwd=REPO,
+    )
+    CONSOLE_PID.write_text(str(proc.pid))
+    log(f"tio pid {proc.pid} on {port} @ {CONSOLE_BAUD}", "ALERT")
+    log(f"socket : {CONSOLE_SOCK}")
+    log(f"log    : {CONSOLE_LOG.relative_to(REPO)}")
+    log("attach : ./dev.py console-attach   (or: nc -U " + str(CONSOLE_SOCK) + ")")
+    return 0
+
+
+@command("report console state (pid, socket, port, log)", kind="action")
+def cmd_console_status(_extra: list[str]) -> int:
+    pid = _console_pid()
+    port = _console_port()
+    log(f"port   : {port or 'NONE FOUND'}", "INFO" if port else "WARN")
+    log(f"pid    : {pid or 'not running'}", "INFO" if pid else "WARN")
+    log(f"socket : {CONSOLE_SOCK} {'(present)' if CONSOLE_SOCK.exists() else '(absent)'}")
+    if CONSOLE_LOG.exists():
+        log(f"log    : {CONSOLE_LOG.relative_to(REPO)} ({CONSOLE_LOG.stat().st_size} B)")
+    else:
+        log(f"log    : {CONSOLE_LOG.relative_to(REPO)} (absent)", "WARN")
+    return 0 if pid else 1
+
+
+@command("stop the tio that owns the serial port", kind="action")
+def cmd_console_stop(_extra: list[str]) -> int:
+    pid = _console_pid()
+    if not pid:
+        log("not running", "WARN")
+        return 0
+    os.kill(pid, 15)
+    CONSOLE_PID.unlink(missing_ok=True)
+    CONSOLE_SOCK.unlink(missing_ok=True)
+    log(f"stopped pid {pid}", "ALERT")
+    return 0
+
+
+@command("attach an interactive client to the console socket", kind="action")
+def cmd_console_attach(_extra: list[str]) -> int:
+    if not _console_pid():
+        log("console not running - start it with ./dev.py console", "ERROR")
+        return 1
+    if not shutil.which("nc"):
+        log("nc not on PATH", "ERROR")
+        return 1
+    log(f"attaching to {CONSOLE_SOCK} - Ctrl-C to detach (tio keeps running)")
+    return subprocess.call(["nc", "-U", str(CONSOLE_SOCK)])
+
+
+@command("send a line to the console and print what comes back",
+         args="<text> [...]", kind="action")
+def cmd_console_send(extra: list[str]) -> int:
+    """Agent-facing write path. Connects to tio's socket, sends one line, then
+    reads whatever arrives. The read window is 1.5 s: a shell echoes and
+    responds in milliseconds, so this is ~1000x the expected latency and still
+    returns promptly. On no reply the caller sees empty output, not a hang."""
+    if not _console_pid():
+        log("console not running - start it with ./dev.py console", "ERROR")
+        return 1
+    line = " ".join(extra)
+    try:
+        s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        s.settimeout(1.5)
+        s.connect(str(CONSOLE_SOCK))
+    except OSError as e:
+        log(f"cannot connect to {CONSOLE_SOCK}: {e}", "ERROR")
+        return 1
+    s.sendall(line.encode() + b"\r")
+    got = b""
+    try:
+        while True:
+            chunk = s.recv(4096)
+            if not chunk:
+                break
+            got += chunk
+    except socket.timeout:
+        pass
+    finally:
+        s.close()
+    sys.stdout.buffer.write(got)
+    sys.stdout.buffer.flush()
+    return 0
+
+
+@command("write a bounded tail of the console log somewhere safe to open",
+         args="[-n LINES]", kind="action")
+def cmd_console_peek(extra: list[str]) -> int:
+    """NEVER open the live console log in an editor. tio appends to it for a
+    whole session and it only rolls at 20 MB, well past where an editor that
+    tokenises the file on open becomes unusable. This writes the last N lines
+    (default 500) to a separate file and prints that path. It is a snapshot, not
+    a live view - re-run it to refresh, or `tail -f` the console log itself."""
+    lines = CONSOLE_PEEK_LINES
+    if extra:
+        if extra[0] not in ("-n", "--lines") or len(extra) != 2 or not extra[1].isdigit():
+            log("usage: ./dev.py console-peek [-n LINES]", "ERROR")
+            return 2
+        lines = int(extra[1])
+    if not CONSOLE_LOG.exists():
+        log(f"no console log at {CONSOLE_LOG.relative_to(REPO)} - "
+            "start it with ./dev.py console", "ERROR")
+        return 1
+    with CONSOLE_LOG.open("r", errors="replace") as fh:
+        # deque(maxlen=) streams; read_text() on a 20 MB log is the same mistake
+        # as opening it in an editor.
+        tail = list(deque(fh, maxlen=lines))
+    LOGS.mkdir(parents=True, exist_ok=True)
+    CONSOLE_TAIL.write_text("".join(tail))
+    log(f"{CONSOLE_LOG.relative_to(REPO)} "
+        f"({CONSOLE_LOG.stat().st_size / (1024 * 1024):.1f} MB) -> "
+        f"{CONSOLE_TAIL.relative_to(REPO)} ({len(tail)} lines, "
+        f"{CONSOLE_TAIL.stat().st_size / 1024:.0f} KB)", "ALERT")
+    print(CONSOLE_TAIL)
+    return 0
+
+
+# --------------------------------------------------------------------------
+# Meta / aggregate commands
+# --------------------------------------------------------------------------
+@command("machine-readable command list (JSON, for AI agents)", kind="meta")
+def cmd_describe(_extra: list[str]) -> int:
+    print(json.dumps({
+        "project": PROJECT,
+        "schema": 1,
+        "entrypoint": "./dev.py",
+        "log": str(LOG.relative_to(REPO)),
+        "board": {"sysid": BOARD_SYSID, "mac": BOARD_MAC},
+        "console": {
+            "baud": CONSOLE_BAUD,
+            "socket": str(CONSOLE_SOCK),
+            "log": str(CONSOLE_LOG.relative_to(REPO)),
+        },
+        "exit_codes": {"0": "success", "2": "usage error",
+                       "125": "step skipped (tool absent)", "other": "failure"},
+        "commands": {
+            name: {k: v for k, v in meta.items() if k != "fn"}
+            for name, meta in COMMANDS.items()
+        },
+    }, indent=2))
+    return 0
+
+
+@command("check the toolchain is present; run this first when stuck", kind="meta")
+def cmd_doctor(_extra: list[str]) -> int:
+    log(f"project    : {PROJECT}")
+    log(f"python     : {sys.version.split()[0]} ({sys.executable})")
+    log("gil        : "
+        + ("disabled (free-threaded)" if not sys._is_gil_enabled() else "enabled")
+        if hasattr(sys, "_is_gil_enabled") else "gil        : n/a (<3.13)")
+    missing = []
+    for tool in ("tio", "nc", "ddrescue", "unsquashfs", "gh", "nmap"):
+        if shutil.which(tool):
+            log(f"{tool:10s} : ok")
+        else:
+            log(f"{tool:10s} : MISSING", "ERROR")
+            missing.append(tool)
+    port = _console_port()
+    log(f"serial     : {port}" if port else "serial     : no adapter found",
+        "INFO" if port else "WARN")
+    for name, (_s, argv, _e) in STEPS.items():
+        if not argv:
+            log(f"{name:10s} : not configured", "WARN")
+        elif argv[0] == sys.executable or shutil.which(argv[0]):
+            log(f"{name:10s} : {argv[0]} ok")
+        else:
+            log(f"{name:10s} : {argv[0]} MISSING", "ERROR")
+            missing.append(argv[0])
+    if missing:
+        log(f"missing tools: {', '.join(sorted(set(missing)))}", "ERROR")
+        return 1
+    log("doctor ok", "ALERT")
+    return 0
+
+
+@command("remove build output and logs", kind="action")
+def cmd_clean(_extra: list[str]) -> int:
+    if _console_pid():
+        log("console is running - stop it first (./dev.py console-stop)", "ERROR")
+        return 1
+    for path in (TMP,):
+        if path.exists():
+            shutil.rmtree(path)
+            log(f"removed {path.relative_to(REPO)}")
+    return 0
+
+
+@command("fail-fast pre-commit gate: " + " + ".join(GATE), kind="aggregate")
+def cmd_gate(_extra: list[str]) -> int:
+    for name in GATE:
+        rc = run_step(name)
+        if rc not in (0, SKIPPED):
+            log(f"GATE FAILED at {name} (rc={rc})", "FATAL")
+            return rc
+    log("GATE PASSED", "ALERT")
+    return 0
+
+
+@command("run every leg, collect all results, one GO/NO-GO", kind="aggregate")
+def cmd_ci(_extra: list[str]) -> int:
+    results: dict[str, int] = {}
+    for name in CI:
+        results[name] = run_step(name)          # no early exit - that is the point
+    failed = {k: v for k, v in results.items() if v not in (0, SKIPPED)}
+    skipped = [k for k, v in results.items() if v == SKIPPED]
+    log("-" * 52)
+    for name, rc in results.items():
+        state = "SKIP" if rc == SKIPPED else ("ok" if rc == 0 else f"FAIL rc={rc}")
+        log(f"  {name:12s} {state}", "INFO" if rc in (0, SKIPPED) else "ERROR")
+    if skipped:
+        log(f"{len(skipped)} step(s) skipped: {', '.join(skipped)}", "WARN")
+    if failed:
+        log(f"NO-GO - {len(failed)} of {len(results)} failed: {', '.join(failed)}", "FATAL")
+        return 1
+    log("GO", "ALERT")
+    return 0
+
+
+@command("verify dev.py's own contract (help/describe/exit codes)", kind="meta")
+def cmd_selftest(_extra: list[str]) -> int:
+    failures = []
+
+    def check(label: str, cond: bool) -> None:
+        log(f"  {label}: {'ok' if cond else 'FAIL'}", "INFO" if cond else "ERROR")
+        if not cond:
+            failures.append(label)
+
+    out = subprocess.run([sys.executable, __file__, "describe"],
+                         capture_output=True, text=True, cwd=REPO)
+    check("describe exits 0", out.returncode == 0)
+    try:
+        doc = json.loads(out.stdout)
+        check("describe emits valid JSON", True)
+        check("describe has project+commands", {"project", "commands"} <= doc.keys())
+        check("every command documented", all(
+            m.get("summary") for m in doc.get("commands", {}).values()))
+    except json.JSONDecodeError:
+        check("describe emits valid JSON", False)
+
+    h = subprocess.run([sys.executable, __file__, "--help"],
+                       capture_output=True, text=True, cwd=REPO)
+    check("--help exits 2 (usage)", h.returncode == 2)
+    check("--help lists commands", all(c in h.stdout for c in COMMANDS))
+
+    u = subprocess.run([sys.executable, __file__, "no-such-command"],
+                       capture_output=True, text=True, cwd=REPO)
+    check("unknown command exits 2", u.returncode == 2)
+
+    check("registry has no duplicate handlers",
+          len({m["fn"] for m in COMMANDS.values()}) == len(COMMANDS))
+
+    if failures:
+        log(f"selftest FAILED: {', '.join(failures)}", "FATAL")
+        return 1
+    log("selftest ok", "ALERT")
+    return 0
+
+
+def _register_steps() -> None:
+    """Expose each STEPS entry as a first-class command."""
+    for name, (summary, _argv, takes_extra) in STEPS.items():
+        if name in COMMANDS:
+            continue
+        COMMANDS[name] = {
+            "summary": summary,
+            "args": "[extra args passed through]" if takes_extra else "",
+            "kind": "step",
+            "fn": (lambda n: lambda extra: run_step(n, extra))(name),
+        }
+
+
+_register_steps()
+
+
+def usage() -> int:
+    print(__doc__.split("Console model:")[0].rstrip())
+    print("\nUsage: ./dev.py <command> [args]\n")
+    order = ["aggregate", "step", "action", "meta"]
+    kinds = sorted({m["kind"] for m in COMMANDS.values()},
+                   key=lambda k: (order.index(k) if k in order else len(order), k))
+    for kind in kinds:
+        group = {n: m for n, m in COMMANDS.items() if m["kind"] == kind}
+        if not group:
+            continue
+        print(f"  {kind}:")
+        for name, meta in sorted(group.items()):
+            arg = f" {meta['args']}" if meta["args"] else ""
+            print(f"    {name:<16}{meta['summary']}{arg}")
+        print()
+    print(f"Log: {LOG.relative_to(REPO)}   JSON help: ./dev.py describe")
+    return 2
+
+
+def main(argv: list[str] | None = None) -> int:
+    argv = sys.argv[1:] if argv is None else argv
+    if not argv or argv[0] in ("-h", "--help", "help"):
+        return usage()
+    name, *extra = argv
+    meta = COMMANDS.get(name)
+    if meta is None:
+        print(f"unknown command: {name!r} - try ./dev.py describe", file=sys.stderr)
+        return 2
+    rc = meta["fn"](extra)
+    return 0 if rc == SKIPPED else rc
+
+
+if __name__ == "__main__":
+    sys.exit(main())
