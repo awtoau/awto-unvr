@@ -5,6 +5,9 @@ images/*.img
 # Downloaded vendor artifacts. sources/README.md is the tracked manifest.
 sources/*.bin
 sources/*.pdf
+# Chip datasheets ARE tracked (owner directive) - sources/chips/ is NOT ignored.
+!sources/chips/
+!sources/chips/**
 
 # ---------------------------------------------------------------------------
 # MTD dumps: NOTHING is tracked.
