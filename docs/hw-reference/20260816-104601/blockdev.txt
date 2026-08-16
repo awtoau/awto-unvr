@@ -1,0 +1,14 @@
+NAME        SIZE TYPE FSTYPE MODEL         SERIAL
+mtdblock0   1.8M disk                      
+mtdblock1    64K disk                      
+mtdblock2    64K disk                      
+mtdblock3    64K disk                      
+mtdblock4    64K disk                      
+mtdblock5    16M disk                      
+mtdblock6    14M disk                      
+mtdblock7     4K disk                      
+mtdblock8     2M disk                      
+mtdblock9    16M disk                      
+mtdblock10 1004M disk                      
+mtdblock11    1M disk                      
+sdq        58.9G disk ext4   SanDisk_Ultra A20043FE1501C484

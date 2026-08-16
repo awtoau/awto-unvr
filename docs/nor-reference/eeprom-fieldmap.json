@@ -1,0 +1,162 @@
+{
+  "eeprom": {
+    "partition": "mtd04 EEPROM",
+    "size": 65536,
+    "fields": [
+      {
+        "off": "0x0000",
+        "len": 6,
+        "name": "base MAC",
+        "value": "74:ac:b9:41:a8:11"
+      },
+      {
+        "off": "0x0006",
+        "len": 6,
+        "name": "MAC+2 (base MAC, first octet +2)",
+        "value": "76:ac:b9:41:a8:11"
+      },
+      {
+        "off": "0x000C",
+        "len": 2,
+        "name": "board id",
+        "value": "0xea16"
+      },
+      {
+        "off": "0x000E",
+        "len": 2,
+        "name": "hw rev",
+        "value": "0x0777"
+      },
+      {
+        "off": "0x0010",
+        "len": 4,
+        "name": "device id",
+        "value": "0x000b101d"
+      },
+      {
+        "off": "0x0014",
+        "len": 32748,
+        "name": "padding 0x00",
+        "value": "zeroed"
+      },
+      {
+        "off": "0x8000",
+        "len": 4,
+        "name": "UBNT magic",
+        "value": "UBNT"
+      },
+      {
+        "off": "0x8004",
+        "len": 4,
+        "name": "crc32",
+        "value": "0x2a2866d3"
+      },
+      {
+        "off": "0x8008",
+        "len": 4,
+        "name": "length",
+        "value": "0x64"
+      },
+      {
+        "off": "0x800C",
+        "len": 4,
+        "name": "version words",
+        "value": "0x0002 0x0001"
+      },
+      {
+        "off": "0x8010",
+        "len": 2,
+        "name": "hw rev",
+        "value": "0x0777"
+      },
+      {
+        "off": "0x8012",
+        "len": 2,
+        "name": "board id",
+        "value": "0xea16"
+      },
+      {
+        "off": "0x8014",
+        "len": 4,
+        "name": "device id",
+        "value": "0x000b101d"
+      },
+      {
+        "off": "0x8018",
+        "len": 6,
+        "name": "base MAC",
+        "value": "74:ac:b9:41:a8:11"
+      },
+      {
+        "off": "0x801E",
+        "len": 2,
+        "name": "MAC count",
+        "value": 2
+      },
+      {
+        "off": "0x9000",
+        "len": 12288,
+        "name": "unidentified high-entropy blob",
+        "value": "entropy 7.98 b/byte"
+      }
+    ],
+    "tlvinfo": {
+      "off": "0xd000",
+      "version": 1,
+      "total_len": 43,
+      "crc": "0xd29bebb4",
+      "tlvs": [
+        {
+          "off": "0x0d00b",
+          "type": "0x01",
+          "len": 8,
+          "val": "20200524"
+        },
+        {
+          "off": "0x0d015",
+          "type": "0x02",
+          "len": 8,
+          "val": "20200524"
+        },
+        {
+          "off": "0x0d01f",
+          "type": "0x03",
+          "len": 1,
+          "val": "01"
+        },
+        {
+          "off": "0x0d022",
+          "type": "0x04",
+          "len": 12,
+          "val": "113-02832-29"
+        },
+        {
+          "off": "0x0d030",
+          "type": "0xfe",
+          "len": 4,
+          "val": "d29bebb4"
+        }
+      ]
+    },
+    "rsa_key": {
+      "off": "0xe004",
+      "end": "0x0e330",
+      "total_len": 812,
+      "format": "SSH-wire (length-prefixed big-endian mpints), NOT DER PKCS#1",
+      "layout": "7B prefix, 'ssh-rsa' tag, e, n(2048b), d, p(1024b), q(1024b)",
+      "modulus_bits": 2048,
+      "pq_eq_n": true,
+      "NOTE": "PRIVATE key - no bytes stored in this map"
+    },
+    "content_end": 58160
+  },
+  "config": {
+    "partition": "mtd06 config",
+    "fs": "ext4",
+    "uuid": "e98263ea-0a3d-4765-8377-f6de9b33da4e",
+    "label": "",
+    "last_mounted": "/tmp/.config",
+    "block_size": 1024,
+    "blocks": 14332
+  }
+}

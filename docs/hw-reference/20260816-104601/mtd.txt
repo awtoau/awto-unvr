@@ -1,0 +1,13 @@
+dev:    size   erasesize  name
+mtd0: 001c0000 00001000 "u-boot"
+mtd1: 00010000 00001000 "u-boot env"
+mtd2: 00010000 00001000 "u-boot env redundant"
+mtd3: 00010000 00001000 "Factory"
+mtd4: 00010000 00001000 "EEPROM"
+mtd5: 01000000 00001000 "recovery kernel"
+mtd6: 00dff000 00001000 "config"
+mtd7: 00001000 00001000 "cksum"
+mtd8: 00200000 00040000 "al_boot"
+mtd9: 01000000 00040000 "linux_kernel"
+mtd10: 3ec00000 00040000 "rootfs"
+mtd11: 00100000 00040000 "chike"

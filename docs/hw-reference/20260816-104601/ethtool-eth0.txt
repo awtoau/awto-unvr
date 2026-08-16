@@ -1,0 +1,3 @@
+Settings for eth0:
+No data available
+---MODULE---

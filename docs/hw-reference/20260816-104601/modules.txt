@@ -1,0 +1,27 @@
+Module                  Size  Used by
+ubnthal               131072  0
+ubnt_common            16384  1 ubnthal
+ramoops                28672  0
+reed_solomon           20480  1 ramoops
+brd                    16384  1
+raid10                 53248  0
+raid456               143360  0
+async_raid6_recov      16384  1 raid456
+async_memcpy           16384  2 raid456,async_raid6_recov
+async_pq               16384  2 raid456,async_raid6_recov
+async_xor              16384  3 async_pq,raid456,async_raid6_recov
+xor                    20480  1 async_xor
+async_tx               16384  5 async_pq,async_memcpy,async_xor,raid456,async_raid6_recov
+raid6_pq              110592  3 async_pq,raid456,async_raid6_recov
+raid1                  40960  0
+raid0                  20480  0
+linear                 16384  0
+md_mod                147456  5 raid1,raid10,raid0,linear,raid456
+squashfs               45056  1
+zstd_decompress        77824  1 squashfs
+xxhash                 16384  1 zstd_decompress
+loop                   28672  0
+ui_hdd_pwrctl          20480  0
+al_nand                20480  0
+nand                  102400  1 al_nand
+nand_ecc               16384  1 nand

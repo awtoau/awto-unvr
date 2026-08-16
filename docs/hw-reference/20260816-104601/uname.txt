@@ -1,0 +1,1 @@
+Linux UniFi-NVR 4.19.152-alpine-unvr #2 SMP Fri Jul 10 16:11:15 CST 2026 aarch64 GNU/Linux

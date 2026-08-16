@@ -1,0 +1,98 @@
+0000:00:01.0 Ethernet controller [0200]: Annapurna Labs Ltd. Gigabit Ethernet Adapter [1c36:0001] (rev 02)
+	Flags: bus master, fast devsel, latency 0, IRQ 255
+	Memory at fe000000 (64-bit, non-prefetchable) [size=128K]
+	Memory at fe15c000 (64-bit, non-prefetchable) [size=4K]
+	Memory at fe150000 (64-bit, non-prefetchable) [size=16K]
+	Capabilities: [40] Express Root Complex Integrated Endpoint, MSI 00
+	Capabilities: [80] Power Management version 3
+	Capabilities: [90] MSI-X: Enable+ Count=64 Masked-
+	Capabilities: [100] Vendor Specific Information: ID=1c36 Rev=0 Len=200 <?>
+	Kernel driver in use: al_eth
+
+0000:00:02.0 Ethernet controller [0200]: Annapurna Labs Ltd. SFP+ 10G Ethernet Adapter [1c36:0002] (rev 03)
+	Flags: bus master, fast devsel, latency 0, IRQ 255
+	Memory at fe020000 (64-bit, non-prefetchable) [size=128K]
+	Memory at fe15d000 (64-bit, non-prefetchable) [size=4K]
+	Memory at fe120000 (64-bit, non-prefetchable) [size=64K]
+	Capabilities: [40] Express Root Complex Integrated Endpoint, MSI 00
+	Capabilities: [80] Power Management version 3
+	Capabilities: [90] MSI-X: Enable+ Count=64 Masked-
+	Capabilities: [100] Vendor Specific Information: ID=1c36 Rev=0 Len=200 <?>
+	Capabilities: [300] Single Root I/O Virtualization (SR-IOV)
+	Kernel driver in use: al_eth
+
+0000:00:04.0 Network and computing encryption device [1000]: Annapurna Labs Ltd. Device [1c36:0022] (rev 02)
+	Flags: fast devsel, IRQ 255
+	Memory at fe0a0000 (64-bit, non-prefetchable) [disabled] [size=128K]
+	Memory at fe130000 (64-bit, non-prefetchable) [disabled] [size=64K]
+	Capabilities: [40] Express Root Complex Integrated Endpoint, MSI 00
+	Capabilities: [80] Power Management version 3
+	Capabilities: [90] MSI-X: Enable- Count=64 Masked-
+	Capabilities: [100] Vendor Specific Information: ID=1c36 Rev=0 Len=200 <?>
+	Capabilities: [300] Single Root I/O Virtualization (SR-IOV)
+
+0000:00:05.0 RAID bus controller [0104]: Annapurna Labs Ltd. Device [1c36:0022] (rev 02)
+	Flags: bus master, fast devsel, latency 0, IRQ 255
+	Memory at fe0e0000 (64-bit, non-prefetchable) [size=128K]
+	Memory at fe140000 (64-bit, non-prefetchable) [size=64K]
+	Capabilities: [40] Express Root Complex Integrated Endpoint, MSI 00
+	Capabilities: [80] Power Management version 3
+	Capabilities: [90] MSI-X: Enable+ Count=64 Masked-
+	Capabilities: [100] Vendor Specific Information: ID=1c36 Rev=0 Len=200 <?>
+	Capabilities: [300] Single Root I/O Virtualization (SR-IOV)
+	Kernel driver in use: al_dma
+
+0000:00:05.1 RAID bus controller [0104]: Annapurna Labs Ltd. Device [1c36:8022] (rev 02)
+	Flags: bus master, fast devsel, latency 0
+	Memory at fe100000 (64-bit, non-prefetchable) [virtual] [size=128K]
+	Capabilities: [40] Express Endpoint, MSI 00
+	Capabilities: [90] MSI-X: Enable- Count=64 Masked-
+	Kernel driver in use: al_dma
+
+0000:00:08.0 SATA controller [0106]: Annapurna Labs Ltd. Device [1c36:0031] (rev 02) (prog-if 01 [AHCI 1.0])
+	Flags: bus master, fast devsel, latency 0, IRQ 255
+	Memory at fe154000 (32-bit, non-prefetchable) [size=16K]
+	Capabilities: [40] Express Root Complex Integrated Endpoint, MSI 00
+	Capabilities: [80] Power Management version 3
+	Capabilities: [90] MSI-X: Enable+ Count=64 Masked-
+	Capabilities: [100] Vendor Specific Information: ID=1c36 Rev=0 Len=200 <?>
+	Kernel driver in use: ahci
+
+0000:00:09.0 SATA controller [0106]: Annapurna Labs Ltd. Device [1c36:0031] (rev 02) (prog-if 01 [AHCI 1.0])
+	Flags: bus master, fast devsel, latency 0, IRQ 255
+	Memory at fe158000 (32-bit, non-prefetchable) [size=16K]
+	Capabilities: [40] Express Root Complex Integrated Endpoint, MSI 00
+	Capabilities: [80] Power Management version 3
+	Capabilities: [90] MSI-X: Enable+ Count=64 Masked-
+	Capabilities: [100] Vendor Specific Information: ID=1c36 Rev=0 Len=200 <?>
+	Kernel driver in use: ahci
+
+0001:00:00.0 PCI bridge [0604]: Annapurna Labs Ltd. Device [1c36:0031] (rev 01) (prog-if 00 [Normal decode])
+	Flags: bus master, fast devsel, latency 0, IRQ 40
+	Memory at c0100000 (32-bit, non-prefetchable) [size=1M]
+	Memory at c0010000 (32-bit, non-prefetchable) [size=64K]
+	Bus: primary=00, secondary=01, subordinate=01, sec-latency=0
+	I/O behind bridge: [disabled]
+	Memory behind bridge: c0200000-c02fffff [size=1M]
+	Prefetchable memory behind bridge: [disabled]
+	Expansion ROM at c0020000 [virtual] [disabled] [size=64K]
+	Capabilities: [40] Power Management version 3
+	Capabilities: [50] MSI: Enable- Count=1/1 Maskable- 64bit+
+	Capabilities: [70] Express Root Port (Slot-), MSI 00
+	Capabilities: [b0] MSI-X: Enable- Count=1 Masked-
+	Capabilities: [d0] Vital Product Data
+	Capabilities: [100] Advanced Error Reporting
+	Capabilities: [148] Device Serial Number 00-00-00-00-00-00-00-00
+	Capabilities: [158] Secondary PCI Express
+	Capabilities: [178] Transaction Processing Hints
+
+0001:01:00.0 USB controller [0c03]: ASMedia Technology Inc. ASM1042A USB 3.0 Host Controller [1b21:1142] (prog-if 30 [XHCI])
+	Subsystem: ASMedia Technology Inc. ASM1042A USB 3.0 Host Controller [1b21:1142]
+	Flags: bus master, fast devsel, latency 0, IRQ 40
+	Memory at c0200000 (64-bit, non-prefetchable) [size=32K]
+	Capabilities: [50] MSI: Enable- Count=1/8 Maskable- 64bit+
+	Capabilities: [68] MSI-X: Enable+ Count=8 Masked-
+	Capabilities: [78] Power Management version 3
+	Capabilities: [80] Express Legacy Endpoint, MSI 00
+	Capabilities: [100] Virtual Channel
+	Kernel driver in use: xhci_hcd

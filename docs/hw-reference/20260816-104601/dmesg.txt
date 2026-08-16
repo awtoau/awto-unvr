@@ -1,0 +1,513 @@
+[32m[    0.000000] [0mBooting Linux on physical CPU 0x0000000000 [0x411fd073]
+[32m[    0.000000] [0mLinux version 4.19.152-alpine-unvr (bdd@builder) (gcc version 10.2.1 20210110 (Debian 10.2.1-6)) #2 SMP Fri Jul 10 16:11:15 CST 2026
+[32m[    0.000000] [0m[33mMachine model[0m: Annapurna Labs Alpine V2 UBNT
+[32m[    0.000000] [0m[33mefi[0m: Getting EFI parameters from FDT:
+[32m[    0.000000] [0m[33mefi[0m: UEFI not found.
+[32m[    0.000000] [0m[33mOn node 0 totalpages[0m: 1048576
+[32m[    0.000000] [0m[33m  DMA32 zone[0m: 12288 pages used for memmap
+[32m[    0.000000] [0m[33m  DMA32 zone[0m: 0 pages reserved
+[32m[    0.000000] [0m[33m  DMA32 zone[0m: 786432 pages, LIFO batch:63
+[32m[    0.000000] [0m[33m  Normal zone[0m: 4096 pages used for memmap
+[32m[    0.000000] [0m[33m  Normal zone[0m: 262144 pages, LIFO batch:63
+[32m[    0.000000] [0m[33mpsci[0m: probing for conduit method from DT.
+[32m[    0.000000] [0m[33mpsci[0m: PSCIv0.2 detected in firmware.
+[32m[    0.000000] [0m[33mpsci[0m: Using standard PSCI v0.2 function IDs
+[32m[    0.000000] [0m[33mpsci[0m: MIGRATE_INFO_TYPE not supported.
+[32m[    0.000000] [0m[33mrandom[0m: get_random_bytes called from start_kernel+0x8c/0x3c4 with crng_init=0
+[32m[    0.000000] [0m[33mpercpu[0m: Embedded 24 pages/cpu s59480 r8192 d30632 u98304
+[32m[    0.000000] [0m[33mpcpu-alloc[0m: s59480 r8192 d30632 u98304 alloc=24*4096
+[32m[    0.000000] [0m[33mpcpu-alloc[0m: [0] 0 [0] 1 [0] 2 [0] 3 
+[32m[    0.000000] [0mDetected PIPT I-cache on CPU0
+[32m[    0.000000] [0m[1mARM_SMCCC_ARCH_WORKAROUND_1 missing from firmware[0m
+[32m[    0.000000] [0m[33mCPU features[0m: enabling workaround for EL2 vector hardening
+[32m[    0.000000] [0m[33mBuilt 1 zonelists, mobility grouping on.  Total pages[0m: 1032192
+[32m[    0.000000] [0m[33mKernel command line[0m: pci=pcie_bus_perf console=ttyS0,115200 sysid=ea16 ubnthal.sysid=ea16 reboot=warm reboot=warm
+[32m[    0.000000] [0m[33mDentry cache hash table entries[0m: 524288 (order: 10, 4194304 bytes)
+[32m[    0.000000] [0m[33mInode-cache hash table entries[0m: 262144 (order: 9, 2097152 bytes)
+[32m[    0.000000] [0m[33msoftware IO TLB[0m: mapped [mem 0xbbfff000-0xbffff000] (64MB)
+[32m[    0.000000] [0m[33mMemory[0m: 4032124K/4194304K available (8444K kernel code, 674K rwdata, 3044K rodata, 8064K init, 330K bss, 162180K reserved, 0K cma-reserved)
+[32m[    0.000000] [0m[33mSLUB[0m: HWalign=64, Order=0-3, MinObjects=0, CPUs=4, Nodes=1
+[32m[    0.000000] [0m[33mrcu[0m: Hierarchical RCU implementation.
+[32m[    0.000000] [0m[33mNR_IRQS[0m: 64, nr_irqs: 64, preallocated irqs: 0
+[32m[    0.000000] [0m[33mGICv3[0m: GIC: Using split EOI/Deactivate mode
+[32m[    0.000000] [0m[33mGICv3[0m: Distributor has no Range Selector support
+[32m[    0.000000] [0m[33mGICv3[0m: no VLPI support, no direct LPI support
+[32m[    0.000000] [0m[33mGICv3[0m: CPU0: found redistributor 0 region 0:0x00000000f0280000
+[32m[    0.000000] [0m[33march_timer[0m: cp15 timer(s) running at 58.33MHz (phys).
+[32m[    0.000000] [0m[33mclocksource[0m: arch_sys_counter: mask: 0xffffffffffffff max_cycles: 0x1ae82a6a7f, max_idle_ns: 881590413063 ns
+[32m[    0.000002] [0m[33msched_clock[0m: 56 bits at 58MHz, resolution 17ns, wraps every 4398046511097ns
+[32m[    0.000111] [0m[33mConsole[0m: colour dummy device 80x25
+[32m[    0.000124] [0mCalibrating delay loop (skipped), value calculated using timer frequency.. 116.66 BogoMIPS (lpj=583333)
+[32m[    0.000129] [0m[33mpid_max[0m: default: 32768 minimum: 301
+[32m[    0.000183] [0m[33mMount-cache hash table entries[0m: 8192 (order: 4, 65536 bytes)
+[32m[    0.000198] [0m[33mMountpoint-cache hash table entries[0m: 8192 (order: 4, 65536 bytes)
+[32m[    0.000683] [0mASID allocator initialised with 32768 entries
+[32m[    0.000713] [0m[33mrcu[0m: Hierarchical SRCU implementation.
+[32m[    0.000968] [0mEFI services will not be available.
+[32m[    0.001067] [0m[33msmp[0m: Bringing up secondary CPUs ...
+[32m[    0.001213] [0mDetected PIPT I-cache on CPU1
+[32m[    0.001226] [0m[33mGICv3[0m: CPU1: found redistributor 1 region 0:0x00000000f02a0000
+[32m[    0.001235] [0m[33mCPU1[0m: Booted secondary processor 0x0000000001 [0x411fd073]
+[32m[    0.001402] [0mDetected PIPT I-cache on CPU2
+[32m[    0.001411] [0m[33mGICv3[0m: CPU2: found redistributor 2 region 0:0x00000000f02c0000
+[32m[    0.001418] [0m[33mCPU2[0m: Booted secondary processor 0x0000000002 [0x411fd073]
+[32m[    0.001582] [0mDetected PIPT I-cache on CPU3
+[32m[    0.001590] [0m[33mGICv3[0m: CPU3: found redistributor 3 region 0:0x00000000f02e0000
+[32m[    0.001598] [0m[33mCPU3[0m: Booted secondary processor 0x0000000003 [0x411fd073]
+[32m[    0.001627] [0m[33msmp[0m: Brought up 1 node, 4 CPUs
+[32m[    0.001641] [0m[33mSMP[0m: Total of 4 processors activated.
+[32m[    0.001644] [0m[33mCPU features[0m: detected: GIC system register CPU interface
+[32m[    0.001647] [0m[33mCPU features[0m: detected: 32-bit EL0 Support
+[32m[    0.001663] [0m[33mCPU[0m: All CPU(s) started at EL2
+[32m[    0.001671] [0m[33malternatives[0m: patching kernel code
+[32m[    0.002197] [0m[33mdevtmpfs[0m: initialized
+[32m[    0.004136] [0m[33mclocksource[0m: jiffies: mask: 0xffffffff max_cycles: 0xffffffff, max_idle_ns: 19112604462750000 ns
+[32m[    0.004143] [0m[33mfutex hash table entries[0m: 1024 (order: 4, 65536 bytes)
+[32m[    0.004290] [0mDMI not present or invalid.
+[32m[    0.004382] [0m[33mNET[0m: Registered protocol family 16
+[32m[    0.004478] [0m[33maudit[0m: initializing netlink subsys (disabled)
+[32m[    0.004523] [0m[33maudit[0m: type=2000 audit(0.000:1): state=initialized audit_enabled=0 res=1
+[32m[    0.004909] [0m[33mcpuidle[0m: using governor ladder
+[32m[    0.004917] [0m[33mcpuidle[0m: using governor menu
+[32m[    0.004947] [0m[33mhw-breakpoint[0m: found 6 breakpoint and 4 watchpoint registers.
+[32m[    0.005025] [0m[33mDMA[0m: preallocated 256 KiB pool for atomic allocations
+[32m[    0.005067] [0mInitializing Peripheral Bus System - PBS
+[32m[    0.014434] [0mHugeTLB registered 2.00 MiB page size, pre-allocated 0 pages
+[32m[    0.014539] [0m[33mcryptd[0m: max_cpu_qlen set to 1000
+[32m[    0.014787] [0m[33mvgaarb[0m: loaded
+[32m[    0.014902] [0mSCSI subsystem initialized
+[32m[    0.014986] [0mlibata version 3.00 loaded.
+[32m[    0.015154] [0m[33musbcore[0m: registered new interface driver usbfs
+[32m[    0.015189] [0m[33musbcore[0m: registered new interface driver hub
+[32m[    0.015216] [0m[33musbcore[0m: registered new device driver usb
+[32m[    0.021274] [0m[33mpca953x 0-0029[0m[31m: failed reading register[0m
+[32m[    0.021282] [0m[33mpca953x[0m[1m: probe of 0-0029 failed with error -121[0m
+[32m[    0.021383] [0m[33mpps_core[0m: LinuxPPS API ver. 1 registered
+[32m[    0.021386] [0m[33mpps_core[0m: Software ver. 5.3.6 - Copyright 2005-2007 Rodolfo Giometti <giometti@linux.it>
+[32m[    0.021411] [0mPTP clock support registered
+[32m[    0.021460] [0m[33mEDAC MC[0m: Ver: 3.0.0
+[32m[    0.021915] [0m[33mBluetooth[0m: Core ver 2.22
+[32m[    0.021931] [0m[33mNET[0m: Registered protocol family 31
+[32m[    0.021934] [0m[33mBluetooth[0m: HCI device and connection manager initialized
+[32m[    0.021957] [0m[33mBluetooth[0m: HCI socket layer initialized
+[32m[    0.021961] [0m[33mBluetooth[0m: L2CAP socket layer initialized
+[32m[    0.021970] [0m[33mBluetooth[0m: SCO socket layer initialized
+[32m[    0.022010] [0m[33mclocksource[0m: Switched to clocksource arch_sys_counter
+[32m[    0.022061] [0m[33mVFS[0m: Disk quotas dquot_6.6.0
+[32m[    0.022083] [0m[33mVFS[0m: Dquot-cache hash table entries: 512 (order 0, 4096 bytes)
+[32m[    0.025929] [0m[33mNET[0m: Registered protocol family 2
+[32m[    0.026117] [0m[33mtcp_listen_portaddr_hash hash table entries[0m: 2048 (order: 3, 32768 bytes)
+[32m[    0.026130] [0m[33mTCP established hash table entries[0m: 32768 (order: 6, 262144 bytes)
+[32m[    0.026194] [0m[33mTCP bind hash table entries[0m: 32768 (order: 7, 524288 bytes)
+[32m[    0.026319] [0m[33mTCP[0m: Hash tables configured (established 32768 bind 32768)
+[32m[    0.026366] [0m[33mUDP hash table entries[0m: 2048 (order: 4, 65536 bytes)
+[32m[    0.026382] [0m[33mUDP-Lite hash table entries[0m: 2048 (order: 4, 65536 bytes)
+[32m[    0.026439] [0m[33mNET[0m: Registered protocol family 1
+[32m[    0.026610] [0m[33mRPC[0m: Registered named UNIX socket transport module.
+[32m[    0.026614] [0m[33mRPC[0m: Registered udp transport module.
+[32m[    0.026617] [0m[33mRPC[0m: Registered tcp transport module.
+[32m[    0.026620] [0m[33mRPC[0m: Registered tcp NFSv4.1 backchannel transport module.
+[32m[    0.026624] [0m[33mPCI[0m: CLS 0 bytes, default 64
+[32m[    0.207408] [0m[33mworkingset[0m: timestamp_bits=46 max_order=20 bucket_order=0
+[32m[    0.211532] [0m[33mNFS[0m: Registering the id_resolver key type
+[32m[    0.211543] [0mKey type id_resolver registered
+[32m[    0.211546] [0mKey type id_legacy registered
+[32m[    0.211552] [0m[33mnfs4filelayout_init[0m: NFSv4 File Layout Driver Registering...
+[32m[    0.211557] [0mInstalling knfsd (copyright (C) 1996 okir@monad.swb.de).
+[32m[    0.687107] [0mBlock layer SCSI generic (bsg) driver version 0.4 loaded (major 250)
+[32m[    0.687164] [0mio scheduler noop registered
+[32m[    0.687168] [0mio scheduler deadline registered
+[32m[    0.687233] [0mio scheduler cfq registered (default)
+[32m[    0.687425] [0mbaseidx 0
+[32m[    0.687557] [0m[33mpl061_gpio fd887000.gpio0[0m: PL061 GPIO chip @0x00000000fd887000 registered
+[32m[    0.687583] [0mbaseidx 8
+[32m[    0.687655] [0m[33mpl061_gpio fd888000.gpio1[0m: PL061 GPIO chip @0x00000000fd888000 registered
+[32m[    0.687677] [0mbaseidx 16
+[32m[    0.687746] [0m[33mpl061_gpio fd889000.gpio2[0m: PL061 GPIO chip @0x00000000fd889000 registered
+[32m[    0.687768] [0mbaseidx 24
+[32m[    0.687833] [0m[33mpl061_gpio fd88a000.gpio3[0m: PL061 GPIO chip @0x00000000fd88a000 registered
+[32m[    0.687856] [0mbaseidx 32
+[32m[    0.687922] [0m[33mpl061_gpio fd88b000.gpio4[0m: PL061 GPIO chip @0x00000000fd88b000 registered
+[32m[    0.687943] [0mbaseidx 40
+[32m[    0.688012] [0m[33mpl061_gpio fd897000.gpio5[0m: PL061 GPIO chip @0x00000000fd897000 registered
+[32m[    0.688121] [0m[33mal-sgpo fd8b4000.sgpo[0m: Alpine SGPO driver probed.
+[32m[    0.688192] [0m[33mal-internal-pcie fbc00000.pcie-internal[0m: host bridge /soc/pcie-internal ranges:
+[32m[    0.688203] [0m[33mal-internal-pcie fbc00000.pcie-internal[0m:   MEM 0xfe000000..0xfeffffff -> 0xfe000000
+[32m[    0.688248] [0m[33mal-internal-pcie fbc00000.pcie-internal[0m: PCI host bridge to bus 0000:00
+[32m[    0.688252] [0m[33mpci_bus 0000:00[0m: root bus resource [bus 00]
+[32m[    0.688256] [0m[33mpci_bus 0000:00[0m: root bus resource [mem 0xfe000000-0xfeffffff]
+[32m[    0.688359] [0m[33mpci 0000:00:01.0[0m: [1c36:0001] type 00 class 0x020000
+[32m[    0.688369] [0m[33mpci 0000:00:01.0[0m: reg 0x10: [mem 0xfe000000-0xfe01ffff 64bit]
+[32m[    0.688374] [0m[33mpci 0000:00:01.0[0m: reg 0x18: [mem 0xfe020000-0xfe020fff 64bit]
+[32m[    0.688378] [0m[33mpci 0000:00:01.0[0m: reg 0x20: [mem 0xfe024000-0xfe027fff 64bit]
+[32m[    0.688396] [0m[33mpci 0000:00:01.0[0m: PME# supported from D3hot D3cold
+[32m[    0.688500] [0m[33mpci 0000:00:02.0[0m: [1c36:0002] type 00 class 0x020000
+[32m[    0.688509] [0m[33mpci 0000:00:02.0[0m: reg 0x10: [mem 0xfe040000-0xfe05ffff 64bit]
+[32m[    0.688514] [0m[33mpci 0000:00:02.0[0m: reg 0x18: [mem 0xfe060000-0xfe060fff 64bit]
+[32m[    0.688518] [0m[33mpci 0000:00:02.0[0m: reg 0x20: [mem 0xfe070000-0xfe07ffff 64bit]
+[32m[    0.688533] [0m[33mpci 0000:00:02.0[0m: PME# supported from D3hot D3cold
+[32m[    0.688542] [0m[33mpci 0000:00:02.0[0m: reg 0x324: [mem 0x00000000-0x0001ffff 64bit]
+[32m[    0.688545] [0m[33mpci 0000:00:02.0[0m: VF(n) BAR0 space: [mem 0x00000000-0x0005ffff 64bit] (contains BAR0 for 3 VFs)
+[32m[    0.688696] [0m[33mpci 0000:00:04.0[0m: [1c36:0022] type 00 class 0x100000
+[32m[    0.688704] [0m[33mpci 0000:00:04.0[0m: reg 0x10: [mem 0xfe080000-0xfe09ffff 64bit]
+[32m[    0.688710] [0m[33mpci 0000:00:04.0[0m: reg 0x20: [mem 0xfe0a0000-0xfe0affff 64bit]
+[32m[    0.688725] [0m[33mpci 0000:00:04.0[0m: PME# supported from D3hot D3cold
+[32m[    0.688733] [0m[33mpci 0000:00:04.0[0m: reg 0x324: [mem 0x00000000-0x0001ffff 64bit]
+[32m[    0.688736] [0m[33mpci 0000:00:04.0[0m: VF(n) BAR0 space: [mem 0x00000000-0x0001ffff 64bit] (contains BAR0 for 1 VFs)
+[32m[    0.688832] [0m[33mpci 0000:00:05.0[0m: [1c36:0022] type 00 class 0x010400
+[32m[    0.688840] [0m[33mpci 0000:00:05.0[0m: reg 0x10: [mem 0xfe0c0000-0xfe0dffff 64bit]
+[32m[    0.688847] [0m[33mpci 0000:00:05.0[0m: reg 0x20: [mem 0xfe0e0000-0xfe0effff 64bit]
+[32m[    0.688862] [0m[33mpci 0000:00:05.0[0m: PME# supported from D3hot D3cold
+[32m[    0.688869] [0m[33mpci 0000:00:05.0[0m: reg 0x324: [mem 0x00000000-0x0001ffff 64bit]
+[32m[    0.688872] [0m[33mpci 0000:00:05.0[0m: VF(n) BAR0 space: [mem 0x00000000-0x0001ffff 64bit] (contains BAR0 for 1 VFs)
+[32m[    0.689062] [0m[33mpci 0000:00:08.0[0m: [1c36:0031] type 00 class 0x010601
+[32m[    0.689074] [0m[33mpci 0000:00:08.0[0m: reg 0x24: [mem 0xfe0f0000-0xfe0f3fff]
+[32m[    0.689088] [0m[33mpci 0000:00:08.0[0m: PME# supported from D3hot D3cold
+[32m[    0.689175] [0m[33mpci 0000:00:09.0[0m: [1c36:0031] type 00 class 0x010601
+[32m[    0.689186] [0m[33mpci 0000:00:09.0[0m: reg 0x24: [mem 0xfe0f4000-0xfe0f7fff]
+[32m[    0.689201] [0m[33mpci 0000:00:09.0[0m: PME# supported from D3hot D3cold
+[32m[    0.690332] [0m[33mpci 0000:00:01.0[0m: BAR 0: assigned [mem 0xfe000000-0xfe01ffff 64bit]
+[32m[    0.690339] [0m[33mpci 0000:00:02.0[0m: BAR 0: assigned [mem 0xfe020000-0xfe03ffff 64bit]
+[32m[    0.690345] [0m[33mpci 0000:00:02.0[0m: BAR 7: assigned [mem 0xfe040000-0xfe09ffff 64bit]
+[32m[    0.690350] [0m[33mpci 0000:00:04.0[0m: BAR 0: assigned [mem 0xfe0a0000-0xfe0bffff 64bit]
+[32m[    0.690356] [0m[33mpci 0000:00:04.0[0m: BAR 7: assigned [mem 0xfe0c0000-0xfe0dffff 64bit]
+[32m[    0.690361] [0m[33mpci 0000:00:05.0[0m: BAR 0: assigned [mem 0xfe0e0000-0xfe0fffff 64bit]
+[32m[    0.690366] [0m[33mpci 0000:00:05.0[0m: BAR 7: assigned [mem 0xfe100000-0xfe11ffff 64bit]
+[32m[    0.690371] [0m[33mpci 0000:00:02.0[0m: BAR 4: assigned [mem 0xfe120000-0xfe12ffff 64bit]
+[32m[    0.690377] [0m[33mpci 0000:00:04.0[0m: BAR 4: assigned [mem 0xfe130000-0xfe13ffff 64bit]
+[32m[    0.690382] [0m[33mpci 0000:00:05.0[0m: BAR 4: assigned [mem 0xfe140000-0xfe14ffff 64bit]
+[32m[    0.690387] [0m[33mpci 0000:00:01.0[0m: BAR 4: assigned [mem 0xfe150000-0xfe153fff 64bit]
+[32m[    0.690392] [0m[33mpci 0000:00:08.0[0m: BAR 5: assigned [mem 0xfe154000-0xfe157fff]
+[32m[    0.690397] [0m[33mpci 0000:00:09.0[0m: BAR 5: assigned [mem 0xfe158000-0xfe15bfff]
+[32m[    0.690402] [0m[33mpci 0000:00:01.0[0m: BAR 2: assigned [mem 0xfe15c000-0xfe15cfff 64bit]
+[32m[    0.690407] [0m[33mpci 0000:00:02.0[0m: BAR 2: assigned [mem 0xfe15d000-0xfe15dfff 64bit]
+[32m[    0.690506] [0m[33mal-external-pcie fd800000.pcie-external0[0m: host bridge /soc/pcie-external0 ranges:
+[32m[    0.690516] [0m[33mal-external-pcie fd800000.pcie-external0[0m:   err 0xfb600000..0xfb6fffff -> 0xfb600000
+[32m[    0.690524] [0m[33mal-external-pcie fd800000.pcie-external0[0m:    IO 0xc0000000..0xc000ffff -> 0x00010000
+[32m[    0.690531] [0m[33mal-external-pcie fd800000.pcie-external0[0m:   MEM 0xc0010000..0xc7ffffff -> 0xc0010000
+[32m[    0.690557] [0m[33mal-external-pcie fd800000.pcie-external0[0m: link up: speed Gen 2 width x1
+[32m[    0.690561] [0m[33mal-external-pcie fd800000.pcie-external0[0m: link up: speed Gen 2 width x1
+[32m[    0.690566] [0m[33mPCIe 0[0m: setting OB iATU even after link is started
+[32m[    0.690607] [0m[33mal-external-pcie fd800000.pcie-external0[0m: PCI host bridge to bus 0001:00
+[32m[    0.690611] [0m[33mpci_bus 0001:00[0m: root bus resource [bus 00-ff]
+[32m[    0.690615] [0m[33mpci_bus 0001:00[0m: root bus resource [??? 0xfb600000-0xfb6fffff flags 0x0]
+[32m[    0.690620] [0m[33mpci_bus 0001:00[0m: root bus resource [io  0x0000-0xffff] (bus address [0x10000-0x1ffff])
+[32m[    0.690624] [0m[33mpci_bus 0001:00[0m: root bus resource [mem 0xc0010000-0xc7ffffff]
+[32m[    0.690635] [0m[33mpci 0001:00:00.0[0m: [1c36:0031] type 01 class 0x060400
+[32m[    0.690646] [0m[33mpci 0001:00:00.0[0m: reg 0x10: [mem 0x00000000-0x000fffff]
+[32m[    0.690651] [0m[33mpci 0001:00:00.0[0m: reg 0x14: [mem 0x00000000-0x0000ffff]
+[32m[    0.690656] [0m[33mpci 0001:00:00.0[0m: reg 0x38: [mem 0x00000000-0x0000ffff pref]
+[32m[    0.690686] [0m[33mpci 0001:00:00.0[0m: supports D1
+[32m[    0.690689] [0m[33mpci 0001:00:00.0[0m: PME# supported from D0 D1 D3hot
+[32m[    0.691748] [0m[33mpci 0001:00:00.0[0m: bridge configuration invalid ([bus 00-00]), reconfiguring
+[32m[    0.691804] [0m[33mpci 0001:01:00.0[0m: [1b21:1142] type 00 class 0x0c0330
+[32m[    0.691830] [0m[33mpci 0001:01:00.0[0m: reg 0x10: [mem 0xc0000000-0xc0007fff 64bit]
+[32m[    0.691924] [0m[33mpci 0001:01:00.0[0m: PME# supported from D3cold
+[32m[    0.693024] [0m[33mpci_bus 0001:01[0m: busn_res: [bus 01-ff] end is updated to 01
+[32m[    0.693034] [0m[33mpci 0001:00:00.0[0m: BAR 0: assigned [mem 0xc0100000-0xc01fffff]
+[32m[    0.693039] [0m[33mpci 0001:00:00.0[0m: BAR 14: assigned [mem 0xc0200000-0xc02fffff]
+[32m[    0.693044] [0m[33mpci 0001:00:00.0[0m: BAR 1: assigned [mem 0xc0010000-0xc001ffff]
+[32m[    0.693049] [0m[33mpci 0001:00:00.0[0m: BAR 6: assigned [mem 0xc0020000-0xc002ffff pref]
+[32m[    0.693055] [0m[33mpci 0001:01:00.0[0m: BAR 0: assigned [mem 0xc0200000-0xc0207fff 64bit]
+[32m[    0.693066] [0m[33mpci 0001:00:00.0[0m: PCI bridge to [bus 01]
+[32m[    0.693071] [0m[33mpci 0001:00:00.0[0m:   bridge window [mem 0xc0200000-0xc02fffff]
+[32m[    0.693080] [0m[33mpci 0001:00:00.0[0m: Max Payload Size set to  256/ 256 (was  128), Max Read Rq  256
+[32m[    0.693097] [0m[33mpci 0001:01:00.0[0m: Max Payload Size set to  256/ 512 (was  128), Max Read Rq  256
+[32m[    0.693101] [0m[33mpci 0001:00:00.0[0m[1m: AL PCIe bridge quirk detected, disable MSI(X)[0m
+[32m[    0.693117] [0m[33mpci 0001:01:00.0[0m: enabling device (0000 -> 0002)
+[32m[    0.693259] [0m[33mal_dma[0m: Annapurna Labs DMA Driver 0.01
+[32m[    0.693272] [0m[33mal_dma 0000:00:05.0[0m[31m: writing to VF config space[0m
+[32m[    0.693283] [0m[33mal_dma 0000:00:05.0[0m: enabling device (0000 -> 0002)
+[32m[    0.812027] [0m[33mpci 0000:00:05.1[0m: [1c36:8022] type 00 class 0x010400
+[32m[    0.812108] [0m[33mal_dma 0000:00:05.1[0m: enabling device (0400 -> 0402)
+[32m[    0.812120] [0m[33mal_ssm_dma_init_aux[0m: non optimal adapter configuration
+[32m[    0.813499] [0m[33mSerial[0m: 8250/16550 driver, 4 ports, IRQ sharing enabled
+[32m[    0.813986] [0mconsole [ttyS0] disabled
+[32m[    0.814002] [0m[33mfd883000.uart0[0m: ttyS0 at MMIO 0xfd883000 (irq = 23, base_baud = 31250000) is a 16550A
+[32m[    1.913430] [0mconsole [ttyS0] enabled
+[32m[    1.917093] [0m[33mfd884000.uart1[0m: ttyS1 at MMIO 0xfd884000 (irq = 24, base_baud = 31250000) is a 16550A
+[32m[    1.926112] [0m[33mfd885000.uart2[0m: ttyS2 at MMIO 0xfd885000 (irq = 25, base_baud = 31250000) is a 16550A
+[32m[    1.935447] [0mmpt3sas version 26.100.00.00 loaded
+[32m[    1.940350] [0m[33mahci 0000:00:08.0[0m: version 3.0
+[32m[    1.940356] [0m[33mahci 0000:00:08.0[0m: enabling device (0000 -> 0002)
+[32m[    1.946110] [0m[33mahci 0000:00:08.0[0m: controller can't do PMP, turning off CAP_PMP
+[32m[    1.953258] [0m[33mahci 0000:00:08.0[0m: SSS flag set, parallel bus scan disabled
+[32m[    1.959877] [0m[33mahci 0000:00:08.0[0m: AHCI 0001.0300 32 slots 4 ports 6 Gbps 0xf impl SATA mode
+[32m[    1.967963] [0m[33mahci 0000:00:08.0[0m: flags: 64bit ncq sntf stag pm led clo only fbs pio slum part ccc apst 
+[32m[    1.977172] [0m[33mahci 0000:00:08.0[0m[1m: both AHCI_HFLAG_MULTI_MSI flag set and custom irq handler implemented[0m
+[32m[    1.987068] [0m[33mscsi host0[0m: ahci
+[32m[    1.990182] [0m[33mscsi host1[0m: ahci
+[32m[    1.993248] [0m[33mscsi host2[0m: ahci
+[32m[    1.996291] [0m[33mscsi host3[0m: ahci
+[32m[    1.999260] [0m[33mata1[0m: SATA max UDMA/133 abar m16384@0xfe154000 port 0xfe154100 irq 32
+[32m[    2.006739] [0m[33mata2[0m: SATA max UDMA/133 abar m16384@0xfe154000 port 0xfe154180 irq 33
+[32m[    2.014213] [0m[33mata3[0m: SATA max UDMA/133 abar m16384@0xfe154000 port 0xfe154200 irq 34
+[32m[    2.021683] [0m[33mata4[0m: SATA max UDMA/133 abar m16384@0xfe154000 port 0xfe154280 irq 35
+[32m[    2.029195] [0m[33mahci 0000:00:09.0[0m: enabling device (0000 -> 0002)
+[32m[    2.030240] [0m[33mata1[0m: SATA link down (SStatus 4 SControl 300)
+[32m[    2.034948] [0m[33mahci 0000:00:09.0[0m: controller can't do PMP, turning off CAP_PMP
+[32m[    2.047488] [0m[33mahci 0000:00:09.0[0m: SSS flag set, parallel bus scan disabled
+[32m[    2.048439] [0m[33mata2[0m: SATA link down (SStatus 4 SControl 300)
+[32m[    2.054111] [0m[33mahci 0000:00:09.0[0m: AHCI 0001.0300 32 slots 4 ports 6 Gbps 0xf impl SATA mode
+[32m[    2.067571] [0m[33mahci 0000:00:09.0[0m: flags: 64bit ncq sntf stag pm led clo only fbs pio slum part ccc apst 
+[32m[    2.076782] [0m[33mahci 0000:00:09.0[0m[1m: both AHCI_HFLAG_MULTI_MSI flag set and custom irq handler implemented[0m
+[32m[    2.083077] [0m[33mata3[0m: SATA link down (SStatus 4 SControl 300)
+[32m[    2.091453] [0m[33mscsi host4[0m: ahci
+[32m[    2.092459] [0m[33mata4[0m: SATA link down (SStatus 4 SControl 300)
+[32m[    2.094478] [0m[33mscsi host5[0m: ahci
+[32m[    2.102734] [0m[33mscsi host6[0m: ahci
+[32m[    2.105756] [0m[33mscsi host7[0m: ahci
+[32m[    2.108724] [0m[33mata5[0m: SATA max UDMA/133 abar m16384@0xfe158000 port 0xfe158100 irq 36
+[32m[    2.116204] [0m[33mata6[0m: SATA max UDMA/133 abar m16384@0xfe158000 port 0xfe158180 irq 37
+[32m[    2.123678] [0m[33mata7[0m: SATA max UDMA/133 abar m16384@0xfe158000 port 0xfe158200 irq 38
+[32m[    2.131148] [0m[33mata8[0m: SATA max UDMA/133 abar m16384@0xfe158000 port 0xfe158280 irq 39
+[32m[    2.138651] [0m[33mahci 0001:00:00.0[0m[31m: writing to VF config space[0m
+[32m[    2.139705] [0m[33mata5[0m: SATA link down (SStatus 4 SControl 300)
+[32m[    2.144088] [0m[33mahci[0m[1m: probe of 0001:00:00.0 failed with error -22[0m
+[32m[    2.155603] [0m[33mm25p80 spi0.0[0m[1m: found mx25u25635f, expected spi_flash_jedec_detection[0m
+[32m[    2.163006] [0m[33mata6[0m: SATA link down (SStatus 4 SControl 300)
+[32m[    2.168424] [0m[33mm25p80 spi0.0[0m: mx25u25635f (32768 Kbytes)
+[32m[    2.173478] [0m[33mata7[0m: SATA link down (SStatus 4 SControl 300)
+[32m[    2.179952] [0m[33mata8[0m: SATA link down (SStatus 4 SControl 300)
+[32m[    2.185385] [0m8 fixed-partitions partitions found on MTD device spi0.0
+[32m[    2.191728] [0mCreating 8 MTD partitions on "spi0.0":
+[32m[    2.196518] [0m[33m0x000000000000-0x0000001c0000 [0m: "u-boot"
+[32m[    2.201820] [0m[33m0x0000001c0000-0x0000001d0000 [0m: "u-boot env"
+[32m[    2.207402] [0m[33m0x0000001d0000-0x0000001e0000 [0m: "u-boot env redundant"
+[32m[    2.213862] [0m[33m0x0000001e0000-0x0000001f0000 [0m: "Factory"
+[32m[    2.219172] [0m[33m0x0000001f0000-0x000000200000 [0m: "EEPROM"
+[32m[    2.224415] [0m[33m0x000000200000-0x000001200000 [0m: "recovery kernel"
+[32m[    2.230417] [0m[33m0x000001200000-0x000001fff000 [0m: "config"
+[32m[    2.235641] [0m[33m0x000001fff000-0x000002000000 [0m: "cksum"
+[32m[    2.240920] [0m[33mlibphy[0m: Fixed MDIO Bus: probed
+[32m[    2.245300] [0m[33mal_eth_drv[0m: Initializing Peripheral Bus System (PBS) resources
+[32m[    2.252200] [0m[33mal_eth 0000:00:01.0[0m[31m: writing to VF config space[0m
+[32m[    2.257769] [0m[33mal_eth 0000:00:01.0[0m: AnnapurnaLabs unified 1GbE/10GbE/25GbE Ethernet Driver with SR-IOV al_eth v3.5.3 (Mar 14, 2019)
+[32m[    2.269325] [0m[33mal_eth 0000:00:01.0[0m: driver_data is 0x0
+[32m[    2.274225] [0m[33mal_eth 0000:00:01.0[0m: eth rev_id 2 (orig_rev_id 2) dev_id 1
+[32m[    2.280822] [0m[33mal_eth 0000:00:01.0 (unnamed net_device) (uninitialized)[0m[1m: Unable to find compatible OF node[0m
+[32m[    2.290207] [0m[33mal_eth 0000:00:01.0[0m: Board info: phy exist Yes. phy addr 4. mdio freq 1000 Khz. SFP connected No. media 1
+[32m[    2.300803] [0m[33mal_eth 0000:00:01.0[0m: al_mod_eth_function_reset: performing FLR
+[32m[    2.313473] [0m[33mal_eth 0000:00:01.0 eth0[0m: AnnapurnaLabs unified 1Gbe/10Gbe/25Gbe integrated found at mem fe000000, mac addr 74:ac:b9:41:a8:11
+[32m[    2.325826] [0m[33mal_eth 0000:00:02.0[0m[31m: writing to VF config space[0m
+[32m[    2.331399] [0m[33mal_eth 0000:00:02.0[0m: driver_data is 0x0
+[32m[    2.336295] [0m[33mal_eth 0000:00:02.0[0m: eth rev_id 3 (orig_rev_id 3) dev_id 2
+[32m[    2.342906] [0m[33mal_eth 0000:00:02.0 (unnamed net_device) (uninitialized)[0m[1m: Unable to find compatible OF node[0m
+[32m[    2.352290] [0m[33mal_eth 0000:00:02.0[0m: Board info: phy exist No. phy addr 0. mdio freq 2500 Khz. SFP connected Yes. media 5
+[32m[    2.362886] [0m[33mal_eth 0000:00:02.0[0m: al_mod_eth_function_reset: performing FLR
+[32m[    2.375697] [0m[33mal_eth 0000:00:02.0 eth1[0m: AnnapurnaLabs unified 1Gbe/10Gbe/25Gbe integrated found at mem fe020000, mac addr 74:ac:b9:41:a8:12
+[32m[    2.388184] [0m[33mehci_hcd[0m: USB 2.0 'Enhanced' Host Controller (EHCI) Driver
+[32m[    2.394708] [0m[33mehci-pci[0m: EHCI PCI platform driver
+[32m[    2.399163] [0m[33mehci-platform[0m: EHCI generic platform driver
+[32m[    2.404425] [0m[33mohci_hcd[0m: USB 1.1 'Open' Host Controller (OHCI) Driver
+[32m[    2.410599] [0m[33mohci-pci[0m: OHCI PCI platform driver
+[32m[    2.415054] [0m[33mohci-platform[0m: OHCI generic platform driver
+[32m[    2.420344] [0m[33mxhci_hcd 0001:01:00.0[0m: xHCI Host Controller
+[32m[    2.425573] [0m[33mxhci_hcd 0001:01:00.0[0m: new USB bus registered, assigned bus number 1
+[32m[    2.567015] [0m[33mxhci_hcd 0001:01:00.0[0m: hcc params 0x0200e081 hci version 0x100 quirks 0x0000000010000410
+[32m[    2.576585] [0m[33mhub 1-0:1.0[0m: USB hub found
+[32m[    2.580338] [0m[33mhub 1-0:1.0[0m: 2 ports detected
+[32m[    2.584491] [0m[33mxhci_hcd 0001:01:00.0[0m: xHCI Host Controller
+[32m[    2.589711] [0m[33mxhci_hcd 0001:01:00.0[0m: new USB bus registered, assigned bus number 2
+[32m[    2.597104] [0m[33mxhci_hcd 0001:01:00.0[0m: Host supports USB 3.0 SuperSpeed
+[32m[    2.603415] [0m[33musb usb2[0m: We don't know the algorithms for LPM for this host, disabling LPM.
+[32m[    2.611662] [0m[33mhub 2-0:1.0[0m: USB hub found
+[32m[    2.615422] [0m[33mhub 2-0:1.0[0m: 2 ports detected
+[32m[    2.619644] [0m[33musbcore[0m: registered new interface driver cdc_acm
+[32m[    2.625298] [0m[33mcdc_acm[0m: USB Abstract Control Model driver for USB modems and ISDN adapters
+[32m[    2.633318] [0m[33musbcore[0m: registered new interface driver usb-storage
+[32m[    2.639341] [0m[33musbcore[0m: registered new interface driver cp210x
+[32m[    2.644917] [0m[33musbserial[0m: USB Serial support registered for cp210x
+[32m[    2.650842] [0m[33musbcore[0m: registered new interface driver ftdi_sio
+[32m[    2.656590] [0m[33musbserial[0m: USB Serial support registered for FTDI USB Serial Device
+[32m[    2.663955] [0mi2c /dev entries driver
+[32m[    2.671576] [0m[33mrtc-s35390a 1-0030[0m: rtc core: registered rtc-s35390a as rtc0
+[32m[    2.678294] [0m[33mi2c i2c-0[0m: Added multiplexed i2c bus 1
+[32m[    2.683150] [0m[33mi2c i2c-0[0m: Added multiplexed i2c bus 2
+[32m[    2.687997] [0m[33mi2c i2c-0[0m: Added multiplexed i2c bus 3
+[32m[    2.692946] [0m[33mi2c i2c-0[0m: Added multiplexed i2c bus 4
+[32m[    2.697729] [0m[33mpca954x 0-0071[0m: registered 4 multiplexed busses for I2C switch pca9546
+[32m[    2.709051] [0m[33madt7475 4-002e[0m: ADT7475 device, revision 1
+[32m[    2.714188] [0m[33madt7475 4-002e[0m: Optional features: fan4 pwm2
+[32m[    2.735722] [0m[33mrandom[0m: fast init done
+[32m[    2.749243] [0m[33mal_thermal_probe[0m: Thermal Sensor Loaded
+[32m[    2.754285] [0m[33mdevice-mapper[0m: ioctl: 4.39.0-ioctl (2018-04-03) initialised: dm-devel@redhat.com
+[32m[    2.762718] [0m[33mBluetooth[0m: HCI UART driver ver 2.3
+[32m[    2.767154] [0m[33mBluetooth[0m: HCI UART protocol H4 registered
+[32m[    2.772286] [0m[33mBluetooth[0m: HCI UART protocol BCSP registered
+[32m[    2.777608] [0m[33musbcore[0m: registered new interface driver btusb
+[32m[    2.783641] [0mInitializing XFRM netlink socket
+[32m[    2.788092] [0m[33mNET[0m: Registered protocol family 10
+[32m[    2.792860] [0mSegment Routing with IPv6
+[32m[    2.796538] [0m[33mNET[0m: Registered protocol family 17
+[32m[    2.801026] [0m[33mBluetooth[0m: RFCOMM socket layer initialized
+[32m[    2.806171] [0m[33mBluetooth[0m: RFCOMM ver 1.11
+[32m[    2.809914] [0m[33mBluetooth[0m: BNEP (Ethernet Emulation) ver 1.3
+[32m[    2.815221] [0m[33mBluetooth[0m: BNEP socket layer initialized
+[32m[    2.820177] [0m[33mBluetooth[0m: HIDP (Human Interface Emulation) ver 1.2
+[32m[    2.826089] [0m[33mBluetooth[0m: HIDP socket layer initialized
+[32m[    2.831064] [0mKey type dns_resolver registered
+[32m[    2.835694] [0mregistered taskstats version 1
+[32m[    2.845223] [0mKey type encrypted registered
+[32m[    2.849607] [0m[33minput[0m: gpio_keys as /devices/platform/gpio_keys/input/input0
+[32m[    2.857573] [0m[33mrtc-s35390a 1-0030[0m: setting system clock to 2026-08-15 11:24:39 UTC (1786793079)
+[32m[    2.868407] [0m[33mFreeing unused kernel memory[0m: 8064K
+[32m[    2.912157] [0mRun /init as init process
+[32m[    2.982387] [0m[33musb 2-1[0m: new SuperSpeed Gen 1 USB device number 2 using xhci_hcd
+[32m[    3.001997] [0m[33mal_eth 0000:00:02.0 enp0s2[0m: renamed from eth1
+[32m[    3.022032] [0m[33musb-storage 2-1:1.0[0m: USB Mass Storage device detected
+[32m[    3.028791] [0m[33mscsi host8[0m: usb-storage 2-1:1.0
+[32m[    3.072898] [0m[33mal_eth 0000:00:01.0 enp0s1[0m: renamed from eth0
+[32m[    3.175440] [0m[33mal_nand_probe[0m: AnnapurnaLabs nand driver
+[32m[    3.181186] [0m[33mnand[0m: device found, Manufacturer ID: 0x2c, Chip ID: 0xa3
+[32m[    3.187541] [0m[33mnand[0m: Micron MT29F8G08ABBCAH4
+[32m[    3.191544] [0m[33mnand[0m: 1024 MiB, SLC, erase size: 256 KiB, page size: 4096, OOB size: 224
+[32m[    3.199293] [0mScanning device for bad blocks
+[32m[    3.361347] [0m4 fixed-partitions partitions found on MTD device al-nand
+[32m[    3.367786] [0mCreating 4 MTD partitions on "al-nand":
+[32m[    3.372660] [0m[33m0x000000000000-0x000000200000 [0m: "al_boot"
+[32m[    3.378068] [0m[33m0x000000300000-0x000001300000 [0m: "linux_kernel"
+[32m[    3.383881] [0m[33m0x000001300000-0x00003ff00000 [0m: "rootfs"
+[32m[    3.390608] [0m[33m0x00003ff00000-0x000040000000 [0m: "chike"
+[32m[    3.396935] [0m[33mui_hdd_pwrctl[0m[1m: loading out-of-tree module taints kernel.[0m
+[32m[    3.408182] [0m[33mloop[0m: module loaded
+[32m[    3.415316] [0m[33msquashfs[0m: version 4.0 (2009/01/31) Phillip Lougher
+[32m[    3.592073] [0m[33mraid6[0m: int64x1  gen()   913 MB/s
+[32m[    3.762020] [0m[33mraid6[0m: int64x1  xor()   945 MB/s
+[32m[    3.932041] [0m[33mraid6[0m: int64x2  gen()  1267 MB/s
+[32m[    4.102032] [0m[33mraid6[0m: int64x2  xor()  1328 MB/s
+[32m[    4.272013] [0m[33mraid6[0m: int64x4  gen()  1723 MB/s
+[32m[    4.442020] [0m[33mraid6[0m: int64x4  xor()  1426 MB/s
+[32m[    4.612028] [0m[33mraid6[0m: int64x8  gen()  2187 MB/s
+[32m[    4.782014] [0m[33mraid6[0m: int64x8  xor()  1445 MB/s
+[32m[    4.952023] [0m[33mraid6[0m: neonx1   gen()  1889 MB/s
+[32m[    5.122016] [0m[33mraid6[0m: neonx1   xor()  2296 MB/s
+[32m[    5.292012] [0m[33mraid6[0m: neonx2   gen()  2505 MB/s
+[32m[    5.462011] [0m[33mraid6[0m: neonx2   xor()  2823 MB/s
+[32m[    5.632013] [0m[33mraid6[0m: neonx4   gen()  2879 MB/s
+[32m[    5.802009] [0m[33mraid6[0m: neonx4   xor()  2899 MB/s
+[32m[    5.972021] [0m[33mraid6[0m: neonx8   gen()  3630 MB/s
+[32m[    6.142017] [0m[33mraid6[0m: neonx8   xor()  3375 MB/s
+[32m[    6.146278] [0m[33mraid6[0m: using algorithm neonx8 gen() 3630 MB/s
+[32m[    6.151666] [0m[33mraid6[0m: .... xor() 3375 MB/s, rmw enabled
+[32m[    6.156623] [0m[33mraid6[0m: using neon recovery algorithm
+[32m[    6.162036] [0m[33mscsi 8:0:0:0[0m: Direct-Access     SanDisk  SanDisk Ultra    PMAP PQ: 0 ANSI: 6
+[32m[    6.165369] [0m[33masync_tx[0m: api initialized (async)
+[32m[    6.170340] [0m[33msd 8:0:0:0[0m: Attached scsi generic sg0 type 0
+[32m[    6.179931] [0m[33msd 8:0:0:0[0m: [sdq] 123502592 512-byte logical blocks: (63.2 GB/58.9 GiB)
+[32m[    6.179960] [0m[33mxor[0m: measuring software checksum speed
+[32m[    6.188823] [0m[33msd 8:0:0:0[0m: [sdq] Write Protect is off
+[32m[    6.197159] [0m[33msd 8:0:0:0[0m: [sdq] Mode Sense: 2b 00 00 08
+[32m[    6.197957] [0m[33msd 8:0:0:0[0m: [sdq] Write cache: disabled, read cache: enabled, doesn't support DPO or FUA
+[32m[    6.213238] [0m[33msd 8:0:0:0[0m: [sdq] Attached SCSI removable disk
+[32m[    6.292010] [0m[33m   8regs     [0m:  6762.400 MB/sec
+[32m[    6.392009] [0m[33m   8regs_prefetch[0m:  5942.800 MB/sec
+[32m[    6.492009] [0m[33m   32regs    [0m:  7725.200 MB/sec
+[32m[    6.592009] [0m[33m   32regs_prefetch[0m:  6691.200 MB/sec
+[32m[    6.596617] [0m[33mxor[0m: using function: 32regs (7725.200 MB/sec)
+[32m[    6.673464] [0m[33mrandom[0m: crng init done
+[32m[    7.149632] [0m[33mEXT4-fs (mtdblock6)[0m: mounted filesystem with ordered data mode. Opts: (null)
+[32m[   48.313765] [0m[33mEXT4-fs (sdq)[0m: mounted filesystem with ordered data mode. Opts: (null)
+[32m[   48.840162] [0m[33mbrd[0m: module loaded
+[32m[   97.062184] [0m[33mEXT4-fs (mtdblock6)[0m: mounted filesystem with ordered data mode. Opts: (null)
+[32m[  138.644038] [0m[33mEXT4-fs (mtdblock6)[0m: mounted filesystem with ordered data mode. Opts: (null)
+[32m[  138.769220] [0m[33mEXT4-fs (sdq)[0m: mounted filesystem with ordered data mode. Opts: (null)
+[32m[  139.668220] [0m[33mEXT4-fs (mtdblock6)[0m: mounted filesystem with ordered data mode. Opts: (null)
+[32m[  181.242826] [0m[33mEXT4-fs (mtdblock6)[0m: mounted filesystem with ordered data mode. Opts: (null)
+[32m[  181.369058] [0m[33mEXT4-fs (sdq)[0m: mounted filesystem with ordered data mode. Opts: (null)
+[32m[  181.535777] [0m[33msystemd[1][0m[31m: Failed to find module 'autofs4'[0m
+[32m[  181.542631] [0m[33mcgroup[0m[31m: cgroup2: unknown option "memory_recursiveprot"[0m
+[32m[  181.782081] [0m[33msystemd[1][0m: systemd 247.3-7+deb11u8 running in system mode. (+PAM +AUDIT +SELINUX +IMA +APPARMOR +SMACK +SYSVINIT +UTMP +LIBCRYPTSETUP +GCRYPT +GNUTLS +ACL +XZ +LZ4 +ZSTD +SECCOMP +BLKID +ELFUTILS +KMOD +IDN2 -IDN +PCRE2 default-hierarchy=unified)
+[32m[  181.805191] [0m[33msystemd[1][0m: Detected architecture arm64.
+[32m[  181.843151] [0m[33msystemd[1][0m: Set hostname to <UniFi-NVR>.
+[32m[  182.081011] [0m[33msystemd[1][0m: Queued start job for default target System Finish Bootup.
+[32m[  182.089347] [0m[33msystemd[1][0m[1m: os.slice: unit configures an IP firewall, but the local system does not support BPF/cgroup firewalling.[0m
+[32m[  182.100823] [0m[33msystemd[1][0m[1m: (This warning is only shown for the first unit using IP firewalling.)[0m
+[32m[  182.110086] [0m[33msystemd[1][0m: Created slice OS Slice. Memory, CPU and IO restricted.
+[32m[  182.152469] [0m[33msystemd[1][0m: Created slice Unifi-OS Slice. Memory, CPU and IO restricted.
+[32m[  182.192472] [0m[33msystemd[1][0m: Created slice App slice.
+[32m[  182.222481] [0m[33msystemd[1][0m: Created slice unifi-drive slice.
+[32m[  182.262354] [0m[33msystemd[1][0m: Created slice unifi-protect slice.
+[32m[  182.302381] [0m[33msystemd[1][0m: Created slice uid-agent slice.
+[32m[  182.332668] [0m[33msystemd[1][0m: Created slice system-bluetooth\x2dcontroller.slice.
+[32m[  182.372328] [0m[33msystemd[1][0m: Created slice system-getty.slice.
+[32m[  182.412453] [0m[33msystemd[1][0m: Created slice system-modprobe.slice.
+[32m[  182.452388] [0m[33msystemd[1][0m: Created slice system-serial\x2dgetty.slice.
+[32m[  182.492382] [0m[33msystemd[1][0m: Created slice system-systemd\x2dnetworkd\x2dfallbacker.slice.
+[32m[  182.532415] [0m[33msystemd[1][0m: Created slice User and Session Slice.
+[32m[  182.572157] [0m[33msystemd[1][0m: Started Dispatch Password Requests to Console Directory Watch.
+[32m[  182.612116] [0m[33msystemd[1][0m: Started Forward Password Requests to Wall Directory Watch.
+[32m[  182.652111] [0m[33msystemd[1][0m: Condition check resulted in Arbitrary Executable File Formats File System Automount Point being skipped.
+[32m[  182.663726] [0m[33msystemd[1][0m: Reached target Local Encrypted Volumes.
+[32m[  182.702124] [0m[33msystemd[1][0m: Reached target Paths.
+[32m[  182.732113] [0m[33msystemd[1][0m: Reached target Slices.
+[32m[  182.762066] [0m[33msystemd[1][0m: Reached target Swap.
+[32m[  182.792614] [0m[33msystemd[1][0m: Listening on RPCbind Server Activation Socket.
+[32m[  182.832146] [0m[33msystemd[1][0m: Listening on initctl Compatibility Named Pipe.
+[32m[  182.872463] [0m[33msystemd[1][0m: Listening on Journal Audit Socket.
+[32m[  182.912180] [0m[33msystemd[1][0m: Listening on Journal Socket (/dev/log).
+[32m[  182.952218] [0m[33msystemd[1][0m: Listening on Journal Socket.
+[32m[  182.982260] [0m[33msystemd[1][0m: Listening on Network Service Netlink Socket.
+[32m[  183.022398] [0m[33msystemd[1][0m: Listening on udev Control Socket.
+[32m[  183.062165] [0m[33msystemd[1][0m: Listening on udev Kernel Socket.
+[32m[  183.103241] [0m[33msystemd[1][0m: Mounting Huge Pages File System...
+[32m[  183.143188] [0m[33msystemd[1][0m: Mounting POSIX Message Queue File System...
+[32m[  183.183049] [0m[33msystemd[1][0m: Mounting RPC Pipe File System...
+[32m[  183.223189] [0m[33msystemd[1][0m: Mounting Kernel Debug File System...
+[32m[  183.262229] [0m[33msystemd[1][0m: Condition check resulted in Kernel Trace File System being skipped.
+[32m[  183.852922] [0m[33msystemd[1][0m: Mounting Temporary Directory (/tmp)...
+[32m[  183.892303] [0m[33msystemd[1][0m: Condition check resulted in Kernel Module supporting RPCSEC_GSS being skipped.
+[32m[  183.903028] [0m[33msystemd[1][0m: Starting Create list of static device nodes for the current kernel...
+[32m[  183.943278] [0m[33msystemd[1][0m: Starting Load Kernel Module configfs...
+[32m[  183.983205] [0m[33msystemd[1][0m: Starting Load Kernel Module drm...
+[32m[  184.022751] [0m[33msystemd[1][0m: Condition check resulted in Set Up Additional Binary Formats being skipped.
+[32m[  184.033185] [0m[33msystemd[1][0m: Starting Journal Service...
+[32m[  184.074011] [0m[33msystemd[1][0m: Starting Load Kernel Modules...
+[32m[  184.090333] [0m[33mpersistent_ram[0m: uncorrectable error in header
+[32m[  184.108980] [0m[33mpstore[0m: Using compression: deflate
+[32m[  184.114684] [0m[33msystemd[1][0m: Starting Remount Root and Kernel File Systems...
+[32m[  184.114705] [0mconsole [pstore-1] enabled
+[32m[  184.145137] [0m[33mpstore[0m: Registered ramoops as persistent store backend
+[32m[  184.145141] [0m[33mramoops[0m: attached 0x200000@0x92000000, ecc: 16/0
+[32m[  184.147620] [0m[33mubnt_common[0m[1m: module license 'Proprietary' taints kernel.[0m
+[32m[  184.164840] [0m[1mDisabling lock debugging due to kernel taint[0m
+[32m[  184.179898] [0m[33mubnthal[0m[1m: unknown parameter 'sysid' ignored[0m
+[32m[  184.203289] [0m[33msystemd[1][0m: Starting Coldplug All udev Devices...
+[32m[  184.210012] [0m[33mubnthal[0m: Ubiquiti UniFi-NVR-4
+[32m[  184.216457] [0mcreating procfs for ubnthal
+[32m[  184.216463] [0mcreating proc entry for system.info
+[32m[  184.216465] [0mcreating proc entry for board
+[32m[  184.216468] [0mcreating procfs for status
+[32m[  184.216470] [0mcreating proc entry for IsDefault
+[32m[  184.216472] [0mcreating proc entry for IsLocated
+[32m[  184.216474] [0mcreating proc entry for IsIsolated
+[32m[  184.216476] [0mcreating proc entry for IsLte
+[32m[  184.216478] [0mcreating proc entry for ControllerPort
+[32m[  184.216480] [0mcreating proc entry for ControllerHost
+[32m[  184.216483] [0mcreating proc entry for AnonNetAppId
+[32m[  184.216485] [0mcreating proc entry for MeshStatus
+[32m[  184.216570] [0mUnable to find 'ubnthal,write-protect' dts node.
+[32m[  184.263293] [0m[33msystemd[1][0m: Starting Force rescan SCSI disks before local fs target...
+[32m[  184.304891] [0m[33msystemd[1][0m: Started Journal Service.
+[32m[  184.754349] [0m[33msystemd-journald[2105][0m: Received client request to flush runtime journal.
+[32m[  185.427685] [0m[33mIPv6[0m: ADDRCONF(NETDEV_UP): enp0s2: link is not ready
+[32m[  185.427980] [0m[33mal_eth 0000:00:01.0[0m: al_mod_eth_function_reset: performing FLR
+[32m[  185.433384] [0mConfigured MAC to RGMII mode
+[32m[  185.434405] [0m[33mal_eth 0000:00:01.0 enp0s1[0m: using MSI-X per Queue interrupt mode
+[32m[  185.443739] [0m[33mlibphy[0m: al mdio bus: probed
+[32m[  185.451243] [0m[33mal_mod_eth_lm_link_detection_step[0m: New SFP mode detected AL_ETH_LM_MODE_DISCONNECTED -> AL_ETH_LM_MODE_10G_OPTIC
+[32m[  185.544364] [0m[33mal_eth 0000:00:01.0 enp0s1[0m: phy[4]: device 8:04, driver Atheros 8031 ethernet
+[32m[  185.544369] [0m[33mal_eth 0000:00:01.0 enp0s1[0m: phy[4]:supported 62ef adv 62ef
+[32m[  185.544485] [0m[33mIPv6[0m: ADDRCONF(NETDEV_UP): enp0s1: link is not ready
+[32m[  185.562037] [0m[33mal_eth 0000:00:02.0[0m: al_mod_eth_function_reset: performing FLR
+[32m[  185.567670] [0m[33mal_eth 0000:00:02.0 enp0s2[0m: Configured iCRC TX HW offload in entry_idx 0 (protocol_idx:0xe)
+[32m[  185.567675] [0mConfigured MAC to KR mode
+[32m[  185.568653] [0m[33mal_eth 0000:00:02.0 enp0s2[0m: using MSI-X per Queue interrupt mode
+[32m[  185.570930] [0m[33mal_mod_eth_group_lm_link_manage[0m: eth2 - link established successfully
+[32m[  185.570964] [0m[33mIPv6[0m: ADDRCONF(NETDEV_CHANGE): enp0s2: link becomes ready
+[32m[  186.160915] [0m[33mEXT4-fs (mtdblock6)[0m: mounted filesystem with ordered data mode. Opts: (null)
+[32m[  187.602506] [0m[33meth [al_mod_eth_1][0m: set link speed to 100Mbps. full duplex.
+[32m[  187.602514] [0m[33mal_eth 0000:00:01.0 enp0s1[0m: Link is Up - 100Mbps/Full - flow control rx/tx
+[32m[  187.602521] [0m[33mIPv6[0m: ADDRCONF(NETDEV_CHANGE): enp0s1: link becomes ready
+[32m[  192.646357] [0m[33mEXT4-fs (mtdblock6)[0m: mounted filesystem with ordered data mode. Opts: (null)
+[32m[  430.713511] [0m[33mEXT4-fs (mtdblock6)[0m: mounted filesystem with ordered data mode. Opts: (null)

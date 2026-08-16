@@ -31,7 +31,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
-BIN = REPO / "sources" / "UNVR-5.1.25.bin"
+DEFAULT_BIN = REPO / "sources" / "UNVR-5.1.25.bin"
 LOGS = REPO / "tmp" / "logs"
 SECTIONS = REPO / "tmp" / "sections"
 
@@ -161,8 +161,14 @@ def find_ikconfig(image):
 if __name__ == "__main__":
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--extract", action="store_true", help="write section payloads to tmp/sections/")
+    ap.add_argument("bin", nargs="?", type=Path, default=DEFAULT_BIN,
+                    help="firmware .bin (default: sources/UNVR-5.1.25.bin)")
+    ap.add_argument("--sections-dir", type=Path, default=SECTIONS,
+                    help="where --extract writes (default: tmp/sections/)")
     args = ap.parse_args()
 
+    BIN = args.bin
+    SECTIONS = args.sections_dir
     if not BIN.exists():
         sys.exit(f"absent: {BIN} - run scripts/fetch-unvr-firmware.py first")
     LOGS.mkdir(parents=True, exist_ok=True)

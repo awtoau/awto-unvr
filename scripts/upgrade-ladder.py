@@ -46,9 +46,12 @@ STAGE_DIR = "/mnt/.rwfs/upgrade"
 # 5.1.25 renamed it to /etc/ssl/fw.pub - do not copy that path backwards.
 PUB_KEY = "/etc/ssl/unas.pub"
 
-# Vendor default console credentials. Also recorded in secrets.yaml (gitignored).
+# Vendor default console credentials, recorded in secrets.yaml (gitignored).
+# The password changed across generations: 1.3.35/1.4.9 = "ubnt", 2.3.14 and
+# every al324 build after = "ui" (verified against each firmware's baked-in
+# /etc/shadow: $5$ SHA-256 crypt, cracked to "ui"). Try the newer one first.
 LOGIN_USER = "root"
-LOGIN_PASS = "ubnt"
+LOGIN_PASSWORDS = ["ui", "ubnt"]
 
 # The ladder. Reasoning in docs/upgrade-path.md:
 #   1.4.9  - crosses the arm64 -> al324 platform boundary alone
@@ -165,14 +168,22 @@ def login() -> bool:
     "Login incorrect" - the getty reprints its banner on a timer, so matching
     on prompt text alone races with it.
     """
-    out = console_raw("", wait=3.0)
-    if "login:" in out.lower():
-        console_raw(LOGIN_USER, wait=5.0, until="assword")
-        console_raw(LOGIN_PASS, wait=10.0)
-    ok = console_rc(console("true", wait=10.0)) == 0
-    if ok:
-        log("  shell available")
-    return ok
+    # Already at a shell? (getty not prompting.) Confirm and return.
+    if console_rc(console("true", wait=10.0)) == 0:
+        return True
+    for pw in LOGIN_PASSWORDS:
+        out = console_raw("", wait=3.0)
+        if "login:" not in out.lower():
+            # A partial prompt or a stale password line - nudge with a newline.
+            out = console_raw("", wait=3.0)
+        if "login:" in out.lower():
+            console_raw(LOGIN_USER, wait=5.0, until="assword")
+            console_raw(pw, wait=10.0)
+        if console_rc(console("true", wait=10.0)) == 0:
+            log(f"  shell available (root:{pw})")
+            return True
+    log("  could not authenticate at console", "ERROR")
+    return False
 
 
 def console_rc(out: str) -> int | None:
@@ -467,12 +478,35 @@ if __name__ == "__main__":
     a = ap.parse_args()
 
     rows = api_rows()
-    plan = [a.only] if a.only else LADDER
     # Authenticate first. Reading a version at a getty prompt returns nothing
     # and looks identical to "the upgrade did not apply".
     login()
     cur = device_version()
     log(f"device currently reports {cur or 'UNKNOWN'}")
+
+    def ver_key(v):
+        return tuple(int(x) for x in v.split("."))
+
+    if a.only:
+        plan = [a.only]
+    else:
+        # ONLY hop forward. The default plan is the ladder, but the loop below
+        # once started at LADDER[0] and tried to DOWNGRADE 3.1.16 -> 1.4.9.
+        # That is not a no-op: with the fdt-rm layout, 1.4.9's initramfs reads
+        # rootfs from the wrong mtd and boot-loops. Cut everything at or below
+        # the running version.
+        if not cur:
+            sys.exit("cannot read current version; refusing to guess a plan")
+        plan = [v for v in LADDER if ver_key(v) > ver_key(cur)]
+
+    # A downgrade via --only is almost never intended; make it deliberate.
+    if a.go and cur and any(ver_key(v) < ver_key(cur) for v in plan):
+        sys.exit(f"refusing to downgrade from {cur} to {plan}. "
+                 "Downgrading past the al324 boundary boot-loops on this unit.")
+
+    if not plan:
+        log(f"already at or past the ladder top ({cur}); nothing to do")
+        sys.exit(0)
 
     if not a.go:
         log("PLAN:")

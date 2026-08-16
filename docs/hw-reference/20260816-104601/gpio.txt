@@ -1,0 +1,34 @@
+gpiochip2: GPIOs 0-7, parent: amba/fd887000.gpio0, fd887000.gpio0:
+ gpio-0   (                    |25g                 ) out lo    
+
+gpiochip3: GPIOs 8-15, parent: amba/fd888000.gpio1, fd888000.gpio1:
+
+gpiochip4: GPIOs 16-23, parent: amba/fd889000.gpio2, fd889000.gpio2:
+
+gpiochip5: GPIOs 24-31, parent: amba/fd88a000.gpio3, fd88a000.gpio3:
+ gpio-31  (                    |ulogo_blue          ) out hi    
+
+gpiochip6: GPIOs 32-39, parent: amba/fd88b000.gpio4, fd88b000.gpio4:
+ gpio-33  (                    |sysfs               ) in  hi    
+ gpio-34  (                    |sysfs               ) in  hi    
+ gpio-37  (                    |ulogo_white         ) out hi    
+ gpio-38  (                    |Reset Button        ) in  hi IRQ
+
+gpiochip7: GPIOs 40-47, parent: amba/fd897000.gpio5, fd897000.gpio5:
+
+gpiochip8: GPIOs 48-111, parent: platform/fd8b4000.sgpo, al-sgpo:
+ gpio-64  (                    |sata led gpio       ) out ?      
+ gpio-65  (                    |sata led gpio       ) out ?      
+ gpio-66  (                    |sata led gpio       ) out ?      
+ gpio-67  (                    |sata led gpio       ) out ?      
+ gpio-68  (                    |sata led gpio       ) out ?      
+ gpio-69  (                    |sata led gpio       ) out ?      
+ gpio-70  (                    |sata led gpio       ) out ?      
+ gpio-71  (                    |sata led gpio       ) out ?      
+
+gpiochip1: GPIOs 480-495, parent: i2c/0-0021, pca9575, can sleep:
+
+gpiochip0: GPIOs 496-511, parent: i2c/0-0020, pca9575, can sleep:
+ gpio-508 (                    |sysfs               ) in  lo    
+ gpio-510 (                    |sysfs               ) in  lo    
+ gpio-511 (                    |sysfs               ) in  lo    

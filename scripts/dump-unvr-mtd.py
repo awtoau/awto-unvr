@@ -367,7 +367,20 @@ if __name__ == "__main__":
     ap.add_argument("--tag", default="", help="label folded into the dump dir name, e.g. pre-1.4.9")
     a = ap.parse_args()
 
-    log("--- dump-unvr-mtd (console + netcat) ---")
+    # Single-instance lock. Two dumps sharing one console + TFTP interleave their
+    # reads and silently corrupt each other - which is exactly what happened when
+    # a killed ladder orphaned its dump child and the next run collided with it
+    # (a good env md5 came back as the pre-saveenv value). flock releases on exit,
+    # including SIGKILL, so a crashed run never wedges the next one.
+    import fcntl
+    LOGS.mkdir(parents=True, exist_ok=True)
+    _lock = (LOGS / ".dump-unvr-mtd.lock").open("w")
+    try:
+        fcntl.flock(_lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError:
+        sys.exit("another dump-unvr-mtd is already running (console is single-user)")
+
+    log("--- dump-unvr-mtd (console + TFTP) ---")
     BOARD.update(read_board())
     BOARD["_uname"] = console("uname -r", wait=2.0).splitlines()[-2].strip() \
         if len(console("uname -r", wait=2.0).splitlines()) > 1 else "unknown"

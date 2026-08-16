@@ -1,0 +1,10 @@
+== /sys/class/hwmon/hwmon0 adt7475
+/sys/class/hwmon/hwmon0/temp1_input=36750
+/sys/class/hwmon/hwmon0/temp2_input=36000
+/sys/class/hwmon/hwmon0/temp3_input=24750
+/sys/class/hwmon/hwmon0/in1_input=896
+/sys/class/hwmon/hwmon0/in2_input=3278
+/sys/class/hwmon/hwmon0/fan1_input=944
+/sys/class/hwmon/hwmon0/fan2_input=949
+/sys/class/hwmon/hwmon0/fan3_input=938
+/sys/class/hwmon/hwmon0/fan4_input=0

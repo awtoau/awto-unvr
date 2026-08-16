@@ -1,0 +1,19 @@
+---
+/sys/bus/i2c/devices/0-0020/name=pca9575
+/sys/bus/i2c/devices/0-0021/name=pca9575
+/sys/bus/i2c/devices/0-0029/name=pca9575
+/sys/bus/i2c/devices/0-0071/name=pca9546
+/sys/bus/i2c/devices/1-0030/name=s35390a
+/sys/bus/i2c/devices/1-0031/name=dummy
+/sys/bus/i2c/devices/1-0032/name=dummy
+/sys/bus/i2c/devices/1-0033/name=dummy
+/sys/bus/i2c/devices/1-0034/name=dummy
+/sys/bus/i2c/devices/1-0035/name=dummy
+/sys/bus/i2c/devices/1-0036/name=dummy
+/sys/bus/i2c/devices/1-0037/name=dummy
+/sys/bus/i2c/devices/4-002e/name=adt7475
+/sys/bus/i2c/devices/i2c-0/name=Synopsys DesignWare I2C adapter
+/sys/bus/i2c/devices/i2c-1/name=i2c-0-mux (chan_id 0)
+/sys/bus/i2c/devices/i2c-2/name=i2c-0-mux (chan_id 1)
+/sys/bus/i2c/devices/i2c-3/name=i2c-0-mux (chan_id 2)
+/sys/bus/i2c/devices/i2c-4/name=i2c-0-mux (chan_id 3)

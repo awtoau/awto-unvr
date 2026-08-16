@@ -1,0 +1,1 @@
+pci=pcie_bus_perf console=ttyS0,115200 sysid=ea16 ubnthal.sysid=ea16 reboot=warm reboot=warm

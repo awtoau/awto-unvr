@@ -1,0 +1,16 @@
+major minor  #blocks  name
+
+  31        0       1792 mtdblock0
+  31        1         64 mtdblock1
+  31        2         64 mtdblock2
+  31        3         64 mtdblock3
+  31        4         64 mtdblock4
+  31        5      16384 mtdblock5
+  31        6      14332 mtdblock6
+  31        7          4 mtdblock7
+  31        8       2048 mtdblock8
+  31        9      16384 mtdblock9
+  31       10    1028096 mtdblock10
+  31       11       1024 mtdblock11
+  65        0   61751296 sdq
+   1        0     748396 ram0

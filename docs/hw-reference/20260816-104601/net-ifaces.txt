@@ -1,0 +1,4 @@
+total 0
+lrwxrwxrwx 1 root root 0 Aug 16 10:43 [0m[01;36menp0s1[0m -> [01;34m../../devices/platform/soc/fbc00000.pcie-internal/pci0000:00/0000:00:01.0/net/enp0s1[0m[K/
+lrwxrwxrwx 1 root root 0 Aug 16 10:43 [01;36menp0s2[0m -> [01;34m../../devices/platform/soc/fbc00000.pcie-internal/pci0000:00/0000:00:02.0/net/enp0s2[0m[K/
+lrwxrwxrwx 1 root root 0 Aug 16 10:43 [01;36mlo[0m -> [01;34m../../devices/virtual/net/lo[0m/

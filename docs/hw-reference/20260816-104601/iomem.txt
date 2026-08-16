@@ -1,0 +1,59 @@
+00000000-bfffffff : System RAM
+  00000000-000fffff : reserved
+  04078000-0407efff : reserved
+  04080000-04bbffff : Kernel code
+  04bc0000-0539ffff : reserved
+  053a0000-054a1fff : Kernel data
+  92000000-921fffff : reserved
+  bbff7000-bfffefff : reserved
+  bffff000-bfffffff : reserved
+c0010000-c7ffffff : pcie-external0
+  c0010000-c001ffff : 0001:00:00.0
+  c0020000-c002ffff : 0001:00:00.0
+  c0100000-c01fffff : 0001:00:00.0
+  c0200000-c02fffff : PCI Bus 0001:01
+    c0200000-c0207fff : 0001:01:00.0
+      c0200000-c0207fff : xhci-hcd
+fb600000-fb6fffff : pcie-external0
+fbc00000-fbcfffff : ecam
+fd800000-fd81ffff : ecam
+fd880000-fd880fff : i2c-pld
+fd882000-fd882fff : spi
+fd883000-fd883fff : serial
+fd884000-fd884fff : serial
+fd885000-fd885fff : serial
+fd887000-fd887fff : gpio0
+  fd887000-fd887fff : gpio0
+fd888000-fd888fff : gpio1
+  fd888000-fd888fff : gpio1
+fd889000-fd889fff : gpio2
+  fd889000-fd889fff : gpio2
+fd88a000-fd88afff : gpio3
+  fd88a000-fd88afff : gpio3
+fd88b000-fd88bfff : gpio4
+  fd88b000-fd88bfff : gpio4
+fd88c000-fd88cfff : wdt0
+fd897000-fd897fff : gpio5
+  fd897000-fd897fff : gpio5
+fd8b4000-fd8b8fff : sgpo
+fe000000-fe01ffff : al_eth
+fe020000-fe03ffff : al_eth
+fe0e0000-fe0fffff : al_dma
+fe100000-fe11ffff : al_dma
+fe120000-fe12ffff : al_eth
+fe140000-fe14ffff : al_dma
+fe150000-fe153fff : al_eth
+fe154000-fe157fff : ahci
+fe158000-fe15bfff : ahci
+fe15c000-fe15cfff : al_eth
+fe15d000-fe15dfff : al_eth
+200000000-23fffffff : System RAM
+  23b600000-23bdfffff : reserved
+  23bfc8000-23fdfffff : reserved
+  23ff06000-23ff65fff : reserved
+  23ff66000-23ff66fff : reserved
+  23ff67000-23ffc6fff : reserved
+  23ffc9000-23ffc9fff : reserved
+  23ffca000-23ffcbfff : reserved
+  23ffcc000-23fff4fff : reserved
+  23fff5000-23fffffff : reserved
