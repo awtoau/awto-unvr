@@ -13,15 +13,22 @@ evidence** captured 2026-08-16.
   Local drafts `docs/issues/NN-*.md` map to live `#(NN+4)` (00→#4 … 21→#25); new
   gap drafts 31–37 → file as #31+.
 
-## Status — 6.18.44 VERIFIED on hardware → 7.1 next (2026-08-16)
+## Status — 7.1.8 VERIFIED on hardware (latest stable) (2026-08-16)
 
-**6.18.44 milestone reached.** Full-platform netboot verified on the UNVR:
-8 internal-PCIe devices, SMCC snoop on all slots, both WD drives @6G, eth0(1G)+
-eth1(10G SFP) bound, al_ssm crypto + al_dma 4ch live, xHCI SuperSpeed device.
-Parity with the patched 6.12. Both porting-agent risk areas cleared (al_eth
-runtime bind on 6.18; native_ecam on USB/xHCI). See
+**7.1.8 milestone reached — full platform parity, latest stable kernel.**
+Netbooted on the UNVR via `scripts/netboot.py`: 8 internal-PCIe devices, SMCC
+snoop all slots, WD82PURZ ×2 @6G on ata5/7, **Samsung SSD 850 EVO on ata3 now
+IDs cleanly** (misclassified on 6.12/6.18), eth0(1G)+eth1(10G SFP) bound, al_ssm
+AES-XTS/CBC + al_dma 4ch, xHCI SuperSpeed. Forward-port from 6.18 needed **zero
+new API deltas** (the three 6.18 adaptations persist byte-for-byte). See
+[linux-71-build.md](linux-71-build.md#netboot-verified-on-hardware--2026-08-16).
+
+**6.18.44** also verified (LTS deploy branch); same full platform. See
 [linux-6.18-build.md](linux-6.18-build.md#netboot-verified-on-hardware--2026-08-16).
-Next: forward-port to **7.1** (Phase 8 / Stage 13).
+
+Netboot gotchas (both baked into `scripts/netboot.py`): U-Boot has a ~50s
+prompt watchdog (catch+netboot must be atomic); `panic=15` in bootargs so a
+console/host drop can't strand the box at an init-kill panic.
 
 First Linux boot on our hardware is **done**: cross-built **Linux 6.12.103** for the
 ea16 board, netbooted via existing U-Boot (tftp `uImage`+DTB, `bootm`, unsigned).
