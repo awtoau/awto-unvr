@@ -114,13 +114,26 @@ Build/deploy facts:
 - Bootargs: `console=ttyS0,115200 root=PARTUUID=dcdc291e-… rootfstype=ext4 rw
   rootwait selinux=0 panic=15`.
 
-### Still TODO — persistence (kernel still netbooted)
+### PERSISTENT — standalone boot from NAND (2026-08-17)
 
-The *kernel* is tftp'd; a plain reboot drops to the vendor rescue shell. To make
-it boot with no host: verify U-Boot can read SATA (`scsi init`) → put gzip uImage
-+ DTB on the SSD ESP (sda1, FAT) → U-Boot bootcmd load+bootm → `saveenv`. If
-U-Boot can't read SATA, flash the uImage to the NAND kernel partition instead.
-Follow-ups: hostname → woomera (`hostnamectl`), change root pw, al_ssm WARN.
+woomera boots Fedora with **no host**: `scripts/flash-nand.py` verified end-to-end
+(NAND kernel → decompress → mount SSD root → systemd multi-user.target).
+
+- **Not SSD-boot**: U-Boot's `scsi init` finds **0 devices** (SATA links time out —
+  U-Boot doesn't do the internal-PCIe AXI-snoop our kernel does). So the kernel
+  can't be loaded from the SSD by U-Boot.
+- **Kernel in NAND, rootfs on SSD**: the 18.5 MB gzip uImage doesn't fit the 16 MiB
+  `linux_kernel` slot (mtd2 @0x300000), so it's written into the **dead vendor
+  rootfs region** — kernel @NAND `0x1300000`, DTB @`0x2800000`. The vendor kernel
+  @`0x300000` is **left intact** as recovery. Full Fedora config kept.
+- **bootcmd** (saved to NOR env):
+  `nand read 0x02000000 0x1300000 0x1200000; nand read 0x04078000 0x2800000 0x20000; bootm 0x02000000 - 0x04078000`
+  **bootargs**: `console=ttyS0,115200 root=PARTUUID=dcdc291e-… rootfstype=ext4 rw rootwait selinux=0 panic=15 reboot=cold`.
+- **Reboot caveat**: `reboot` from Linux hangs (#51 — no AL-324 reset driver);
+  power-cycle to reboot. Cold boot works.
+
+Follow-ups: hostname → woomera (`hostnamectl`), change root pw, al_ssm crypto (#50),
+al_thermal into the build (#44/#49).
 
 ## After this — dev work self-hosts on woomera
 
