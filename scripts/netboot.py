@@ -72,14 +72,17 @@ def main() -> int:
     ap.add_argument("--dtaddr", default="0x04078000")
     ap.add_argument("--panic", type=int, default=15,
                     help="kernel panic= seconds (auto-reboot on panic; 0 = omit)")
+    ap.add_argument("--uimage", help="explicit tftp uImage filename (overrides --tag)")
+    ap.add_argument("--dtb", help="explicit tftp DTB filename (overrides --tag)")
+    ap.add_argument("--bootargs", help="full bootargs override (e.g. root=PARTUUID=..)")
     # Catch ceiling: long enough to power-cycle + preboot (~15s) with margin.
     ap.add_argument("--catch-seconds", type=float, default=180.0)
     a = ap.parse_args()
 
-    uimage = f"uImage-unvr-ea16-{a.tag}"
-    dtb = f"alpine-v2-ubnt-unvr-ea16-{a.tag}.dtb"
+    uimage = a.uimage or f"uImage-unvr-ea16-{a.tag}"
+    dtb = a.dtb or f"alpine-v2-ubnt-unvr-ea16-{a.tag}.dtb"
     panic = f" panic={a.panic}" if a.panic else ""
-    bootargs = (f"console=ttyS0,115200 sysid=ea16 ubnthal.sysid=ea16 "
+    bootargs = a.bootargs or (f"console=ttyS0,115200 sysid=ea16 ubnthal.sysid=ea16 "
                 f"reboot=warm rw iommu.passthrough=1 pci=pcie_bus_perf{panic}")
 
     if not SOCK.exists():

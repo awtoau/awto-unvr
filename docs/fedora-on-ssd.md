@@ -93,6 +93,17 @@ Prereq: **unplug the SanDisk USB stick (sda)** so the SSD enumerates as `/dev/sd
    kernel+DTB; `saveenv`.
 6. Reboot → persistent Fedora on the SSD.
 
+## Deploy state (live, 2026-08-16)
+
+- SSD = `/dev/sda` (USB removed). `sda2` = ext4 label `unvr-root`,
+  **PARTUUID=`dcdc291e-9956-48cd-9d7c-48219877881a`**.
+- Fedora rootfs extracted onto sda2 (RC=0, systemd present).
+- Production kernel = Fedora aarch64 config + Alpine patches, no initramfs
+  (`scripts/build-linux-71-fedora.py` → `build-out-71-fedora/`).
+- Verify-first: **netboot** `uImage-unvr-ea16-7.1-fedora` + DTB with
+  `root=PARTUUID=dcdc291e-… rootfstype=ext4 rw rootwait selinux=0 panic=15`
+  before writing any persistent U-Boot env. Proves the Fedora stack, then persist.
+
 ## After this — dev work self-hosts on woomera
 
 Once Fedora is up with the toolchain, kernel builds and git move onto woomera

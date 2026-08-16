@@ -45,6 +45,15 @@ IH_MAGIC, IH_OS_LINUX, IH_ARCH_ARM64, IH_TYPE_KERNEL, IH_COMP_NONE = \
     0x27051956, 5, 22, 2, 0
 LOAD_ADDR = ENTRY_ADDR = 0x08080000
 
+# Production mode: no embedded initramfs, so the kernel runs /sbin/init (systemd)
+# from the real root (root=PARTUUID=..., kernel's own rootwait waits for SATA).
+# The bring-up initramfs would otherwise hijack the boot into a shell. Output is
+# suffixed so it never clobbers the installer uImage. See docs/fedora-on-ssd.md.
+# (Audit #43 kernel-config adds are a later rebuild; this is the minimal change
+# to get Fedora booting.)
+PROD = ("--production" in sys.argv) or os.environ.get("UNVR_PRODUCTION") == "1"
+SUFFIX = "-prod" if PROD else ""
+
 KCONFIG_SNIPPET = """
 config PCIE_AL_INTERNAL
 \tbool "Annapurna Labs Alpine V2 internal PCIe host controller"
@@ -178,17 +187,32 @@ def prep_initramfs():
 def configure():
     run(["make", "-C", SRC, "unvr_defconfig"])
     cfg = os.path.join(SRC, "scripts/config")
-    initramfs = f"{OUT}/initramfs-root {OUT}/initramfs-devnodes"
-    run([cfg, "--file", os.path.join(SRC, ".config"),
-         "--disable", "WERROR",
-         "--disable", "TRIM_UNUSED_KSYMS",
-         "--enable", "BLK_DEV_INITRD",
-         "--enable", "PCIE_AL", "--enable", "PCIE_AL_INTERNAL",
-         "--enable", "EXPERT", "--enable", "GPIO_SYSFS",
-         "--set-str", "INITRAMFS_SOURCE", initramfs,
-         "--set-val", "INITRAMFS_ROOT_UID", "0",
-         "--set-val", "INITRAMFS_ROOT_GID", "0",
-         "--enable", "RD_GZIP", "--enable", "INITRAMFS_COMPRESSION_GZIP"])
+    args = [cfg, "--file", os.path.join(SRC, ".config"),
+            "--disable", "WERROR",
+            "--disable", "TRIM_UNUSED_KSYMS",
+            "--enable", "PCIE_AL", "--enable", "PCIE_AL_INTERNAL",
+            "--enable", "EXPERT", "--enable", "GPIO_SYSFS"]
+    if PROD:
+        # Production: no embedded initramfs -> kernel runs systemd from
+        # root=PARTUUID. Add the exact Fedora/systemd-required symbols the audit
+        # found missing (docs/improvements-audit.md dim 2) + cheap wins, so stock
+        # Fedora boots with nothing degraded.
+        args += ["--set-str", "INITRAMFS_SOURCE", "",
+                 "--enable", "PSI", "--enable", "CGROUP_BPF", "--enable", "BPF_JIT",
+                 "--module", "BINFMT_MISC", "--enable", "HUGETLBFS",
+                 "--enable", "CRYPTO_SHA1_ARM64_CE", "--enable", "CRYPTO_SHA2_ARM64_CE",
+                 "--enable", "CRYPTO_SHA512_ARM64_CE",
+                 "--enable", "XFS_FS", "--enable", "BTRFS_FS_POSIX_ACL",
+                 "--enable", "ZRAM", "--enable", "SECURITY_YAMA",
+                 "--enable", "SLAB_FREELIST_HARDENED"]
+    else:
+        initramfs = f"{OUT}/initramfs-root {OUT}/initramfs-devnodes"
+        args += ["--enable", "BLK_DEV_INITRD",
+                 "--set-str", "INITRAMFS_SOURCE", initramfs,
+                 "--set-val", "INITRAMFS_ROOT_UID", "0",
+                 "--set-val", "INITRAMFS_ROOT_GID", "0",
+                 "--enable", "RD_GZIP", "--enable", "INITRAMFS_COMPRESSION_GZIP"]
+    run(args)
     run(["make", "-C", SRC, "olddefconfig"])
     dotcfg = pathlib.Path(os.path.join(SRC, ".config")).read_text()
     for sym in ("CONFIG_PCIE_AL_INTERNAL=y", "CONFIG_PCIE_AL=y"):

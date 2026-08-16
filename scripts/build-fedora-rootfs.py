@@ -41,7 +41,7 @@ CTR = "unvr-fedora-build"
 CORE_GROUP = "core"
 EXTRAS = [
     "openssh-server", "e2fsprogs", "dosfstools", "python3",
-    "rsync", "htop", "smartmontools", "mdadm", "hdparm", "gpiod", "lm_sensors",
+    "rsync", "htop", "smartmontools", "mdadm", "hdparm", "libgpiod-utils", "lm_sensors",
 ]
 
 # Config applied inside the container (aarch64, via qemu) before export.
