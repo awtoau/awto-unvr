@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 """Headless Ghidra: import an ARM32 preboot blob, auto-analyse, export decompiled C + asm.
 
-Ghidra 12.2 needs JDK 21 (application.java.min=21); JDK 25 hangs the decompiler.
-Fix applied out-of-tree: JAVA_HOME_OVERRIDE=/usr/lib/jvm/java-21-temurin-jdk in
-<ghidra>/support/launch.properties. See docs/preboot-decompile.md.
+Ghidra 12.2_DEV master (>=2026-08 build) requires JDK 25 (application.java.min=25,
+compiler=25); JDK 21 is now rejected by the launcher. JDK 25 does NOT hang the
+decompiler on this build (verified: 103-func ELF, 0 failures). Set out-of-tree via
+JAVA_HOME_OVERRIDE=/usr/lib/jvm/java-25-openjdk in <ghidra>/support/launch.properties.
+See docs/preboot-decompile.md.
 
 Usage:
   scripts/ghidra-decompile.py <blob> --base 0x1000000 --name alboot [--out DIR]
@@ -18,7 +20,7 @@ import sys
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
-GHIDRA = Path("/home/dan/tools/ghidra_12.2_DEV")
+GHIDRA = Path("/home/dan/tools/ghidra_12.2_DEV_20260816")
 HEADLESS = GHIDRA / "support" / "analyzeHeadless"
 SCRIPTPATH = REPO / "tmp" / "ghidra-scripts"
 LOG = REPO / "tmp" / "logs" / "ghidra-decompile.log"

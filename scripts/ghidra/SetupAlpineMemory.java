@@ -88,9 +88,15 @@ public class SetupAlpineMemory extends GhidraScript {
         long base = ((Number) r[1]).longValue(), size = ((Number) r[2]).longValue();
         boolean ram = (Boolean) r[3];
         Address at = toAddr(String.format("0x%x", base));
-        // Skip if any part of the range already belongs to a block (e.g. loaded image).
-        if (mem.getBlock(at) != null) { println(name + ": overlaps existing, skip"); return 0; }
-        MemoryBlock b = mem.createUninitializedBlock(name, at, size, false);
+        // The loaded image block sits INSIDE DRAM; a covering block would conflict.
+        // Catch the overlap and skip rather than abort -- keeps the script idempotent
+        // and safe wherever the image loaded (e.g. U-Boot @0x1100000 inside DRAM0).
+        MemoryBlock b;
+        try {
+            b = mem.createUninitializedBlock(name, at, size, false);
+        } catch (ghidra.program.model.mem.MemoryConflictException e) {
+            println(name + ": overlaps existing, skip"); return 0;
+        }
         b.setRead(true); b.setWrite(true);
         b.setExecute(ram);          // RAM executable; MMIO never
         b.setVolatile(!ram);        // MMIO volatile; RAM not
