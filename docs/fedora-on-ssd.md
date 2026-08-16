@@ -93,16 +93,35 @@ Prereq: **unplug the SanDisk USB stick (sda)** so the SSD enumerates as `/dev/sd
    kernel+DTB; `saveenv`.
 6. Reboot → persistent Fedora on the SSD.
 
-## Deploy state (live, 2026-08-16)
+## BOOTED — Fedora 44 verified on hardware (2026-08-16)
 
-- SSD = `/dev/sda` (USB removed). `sda2` = ext4 label `unvr-root`,
+Fedora 44 aarch64 booted on the UNVR via netboot of the patched kernel,
+root on the SSD. Verified logged in:
+
+- Kernel `7.1.8-dirty aarch64` (Fedora config + Alpine patches, gzip uImage).
+- Root `/dev/sda2 ext4` — no initramfs, no UEFI/GRUB/dracut.
+- al_eth/al_dma/al_ssm/al_sgpo autoloaded by PCI ID; enp0s1 up, DHCP.
+- systemd reached graphical.target; serial + ssh login work.
+- al_ssm prints a one-time WARN at udma init but crypto engine comes up (AES-XTS).
+- Kernel is 56 MB uncompressed → **gzip uImage** (18.5 MB): fast tftp + U-Boot
+  decompresses to 0x08080000, so the standard DTB addr (0x04078000) stays clear.
+  `scripts/mkuimage.py Image out --gzip`.
+
+Build/deploy facts:
+- SSD = `/dev/sda` (USB removed). `sda2` ext4 label `unvr-root`,
   **PARTUUID=`dcdc291e-9956-48cd-9d7c-48219877881a`**.
-- Fedora rootfs extracted onto sda2 (RC=0, systemd present).
-- Production kernel = Fedora aarch64 config + Alpine patches, no initramfs
-  (`scripts/build-linux-71-fedora.py` → `build-out-71-fedora/`).
-- Verify-first: **netboot** `uImage-unvr-ea16-7.1-fedora` + DTB with
-  `root=PARTUUID=dcdc291e-… rootfstype=ext4 rw rootwait selinux=0 panic=15`
-  before writing any persistent U-Boot env. Proves the Fedora stack, then persist.
+- Production kernel: `scripts/build-linux-71-fedora.py` → `build-out-71-fedora/`
+  (Image, uImage, dtb, `modroot/` full module tree, all al_* OOT built).
+- Bootargs: `console=ttyS0,115200 root=PARTUUID=dcdc291e-… rootfstype=ext4 rw
+  rootwait selinux=0 panic=15`.
+
+### Still TODO — persistence (kernel still netbooted)
+
+The *kernel* is tftp'd; a plain reboot drops to the vendor rescue shell. To make
+it boot with no host: verify U-Boot can read SATA (`scsi init`) → put gzip uImage
++ DTB on the SSD ESP (sda1, FAT) → U-Boot bootcmd load+bootm → `saveenv`. If
+U-Boot can't read SATA, flash the uImage to the NAND kernel partition instead.
+Follow-ups: hostname → woomera (`hostnamectl`), change root pw, al_ssm WARN.
 
 ## After this — dev work self-hosts on woomera
 
