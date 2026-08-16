@@ -15,9 +15,37 @@ We have none of those. Instead:
 
 - **U-Boot loads our 7.1.8 kernel + DTB directly** (`bootm`), same as netboot.
 - **No initramfs**: our kernel has **AHCI + ext4 built-in**, so it mounts the SSD
-  root (`root=/dev/sda2`) with no dracut. `rootwait` covers SATA probe latency.
+  root directly, no dracut. `rootwait` covers SATA probe latency.
 - **Fedora's userland doesn't care** what booted it or that the kernel (7.1.8) is
   newer than Fedora ships — systemd/glibc are kernel-version agnostic.
+
+### Two kernels — installer vs production (do NOT reuse the bring-up uImage)
+
+Our bring-up uImage **embeds an initramfs** (`CONFIG_INITRAMFS_SOURCE`) whose
+`/init` drops to a shell — it would hijack Fedora's boot. So:
+
+- **Installer kernel** = bring-up uImage with the *enhanced* initramfs
+  (`e2fsprogs`+`rsync`+`util-linux`, already added to `build-initramfs-ea16.py`).
+  Used once to format + rsync the rootfs onto the SSD.
+- **Production kernel** = built with `CONFIG_INITRAMFS_SOURCE=""` (no embedded
+  initramfs) so the kernel runs `/sbin/init` (systemd) from the real root. This is
+  the uImage U-Boot boots for the persistent system. Fold the audit's Fedora
+  kernel-config additions here (PSI, CGROUP_BPF, BPF_JIT, SHA-CE …) — see
+  [improvements-audit.md](improvements-audit.md) / #43.
+
+### Root device — PARTUUID, not /dev/sdaN (audit 7.5a)
+
+A no-initramfs kernel resolves `root=PARTUUID=` natively but **not** `LABEL=`/`UUID=`
+(those need udev). `root=/dev/sda2` works but is fragile to enumeration. Use:
+`root=PARTUUID=<sda2 GPT partuuid> rootfstype=ext4 rootwait rw`. Get it on the
+device: `blkid /dev/sda2` → `PARTUUID=`.
+
+### al_* modules must autoload without dracut (audit 7.5b)
+
+No initramfs → udev autoloads by `modules.alias`. al_eth/al_dma/al_ssm bind by PCI
+ID (1c36:0001/0002/0022). After `depmod` in the deployed rootfs, confirm those
+aliases are present; if not, ship `/etc/modules-load.d/al.conf` listing all al_*.
+Without this, **eth never comes up** (no NAS).
 
 ## Deviations from a stock Fedora install (the ONLY ones)
 
@@ -49,16 +77,20 @@ Prereq: **unplug the SanDisk USB stick (sda)** so the SSD enumerates as `/dev/sd
 (sda1 = existing 100 MB ESP, sda2 = 931 GB root). USB fully backed up
 (`images/unvr-usb-*.img`).
 
-1. Boot an **enhanced initramfs** (adds `mkfs.ext4` + `rsync` to the bring-up one).
-2. `mkfs.ext4 -L unvr-root /dev/sda2` (fstab mounts root by that label).
-3. Mount, extract the rootfs tar, add our 7.1.8 modules
-   (`build-out-71/modules/lib/modules/7.1.8-dirty` → `/lib/modules/`).
-4. Kernel+DTB location — depends on whether **vendor U-Boot can read SATA** (TBD,
-   check at prompt: `scsi init` / `ls scsi 0`):
-   - **yes** → put uImage+DTB on the SSD (ESP FAT or ext4 /boot), fully self-contained.
+1. Boot the **installer kernel** (bring-up uImage w/ enhanced initramfs: mkfs.ext4
+   + rsync + util-linux).
+2. `mkfs.ext4 -L unvr-root /dev/sda2`. Record `blkid /dev/sda2` → **PARTUUID**.
+3. Mount, rsync/extract the rootfs tar, add our 7.1.8 modules
+   (`build-out-71/modules/lib/modules/7.1.8-dirty` → `/lib/modules/`), `depmod`,
+   then verify al_* PCI aliases in `modules.alias` (else write `modules-load.d/al.conf`).
+4. Build the **production kernel** (`CONFIG_INITRAMFS_SOURCE=""` + audit config
+   adds). Kernel+DTB location depends on whether **vendor U-Boot can read SATA**
+   (TBD, check at prompt: `scsi init` / `ls scsi 0`):
+   - **yes** → uImage+DTB on the SSD (ESP FAT or ext4 /boot), self-contained.
    - **no** → flash our uImage to the NAND kernel partition; rootfs still on SSD.
-5. Set U-Boot env → `bootargs 'console=ttyS0,115200 root=/dev/sda2 rootfstype=ext4
-   rw rootwait selinux=0 panic=15 ...'` + a bootcmd that loads kernel+DTB; `saveenv`.
+5. Set U-Boot env → `bootargs 'console=ttyS0,115200 root=PARTUUID=<sda2-partuuid>
+   rootfstype=ext4 rw rootwait selinux=0 panic=15'` + a bootcmd that loads
+   kernel+DTB; `saveenv`.
 6. Reboot → persistent Fedora on the SSD.
 
 ## After this — dev work self-hosts on woomera

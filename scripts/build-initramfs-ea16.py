@@ -126,10 +126,13 @@ def main():
     os.makedirs(WORK, exist_ok=True)
 
     run(["docker", "pull", "--platform=linux/arm64", IMAGE])
-    # Install libgpiod (gpioset/gpioinfo) + i2c-tools into the rootfs, then export.
+    # libgpiod (gpioset/gpioinfo) + i2c-tools for bay power; e2fsprogs (mkfs.ext4),
+    # rsync, util-linux (blkid/lsblk) so this same initramfs installs a rootfs to
+    # the SSD (format sda2, rsync Fedora on). See docs/fedora-on-ssd.md.
     cid = subprocess.check_output(
         ["docker", "create", "--platform=linux/arm64", IMAGE,
-         "sh", "-c", "apk add --no-cache libgpiod i2c-tools"]).decode().strip()
+         "sh", "-c", "apk add --no-cache libgpiod i2c-tools e2fsprogs rsync util-linux"
+         ]).decode().strip()
     try:
         run(["docker", "start", "-a", cid])   # runs apk add (needs network)
         tar = os.path.join(OUT, "alpine-arm64.tar")
