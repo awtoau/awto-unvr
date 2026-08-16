@@ -1,0 +1,42 @@
+From 4f9f4f760876132f277c22d682ecd760065ede65 Mon Sep 17 00:00:00 2001
+From: Dan on Selwyn <dan@awto.au>
+Date: Sun, 16 Aug 2026 17:41:23 +1000
+Subject: [PATCH 2/5] PCI: al: pre-set DBI base for external DWC PCIe
+ (xHCI/USB)
+
+- Alpine V2 DWC DBI registers sit at controller_base + 0x10000. Pre-set
+  pci->dbi_base so dw_pcie_get_resources() skips the "dbi" resource
+  lookup and avoids a resource conflict on the external PCIe (USB path).
+- Applied in place, keeping the in-tree pci->pp.native_ecam = true.
+  Net effect equals the 6.12 out-of-tree pcie-al-dbi-fix.c.
+- Requires CONFIG_PCIE_AL=y.
+
+Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>
+---
+ drivers/pci/controller/dwc/pcie-al.c | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
+
+diff --git a/drivers/pci/controller/dwc/pcie-al.c b/drivers/pci/controller/dwc/pcie-al.c
+index 345c281c7..b58953581 100644
+--- a/drivers/pci/controller/dwc/pcie-al.c
++++ b/drivers/pci/controller/dwc/pcie-al.c
+@@ -365,6 +365,19 @@ static int al_pcie_probe(struct platform_device *pdev)
+ 
+ 	dev_dbg(dev, "From DT: controller_base: %pR\n", controller_res);
+ 
++	/*
++	 * Alpine V2: DWC DBI registers sit at controller_base + 0x10000.
++	 * Pre-set dbi_base so dw_pcie_get_resources() skips the "dbi"
++	 * resource lookup and avoids a resource conflict (forward-port of
++	 * the 6.12 patches/pcie-al-dbi-fix.c, applied in place for 6.18).
++	 */
++	pci->dbi_base = devm_ioremap(dev, controller_res->start + 0x10000,
++				     0x10000);
++	if (!pci->dbi_base) {
++		dev_err(dev, "couldn't map DBI base\n");
++		return -ENOMEM;
++	}
++
+ 	platform_set_drvdata(pdev, al_pcie);
+ 
+ 	return dw_pcie_host_init(&pci->pp);
