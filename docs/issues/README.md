@@ -1,10 +1,16 @@
 # Issue drafts — mainline Linux port
 
 Local GitHub-issue drafts. **Not filed.** A human files them (scrub + approval)
-after review. File in NN order; cross-references use the NN numbers.
+after review.
 
 Plan: [../porting-roadmap.md](../porting-roadmap.md). Evidence:
 [../hw-reference/20260816-104601/](../hw-reference/20260816-104601/).
+
+## Numbering
+- Drafts `00`–`21` are already filed as live GitHub issues **#4–#25** (offset +4:
+  00→#4 … 21→#25). Cross-refs inside those drafts use their own NN.
+- Gap drafts `31`–`37` (below) are **not filed** — file as live #31+.
+- Reconciliation and new drafts reference existing work by **live #** (#4–#25).
 
 | NN | Title | Labels | Hook |
 |---|---|---|---|
@@ -30,6 +36,22 @@ Plan: [../porting-roadmap.md](../porting-roadmap.md). Evidence:
 | 19 | [Patch 12] RAID dmaengine driver (al_dma) | porting, raid, dmaengine, patch | Code for Phase 6 |
 | 20 | [Patch 13] Crypto-engine driver (al_ssm) | porting, crypto, patch | Last functional driver |
 | 21 | [Patch 14] defconfig & docs | porting, defconfig, docs, patch | Booting defconfig + build docs |
+
+## Gap drafts (new — not filed; plan items #4–#25 don't cover these)
+
+| NN | Title | Labels | Complements |
+|---|---|---|---|
+| 31 | Driver-ancestry register DB + structural-compare tooling | porting, phase-2, analysis, tooling | Stage 2 method; feeds live #5, #7 |
+| 32 | SW MD RAID baseline (CPU parity, no accel) | porting, raid, phase-6, milestone | Stage 8 baseline; accel = live #11/#23 |
+| 33 | NVMEM board identity (base MAC/board-ID), replace ubnthal | porting, nvmem, devicetree, patch | Stage 10 identity half; SGPO = live #22 |
+| 34 | Clock / reset-controller / PM | porting, clock, reset, pm | Stage 11; clocks in live #16 |
+| 35 | 6.18 functional + performance matrix | porting, validation, testing | Stage 12; gates rebase live #13 |
+| 36 | Clean-source / derivation ledger + submission | porting, upstream, licensing | Stage 14; relates live #4, #13, #25 |
+| 37 | Branch / repo structure setup | porting, setup, meta | Branch scheme; relates live #4 |
+
+**Already covered — extend, do NOT re-draft:**
+- Shared-MDIO-as-one-bus → live **#20** ("Register the shared MDIO bus").
+- Fixed-clocks in DT → live **#16** (SoC dtsi); reset-controller/PM split to #34.
 
 ## Dependency highlights
 - **#01 blocks #04 blocks #15 blocks #16** (ethernet chain).

@@ -9,6 +9,77 @@ evidence** captured 2026-08-16.
   and the decompiled vendor DT [live.dts](hw-reference/20260816-104601/live.dts).
 - Refreshed chip table: [hardware.md](hardware.md).
 - Do NOT restate the finding docs — links below.
+- Issue numbers below are the **live GitHub** set (`awtoau/awto-unvr` #4–#30).
+  Local drafts `docs/issues/NN-*.md` map to live `#(NN+4)` (00→#4 … 21→#25); new
+  gap drafts 31–37 → file as #31+.
+
+## Status — 6.12 achieved → 6.18 next (2026-08-16)
+
+First Linux boot on our hardware is **done**: cross-built **Linux 6.12.103** for the
+ea16 board, netbooted via existing U-Boot (tftp `uImage`+DTB, `bootm`, unsigned).
+Build: [linux-6.12-build.md](linux-6.12-build.md); `scripts/build-linux-612-ea16.py`
++ `scripts/build-initramfs-ea16.py`; artifacts in
+`/mnt/2tb/unvr-port-refs/build-out/` (Image, uImage, ea16 DTB, initramfs, modules,
+config).
+
+- **Proved:** 4 cores online, 4 GiB RAM, initramfs shell on `ttyS0`, vendor NAND
+  untouched. Boot method (unsigned tftp bootm) validated end-to-end.
+- **Gaps at that boot:** SATA empty (no PCIe internal AXI-snoop glue / hdd-pwrctl
+  → Stage 5 / live #9,#18); net = `lo` only (`al_eth.ko` built, not loaded → Stage 7).
+
+Concrete next steps toward 6.18 (trees already cloned at
+`/mnt/2tb/unvr-port-refs/linux-v6.18.44/`):
+
+1. Checkout 6.18.44; reuse ea16 DTS + `build-linux-*` scripts → serial+initramfs
+   kernel; boot via `bootunsign`, capture log (live #6).
+2. Fix minimum DT + PCIe internal glue (AXI snoop 0x110/0x130/0x150/0x170,
+   APP_CONTROL 0x220=0x03FF, DBI base +0x10000) so 4 SATA bays enumerate (live #9,#18).
+3. Boot USB/NFS-root; verify 4 SATA; **SW MD RAID baseline** on CPU parity (new #32).
+4. Load `al_eth.ko`, bring up 1GbE (AR8031); then start the **ethernet ancestry
+   report** (live #5) before committing to a driver strategy.
+5. Stand up the **branch scheme** (new #37) so 6.12/6.18/7.1 tracks don't collide.
+
+## 14-stage plan reconciliation
+
+User's 14-stage plan ([tmp/port-plan-6.18-source.md](../tmp/port-plan-6.18-source.md))
+mapped to current reality. Detail lives in the phases/issues linked; do not restate.
+
+| Stage | Status | One-line + pointer |
+|---|---|---|
+| 1 Recovery + HW facts | **DONE** | Boot logs, all MTD backups, EEPROM/board-ID decoded, TFTP netboot proven, live inventory captured. [identity-partitions.md](identity-partitions.md), [hw-reference/](hw-reference/20260816-104601/), [hardware.md](hardware.md) |
+| 2 Driver ancestry (register DB) | **IN-PROGRESS** | Ethernet ancestry ticketed (live #5); patch inventory (live #7). General register-DB + structural-compare **tooling not ticketed → new #31** |
+| 3 Minimum 6.18 boot | **IN-PROGRESS** | 6.12 boot proves the method; 6.18 not yet built. Reuse scripts. Live #6 |
+| 4 Device Tree | **IN-PROGRESS** | ea16 DTS adapted from port's ea1a ([linux-6.12-build.md](linux-6.12-build.md)); clean dtsi/board split TODO. Live #12,#16,#17 |
+| 5 PCIe glue | **TODO** | Blocks SATA/USB/eth (all PCIe EPs). Live #9 (phase), #18 (patch) |
+| 6 Storage/peripherals | **PARTIAL** | Mainline blocks confirmed live (AHCI, SPI-NOR, DW i2c, adt7475, pca953x, s35390a, sp805); gated on Stage 5. Compat-confirm live #14 |
+| 7 Ethernet | **TODO** | `al_eth.ko` builds, not loaded. Ancestry #5 → decision #8 → driver #19 → phylink/PCS #20. Shared-MDIO covered by #20 |
+| 8 RAID/DMA | **TODO** | **SW MD RAID baseline not ticketed → new #32**; accel via dmaengine live #11,#23 |
+| 9 Crypto | **TODO** | `al_ssm` via Crypto API + crypto_engine. Live #24 |
+| 10 LEDs/platform + board-ID | **TODO** | SGPO LEDs live #22. **NVMEM board-ID (replace ubnthal) not ticketed → new #33** |
+| 11 Clock/reset/PM | **TODO** | Fixed-clocks likely suffice (live #16). **reset-controller + PM not ticketed → new #34**. CPU OC is SEPARATE ([overclock-and-caps.md](overclock-and-caps.md)) |
+| 12 6.18 validation | **TODO** | Functional matrix + perf. **Not ticketed → new #35** |
+| 13 → 7.1 rebase | **TODO** | Forward-port series by subsystem. Live #13 |
+| 14 Upstream + licence ledger | **TODO** | Least-controversial first; per-file clean-source ledger. **Not ticketed → new #36** |
+
+## Branch scheme
+
+Separate **functional** commits (new capability) from **mechanical** ones (rebase,
+API rename). Keep reference dirs read-only.
+
+- `reference/vendor-4.1` — Ubiquiti 4.19.152 GPL, untouched.
+- `reference/alpine-6.12` — community 6.12 port + our 6.12.103 ea16 build.
+- `alpine-v2-6.18-bringup` — dirty bring-up (works > clean).
+- `alpine-v2-6.18-clean` — reworked into reviewable patches.
+- `alpine-v2-7.1` — forward-port; **upstream-dev**. 6.18-clean = **conservative deploy**.
+- `alpine-v2-upstream` — per-subsystem submission slices.
+
+Setup ticketed as **new #37**.
+
+## First useful completion (definition of done for the deploy branch)
+
+6.18 LTS booting the box with: 4 CPU, 4 GiB, 4 SATA, USB, SPI/MTD read, fans+temp,
+1GbE, 10G SFP+, SW RAID, stable reboot + recovery. THEN RAID accel, crypto, PM,
+upstream. (Everything past "SW RAID" is post-milestone.)
 
 ## Goal + why now
 
