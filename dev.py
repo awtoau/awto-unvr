@@ -10,10 +10,13 @@ Repurposing a Ubiquiti UNVR (Annapurna Labs Alpine V2, aarch64). Board sysid
 0xea16 - "UNVR without eMMC": kernel/rootfs in NAND, USERDEV on an internal USB
 stick. Boot chain in docs/boot-flow.md, prior art in docs/sources.md.
 
-Console model: ONE tio owns the serial port and exposes a unix socket. Humans
-and agents both attach to the socket instead of fighting over /dev/ttyUSB*.
-tio does the logging (-L --log-strip -t), so there is no tmux and no pane
-lifecycle to supervise.
+Console model: ONE tio owns the serial port and exposes a unix socket + a plain
+log; whoever does NOT own it works through those. Two ways to own it:
+  - `console`      - agent runs tio backgrounded (headless; agent drives).
+  - `console-own`  - YOU run a real interactive tio in the foreground (you drive,
+                     Ctrl-t q to quit); the agent reads the same socket + log.
+Either way there is one owner and no /dev/ttyUSB* fight, no tmux/pane lifecycle.
+tio does the logging (-L --log-strip -t).
 """
 
 from __future__ import annotations
@@ -250,6 +253,39 @@ def cmd_console(_extra: list[str]) -> int:
     return 0
 
 
+@command("run tio in the FOREGROUND (you own the port); socket+log stay live for the agent",
+         kind="action")
+def cmd_console_own(_extra: list[str]) -> int:
+    """You get a real interactive tio in your own terminal, owning the serial
+    port. --socket + -L still expose the SAME socket + log the agent's tools use,
+    so console-send / log-reading keep working against your session. Ctrl-t q to
+    quit (which ends the agent's access until a console is restarted)."""
+    if not shutil.which("tio"):
+        log("tio not on PATH", "ERROR")
+        return 1
+    if _console_pid():
+        log("a tio already owns the port - stop it first (./dev.py console-stop)", "ERROR")
+        return 1
+    port = _console_port()
+    if not port:
+        log("no serial adapter found", "ERROR")
+        return 1
+    CONSOLE_SOCK.unlink(missing_ok=True)
+    LOGS.mkdir(parents=True, exist_ok=True)
+    TMP.mkdir(parents=True, exist_ok=True)
+    _roll_console_log()
+    cmd = ["tio", "-b", str(CONSOLE_BAUD), "--socket", f"unix:{CONSOLE_SOCK}",
+           "-L", "--log-file", str(CONSOLE_LOG), "--log-append", "--log-strip", "-t", port]
+    log(f"foreground tio on {port} @ {CONSOLE_BAUD} — you drive. "
+        f"Agent reads {CONSOLE_SOCK} + the log. Ctrl-t q to quit.")
+    proc = subprocess.Popen(cmd, cwd=REPO)   # inherits your tty -> real interactive tio
+    CONSOLE_PID.write_text(str(proc.pid))
+    try:
+        return proc.wait()
+    finally:
+        CONSOLE_PID.unlink(missing_ok=True)
+
+
 @command("report console state (pid, socket, port, log)", kind="action")
 def cmd_console_status(_extra: list[str]) -> int:
     pid = _console_pid()
@@ -282,11 +318,21 @@ def cmd_console_attach(_extra: list[str]) -> int:
     if not _console_pid():
         log("console not running - start it with ./dev.py console", "ERROR")
         return 1
-    if not shutil.which("nc"):
-        log("nc not on PATH", "ERROR")
-        return 1
-    log(f"attaching to {CONSOLE_SOCK} - Ctrl-C to detach (tio keeps running)")
-    return subprocess.call(["nc", "-U", str(CONSOLE_SOCK)])
+    # socat puts the LOCAL terminal in raw mode (echo=0) so keystrokes and escape
+    # sequences pass through untouched - a real interactive console. `nc -U` does
+    # NOT (line-buffered, cooked tty) which leaks cursor-report garbage. escape
+    # 0x1d = Ctrl-] detaches, leaving the shared tio (and its socket) running so
+    # the agent keeps programmatic access to the same session.
+    if shutil.which("socat"):
+        log(f"attaching to {CONSOLE_SOCK} via socat - Ctrl-] to detach (tio keeps running)")
+        return subprocess.call(
+            ["socat", "-,raw,echo=0,escape=0x1d", f"UNIX-CONNECT:{CONSOLE_SOCK}"])
+    if shutil.which("nc"):
+        log(f"socat missing; falling back to raw nc on {CONSOLE_SOCK} "
+            "(cooked tty - escape sequences will leak) - Ctrl-C to detach", "ALERT")
+        return subprocess.call(["nc", "-U", str(CONSOLE_SOCK)])
+    log("neither socat nor nc on PATH", "ERROR")
+    return 1
 
 
 @command("send a line to the console and print what comes back",
