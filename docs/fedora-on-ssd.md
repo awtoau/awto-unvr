@@ -27,11 +27,15 @@ Our bring-up uImage **embeds an initramfs** (`CONFIG_INITRAMFS_SOURCE`) whose
 - **Installer kernel** = bring-up uImage with the *enhanced* initramfs
   (`e2fsprogs`+`rsync`+`util-linux`, already added to `build-initramfs-ea16.py`).
   Used once to format + rsync the rootfs onto the SSD.
-- **Production kernel** = built with `CONFIG_INITRAMFS_SOURCE=""` (no embedded
-  initramfs) so the kernel runs `/sbin/init` (systemd) from the real root. This is
-  the uImage U-Boot boots for the persistent system. Fold the audit's Fedora
-  kernel-config additions here (PSI, CGROUP_BPF, BPF_JIT, SHA-CE …) — see
-  [improvements-audit.md](improvements-audit.md) / #43.
+- **Production kernel** (`scripts/build-linux-71-fedora.py`) = **Fedora 44's own
+  aarch64 kernel config** + our Alpine patches, `CONFIG_INITRAMFS_SOURCE=""` (no
+  embedded initramfs → runs `/sbin/init`/systemd from the real root). Using
+  Fedora's config (not our lean one) means every systemd/fs/net symbol is correct
+  by construction — it resolves nearly all of the audit's #43 kernel-config
+  findings automatically (PSI, CGROUP_BPF, BPF_JIT, XFS, BTRFS-ACL, zram, BBR,
+  YAMA … all `=y/m`). Only ARM64-CE SHA accel (`CRYPTO_SHA2/SHA512_ARM64_CE`)
+  is still off even in Fedora's config → add next rebuild. Build disables
+  DEBUG_INFO_BTF / MODULE_SIG / debuginfo (build-complexity we don't need).
 
 ### Root device — PARTUUID, not /dev/sdaN (audit 7.5a)
 
@@ -71,27 +75,22 @@ Needs: `podman` + `qemu-aarch64` binfmt (both present on the Fedora host).
 - Output: `tmp/fedora-rootfs-ea16.tar` (+ .sha256).
 - Slow: `dnf` runs under qemu emulation (~minutes), background it.
 
-## Deploy — put it on the SSD (steps, not yet scripted)
+## Deploy — as executed (2026-08-16)
 
-Prereq: **unplug the SanDisk USB stick (sda)** so the SSD enumerates as `/dev/sda`
-(sda1 = existing 100 MB ESP, sda2 = 931 GB root). USB fully backed up
-(`images/unvr-usb-*.img`).
+Prereq done: **SanDisk USB unplugged** → SSD enumerates as `/dev/sda` (sda1 =
+100 MB ESP, sda2 = 931 GB root). USB fully backed up (`images/unvr-usb-*.img`).
 
-1. Boot the **installer kernel** (bring-up uImage w/ enhanced initramfs: mkfs.ext4
-   + rsync + util-linux).
-2. `mkfs.ext4 -L unvr-root /dev/sda2`. Record `blkid /dev/sda2` → **PARTUUID**.
-3. Mount, rsync/extract the rootfs tar, add our 7.1.8 modules
-   (`build-out-71/modules/lib/modules/7.1.8-dirty` → `/lib/modules/`), `depmod`,
-   then verify al_* PCI aliases in `modules.alias` (else write `modules-load.d/al.conf`).
-4. Build the **production kernel** (`CONFIG_INITRAMFS_SOURCE=""` + audit config
-   adds). Kernel+DTB location depends on whether **vendor U-Boot can read SATA**
-   (TBD, check at prompt: `scsi init` / `ls scsi 0`):
-   - **yes** → uImage+DTB on the SSD (ESP FAT or ext4 /boot), self-contained.
-   - **no** → flash our uImage to the NAND kernel partition; rootfs still on SSD.
-5. Set U-Boot env → `bootargs 'console=ttyS0,115200 root=PARTUUID=<sda2-partuuid>
-   rootfstype=ext4 rw rootwait selinux=0 panic=15'` + a bootcmd that loads
-   kernel+DTB; `saveenv`.
-6. Reboot → persistent Fedora on the SSD.
+1. Netbooted the **installer kernel** (bring-up uImage w/ enhanced initramfs:
+   mkfs.ext4 + rsync + util-linux) via `scripts/netboot.py --tag 7.1`.
+2. `mkfs.ext4 -L unvr-root /dev/sda2` → PARTUUID `dcdc291e-9956-48cd-9d7c-48219877881a`.
+3. Streamed the rootfs onto it: host `python3 -m http.server` + device
+   `wget -O - http://host:8080/fedora-rootfs-ea16.tar | tar -x -C /mnt/root`.
+4. Built the **production kernel** = Fedora config + our patches (`build-linux-71-fedora.py`),
+   `INITRAMFS_SOURCE=""`. 56 MB Image → **gzip uImage 18.5 MB** (`mkuimage.py --gzip`).
+5. Deployed modules: `rsync` the full `modroot/lib/modules/7.1.8-dirty` (429 MB,
+   already `depmod`'d, al_* PCI aliases present) into the rootfs `/lib/modules/`.
+6. **Netbooted** the gzip Fedora uImage + DTB with `root=PARTUUID=dcdc291e-…
+   rootfstype=ext4 rw rootwait selinux=0 panic=15` → **Fedora 44 booted** (below).
 
 ## BOOTED — Fedora 44 verified on hardware (2026-08-16)
 

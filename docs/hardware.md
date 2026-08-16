@@ -77,14 +77,16 @@ The base MAC and the "+2" allocation come from the EEPROM at offset `0x0000`.
 
 | Item | Detail | Evidence |
 |---|---|---|
-| Temperature | 3 sensors read at boot: `dtt_get_temp[0] 103`, `[1] 99`, `[2] 101`; SoC reported `temprature: 50 degrees` | ✅ |
-| Fans | 3 ×, PWM, ADT7475 hwmon | 📄 linux-alpine-v2 |
-| I2C | SPD at 0x57; `Setting bus to 4` at boot — at least 5 buses | ✅ |
+| Temperature (board) | ADT7475 temp1/2/3 — **live on Fedora** `hwmon0`; temp2≈34.5°C temp3≈36.5°C at idle. temp3 is the vendor's fan-curve sensor | ✅ Fedora verified |
+| Temperature (SoC die) | al-thermal `@fd860a00` node in DTS, but `al_thermal` driver **NOT built** → no die temp / no kernel thermal zones | ⚠ #44 |
+| Fans | 2 × spinning (fan1/fan3 ~4500 RPM; fan2/fan4 absent), ADT7475 PWM. **Auto curve live** via `unvr-fancontrol.service` (temp3, Tmin30/Tmax55°C, hw mode 2). Proper SoC-temp control needs al_thermal (#44) | ✅ Fedora verified |
+| I2C | SPD at 0x57; `Setting bus to 4` at boot — at least 5 buses. adt7475/s35390a on the PCA9546 mux (ch3/ch0) | ✅ |
 | GPIO | `gpio: pin 37 (gpio 37) value is 0` read during boot | ✅ purpose unknown |
-| GPIO expander | PCA9575 — pins 4, 5, 8 known, rest undocumented | 📄 linux-alpine-v2 |
-| RTC | S35390A | 📄 |
-| Watchdog | ARM SP805 | 📄 |
-| LED | `ulogo_ctrl` with a `pattern` sysfs attribute (`2:500 1:500` = white/blue) | ✅ from `product-override` |
+| GPIO expander | PCA9575 @0x20/0x21/0x29 — @0x21 = HDD bay pwren (gpio-hog); pins 4,5,8 known | 📄 linux-alpine-v2 |
+| RTC | S35390A — `rtc_s35390a` **loaded live** on Fedora | ✅ |
+| Watchdog | ARM SP805 — `sp805_wdt` loaded | ✅ |
+| LED | Front-panel logo: **`ulogo_blue` + `ulogo_white`** under `/sys/class/leds/` — **live/controllable on Fedora** | ✅ Fedora verified |
+| Reset button | `gpio-keys` input → **KEY_RESTART** (keycode 408) — live on Fedora | ✅ #47 |
 
 ## Connectors
 
