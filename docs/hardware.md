@@ -133,6 +133,118 @@ The base MAC and the "+2" allocation come from the EEPROM at offset `0x0000`.
 - Whether `dtt_get_temp[0..2]` maps to the three fan-adjacent sensors.
 - SFP+ module type/vendor — `ethtool` gave no module data on the vendor kernel.
 
+## MMIO and address map
+
+**Single source of truth for the SoC address map** — all other docs link here, do
+not re-table it. Verified against
+[hw-reference/20260816-104601/live.dts](hw-reference/20260816-104601/live.dts)
+(`reg=`/`compatible=`) + [iomem.txt](hw-reference/20260816-104601/iomem.txt)
+(Linux `/proc/iomem`). Sizes are the DT `reg` span. HAL headers are in
+`/mnt/2tb/unvr-port-refs/delroth-alpine_hal/` (see [ghidra.md](ghidra.md#4-register-naming--mechanical)).
+
+### DRAM (two banks)
+
+| region | base | size | notes |
+|---|---|---|---|
+| DRAM0 | `0x00000000` | `0xC0000000` (3 GiB) | bank 0; kernel/reserved carve-outs within |
+| DRAM1 | `0x200000000` | `0x40000000` (1 GiB) | bank 1, above 4 GiB |
+
+### On-SoC PBS peripherals (`compatible` → mainline driver → HAL header)
+
+| region | base | size | compatible | driver | HAL header |
+|---|---|---|---|---|---|
+| i2c0 (i2c-pld) | `0xfd880000` | 0x1000 | `snps,designware-i2c` | i2c-designware | `pbs/al_hal_i2c_regs.h` |
+| spi0 (NOR) | `0xfd882000` | 0x1000 | `amazon,alpine-dw-apb-ssi`,`snps,dw-spi-mmio`,`snps,dw-apb-ssi` | spi-dw + m25p80 | `pbs/al_hal_spi_regs.h` |
+| uart0 | `0xfd883000` | 0x1000 | **`ns16550a`** (8250 DW, **NOT PL011**) | 8250_dw | `pbs/al_hal_uart_regs.h` |
+| uart1 | `0xfd884000` | 0x1000 | `ns16550a` | " | " |
+| uart2 | `0xfd885000` | 0x1000 | `ns16550a` (status okay) | " | " |
+| uart3 | `0xfd886000` | 0x1000 | `ns16550a` (DT disabled; not in iomem) | " | " |
+| gpio0 | `0xfd887000` | 0x1000 | `arm,pl061` | pl061 | `pbs/al_hal_gpio_regs.h` |
+| gpio1 | `0xfd888000` | 0x1000 | `arm,pl061` | pl061 | " |
+| gpio2 | `0xfd889000` | 0x1000 | `arm,pl061` | pl061 | " |
+| gpio3 | `0xfd88a000` | 0x1000 | `arm,pl061` | pl061 | " |
+| gpio4 | `0xfd88b000` | 0x1000 | `arm,pl061` | pl061 | " |
+| wdt0..3 | `0xfd88c000` | 4×0x1000 | `arm,sp805`,`primecell` | sp805_wdt | `sys_services/al_hal_watchdog_regs.h` |
+| timer0..3 | `0xfd890000` | 4×0x1000 | `arm,sp804`,`primecell` | sp804 | `sys_services/al_hal_timer_regs.h` |
+| i2c1 | `0xfd894000` | 0x1000 | `snps,designware-i2c` | i2c-designware | `pbs/al_hal_i2c_regs.h` |
+| otp_efuse | `0xfd896000` | 0x1000 | (not in DT/iomem — inferred) | — | `sys_services/al_hal_otp_regs.h` |
+| gpio5 | `0xfd897000` | 0x1000 | `arm,pl061` | pl061 | `pbs/al_hal_gpio_regs.h` |
+| pbs regfile / pinctrl | `0xfd8a8000` | 0x1000 | `annapurna-labs,al-pbs`,`alpine-pinctrl` | — | `pbs/al_hal_pbs_regs.h` |
+| sgpo (bay LEDs) | `0xfd8b4000` | 0x5000 | `annapurna-labs,alpine-sgpo` | (custom al-sgpo) | `pbs/al_hal_sgpo_regs.h` |
+| serdes | `0xfd8c0000` | 0x2400 | `annapurna-labs,al-serdes` | (custom al-serdes) | — |
+| thermal | `0xfd860a00` | 0x100 | `annapurna-labs,al-thermal` | (custom al_thermal) | — |
+
+> **eFuse modulus-hash** compared in preboot lives at **`0xfd89608c` (32 B, to
+> 0xfd8960ac)** inside the `otp_efuse` block ([preboot-decompile.md](preboot-decompile.md)
+> §RSA). `otp_efuse` @`0xfd896000` is **inferred** — not in live.dts or iomem; its
+> base is chosen to cover `0xfd89608c` and its 0x1000 size is a guess (OTP is
+> one-time-programmed). All other rows above are confirmed from DT + iomem.
+
+### SoC service / fabric blocks
+
+| region | base | size | compatible / role |
+|---|---|---|---|
+| GIC-v3 dist | `0xf0200000` | 0x10000 | `arm,gic-v3` (GICR @`0xf0280000` 0x200000; +f0100000/f0110000/f0120000) |
+| nb-service | `0xf0070000` | 0x10000 | `annapurna-labs,al-nb-service`,`syscon` — **= preboot agent mailbox** |
+| memctl | `0xf0080000` | 0x10000 | `annapurna-labs,alpine-mc` |
+| ccu | `0xf0090000` | 0x10000 | `annapurna-labs,al-ccu` — **= preboot agent mailbox** |
+| msix | `0xfbe00000` | 0x100000 | `annapurna-labs,alpine-msix`,`al,alpine-msix` |
+| al-nand | `0xfa100000` | 0x202000 | `annapurna-labs,al-nand` (custom driver) |
+| tdm | `0xf2300000` | 0x11000 | `annapurna-labs,al-tdm` |
+
+### PCIe / ECAM
+
+| region | base | size | compatible / role |
+|---|---|---|---|
+| pcie_int_ecam | `0xfbc00000` | 0x100000 | `annapurna-labs,alpine-internal-pcie`; integrated-EP window `0xfe000000` (0x1000000) |
+| pcie_ext0_ctl | `0xfd800000` | 0x20000 | `annapurna-labs,alpine-external-pcie` (ECAM); `cfg-space-offset 0x10000` |
+| pcie_ext1_ctl | `0xfd820000` | 0x20000 | `…external-pcie` (DT disabled) |
+| pcie_ext2_ctl | `0xfd840000` | 0x20000 | `…external-pcie` (DT disabled) |
+| pcie_ext3_ctl | `0xfd900000` | 0x20000 | `…external-pcie` (DT disabled) |
+| pcie_ext0_win | `0xfb600000` | 0x100000 | external0 cfg/window (ext1/2/3 → fb700000/fb800000/fb900000) |
+| pcie_ext0_mem | `0xc0010000` | 0x7ff0000 | external0 mem BAR space; **xHCI `1b21:1142` @`0xc0010000`** (0001:00:00.0) |
+
+### Integrated-EP IO fabric (eth / dma / sata), under the internal-PCIe window
+
+HAL: eth `drivers/eth/al_hal_eth_*_regs.h`; udma `include/udma/al_hal_udma_regs.h`;
+adapter `include/io_fabric/al_hal_unit_adapter_regs.h`. Kernel copies:
+`urnvr-kernel-4.19.152/drivers/net/ethernet/al/`. AHCI is stock (`ahci`). These are
+PCI-enumerated EPs (bind by PCI ID, not DT); the fixed windows below are the MMIO the
+EPs decode. (Bare `eth0..3` platform nodes at `0xfc000000`+ exist in DT but are
+**unused** by the driver.)
+
+| region | base | size | what |
+|---|---|---|---|
+| eth0 | `0xfe000000` | 0x20000 | `al_eth` |
+| eth1 | `0xfe020000` | 0x20000 | `al_eth` |
+| dma0 | `0xfe0e0000` | 0x20000 | `al_dma` (udma) |
+| dma1 | `0xfe100000` | 0x20000 | `al_dma` |
+| eth2 | `0xfe120000` | 0x10000 | `al_eth` |
+| dma2 | `0xfe140000` | 0x10000 | `al_dma` |
+| eth3 | `0xfe150000` | 0x4000 | `al_eth` |
+| ahci0 | `0xfe154000` | 0x4000 | SATA (00:08.0, ata1–4) |
+| ahci1 | `0xfe158000` | 0x4000 | SATA (00:09.0, ata5–8) |
+| eth4 | `0xfe15c000` | 0x1000 | `al_eth` |
+| eth5 | `0xfe15d000` | 0x1000 | `al_eth` |
+
+### Preboot-only SoC regions (not in Linux DT)
+
+From [preboot-decompile.md](preboot-decompile.md); Ghidra `--preboot` adds these.
+
+| region | base | size | what |
+|---|---|---|---|
+| s2_sram | `0xf2200000` | 0x40000 | S2 first-stage link base (SRAM) |
+| agent_mb0 | `0xf0070000` | 0x1000 | CVOS DDR agent mailbox = nb-service block above |
+| agent_mb1 | `0xf0090000` | 0x1000 | CVOS agent mailbox = ccu block above |
+| ddr_ready | `0xfbff4000` | 0x1000 | `_DAT_fbff4150 == 0x31415926` DDR-ready poll |
+
+**Standard-IP notes (do not re-derive):** UART is 8250-style DesignWare
+(`al_hal_uart_regs.h` = rbr_thr/dll/ier…), **not PL011** — use the 8250 layout. GPIO
+is genuine `arm,pl061` (PrimeCell); the AL HAL wraps the PL061 block
+(`gpiodata[0x100]`@0x0, `gpiodir`@0x400). Where iomem and DT disagree on presence
+(uart3, wdt1..3, timers — DT-disabled, so absent from iomem), **trust DT** for block
+layout; iomem lists only what a live driver claimed.
+
 ## Live capture mainline driver mapping
 
 From [hw-reference/20260816-104601/](hw-reference/20260816-104601/), 2026-08-16.

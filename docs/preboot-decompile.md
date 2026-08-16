@@ -68,7 +68,7 @@ Reset/entry chain into the reversed region:
    - `FUN_01000370(1,1,1)` — SCTLR: I-cache(0x1000)+align(0x2)+branch-pred(0x800)
    - `FUN_010274e8(0xf0070000, 0)` / `FUN_01027508(0xf0090000, 1)` — poke SoC
      fabric/agent mailbox regs
-   - `FUN_0100110c()` — stage3 board init + multi_dt (below)
+   - `FUN_0100110c()` — **`stg3_early_init`** (`__func__`): TOC scan + multi_dt (below)
    - `FUN_01002804()` — SoC/PCIe/ethernet fabric bring-up (table-driven)
    - `FUN_01002a8c()` — **loads U-Boot** (below)
    - returns `_DAT_fbff4150 == 0x31415926` — DDR-ready magic (pi digits) written by
@@ -114,8 +114,9 @@ Question was: what input drives DTB selection, and how does it map to an index
 (prior RE inferred EEPROM board id but had not disassembled the switch in the NEW
 preboot). **Now confirmed in decompiled C AND disassembly.**
 
-Location: inside `FUN_0100110c` (**stg3 board init**; references `stg3_early_init`,
-`dt_based_init_pcie`). Decompiled read + switch:
+Location: inside `FUN_0100110c` = **`stg3_early_init`** (`__func__`-confirmed; NOT
+"stg3 board init" — that is `FUN_01002460`; references `dt_based_init_pcie`).
+Decompiled read + switch:
 
 ```c
 // board-id read via SPI-NOR read fn-ptr: (offset, dst, len)
@@ -172,7 +173,7 @@ they set capability state and log, they do not abort OS boot.
   **modulus** (`param_4`, 0x100 B = 2048-bit) read from the I2C EEPROM.
 - Error returns: `0xffffffea` (no/short encapsulation), `0xfffffffb` (read fail).
 
-### `FUN_01002f3c` — RSA capability signature authentication
+### `FUN_01002f3c` = `eeprom_preload_parser` — RSA capability signature authentication
 
 - Hashes the capabilities blob: `FUN_01009a58` (init) / `FUN_01009c44` (update,
   0x100 B) / `FUN_01009ae4` (final → 32-byte digest). Digest size 32 ⇒ SHA-256.
@@ -198,6 +199,152 @@ they set capability state and log, they do not abort OS boot.
 - Effect = enable/deny **SoC capability flags** in preboot. No branch here reads,
   hashes, or verifies the OS kernel/uImage. The SPI-NOR EEPROM RSA **private** key
   (@0xe004, see secrets inventory) is unrelated — never read by this path.
+
+## Function name map — significant functions
+
+Vendor names recovered from `__func__` strings the AL HAL / contractor stage3 leave
+in `.rodata` (log calls pass the enclosing function's `__func__`). Extractor:
+`scripts/name-preboot-funcs.py` (reads the full NUL-terminated string from
+`tmp/alboot-payload.bin` at each label's rodata VA — defeats Ghidra's ~32-char label
+truncation; keeps only clean C-identifier strings). Full machine map (89 auto-named):
+`tmp/logs/name-preboot-funcs.log`.
+
+**Coverage:** al_boot payload has **~311 defined functions** (2223 `FUN_`
+call-site occurrences). **~70 significant** boot-critical + HW-access functions named
+below (full names). The remaining ~220 are leaf helpers / HAL internals / allocator
+(`mspace_*`) / string ops — left as `FUN_`, not worth naming. **S2 stage: 0 strings →
+all 77 stay `FUN_`** (stringless boot-ROM loader).
+
+Names in `code` are recovered `__func__`; names in (parens) are functional labels
+from hand-RE (no `__func__` logged). "d" = auto-name confidence: h=high (`__func__`
+recurs, hits≥4), m=medium (hits 2–3), R=hand-RE.
+
+### Boot orchestration — contractor stage3
+
+| VA | name | d | role |
+|---|---|---|---|
+| 0x010005ac | (reset_tail) | R | reset entry tail → `FUN_01002e90`, then `halt_baddata` |
+| 0x01002e90 | (stg3 orchestrator) | R | DRAM/SoC-init: dram_clear, MMU/cache, board init, fabric, U-Boot load; polls DDR-ready `0x31415926` |
+| 0x0100110c | `stg3_early_init` | h | **TOC scan + sysid(NOR 0x1F000C)/hwrev(0x1F0010) read + multi_dt DTB switch + obj load** (§multi_dt) — **corrects** earlier "stg3 board init" label |
+| 0x01002460 | `stg3_board_init` | h | DDR-size check, "clearing physical memory", iodma init |
+| 0x01000b34 | `dt_based_init` | h | DT-driven init dispatch (thermal trim, `dt_based_init_pcie`) |
+| 0x01002df0 | `power_down_secondary_cpus` | m | parks secondary A57 cores |
+| 0x01000640 | (stage3 banner) | R | prints Stage 3 version/Commit/CVOS/HAL |
+| 0x01002804 | (SoC fabric bring-up) | R | PCIe/eth SoC config, table-driven (`DAT_010290a0..`) |
+| 0x01002a8c | (U-Boot loader) | R | SPI read → load app to 0x1100000, transfer control |
+
+### CPU / cache / MMU primitives (ARMv8-A32; reproduce or skip in a port)
+
+| VA | name | d | role |
+|---|---|---|---|
+| 0x01000088 | (read_cache_type) | R | read cache-type / CLIDR level |
+| 0x010000bc | (dcache_clean_inval) | R | clean/invalidate D-cache by set/way |
+| 0x01000370 | (sctlr_compose) | R | SCTLR bit compose (I/C/A/Z) |
+| 0x0100057c | `set_vectors` | m | VBAR + MMU enable, SCTLR M/TE — confirms hand-RE |
+| 0x01000618 | (cpacr_enable_simd) | R | CPACR enable CP10/CP11 (NEON/VFP) |
+
+### Flash / TOC (HAL)
+
+| VA | name | d |
+|---|---|---|
+| 0x01005504 | `read_toc_obj_hdr` | m |
+| 0x01027a3c | `al_flash_obj_id_to_str` | h |
+| 0x01027c58 | `al_flash_toc_validate` | m |
+| 0x01027e14 | `al_flash_toc_find_id_with_fallback` | h |
+| 0x01027f70 | `al_flash_toc_stage2_active_instance_get_with_fallback` | h |
+| 0x010280d8 | `al_flash_obj_header_read_and_validate` | h |
+
+### EEPROM / RSA / eFuse capability auth (§RSA)
+
+| VA | name | d | role |
+|---|---|---|---|
+| 0x01003234 | (i2c caps record reader) | R | reads 12-B TLV records from I2C EEPROM via `FUN_01003464` |
+| 0x01002f3c | `eeprom_preload_parser` | m | **RSA-2048 verify + eFuse SHA-256 modulus compare @`0xfd89608c`** (contains the SHA calls) — name recovered |
+| 0x01009a58 | (sha256_init) | R | SHA-256 init |
+| 0x01009c44 | (sha256_update) | R | SHA-256 update (0x100 B) |
+| 0x01009ae4 | (sha256_final) | R | SHA-256 final (32-B digest) |
+| 0x01012b08 | (memcmp / rsa_modexp) | R | shared compare / RSA-verify primitive |
+| 0x01003464 | (i2c_eeprom_read) | R | I2C read (bus, addr, len, dst, len) |
+| 0x01003448 | `i2c_read` | m | preboot I2C read flag helper |
+
+### HW-access HAL — I2C / UART / OTP / timer / PLL / bootstrap / PBS / thermal
+
+| VA | name | d |
+|---|---|---|
+| 0x01022864 | `al_i2c_perform_write` | h |
+| 0x01022ce8 | `al_i2c_read` | m |
+| 0x01022f00 | `al_uart_handle_init` | h |
+| 0x01022e6c | `al_uart_is_input_available` | m |
+| 0x0100d0e0 | `uart_write_byte` | h |
+| 0x0100d204 | `uart_read_byte` | m |
+| 0x01024fdc | `al_otp_read_word` | h |
+| 0x010244b8 | `al_timer_value_get` | h |
+| 0x01023ed4 | `al_pll_init` | m |
+| 0x01023fd4 | `al_pll_freq_get` | h |
+| 0x01022328 | `al_bootstrap_parse` | h |
+| 0x010221cc | `al_pbs_axi_timeout_set` | h |
+| 0x0102383c | `al_addr_map_dram_remap_set` | m |
+| 0x01024968 | `al_thermal_sensor_readout_get` | h |
+
+### CPU sys-fabric bring-up
+
+| VA | name | d |
+|---|---|---|
+| 0x01025300 | `al_sys_fabric_handle_init` | h |
+| 0x01025484 | `al_sys_fabric_cluster_handle_init` | h |
+| 0x010255e0 | `al_sys_fabric_cluster_pd_pu_timer_set` | h |
+| 0x010257a4 | `al_sys_fabric_core_power_on_reset` | h |
+| 0x0102596c | `al_sys_fabric_core_reset_deassert` | h |
+| 0x01025bcc | `al_sys_fabric_core_aarch64_setup` | h |
+
+### DDR
+
+| VA | name | d |
+|---|---|---|
+| 0x01021f14 | `al_ddr_cfg_init` | m |
+
+### SerDes (10G/25G PHY bring-up)
+
+| VA | name | d |
+|---|---|---|
+| 0x01026184 | `al_serdes_init` | h |
+| 0x0101dc0c | `al_serdes_hssp_group_ictl_pma_val_set` | h |
+| 0x0101f4bc | `al_serdes_hssp_group_cfg_eth_sgmii_2_5g_mode` | m |
+| 0x010194d0 | `al_serdes_25g_reg_read` | m |
+| 0x01019be4 | `al_serdes_25g_rx_diag_info_get` | m |
+| 0x01019f68 | `al_serdes_25g_rx_leq_fsm_op` | m |
+| 0x0101a0b0 | `al_serdes_25g_single_iteration_dosc_set` | m |
+| 0x0101a1d8 | `al_serdes_25g_rx_equalization` | h |
+| 0x0101af8c | `al_serdes_25g_cdr_is_locked` | m |
+| 0x0101bc3c | `al_serdes_25g_qsample_pll_lock_check` | m |
+| 0x0101bd6c | `al_serdes_25g_tx_pll_wa_find_window` | h |
+
+### PCIe / UDMA / IOFIC / unit-adapter (I/O fabric)
+
+| VA | name | d |
+|---|---|---|
+| 0x0100c2f0 | `al_pcie_read_config` | h |
+| 0x0100c718 | `al_pcie_master_enable` | h |
+| 0x01003b24 | `al_pcie_int_adapter_pd` | h |
+| 0x01003e74 | `pci_skip_dev` | m |
+| 0x01012eb8 | `al_udma_init` | h |
+| 0x0101332c | `al_udma_q_init` | m |
+| 0x010134c0 | `al_udma_state_set` | h |
+| 0x010040d8 | `al_udma_fast_desc_flags_set` | h |
+| 0x01004584 | `al_udma_ring_id_get` | h |
+| 0x01013818 | `al_udma_q_set_pointers` | h |
+| 0x01013af4 | `al_udma_m2s_packet_size_cfg_set` | h |
+| 0x01013c34 | `al_udma_m2s_max_descs_set` | h |
+| 0x01013d6c | `al_udma_iofic_s2m_error_ints_unmask` | m |
+| 0x01012b84 | `al_iofic_abort_mask_clear` | h |
+| 0x01025e24 | `al_unit_adapter_handle_init` | m |
+
+### Misc (hand-RE)
+
+| VA | name | role |
+|---|---|---|
+| 0x010129dc / 0x0100ceb0 / 0x01010c00 | (log/printf) | AL logging helpers |
+| 0x010274e8 / 0x01027508 | (poke fabric / agent-mailbox reg) | writes `0xf0070000` / `0xf0090000` |
 
 ## S2 first-stage (Thumb-2 @0xF2200000) — for completeness
 

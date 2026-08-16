@@ -81,27 +81,12 @@ U-Boot  1400000a b 0x1100028 ; .quad 0x01100000 ; .quad 0x000a8640
 defines it as `AL_SB_PBS_BASE + 0x28000`. FDT `al-pbs` = 0xfd8a8000 ⇒
 **`AL_SB_PBS_BASE = 0xfd880000`, `AL_SB_BASE = 0xfd800000`**.
 
-| Peripheral | Base | FDT compatible |
-|---|---|---|
-| PBS regfile / pinctrl | 0xfd8a8000 | `annapurna-labs,al-pbs`, `alpine-pinctrl` |
-| I2C0 / I2C1 | 0xfd880000 / 0xfd894000 | `snps,designware-i2c` |
-| SPI (NOR) | 0xfd882000 | `amazon,alpine-dw-apb-ssi` |
-| UART0–3 | 0xfd883000 / 4000 / 5000 / 6000 | `ns16550a` |
-| SerDes | 0xfd8c0000 (0x2400) | `annapurna-labs,al-serdes` |
-| SGPO | 0xfd8b4000 | `alpine-sgpo` |
-| GPIO 0–5 | 0xfd887000–0xfd88b000, 0xfd897000 | `arm,pl061` |
-| Timers / watchdogs | 0xfd890000–93000 / 0xfd88c000–8f000 | `arm,sp804` / `arm,sp805` |
-| Thermal | 0xfd860a00 | `al-thermal` |
-| al_eth0–3 | 0xfc000000 / fc100000 / fc200000 / fc300000 | eth nodes |
-| NAND | 0xfa100000 (0x202000) | `annapurna-labs,al-nand` |
-| GIC-v3 | 0xf0200000 + 0xf0280000 | `arm,gic-v3` |
-| CCU / NB fabric / memctl | 0xf0090000 / 0xf0070000 / 0xf0080000 | `al-ccu`, `al-nb-service`, `alpine-mc` |
-| MSIX | 0xfbe00000 | `alpine-msix` |
-| PCIe internal | 0xfbc00000 | `alpine-internal-pcie` |
-| PCIe external 0–3 | 0xfd800000 / fd820000 / fd840000 / fd900000 | `alpine-external-pcie` |
-| PCIe cfg windows | 0xfb600000 / fb700000 / fb800000 / fb900000 | ranges |
-| TDM | 0xf2300000 | `al-tdm` |
-| SoC SRAM (S2 runs here) | 0xf2200000 | ❓ not in FDT; measured link base |
+**Full MMIO / address map: see [hardware.md](hardware.md#mmio-and-address-map)** — the
+one authoritative table (all bases/sizes/compatibles cross-checked to live.dts +
+iomem). The RE finding above (`AL_SB_PBS_BASE = 0xfd880000`, `AL_SB_BASE =
+0xfd800000`, derived from the `AL_PBS_REGFILE_BASE` literal + `AL_SB_PBS_BASE +
+0x28000`) is what pins those bases; SoC SRAM `0xf2200000` (S2 link base) is a measured
+value, not in FDT.
 
 **Clocks in the stored DTB are placeholders** — `sbclk`/`nbclk`/`cpuclk` =
 0xf4240 (1 MHz), `refclk` = 0x16e3600. U-Boot overwrites them at boot from

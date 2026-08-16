@@ -251,12 +251,10 @@ Kernel: `4.19.152-alpine-unvr`, firmware `UNVR4.al324.v5.1.25`.
 
 Key nodes / facts the port depends on:
 
-- **SoC MMIO** (all `0xfd8xxxxx` / `0xf00xxxxx`): GIC-v3 `0xf0200000`, msix
-  `0xfbe00000`, i2c-pld `0xfd880000`, spi `0xfd882000`, uart0 `0xfd883000`, PL061
-  gpio0–5 `0xfd887000`+, sp805 wdt `0xfd88c000`+, sgpo `0xfd8b4000`, serdes
-  `0xfd8c0000`, al-nand `0xfa100000`, al-thermal `0xfd860a00`. Custom SoC service
-  blocks: `al-ccu` `0xf0090000`, `al-nb-service` `0xf0070000`, `al-pbs`
-  `0xfd8a8000`, `alpine-mc` `0xf0080000`.
+- **SoC MMIO** — full address map (bases/sizes/compatibles) in
+  [hardware.md](hardware.md#mmio-and-address-map). Port-relevant blocks: GIC-v3, msix,
+  DW i2c/spi/uart, PL061 gpio, sp805 wdt, sgpo, serdes, al-nand, al-thermal; custom
+  SoC service blocks al-ccu/al-nb-service/al-pbs/alpine-mc.
 - **al_eth nodes**: driver binds by PCI ID (`1c36:0001` 1G, `1c36:0002` 10G), MMIO
   `0xfe000000`/`0xfe020000` under the internal-PCIe window. Bare `eth0..eth3`
   platform nodes exist in vendor DT (`0xfc000000`+, irq 61–64) but are **unused**

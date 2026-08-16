@@ -77,97 +77,29 @@ mark MMIO **volatile + non-executable**, fill gaps, THEN analyse.
 
 - **Mechanical**: `scripts/ghidra-analyse.py … ` runs
   `scripts/ghidra/SetupAlpineMemory.java` as a **preScript**. Map table is baked into
-  that script; keep it in sync with the table below. RAM → R/W/X, non-volatile; MMIO
+  that script; **keep it in sync with the authoritative map in
+  [hardware.md](hardware.md#mmio-and-address-map)**. RAM → R/W/X, non-volatile; MMIO
   → R/W, **volatile, non-exec**. Idempotent (skips blocks that overlap the loaded
-  image). `--preboot` adds the SoC-fabric regions.
-- Source of truth for the map:
-  `docs/hw-reference/20260816-104601/iomem.txt` (Linux `/proc/iomem`) +
-  `…/live.dts` (`reg=` + `compatible=`).
+  image). `--preboot` adds the SoC-fabric regions (s2_sram, agent mailboxes,
+  ddr_ready — see the preboot-only table in hardware.md).
+- Source of truth for the map: **[hardware.md](hardware.md#mmio-and-address-map)**,
+  verified from `docs/hw-reference/20260816-104601/live.dts` (`reg=`/`compatible=`) +
+  `iomem.txt` (Linux `/proc/iomem`). Do not re-table it here.
 
-### AL-324 address map (concrete)
+### AL-324 address map
 
-DRAM (two banks):
+**MMIO / address map: see [hardware.md](hardware.md#mmio-and-address-map)** — the one
+authoritative table (DRAM, PBS peripherals, fabric, PCIe/ECAM, IO-fabric EPs,
+preboot-only regions). RE-relevant notes only below:
 
-| region | base | size | notes |
-|---|---|---|---|
-| DRAM0 | `0x00000000` | `0xC0000000` (3 GiB) | bank 0; kernel/reserved carve-outs within |
-| DRAM1 | `0x200000000` | `0x40000000` (1 GiB) | bank 1, above 4 GiB |
-
-MMIO — PBS peripherals (`compatible` → mainline driver → HAL header):
-
-| region | base | size | compatible | driver | HAL header |
-|---|---|---|---|---|---|
-| i2c0 (i2c-pld) | `0xfd880000` | 0x1000 | `snps,designware-i2c` | i2c-designware / dw-i2c | `pbs/al_hal_i2c_regs.h` |
-| spi0 | `0xfd882000` | 0x1000 | `amazon,alpine-dw-apb-ssi`,`snps,dw-apb-ssi` | spi-dw | `pbs/al_hal_spi_regs.h` |
-| uart0 | `0xfd883000` | 0x1000 | **`ns16550a`** | 8250_dw / of_serial | `pbs/al_hal_uart_regs.h` |
-| uart1 | `0xfd884000` | 0x1000 | `ns16550a` | " | " |
-| uart2 | `0xfd885000` | 0x1000 | `ns16550a` | " | " |
-| uart3 | `0xfd886000` | 0x1000 | `ns16550a` | " | in DT; **not** in Linux iomem |
-| gpio0 | `0xfd887000` | 0x1000 | `arm,pl061` | pl061 | `pbs/al_hal_gpio_regs.h` |
-| gpio1 | `0xfd888000` | 0x1000 | `arm,pl061` | pl061 | " |
-| gpio2 | `0xfd889000` | 0x1000 | `arm,pl061` | pl061 | " |
-| gpio3 | `0xfd88a000` | 0x1000 | `arm,pl061` | pl061 | " |
-| gpio4 | `0xfd88b000` | 0x1000 | `arm,pl061` | pl061 | " |
-| wdt0..3 | `0xfd88c000` | 0x4000 | `arm,sp805`,`primecell` | sp805_wdt | `sys_services/al_hal_watchdog_regs.h` |
-| timer0..3 | `0xfd890000` | 0x4000 | `arm,sp804`,`primecell` | sp804 | `sys_services/al_hal_timer_regs.h` |
-| i2c1 | `0xfd894000` | 0x1000 | `snps,designware-i2c` | dw-i2c | `pbs/al_hal_i2c_regs.h` |
-| gpio5 | `0xfd897000` | 0x1000 | `arm,pl061` | pl061 | `pbs/al_hal_gpio_regs.h` |
-| otp_efuse | `0xfd896000` | 0x1000 | (OTP/eFuse) | — | `sys_services/al_hal_otp_regs.h` |
-| pbs | `0xfd8a8000` | 0x1000 | `annapurna-labs,al-pbs` | — | `include/pbs/al_hal_pbs_regs.h` |
-| sgpo | `0xfd8b4000` | 0x5000 | `annapurna-labs,alpine-sgpo` | — | `pbs/al_hal_sgpo_regs.h` |
-
-> **eFuse modulus-hash** compared in preboot lives at **`0xfd89608c` (32 B)** inside
-> the `otp_efuse` block (preboot-decompile.md §RSA). Keep the block non-volatile-read
-> is fine; it is one-time-programmed.
-
-MMIO — PCIe / ECAM:
-
-| region | base | size | compatible |
-|---|---|---|---|
-| pcie_ext0_ctl | `0xfd800000` | 0x20000 | `annapurna-labs,alpine-external-pcie` |
-| pcie_ext1_ctl | `0xfd820000` | 0x20000 | `…external-pcie` |
-| pcie_ext2_ctl | `0xfd840000` | 0x20000 | `…external-pcie` |
-| pcie_int_ecam | `0xfbc00000` | 0x100000 | `annapurna-labs,alpine-internal-pcie` |
-| pcie_ext0_win | `0xfb600000` | 0x100000 | pcie-external0 window |
-| pcie_ext0_mem | `0xc0010000` | 0x07ff0000 | BAR/mem space (xHCI `xhci-hcd` behind it) |
-
-MMIO — IO fabric (eth / dma / sata). HAL: eth `drivers/eth/al_hal_eth_*_regs.h`;
-udma `include/udma/al_hal_udma_regs.h`; adapter `include/io_fabric/al_hal_unit_adapter_regs.h`.
-Kernel copies: `urnvr-kernel-4.19.152/drivers/net/ethernet/al/` (+`internal/`).
-AHCI is stock (mainline `ahci_platform`).
-
-| region | base | size | what |
-|---|---|---|---|
-| eth0 | `0xfe000000` | 0x20000 | `al_eth` |
-| eth1 | `0xfe020000` | 0x20000 | `al_eth` |
-| dma0 | `0xfe0e0000` | 0x20000 | `al_dma` (udma) |
-| dma1 | `0xfe100000` | 0x20000 | `al_dma` |
-| eth2 | `0xfe120000` | 0x10000 | `al_eth` |
-| dma2 | `0xfe140000` | 0x10000 | `al_dma` |
-| eth3 | `0xfe150000` | 0x4000 | `al_eth` |
-| ahci0 | `0xfe154000` | 0x4000 | SATA |
-| ahci1 | `0xfe158000` | 0x4000 | SATA |
-| eth4 | `0xfe15c000` | 0x1000 | `al_eth` |
-| eth5 | `0xfe15d000` | 0x1000 | `al_eth` |
-
-Preboot-only SoC-fabric regions (NOT in Linux DT; from preboot-decompile.md — add
-with `--preboot`):
-
-| region | base | size | what |
-|---|---|---|---|
-| s2_sram | `0xf2200000` | 0x40000 | S2 first-stage link base (SRAM) |
-| agent_mb0 | `0xf0070000` | 0x1000 | CVOS DDR agent mailbox |
-| agent_mb1 | `0xf0090000` | 0x1000 | CVOS agent mailbox |
-| ddr_ready | `0xfbff4000` | 0x1000 | `_DAT_fbff4150 == 0x31415926` DDR-ready poll |
-
-### Discrepancies noted (task brief said pl011 UART/pl061 GPIO)
-- **UART is `ns16550a` (DesignWare 8250), NOT PL011.** The AL HAL header
-  `al_hal_uart_regs.h` is 8250-style (rbr_thr_dll/dlh_ier/iir_fcr…), consistent with
-  the DT. Use the 8250 register layout, not PL011.
-- **GPIO is genuinely `arm,pl061`** (PrimeCell) — `al_hal_gpio_regs.h` matches PL061
-  (`gpiodata[0x100]` @0x0, `gpiodir` @0x400). The AL HAL wraps the PL061 block.
-- If iomem and DT disagree on presence (e.g. uart3, wdt1..3), trust **DT** for the
-  block layout; iomem only lists what a live driver claimed.
+- `otp_efuse` @`0xfd896000` is **inferred** (not in DT/iomem); size 0x1000 chosen to
+  cover the preboot eFuse modulus-hash at `0xfd89608c`. Keep it non-volatile-read; OTP.
+- **Standard-IP gotchas** (matter when applying register structs): UART is `ns16550a`
+  (DesignWare 8250), **NOT PL011** — `al_hal_uart_regs.h` is 8250-style; use the 8250
+  layout. GPIO is genuine `arm,pl061` — `al_hal_gpio_regs.h` matches PL061
+  (`gpiodata[0x100]`@0x0, `gpiodir`@0x400); the AL HAL wraps the PL061 block.
+- Where iomem and DT disagree on presence (uart3, wdt1..3, timers — DT-disabled),
+  trust **DT** for block layout; iomem lists only what a live driver claimed.
 
 ---
 
