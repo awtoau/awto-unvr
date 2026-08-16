@@ -1,0 +1,89 @@
+#!/usr/bin/env python3
+"""Flash the Fedora kernel + DTB into NAND and set U-Boot to boot it standalone.
+
+Runs against a device ALREADY at the U-Boot prompt (ALPINE_UBNT_NAS_ALL>). tftp's
+our gzip uImage + ea16 DTB from the host and writes them into the DEAD vendor
+rootfs region of NAND (the vendor kernel @0x300000 is left intact as recovery),
+then sets bootcmd to nand-read + bootm and saveenv. Rootfs stays on the SSD
+(root=PARTUUID, already in bootargs). Fully NAND-side; SSD untouched.
+
+Layout (NAND offsets):
+  kernel  @ 0x1300000  (start of the unused rootfs partition), read span 0x1200000
+  dtb     @ 0x2800000
+"""
+from __future__ import annotations
+import os, socket, sys, time
+from datetime import datetime, timezone
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from _repo import LOGS  # noqa: E402
+
+SOCK = Path(os.environ.get("XDG_RUNTIME_DIR", "/tmp")) / "tio-unvr.sock"
+PROMPT = b"ALPINE_UBNT_NAS_ALL>"
+
+IPADDR, SERVERIP = "192.168.25.140", "192.168.25.145"
+KIMG = "uImage-unvr-ea16-7.1-fedora-gz"
+DIMG = "alpine-v2-ubnt-unvr-ea16-7.1-fedora.dtb"
+K_NAND, K_SPAN = "0x1300000", "0x1200000"   # 18.9 MiB span (kernel ~18.5)
+D_NAND, D_ERASE, D_READ = "0x2800000", "0x40000", "0x20000"
+K_RAM, D_RAM = "0x02000000", "0x04078000"
+BOOTCMD = (f"nand read {K_RAM} {K_NAND} {K_SPAN}; "
+           f"nand read {D_RAM} {D_NAND} {D_READ}; bootm {K_RAM} - {D_RAM}")
+
+
+def log(m):
+    line = f"{datetime.now(timezone.utc).astimezone().isoformat(timespec='seconds')}  {m}"
+    print(line, flush=True)
+    LOGS.mkdir(parents=True, exist_ok=True)
+    (LOGS / "flash-nand.log").open("a").write(line + "\n")
+
+
+def step(s, cmd, needle, limit, label):
+    s.sendall(cmd.encode() + b"\n")
+    buf = b""
+    end = time.monotonic() + limit
+    while time.monotonic() < end:
+        try:
+            c = s.recv(4096)
+        except socket.timeout:
+            continue
+        if not c:
+            break
+        buf += c
+        if needle.encode() in buf:
+            log(f"  OK: {label}")
+            return buf
+    log(f"  FAIL: {label} — did not see {needle!r} in {limit}s\n{buf.decode(errors='replace')[-400:]}")
+    raise SystemExit(3)
+
+
+def main():
+    if not SOCK.exists():
+        sys.exit(f"console socket absent: {SOCK}")
+    s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    s.settimeout(0.1)
+    s.connect(str(SOCK))
+    # confirm we're at the prompt
+    step(s, "", "ALPINE_UBNT_NAS_ALL>", 5, "at U-Boot prompt")
+    log("=== flashing Fedora kernel+DTB to NAND (vendor kernel @0x300000 preserved) ===")
+    step(s, f"setenv ipaddr {IPADDR}", "ALPINE_UBNT_NAS_ALL>", 5, "set ipaddr")
+    step(s, f"setenv serverip {SERVERIP}", "ALPINE_UBNT_NAS_ALL>", 5, "set serverip")
+    # kernel
+    step(s, f"tftpboot {K_RAM} {KIMG}", "Bytes transferred", 60, f"tftp {KIMG}")
+    step(s, f"nand erase {K_NAND} {K_SPAN}", "OK", 30, "erase kernel region")
+    step(s, f"nand write {K_RAM} {K_NAND} {K_SPAN}", "OK", 60, "write kernel")
+    # dtb
+    step(s, f"tftpboot {D_RAM} {DIMG}", "Bytes transferred", 30, f"tftp {DIMG}")
+    step(s, f"nand erase {D_NAND} {D_ERASE}", "OK", 15, "erase dtb block")
+    step(s, f"nand write {D_RAM} {D_NAND} {D_ERASE}", "OK", 15, "write dtb")
+    # bootcmd + save
+    step(s, f"setenv bootcmd '{BOOTCMD}'", "ALPINE_UBNT_NAS_ALL>", 5, "set bootcmd")
+    step(s, "saveenv", "done", 15, "saveenv")
+    log("DONE — kernel+DTB in NAND, bootcmd set + saved. 'boot' or reset to verify.")
+    s.close()
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
