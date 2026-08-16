@@ -148,23 +148,24 @@ setenv bootargs 'console=ttyS0,115200 sysid=ea16 ubnthal.sysid=ea16 reboot=warm 
 bootm 0x02000000 - 0x04078000
 ```
 
-## Expected at netboot + risk areas
+## Netboot VERIFIED on hardware — 2026-08-16
 
-- **Serial shell + 4 CPU + 4 GiB**: expected, same path as 6.12 (already proven).
-- **Internal PCIe -> SATA**: expected to enumerate — the internal-PCIe driver
-  compiled with the snoop/APP_CONTROL logic intact and `=y`; AHCI etc. are `=y`.
-  Same design that the 6.12 patched build was built to do (that build was not yet
-  re-verified on hardware either — see 6.12 doc status).
-- **Drive power**: DTB gpio-hog on PCA9575 @0x21 lines 0-3 (unchanged in DTS) +
-  `/bin/hdd-power-on` fallback in the reused initramfs.
-- **al_eth (1G AR8031 / 10G SFP+)**: `.ko` built clean but **runtime bind on 6.18
-  unverified**. Watch at boot: it binds by PCI ID (1c36:0001/0002); phylink /
-  netdev runtime behaviour on 6.18 is the main unknown despite the clean compile.
-- **al_dma / al_ssm**: `.ko` built; dmaengine/crypto runtime unverified (last-
-  priority per roadmap; CPU-parity RAID works without al_dma).
-- **al_sgpo**: builds now; SGPO LEDs are cosmetic, non-blocking.
-- **`native_ecam` interaction**: 6.18 sets `pci->pp.native_ecam = true` in the
-  external PCIe path (kept). No issue seen at build; note it if external-PCIe/USB
-  behaves differently from 6.12 at runtime.
+`6.18.44-dirty` (gcc-16.1.1) netbooted on the UNVR. Full platform parity with
+6.12 — every flagged risk area cleared:
 
-Not re-run on the device this session (device/serial in use, per task).
+- **Internal PCIe**: 8 devices enumerated (non-empty). 2× al_eth (1c36:0001/0002),
+  al_ssm (0022 class 100000), al_dma (0022 class 010400), 2× ahci (0031 class 010601).
+- **SMCC snoop**: configured on all slots — `registered SMCC snoop notifier`;
+  ahci slots 8/9 (SM0 only), al_dma/al_ssm/al_eth slots 4/5/1/2 (all 4 sub-masters).
+  The AXI-coherency patch works unchanged on 6.18.
+- **SATA**: both WD82PURZ up on ata5/ata7 @ 6.0 Gbps (gpio-hog powered the bays).
+- **al_eth** (risk #1 — CLEARED): eth0 (1G RJ45, phy@4) + eth1 (10G SFP, media 5)
+  both bound and up; runtime bind on 6.18 works.
+- **al_ssm**: AES-XTS / AES-CBC async crypto engine initialized.
+- **al_dma**: 4 channels (XOR/PQ max 31 sources) — RAID offload live.
+- **xHCI** (risk #2 — `native_ecam` on USB path CLEARED): USB 3.0 SuperSpeed host
+  up, a SuperSpeed device enumerated on bus 2.
+- `of_irq_parse_pci: failed with rc=-22` is the same benign fallback as 6.12
+  (drivers use their own MSI/IRQ setup); non-fatal.
+
+Netboot command sequence: unchanged from the block above.
