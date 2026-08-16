@@ -1,18 +1,19 @@
 #!/usr/bin/env python3
 """Hysteresis fan daemon for the UNVR (woomera). Quiet by default, MAX when hot.
 
-The hot components are the spinning drives (~50 C), not the board (~36 C), so the
-ADT7475's own sensors are the wrong input. This polls the real temps — SoC die
-(via /dev/mem, until al_thermal is wired, #44) + each drive (SMART) — and drives
-the ADT7475 in MANUAL mode with bang-bang hysteresis:
+Driven by the **CPU/SoC die temp** — the al_thermal `cpu-thermal` zone
+(`/sys/class/thermal`), falling back to /dev/mem only if the zone is absent.
+Disk temps are deliberately ignored — the WD drives
+sit at ~50 C, which is normal and well within rating, not a fan trigger. The
+ADT7475 is driven in MANUAL mode with bang-bang hysteresis on SoC temp:
 
-    hottest >= HIGH  -> fans MAX  (255)
-    hottest <= LOW   -> fans FLOOR (quiet)
-    in between       -> hold (hysteresis, no oscillation)
+    soc >= HIGH  -> fans MAX  (255)
+    soc <= LOW   -> fans FLOOR (quiet)
+    in between   -> hold (hysteresis, no oscillation)
 
-Defaults: HIGH=60 C, LOW=50 C, FLOOR=60/255 (~24%). Tune via the constants.
+Defaults: HIGH=60 C, LOW=50 C, FLOOR=80/255 (~31%). Tune via the constants.
 """
-import glob, mmap, struct, subprocess, sys, time
+import glob, mmap, struct, sys, time
 from pathlib import Path
 
 HIGH_C, LOW_C = 60, 50
@@ -25,6 +26,14 @@ SOC_OFFSET, SOC_MULT = 1090, 3520
 
 
 def soc_temp():
+    # Preferred: the al_thermal cpu-thermal zone (standard kernel interface).
+    for z in glob.glob("/sys/class/thermal/thermal_zone*"):
+        try:
+            if Path(z, "type").read_text().strip() == "cpu-thermal":
+                return int(Path(z, "temp").read_text()) // 1000
+        except OSError:
+            pass
+    # Fallback: raw /dev/mem read (if al_thermal isn't loaded).
     try:
         with open("/dev/mem", "rb", 0) as f:
             m = mmap.mmap(f.fileno(), 4096, offset=SOC_BASE, prot=mmap.PROT_READ)
@@ -33,20 +42,6 @@ def soc_temp():
         return ((raw * SOC_MULT) // 4096 - SOC_OFFSET) // 10
     except OSError:
         return None
-
-
-def disk_temps():
-    temps = []
-    for dev in sorted(glob.glob("/dev/sd?")):
-        r = subprocess.run(["smartctl", "-A", dev], capture_output=True, text=True)
-        for line in r.stdout.splitlines():
-            if "Temperature_Cel" in line or "Airflow_Temperature" in line:
-                try:
-                    temps.append((dev, int(line.split()[9])))
-                except (IndexError, ValueError):
-                    pass
-                break
-    return temps
 
 
 def adt7475():
@@ -77,15 +72,16 @@ def main():
     set_pwm(h, FLOOR_PWM)
     while True:
         soc = soc_temp()
-        disks = disk_temps()
-        hottest = max([t for t in ([soc] if soc else []) + [d[1] for d in disks]] or [0])
-        if hottest >= HIGH_C:
+        # If the SoC read ever fails, fail SAFE to MAX rather than risk no cooling.
+        if soc is None:
             state = "MAX"
-        elif hottest <= LOW_C:
+        elif soc >= HIGH_C:
+            state = "MAX"
+        elif soc <= LOW_C:
             state = "FLOOR"
         # else: hold previous state (hysteresis)
         set_pwm(h, MAX_PWM if state == "MAX" else FLOOR_PWM)
-        print(f"hottest={hottest}C soc={soc} disks={disks} -> {state}", flush=True)
+        print(f"soc={soc}C -> {state}", flush=True)
         time.sleep(POLL_S)
 
 
