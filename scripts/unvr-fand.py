@@ -8,16 +8,17 @@ sit at ~50 C, which is normal and well within rating, not a fan trigger. The
 ADT7475 is driven in MANUAL mode with bang-bang hysteresis on SoC temp:
 
     soc >= HIGH  -> fans MAX  (255)
-    soc <= LOW   -> fans FLOOR (quiet)
+    soc <= LOW   -> fans OFF  (0)
     in between   -> hold (hysteresis, no oscillation)
 
-Defaults: HIGH=60 C, LOW=50 C, FLOOR=80/255 (~31%). Tune via the constants.
+Defaults: HIGH=80 C, LOW=50 C, OFF=0 (silent). i.e. fans are OFF until the CPU
+die hits 80 C, then full-blast until it drops back to 50 C. Tune via constants.
 """
 import glob, mmap, struct, sys, time
 from pathlib import Path
 
-HIGH_C, LOW_C = 60, 50
-FLOOR_PWM, MAX_PWM = 80, 255   # 80/255 ~31% quiet floor (drives rest happy here)
+HIGH_C, LOW_C = 80, 50
+OFF_PWM, MAX_PWM = 0, 255      # fans OFF below 80 C; full-blast at/above 80 C
 POLL_S = 15
 
 # SoC die sensor (Alpine V2 thermal unit) via /dev/mem
@@ -68,8 +69,8 @@ def main():
     if h is None:
         print("adt7475 not found", file=sys.stderr)
         return 1
-    state = "FLOOR"        # start quiet; first loop escalates if already hot
-    set_pwm(h, FLOOR_PWM)
+    state = "OFF"          # start silent; first loop escalates if already >=80 C
+    set_pwm(h, OFF_PWM)
     while True:
         soc = soc_temp()
         # If the SoC read ever fails, fail SAFE to MAX rather than risk no cooling.
@@ -78,9 +79,9 @@ def main():
         elif soc >= HIGH_C:
             state = "MAX"
         elif soc <= LOW_C:
-            state = "FLOOR"
+            state = "OFF"
         # else: hold previous state (hysteresis)
-        set_pwm(h, MAX_PWM if state == "MAX" else FLOOR_PWM)
+        set_pwm(h, MAX_PWM if state == "MAX" else OFF_PWM)
         print(f"soc={soc}C -> {state}", flush=True)
         time.sleep(POLL_S)
 
