@@ -34,8 +34,87 @@ Notes:
   U-Boot `bootargs` you set for netboot — U-Boot's `setenv bootargs` overrides the DTB value.
 - First netboot uses an **embedded initramfs**, so no `root=`. A later NAND-root
   boot would append `root=` (e.g. an MTD/ubi rootfs) via U-Boot bootargs.
-- The out-of-tree `al_eth` / SATA (internal PCIe) are **not** needed to reach a
-  serial shell; they matter for a real root-on-NAND / networked boot later.
+- The `pci@fbc00000` node keeps the mainline dtsi's reg/ranges/bus-range/SATA
+  interrupt-map and only overrides `compatible = "annapurna-labs,alpine-internal-pcie"`
+  + adds `dma-coherent` — this is the compatible the integrated `pcie-al-internal`
+  driver binds to (see below).
+
+## PCIe patch integration (REQUIRED — without it the internal bus is empty)
+
+On Alpine V2 every on-SoC block (both AHCI SATA controllers, al_eth, al_dma,
+al_ssm, the xHCI/USB) is a PCI endpoint on the **internal** PCIe bus at
+`0xfbc00000`. Mainline has **no driver** for `annapurna-labs,alpine-internal-pcie`,
+and `CONFIG_PCIE_AL_INTERNAL=y` in `unvr_defconfig` is silently dropped unless the
+driver/Kconfig symbol exists. Result of skipping this: `/sys/bus/pci/devices` empty
+→ no SATA, no net. `build-linux-612-ea16.py` integrates the port's patches:
+
+1. **`pcie-al-internal.c`** → copied to `drivers/pci/controller/pcie-al-internal.c`;
+   a `config PCIE_AL_INTERNAL` block is inserted into that dir's `Kconfig`
+   (`select PCI_HOST_COMMON`), and `obj-$(CONFIG_PCIE_AL_INTERNAL) += pcie-al-internal.o`
+   into its `Makefile`. `--enable PCIE_AL_INTERNAL` is then asserted and the build
+   aborts if `.config` doesn't carry it. The driver uses `pci_host_common_probe` +
+   a `BUS_NOTIFY_BIND_DRIVER` notifier that, for each Annapurna device (vendor
+   0x1c36) on bus 0, sets **SMCC snoop** (config offsets 0x110/0x130/0x150/0x170,
+   bits SNOOP_OVR|SNOOP_EN) and **APP_CONTROL** (0x220 low 16 bits = 0x03ff) — the
+   coherent-DMA setup the generic ECAM driver never does.
+2. **`pcie-al-dbi-fix.c`** → overwrites `drivers/pci/controller/dwc/pcie-al.c`.
+   Adds the 13-line pre-set of `pci->dbi_base = controller_base + 0x10000` so the
+   external DWC PCIe (xHCI/USB) probes without a resource conflict.
+
+All the enclosure drivers are already `=y` in `unvr_defconfig` (`SATA_AHCI`,
+`SATA_AHCI_PLATFORM`, `I2C_DESIGNWARE_PLATFORM`, `I2C_MUX_PCA954x`,
+`GPIO_PCA953X`, `GPIO_SYSFS`, `SENSORS_ADT7475`, `RTC_DRV_S35390A`) — so once the
+internal bus enumerates, AHCI + the i2c/gpio expanders bind automatically.
+
+## Out-of-tree modules + initramfs autoload
+
+`al_eth/al_dma/al_ssm/al_sgpo` are built (`make -C /src KDIR=/src M=…`) and
+installed into `build-out/initramfs-root/lib/modules/6.12.103/extra/` **before**
+the kernel Image is linked, so they ride inside the embedded initramfs.
+`depmod -b` is run so `modprobe` resolves them. `/init` loads them in order
+(`al_dma al_ssm al_eth al_sgpo`, with an `insmod`-by-path fallback).
+
+Initramfs fixes vs the first attempt:
+- **Controlling tty**: busybox here has no `cttyhack`, so a real `/dev/console`
+  (plus `/dev/null,tty,ttyS0,kmsg`) is baked in via a `gen_init_cpio` device-node
+  list (`initramfs-devnodes`, second `CONFIG_INITRAMFS_SOURCE` entry). `/init`
+  ends with `exec setsid -c /bin/sh …/dev/console` → no "can't access tty".
+- **On-box tools**: full aarch64 Alpine userland (`ip`, `mount`, `ls -l`, `lsmod`,
+  `dmesg`, …) plus a `/bin/hdd-power-on` helper.
+
+### Drive power — gpio-hog (primary) + gpioset fallback
+
+`ui,hdd-pwrctl` has no mainline/out-of-tree driver here, so the SATA bays stay
+powered OFF until the PCA9575 @0x21 `pwren` lines (0-3, bays 1-4) go high.
+
+**Primary fix — DTB gpio-hog (zero userspace):** the ea16 DTS hogs those lines
+`output-high` on the `gpio@21` node:
+```
+i2c_gpio1: gpio@21 {           /* PCA9575 @0x21 */
+    ...
+    hdd-pwren-hog {
+        gpio-hog;
+        gpios = <0 0>, <1 0>, <2 0>, <3 0>;   /* bays 1-4, active-high */
+        output-high;
+        line-name = "hdd-pwren";
+    };
+};
+```
+gpiolib drives them high at chip-probe, so drives spin up before userspace runs.
+(On the vendor kernel these same lines — gpiochip base 480, offsets 0-3 — power
+the fitted drives on ata5/ata7.) The @0x29 PCA9575 fails i2c (-121) on this board
+exactly as on the vendor kernel; nothing depends on it.
+
+**Fallback / diagnostic:** the initramfs ships libgpiod + i2c-tools, and `/init`
+runs `/bin/hdd-power-on`, which prints `gpiodetect`/`gpioinfo` and (if the hog is
+absent) drives the `*-0021` chip lines 0-3 high on the `/dev/gpiochipN` char
+device — no `CONFIG_GPIO_SYSFS` needed:
+```
+gpiodetect                              # find the gpiochip whose label ends 0021
+gpioset -c gpiochipN 0=1 1=1 2=1 3=1    # drive bays 1-4 pwren high
+```
+`CONFIG_GPIO_SYSFS` is also enabled now (via `CONFIG_EXPERT`), so
+`/sys/class/gpio/export` works too if you prefer the legacy interface.
 
 ## Build (reproduce)
 
@@ -76,12 +155,14 @@ out-of-tree modules resolve kernel symbols.
 | `modules/*/al_*.ko` | out-of-tree drivers |
 | `unvr-ea16.config` | exact kernel `.config` used |
 
-Built sizes (kernel 6.12.103, gcc-12, ~122 s on 31 cores):
-`uImage-unvr-ea16` 18 MB · `Image` 18 MB · `alpine-v2-ubnt-unvr-ea16.dtb` 15 KB ·
-`initramfs-ea16.cpio.gz` 3.7 MB · `al_eth.ko` 401 KB · `al_ssm.ko` 179 KB ·
-`al_dma.ko` 91 KB · `al_sgpo.ko` 12 KB. uImage header verified: arch ARM64,
-OS Linux, type kernel, comp none, load/entry 0x08080000. Module vermagic
-`6.12.103 … aarch64`.
+Built sizes (kernel 6.12.103, gcc-12): `uImage-unvr-ea16` 18.7 MB (modules +
+initramfs embedded) · `alpine-v2-ubnt-unvr-ea16.dtb` 15 KB ·
+`initramfs-ea16.cpio.gz` 4.1 MB · `al_eth.ko` 401 KB · `al_ssm.ko` 179 KB ·
+`al_dma.ko` 91 KB · `al_sgpo.ko` 12 KB. Verified: uImage header ARM64/Linux/
+kernel/none, load/entry 0x08080000; `CONFIG_PCIE_AL_INTERNAL=y` linked into
+vmlinux; DTB carries the `hdd-pwren-hog` (gpio@21 lines 0-3 output-high);
+`CONFIG_GPIO_SYSFS=y` (via `CONFIG_EXPERT`); embedded initramfs carries the 4
+`.ko` + `modules.dep` + `gpioset`/`gpiodetect`/`i2cset` + real `/dev/console`.
 
 ## Netboot — U-Boot command sequence (NO flashing)
 
@@ -134,9 +215,17 @@ build embeds the initramfs, so this is not needed.
 
 ## Status / caveats
 
-- Not yet run on the device (serial console in use). This is the netboot recipe +
-  artifacts; on-device verification is the next step.
-- `al_eth` link bring-up on ea16 is unverified (PHY is AR8031 at MDIO addr 4 per
-  `live.dts`; the driver probes addr 4 regardless of vendor). Serial shell does
-  not depend on it.
+- **First netboot (pre-patch build) confirmed on hardware**: 6.12.103 booted to a
+  serial shell (4 cores, 4 GB). But `/sys/bus/pci/devices` was empty and
+  `/lib/modules` had no modules — both fixed by this patched build (internal PCIe
+  driver + modules in initramfs).
+- This patched build is **not yet re-run on the device**. Expected now: internal
+  PCIe enumerates → `/sys/bus/pci/devices` non-empty, AHCI + `ata_port`s appear,
+  al_eth/al_dma/al_ssm bind; `/init` powers the bays and auto-loads the modules.
+- **Drive power**: no mainline `hdd-pwrctl` driver — `/init` asserts PCA9575 @0x21
+  pwren via GPIO sysfs (see above). If a drive still won't spin, drive the pwren
+  lines by hand from the shell.
+- `al_eth` link bring-up on ea16 is unverified (PHY AR8031 @ MDIO addr 4).
+- GCC 16 (host) does **not** build 6.12 — use the gcc-12 Docker toolchain.
+  gcc-12 fallback artifacts (pre-patch) are in `build-out/gcc12-fallback/`.
 - Building on the device itself is a separate long-term goal — not attempted here.
