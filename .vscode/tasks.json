@@ -1,13 +1,18 @@
 {
-  // Ctrl+Shift+P -> "Tasks: Run Task" -> pick one. Each opens its OWN named
-  // terminal panel (presentation.panel=dedicated), so sessions stay separate.
+  // Native VS Code tasks. Two ways to run each:
+  //   1. Ctrl+Shift+P -> "Tasks: Run Task" -> pick one (manual).
+  //   2. Ignition MCP (jostrand.ignition-mcp) exposes each as an agent tool
+  //      task_<label>, so Claude Code can invoke it directly.
+  //
+  // Interactive/long-running tasks (ssh, serial console) set
+  //   isBackground + options.mcp.interactive so they open in a NATIVE terminal
+  //   you can watch and type in, and the agent tool returns immediately instead
+  //   of blocking on a session that never exits.
   //
   // woomera console model: ONE `tio` owns the serial line and serves a unix
-  // socket ($XDG_RUNTIME_DIR/tio-unvr.sock). Every script (_console.py,
-  // flash-nand.py, netboot.py, ...) attaches to that socket. So:
+  // socket ($XDG_RUNTIME_DIR/tio-unvr.sock); every console script attaches to it.
   //   - "serial console (tio)"    = start the owner; watch/type here.
-  //   - "serial console (attach)" = a 2nd read/write view onto the same socket,
-  //                                 so you can watch while a script drives it.
+  //   - "serial console (attach)" = a 2nd read/write view onto the same socket.
   //   - "ssh"                     = login over LAN (resolved by MAC, lease moves).
   "version": "2.0.0",
   "tasks": [
@@ -15,7 +20,8 @@
       "label": "woomera: ssh",
       "type": "shell",
       "command": "python3 scripts/ssh-woomera.py",
-      "options": { "cwd": "${workspaceFolder}" },
+      "isBackground": true,
+      "options": { "cwd": "${workspaceFolder}", "mcp": { "interactive": true } },
       "presentation": { "panel": "dedicated", "focus": true, "clear": true },
       "problemMatcher": []
     },
@@ -25,7 +31,8 @@
       "label": "woomera: serial console (tio)",
       "type": "shell",
       "command": "tio /dev/serial/by-id/usb-Silicon_Labs_CP2102_USB_to_UART_Bridge_Controller_0001-if00-port0 -b 115200 -S unix:${env:XDG_RUNTIME_DIR}/tio-unvr.sock -L --log-file ${workspaceFolder}/tmp/logs/tio-woomera.log --log-append --log-strip",
-      "options": { "cwd": "${workspaceFolder}" },
+      "isBackground": true,
+      "options": { "cwd": "${workspaceFolder}", "mcp": { "interactive": true } },
       "presentation": { "panel": "dedicated", "focus": true, "clear": true },
       "problemMatcher": []
     },
@@ -35,11 +42,14 @@
       "label": "woomera: serial console (attach)",
       "type": "shell",
       "command": "socat -,raw,echo=0,escape=0x1d UNIX-CONNECT:${env:XDG_RUNTIME_DIR}/tio-unvr.sock",
-      "options": { "cwd": "${workspaceFolder}" },
+      "isBackground": true,
+      "options": { "cwd": "${workspaceFolder}", "mcp": { "interactive": true } },
       "presentation": { "panel": "dedicated", "focus": true, "clear": true },
       "problemMatcher": []
     },
     {
+      // One-shot: prints woomera's current DHCP address (by MAC OUI). Foreground
+      // so the address is captured as the tool result.
       "label": "woomera: find on LAN",
       "type": "shell",
       "command": "python3 scripts/find-woomera-ssh.py",
@@ -51,8 +61,8 @@
       "label": "serial: loopback (continuous)",
       "type": "shell",
       "command": "python3 scripts/serial_loopback_test.py --repeat --interval 1.0",
-      "options": { "cwd": "${workspaceFolder}" },
       "isBackground": true,
+      "options": { "cwd": "${workspaceFolder}" },
       "presentation": { "panel": "dedicated", "focus": true, "clear": true },
       "problemMatcher": []
     },
