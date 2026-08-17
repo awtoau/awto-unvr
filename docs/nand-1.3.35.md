@@ -98,6 +98,10 @@ env does not apply as-is here — there is nothing saved to override.
 
 ## Default environment, extracted from mtd5
 
+This is the **1.3.35 / on-device (OLD)** env. Full OLD-vs-NEW-5.1.25 reconciliation:
+[nor-boot-chain.md](nor-boot-chain.md) §4; env deltas in
+[uboot-update-path.md](uboot-update-path.md) §Env.
+
 ```
 bootdelay        = 2
 loadaddr         = 0x08000000
@@ -133,7 +137,9 @@ bootm $loadaddr_payload - $fdtaddr
 That is the **plain unsigned** form — the same command 5.1.25 names `bootunsign`.
 This bootloader contains **no `bootsign`, no `dobootm`, no FIT
 `#$model@$fit_index`, and no verification step at all**. It boots arbitrary
-unsigned uImages unconditionally.
+unsigned uImages unconditionally. (Generation delta: 5.1.25's U-Boot *adds*
+`bootsign`/`dobootm` but still defaults to unsigned. Full per-stage trust model:
+[nor-boot-chain.md](nor-boot-chain.md) §5.)
 
 And a firmware upgrade **does not flash U-Boot** — `upgrade_firmware()` calls
 only `upgrade_kernel` and `upgrade_rootfs` — so upgrading cannot introduce

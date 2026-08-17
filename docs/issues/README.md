@@ -1,7 +1,7 @@
 # Issue drafts — mainline Linux port
 
-Local GitHub-issue drafts. **Not filed.** A human files them (scrub + approval)
-after review.
+Local GitHub-issue drafts, **kept as history**. **Most are now filed** (see the
+numbering below) — the local copies are the drafting record, not the live issues.
 
 Plan: [../porting-roadmap.md](../porting-roadmap.md). Evidence:
 [../hw-reference/20260816-104601/](../hw-reference/20260816-104601/).
@@ -9,7 +9,7 @@ Plan: [../porting-roadmap.md](../porting-roadmap.md). Evidence:
 ## Numbering
 - Drafts `00`–`21` are already filed as live GitHub issues **#4–#25** (offset +4:
   00→#4 … 21→#25). Cross-refs inside those drafts use their own NN.
-- Gap drafts `31`–`37` (below) are **not filed** — file as live #31+.
+- Gap drafts `31`–`37` are **filed as GitHub #31–#37** (drafts kept as history).
 - Reconciliation and new drafts reference existing work by **live #** (#4–#25).
 
 | NN | Title | Labels | Hook |
@@ -37,7 +37,7 @@ Plan: [../porting-roadmap.md](../porting-roadmap.md). Evidence:
 | 20 | [Patch 13] Crypto-engine driver (al_ssm) | porting, crypto, patch | Last functional driver |
 | 21 | [Patch 14] defconfig & docs | porting, defconfig, docs, patch | Booting defconfig + build docs |
 
-## Gap drafts (new — not filed; plan items #4–#25 don't cover these)
+## Gap drafts (filed as GitHub #31–#37; plan items #4–#25 don't cover these)
 
 | NN | Title | Labels | Complements |
 |---|---|---|---|

@@ -83,6 +83,10 @@ rsvd[4]`. That resolves the `preboot` row flagged open in
 | uboot-env | 0x1c0000 +0x10000 | same |
 | uboot-re | 0x1d0000 +0x230000 | same |
 
+Full reconciled TOC (per-object content + preboot sub-blobs S2/al_boot):
+[nor-boot-chain.md](nor-boot-chain.md) §1 (canonical). The env-delta table in §Env below
+is the single source the boot-chain doc links back to.
+
 `tmp/sections/01-uboot.bin` is 1,395,740 B (0x154D9C) — a **raw SPI image for
 offset 0**, ending exactly at the end of the U-Boot payload. Everything it
 covers lies inside the `u-boot` mtd0 window (0..0x1c0000); env and everything

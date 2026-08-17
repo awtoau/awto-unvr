@@ -4,6 +4,10 @@ Ghidra headless + manual carving of `mtd05`, UNVR sysid 0xea16, firmware 1.3.35.
 Partition map and env in [nand-1.3.35.md](nand-1.3.35.md); peripheral summary in
 [hardware.md](hardware.md). This file is the structure and the RE method.
 
+**Canonical boot chain, flash TOC and U-Boot env: [nor-boot-chain.md](nor-boot-chain.md)**
+(OLD on-device + NEW 5.1.25 side by side, both containers reconciled). The tables below
+are the RE-evidence view for this unit; where they overlap, nor-boot-chain.md wins.
+
 ✅ = verified by instruction decoding or byte comparison. ❓ = inferred.
 
 ## `mtd05` is the whole boot chain
@@ -20,7 +24,7 @@ size/load/entry at +0x28/+0x30/+0x38.
 
 | Name | Type | Offset | Size | Note |
 |---|---|---|---|---|
-| `preboot` | 0x0d | 0x080000 | 0 | **does not match** the payload at 0x21000 — unresolved ❓ |
+| `preboot` | 0x0d | 0x000000 | 0x080000 | ✅ **RESOLVED** — entry is `off 0x000000 size 0x080000` (earlier misread as off 0x80000 size 0); the region 0..0x80000 holds S2 + al_boot + stage3, incl. the payload at 0x21000. See [uboot-update-path.md](uboot-update-path.md#toc-correction) / [nor-boot-chain.md](nor-boot-chain.md) §1 |
 | `dt` | 0x02 | 0x081000 | 0x07000 | FDT magic at 0x81048 ✅ |
 | `dt_pro` | 0x02 | 0x088000 | 0x08000 | ✅ |
 | `dt_ai` | 0x02 | 0x090000 | 0x08000 | ✅ |
@@ -225,8 +229,12 @@ inert at `bootdelay=2`. None gate the boot image.
 
 ## Open
 
-- TOC `preboot` row (offset 0x80000, size 0) contradicts the payload at 0x21000.
-  A `2ND_TOC` object ID exists in the name table; not chased.
+- ~~TOC `preboot` row contradicts the payload at 0x21000~~ **RESOLVED** — the entry is
+  `off 0x000000 size 0x080000` (see the TOC table above and
+  [uboot-update-path.md](uboot-update-path.md#toc-correction)); the region contains the
+  payload. A `2ND_TOC` object ID also exists in the name table; not chased.
 - `0xF2200000` as SRAM is the measured link base, not a named region.
 - Why `cvos_tags = 0x01000000` coincides with the preboot link base.
-- Exact fitted 1G PHY part (AR8033 vs RTL8211x) — runtime says Atheros 8031.
+- ~~Exact fitted 1G PHY part~~ **RESOLVED** — chip is **AR8033** (marking `AR8033-AL1A`,
+  U51, photo); the `at803x` driver mislabels it "Atheros 8031" (shared PHY ID). See
+  [components.md](components.md) / [chips/ar8033.md](chips/ar8033.md).

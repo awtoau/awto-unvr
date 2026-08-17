@@ -36,7 +36,8 @@ make            # -> al_reboot.ko (aarch64, matches the 7.1.8-dirty kernel on wo
 
 ## Deploy + test (woomera)
 
-woomera runs Fedora with sshd (root/`unvr`) at `192.168.25.140`. Either scp or push the
+woomera runs Fedora with sshd (root/`unvr`) on its LAN IP (DHCP lease — find it on the
+box or via the router; it is not the U-Boot `ipaddr`/tftp address). Either scp or push the
 `.ko` over the serial console (base64), then:
 
 ```

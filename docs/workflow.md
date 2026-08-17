@@ -1,7 +1,10 @@
-# Workflow — everything done so far, in order
+# Workflow — cold-start bring-up narrative (2026-08-15)
 
 Reproducible sequence for the UNVR (`ea16`, USB-boot variant) from a cold start.
-Work done 2026-08-15. Each step: what / command / result / gotcha.
+Work done 2026-08-15 — the historical record of the initial bring-up.
+**Current state is [project-status.md](project-status.md)**: the box now runs Fedora 44
+standalone (kernel ports + Fedora + full hardware RE all landed since — see the
+milestones at the end). Each step: what / command / result / gotcha.
 
 Marks follow [sources.md](sources.md): ✅ verified here, 📄 reported elsewhere.
 
@@ -481,7 +484,9 @@ board.serialno=74acb941a811 board.qrid=icvpQD
 **`uname -a`** ✅ — `Linux (none) 4.1.37-ubnt #2 SMP Wed Dec 16 18:18:20 CST 2020
 aarch64 GNU/Linux`
 
-**`ip -4 addr show`** ✅ — `enp0s1` at `192.168.25.140/24`, carrier up.
+**`ip -4 addr show`** ✅ — `enp0s1` at `192.168.25.140/24`, carrier up. (This is the
+vendor-initramfs / U-Boot `ipaddr` tftp context; the later Fedora DHCP lease may differ —
+don't treat `.140` as woomera's current IP.)
 
 **Gotchas**
 
@@ -553,20 +558,23 @@ reports the latter and stars bump it.
 
 ---
 
-## Current state
+## Current state (2026-08-15 snapshot — SUPERSEDED)
 
-| Thing | State |
+Historical snapshot of the first day. Current state: [project-status.md](project-status.md)
+(box runs Fedora 44 standalone; USB removed; MTD dumps taken; kernel ports done).
+
+| Thing | State (as of 2026-08-15) |
 |---|---|
-| Boot USB | Failing but **fully recovered**. Every allocated ext4 block rescued, **0 unrecovered bytes**. Verified by `scripts/verify-rescue-coverage.py` |
+| Boot USB | Failing but **fully recovered**. Every allocated ext4 block rescued, **0 unrecovered bytes**. Verified by `scripts/verify-rescue-coverage.py`. (Later fully backed up + **unplugged**.) |
 | `images/*.img` | 6.2 GB written, sparse, gitignored. Manifest **not yet generated** (`rescue-unvr-usb.py manifest`) |
 | Firmware 5.1.25 | Downloaded, sha256-verified, container fully decoded, all CRCs valid |
 | Kernel / config / initramfs | Extracted to `tmp/sections/`, read |
-| U-Boot | Extracted; netboot path (`bootcmdtftp` + `bootunsign`) identified, **not yet exercised** |
+| U-Boot | Extracted; netboot path (`bootcmdtftp` + `bootunsign`) identified. (Later **exercised**; then custom 6.12/6.18/7.1 kernels netbooted.) |
 | Serial console | Working. CP2102 by-id, 115200 8N1, tio + socket via `./dev.py console` |
-| Device | Powered, reachable on console only. Sits at the initramfs BusyBox shell, `192.168.25.140/24`, ICMP-only |
-| Replacement stick | Selected (SanDisk Ultra, `A20043FE1501C484`), dry run passed, **not yet formatted** |
-| MTD dumps | **None taken.** `scripts/dump-unvr-mtd.py` written but needs SSH, which needs userspace |
-| Git | Repo initialised, **no commits yet** |
+| Device | 2026-08-15: at the initramfs BusyBox shell, ICMP-only. **Now runs Fedora 44 standalone** (NAND kernel + SSD rootfs) — [project-status.md](project-status.md) |
+| Replacement stick | Selected (SanDisk Ultra), dry run passed. (Superseded — USB removed; Fedora rootfs is on the SATA SSD.) |
+| MTD dumps | 2026-08-15 none taken. **Later taken** + identity preserved — [nand-1.3.35.md](nand-1.3.35.md), [nor-boot-chain.md](nor-boot-chain.md) §6. |
+| Git | Repo initialised. (Now under active version control.) |
 
 ## 14. Verify the rescue covered the data that matters
 
@@ -646,3 +654,29 @@ first and second field. Match on that or the parser dies on `?`.
   Numbering, paths and `/dev/boot*` assumptions all need re-checking on the box.
 - linux-alpine-v2 issue #1: AHCI port 2 fails to link up on warm reboot, both
   controllers ✅ — unresolved upstream, and it hits a 4-bay NAS directly.
+
+---
+
+## Since then — milestones (2026-08-16 → 17)
+
+The cold-start narrative above (2026-08-15) is history; the box has moved well past it.
+Live state: [project-status.md](project-status.md). What landed:
+
+- **Netboot proven, then kernel port** — `bootcmdtftp` + `bootunsign` exercised; the
+  stock uImage booted, then **6.12.103 → 6.18.44 LTS → 7.1.8** all netboot-verified
+  full-platform. [linux-71-build.md](linux-71-build.md), [porting-roadmap.md](porting-roadmap.md).
+- **Fedora 44 boots standalone on woomera** — NAND kernel (@`0x1300000`) + SSD rootfs,
+  no host / netboot / UEFI / GRUB / dracut (U-Boot can't read SATA).
+  [fedora-on-ssd.md](fedora-on-ssd.md). #40 closed.
+- **Boot chain fully reversed** — canonical [nor-boot-chain.md](nor-boot-chain.md);
+  [bootloader.md](bootloader.md), [preboot-decompile.md](preboot-decompile.md).
+- **MTD dumps taken + identity preserved** — [nand-1.3.35.md](nand-1.3.35.md),
+  [nor-boot-chain.md](nor-boot-chain.md) §6 (over serial/TFTP, no SSH needed).
+- **Hardware fully catalogued** — [components.md](components.md) (130-photo master BOM),
+  [rps-subsystem.md](rps-subsystem.md) (RPS populated; ttyS2=RPS UART, not BT),
+  [gpio-switches-leds.md](gpio-switches-leds.md); I2C/SPI scan; JTAG-candidate header lead.
+- **`al_reboot` SP805 restart driver** written (untested, #51) —
+  [reboot-driver-handover.md](reboot-driver-handover.md).
+
+The **What's next** list above is largely done or superseded — track live work in
+[project-status.md](project-status.md).

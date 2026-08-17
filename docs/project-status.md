@@ -1,4 +1,4 @@
-# UNVR repurpose — project status (2026-08-16)
+# UNVR repurpose — project status (2026-08-17)
 
 Single-glance current state. Detail lives in the linked docs/issues; this is the map.
 Device: Ubiquiti UNVR → custom Linux/NAS. Annapurna Alpine V2 / AL-324, quad
@@ -6,8 +6,16 @@ Cortex-A57 aarch64, 4 GiB, sysid **0xea16**. Host name for the box: **woomera**.
 
 ## Done (verified on hardware)
 
+- **Fedora 44 aarch64 boots standalone on woomera** — no host, no netboot, no
+  UEFI/GRUB/dracut. Kernel in NAND, rootfs on the SATA SSD.
+  [fedora-on-ssd.md](fedora-on-ssd.md) §PERSISTENT. #40 closed.
+  - U-Boot **can't read SATA** (`scsi init` → 0 devices; no AXI-snoop), so the
+    18.5 MB gzip Fedora uImage lives in NAND: kernel @`0x1300000`, DTB @`0x2800000`
+    (the dead vendor-rootfs region). Vendor kernel @`0x300000` left intact as recovery.
+  - `bootcmd`: `nand read 0x02000000 0x1300000 0x1200000; nand read 0x04078000 0x2800000 0x20000; bootm 0x02000000 - 0x04078000`.
+    Root `root=PARTUUID=…` ext4 on SSD `sda2`. Reversible — vendor NAND kernel untouched.
 - **Boot chain fully reversed** — ROM→S2→al_boot(stage2/3 CVOS HAL)→U-Boot→kernel.
-  [nor-boot-chain.md](nor-boot-chain.md), [preboot-decompile.md](preboot-decompile.md).
+  Canonical: [nor-boot-chain.md](nor-boot-chain.md), [preboot-decompile.md](preboot-decompile.md).
 - **Firmware ladder** to 5.1.25 (vendor). [firmware-5.1.25.md](firmware-5.1.25.md).
 - **Kernel port, 3 versions, all netboot-verified full-platform**:
   6.12.103 → 6.18.44 LTS → **7.1.8 (latest stable)**. Each: 8 internal-PCIe
@@ -15,39 +23,57 @@ Cortex-A57 aarch64, 4 GiB, sysid **0xea16**. Host name for the box: **woomera**.
   crypto, al_dma 4ch, xHCI SuperSpeed. 6.18→7.1 = **zero new API deltas**.
   [linux-71-build.md](linux-71-build.md), [porting-roadmap.md](porting-roadmap.md).
 - **Patch series published** — `kernel-patches/` (6 patches, base 6.18.44, apply
-  clean to 6.12/6.18/7.1). Owner-chosen format.
-- **Tooling**: `scripts/netboot.py` (atomic catch-U-Boot + tftp + bootm, watchdog-safe),
-  `scripts/build-linux-{612,618,71}-ea16.py`, `scripts/build-initramfs-ea16.py`.
+  clean to 6.12/6.18/7.1).
+- **Tooling**: `scripts/netboot.py`, `scripts/flash-nand.py` (standalone-boot flash,
+  verified), `scripts/build-linux-{612,618,71}-ea16.py`,
+  `scripts/build-linux-71-fedora.py`, `scripts/build-fedora-rootfs.py`.
+- **Hardware fully catalogued** (this session):
+  - **Master BOM** — [components.md](components.md): every part/connector/test-point
+    reconciled from a 130-photo sweep (SoC silk = **U2**; `U1` is a separate unresolved QFP).
+  - **RPS/PSE subsystem reversed** — [rps-subsystem.md](rps-subsystem.md): RPS is
+    **populated** on this 4-bay unit (not Pro-only); `ttyS2` = RPS UART via MAX3221
+    (**not Bluetooth**; no BT on board); sense = gpio 33/34.
+  - **GPIO/switch/LED map** — [gpio-switches-leds.md](gpio-switches-leds.md): reset=gpio38,
+    `ulogo_white`=gpio37; gpio 33/34 = RPS (not SW1/SW2 — those are unknown, need a probe).
+  - **I2C/SPI scan** — active `i2c_pld` bus has no INA/ISL power monitor; `i2c_gen`
+    (vendor "bus 11") is **disabled** in the ea16 DTS; unidentified 0x57 device (#62).
+  - **JTAG-candidate header** lead — unpopulated 2-row PTH at the SoC top edge
+    ([components.md](components.md) test-points); needs a macro.
 - **Drive power root-caused** — PCA9575 @0x21 pwren, gpio-hog auto-powers bays.
 - **Security analysis** — exposed secrets, unsigned boot, data remanence (#1,#2).
 
-## In flight
+## In flight / open
 
-- **Fedora aarch64 on the SSD** (#40) — stock Fedora 44, booted by our U-Boot +
-  7.1.8 kernel (no UEFI/GRUB/dracut). Rootfs building on host now.
-  [fedora-on-ssd.md](fedora-on-ssd.md). Then dev work self-hosts on woomera.
-- **System-improvements audit** — kernel-config / perf / thermal / RAID / Fedora-compat.
+- **`al_reboot` SP805 restart driver** — **written, NOT built or tested** (#51).
+  Fixes the Linux `reboot` hang (mainline 7.1 has no AL-324 restart handler); pokes
+  the SP805 watchdog to reset to U-Boot. Manual SP805 reset already validated.
+  [reboot-driver-handover.md](reboot-driver-handover.md). Until proven, reboot hangs
+  → power-cycle.
+- **System-improvements audit** — kernel-config / perf / thermal (#44 al_thermal) /
+  RAID / Fedora-compat. [improvements-audit.md](improvements-audit.md).
 
-## Storage layout (current)
+## Storage layout (current — USB removed, Fedora on SSD)
 
-| Dev* | Disk | Role |
+| Dev | Disk | Role |
 |---|---|---|
-| sda | SanDisk 64 GB USB (vendor USERDEV) | **to be unplugged** → then SSD becomes sda |
-| sdb | Samsung SSD 850 EVO 1 TB (ata3) | **Fedora boot/root** (ESP + 931 GB) |
-| sdc | WD82PURZ 8 TB (ata5) | work store ("unvr-work") |
-| sdd | WD82PURZ 8 TB (ata7) | spare / RAID pair (raw) |
+| sda | Samsung SSD 1 TB (ata3) | **Fedora boot/root** — sda1 100 MB ESP, sda2 931 GB ext4 (`unvr-root`, PARTUUID `dcdc291e-…`) |
+| sdb | WD82PURZ 8 TB | work store / RAID pair |
+| sdc | WD82PURZ 8 TB | work store / RAID pair |
 
-\* naming shifts by one once the USB is removed. Full USB backup: `images/unvr-usb-*.img`.
+Vendor USERDEV USB fully backed up (`images/unvr-usb-*.img`), then unplugged — that
+shifted SSD/HDD from sdb/… down to sda/…. Two 8 TB disks → repurpose plan
+(analyse read-only → wipe → one Linux boot, one work store).
 
 ## Next
 
-1. Deploy Fedora to SSD (#40): unplug USB → enhanced initramfs → format `sda2` →
-   extract rootfs + 7.1.8 modules → U-Boot env `root=/dev/sda2` → saveenv.
-   Verify vendor U-Boot can read SATA (kernel on SSD vs NAND).
-2. Move dev toolchain + git onto woomera; build kernels on-device.
+1. Build + test `al_reboot` (#51) → clean `reboot`; then add to the OOT module list so
+   a NAND reflash carries it.
+2. Move dev toolchain + git onto woomera; build kernels on-device (self-host).
 3. **UEFI/EDK2** as a U-Boot payload (#39) — [uefi.md](uefi.md).
 4. Apply improvements from the audit (kernel config, perf, thermal, overclock #29).
 5. Benchmarks on 7.1 (#41) + network throughput (#42).
+6. Physical chases (macro shots): SoC-top-edge JTAG-candidate header; `U1` (Marvell
+   switch vs ASM1061 bridge); continuity-probe JB4 rail map + SW1/SW2 GPIO.
 
 ## Operational notes (gotchas)
 
@@ -56,7 +82,9 @@ Cortex-A57 aarch64, 4 GiB, sysid **0xea16**. Host name for the box: **woomera**.
   (streaming at a bash prompt triggers tab-completion, not U-Boot capture).
 - **`panic=15`** in bootargs — a console/host drop kills the PID-1 initramfs shell
   → "Attempted to kill init" panic; panic=15 auto-reboots instead of stranding.
-- Console creds (vendor): root:ui (al324 gen). See [credentials.md](credentials.md).
+- **Reboot from Linux hangs** (#51, no restart driver yet) — power-cycle to reboot.
+- Console creds (vendor): root:ui (al324 gen). Fedora root pw `unvr` (CHANGE).
+  See [credentials.md](credentials.md).
 
 ## Issue index (by theme)
 
@@ -64,7 +92,10 @@ Cortex-A57 aarch64, 4 GiB, sysid **0xea16**. Host name for the box: **woomera**.
 - **Boot independence**: #3 (U-Boot decompile), #26 (bootROM), #27/#28 (flash layout / DDR),
   #30 (MTD for UEFI), **#39 (EDK2/UEFI)**.
 - **Porting phases/patches**: #5–#25 (per-subsystem), #31–#35.
-- **Milestones**: #32 (MD RAID), **#40 (Fedora on SSD)**.
-- **Perf/OC/validation**: **#29 (overclock)**, **#41 (7.1 matrix)**, **#42 (network)**.
-- **Chips/datasheets**: #38.
+- **Milestones**: #32 (MD RAID), **#40 (Fedora on SSD — CLOSED)**.
+- **Reboot/reset**: **#51 (reboot hang — al_reboot, in flight)**, #60 (early watchdog),
+  **#47 (reset button — CLOSED)**.
+- **Perf/OC/validation**: **#29 (overclock)**, **#41 (7.1 matrix)**, **#42 (network)**,
+  **#44 (al_thermal)**, #49/#50 (thermal/crypto).
+- **Chips/datasheets**: **#38 (DRAM & SFP identified — CLOSED)**, **#62 (i2c 0x57 device — CLOSED)**.
 - **Security**: #1, #2.

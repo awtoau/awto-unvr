@@ -21,7 +21,7 @@ ground-truth for the mainline port. Mainline-driver mapping table at the
 
 | # | Part | Type | Detail | Evidence |
 |---|---|---|---|---|
-| U1 | **Annapurna Labs AL-324** | SoC | `Device ID = a324`, Alpine V2. Quad Cortex-A57 @ 1.7 GHz, ARMv8-A | ✅ U-Boot: `Device ID = a324` |
+| **U2** | **Annapurna Labs AL-324** | SoC | `Device ID = a324`, Alpine V2. Quad Cortex-A57 @ 1.7 GHz, ARMv8-A. Silk = **U2** (`U1` is a separate unresolved QFP, see [components.md](components.md)) | ✅ U-Boot: `Device ID = a324` |
 | — | — | SoC rev | `EEPROM Revision ID = 39`, `Device Info: v2sil-39-rc1` | ✅ |
 | U? | DRAM | RAM | **4 GiB**. SPD read over I2C at address **0x57** | ✅ `DRAM: 4 GiB`, `SPD I2C Address: 57` |
 | U? | **Macronix MX25U25635F** | SPI-NOR | **32 MiB**, page 256 B, erase 4 KiB, 1.8 V | ✅ `SF: Detected MX25U25635F` |
@@ -112,27 +112,10 @@ unit `@0x29` is unpopulated.
 
 ### Physical chip IDs — board-photo catalog (2026-08-17)
 
-Reconciled from ~40 board macro-photos (`sources/photos/`, gitignored). Markings verbatim.
-
-| Ref | Marking (key line) | Part | Function | Conf |
-|---|---|---|---|---|
-| U2 | `AL32400-1700-A1-E-2BT-8-C` | Annapurna Labs **AL-324** (AL32400) | Main SoC | high |
-| U3/U4 +2 (×4) | `SEC / K4A8G16 / 5WB-BCRC` | Samsung **K4A8G165WB-BCRC** 8 Gb DDR4 ×4 | System DRAM (**4 GB**) | high |
-| U12 | `NQ299` + Micron | Micron **MT29F8G08ABBCAH4** | NAND (1 GB SLC) | high |
-| U8 | `MXIC / MX25U256…` | Macronix **MX25U25635F** | SPI-NOR (32 MB, 1.8 V) — **matches live** | high |
-| U51 | `AR8033-AL1A` + Atheros | Qualcomm Atheros **AR8033** | **1G Ethernet PHY** | high |
-| U20 | `asmedia / ASM1042A` | ASMedia **ASM1042A** | USB 3.0 host (PCIe→USB3) | high |
-| U21 | winbond `25X…` | Winbond **W25X** SPI flash (small) | ASM1042A config/FW | med |
-| U27 | `ADT747?ARQZ` | AD **ADT7475/7476ARQZ** | Fan/thermal PWM @0x2e | ⚠ recheck |
-| U40 | `PW546A` + TI | TI **TCA9546APW** | 4-ch I2C mux @0x71 | high |
-| UB1, U10 | `9575PW2` + NXP | NXP **PCA9575PW** (×2) | 16-bit I2C GPIO exp. (DTS @0x20/21/29) | high |
-| UB20 | Toshiba `VHC / 595` | Toshiba **TC74VHC595** | bay/LED shift reg (drives SGPO) | high |
-| UB22 | (footprint, no chip) | unpopulated 2nd 595 | — | high |
-| U122 | `MA3221C` + TI | TI **MAX3221C** | RS-232 console transceiver | high |
-| U5 | `ATMLH / 64DM` | Atmel **AT24C64** | Identity EEPROM (I2C) | high |
-| U5050 | `S353` (+ MS621 coin cell BAT1) | Seiko **S-35390A** | I2C RTC | high |
-| UB3 | `uP1708P` | uPI **uP1708** | PMIC / buck | med |
-| U49/U14/U44, U5053/54 | `YF04E`/`K04E`/`YE04` + TI | TI single-gate/logic "04" family | glue logic / level-xlate | med |
+**Full parts list moved to the master BOM — [components.md](components.md).** That doc
+reconciles every physical part/connector/test-point from the 130-photo sweep (single
+source; SoC silk = **U2**, `U1` is a separate unresolved QFP). Only the cross-doc
+corrections and open reshoots that came out of it are kept here:
 
 **Resolved opens:** the `27504E` "mystery IC" = a misread of **`YF04E`** (TI SC70
 single-gate logic near U122); **there is no PCA9675** — UB1 and U10 both read
@@ -143,8 +126,8 @@ single-gate logic near U122); **there is no PCA9675** — UB1 and U10 both read
   8031" (AR8031/8033 share PHY ID) — see `docs/chips/ar8033.md` (reconciled).
 - **DRAM = Samsung K4A8G165WB DDR4 ×4** (was guessed Micron MT40A in dram-ddr4.md).
 - **USB host = ASM1042A** (earlier eMMC note said ASM1142).
-- **Fan chip:** photo reads **ADT7476**ARQZ; live binds `adt7475` (same-family
-  driver) — recheck U27 marking (7475 vs 7476).
+- **Fan chip = AD ADT7475ARQZ** (U27, marking `ADT747 5ARQZ` — resolved to 7475 in
+  [components.md](components.md); live binds `adt7475`).
 - **Shift reg = Toshiba TC74VHC595** (≡ SN74HC595 functionally).
 
 **Still needs a reshoot:** the **eMMC (KLM4G1FE3B)** and any **USB-eMMC bridge**
@@ -170,7 +153,8 @@ matte-black QFP **U1** in the SATA area is unread.
 
 | Connector | Detail | Evidence |
 |---|---|---|
-| **UART** | 4-pin header **behind the SFP+ cage, mid-PCB**. Pins: GND, TXD, RXD, 3V3. **Use only the first three — do not connect 3V3.** 115200 8N1, 3.3 V TTL | 📄 pinout from NeccoNeko; ✅ baud/settings confirmed working |
+| **UART (console)** | `ttyS0`/uart0 — 4-pin header **behind the SFP+ cage, mid-PCB**. Pins: GND, TXD, RXD, 3V3. **Use only the first three — do not connect 3V3.** 115200 8N1, **3.3 V TTL** (no RS-232 xcvr). | 📄 NeccoNeko; ✅ confirmed |
+| **UART (RPS)** | `ttyS2`/uart2 — **separate** port, **RS-232** via MAX3221 (`U122`), out on the RPS connector `JB4`. NOT the console; our DTS mislabels it "Bluetooth". Spare RS-232 if RPS unused. See [rps-subsystem.md](rps-subsystem.md). | ✅ rpsd RE |
 | SFP+ | 1 × 10G cage | 📄 |
 | RJ45 | 1 × 1G | 📄 |
 | SATA | 4 × backplane, hot-swap | 📄 |
@@ -431,8 +415,9 @@ models, not in the chip table before:
   (18:36:17). Both log `Unable to find compatible OF node` — driver runs off PCI
   IDs, not DT.
 - Board-info lines identical across all boots (corroborate the chip table):
-  port1 `phy exist Yes, addr 4, mdio 1000 kHz, SFP No, media 1` (RGMII 1G, AR8031
-  `driver Atheros 8031`, `phy[4]:supported 2ef adv 2ef`); port2 `phy No, addr 0,
+  port1 `phy exist Yes, addr 4, mdio 1000 kHz, SFP No, media 1` (RGMII 1G, chip
+  **AR8033**, `driver Atheros 8031` — driver mislabel, same PHY ID;
+  `phy[4]:supported 2ef adv 2ef`); port2 `phy No, addr 0,
   mdio 2500 kHz, SFP Yes, media 5` (10G optic). MAC `74:ac:b9:41:a8:11` (eth0) /
   `…:12` (eth1). RJ45 negotiates `100Mbps/Full` (17:03:28). SFP: `AL_ETH_LM_MODE
   _DISCONNECTED → 10G_OPTIC`, then `link established / wasn't established`

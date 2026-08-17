@@ -3,6 +3,8 @@
 ## U-Boot has working Ethernet and a built-in TFTP boot path ✅
 
 Extracted from `tmp/sections/01-uboot.bin` (1.33 MB, section 1 of the container).
+**Canonical U-Boot env (full default chain, OLD vs NEW deltas): [nor-boot-chain.md](nor-boot-chain.md) §4.**
+The env excerpt below is what the netboot recipe needs.
 
 The bootloader contains the **Annapurna `al_eth` driver**, the `Annapurna` vendor
 string, `eth0`–`eth3`, the `Net:` init banner, PHY handling and
@@ -35,20 +37,14 @@ fail             = echo Failed!; lcd_print "Failed!"
 
 ### Signature verification is skipped by default ✅
 
-```
-bootsign   = bootm $loadaddr_payload#$model@$fit_index      <- FIT, signed
-bootunsign = bootm $loadaddr_payload - $fdtaddr             <- plain, unsigned
-dobootm    = run bootunsign                                 <- DEFAULT
-```
+`dobootm = run bootunsign` ships as the default (`bootunsign = bootm
+$loadaddr_payload - $fdtaddr`, plain/unsigned; the FIT-signed `bootsign` exists but is
+not run). **Consequence: U-Boot boots an arbitrary unsigned `uImage` over TFTP into
+RAM with zero flash writes** — the safest bring-up (no USB, no MTD write, no env change
+beyond volatile `setenv`; power-cycle returns to stock).
 
-Both paths exist and **`dobootm` runs the unsigned one**. This is the shipped
-default, not a bypass. It independently confirms linux-alpine-v2's note that
-U-Boot signature checking is "currently skipped".
-
-**Consequence: U-Boot will boot an arbitrary unsigned `uImage` pulled over TFTP
-into RAM, with zero writes to any flash.** That is the safest possible bring-up
-and it needs no USB stick, no MTD write, no bootloader env change beyond volatile
-`setenv`. Power-cycle returns to stock.
+Full per-stage trust model (OLD vs NEW, FIT/RSA present-but-unused, stage3 RSA capability
+check): **[nor-boot-chain.md](nor-boot-chain.md) §5** (canonical).
 
 Serial console is `ttyS0,115200` per `loadbootargs` ✅.
 
