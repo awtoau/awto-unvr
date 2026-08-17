@@ -15,10 +15,13 @@ GPLv2 copies of the Annapurna DDR HAL exist:
   copy is the same source the vendor already publishes under GPLv2. Use the **kernel-tree
   copy** as the license-clean origin (§License).
 
-The HAL is the "how" (generic training/BIST). The **only missing piece is OUR board's DDR
-config** — the "what" (speed bin, CL/tRCD/tRP, addrmap, ranks, ECC). No populated
-`al_ddr_init_cfg` exists in ANY tree (delroth, kernel HAL, or GPL U-Boot) — grep-confirmed ✅.
-It must come from the **SPD EEPROM @ I²C 0x57** (§Params).
+The HAL is the "how" (generic training/BIST). The **"what" — OUR board's DDR config** (speed
+bin, CL/tRCD/tRP, addrmap, ranks, impedance) — was the only missing piece and is now
+**RESOLVED (#67)**: decoded from the live `0x57` EEPROM through the vendor S2 algorithm →
+full `al_ddr_init_cfg` for ea16 (**DDR4-1866 CL13, 4 GiB, ×16, 1 rank**, impedance from the
+`0xCC` block). See [ddr-s2-parser-analysis.md](ddr-s2-parser-analysis.md) (byte-exact +
+drop-in portable C). Only `al_bootstrap.ddr_pll_freq` (running-point strap, SPD-bounded
+≤1866) remains a live read.
 
 ---
 
@@ -217,6 +220,28 @@ Prereq: Stage-1 chainload U-Boot builds ✅ (`uboot-port-plan.md` §9). DDR work
 - **`AL_DEV_ID` gating:** the source is multi-SoC via `#if AL_DEV_ID`. Fix to
   `AL_DEV_ID_ALPINE_V2` so the V2 struct layout / ZQ-segment counts (2) / MR set compile.
 
+## 6a. Overclock recoverability — test in RAM, commit to NOR last
+
+Same rule as the MTD/NAND work: do whatever we like, because every test is non-persistent
+and the persistent thing is backed up. Layered, weakest failure to worst:
+
+1. **Test in RAM/SRAM, never NOR.** The overclock SPL is loaded + run via the *existing*
+   vendor chain (reboot → vendor U-Boot → load SPL to SRAM → jump). NOR's S2 blob is
+   untouched → a hang/failed-train recovers by **power cycle** (boots normally).
+2. **DDR config is volatile.** PLL + controller/PHY are registers; a power-cycle/SoC reset
+   wipes them to defaults. No "stuck overclocked" state exists.
+3. **Watchdog catches a training hang.** Arm SP805 (`0xfd88c000`) before `al_ddr_init`; a
+   deadlock at an unstable freq → watchdog reset → BootROM → vendor chain.
+4. **Validation gate — never trust un-validated DRAM.** Run memtest + HAL BIST (§5) at the
+   new freq BEFORE handing DRAM to anything. Instability = detectable BIST/memtest failure,
+   not silent corruption. Fail → fall back to known-good, don't proceed.
+5. **NOR touched LAST, reversibly.** Only flash SPL→NOR after many stable RAM-loaded boots.
+   Fallbacks: full NOR image + S2 blob dumped (reflash); AL-324 BootROM UART/USB recovery;
+   external SPI programmer on the MX25U25635F.
+
+Staged progression, each step BIST-gated: **1866 (SPD-validated) → 2133 → 2400** (reclaim the
+K4A8G165WB-BCRC die's marked bin the SPD capped) → push until BIST fails, record the margin.
+
 ## 7. Dependencies to port alongside DDR
 - **PLL/clock** before DDR: vendor `board/annapurna-labs/common/pll_init.c` + `al_pll_init`
   (`preboot FUN_01023ed4`). Sets DDR ref clock → `tmg.ref_clk_freq_mhz` / `ddr_freq`.
@@ -234,11 +259,14 @@ Prereq: Stage-1 chainload U-Boot builds ✅ (`uboot-port-plan.md` §9). DDR work
 - Keep the tri-license header intact on every ported file; record derivation in
   `docs/issues/36-licence-derivation-ledger.md`.
 
-## Concrete first step (DONE this pass) + next
-- **DONE:** `scripts/read-ddr-spd.py` — reads + decodes the DDR4 SPD @ I²C 0x57 over the serial
-  console (probes all buses incl. PCA9546A mux; `i2cdump` → JEDEC SPD5 decode: density, width,
-  ranks, speed bin, CL map, tRCD/tRP/tRAS/tRC/tRFC/tFAW). Output → `tmp/logs/read-ddr-spd.log`.
-  Run on device to replace every 📄/⚠ in §3 with SPD-authoritative values.
-- **NEXT (S0):** port the HAL + a `ddr` command backed by `al_ddr_cfg_init` into `uboot-port/`
-  for the chainloaded U-Boot; dump live MRs/impedance to recover `impedance_ctrl` + actual freq
-  (§Params src 2), and expose BIST/margins for #29. No SPL yet.
+## Concrete status + next
+- **DONE — DDR cfg (#67):** live `0x57` dumped (`scripts/read-ddr-spd.py`, 16-bit path) +
+  decoded through the vendor algorithm ([ddr-s2-parser-analysis.md](ddr-s2-parser-analysis.md))
+  → full ea16 `al_ddr_init_cfg`. The §3 "what" is resolved.
+- **DONE — chainload U-Boot:** builds (`scripts/uboot-build.py`); `CMD_MEMTEST` widened +
+  `CMD_MEMORY` (md/mw) added for live DDR-register inspection.
+- **NEXT (S0):** test the chainload U-Boot on woomera (reboot → vendor U-Boot → load
+  `u-boot.bin` @0x1100000 → `go` → `mtest` on live DRAM). Port the HAL + a `ddr` command
+  backed by `al_ddr_cfg_init` for BIST/margins on the running controller (§5). No SPL yet.
+- **NEXT (S2/S3 — overclock):** SPL from SRAM (§6) using the decoded cfg → `al_ddr_init` at a
+  parametrised freq → memtest/BIST gate (§6a). 1866 known-good first, then step up.

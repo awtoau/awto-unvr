@@ -21,6 +21,12 @@ CONFIG_NO_NET=y
 # CONFIG_DISPLAY_CPUINFO is not set
 CONFIG_SYS_PROMPT="unvr# "
 CONFIG_CMD_CACHE=y
+CONFIG_CMD_MEMORY=y
+# md/mw/mm let us read+poke the DDR controller (0xf0080000) / PHY (0xf0088000)
+# regs live — DDR config inspection + manual timing experiments in chainload.
 CONFIG_CMD_MEMTEST=y
-CONFIG_SYS_MEMTEST_START=0x02000000
-CONFIG_SYS_MEMTEST_END=0x04000000
+CONFIG_SYS_ALT_MEMTEST=y
+# Default memtest window well above U-Boot (TEXT 0x01100000, SP 0x05000000);
+# runtime `mtest <start> <end>` overrides for any bank incl. 0x2_00000000.
+CONFIG_SYS_MEMTEST_START=0x10000000
+CONFIG_SYS_MEMTEST_END=0x40000000
