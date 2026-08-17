@@ -14,7 +14,7 @@ Per-chip docs for the UNVR motherboard (Annapurna Alpine V2 / **AL-324**, sysid
 | **AL-324** (Annapurna Alpine V2) | SoC — 4× Cortex-A57, all integrated I/O | SoC-internal; peripheral I/O 1.8 V | — | [al-324.md](al-324.md) | none (NDA) |
 | **MX25U25635F** (Macronix) | SPI-NOR boot flash (32 MiB) | **1.8 V** | SPI0 `0xfd882000` | [mx25u25635f.md](mx25u25635f.md) | ✅ local v1.5 |
 | **MT29F8G08ABBCAH4** (Micron) | SLC NAND — kernel+rootfs (1024 MiB) | **1.8 V** | al-nand `0xfa100000` | [mt29f8g08abbcah4.md](mt29f8g08abbcah4.md) | ⚠ 1-page card only |
-| **AR8031** (Qualcomm/Atheros) | 1G PHY, RJ45 (enp0s1) | core 1.0 V (int LDO); RGMII I/O 1.5/1.8/2.5 V | MDIO addr 4 (RGMII) | [ar8031.md](ar8031.md) | ✅ local v1.1 |
+| **AR8033** (Qualcomm/Atheros) | 1G PHY, RJ45 (enp0s1); driver reports "8031" (shared PHY ID) | core 1.0 V (int LDO); RGMII I/O 1.5/1.8/2.5 V | MDIO addr 4 (RGMII) | [ar8033.md](ar8033.md) | ✅ photo + live |
 | **ASM1042A** (ASMedia) | USB 3.0 xHCI host (boot USB) | on-module (NDA) | ext-PCIe0, `1b21:1142` | [asm1042a.md](asm1042a.md) | none (NDA) |
 | **PCA9575** ×3 (NXP) | GPIO expanders — HDD pwr/LED | 1.1–3.6 V | I²C 0x20/0x21/**0x29†** | [pca9575.md](pca9575.md) | ⚠ hotlink-blocked |
 | **PCA9546A** (NXP) | 4-ch I²C mux | 1.65–5.5 V (1.8 V domain) | I²C 0x71 | [pca9546a.md](pca9546a.md) | ✅ local (TI 2nd-source) |
@@ -31,7 +31,7 @@ Per-chip docs for the UNVR motherboard (Annapurna Alpine V2 / **AL-324**, sysid
 - **PCA9575 count:** hardware.md lists 3 (0x20/0x21/0x29); only 2 respond — the BOM row here marks 0x29 as phantom.
 - **NOR page/erase:** hardware.md main-silicon table ("page 256 B, erase 4 KiB") matches the MX25U25635F datasheet. ✅ no conflict.
 - **NAND OOB:** hardware.md and datasheet agree page 4096 + **224 B OOB**, erase 256 KiB. ✅
-- **10G port:** hardware.md correctly records it as SFP optic, **not** a PHY (earlier "Marvell 10G" guess retracted there). AR8031 is the 1G port only.
+- **10G port:** hardware.md correctly records it as SFP optic, **not** a PHY (earlier "Marvell 10G" guess retracted there). AR8033 is the 1G port only.
 
 ## Unconfirmed parts (need a physical/host check)
 

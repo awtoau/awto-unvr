@@ -140,7 +140,7 @@ single-gate logic near U122); **there is no PCA9675** — UB1 and U10 both read
 
 **Corrections to prior docs (from this catalog):**
 - **1G PHY:** chip marking = **AR8033** (photo); Linux `at803x` labels it "Atheros
-  8031" (AR8031/8033 share PHY ID) — reconcile `docs/chips/ar8031.md`.
+  8031" (AR8031/8033 share PHY ID) — see `docs/chips/ar8033.md` (reconciled).
 - **DRAM = Samsung K4A8G165WB DDR4 ×4** (was guessed Micron MT40A in dram-ddr4.md).
 - **USB host = ASM1042A** (earlier eMMC note said ASM1142).
 - **Fan chip:** photo reads **ADT7476**ARQZ; live binds `adt7475` (same-family
@@ -159,7 +159,7 @@ matte-black QFP **U1** in the SATA area is unread.
 | Temperature (SoC die) | al-thermal `@fd860a00` node in DTS, but `al_thermal` driver **NOT built** → no die temp / no kernel thermal zones | ⚠ #44 |
 | Fans | 2 × spinning (fan1/fan3 ~4500 RPM; fan2/fan4 absent), ADT7475 PWM. **Auto curve live** via `unvr-fancontrol.service` (temp3, Tmin30/Tmax55°C, hw mode 2). Proper SoC-temp control needs al_thermal (#44) | ✅ Fedora verified |
 | I2C | SPD at 0x57; `Setting bus to 4` at boot — at least 5 buses. adt7475/s35390a on the PCA9546 mux (ch3/ch0) | ✅ |
-| GPIO | `gpio: pin 37 (gpio 37) value is 0` read during boot | ✅ purpose unknown |
+| GPIO 37 | **`ulogo_white` front LED** (gpio4.5, active-low); U-Boot `resetled=gpio clear 37`. See [gpio-switches-leds.md](gpio-switches-leds.md) | ✅ RE-resolved |
 | GPIO expander | PCA9575 @0x20/0x21/0x29 — @0x21 = HDD bay pwren (gpio-hog); pins 4,5,8 known | 📄 linux-alpine-v2 |
 | RTC | S35390A — `rtc_s35390a` **loaded live** on Fedora | ✅ |
 | Watchdog | ARM SP805 — `sp805_wdt` loaded | ✅ |
@@ -207,7 +207,8 @@ matte-black QFP **U1** in the SATA area is unread.
 ## Open questions
 
 - Which physical chip provides the 10G PHY, and its MDIO address on this board.
-- PCA9575 full pin map (only 4, 5, 8 known, from another project).
+- ~~PCA9575 full pin map~~ **RESOLVED** — full map in [gpio-switches-leds.md](gpio-switches-leds.md)
+  (@0x20 SFP-1G-LED + straps; @0x21 bay pwr/present/fault; @0x29 = Pro bays 5–8, unpopulated).
 - What the second, unpopulated EEPROM region is for.
 - The `chike` NAND partition holds a 2095×1692 JPEG with Exif — purpose unknown.
 - Whether `dtt_get_temp[0..2]` maps to the three fan-adjacent sensors.

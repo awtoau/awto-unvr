@@ -7,7 +7,11 @@ watchdog reset (`scripts/reboot-to-uboot.tcl`) — no power-cycle.
 ## Highlights
 
 **Overclock / clock levers (built into vendor U-Boot):**
-- **`cpu_set_speed`** — "Set CPU speed". The direct overclock lever — no modern U-Boot needed for a first test. Pair with the UART-as-clock-probe to verify.
+- **`cpu_set_speed <MHz>`** — sets only the CPU-PLL **channel divider**, so it is
+  **DOWN-clock only** (requires MHz to evenly divide the current VCO; can't exceed
+  it). A runtime **underclock/thermal** lever, **NOT** overclock. **Real overclock =
+  raise the PLL VCO** (`setup_0 @0xfd860d40`, see overclock-and-caps.md). Confirmed
+  in GPL `cmd_cpu_misc.c:do_cpu_set_speed`.
 - `dram_margins` — DDR RDQS/WDQS shmoo via the controller BIST. **DANGEROUS** — crashed U-Boot with a Synchronous Abort before; treat as read-with-care.
 - `ddr_training_results`, `ddr_ecc_stats`, `ddr_ecc_poison` — DDR tuning/diag.
 - `serdes`, `eth_1g_params_set`, `eth_link_training_enable`, `mdio`, `mii` — Ethernet/SerDes tuning (carry into Linux per `eth_1g_params_set` help).
