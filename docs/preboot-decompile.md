@@ -354,9 +354,25 @@ recurs, hits≥4), m=medium (hits 2–3), R=hand-RE.
   fully recover (dispatch by loaded function pointers). Not on the critical path
   for a mainline port (BootROM+S2 stay in mask ROM / factory NOR).
 
+## Superseded by [ddr-config-reverse.md](ddr-config-reverse.md)
+
+- **DDR training is NOT in a "CVOS agent".** It is `al_ddr_init` inside the **S2 /
+  `stage2_loader v2.22.3`** blob (`FUN_f2201a90`, 8,392 B), fed by a JEDEC SPD +
+  impedance record read over I²C. The S2 is not stringless.
+- **`0xfbff4150` is not a mailbox** — it is `struct shared_parameters`
+  {`magic 0x31415926`, `ddr_size` u64} at `AL_PBS_INT_MEM_SRAM_BASE + 0x150`, named in
+  the GPL U-Boot (`board/annapurna-labs/common/shared_params.h`). `0xf0070000` is
+  `AL_NB_SERVICE_BASE`, `0xf0090000` the CCU.
+- **al_boot payload carve is off by 4 bytes.** Real payload = container
+  `0x21004 .. 0x6b6b4` (0x4a6b0 B, u32 length prefix at 0x21000), load 0x01000000. The
+  existing decompile/disassembly were loaded at 0x21000, so **every `FUN_`/`DAT_` VA in
+  this document is 4 too high** (e.g. `al_ddr_cfg_init` = 0x01021f10). The instruction
+  decode itself is valid.
+
 ## Open / not chased
 
-- Exact AL-324 DDR PHY timings (owned by the CVOS agent, not in these blobs).
+- Exact AL-324 DDR PHY timings — recoverable: read the SPD + impedance records off the
+  I²C EEPROM ([issues/39](issues/39-ddr-spd-eeprom-readout.md)).
 - `FUN_01012b08` used as both memcmp and RSA-verify entry — same primitive; not
   split into named sub-ops here.
 - S2 0xf22000fc jumptable (pointer-dispatch) not reconstructed.

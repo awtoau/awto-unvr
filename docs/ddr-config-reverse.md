@@ -1,11 +1,12 @@
 # DDR config reverse — where ea16's DDR "what" actually lives
 
-Goal: recover THIS board's (`sysid 0xea16`, UNVR4) DDR `al_ddr_init_cfg` values that the
-open GPLv2 Annapurna DDR HAL needs. Result below **overturns the prior hypothesis** that
-DDR is trained by a CVOS "agent" fed a config struct from the main core.
+Goal: recover THIS board's (`sysid 0xea16`, UNVR4) `al_ddr_init_cfg` values that the open
+GPLv2 Annapurna DDR HAL needs. Result **overturns the prior hypothesis** that DDR is
+trained by a CVOS "agent" fed a config struct from the main core.
 
-Evidence base: carved blobs + Ghidra decompile in `docs/nor-reference/`, vendor GPL
-u-boot `board/annapurna-labs/`, kernel HAL `urnvr-kernel-4.19.152/.../HAL/ddr/`.
+Evidence base: carved blobs + Ghidra decompile in `docs/nor-reference/`, vendor GPL u-boot
+`board/annapurna-labs/`, kernel HAL `urnvr-kernel-4.19.152/.../HAL/ddr/`.
+Raw offsets/dumps: [tmp/logs/ddr-config-reverse.md](../tmp/logs/ddr-config-reverse.md).
 Marks: ✅ confirmed (byte/disasm evidence) · ⚠ needs live HW read · ✎ correction to prior RE.
 
 ---
@@ -13,240 +14,428 @@ Marks: ✅ confirmed (byte/disasm evidence) · ⚠ needs live HW read · ✎ cor
 ## TL;DR
 
 - **DDR is trained by the S2 first-stage `stage2_loader v2.22.3`** (Thumb-2, link base
-  `0xf2200000`, mask-BootROM-loaded) — the carved
-  `docs/nor-reference/s2-loader-stage2_v2.22.3-25044B.bin`. ✅✎
-- The DDR "what" is **read at RUNTIME**, not stored as a per-board table:
-  - `org`/`tmg`/`addrmap` from the **JEDEC SPD EEPROM over I2C**. ✅
-  - `impedance_ctrl` (ODT/DIC/ROUT) from an **I2C EEPROM override block** (magic `0xCC`);
-    absent → hardcoded stage2 defaults. ✅
-- **No sysid switch selects DDR params.** The only per-sysid branch in the boot chain is
-  DTB selection (al_boot `stg3_early_init`). DDR board-specificity = the physical SPD chip
-  + EEPROM impedance bytes on this board. ✅
-- **No config struct is handed core→agent.** The `0xf0070000`/`0xf0090000` writes are
-  nb-service + CCU fabric config done AFTER DDR is up, not a DDR mailbox. ✎
+  `0xf2200000`, mask-BootROM-loaded) — carved as
+  `docs/nor-reference/s2-loader-stage2_v2.22.3-25044B.bin`. `al_ddr_init` = `FUN_f2201a90`,
+  0xf2201a90..0xf2203b58 = **8,392 B** of inlined Thumb-2. ✅✎
+- The DDR "what" is **read at RUNTIME from an I²C EEPROM**, not stored as a per-board table:
+  - `org`/`tmg`/`addrmap` from a **256-byte JEDEC SPD image**. ✅
+  - `impedance_ctrl` (ODT/ODT_DYN/DIC/PHY ROUT/PHY ODT) from a **20-byte override block**
+    (magic `0xCC`); absent → hardcoded stage2 defaults. ✅
+- **The EEPROM records live at 16-bit offsets** (default base **0x400**) behind a magic-`0xAA`
+  pointer record. ✅ This is why a plain `i2cdump 0x57` looked like garbage — see §2c and
+  [issues/39](issues/39-ddr-spd-eeprom-readout.md).
+- **No sysid switch selects DDR params.** The only per-sysid branch is DTB selection in
+  al_boot. DDR board-specificity = the EEPROM contents + bootstrap straps on this unit. ✅
 - Core→core handoff after training = `struct shared_parameters { u32 magic=0x31415926;
-  u64 ddr_size; }` at SRAM **`0xfbff4150`**. al_boot Stage-3 only *polls* it and reads
-  `ddr_size`; it does not train. ✅
-- **Not recoverable from any NOR blob:** exact SPD contents (CL/tRCD/tRP/tRAS/tRC/tRFC/tFAW/
-  speed-bin) — they live on the separate on-board SPD I2C chip → must be read from HW. ⚠
+  u64 ddr_size; }` at SRAM **`0xfbff4150`**. al_boot Stage-3 only *reads* it. ✅
+- **Still needed from hardware:** 278 bytes of EEPROM (7-byte pointer + 256-byte SPD +
+  22-byte impedance record) and `al_bootstrap.ddr_pll_freq`. ⚠
 
 ---
 
 ## 1. Handoff mechanism — who writes what, where
 
-Two proprietary code blobs inside NOR `preboot` (container `01-uboot.bin`, TOC obj
-`preboot` @0x0, split at img-hdr `0x20000`):
+Two proprietary blobs inside NOR `preboot` (container `tmp/sections/01-uboot.bin`, TOC obj
+`preboot` @0x0):
 
 | blob | ISA / link | role |
 |---|---|---|
-| **S2 stage2_loader v2.22.3** | Thumb-2 @ `0xf2200000` (SRAM) | **the DDR trainer** — SPD read, `al_ddr_init`, impedance |
-| al_boot Stage-3 payload | ARM A32 @ `0x01000000` | downstream: reads `ddr_size`, fabric/PCIe/eth, loads U-Boot |
+| **S2 `stage2_loader v2.22.3`** | Thumb-2 @ `0xf2200000` (SRAM), NOR 0x0, 25,044 B | **the DDR trainer** — bootstrap parse, NB PLL, SPD read, `al_ddr_init`, impedance |
+| al_boot Stage-3 payload | ARM A32 @ `0x01000000`, NOR 0x21004, 305,328 B | downstream: reads `ddr_size`, fabric/PCIe/eth, loads U-Boot |
 
-### Boot order (corrected)
+### Boot order (corrected) ✎
 1. BootROM → **S2 stage2_loader** trains DDR (§2), writes `shared_parameters` to SRAM.
-2. S2 loads al_boot payload (`0x01000000`) and jumps.
-3. al_boot `FUN_01002e90` runs with DRAM **already up**: pokes nb-service/CCU, multi_dt
-   DTB select, fabric bring-up, loads U-Boot. Returns `_DAT_fbff4150 == 0x31415926`
-   (just a validity check of the handoff, not a DDR-ready poke it issued).
+2. S2 loads the al_boot payload to `0x01000000` and jumps.
+3. al_boot `FUN_01002e90` runs with DRAM **already up**: pokes nb-service/CCU, multi_dt DTB
+   select, fabric bring-up, loads U-Boot. Its `_DAT_fbff4150 == 0x31415926` return is a
+   validity check of the handoff, not a DDR-ready poke it issued.
 
-### The shared-params handoff (SRAM), ✅
-- GPL source is explicit: `board/annapurna-labs/common/shared_params.{h,c}`
-  ```c
-  #define SHARED_PARAMS_MN 0x31415926
-  struct shared_parameters { uint32_t magic_num; uint64_t ddr_size; };
-  ptr = (AL_PBS_INT_MEM_SRAM_BASE + PBS_INT_MEM_SHARED_PARAMS_OFFSET);
-  ```
-- Addresses: `AL_PBS_INT_MEM_SRAM_BASE = 0xfbff4000`, `SHARED_PARAMS_OFFSET = 0x150`
-  → struct base **`0xfbff4150`** (kernel `platform/alpine_v2/include/al_hal_iomap.h`).
-- Confirmed in S2 literal pool: `0xfbff4000` (`DAT_f220029c`), `0xfbff4100`
-  (`SRAM_DEV_INFO_ADDRESS`, `DAT_f220039c`), `0xfbff410c` (`DAT_f2200290`).
-- al_boot consumers, ✅:
-  - `FUN_01002f08` → `return _DAT_fbff4150 == 0x31415926;`
-    (`preboot-alboot-decompiled.c:1604`).
-  - `FUN_01002460` (`stg3_board_init`) reads `ddr_size` lo/hi at struct `+8`/`+0xc`
-    (`local_50/uStack_4c`), then loops "clearing physical memory" and the
-    `%s: DDR size not supported!` guard (`preboot-alboot-decompiled.c:1197-1207`).
-  - For ea16, `ddr_size = 4 GiB` (matches live U-Boot `DRAM: 4 GiB`).
+### The shared-params handoff (SRAM) ✅
+GPL source is explicit — `board/annapurna-labs/common/shared_params.{h,c}`:
+```c
+#define SHARED_PARAMS_MN 0x31415926
+struct shared_parameters { uint32_t magic_num; uint64_t ddr_size; };
+ptr = (AL_PBS_INT_MEM_SRAM_BASE + PBS_INT_MEM_SHARED_PARAMS_OFFSET);
+```
+`AL_PBS_INT_MEM_SRAM_BASE = 0xfbff4000`, `SHARED_PARAMS_OFFSET = 0x150` → **`0xfbff4150`**
+(kernel `platform/alpine_v2/include/al_hal_iomap.h`).
 
-### The `0xf0070000` / `0xf0090000` writes are NOT a DDR mailbox, ✎
-- `FUN_01002e90`: `FUN_010274e8(0xf0070000,0)` = nb-service; `FUN_01027508(0xf0090000,1)`
-  = CCU/io_coherency. Both run after the DRAM handoff check path; they configure the SoC
-  fabric, not DDR.
-- al_boot's `al_ddr_cfg_init` (`FUN_01021f14`, args `0xf0070000,0xf0080000,0xf0088000`)
-  only builds a HAL **handle over the already-trained controller** (rev-id switch
-  `0x120120→V2 / 0x250231→V3`, else `Unknown DDR rev`) for the size sanity check. It does
-  **no training** (`preboot-alboot-decompiled.c:14828`). Same call the GPL `cmd_ddr.c`
-  uses for live readback.
+| off | field | writer | reader |
+|---|---|---|---|
+| +0x00 | `magic_num` = 0x31415926 | S2 `FUN_f22044b8` | al_boot `FUN_01002f08` (`preboot-alboot-decompiled.c:1604`), U-Boot `shared_params_valid` |
+| +0x04 | `al_ddr_init` retry count (u8) — vendor extension over the GPL struct ✅ | S2 `FUN_f22003d8` | — |
+| +0x08 | `ddr_size` (u64, bytes) | S2 `FUN_f22003d8` | al_boot `stg3_board_init` (`:1197-1207`), U-Boot |
 
-**Conclusion:** there is no "populate a struct, wake an agent, agent trains DDR" flow from
-the main core. The main core is a consumer. The trainer is S2, and it sources params from
-hardware (SPD + EEPROM), not from a blob table.
+al_boot's fallback when the magic is absent is **0x20000000 (512 MiB)** ✅. For ea16
+`ddr_size = 4 GiB`, matching live U-Boot `DRAM: 4 GiB`.
+
+Neighbouring SRAM regions used by the same chain: `SRAM_DEV_INFO_ADDRESS 0xfbff4100`,
+`SRAM_CPU_RESUME_ADDRESS 0xfbff4120`, `SRAM_AGENT_ADDRESS 0xfbff4200`.
+
+### The `0xf0070000` / `0xf0090000` writes are NOT a DDR mailbox ✎
+- `FUN_01002e90`: `FUN_010274e8(0xf0070000,0)` = `AL_NB_SERVICE_BASE`;
+  `FUN_01027508(0xf0090000,1)` = CCU/io_coherency. SoC fabric config, after DRAM is up.
+- al_boot's `al_ddr_cfg_init` (args `0xf0070000,0xf0080000,0xf0088000`) only builds a HAL
+  **handle over the already-trained controller** (rev switch `0x120120→V2 / 0x250231→V3`,
+  else `Unknown DDR rev`) for the size sanity check — no training
+  (`preboot-alboot-decompiled.c:14828`). Same call the GPL `cmd_ddr.c` uses for readback.
+- The `aarch64_resume_agent` / `agent_wakeup v2.10` strings in al_boot are the **CPU resume**
+  agent (`0xfbff4120`), unrelated to DDR. ✎
+
+**Conclusion:** there is no "populate a struct, wake an agent, agent trains DDR" flow. The
+main core is a consumer. The trainer is S2, and it sources params from hardware.
+
+### al_boot payload carve is off by 4 bytes ✎ ✅
+The S2 reads a u32 length at container **0x21000** (= `0x0004a6b0`) and copies from
+**0x21004** to `0x01000000` (S2 disasm 0xf220021e..0xf2200232). Real payload =
+`01-uboot.bin[0x21004 : 0x6b6b4]`, 305,328 B, + 4 B trailing checksum `a3 34 a4 03`.
+Existing `preboot-alboot-*.{c,asm}` were loaded at 0x21000, so **every `FUN_`/`DAT_` VA in
+them and in `preboot-decompile.md` is 4 too high** (e.g. `al_ddr_cfg_init` = 0x01021f10).
+The instruction decode is still valid — A32 stays 4-byte aligned and PC-relative loads are
+shift-invariant. The old "payload 0x6a6b4" came from the image-header field @+0x28, which is
+length + 0x20000; the extra 128 KiB carved in was the TOC and the `dt` DTB.
 
 ---
 
 ## 2. The trainer: S2 `stage2_loader v2.22.3` — DDR path
 
-`docs/nor-reference/s2-loader-stage2_v2.22.3-25044B.bin` (0x61d4 B, Thumb-2).
-Prior RE (`preboot-decompile.md`) labelled this "stringless S2 SPI loader, NOT
-stage2_loader v2.22.3" — **incorrect** ✎. It carries the banner and the full DDR stack:
+Prior RE (`preboot-decompile.md`) labelled this "stringless S2 SPI loader, NOT stage2_loader
+v2.22.3" — **incorrect** ✎. It carries the banner and the full DDR stack:
 
-Banner + DDR strings (file offsets, from `strings -t x`):
 ```
-0x4892 stage2_loader v2.22.3
-0x48de al_ddr_init(%d) succeeded after %d attempts!
-0x4948 ddr_freq_change_according_to_spd
-0x4969 ddr_init_dimm_params_get
-0x4982 %s: ddr_init_spd_get failed!
-0x49a0 al_ddr_spd_parse failed!
-0x4aea SPD I2C Address: %02x
-0x4b12 ddr_init_read_spd failed!
+0x4892 stage2_loader v2.22.3          0x48de al_ddr_init(%d) succeeded after %d attempts!
+0x4948 ddr_freq_change_according_to_spd  0x4969 ddr_init_dimm_params_get
+0x4982 %s: ddr_init_spd_get failed!    0x49a0 al_ddr_spd_parse failed!
+0x4aea SPD I2C Address: %02x           0x4b12 ddr_init_read_spd failed!
+0x4abc ddr_init_spd_read_early_init_paramsa failed!   0x4aa2 invalid early init info!
 0x4b3f set_dram_impedance_ctrl_from_eeprom
-0x4d8a al_ddr4_spd_parse   0x4d78 al_ddr3_spd_parse   0x4d9c al_ddr_spd_parse
-0x4d59 al_ddr_spd_compute_cas_latency
-0x505b al_ddr_cfg_init     0x5033 al_ddr_mode_register_set
-0x5157 al_ddr_ctrl_dfi_init  0x513c al_ddr_phy_vt_calc_disable
+0x4d78/4d8a/4d9c al_ddr3_spd_parse / al_ddr4_spd_parse / al_ddr_spd_parse
+0x4d59 al_ddr_spd_compute_cas_latency  0x5033 al_ddr_mode_register_set
+0x5157 al_ddr_ctrl_dfi_init            0x513c al_ddr_phy_vt_calc_disable
 0x53a3 Write Leveling Error … 0x54bd DRAM Vref Error … (full training error set)
 ```
 
-### 2a. `org` / `tmg` / `addrmap` ← SPD over I2C, ✅
-Recovered call chain: `ddr_init_read_spd` → `al_ddr_spd_parse` → `al_ddr4_spd_parse`
-→ `al_ddr_spd_compute_cas_latency` + `..compute_cas_write_latency_ddr4`
-→ `ddr_freq_change_according_to_spd` → `al_ddr_init`.
-- I2C SPD address printed at runtime (`SPD I2C Address: %02x`); the DDR4 SPD supplies
-  density, device width, ranks, speed bin, CL support map, tRCD/tRP/tRAS/tRC/tRFC/tFAW.
-- Guards seen in strings: `%s: 4 bit chips not supported`, `%s: invalid DDR device width
-  field`, `DDR clock is faster than the DIMM can support`, `%s: couldn't find supported
-  CAS latency!` — standard JEDEC SPD parse, not board-table lookup.
+Key functions (VA = 0xf2200000 + file offset):
 
-**These exact numbers are NOT in the blob.** They come off the SPD chip. To populate
-`al_ddr_init_cfg.org`/`.tmg`/`.addrmap` for ea16, read the SPD live
-(`scripts/read-ddr-spd.py`). ⚠
+| VA | role |
+|---|---|
+| 0xf2200124 | main — bootstrap/PLL/UART, DDR, TOC load of al_boot |
+| 0xf22002c8 | `al_bootstrap_parse(0xfd8a8000, &bs)` + NB PLL init (0xfd860c00) |
+| 0xf2200360 | `eeprom_read(off, len)` → buf `0xf220606c + off` |
+| **0xf22003d8** | **DDR bring-up orchestrator** |
+| 0xf2200628 | `ddr_freq_change_according_to_spd` — SPD get + PLL retry ladder |
+| 0xf2200816 | addrmap builder (col/bank/bg/row/cs index tables) → cfg+0x44 |
+| 0xf220093c | `ddr_init_spd_get` — early-init record + SPD scan 0x50→0x58 |
+| **0xf2200a58** | **`set_dram_impedance_ctrl_from_eeprom`** |
+| 0xf2200d10 | DRAM-voltage GPIO |
+| 0xf2200dcc | JEDEC CRC-16 |
+| 0xf2201140 / 0xf2200f30 | `al_ddr4_spd_parse` / `al_ddr3_spd_parse` |
+| 0xf22013e8 | `al_ddr_spd_parse` — CRC check + DDR3/DDR4 dispatch |
+| 0xf22018f4 | `al_ddr_cfg_init(nb, ctrl, phy, cfg)` |
+| **0xf2201a90** | **`al_ddr_init(cfg)`**, 8,392 B |
+| 0xf22044d0 | `i2c_eeprom_read(addr, off, len, dst)` — 2-byte offset when off > 0xff |
 
-### 2b. `impedance_ctrl` ← I2C EEPROM override block, ✅ (defaults byte-exact)
-`set_dram_impedance_ctrl_from_eeprom` = `FUN_f2200a58` (`preboot-s2-decompiled.c:864`).
-Builds a default impedance struct, then optionally overrides from an EEPROM block that
-must start with magic `0xCC` (`if (*(buf+0xe) != 0xCC) return;` keeps defaults).
+`al_ddr_init` is retried up to **1000** times; the successful attempt count is stored at
+`0xfbff4154`. ✅
 
-**Hardcoded defaults, rank≥2 path (our board = 2 ranks), byte-exact from decompile:**
-| struct field (stage2 layout, `param_3+off`) | value | likely al_ddr_init_cfg_impedance_ctrl |
+### 2a. `org` / `tmg` / `addrmap` ← JEDEC SPD over I²C ✅
+
+`al_ddr_spd_parse` (0xf22013e8) validates JEDEC CRC-16 over bytes 0..0x7D or 0..0x74
+(selected by bit 7 of byte 0), CRC at 0x7E/0x7F, second block CRC at 0xFE/0xFF over
+0x80..0xFD — then dispatches on byte 2: `0x0B` → DDR3, `0x0C` → DDR4. ✅
+
+Recovered SPD-byte → cfg-field map ✅:
+
+| cfg field | SPD source | S2 evidence |
 |---|---|---|
-| `[0]` | 1 | `dic` |
-| `[1]` | 5 (rank≥2) / 3 | `odt` |
-| `[2]` | 2 (rank≥2) / 0 | `odt_dyn` |
-| `+0x04` | `0x1928` | wr/rd odt or vref pair |
-| `+0x06` | `0x0b0d` | " |
-| `+0x08` | `0x0d0d` | " |
-| `+0x0a` | `0x0707` | " |
-| `+0x0c..+0x1a` | 5,10,5,10,4,8,1,2 | `wr_odt_map[]`/`rd_odt_map[]` |
-| `+0x1c` | `0x0a0a` | phy_rout pair |
-| `+0x1e` | `0x0808` | phy_odt pair |
-| `+0x20` | 1 (0x100 if EEPROM byte`+0xf`==1) | flag |
+| `org.data_width` | byte 13 bits 2:0 | 0=32b, 1=64b, 2=16b (`enum al_ddr_data_width`) |
+| `org.ranks` | `((byte12 >> 3) & 7) + 1`, × dimms | 0xf2201164 `ubfx r1,r1,#3,#3; adds r1,#1` |
+| `org.dimms` | 1 or 2, from the aux-address probe | 0xf2200a00 |
+| `org.rdimm` | byte 3 module_type ∈ mask 0x132 | 0xf22011a4 |
+| `org.udimm_addr_mirroring` | bit0 of byte 0x88 | 0xf22011ac |
+| `org.ecc_is_supported` | `byte13 & 0x18` (bus-width extension) | 0xf22011b6 |
+| `org.ddr_type` | byte 2 (0x0B→0, 0x0C→1) | 0xf2201440 |
+| `org.ddr_device` | byte 12 bits 2:0 (x4 rejected: "4 bit chips not supported") | 0xf220114e `tbb` |
+| `tmg.cl` / `cwl` | CAS support map + JEDEC tables | 0xf2200ed8 / 0xf2200e74 |
+| `tmg.t_*_ps` | MTB/FTB timing bytes | inside `al_ddr4_spd_parse` |
+| `addrmap` | col/bank/bg/row/cid bit counts | 0xf2200816 → cfg+0x44 |
 
-Confidence **medium** on the field mapping (stage2's internal struct layout ≠ kernel HAL
-`al_hal_ddr_init.h` offsets; values are byte-exact, the *names* are inferred). These are
-SoC-family DDR4 defaults, not ea16-unique.
+Guards seen in strings: `%s: invalid DDR device width field`, `DDR clock is faster than the
+DIMM can support.`, `%s: couldn't find supported CAS latency!` — standard JEDEC parse, not
+a board-table lookup.
 
-**EEPROM override decode tables (byte-exact from blob) — stored-value → HAL enum index:**
+`tmg.ref_clk_freq_mhz` and `tmg.ddr_freq` come from the **bootstrap straps**, not SPD ✅:
+`ref_clk_freq_mhz = al_bootstrap.ddr_pll_freq / 1e6`;
+`tCK_ps = 1e9 / (ddr_pll_freq / 1000)` → enum:
+
+| tCK ps | enum | rate |
+|---|---|---|
+| 1875, or no match | 1 | 1066 |
+| 1500 | 2 | 1333 |
+| 1250 | 3 | 1600 |
+| 1090 / 1071 | 4 | 1866 |
+| 937…1069 | 5 | 2133 |
+| 833…936 | 6 | **2400** |
+
+Matches `enum al_ddr_freq` (`al_hal_ddr_init.h:70`) exactly. If the SPD cannot support the
+requested tCK, `ddr_freq_change_according_to_spd` reprograms the NB PLL (0xfd860c00) down the
+ladder — targets 933,333,333 / 800,000,000 / 666,666,666 / 533,333,333 Hz ✅ — and retries.
+The K4A8G165WB-**BCRC** marking is a 2400 speed bin ⚠, which would give tCK 833 ps →
+`AL_DDR_FREQ_2400`; unconfirmed until `ddr_pll_freq` is read live.
+
+### 2b. `impedance_ctrl` ← I²C EEPROM override block ✅ (byte-exact, header-matched)
+
+`set_dram_impedance_ctrl_from_eeprom` = `FUN_f2200a58` (`preboot-s2-decompiled.c:864`),
+called as `FUN_f2200a58(org.dimms, org.ranks, &cfg->impedance_ctrl)`. It writes defaults,
+then overrides from the EEPROM block if `buf[base+0x0e] == 0xCC`.
+
+**Struct layout (cfg+0xb8), header-matched** ✅ — the shipping stage2 was built with
+**1-byte enums** (`-fshort-enums`) and an older HAL (**no `hv_min`/`hv_max`**), giving a
+0x22-byte block that accounts for every observed write:
+
 ```
-DRAM_ODT  (10): (0,0)(2,1)(4,2)(6,3)(8,4)(12,5)(1,6)(5,7)(3,8)(7,9)   → al_ddr_odt
-ODT_DYN    (5): (0,0)(2,1)(4,2)(1,3)(0x99,4)                          → al_ddr_odt_dyn
-DRAM_ROUT  (3): (6,0)(7,1)(5,2)                                       → al_ddr_dic (RZQ6/7/5)
-PHY_ODT   (15): ohms 200,133,100,77,66,56,50,44,40,36,33,30,28,26,25 → al_ddr_phy_odt
-PHY_ROUT  (11): ohms 80,68,60,53,48,44,40,37,34,32,30                 → al_ddr_phy_rout
++0x00 dic            +0x01 odt          +0x02 odt_dyn      +0x03 rtt_park (0 = disabled)
++0x04 host_initial_vref = 0x28 (40)     +0x05 vrefdq = 0x19 (25)
++0x06..07 phy_rout_pu[2] = 13, 11       +0x08..09 phy_rout_pd[2] = 13, 13
++0x0a..0b phy_pu_odt[2] = 7, 7
++0x0c..13 wr_odt_map[4] (u16)           +0x14..1b rd_odt_map[4] (u16)
++0x1c..1d phy_rout[2] = 10 (30 Ω)       +0x1e..1f phy_odt[2] = 8 (40 Ω)
++0x20 dqs_res        +0x21 dqsn_res
 ```
-Error strings gate each: `invalid DRAM ODT/ODT_DYN/ROUT from EEPROM`, `invalid PHY
-ROUT/ODT from EEPROM` (`FUN_f2200a58`). The override block also carries a DRAM-voltage
-GPIO selector (`FUN_f2200d10`: `dram voltage gpio pin out of range`, `spd dram voltage
-support`, 1.25 V check).
 
-**ea16 actual impedance = defaults UNLESS this board's I2C EEPROM carries a `0xCC` block.**
-Unknown from NOR (the impedance EEPROM is a separate I2C device). ⚠ Read live, or read
-back the trained PHY registers (`al_ddr_cfg_init` + PHY IMPD regs) — that's the ground
-truth the vendor programmed.
+Defaults are selected by **`dimms`**, not ranks ✎ (an earlier draft assumed the rank≥2 path):
+
+| | dimms = 1 (**our board** ⚠) | dimms ≥ 2 |
+|---|---|---|
+| `dic` | 1 (`AL_DDR_DIC_RZQ7`) | 1 |
+| `odt` | 3 (`AL_DDR_ODT_RZQ6`) | 5 (`RZQ12`) |
+| `odt_dyn` | 0 (`DIS`) | 2 (`RZQ4`) |
+| `wr_odt_map[4]` | {1, 2, 0, 0} | {5, 10, 5, 10} |
+| `rd_odt_map[4]` | {0, 0, 0, 0} | {4, 8, 1, 2} |
+
+`base+0x0f` selects the DQS termination pair ✅: `==1` → `dqs_res = PULL_DOWN_500OHM`,
+`dqsn_res = PULL_UP_500OHM`; else `dqs_res = PULL_UP_611OHM`, `dqsn_res = PULL_UP_458OHM`.
+(Confirms +0x20/+0x21 against `enum al_ddr_dqs_res` / `al_ddr_dqsn_res`.)
+
+**The 20-byte EEPROM table** at `base+0x10` is indexed
+`idx = (dimms-1)*10 + (ranks/dimms - 1)*5`, 5 bytes per (dimms, ranks-per-dimm) case ✅:
+
+| table byte | cfg field | decode table (S2 addr) | encoding |
+|---|---|---|---|
+| +0 | `odt` | 0xf2204c34, 10 entries | RZQ divider 0,2,4,6,8,12,1,5,3,7 → `AL_DDR_ODT_*` |
+| +1 | `odt_dyn` | 0xf2204c2a, 5 | 0,2,4,1,**0x99 = Hi-Z** → `AL_DDR_ODT_DYN_*` |
+| +2 | `dic` | 0xf2204c48, 3 | RZQ divider 6,7,5 → `AL_DDR_DIC_RZQ6/7/5` |
+| +3 | `phy_odt[0..1]` | 0xf2204c4e, 15 | **ohms** 200,133,100,77,66,56,50,44,40,36,33,30,28,26,25 |
+| +4 | `phy_rout[0..1]` | 0xf2204c6c, 11 | **ohms** 80,68,60,53,48,44,40,37,34,32,30 |
+
+All five tables match `enum al_ddr_odt` / `al_ddr_odt_dyn` / `al_ddr_dic` /
+`al_ddr_phy_odt` / `al_ddr_phy_rout` in the GPL kernel HAL **element-for-element** ✅. The
+EEPROM stores human units — RZQ dividers DRAM-side, ohms PHY-side. Error strings gate each
+(`invalid DRAM ODT/ODT_DYN/ROUT from EEPROM`, `invalid PHY ROUT/ODT from EEPROM`).
+
+**ea16 actual impedance = defaults UNLESS this unit's EEPROM carries the `0xCC` block.** ⚠
+Read it live (§2c) or read back the trained PHY registers.
+
+### 2c. The EEPROM record layout — the actionable finding ✅
+
+Bus: **`i2c-pld`, DesignWare @`0xfd880000` = `AL_I2C_PLD_BASE`, 100 kHz standard mode** ✅
+(S2 i²c cfg struct @0xf2205df8 → IC_CON 0x63; DT `i2c-pld ... clock-frequency = <0x186a0>`).
+This is Linux **`i2c-0`**; the PCA9546 mux at 0x71 hangs off the same bus but the loader
+never touches it. ✎ (an earlier draft said `AL_I2C_GEN_BASE` — wrong; GEN is 0xfd894000).
+
+Device address = `al_bootstrap.i2c_preload_addr` (straps, read from `AL_PBS_REGFILE_BASE`
+0xfd8a8000) ❓ not recoverable offline.
+
+Record base = **0x400** by default, or `DEV_INFO[0x0a] | DEV_INFO[0x0b]<<8` when
+`DEV_INFO[0x00] != 0` ✅ (`SRAM_DEV_INFO_ADDRESS 0xfbff4100`; `DEV_INFO_EARLY_INIT_ADDR_
+LSB/MSB_OFFSET 10/11` in `u-boot/board/annapurna-labs/alpine_ubnt/dev_info_layout.h`).
+Offsets > 0xFF use a **2-byte big-endian** EEPROM pointer (`FUN_f22044d0`).
+
+Four magic-guarded records, relative to that base ✅:
+
+| off | len | magic | content |
+|---|---|---|---|
+| +0x00 | 7 | `0xAA` | `spd_i2c_addr`, `spd_off` (u16 LE), `aux_i2c_addr`, `aux_off` (u16 LE) |
+| +0x0b | 3 | `0xBB` | DRAM-voltage GPIO pin (< 0x38), polarity |
+| +0x0e | 0x16 | `0xCC` | `dqs_res` selector byte, then the 20-byte impedance table |
+| +0x24 | 2 | `0xDD` | UART divisor override |
+
+Then **256 bytes of SPD** from `(spd_i2c_addr, spd_off)`; a 1-byte probe at
+`(aux_i2c_addr, aux_off)` sets `dimms = 1` or `2`. On i²c failure the loader scans
+addresses **0x50 → 0x58**, printing `SPD I2C Address: %02x` per attempt. Our unit prints
+exactly `SPD I2C Address: 57`, so 0x57 came from the `0xAA` record ⚠ (a scan would have
+printed 0x50…0x57 too).
+
+**This explains issue #62:** the SPD sits at a **16-bit offset**; `i2cdump` uses 1-byte
+addressing and read window 0x0000-0x00FF instead. Filed as
+[issues/39](issues/39-ddr-spd-eeprom-readout.md).
 
 ---
 
-## 3. Per-sysid conditioning — NONE for DDR, ✅
+## 3. Per-sysid conditioning — NONE for DDR ✅
 
-- The only sysid switch in the chain is DTB selection: al_boot `stg3_early_init`
-  (`FUN_0100110c`) reads sysid 2 B BE from SPI-NOR `0x1F000C`, `switch` → DTB instance
-  (ea16→0/`dt`, ea20→`dt_pro`, ea21→`dt_ai`, ea1a→`dt_bt`, ea30→`dt_hd`).
-  See `preboot-decompile.md` §multi_dt.
-- S2 DDR path has **no sysid read and no per-board table**; it keys entirely off the SPD
-  chip + EEPROM. So "would another UBNT board get different DDR values?" — yes, but because
-  it has a different SPD/EEPROM soldered, not because the blob picks a row. There is no row
-  to dump.
+- The only sysid switch is DTB selection: al_boot `stg3_early_init` reads sysid 2 B BE from
+  SPI-NOR `0x1F000C`, `switch` → DTB instance (ea16→0/`dt`, ea20→`dt_pro`, ea21→`dt_ai`,
+  ea1a→`dt_bt`, ea30→`dt_hd`). See `preboot-decompile.md` §multi_dt.
+- S2's DDR path has **no sysid read and no per-board table** — it keys entirely off the
+  EEPROM + straps. So "would another UBNT board get different DDR values?" — yes, but
+  because it has different EEPROM bytes, not because the blob picks a row. **There is no
+  row to dump**, for ea16 or any other model.
 
 ---
 
-## 4. Control DTB `dt_hd-NEW-5.1.25.dtb` — no DDR params, ✅
+## 4. Control DTBs — no DDR params ✅
 
-- Decompiled with `dtc`. `dt_hd` = board-cfg id `"alpine_v2_ubnt one nas hd"` (the HD/Pro
-  variant, sysid 0xea30) — NOT our board. Our board is `dt`
-  (`"alpine_v2_ubnt one nas v5.0"`, `tmp/dtb-current/dtb00-*.dts`).
-- **`memory { reg = <0 0 0 0>; }` in every DTB** — DRAM base/size is patched at runtime
-  from `shared_parameters.ddr_size`, never a DTB constant. No `ddr`/`memory-controller`
-  timing node exists in any of the 5 DTBs.
-- `/soc/board-cfg` holds pinctrl/gpio/**serdes**/ethernet/pcie/sgpo — board-specific, but
-  **no DDR/i2c-bus/PLL DDR fields**. (Full ea16 board-cfg captured in
-  `tmp/dtb-current/dtb00-0x081048-26208B.dts:1192-1629`.)
+`dtc` on the DTBs carved by `scripts/carve-dtb.py`:
+
+| TOC obj | sysid | `board-cfg/id` |
+|---|---|---|
+| `dt` | **0xea16 (ours)** | `alpine_v2_ubnt one nas v5.0` |
+| `dt_pro` | 0xea20 | `alpine_v2_ubnt one nas pro v2.0` |
+| `dt_ai` | 0xea21 | `alpine_v2_ubnt one nas ai v3.0` |
+| `dt_bt` | 0xea1a | `alpine_v2_ubnt one nas bt v1.0` |
+| `dt_hd` (5.1.25 fw only, absent from current NOR) | 0xea30 | `alpine_v2_ubnt one nas hd` |
+
+- **`memory { reg = <0 0 0 0>; }` in every DTB** — DRAM base/size is patched at runtime from
+  `shared_parameters.ddr_size`, never a DTB constant.
+- The only DDR-adjacent node is
+  `memory-controller { compatible = "annapurna-labs,alpine-mc"; reg = <0 0xf0080000 0 0x10000>; }`
+  — no timing/ODT/addrmap properties in any DTB.
+- `/soc/board-cfg` holds pinctrl/gpio/serdes/ethernet/pcie/sgpo — board-specific, but no
+  DDR fields. It is consumed by al_boot/U-Boot **after** DRAM is up, so it structurally
+  cannot carry DDR parameters.
 
 ---
 
 ## 5. Other board-specific config found in the handoff
 
-- **SerDes** (ea16, from `dt` board-cfg, byte-exact in DTS): grp0 `pcie_g2x2_pcie_g2x2`
-  100 MHz lanes 0,2; grp1/grp2 `sata` 100 MHz 4-lane (tx override amp=7 units=0x1f
-  post_emph=6 on lanes 1,3); grp3 `10gbe` 156.25 MHz lane0 (tx amp=7 units=0x1f
-  post_emph=7 pre_emph=1); grp4 `skip`. Consumed by al_boot `al_serdes_init`
-  (`dt_based_init_serdes_group`).
-- **Ethernet:** port1 rgmii ext_phy addr 0x4 mdc-mdio 1 MHz; port2 10g-serial (SFP, i2c-id
-  2, serdes grp3 lane0, dac len 3, force-1000base-x); port0/3 disabled.
-- **PCIe:** ep-ports; port0 gen2 x1 enabled, others disabled.
-- **PLL (from GPL `board_cfg.h`):** SB PLL chans ETH0/1 ref-clk 25 MHz; SerDes R2L/L2R
-  100 MHz (commented out — PLL bypass, 100 MHz ref assumed). NB PLL (DDR clock) comes from
-  `al_bootstrap` (PBS regfile), not board_cfg.
-- **I2C:** stage2 SPD read uses `al_i2c_perform_write`/`al_i2c_read` on the general I2C
-  (`AL_I2C_GEN_BASE`); impedance/caps EEPROM on I2C too (distinct from the SPI-NOR sysid
-  read). SPD I2C address printed at runtime, not fixed in blob.
-- **Identity EEPROM (NOR mtd04, our unit):** `UBNT` magic block @0x8000 (sysid `ea16`,
-  Device ID `0b101d`, MAC `74:ac:b9:41:a8:11`), TlvInfo @0xd000 (P/N `113-02832-29`,
-  date 20200524), ssh-rsa host key @0xe000. No DDR fields.
+ea16 `board-cfg`, byte-exact from `tmp/dtb-current/dtb00-0x081048-26208B.dts:1192-1629`:
+
+- **SerDes** — grp0 `pcie_g2x2_pcie_g2x2` 100 MHz lanes 0,2; grp1/grp2 `sata` 100 MHz
+  lanes 0-3; grp3 `10gbe` 156.25 MHz lane 0; grp4 `skip`. All `inv-tx-lanes`,
+  `inv-rx-lanes`, `ssc = disabled`. TX overrides: SATA grp1/grp2 lanes 1,3 →
+  `amp=7 total_driver_units=0x1f post_emph=6 pre_emph=0 slew_rate=0`; 10 GbE grp3 lane0 →
+  `amp=7 total_driver_units=0x1f post_emph=7 pre_emph=1`. Consumed by al_boot
+  `al_serdes_init` / `dt_based_init_serdes_group`.
+- **Ethernet** — port0 disabled; port1 `rgmii`, ext PHY MDIO addr 4, MDC 1.0 MHz,
+  out-of-band autoneg; port2 `auto-detect-auto-speed`, `i2c-id=2`, serdes grp3 lane0,
+  10G-serial DAC enabled len 3, autoneg/link-training/FEC off, `force-1000base-x`, retimer
+  br410 present=disabled at i2c bus 1 addr 0x56 chan B, LED `sfp_1g` on `gpio@20` pin 2;
+  port3 disabled.
+- **PCIe** — `ep-ports`; port0 gen2 x1 enabled, ports 1-3 disabled.
+- **SGPO** — group_mode `two`, sata_mode `active-presence`, clk_setup 0x40 ns, update 1 kHz,
+  clk 1 MHz, blink normal; group0 `mode_mask=0xf0 init_val=0xc0`, group1
+  `stretch_mask=blink_mask=0xff`, groups 2/3 `mode_mask=0xff`, stretch 512 ms.
+- **pinmux** (`pinctrl_init`, phandles resolved) — `if_nand_8`, `if_nand_cs_0`, `if_uart_2`,
+  `if_eth_2_led`, `if_gpio31`, `if_sgpo_clk`, `if_sgpo_ds_2`. `gpio_init` = `<3 1 0>`.
+- **I²C** — `i2c-pld` @0xfd880000 (bootstrap/SPD/mux bus, = Linux `i2c-0`), `i2c-gen`
+  @0xfd894000; both 100 kHz, `i2c-ss-scl-hcnt-raw = 0x855`, `i2c-ss-scl-lcnt-raw = 0xb0b`.
+- **PLL** — GPL `alpine_ubnt/board_cfg.h`: SB PLL chans ETH0/1 ref-clk 25 MHz; SerDes
+  R2L/L2R 100 MHz commented out (PLL bypass, 100 MHz ref assumed). The **NB PLL is the DDR
+  clock** and comes from `al_bootstrap` (PBS regfile 0xfd8a8000), not board_cfg ✅.
+- **DRAM voltage GPIO** ✅ — EEPROM `base+0x0b` record (`0xBB`): GPIO pin + polarity, driven
+  from the SPD module-voltage field (`FUN_f2200d10`; GPIO regs `0xfd897000 + (pin>>3)*0x1000`,
+  with `0xfd897400`/`0xfd897000` for pins 0x28-0x2f). DDR4 here is 1.2 V nominal, so the pin
+  may be unpopulated — the record's presence is the test.
+- **UART divisor override** ✅ — EEPROM `base+0x24` (`0xDD`): byte `base+0x25` used directly
+  instead of deriving from `al_bootstrap.sb_clk_freq`.
+- **DDR frequency is capability-gated** ✅ — al_boot `stg3_early_init` compares the running
+  DDR frequency against a limit from the **RSA-2048-signed EEPROM capabilities blob** and
+  logs `DRAM frequency violation!` (string @al_boot 0x307c0), setting the caps-invalid flag;
+  likewise `CPU frequency violation!`. Directly relevant to the overclock issue (#29):
+  raising the DDR PLL past the signed limit trips this path.
+- **DRAM remap** ✅ — the 3 GiB @0 + 1 GiB @0x200000000 split is
+  `al_addr_map_dram_remap_set` in al_boot (the MMIO hole at 3-4 GiB), not two controllers.
+- **Identity EEPROM (NOR mtd04, our unit)** — `UBNT` magic block @0x8000 (sysid `ea16`,
+  Device ID `0b101d`, MAC `74:ac:b9:41:a8:11`), TlvInfo @0xd000 (P/N `113-02832-29`, date
+  20200524), ssh-rsa host key @0xe000. **No DDR fields** — this is SPI-NOR, a different
+  device from the I²C EEPROM the stage2 reads.
+
+Diffs vs the other three current DTBs are ethernet/PHY only (pro and ai add a second
+`i2c-id=2` port with a 0x18 retimer; ai adds a second PHY at MDIO addr 5). SerDes group
+assignment, PCIe and SGPO are identical across all four.
 
 ---
 
 ## 6. Mapping to `al_ddr_init_cfg` — status per field
 
+Observed top-level offsets in the shipping stage2 ✅: `ddr_cfg` 0x00, `org` 0x10,
+`addrmap` 0x44, `tmg` 0x6c, `impedance_ctrl` 0xb8. `org` has **no `cids`** field (the
+published header puts it between `ranks` and `dimms`), and cfg+0x104 is a pointer to a
+static 0x3c-byte table at 0xf220602c `{1,8,43,1,100,16,15,16,128,15,128,128,15,128,
+0xfd883000, 0xfd884000}` ❓ unidentified. A port using the current header must not assume
+these offsets.
+
 | member | source | ea16 status |
 |---|---|---|
-| `org.data_width` | SPD (4×x16 = 64-bit) | ✅ 64-bit (BOM) / ⚠ confirm from SPD |
-| `org.ranks` | SPD | ⚠ 2 (from live 2-bank split) — SPD authoritative |
-| `org.ddr_type / ddr_device` | SPD | ✅ DDR4 / x16 (marking) |
-| `org.ecc_is_supported` | SPD/BOM | ✅ 0 (no ECC device) |
-| `tmg.*` (CL/CWL/tRCD/tRP/tRAS/tRC/tRFC/tFAW/ddr_freq) | **SPD only** | ⚠ NOT in blob — read SPD live |
-| `addrmap.*` | derived from density/width/ranks | ⚠ derive after SPD |
-| `impedance_ctrl.*` | EEPROM `0xCC` block, else defaults | ✅ defaults byte-exact (§2b) / ⚠ live PHY readback for actual |
-| `misc.training_en` etc | stage2 fixed | ✅ training_en=1 (blob does full training) |
 | `ddr_cfg` (bases/rev) | fixed | ✅ nb `0xf0070000`, ctrl `0xf0080000`, phy `0xf0088000`, rev V2 |
+| `org.data_width` | SPD byte 13 | ⚠ 64-bit expected (4 × x16) — SPD authoritative |
+| `org.ranks` | SPD byte 12 bits 5:3, × dimms | ⚠ read SPD |
+| `org.dimms` | aux-address probe | ⚠ expected 1 (soldered) |
+| `org.ddr_type` / `ddr_device` | SPD bytes 2 / 12 | ✅ DDR4 / x16 (marking) — confirm from SPD |
+| `org.ecc_is_supported` | SPD byte 13 bits 4:3 | ✅ 0 (no ECC device in BOM) |
+| `org.rdimm` / `udimm_addr_mirroring` | SPD bytes 3 / 0x88 | ⚠ read SPD (expect 0 / 0) |
+| `tmg.ref_clk_freq_mhz` / `ddr_freq` | `al_bootstrap.ddr_pll_freq` | ⚠ read straps; 2400 expected |
+| `tmg.cl / cwl / t_*_ps` | **SPD only** | ⚠ NOT in blob — read SPD |
+| `addrmap.*` | derived from density/width/ranks | ⚠ derive after SPD (algorithm recovered, 0xf2200816) |
+| `impedance_ctrl.dic/odt/odt_dyn/phy_rout/phy_odt` | EEPROM `0xCC` block, else defaults | ✅ defaults + decode tables byte-exact (§2b) / ⚠ read the block |
+| `impedance_ctrl.rtt_park / host_initial_vref / vrefdq / phy_rout_pu/pd / phy_pu_odt / wr_odt_map / rd_odt_map` | stage2 hardcoded | ✅ recovered exactly (§2b) |
+| `impedance_ctrl.dqs_res / dqsn_res` | EEPROM `base+0x0f` | ✅ both cases recovered / ⚠ read the byte |
+| `misc.training_en` | stage2 fixed | ✅ 1 (blob does full training) |
 
 ---
 
-## 7. Open / unrecoverable
+## 7. Open / unrecoverable from the blobs
 
-- **Exact SPD image (CL, tRCD, tRP, tRAS, tRC, tRFC, tFAW, speed bin) — the bulk of
-  `tmg`/`org`/`addrmap`.** Lives on the on-board SPD I2C chip, not in any NOR blob. Read
-  live: `scripts/read-ddr-spd.py`. This is the single biggest remaining item.
-- Whether ea16's I2C impedance EEPROM carries a `0xCC` override block (→ actual
-  `impedance_ctrl` ≠ defaults). Read I2C EEPROM, or read back trained PHY IMPD regs.
-- Exact stage2 impedance struct layout (offsets in §2b are observed, not header-matched).
-- No further gain from reversing the DDR *algorithm*: it is the open GPLv2
-  `al_hal_ddr_init_alpine_v2.c` (5608 lines) already in the kernel tree — same "how".
+Everything structural is now known. What remains is **278 bytes of per-unit EEPROM data plus
+two strapping values**:
+
+| unknown | why it matters | how to get it |
+|---|---|---|
+| `al_bootstrap.i2c_preload_addr` | which I²C address holds the records | read PBS regfile 0xfd8a8000 live, or scan 0x50-0x57 for `0xAA` at offset 0x400 |
+| 7-byte record @ EEPROM 0x400 | gives `spd_off` (16-bit!) | `i2ctransfer` on `i2c-0`, 2-byte offset |
+| 256-byte SPD image | `org`, `tmg`, `addrmap` | same, at `(spd_i2c_addr, spd_off)` |
+| 22-byte record @ base+0x0e | `odt`, `odt_dyn`, `dic`, `phy_odt`, `phy_rout`, `dqs_res` | same |
+| `al_bootstrap.ddr_pll_freq` | `tmg.ddr_freq`, `tmg.ref_clk_freq_mhz` | live PBS read, or infer from the trained controller |
+
+`scripts/read-ddr-spd.py` exists but uses 1-byte addressing — it needs the 2-byte-offset path
+and the `0xAA` indirection. Tracked in [issues/39](issues/39-ddr-spd-eeprom-readout.md).
+
+No further gain from reversing the DDR *algorithm*: it is the open GPLv2
+`al_hal_ddr_init_alpine_v2.c` (5608 lines) already in the kernel tree — the same "how".
+
+---
 
 ## 8. Cross-check vs live readback
-- `ddr_size` handoff (4 GiB) matches live `DRAM: 4 GiB` and the 2-bank DT split
-  (3 GiB@0 + 1 GiB@0x200000000, the DRAM-remap hole for the 3–4 GiB MMIO window; single
-  `alpine-mc` @0xf0080000, programmed by `al_addr_map_dram_remap_set`).
-- Recommended: chainload U-Boot → `al_ddr_cfg_init(0xf0070000,0xf0080000,0xf0088000,&h)`
-  → dump MR0..MR6 + PHY IMPD/VREF regs. That readback is authoritative for the actual
-  `impedance_ctrl` and running frequency the vendor stage2 set (§2b confirms the trainer
-  path but not the runtime EEPROM override result).
+
+`ddr_size` handoff (4 GiB) matches live `DRAM: 4 GiB` and the 2-bank DT split (3 GiB@0 +
+1 GiB@0x200000000; single `alpine-mc` @0xf0080000).
+
+Every EEPROM-derived field has an independent live check via
+`al_ddr_cfg_init(0xf0070000, 0xf0080000, 0xf0088000, &cfg)` on the trained controller
+([uboot-ddr-port.md](uboot-ddr-port.md) §5):
+
+| field | live source |
+|---|---|
+| `odt` (RTT_NOM), `dic` | MR1 |
+| `odt_dyn` (RTT_WR), `cwl` | MR2 |
+| `rtt_park` | MR5 |
+| `vrefdq` | MR6 |
+| `cl`, BL | MR0 |
+| `phy_rout` / `phy_odt` / `host_initial_vref` | PUB PHY ZQ + VREF registers |
+| `ranks`, `data_width`, `addrmap` | uMCTL2 MSTR + ADDRMAP registers |
+| `ddr_freq` | DFI/PLL divider |
+| `ddr_size` | `shared_parameters` @0xfbff4150 +0x08 |
+
+Agreement between the EEPROM path and the readback path is the acceptance test before
+committing an `alpine_ddr_cfg.c` for the SPL.
+
+---
+
+## 9. Licence note
+
+Nothing here is copied vendor code. The findings are register/EEPROM layout facts and
+value→enum tables **already present verbatim in the GPLv2 kernel HAL headers**
+(`al_hal_ddr_init.h`, `al_hal_ddr.h`, `al_hal_iomap.h`) and the GPLv2 vendor U-Boot
+(`shared_params.h`, `dev_info_layout.h`). The SPD format is JEDEC. The only novel output is
+the per-unit EEPROM byte map — data about this board, not vendor code.
