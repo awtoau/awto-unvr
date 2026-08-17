@@ -1,222 +1,330 @@
-# UNVR vendor/official access paths — SSH, serial, firmware upload, update channel
+# UNVR vendor/official access paths — research
 
-Scope: Ubiquiti UNVR (Alpine V2 / AL-324, UniFi OS + Protect). Firmware 5.1.25
-(`UNVR4.al324`). Goal: find an easier route to run our own kernel/firmware than
-serial + NAND reflash.
+Six questions on how to get a shell / push our own kernel/firmware to the stock
+UNVR (Alpine V2 / AL-324, UniFi OS + Protect). Method A = web (playwrong), method
+B = reverse the vendor firmware on disk.
 
-Evidence marks: ✅ verified here (read the code/page) · 📄 vendor doc · ❓ inferred.
+Firmware reversed: `sources/UNVR-5.1.25.bin` → squashfs @ 15242534 (zstd),
+`unsquashfs -o 15242534`. Kernel config pulled via
+`scripts/analyse-unvr-firmware.py --extract` → `tmp/sections/kernel.config`
+(IKCFG in-kernel, `CONFIG_IKCONFIG=y`). Firmware extracts are ephemeral (not
+committed). Paths below written `fw:/...` = path inside the extracted rootfs.
 
-Firmware source: `sources/UNVR-5.1.25.bin`, squashfs @ offset 15242534 (zstd),
-extracted read-only to scratch. Paths below are rootfs-relative.
+Evidence marks: ✅ confirmed (read it here) · 〄 inferred · 📄 vendor/community claim.
 
-## TL;DR — the highest-value finding
-
-**The official SSH toggle IS the easy route to a root shell — no serial needed.**
-- UniFi OS ships **OpenSSH `sshd`** (`/usr/sbin/sshd`, 864 KB) enabled at boot, gated
-  by the web-UI toggle **Settings → Control Plane → Console → SSH** ✅.
-- Default console login **`root` / `ui`** (older gen `root`/`ubnt`) 📄✅ — same for
-  every unit, matches the cracked `/etc/shadow`.
-- Toggle backend is `ubnt-systool sshd <true|false>` → `systemctl enable/restart ssh` ✅.
-- With that root shell you do the **UrNVR file-swap** (replace the boot-partition
-  `uImage`, which this gen boots **unsigned**) — bypassing `fwupdate` entirely.
-
-**Neither web-upload nor update-channel MITM helps**, because both funnel through
-`fwupdate`, which enforces an **RSA-SHA1 signature on the whole `.bin` container**
-(`ERROR: Bad FW Image Signature`) ✅. The unsigned-uImage fact lives *below* that
-check (U-Boot), so it only helps once you already have filesystem write access —
-i.e. via the SSH shell, not via the vendor update path.
+Live update API (fetched): the whole update chain is confirmed reachable, see Q3.
 
 ---
 
-## Q1 — SSH / serial session
+## Q1 — SSH / serial shell (official)
 
-### SSH — YES, official, web-UI toggle. Confidence: HIGH ✅📄
+**SSH: YES, official, web-UI toggle.** ✅
 
-- **Enable:** UniFi OS consoles ship SSH **disabled by default**; enable at
-  **Settings → Control Plane → Console → check SSH** 📄
-  (help.ui.com/hc/en-us/articles/204909374 — "UniFi Consoles: SSH is disabled by
-  default. To enable it, navigate to Settings > Control Plane > Console and check
-  SSH.").
-- **Port:** 22 (standard; `sshd_config` has no non-default `Port`) ✅.
-- **User:** always `root` for UniFi Consoles 📄.
-- **Default password:** `root` / `ui` (older gen `root` / `ubnt`) 📄, matches the
-  baked `/etc/shadow` ✅ (see `docs/credentials.md`). After setup/adoption the SSH
-  password is set separately in the UI.
-- **Auth mode** (`etc/ssh/sshd_config`) ✅:
-  - `PermitRootLogin yes`
-  - `PasswordAuthentication no` **but** `ChallengeResponseAuthentication yes` +
-    `UsePAM yes` → password login works via PAM keyboard-interactive, not the
-    plain password path. `ubnt-systool sshd-passwdauth true` flips
-    `PasswordAuthentication` if needed.
-  - `Subsystem sftp /usr/lib/openssh/sftp-server` present → SCP/SFTP works.
-- **Service unit** `lib/systemd/system/ssh.service` ✅: `ExecStart=/usr/sbin/sshd -D`,
+- Vendor doc: SSH is a supported (if discouraged) access method. UniFi **Consoles
+  (UDM Pro / UNVR / CloudKey): SSH disabled by default**; enable at
+  **Settings → Control Plane → Console → check SSH**. Older UI:
+  Settings → System. Username always `root`.
+  Source: help.ui.com/hc/en-us/articles/204909374 (Connecting to UniFi with Debug
+  Tools & SSH) — fetched ✅.
+- **Default creds** (pre-adoption / factory): **`root` / `ui`** (older gen
+  `root`/`ubnt`). Same doc ✅, and matches baked `/etc/shadow` (`credentials.md`).
+- Port 22 (configurable, see Q4). Once adopted, the SSH password is whatever the
+  setup wizard / Control-Plane panel set; a random one if unset.
+- **Simple Mode alternative — "Debug" console**: UniFi Network device panel →
+  Settings → bottom → Debug opens a browser terminal to the device without SSH.
+  Same doc ✅. (Network devices, not the NVR host shell.)
+
+Firmware side (method B) confirms it is a **full OpenSSH server**, not a stub:
+
+- `fw:/usr/sbin/sshd` — OpenSSH 864 KB ✅.
+- `fw:/lib/systemd/system/ssh.service` ✅ — `ExecStart=/usr/sbin/sshd -D`,
   `WantedBy=multi-user.target`, gated by
-  `ConditionPathExists=!/etc/ssh/sshd_not_to_be_run`.
-- Community-confirmed working on UNVR (e.g. unifi-common install over UNVR UniFi OS
-  4.3.6, `sources.md` §6).
+  `ConditionPathExists=!/etc/ssh/sshd_not_to_be_run`. Symlinked
+  `fw:/etc/systemd/system/multi-user.target.wants/ssh.service` → enabled in image,
+  but the runtime state is driven by the toggle (Q4), which does
+  `systemctl enable/disable ssh`.
+- `fw:/etc/ssh/sshd_config` ✅: `PermitRootLogin yes`, `PasswordAuthentication no`
+  **but** `ChallengeResponseAuthentication yes` + `UsePAM yes` → root logs in via
+  **PAM keyboard-interactive** (password prompt still works). `sshd_config.d/`
+  empty; the toggle rewrites `PasswordAuthentication` when needed (Q4).
 
-**Use it:** enable SSH in the UI, `ssh root@<unvr-ip>`, password `ui` (fresh) or the
-UI-set password. That is a full root shell.
+**Serial console: YES.** 📄/✅ (already established in this project)
 
-### Serial console — YES, documented. Confidence: HIGH 📄✅
+- UNVR: 4-pin header behind the SFP+ cage, mid-PCB; GND/TXD/RXD (ignore 3V3),
+  **115200 8N1**, 3.3 V TTL. UNVR Pro: near USP-RPS connector. (`sources.md` §8,
+  `credentials.md`.)
+- Login `root`/`ui` (al324 gen). Recovery-mode serial/telnet `root`/`ubnt`.
 
-- UNVR: 4-pin header behind the SFP+ cage, mid-PCB. GND/TXD/RXD (ignore 3V3),
-  **115200 8N1**, 3.3 V TTL 📄 (`docs/sources.md` §8, `docs/hardware.md`).
-- UNVR Pro: 4-pin near the USP-RPS / DC Power Backup connector 📄.
-- Login same as SSH: `root` / `ui`. Recovery mode (hold reset ~10 s): telnet/serial
-  `root` / `ubnt` 📄✅.
+**Confidence: high.** SSH is the intended official host shell; enable in web UI,
+log in as root. No serial teardown needed once enabled.
 
 ---
 
-## Q2 — Manual firmware upload via the web UI
+## Q2 — Upload firmware via the web interface
 
-### YES, but signature-gated. Confidence: HIGH ✅📄
+**Mechanism exists, but it is a signed `.bin` and the offline-upload UI is not
+exposed for the NVR the way it is for adopted network devices.** ✅
 
-**Web-UI paths (vendor):**
-- **Device panel URL paste** 📄 (help.ui.com/hc/en-us/articles/204910064): paste a
-  `community.ui.com/releases` firmware link into the address bar in the device
-  Settings panel; the console fetches + applies it.
-- **Network cache** 📄: cache the update in the Network app, then "Update Available".
+Backend chain (method B), all in `fw:/usr/share/unifi-core/app/service.js`
+(Node app, minified) + `fw:/sbin/ubnt-systool` (bash) ✅:
 
-**Backend endpoint** — `unifi-core` (Node app,
-`usr/share/unifi-core/app/service.js`) ✅:
-- Route: **`POST /firmware/update`** (and `GET /firmware/update` for status), plus
-  a `consoleGroups/firmware` variant. Registered as
-  `Jr.post("/firmware/update",ge(4),Kne)` — `ge(4)` is a role/permission gate
-  (owner/admin) ✅.
-- Uploaded/downloaded image is written to
-  **`/data/unifi-core/firmware/fwupdate.bin`** (const `GD="fwupdate.bin"`,
-  `oa.join("unifi-core","firmware")`) ✅. Config `firmware.internalDir:
-  /data/unifi-core/firmware`, `externalDir: /srv/unifi-core/firmware`
-  (`app/config/default.yaml`) ✅.
-- `unifi-core` then invokes the same updater as CLI: `ubnt-systool fwupdate <file>`.
+- Firmware image path constants: `GD="fwupdate.bin"`, internal
+  `/data/unifi-core/firmware/fwupdate.bin`, external
+  `/srv/unifi-core/firmware/fwupdate.bin`, console-group copy
+  `/data/unifi-core/consoleGroup/fwupdate.bin`; generic upload dir
+  `/data/unifi-core/uploads`. (`service.js` `firmware.internalDir/externalDir` in
+  `config/default.yaml` ✅.)
+- nginx exposes `location ~* /api/consoleGroups/(backup|firmware)$` →
+  `uos_api_backend` (`fw:/usr/share/unifi-core/http/site-shadow.conf` ✅) — the
+  console-group firmware push endpoint (X-Group-Token auth). This is a
+  cloud/group-driven firmware channel, not a plain "upload my .bin" form.
+- Apply path: unifi-core → **`ubnt-systool fwupdate <file|url>`** ✅. That handler
+  (`do_fwupdate`, `ubnt-systool` L1312) ✅:
+  1. accepts a **local file OR a URL** (wget/curl download);
+  2. `fwinfo -k` sanity, then on UNVR **`ubntnas system upgrade <file> -f
+     --no-reboot`** (else fallback `fwupdate -c` + `fwextract` + `fw_move` to
+     `/boot/fwupdate.bin`);
+  3. reboots to apply.
 
-**File format + signature check (the blocker)** ✅ — from `sbin/fwupdate` strings and
-`sbin/ubnt-systool` `do_fwupdate()`:
-- Container = Ubiquiti multi-part `.bin` (magic-tagged parts; `DEBUG: Part magic`).
-- Verify chain: `ubnt-systool fwupdate` → `fwinfo -k` (parse/verify) → `ubntnas
-  system upgrade` (or `fwupdate -c`). `fwupdate` does
-  **`EVP_VerifyInit`/`EVP_VerifyUpdate`/`EVP_VerifyFinal` with `EVP_sha1` against an
-  embedded RSA `-----BEGIN PUBLIC KEY-----`** → **RSA-SHA1 signature over each part**.
-  On mismatch: **`ERROR: Bad FW Image Signature`**, abort. On pass it writes
-  `/dev/mtdblock%d` (incl. uboot).
-- **No signing key leaked**; we cannot forge a valid container. So a
-  hand-built/custom `.bin` uploaded via the web UI is **rejected at `fwinfo`/`fwupdate`**.
+**Signature check — this is the blocker.** ✅
 
-**CLI equivalents (need the SSH shell from Q1)** 📄:
-- `ubnt-systool fwupdate https://fw-download.ubnt.com/.../<img>.bin`
-- or `scp file → /tmp/fwupdate.bin; ubnt-systool fwupdate /tmp/fwupdate.bin`
-- Same signature check applies — only genuine Ubiquiti images pass.
+- `fw:/sbin/fwupdate` strings ✅: `EVP_sha1`, `EVP_VerifyFinal`,
+  `ERROR: Bad FW Image Signature`, `-s RSA public Key file`, writes
+  `/dev/mtdblock%d` (incl. uboot). → **RSA + SHA1 signature over the UBNT
+  container, verified before flashing.** A modified/unsigned `.bin` is rejected.
+- So a web-upload of a *custom* image does not boot: format = UBNT container
+  (`analyse-unvr-firmware.py`), and it must carry a valid Ubiquiti RSA signature
+  we do not have. No signing key leaked (prior RE).
 
-**Verdict for our goal:** web-upload is NOT an easier custom-kernel route. It only
-accepts signed vendor images. The escape hatch is *below* fwupdate (unsigned uImage,
-reached from a root shell), not the upload endpoint.
+**Payoff for us:** the web/UI upload is **not** an easier route to custom
+code — the signature gate is the same one U-Boot/`fwupdate` enforce. The
+unsigned-uImage fact (this gen boots unsigned kernels from `/boot`) does **not**
+help here, because `fwupdate`/`ubntnas` verify the *container* signature before
+they ever write the kernel partition. Bypass is at the `/dev/mtd` layer instead
+(see Q5), not the upload form.
+
+**Confidence: high** on the chain + signature. **Medium** on "no offline-upload
+button in the NVR UI" (backend supports file input; whether the shipped UI
+surfaces a file picker for the console host is not UI-confirmed here).
 
 ---
 
 ## Q3 — Automatic-update firmware download
 
-### Confirmed + expanded. Confidence: HIGH ✅
+**Confirmed end-to-end, live.** ✅
 
-**Update-check API** — from `service.js` + `default.yaml` ✅:
-- Base host (prod): **`https://fw-update.ubnt.com`** (`cloud.prd.fwUpdateUrl`).
-  Dev/stg: `dev-fw-update.ubnt.com` / `stg-fw-update.ubnt.com`.
-- Query: **`GET {fwUpdateUrl}/api/firmware-latest?product=<p>&channel=<c>&platform=<o>`**
-  — code: `n=cloud[E.cloudEnv].fwUpdateUrl; s=pD("/api/firmware-latest",{product,channel,platform})`.
-- `channel: release` default (`default.yaml` `firmware.channel`). Platform for us =
-  `unvr`. Matches the known
-  `https://fw-update.ui.com/api/firmware-latest?filter=eq~~platform~~unvr` (the
-  `.ui.com` host + `filter=` form is the public/CDN variant of the same API).
-- Response schema: JSON list of `{version, channel, platform, sizeBytes, sha256,
-  <cdn download url>}` — CDN link points at **`https://fw-download.ubnt.com/data/...`**
-  (per vendor doc example) 📄.
-- Related cloud config also hits `config.ubnt.com/cloudAccessConfig.json`,
-  `static.ui.com/fingerprint/...` (device DB), none firmware-signing-relevant ✅.
+Update-check (from `service.js` ✅):
+```
+GET {fwUpdateUrl}/api/firmware-latest?filter=eq~~product~~<product>
+                                     &filter=eq~~platform~~<platform>
+                                     &filter=eq~~channel~~<channel>
+```
+- `fwUpdateUrl = https://fw-update.ubnt.com` (prod; stg/dev variants
+  `stg-fw-update`/`dev-fw-update`). `config/default.yaml` ✅.
+- params built by `pD("/api/firmware-latest",{product,channel,platform})`,
+  `Nf=(k,v)=>filter=eq~~${k}~~${v}` ✅. `product` = `unifi-nvr`
+  (`firmware.product`, default `unifi-firmware`), `platform` = `UNVR`,
+  `channel` = `release` (or beta/etc).
+- Optional `Authorization` header = cloud token (`gd()`), added only if a cloud
+  session exists; the check works unauthenticated.
 
-**Authentication:** the update-check is an unauthenticated GET over HTTPS (public
-API; the same URL works from a browser). Device identity/entitlement is not required
-to *learn* the latest version.
+Live response (playwrong-fetched
+`https://fw-update.ubnt.com/api/firmware-latest?filter=eq~~product~~unifi-nvr&filter=eq~~platform~~UNVR&filter=eq~~channel~~release`) ✅:
+```json
+{"_embedded":{"firmware":[{"channel":"release","file_size":786253430,
+ "md5":"3f661a852b6fb70946e2a94712df6923",
+ "sha256_checksum":"74f2833356e832bd97f59bb3686eaedaf704335631b5daabedfce4d30bb222fc",
+ "platform":"UNVR","product":"unifi-nvr",
+ "tags":{"ubnt_version":"UNVR4.al324.v5.1.25.84c48e7.260710.1602"},
+ "version":"v5.1.25+84c48e7",
+ "_links":{"data":{"href":
+   "https://fw-download.ubnt.com/data/unifi-nvr/44dc-UNVR-5.1.25-4d75bc90-....bin"}}}]}}
+```
+- **Download host/URL: `https://fw-download.ubnt.com/data/unifi-nvr/<hash>-UNVR-<ver>-<uuid>.bin`** ✅ (matches the file already in `sources/`).
+- Response carries `md5` + `sha256_checksum` (integrity) and the exact
+  `ubnt_version` string.
+- Target-version fetch: `GET {fwUpdateUrl}/api/firmware?filter=…product/platform/version/probability` (`service.js` `ws()`) ✅.
 
-**Is it signature-verified? YES — at the device, not the transport** ✅:
-- Transport is HTTPS to `fw-update.ubnt.com` / `fw-download.ubnt.com` (TLS cert
-  validation applies).
-- Even if you defeat TLS (own CA on the box, DNS/redirect on-LAN), the downloaded
-  image still passes through `fwupdate` → **RSA-SHA1 container signature check**
-  (Q2). A custom image fails `Bad FW Image Signature`.
+**Can an on-LAN MITM/redirect serve a custom image? NO.** ✅
 
-**Can an on-LAN MITM/redirect serve a custom image?**
-- To serve a *different genuine Ubiquiti image* (e.g. force a specific/older signed
-  version): **plausible** — redirect `fw-download.ubnt.com` to your host serving a
-  real signed `.bin`; it will verify and flash. Useful only for
-  downgrade/version-pinning, not custom code.
-- To serve a *custom/unsigned image*: **NO** — blocked by the RSA-SHA1 check.
+- Transport is HTTPS to `fw-update.ubnt.com` / `fw-download.ubnt.com` (TLS; a
+  transparent redirect needs a trusted cert). Even granting a redirect, the
+  downloaded `.bin` is **RSA+SHA1-signed** and `fwupdate`/`ubntnas` verify it
+  (Q2) → "Bad FW Image Signature". The API's `sha256_checksum` is a second gate.
+- So MITM of the update channel is not a custom-boot path. Its only use would be
+  pinning/holding a *legitimate* signed image.
 
-**Verdict:** update-channel MITM is not a custom-firmware route. Signature is
-enforced on-device regardless of transport.
-
----
-
-## Q4 — Vendor toggle to enable telnet / ssh / debug shell
-
-### SSH: YES — first-class vendor toggle. Confidence: HIGH ✅
-
-- **`ubnt-systool sshd <true|false>`** (`sbin/ubnt-systool`, `do_sshd()`) ✅:
-  - enable → `systemctl enable ssh; systemctl --no-block restart ssh`
-  - disable → `systemctl disable ssh; kill ssh; terminate live sshd sessions`
-- Companion subcommands ✅: `sshd-authkeys [file]` (install `authorized_keys`),
-  `sshd-passwdauth [true|false]` (flip `PasswordAuthentication`),
-  `sshd-port [n]` (change port, validated by `sshd -t`).
-- The web-UI SSH checkbox (Q1) and `unifi-core` call exactly this. So the "cloud
-  portal / Protect UI SSH setting" == `ubnt-systool sshd true` == root shell.
-- **This is the single highest-value access path**: root without the serial console.
-
-### Debug console (UI) 📄
-- "Simple Mode: Debug Console" — Settings → device → Debug — an in-app shell to the
-  device, no SSH needed (help.ui.com/204909374). Also a root-capable shell via the UI.
-
-### Telnet / dropbear / adb: NO general-purpose shell in the running OS ✅
-- No `telnetd`, `dropbear`, or `adb` binary in the rootfs ✅ (only `sbin/fwupdate`,
-  OpenSSH). `debug-shell.service` exists (stock systemd, early root shell on
-  `/dev/tty9`) but is not enabled and needs local TTY access.
-- **Recovery mode** (hold reset ~10 s at power-on) exposes **telnet `ubnt:ubnt`** on
-  a separate SPI-NOR recovery kernel 📄✅ — a distinct, documented factory/recovery
-  path, not a runtime toggle.
-
-### No engineering/factory runtime backdoor found ✅
-- Second UID-0 account `ui` is **locked** (`ui:!`) — not a login (prior RE).
-- No hidden env flag beyond the `ubnt-systool sshd`/`sshd-*` family and the
-  `sshd_not_to_be_run` condition file.
+**Confidence: high** (API fetched live; chain read in binary).
 
 ---
 
-## Synthesis — easiest route to our own kernel
+## Q4 — Vendor toggle to enable TELNET / SSH / debug shell
 
-1. **Enable SSH** in the UI (or `ubnt-systool sshd true`) → `ssh root@unvr` (`ui`).
-   No serial, no disassembly. HIGH confidence this works on a booting stock unit.
-2. From that shell, do the **UrNVR file-swap**: back up `/dev/mtd*` + boot device,
-   mount the boot partition, replace `uImage` with our unsigned image (this gen
-   boots unsigned — U-Boot verification is skipped), keep the original beside it.
-   **Does not touch `fwupdate`, so the RSA-SHA1 container signature is irrelevant.**
-3. `fwupdate` / web-upload / update-MITM are all dead ends for *custom* code — all
-   enforce the container signature. They only serve genuine signed Ubiquiti images.
+**SSH: single vendor toggle, no serial needed.** ✅ — highest-value Q1/Q4 result.
 
-Open/untested (needs a live box; ours has a failing USB):
-- Whether the boot partition is mountable rw on UniFi OS 4.x/5.x from the SSH shell.
-- Whether any block-write-protection module (UDM-Pro-only elsewhere) applies to UNVR
-  (no evidence it does).
+- The toggle is **`ubnt-systool sshd <true|false>`** (`fw:/sbin/ubnt-systool`
+  `do_sshd`, L854) ✅:
+  ```
+  enable : systemctl enable ssh ; systemctl --no-block restart ssh
+  disable: systemctl disable ssh ; systemctl kill ssh ; terminate ssh sessions
+  status : systemctl -q is-enabled ssh
+  ```
+- unifi-core drives it: `fd(e)` → `Q("ubnt-systool",["sshd",String(e)])`; state
+  read from `ucore/system-data.json` (`sshEnabled` + `hashedSshPassword`), gated
+  by `pC.ssh` capability + a cloud **SSH agreement** (`agreementAcceptedAt`) and
+  applied on boot by `KXe()` (`service.js` ✅).
+- Password set via **`ubnt-systool sshpasswd set <crypt>`** →
+  `echo "root:<hash>" | chpasswd -e` (L1919) ✅. Get = reads root line from
+  `/etc/shadow`.
+- Related vendor sub-toggles (all in `ubnt-systool`) ✅:
+  `sshd-port <n>` (rewrites `Port` in sshd_config), `sshd-passwdauth
+  <true|false>` (rewrites `PasswordAuthentication`), `sshd-authkeys [file]`
+  (installs `/root/.ssh/authorized_keys`). → key-based root login is a supported
+  path.
 
-## Evidence index (firmware paths, rootfs-relative)
-- `usr/sbin/sshd` (OpenSSH), `etc/ssh/sshd_config`, `lib/systemd/system/ssh.service`
-- `sbin/ubnt-systool` — `do_sshd()` L854, `do_fwupdate()` L1312, `sshd-*` subcmds L26-29
-- `sbin/fwupdate` — RSA `BEGIN PUBLIC KEY` / `EVP_sha1` / `EVP_VerifyFinal` /
-  `ERROR: Bad FW Image Signature` / `/dev/mtdblock%d`
-- `sbin/fwinfo`, `usr/bin/ubntnas` (`system upgrade`)
-- `usr/share/unifi-core/app/service.js` — `POST /firmware/update` (`ge(4)`),
-  `fwupdate.bin`, `firmware-latest` query builder
-- `usr/share/unifi-core/app/config/default.yaml` — `cloud.prd.fwUpdateUrl`,
-  `firmware.internalDir/externalDir/channel`
+**So from any root context you can just `ubnt-systool sshd true` (or plain
+`systemctl enable --now ssh`) to get network root SSH.** The web toggle does
+exactly this.
 
-## Web sources
-- help.ui.com/hc/en-us/articles/204909374 — SSH enable location + default creds ✅
-- help.ui.com/hc/en-us/articles/204910064 — manual/advanced update (URL paste, SSH
-  `ubnt-systool fwupdate`, `fw-download.ubnt.com` example) ✅
+**Telnet: not a vendor service, but the applet is on the box.** ✅
+
+- No `telnetd`/`in.telnetd` systemd unit; not enabled. But
+  `fw:/bin/busybox` includes the **`telnetd` and `telnet` applets** ✅ — a root
+  shell can `busybox telnetd -l /bin/login -p <port>` manually. Not gated by
+  anything but root (DAC); no SELinux/lockdown (Q5).
+- Recovery mode (SPI-NOR `mtd5`, hold reset ~10 s) exposes **telnet `root`/`ubnt`**
+  📄 — a separate vendor debug path that survives a bad `/boot` uImage.
+
+**Debug shell:** `fw:/lib/systemd/system/debug-shell.service` exists (systemd's
+`/dev/tty9` root bash) but is not wired into a target — enable-able from root
+only ✅.
+
+No engineering/factory "unlock" flag beyond the above was found; there is a
+second UID-0 account `ui` but it is **locked** (`ui:!` in `/etc/shadow`) ✅, and
+root's hash is `$5$…` (SHA256 crypt) ✅ — not the enable path.
+
+**Confidence: high.** The SSH toggle is the single best find: network root shell
+with no console teardown.
+
+---
+
+## Q5 — Direct hardware access from userspace
+
+**Very open. From a root shell the SoC is wide open — this is the real bypass of
+the signed-update path.** ✅ All from `tmp/sections/kernel.config` (this image's
+own `CONFIG_IKCONFIG`) unless noted.
+
+- **/dev/mem: unrestricted MMIO.** `CONFIG_DEVMEM=y` **and
+  `# CONFIG_STRICT_DEVMEM is not set`** ✅ → `/dev/mem` maps arbitrary physical
+  addresses incl. SoC registers (clock/PLL/pinmux 0xf00xxxxx, DBGEN
+  0xf0070008, thermal, 0xfd8xxxxx). **`busybox devmem` applet present**
+  (`fw:/bin/busybox`, strings `/dev/mem` `devmem`) ✅. → arbitrary MMIO peek/poke
+  from a shell, no driver. Gate = **root only** (no STRICT_DEVMEM, no SELinux, no
+  lockdown).
+- **MTD → userspace NAND/NOR reflash without U-Boot.** `CONFIG_MTD=y`,
+  `MTD_BLOCK=y`, `MTD_SPI_NOR=y`, `MTD_NAND=m` ✅. Tools present:
+  `fw:/usr/sbin/{flashcp,nandwrite,nanddump,flash_erase,flash_eraseall,mtd_debug,mtdinfo}`
+  ✅. → **write `/dev/mtdN` (kernel, uboot, recovery) directly from a shell**,
+  bypassing the RSA-signed `fwupdate`/`ubntnas` container check entirely. This is
+  the cleanest custom-image route given a root shell: `flashcp`/`nandwrite` our
+  own uImage/uboot. (Dump first — prior RE and `sources.md` §12.)
+- **Raw I2C.** `CONFIG_I2C_CHARDEV=y` → `/dev/i2c-*` ✅. `busybox`
+  `i2cget/i2cset/i2cdump/i2cdetect` present ✅. Vendor daemons already use it:
+  `fw:/sbin/rpsd` (`/dev/i2c-`), `fw:/usr/sbin/sfpd` (`/dev/i2c-%d`) ✅. → reach
+  the RPS power monitor and the otherwise-disabled `i2c_gen` bus from userspace
+  (stop the daemon first to avoid contention).
+- **SPI:** `CONFIG_SPI_SPIDEV=y` → `/dev/spidev*` possible ✅.
+- **GPIO:** `CONFIG_GPIO_SYSFS=y` (sysfs `/sys/class/gpio`) ✅; Python libgpiod
+  `fw:/usr/lib/python3/dist-packages/gpiod*.so` present ✅.
+- **debugfs:** `CONFIG_DEBUG_FS=y` ✅ (register/knob exposure available).
+- **UIO / VFIO: NOT available.** `# CONFIG_UIO is not set`; no VFIO in config ✅.
+  No `/dev/uio*` or vfio-pci hand-off of al_eth/al_ssm/SATA to userspace. (Use the
+  in-kernel drivers or /dev/mem instead.)
+- **Watchdog:** `/dev/watchdog` via the Alpine WDT (see hardware docs); not the
+  focus here.
+
+**Only gate anywhere is DAC (root).** No SELinux, no kernel lockdown, no
+`STRICT_DEVMEM`, no module-sig (`# CONFIG_MODULE_SIG is not set`) — so also
+`insmod` of our own `.ko` (`busybox insmod` present).
+
+**Payoff ranking (given a root shell):**
+1. **`flash_erase`+`nandwrite`/`flashcp` on `/dev/mtdN`** → reflash NAND/NOR
+   (kernel/uboot/recovery) with no signature check. *The* custom-boot route.
+2. **`busybox devmem`** → set DBGEN, poke clock/pinmux/thermal regs directly.
+3. **`busybox i2cset/i2cget` on `/dev/i2c-*`** → RPS monitor + `i2c_gen` bus.
+
+**Confidence: high** (kernel config is this image's own; tools verified in rootfs).
+
+---
+
+## Q6 — Vendor file-transfer / remote services (push a custom image)
+
+What ships, whether it listens, and whether we can push with it. Firmware = `fw:`.
+`busybox` applets from `fw:/bin/busybox` ✅.
+
+| Service | In firmware | Default state | Use to push? |
+|---|---|---|---|
+| **OpenSSH sshd** (scp/sftp) | `fw:/usr/sbin/sshd` ✅ | **disabled**, one toggle (Q4) | **Yes — best.** `ubnt-systool sshd true`, then `scp`/`sftp` in. Key auth via `sshd-authkeys`. |
+| ssh.socket | `fw:/lib/systemd/system/ssh.socket` ✅ | present (socket-activation alt) | same as sshd |
+| **telnetd** | busybox applet ✅ | no unit, off | Yes, manual: `busybox telnetd` from root (cleartext) |
+| **tftp client** | `fw:/bin/tftp` + busybox `tftp` ✅ | n/a (client) | **Yes — pull our kernel** from a LAN TFTP server onto the box |
+| tftpd (server) | busybox `tftpd`? (not confirmed) | off | n/a |
+| ftp client | apt method only `fw:/usr/lib/apt/methods/ftp`; busybox `ftpget/ftpput` ✅ | n/a | ftpget/ftpput usable from root |
+| ftpd/vsftpd | **absent** ✅ | — | — |
+| **rsync** | `fw:/usr/bin/rsync` ✅ | client (no rsyncd unit) | Yes, over ssh: `rsync -e ssh` |
+| **nc / netcat** | `fw:/bin/nc`, `fw:/bin/netcat`, busybox `nc` ✅ | n/a | Yes, ad-hoc `nc` file transfer |
+| curl / wget | `fw:/usr/bin/{curl,wget}` + busybox `wget` ✅ | client | **Yes — pull image over HTTP(S)** |
+| busybox httpd | applet ✅ | off | serve files off the box if needed |
+| socat | **absent** ✅ | — | — |
+| xinetd | **absent** ✅ | — | — |
+
+Vendor update/transfer endpoints:
+- `ubnt-systool fwupdate <url>` ✅ accepts a **URL** (wget/curl) — but still
+  signature-checked (Q2). Not a custom-image path.
+- `/api/consoleGroups/firmware` nginx endpoint (Q2) — cloud/group push, signed.
+- No inform/adopt firmware-push usable for custom code (signed).
+
+**U-Boot-level transfer** (from `sources/.../UNVR-1.3.35-GPL/u-boot`, `sources.md`
+§3, and boot docs) 〄/✅:
+- `tftpboot` / `tftpput` (DHCP + TFTP), `dhcp`, `nfs`, and serial
+  `loadb`/`loadx`/`loady` (kermit/xmodem/**ymodem**). Standard Ubiquiti Alpine V2
+  U-Boot config carries these.
+- **`loady`** = ymodem receive over the **same serial console we already have** →
+  push a uImage with zero extra infra. **`tftpput`** = pull files *off* the device
+  over TFTP (dumps). `tftpboot` = fetch our kernel to RAM and `bootm`.
+
+**Easiest "push a file / custom image" methods, ranked (we already have root
+serial + LAN):**
+1. **Enable sshd (`ubnt-systool sshd true`) → `scp` the file in.** One command,
+   network, keys supported. Then reflash via `/dev/mtd` (Q5) or drop a uImage in
+   `/boot`.
+2. **`busybox wget`/`curl`/`tftp` from the existing root shell** to pull the
+   image off a LAN server — no service to enable at all.
+3. **U-Boot `loady`** (ymodem over the serial we already use) or **`tftpboot`** —
+   bootloader-level, good for one-shot RAM-boot testing without touching flash.
+4. `nc`/`rsync-over-ssh` as fallbacks.
+
+Note all of these move *bytes*; the boot itself is unsigned at the U-Boot/uImage
+layer (this gen boots unsigned kernels — linux-alpine-v2 TODO ✅, and `fwupdate`'s
+signature gate is above the raw `/dev/mtd` write), so a hand-placed uImage /
+mtd-write **runs without a signature**. The only signed gate is the
+`fwupdate`/`ubntnas` *container* path (Q2/Q3), which we simply don't use.
+
+**Confidence: high** on presence/state; **medium** on the exact U-Boot command
+set for *our* 5.1.25 build (read from the 1.3.35 GPL U-Boot + community, not our
+running env).
+
+---
+
+## Bottom line for the port
+
+- **Get a shell the easy way:** enable SSH in the web UI (Settings → Control Plane
+  → Console → SSH) or `ubnt-systool sshd true`; log in `root` / (set password).
+  No serial teardown. (Q1/Q4)
+- **Do NOT expect the web upload or update channel to boot custom code** — both go
+  through RSA+SHA1 container verification in `fwupdate`/`ubntnas`. (Q2/Q3)
+- **The custom-boot route is below that gate:** from the root shell, `/dev/mtd*` +
+  mtd-utils reflash NAND/NOR unsigned, or drop an unsigned uImage in `/boot`; the
+  SoC is fully reachable via `/dev/mem` (no STRICT_DEVMEM) and `/dev/i2c-*`. (Q5)
+- **Move the bytes** with scp (enable sshd) or wget/tftp already on the box, or
+  U-Boot `loady`/`tftpboot`. (Q6)
