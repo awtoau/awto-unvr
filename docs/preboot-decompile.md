@@ -372,7 +372,7 @@ recurs, hits≥4), m=medium (hits 2–3), R=hand-RE.
 ## Open / not chased
 
 - Exact AL-324 DDR PHY timings — recoverable: read the SPD + impedance records off the
-  I²C EEPROM ([issues/39](issues/39-ddr-spd-eeprom-readout.md)).
+  I²C EEPROM ([ddr-config-reverse.md](ddr-config-reverse.md) §7).
 - `FUN_01012b08` used as both memcmp and RSA-verify entry — same primitive; not
   split into named sub-ops here.
 - S2 0xf22000fc jumptable (pointer-dispatch) not reconstructed.

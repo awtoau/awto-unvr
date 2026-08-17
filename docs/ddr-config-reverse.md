@@ -22,8 +22,7 @@ Marks: ✅ confirmed (byte/disasm evidence) · ⚠ needs live HW read · ✎ cor
   - `impedance_ctrl` (ODT/ODT_DYN/DIC/PHY ROUT/PHY ODT) from a **20-byte override block**
     (magic `0xCC`); absent → hardcoded stage2 defaults. ✅
 - **The EEPROM records live at 16-bit offsets** (default base **0x400**) behind a magic-`0xAA`
-  pointer record. ✅ This is why a plain `i2cdump 0x57` looked like garbage — see §2c and
-  [issues/39](issues/39-ddr-spd-eeprom-readout.md).
+  pointer record. ✅ This is why a plain `i2cdump 0x57` looked like garbage — see §2c.
 - **No sysid switch selects DDR params.** The only per-sysid branch is DTB selection in
   al_boot. DDR board-specificity = the EEPROM contents + bootstrap straps on this unit. ✅
 - Core→core handoff after training = `struct shared_parameters { u32 magic=0x31415926;
@@ -267,8 +266,7 @@ exactly `SPD I2C Address: 57`, so 0x57 came from the `0xAA` record ⚠ (a scan w
 printed 0x50…0x57 too).
 
 **This explains issue #62:** the SPD sits at a **16-bit offset**; `i2cdump` uses 1-byte
-addressing and read window 0x0000-0x00FF instead. Filed as
-[issues/39](issues/39-ddr-spd-eeprom-readout.md).
+addressing and read window 0x0000-0x00FF instead. Readout task in §7.
 
 ---
 
@@ -399,7 +397,10 @@ two strapping values**:
 | `al_bootstrap.ddr_pll_freq` | `tmg.ddr_freq`, `tmg.ref_clk_freq_mhz` | live PBS read, or infer from the trained controller |
 
 `scripts/read-ddr-spd.py` exists but uses 1-byte addressing — it needs the 2-byte-offset path
-and the `0xAA` indirection. Tracked in [issues/39](issues/39-ddr-spd-eeprom-readout.md).
+and the `0xAA` indirection. Remaining task: extend it for the 2-byte offset + `0xAA`
+indirection, dump all four records to `tmp/logs/`, decode SPD + the 20-byte impedance table
+(§2b), then cross-check every field against the live `al_ddr_cfg_init` readback (§8) before
+committing `alpine_ddr_cfg.c` for the SPL ([uboot-ddr-port.md](uboot-ddr-port.md) §6).
 
 No further gain from reversing the DDR *algorithm*: it is the open GPLv2
 `al_hal_ddr_init_alpine_v2.c` (5608 lines) already in the kernel tree — the same "how".

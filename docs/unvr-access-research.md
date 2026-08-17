@@ -328,3 +328,37 @@ running env).
   SoC is fully reachable via `/dev/mem` (no STRICT_DEVMEM) and `/dev/i2c-*`. (Q5)
 - **Move the bytes** with scp (enable sshd) or wget/tftp already on the box, or
   U-Boot `loady`/`tftpboot`. (Q6)
+
+---
+
+## Our deployment — reaching the Fedora box (woomera)
+
+Not the stock image: our Fedora-44 build on the SSD (kernel `7.1.8-dirty`). SSH is
+the intended default — `build-fedora-rootfs.py` ships sshd enabled + `PermitRootLogin
+yes` ([fedora-on-ssd.md](fedora-on-ssd.md) L65). Serial console was bring-up only.
+
+- **Address: `192.168.25.149/24` on `enp0s1`, DHCP lease** — NOT the netboot-era
+  static `.140`. `build-fedora-rootfs.py` runs systemd-networkd DHCP on all ethernet,
+  so the box takes a lease; `.140` never applied to the Fedora rootfs.
+- MAC `74:ac:b9:41:a8:11` (OUI 74:AC:B9 = Ubiquiti). Fedora 44 aarch64,
+  `SSH-2.0-OpenSSH_10.2`, password auth OK as `root`.
+- Found 2026-08-16T22:33+10:00 from `192.168.25.145/24` via
+  `scripts/find-woomera-ssh.py` + MAC OUI (no serial). Gotcha: Fedora does not tag
+  its SSH banner, so the distro-string heuristic is useless — MAC OUI is the
+  discriminator. Ruled out on the way: `.140` ping/ssh (timeout), `ssh woomera` (no
+  DNS), Ubiquiti UDP 10001 discovery (no answer), mDNS (none); a 22/443 sweep found
+  13 hosts but named none.
+
+Open hardening (was draft issue 38, not filed to GitHub):
+- Hostname is `fedora`, not `woomera` — `hostnamectl` follow-up
+  ([fedora-on-ssd.md](fedora-on-ssd.md) L123) never run.
+- Root password still the build default (`build-fedora-rootfs.py` L67, marked CHANGE
+  THIS) + `PermitRootLogin yes` → any LAN host can root the box over SSH.
+- Key-based login not set up — `ssh-copy-id` blocked by the agent permission
+  classifier 2026-08-16; needs the owner to run/grant it.
+- DHCP lease, not a reservation — address moves on its own (what rotted `.140`).
+  Router reservation is the cheapest durable fix.
+- `woomera` does not resolve — add `/etc/hosts` or `~/.ssh/config` Host block.
+- [workflow.md](workflow.md) still says `192.168.25.140/24` — update after pinning.
+- Acceptance: `ssh woomera` by name, key-based, no prompt; address survives reboot;
+  serial needed only when the network is down.
