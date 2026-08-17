@@ -53,6 +53,20 @@ watchdog reset (`scripts/reboot-to-uboot.tcl`) — no power-cycle.
 `bootm`/`bootz`, `ext4load`/`ext4ls`, `part`/`gpt`, `scsi*`.
 Absent here: `mmc`, `mtdparts`, `clocks`, `date`.
 
+## Quirks for a modern / custom U-Boot (drop or fix these)
+
+- **`lcd_init()` runs unconditionally** (`power_init_board()` → `board/annapurna-labs/
+  alpine_ubnt/lcd.c`): it writes an MCU frame (`a0 0a 08 <cmd> 0b b0`, **9600 baud**) to
+  **`eserial2` = uart2 = `ttyS2`** — which on the UNVR is the **RPS PHY UART** (RS-232 via
+  MAX3221 `U122` → connector `JB4`), *not* a display. So **every boot squirts LCD bytes at
+  the RPS connector** (harmless — no LCD there, and rpsd resyncs at 115200). A custom
+  U-Boot should **not** init a non-existent LCD, and must treat **uart2 as the RPS link**,
+  not a console/display. (The LCD/MCU path is the UDM-Pro front panel; unpopulated here.)
+- **`cpu_set_speed` is downclock-only** (sets the channel divider, can't exceed the VCO) —
+  real overclock = raise the PLL VCO (`setup_0 @0xfd860d40`, see overclock-and-caps.md).
+- **`i2c_gen @0xfd894000` is `status="disabled"`** in the DTB — the vendor "bus 11" where
+  the RPS/PSE INA/ISL power monitors (0x40–0x49) sit; enable it if we want those.
+
 ## Full dump
 
 Verbatim read-only capture (complete, incl. env MACs/IPs):
