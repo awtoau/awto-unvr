@@ -73,6 +73,63 @@ The base MAC and the "+2" allocation come from the EEPROM at offset `0x0000`.
 | HDD power control | `ubnt-hdd-pwrctl` platform driver, GPIOs: **pwren 464, present 468, fault-led 476**, pwren delay 500 ms | ✅ kernel log |
 | Drives fitted | 1 × 4 TB (`sda`, foreign), 2 × 8 TB (`sdb`,`sdc`, UniFi arrays) | ✅ |
 
+### Storage media — one mainboard, populated per SKU
+
+The Alpine V2 can boot from several media; Ubiquiti ships **one PCB, populated
+differently per model** (chosen by `board.sysid`). **This unit (ea16) = NOR +
+NAND, NO eMMC.**
+
+| Medium | Part (this unit) | Role | On ea16? |
+|---|---|---|---|
+| **SPI-NOR** | Macronix **MX25U25635F**, 32 MiB, 1.8 V | al_boot SPL + U-Boot + env + identity EEPROM + recovery kernel | ✅ always (live `SF: Detected MX25U25635F`, JEDEC `C2 25 39`) |
+| **Parallel NAND** | Micron **MT29F8G08ABBCAH4**, 1 GiB, 1.8 V SLC (mark `NQ299`) | al_boot + kernel + rootfs — **our boot medium** | ✅ live (mfr `0x2C` dev `0xA3`) |
+| **eMMC** | Samsung KLM4G1FE3B-B001, 4 GB (BGA **populated** on this board) | boot medium on eMMC variants (`bootemmc`, over USB xHCI) | ⚠ **populated but hostless** on ea16 — see probe below |
+| **USB / SATA** | external stick (removed SanDisk); SSD on SATA | our Fedora rootfs lives on the **SATA SSD** | external only |
+
+**eMMC probe (2026-08-17, live Fedora, `tmp/probe-emmc.tcl` + `probe-usb.tcl`):**
+Linux sees **no eMMC** — no `/sys/class/mmc_host`, no `/dev/mmcblk*`, nothing in
+`dmesg | grep mmc/sdhci/emmc`. **No MMC controller node exists in the SoC dtsi or
+the vendor 4.19 DTB** — the AL-324's eMMC is not on a native SD host. The family
+accesses it over **USB** (vendor U-Boot `bootemmc` = `usb start`), but the xHCI
+host (ASM1142 `0001:01:00.0`) enumerates **0 downstream devices** — the USB-eMMC
+**bridge is not populated/powered on this SKU**, so the populated BGA has no host.
+lsblk = only SATA (`sda` SSD, `sdb`/`sdc` WDC 8 TB) + zram. **To confirm the
+bridge:** at U-Boot, `usb start; usb tree` — the vendor path; if it finds a
+device the bridge+eMMC are reachable, else the bridge is unpopulated.
+
+Boot medium follows sysid: **ea16 → `bootnand`** (this unit); ea1a UNVR / ea20
+Pro / ea21 AI → `bootemmc`. A photo that reads the NOR
+as **MX25L12835E (16 MiB)** conflicts with our live read (MX25U25635F, 32 MiB) —
+trust the live JEDEC ID; the photo is a different rev/variant or an L↔U misread.
+
+### Board variants — 4-bay UNVR vs 8-bay Pro (same mainboard)
+
+The 4-bay UNVR and 8-bay UNVR Pro share the **same motherboard**; the Pro adds a
+**drive backplane / daughterboard** for the extra 4 bays. Evidence: `pca9575
+@0x29` in the DTS is the Pro's **second bay-expander** on that backplane (4 bays
+fill 12 of 16 lines on `@0x21`, so bays 5–8 need a second expander). On the 4-bay
+unit `@0x29` is unpopulated.
+
+### Physical chip IDs (board-photo cross-check)
+
+Photo-read markings reconciled against our live/DTS data:
+
+| Ref | Photo ID | Our mapping | Status |
+|---|---|---|---|
+| U8 | Macronix MX25L12835E (16 MB NOR) | **MX25U25635F (32 MB)**, live | ⚠ conflict — trust live JEDEC `C2 25 39` |
+| U12 | Micron MT29F8G08ABBCAH4 (1 GB NAND) | same | ✅ confirmed |
+| — | Samsung KLM4G1FE3B (4 GB eMMC) | not on ea16 | ❌ eMMC-SKU only |
+| UB1 | NXP **PCA9675PW** (16-bit I2C GPIO) | we mapped `pca9575` @0x20/21/29 | ❓ 9675 ≠ 9575 — verify by i2c (distinct part or misread) |
+| U10 | NXP PCA9575PW (16-bit GPIO) | `pca9575` | ✅ |
+| UB20 | TI **SN74HC595** shift register | drives **SGPO bay LEDs** (`alpine-sgpo`, gpiochip8) | ✅ maps abstract SGPO → physical 595s |
+| U40 | TI **TCA9546A** (4-ch I2C switch) | DTS `pca9546` @0x71 | ✅ TI TCA9546A ≡ NXP PCA9546A |
+| — | TI **MAX3221C** RS-232 | serial-console UART transceiver (the console level shifter) | ✅ new detail |
+| U5 | Atmel **AT24C64C** (64 Kbit EEPROM) | identity EEPROM (`at24`) | ✅ |
+| U27 | **ADT7475ARQZ** fan/temp | `adi,adt7475` @0x2e | ✅ |
+
+To verify on the live unit: (1) is UB1 truly a **PCA9675** (distinct from the
+PCA9575s) — i2c scan; (2) small IC in image 5 (marking `27504E`) unidentified.
+
 ## Sensors and misc
 
 | Item | Detail | Evidence |
