@@ -1,0 +1,12 @@
+if TARGET_ALPINE_V2_UNVR
+
+config SYS_BOARD
+	default "alpine"
+
+config SYS_VENDOR
+	default "annapurna"
+
+config SYS_CONFIG_NAME
+	default "alpine"
+
+endif

@@ -1,0 +1,103 @@
+// SPDX-License-Identifier: GPL-2.0+ OR X11
+/*
+ * Minimal U-Boot control DTS for the Ubiquiti UNVR
+ * (Annapurna Labs Alpine V2 / AL-324, sysid 0xea16).
+ *
+ * Stage-1 console bring-up only: CPUs, PSCI, GIC-v3, arch timer, UART0,
+ * memory. Addresses from docs/hardware.md (verified against the live DT).
+ * PCIe/SATA/SPI-NOR/I2C nodes are added in later stages.
+ */
+
+/dts-v1/;
+
+/ {
+	model = "Ubiquiti UNVR (Annapurna Labs Alpine V2 AL-324)";
+	compatible = "ubnt,unvr", "annapurna-labs,al-alpine-v2", "al,alpine-v2";
+	interrupt-parent = <&gic>;
+	#address-cells = <2>;
+	#size-cells = <2>;
+
+	aliases {
+		serial0 = &uart0;
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+	};
+
+	cpus {
+		#address-cells = <2>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a57";
+			reg = <0x0 0x0>;
+			enable-method = "psci";
+		};
+		cpu1: cpu@1 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a57";
+			reg = <0x0 0x1>;
+			enable-method = "psci";
+		};
+		cpu2: cpu@2 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a57";
+			reg = <0x0 0x2>;
+			enable-method = "psci";
+		};
+		cpu3: cpu@3 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a57";
+			reg = <0x0 0x3>;
+			enable-method = "psci";
+		};
+	};
+
+	psci {
+		compatible = "arm,psci-0.2", "arm,psci";
+		method = "smc";
+	};
+
+	timer {
+		compatible = "arm,armv8-timer";
+		/* GIC_PPI type; LEVEL_LOW(8) per the vendor dtsi */
+		interrupts = <1 13 8>, <1 14 8>, <1 11 8>, <1 10 8>;
+	};
+
+	/* 4 GiB: 3 GiB contiguous at 0 + 1 GiB above 4 GiB (docs/hardware.md) */
+	memory@0 {
+		device_type = "memory";
+		reg = <0x0 0x00000000 0x0 0xC0000000>,
+		      <0x2 0x00000000 0x0 0x40000000>;
+	};
+
+	gic: interrupt-controller@f0200000 {
+		compatible = "arm,gic-v3";
+		#interrupt-cells = <3>;
+		#address-cells = <2>;
+		#size-cells = <2>;
+		interrupt-controller;
+		reg = <0x0 0xf0200000 0x0 0x10000>,	/* GICD */
+		      <0x0 0xf0280000 0x0 0x200000>;	/* GICR */
+		interrupts = <1 9 4>;
+	};
+
+	soc {
+		compatible = "simple-bus";
+		#address-cells = <2>;
+		#size-cells = <2>;
+		ranges;
+
+		uart0: serial@fd883000 {
+			compatible = "ns16550a";
+			reg = <0x0 0xfd883000 0x0 0x1000>;
+			interrupts = <0 17 4>;		/* GIC_SPI 17 LEVEL_HIGH */
+			clock-frequency = <500000000>;
+			reg-shift = <2>;
+			reg-io-width = <4>;
+			status = "okay";
+		};
+	};
+};

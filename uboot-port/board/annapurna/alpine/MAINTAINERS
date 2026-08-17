@@ -1,0 +1,6 @@
+ANNAPURNA ALPINE V2 (AL-324) / UBIQUITI UNVR
+S:	Maintained
+F:	board/annapurna/alpine/
+F:	include/configs/alpine.h
+F:	configs/alpine_v2_unvr_defconfig
+F:	arch/arm/dts/alpine-v2-unvr-uboot.dts
