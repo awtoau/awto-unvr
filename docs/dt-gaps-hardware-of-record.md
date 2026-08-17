@@ -22,14 +22,15 @@ the items below in.
   runs `hciattach` on **`/dev/ttyS1` or `/dev/ttyS3`** with `csr8x11-…psr` firmware;
   `ubnthal` EEPROM has `BtMACAddrCount`/`bt%d.macaddr`. **Our DTS labels uart2/ttyS2 as
   "Bluetooth CSR" — wrong UART** (vendor never uses ttyS2). Either BT sits on ttyS1/S3,
-  or UNVR doesn't populate it (nothing on USB; BT would be UART-side). **Needs a bench
-  check.** If present: a `bluetooth { compatible = "csr,csr8811"; }` under the *correct*
-  uart, not uart2.
+  or UNVR doesn't populate it. **Owner-confirmed: NO Bluetooth on this board.** So the
+  CSR8811 is shared-platform code only; **our DTS `ttyS2` "Bluetooth CSR" label is wrong**
+  — remove/relabel it (no `bluetooth` node needed).
 - **S3 — RPS/PSE is a hidden power-monitor + UART + expander subsystem (Pro).** `rpsd`
   drives 12 V/54 V enable, over-current, `54V_STBY_PG`, battery-guard, and
-  `oring12v/54v power_crit` **power monitoring**, via PCA9575 GPIO **plus a dedicated
-  RPS UART**. Base 4-bay ea16 (DC barrel) likely doesn't populate it. Full pin/repurpose
-  detail in [gpio-switches-leds.md](gpio-switches-leds.md#repurposing-the-rps-connector-for-remote-reset--poweroff).
+  `oring12v/54v power_crit` **power monitoring** (dedicated ORing power-monitor IC over
+  I²C), via PCA9575 GPIO **plus a per-port RPS UART** (`/dev/ttyRPS1..8`). **Owner-
+  confirmed: the RPS connector IS populated on this 4-bay board — NOT Pro-only.** Full
+  mechanism / protocol / pins in [rps-subsystem.md](rps-subsystem.md).
 
 ## Confirmed gaps in our ea16 DTS (actionable)
 
@@ -76,5 +77,7 @@ the items below in.
 7. **M1** optional `ubnthal,write-protect`.
 8. **C2** SerDes TX params — keep in U-Boot; document only.
 
-**Bench checks still open:** does UNVR-4 physically populate (a) the CSR8811 BT module,
-(b) the USP-RPS PSE hardware? Both are platform-shared code; photos/`lsusb` show no BT.
+**Owner-resolved:** BT is **not** populated (remove the wrong `ttyS2` label); the RPS
+connector **is** populated (see [rps-subsystem.md](rps-subsystem.md)). Remaining RPS
+work: identify the ORing power-monitor IC (I²C addr + marking), finish the `rpsd`
+static pin-number walk, and macro-shot the `RPS IN` connector contacts.

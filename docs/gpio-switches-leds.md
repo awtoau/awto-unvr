@@ -45,7 +45,8 @@ gpio4=32, gpio5=40, sgpo=48 (64 lines), pca9575@0x29=464, @0x21=480, @0x20=496.
   sense over GPIO, + disk-driven budgeting (`999-rpsd.rules`→`rpsd_power_budget`).
   Signals `rps_pin_*`: 12v/54v ×(en,sw,oc,lp,psu_pg,guard,batt_guard,out_oc_oring),
   `rps_prnt`, `pd_prnt`, `uart_tx/rx`. UART smart-module path (`ttyRPS*`) is UDM/UXG
-  only — not on ea16. **Likely Pro-only** (base 4-bay = DC barrel); confirm on-board.
+  only — not on ea16. **The RPS connector IS populated on this 4-bay board
+  (owner-confirmed) — NOT Pro-only.** Full detail in [rps-subsystem.md](rps-subsystem.md).
 - **Connector:** mates the standard **USP-RPS** (54 V+12 V DC, 52 V@11.54 A=600 W/port)
   → large: paralleled 54 V+GND power blades + 12 V + 3.3 V-CMOS logic + a 3.3 V-TTL UART.
 - **Pin numbers are compiled into `rpsd`, NOT the EEPROM.** Identity EEPROM (mtd04
