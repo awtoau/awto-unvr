@@ -58,7 +58,7 @@ the ASMedia USB controller.
 | `al_eth2` | Second interface | ✅ |
 | 10G SFP+ | 1 × SFP+ cage — `enp0s2`/`al_eth2` (`1c36:0002`), SFP optic, LM mode `AL_ETH_LM_MODE_10G_OPTIC`, mdio 2500 kHz, no ext PHY | ✅ live dmesg |
 | 1G RJ45 | 1 × RJ45 — `enp0s1`/`al_eth1` (`1c36:0001`), RGMII | ✅ live dmesg |
-| 1G PHY | **Qualcomm Atheros AR8031** at MDIO addr 4 (`driver Atheros 8031`) → mainline `at803x` (needs `CONFIG_REGULATOR=y`) | ✅ live dmesg (corrects earlier "Marvell 10G" guess — that was the 10G port, which is SFP not a PHY) |
+| 1G PHY | Chip **AR8033** (marking `AR8033-AL1A`, U51); Linux `at803x` reports "Atheros 8031" @ MDIO addr 4 — AR8031/8033 share PHY ID `0x004dd074`, so same device, two labels (needs `CONFIG_REGULATOR=y`). 10G port is SFP, not a PHY | ✅ live dmesg + photo |
 | SFP module | **NOT captured** — `ethtool` returned "No data available"; module EEPROM/vendor unconfirmed | ❓ read on hardware |
 
 The base MAC and the "+2" allocation come from the EEPROM at offset `0x0000`.
@@ -69,7 +69,7 @@ The base MAC and the "+2" allocation come from the EEPROM at offset `0x0000`.
 |---|---|---|
 | Bays | 4 × 3.5"/2.5" hot-swap | 📄 |
 | Controllers | 2 × Annapurna SATA (`1c36:0031`) | ✅ |
-| Internal boot USB | On the ASM1142 USB host; enumerates as **`/dev/sdq`** | ✅ deliberately after the 16 possible `/dev/sd[a-p]` HDD slots |
+| Internal boot USB | On the ASM1042A USB 3.0 host (U20); enumerates as **`/dev/sdq`** | ✅ deliberately after the 16 possible `/dev/sd[a-p]` HDD slots |
 | HDD power control | `ubnt-hdd-pwrctl` platform driver, GPIOs: **pwren 464, present 468, fault-led 476**, pwren delay 500 ms | ✅ kernel log |
 | Drives fitted | 1 × 4 TB (`sda`, foreign), 2 × 8 TB (`sdb`,`sdc`, UniFi arrays) | ✅ |
 
@@ -91,7 +91,7 @@ Linux sees **no eMMC** — no `/sys/class/mmc_host`, no `/dev/mmcblk*`, nothing 
 `dmesg | grep mmc/sdhci/emmc`. **No MMC controller node exists in the SoC dtsi or
 the vendor 4.19 DTB** — the AL-324's eMMC is not on a native SD host. The family
 accesses it over **USB** (vendor U-Boot `bootemmc` = `usb start`), but the xHCI
-host (ASM1142 `0001:01:00.0`) enumerates **0 downstream devices** — the USB-eMMC
+host (ASM1042A `0001:01:00.0`) enumerates **0 downstream devices** — the USB-eMMC
 **bridge is not populated/powered on this SKU**, so the populated BGA has no host.
 lsblk = only SATA (`sda` SSD, `sdb`/`sdc` WDC 8 TB) + zram. **To confirm the
 bridge:** at U-Boot, `usb start; usb tree` — the vendor path; if it finds a
@@ -110,25 +110,46 @@ The 4-bay UNVR and 8-bay UNVR Pro share the **same motherboard**; the Pro adds a
 fill 12 of 16 lines on `@0x21`, so bays 5–8 need a second expander). On the 4-bay
 unit `@0x29` is unpopulated.
 
-### Physical chip IDs (board-photo cross-check)
+### Physical chip IDs — board-photo catalog (2026-08-17)
 
-Photo-read markings reconciled against our live/DTS data:
+Reconciled from ~40 board macro-photos (`sources/photos/`, gitignored). Markings verbatim.
 
-| Ref | Photo ID | Our mapping | Status |
-|---|---|---|---|
-| U8 | Macronix MX25L12835E (16 MB NOR) | **MX25U25635F (32 MB)**, live | ⚠ conflict — trust live JEDEC `C2 25 39` |
-| U12 | Micron MT29F8G08ABBCAH4 (1 GB NAND) | same | ✅ confirmed |
-| — | Samsung KLM4G1FE3B (4 GB eMMC) | not on ea16 | ❌ eMMC-SKU only |
-| UB1 | NXP **PCA9675PW** (16-bit I2C GPIO) | we mapped `pca9575` @0x20/21/29 | ❓ 9675 ≠ 9575 — verify by i2c (distinct part or misread) |
-| U10 | NXP PCA9575PW (16-bit GPIO) | `pca9575` | ✅ |
-| UB20 | TI **SN74HC595** shift register | drives **SGPO bay LEDs** (`alpine-sgpo`, gpiochip8) | ✅ maps abstract SGPO → physical 595s |
-| U40 | TI **TCA9546A** (4-ch I2C switch) | DTS `pca9546` @0x71 | ✅ TI TCA9546A ≡ NXP PCA9546A |
-| — | TI **MAX3221C** RS-232 | serial-console UART transceiver (the console level shifter) | ✅ new detail |
-| U5 | Atmel **AT24C64C** (64 Kbit EEPROM) | identity EEPROM (`at24`) | ✅ |
-| U27 | **ADT7475ARQZ** fan/temp | `adi,adt7475` @0x2e | ✅ |
+| Ref | Marking (key line) | Part | Function | Conf |
+|---|---|---|---|---|
+| U2 | `AL32400-1700-A1-E-2BT-8-C` | Annapurna Labs **AL-324** (AL32400) | Main SoC | high |
+| U3/U4 +2 (×4) | `SEC / K4A8G16 / 5WB-BCRC` | Samsung **K4A8G165WB-BCRC** 8 Gb DDR4 ×4 | System DRAM (**4 GB**) | high |
+| U12 | `NQ299` + Micron | Micron **MT29F8G08ABBCAH4** | NAND (1 GB SLC) | high |
+| U8 | `MXIC / MX25U256…` | Macronix **MX25U25635F** | SPI-NOR (32 MB, 1.8 V) — **matches live** | high |
+| U51 | `AR8033-AL1A` + Atheros | Qualcomm Atheros **AR8033** | **1G Ethernet PHY** | high |
+| U20 | `asmedia / ASM1042A` | ASMedia **ASM1042A** | USB 3.0 host (PCIe→USB3) | high |
+| U21 | winbond `25X…` | Winbond **W25X** SPI flash (small) | ASM1042A config/FW | med |
+| U27 | `ADT747?ARQZ` | AD **ADT7475/7476ARQZ** | Fan/thermal PWM @0x2e | ⚠ recheck |
+| U40 | `PW546A` + TI | TI **TCA9546APW** | 4-ch I2C mux @0x71 | high |
+| UB1, U10 | `9575PW2` + NXP | NXP **PCA9575PW** (×2) | 16-bit I2C GPIO exp. (DTS @0x20/21/29) | high |
+| UB20 | Toshiba `VHC / 595` | Toshiba **TC74VHC595** | bay/LED shift reg (drives SGPO) | high |
+| UB22 | (footprint, no chip) | unpopulated 2nd 595 | — | high |
+| U122 | `MA3221C` + TI | TI **MAX3221C** | RS-232 console transceiver | high |
+| U5 | `ATMLH / 64DM` | Atmel **AT24C64** | Identity EEPROM (I2C) | high |
+| U5050 | `S353` (+ MS621 coin cell BAT1) | Seiko **S-35390A** | I2C RTC | high |
+| UB3 | `uP1708P` | uPI **uP1708** | PMIC / buck | med |
+| U49/U14/U44, U5053/54 | `YF04E`/`K04E`/`YE04` + TI | TI single-gate/logic "04" family | glue logic / level-xlate | med |
 
-To verify on the live unit: (1) is UB1 truly a **PCA9675** (distinct from the
-PCA9575s) — i2c scan; (2) small IC in image 5 (marking `27504E`) unidentified.
+**Resolved opens:** the `27504E` "mystery IC" = a misread of **`YF04E`** (TI SC70
+single-gate logic near U122); **there is no PCA9675** — UB1 and U10 both read
+`9575` (earlier PCA9675 was a misread).
+
+**Corrections to prior docs (from this catalog):**
+- **1G PHY:** chip marking = **AR8033** (photo); Linux `at803x` labels it "Atheros
+  8031" (AR8031/8033 share PHY ID) — reconcile `docs/chips/ar8031.md`.
+- **DRAM = Samsung K4A8G165WB DDR4 ×4** (was guessed Micron MT40A in dram-ddr4.md).
+- **USB host = ASM1042A** (earlier eMMC note said ASM1142).
+- **Fan chip:** photo reads **ADT7476**ARQZ; live binds `adt7475` (same-family
+  driver) — recheck U27 marking (7475 vs 7476).
+- **Shift reg = Toshiba TC74VHC595** (≡ SN74HC595 functionally).
+
+**Still needs a reshoot:** the **eMMC (KLM4G1FE3B)** and any **USB-eMMC bridge**
+were NOT captured (consistent with the live "no eMMC on the USB bus" probe); the
+matte-black QFP **U1** in the SATA area is unread.
 
 ## Sensors and misc
 
