@@ -74,6 +74,8 @@ def main() -> int:
                     help="kernel panic= seconds (auto-reboot on panic; 0 = omit)")
     ap.add_argument("--uimage", help="explicit tftp uImage filename (overrides --tag)")
     ap.add_argument("--dtb", help="explicit tftp DTB filename (overrides --tag)")
+    ap.add_argument("--initrd", help="tftp initrd/initramfs filename (adds external ramdisk)")
+    ap.add_argument("--iaddr", default="0x20000000", help="initrd load addr (clear of kernel decompress)")
     ap.add_argument("--bootargs", help="full bootargs override (e.g. root=PARTUUID=..)")
     # Catch ceiling: long enough to power-cycle + preboot (~15s) with margin.
     ap.add_argument("--catch-seconds", type=float, default=180.0)
@@ -139,7 +141,19 @@ def main() -> int:
         return 2
     log(f"{dtb} loaded")
 
-    send(s, f"bootm {a.kaddr} - {a.dtaddr}")
+    rd = "-"
+    if a.initrd:
+        # This vendor U-Boot (2015.07) lacks CONFIG_SUPPORT_RAW_INITRD, so the raw
+        # addr:size syntax fails ("Wrong Ramdisk Image Format"). The initrd must be
+        # a uImage-wrapped ramdisk (scripts/mkuimage.py --ramdisk); bootm then reads
+        # its header, no :size needed. ~35MB at ~2.5MB/s ~14s; 60s limit = margin.
+        send(s, f"tftpboot {a.iaddr} {a.initrd}")
+        if not wait_for(s, b"Bytes transferred", what=f"{a.initrd} tftp", limit_s=60):
+            return 2
+        log(f"{a.initrd} loaded at {a.iaddr}")
+        rd = a.iaddr
+
+    send(s, f"bootm {a.kaddr} {rd} {a.dtaddr}")
     # Confirm the kernel actually took (Verifying Checksum -> decompress -> Linux).
     if wait_for(s, b"Booting kernel", what="bootm handoff", limit_s=15):
         log("bootm handed off to kernel - watch console log for platform bring-up")
