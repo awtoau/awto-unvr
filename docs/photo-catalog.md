@@ -23,8 +23,11 @@ The board *may* carry an extra networking/controller chip, but the agents disagr
   corner** next to the ASM1042A. Read variously as a **Marvell 88E6xxx managed switch**
   (batch 3) OR an **ASM1061-class PCIe→SATA / 2nd USB3 bridge** (batch 1). Marking worn
   on every frame. **Needs a clear macro to settle.**
-- A batch-4 "**Atheros 48-pin switch**" (photo `_231702`) is **most likely the AR8033
-  1G PHY (U51) misread** (AR8033 is a 48-pin Atheros QFN) — not a separate switch.
+- A batch-4 "**Atheros 48-pin switch**" (photo `_231702`) is **CONFIRMED = the AR8033
+  1G PHY (U51)**, not a switch (inspected the photo): a ~48-pin Atheros QFN sitting by
+  its **25 MHz crystal `Y8`** in the RTC-cluster area. A real Atheros/QCA switch
+  (AR8327/QCA8337) is a **148+ pin** device — this is far too small. So **no second
+  Atheros switch exists.**
 - **Why it matters:** the AL-324 already has 2 native SATA controllers + 2 Ethernet MACs,
   so a NAS with **one RJ45 + one SFP** shouldn't need an extra switch or SATA controller.
   The owner's instinct ("only one port — why a switch?") is the right question. **U1's
