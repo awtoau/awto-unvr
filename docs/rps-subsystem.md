@@ -62,9 +62,10 @@ minimal one** — do not confuse them:
   JB4-in and JB5-out; **`D500`** = DPAK FET/diode in the ORing path.
 - **ORing power-monitor IC:** physical candidate **`U48`** (~10-pin QFN) — marking
   illegible; need a clearer macro. (`U122` is the MAX3221 RS-232 xcvr, not the monitor.)
-  ⚠ **`U1` CONFLICT:** the RPS-photo read called U1 a 16-pin monitor, but the full
-  photo catalog reads **U1 = a Marvell 88E6xxx managed Ethernet switch** (~40-pin QFN,
-  clocked by OSC1/YA2) — see hardware.md. Re-attribute the monitor to U48/other, not U1.
+  ⚠ **`U1` UNRESOLVED:** the RPS-photo read called U1 a 16-pin monitor; the photo
+  catalog read it as a Marvell 88E6xxx switch OR an ASM1061 SATA/USB bridge (marking
+  worn) — see [photo-catalog.md](photo-catalog.md). Either way it's **not** the ORing
+  monitor (that's U48/other). U1's true ID needs a macro.
 
 ## Power budgeting
 
@@ -89,6 +90,13 @@ the ttyS2 JSON link.)
 - **`JB4` per-blade rail map** — continuity probe (54 V/12 V/GND/UART/sense).
 - Whether ea16 populates any i2c power monitor at all (config lists none; physical U1/U48
   suggest one exists on the ORing path).
+  - **Scan result (2026-08-17, `scripts/i2c-spi-scan.py`):** the *active* i2c bus
+    (`i2c_pld` @0xfd880000) has **no monitor** in the INA/ISL range 0x40–0x49 — only
+    mux/RTC/adt7475/pca9575/SFP. The **general bus `i2c_gen` @0xfd894000** (the vendor's
+    "bus 11", where the INA230/ISL28022/INA237 monitors sit) is **`status="disabled"`** in
+    the ea16 DTS, so nothing probes it. → To confirm ea16 has/lacks the monitor, **enable
+    `i2c_gen` and rescan 0x40–0x49**. Unrelated: an unidentified 32-bit-register device sits
+    at **0x57** on `i2c_pld` (not an INA/ISL monitor) — see #62.
 
 Scripts: `scripts/rps_walk.py` (binary pin-table walk), `scripts/crop_rps.py`.
 Full offsets/disasm/photo cites: `tmp/logs/rps-reverse.md`.
