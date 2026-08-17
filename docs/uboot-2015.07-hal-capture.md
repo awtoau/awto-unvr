@@ -1,74 +1,38 @@
-# Vendor U-Boot info dump — read-only (2026-08-17)
+# Vendor U-Boot live capture — read-only (2026-08-17)
 
-`U-Boot 2015.07-alpine_db-2.21-HAL (Dec 16 2020)`, captured at the prompt via
-`scripts/uboot-info.tcl` (all commands read-only). Reached U-Boot with the SP805
-watchdog reset (`scripts/reboot-to-uboot.tcl`) — no power-cycle.
+Live runtime dump of the running vendor bootloader
+`U-Boot 2015.07-alpine_db-2.21-HAL (Dec 16 2020)`. This is the **runtime-evidence**
+companion to the static-RE boot-chain docs; it does not restate their analysis.
 
-## Highlights
+## Provenance
 
-**Overclock / clock levers (built into vendor U-Boot):**
-- **`cpu_set_speed <MHz>`** — sets only the CPU-PLL **channel divider**, so it is
-  **DOWN-clock only** (requires MHz to evenly divide the current VCO; can't exceed
-  it). A runtime **underclock/thermal** lever, **NOT** overclock. **Real overclock =
-  raise the PLL VCO** (`setup_0 @0xfd860d40`, see overclock-and-caps.md). Confirmed
-  in GPL `cmd_cpu_misc.c:do_cpu_set_speed`.
-- `dram_margins` — DDR RDQS/WDQS shmoo via the controller BIST. **DANGEROUS** — crashed U-Boot with a Synchronous Abort before; treat as read-with-care.
-- `ddr_training_results`, `ddr_ecc_stats`, `ddr_ecc_poison` — DDR tuning/diag.
-- `serdes`, `eth_1g_params_set`, `eth_link_training_enable`, `mdio`, `mii` — Ethernet/SerDes tuning (carry into Linux per `eth_1g_params_set` help).
-- `thermal_get` / `thermal_init` / `dtt` — SoC thermal readout from U-Boot.
-- **`reset`** — "Perform RESET of the CPU" (try as a clean reboot path vs the hung Linux `reboot`, #51 — alongside the working watchdog reset).
+- Captured at the U-Boot prompt via `scripts/uboot-info.tcl` — **all commands read-only**.
+- Reached U-Boot with the **SP805 watchdog reset** (`scripts/reboot-to-uboot.tcl`) —
+  **no power-cycle** (see [reboot-driver-handover.md](reboot-driver-handover.md)).
+- Verbatim dump (complete `printenv`/`help`/`bdinfo`/`nand`/`sf`/`i2c`/`pci`/`dm`/`usb`,
+  incl. env MACs/IPs): **[uboot-2015.07-hal-capture.txt](uboot-2015.07-hal-capture.txt)**.
 
-**Storage / boot (confirms our model):**
-- NOR: `sf probe` → **`MX25U25635F … total 32 MiB`** (matches live + photo).
-- NAND: `nand0`, erase 256 KiB, page 4096 B, OOB 224 B, **0 bad blocks** (MT29F8G08).
-- `bootcmd` = our NAND boot (`nand read 0x02000000 0x1300000 0x1200000; …`).
-- `bootcmd_orig` (vendor recovery) + `bootnand`/`bootspi`/`bootemmc`/`multiboot`.
-- `bootemmc` = `usb start; ext4load usb 0 … uImage` — confirms **eMMC is over USB** (and `usb start` finds nothing → stranded, as probed).
-- Update scripts show how the vendor writes flash: `kernelupd`/`spikernelupd`
-  (NAND/NOR kernel), `dtupd` (DT @ NOR `0x81000`), `bootupd` (al_boot), `delenv`.
-- NOR env at `env_offset=0x1c0000` (+redund `0x1d0000`); `pld_i2c_addr=0x57`.
+## Runtime-only findings (not derivable from static RE)
 
-**Reconcile / conflict:**
-- **I2C mux:** U-Boot enumerates **`PCA9548@0x71`** with 8 channels, but that's a
-  generic mislabel — **RESOLVED as a 4-channel PCA9546/TCA9546A**: the live vendor
-  capture (`20260816-104601/i2c-devices.txt`) shows `pca9546 @0x71` with only 4
-  child buses (`chan_id 0–3`), matching the photo (`PW546A`) and the DTS. U-Boot
-  buses 5–8 are dead. Full I2C map: pca9575 @0x20/21/29 + pca9546 @0x71 on bus 0;
-  s35390a RTC @0x30 (claims 0x30–0x37) on mux ch0; adt7475 @0x2e on mux ch3.
-- `cpu_set_speed` + `thermal_get` present in U-Boot but not surfaced in Linux.
+- **`dram_margins` crashed U-Boot with a Synchronous Abort** — the vendor SRAM agent blob
+  is fragile; read-with-care. Folded into [uboot-ddr-port.md](uboot-ddr-port.md) §5.
+- **`usb start` finds nothing** → the eMMC (over USB, `bootemmc`) is stranded on this unit,
+  confirming the hostless-eMMC probe in [hardware.md](hardware.md).
+- Live command set present/absent: `mmc`, `mtdparts`, `clocks`, `date` are **absent**;
+  `reset` (SP805) present — a clean-reboot candidate vs the hung Linux path (#51).
+- Live `i2c bus` mislabels the mux **`PCA9548@0x71` (8 ch)** — a generic driver mislabel;
+  the part is a 4-channel PCA9546 ([hardware.md](hardware.md) I2C map is canonical).
 
-**Fan control (vendor, for reference):** `slowfan` = `i2c dev 4; i2c mw 0x2e 0x5c/0x5d/0x5e 0xe8; i2c mw 0x2e 0x30/0x31/0x32 $fanspeed` (ADT747x at **0x2e on i2c bus 4**, `fanspeed=0x50`). `resetled=gpio clear 37`; `preboot=ble;$resetled;run slowfan`.
+## Where each captured fact is analysed (canonical docs — not repeated here)
 
-**PCI topology:** `00.01/00.02` al_eth (1c36:0001), `00.04` al_ssm crypto (1c36:0022),
-`00.05` al_dma/RAID (1c36:0022 cls 04), `00.08/00.09` SATA (1c36:0031).
-
-**DRAM (bdinfo):** 4 banks × 0x40000000 = **4 GB**, at `0x0 / 0x40000000 /
-0x80000000 / 0x200000000`. MACs `eth1 74:ac:b9:41:a8:11`, `eth2 …:12`.
-
-## Notable commands (from `help`) worth remembering
-`cpu_set_speed`, `cpu_aborts_enable_set`, `dram_margins`, `ddr_training_results`,
-`serdes`, `mdio`/`mii`, `thermal_get`, `sgpo` (bay LEDs), `pca953x` (GPIO exp),
-`muio_mux` (pin mux debug), `iodma_*` (RAID/memcpy accel), `flash_contents_*`
-(TOC / boot-instance system), `is_nand_boot`, `reset`, `go` (chainload entry),
-`bootm`/`bootz`, `ext4load`/`ext4ls`, `part`/`gpt`, `scsi*`.
-Absent here: `mmc`, `mtdparts`, `clocks`, `date`.
-
-## Quirks for a modern / custom U-Boot (drop or fix these)
-
-- **`lcd_init()` runs unconditionally** (`power_init_board()` → `board/annapurna-labs/
-  alpine_ubnt/lcd.c`): it writes an MCU frame (`a0 0a 08 <cmd> 0b b0`, **9600 baud**) to
-  **`eserial2` = uart2 = `ttyS2`** — which on the UNVR is the **RPS PHY UART** (RS-232 via
-  MAX3221 `U122` → connector `JB4`), *not* a display. So **every boot squirts LCD bytes at
-  the RPS connector** (harmless — no LCD there, and rpsd resyncs at 115200). A custom
-  U-Boot should **not** init a non-existent LCD, and must treat **uart2 as the RPS link**,
-  not a console/display. (The LCD/MCU path is the UDM-Pro front panel; unpopulated here.)
-- **`cpu_set_speed` is downclock-only** (sets the channel divider, can't exceed the VCO) —
-  real overclock = raise the PLL VCO (`setup_0 @0xfd860d40`, see overclock-and-caps.md).
-- **`i2c_gen @0xfd894000` is `status="disabled"`** in the DTB — the vendor "bus 11" where
-  the RPS/PSE INA/ISL power monitors (0x40–0x49) sit; enable it if we want those.
-
-## Full dump
-
-Verbatim read-only capture (complete, incl. env MACs/IPs):
-[`uboot-2015.07-alpine_db-2.21-HAL.txt`](uboot-2015.07-alpine_db-2.21-HAL.txt) —
-the full `printenv`, `help`, `bdinfo`, `nand/sf/i2c/pci/dm` output.
+| Captured output | Canonical analysis |
+|---|---|
+| `printenv` env, `bootcmd`, flash-write scripts (`kernelupd`/`dtupd`/`bootupd`/`delenv`) | [uboot-update-path.md](uboot-update-path.md), [nor-boot-chain.md](nor-boot-chain.md) §4 |
+| TOC / boot chain / `flash_contents_*` | [nor-boot-chain.md](nor-boot-chain.md), [bootloader.md](bootloader.md) |
+| `sf`/`nand` info (MX25U25635F, MT29F8G08) | [hardware.md](hardware.md), [nand-1.3.35.md](nand-1.3.35.md) |
+| `i2c bus`, mux + expanders + RTC + ADT7475 map | [hardware.md](hardware.md) I2C map |
+| `slowfan` / `fanspeed` fan control | [hardware.md](hardware.md), [gpio-switches-leds.md](gpio-switches-leds.md) |
+| `pci` topology, `bdinfo` DRAM banks + MACs | [hardware.md](hardware.md), [nor-boot-chain.md](nor-boot-chain.md) |
+| `cpu_set_speed` (downclock-only) / VCO overclock | [overclock-and-caps.md](overclock-and-caps.md) |
+| `help` command inventory → porting parity | [uboot-hw-test-suite.md](uboot-hw-test-suite.md), [uboot-port-plan.md](uboot-port-plan.md) |
+| `lcd_init` → LCD frame at 9600 on uart2 = RPS UART | [dt-gaps-hardware-of-record.md](dt-gaps-hardware-of-record.md), [rps-subsystem.md](rps-subsystem.md) |

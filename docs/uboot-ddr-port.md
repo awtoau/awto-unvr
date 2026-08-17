@@ -167,6 +167,9 @@ retrain. Init handle first: `al_ddr_cfg_init(0xf0070000, 0xf0080000, 0xf0088000,
   - NOTE ✅: vendor `dram_margins` runs a **prebuilt SRAM agent blob** (`cmd_dram_margins.c`
     memcpy's `agent_ddr_margins_arr` to SRAM), NOT HAL calls. Our port uses the HAL BIST
     directly — cleaner, no blob.
+  - ⚠ RUNTIME: vendor `dram_margins` **crashed the live U-Boot with a Synchronous Abort**
+    (read-only capture, [uboot-2015.07-hal-capture.md](uboot-2015.07-hal-capture.md)) —
+    the blob is fragile; treat as read-with-care. Extra reason to use the HAL BIST path.
 - **A/C BIST:** `al_ddr_phy_ac_bist(cfg, err_status, pat)` (`:1362`).
 - **ECC status/inject (needs ECC on — likely OFF on this board, see §3):** `al_ddr_ecc_status_get`,
   `al_ddr_ecc_cfg_get`, `al_ddr_ecc_data_poison_enable/disable`, `al_ddr_ecc_corr/uncorr_*_clear`
