@@ -840,3 +840,14 @@
 &uart2 {
 	status = "okay";
 };
+
+/*
+ * SP804 timer0: unused. Linux clocksource/clockevent is the ARMv8 arch timer
+ * (armv8-timer), not SP804. The dtsi enables timer0 with clocks=<&sbclk> but no
+ * clock-names="apb_pclk", so the arm,primecell/AMBA pclk lookup never resolves
+ * and the device defers probe forever ("deferred probe pending: reason
+ * unknown"). Disable it to match timer1/2/3 (already disabled in the dtsi).
+ */
+&timer0 {
+	status = "disabled";
+};
