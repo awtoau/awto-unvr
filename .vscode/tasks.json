@@ -1,0 +1,48 @@
+{
+  // Ctrl+Shift+P -> "Tasks: Run Task" -> pick one. Each opens its OWN named
+  // terminal panel (presentation.panel=dedicated), so sessions stay separate.
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "woomera: ssh",
+      "type": "shell",
+      "command": "python3 scripts/ssh-woomera.py",
+      "options": { "cwd": "${workspaceFolder}" },
+      "presentation": { "panel": "dedicated", "focus": true, "clear": true },
+      "problemMatcher": []
+    },
+    {
+      "label": "woomera: find on LAN",
+      "type": "shell",
+      "command": "python3 scripts/find-woomera-ssh.py",
+      "options": { "cwd": "${workspaceFolder}" },
+      "presentation": { "panel": "dedicated", "focus": true, "clear": true },
+      "problemMatcher": []
+    },
+    {
+      "label": "serial: loopback (continuous)",
+      "type": "shell",
+      "command": "python3 scripts/serial_loopback_test.py --repeat --interval 1.0",
+      "options": { "cwd": "${workspaceFolder}" },
+      "isBackground": true,
+      "presentation": { "panel": "dedicated", "focus": true, "clear": true },
+      "problemMatcher": []
+    },
+    {
+      "label": "serial: pin probe (one-shot)",
+      "type": "shell",
+      "command": "python3 scripts/serial_pin_probe.py",
+      "options": { "cwd": "${workspaceFolder}" },
+      "presentation": { "panel": "dedicated", "focus": true, "clear": true },
+      "problemMatcher": []
+    },
+    {
+      "label": "serial: baud sweep",
+      "type": "shell",
+      "command": "python3 scripts/serial_baud_sweep.py",
+      "options": { "cwd": "${workspaceFolder}" },
+      "presentation": { "panel": "dedicated", "focus": true, "clear": true },
+      "problemMatcher": []
+    }
+  ]
+}

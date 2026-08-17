@@ -1,0 +1,8 @@
+{
+  // REST Control (dpar39.vscode-rest-control) - lets scripts/agents open terminals
+  // in THIS window. Fixed port so scripts/vscode-terminal.py does not have to guess;
+  // the extension otherwise derives one from the workspace path.
+  "restRemoteControl.enable": true,
+  "restRemoteControl.port": 37100,
+  "restRemoteControl.fallbacks": [37101, 37102]
+}
