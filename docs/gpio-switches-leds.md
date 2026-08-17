@@ -1,6 +1,6 @@
 # GPIO / switches / LEDs / RPS map
 
-Reverse-engineered from the vendor GPL U-Boot + kernel (4.1.37), the live vendor
+Reverse-engineered from the Ubiquiti GPL U-Boot + kernel (4.1.37), the live stock
 DTB (`hw-reference/20260816-104601/`), the extracted firmware userland
 (`UNVR-5.1.25.bin` rootfs), and board photos (`photos/`). 2026-08-17.
 

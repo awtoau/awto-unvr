@@ -106,7 +106,7 @@ Manifest written to [../sources/README.md](../sources/README.md).
 **Gotchas**
 
 - Fetched with `curl` **by explicit approval** — playwrong has no binary-download
-  tool (only `pdf` writes files). The vendor sha256 is what makes that safe: the
+  tool (only `pdf` writes files). The Ubiquiti sha256 is what makes that safe: the
   silent-wrong-content failure the no-curl rule guards against is detectable here.
 - Verification is mandatory and destructive on failure — a bad copy is deleted
   rather than left looking valid. Size **and** sha256 **and** md5 must match.
@@ -190,7 +190,7 @@ for a single known offset would not survive a firmware bump.
 **Gotcha:** `IKCFG_ST`'s gzip stream ends at `IKCFG_ED`, so `gzip.decompress`
 fails on the trailing bytes — `zlib.decompressobj` tolerates them.
 
-Vendor build path from `CONFIG_INITRAMFS_SOURCE` ✅:
+Stock build path from `CONFIG_INITRAMFS_SOURCE` ✅:
 `.../irmware.debbox_unifi-nvr_v5.1.25/unvr4.alpine-2/build/target-unvr4.alpine/image/unvr-image/initramfs.cpio`
 — `debbox`, matching `thezim/debbox-kernel` naming.
 
@@ -294,7 +294,7 @@ verification is whatever `ubnt-tools` does internally.
 Source: `tmp/sections/01-uboot.bin` (1.33 MB, section 1).
 
 **Result** ✅ — U-Boot contains the Annapurna `al_eth` driver, the `Annapurna`
-vendor string, `eth0`–`eth3`, the `Net:` banner, PHY handling and
+string, `eth0`–`eth3`, the `Net:` banner, PHY handling and
 `Waiting for PHY realtime link`. Networking is not initramfs-only. Build path
 `/project/users/barak/tasks/al-boot-release/`.
 
@@ -485,7 +485,7 @@ board.serialno=74acb941a811 board.qrid=icvpQD
 aarch64 GNU/Linux`
 
 **`ip -4 addr show`** ✅ — `enp0s1` at `192.168.25.140/24`, carrier up. (This is the
-vendor-initramfs / U-Boot `ipaddr` tftp context; the later Fedora DHCP lease may differ —
+stock initramfs / U-Boot `ipaddr` tftp context; the later Fedora DHCP lease may differ —
 don't treat `.140` as woomera's current IP.)
 
 **Gotchas**

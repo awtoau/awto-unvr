@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Map preboot FUN_<va> -> FULL vendor name via referenced __func__ strings.
+"""Map preboot FUN_<va> -> FULL Annapurna/contractor name via referenced __func__ strings.
 
 The Annapurna/contractor preboot leaves __func__ in .rodata; log calls
 (FUN_0100ceb0 / FUN_01010c00) pass the enclosing function's __func__ as an arg,

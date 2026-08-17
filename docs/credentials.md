@@ -1,6 +1,6 @@
 # Console credentials
 
-Vendor factory defaults — publicly documented, **not** device secrets. Same for
+Stock factory defaults — publicly documented, **not** device secrets. Same for
 every unit of the given firmware generation; verified against each firmware's
 baked-in `/etc/shadow` ($5$/$6$ crypt, cracked).
 

@@ -2,7 +2,7 @@
 """Build a Fedora aarch64 rootfs for the UNVR (ea16), bootable by OUR U-Boot+kernel.
 
 The "hack": Fedora arm64 normally boots UEFI -> shim -> GRUB -> dracut. We have
-none of those. This rootfs is booted directly by the vendor U-Boot + our 7.1.8
+none of those. This rootfs is booted directly by the stock U-Boot + our 7.1.8
 kernel with root=/dev/sdaN, no initramfs (kernel has AHCI+ext4 built-in), no
 bootloader of its own. So this script produces ONLY a configured userland tar;
 kernel + modules + boot config are applied separately.

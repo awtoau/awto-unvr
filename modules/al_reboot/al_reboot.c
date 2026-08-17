@@ -3,13 +3,13 @@
  * Annapurna Labs Alpine V2 (AL-324) reboot driver.
  *
  * Registers a restart handler that resets the SoC via the SP805 watchdog
- * (wdt0), the vendor's reboot mechanism. Fixes the Linux reboot hang (#51):
+ * (wdt0), the stock reboot mechanism. Fixes the Linux reboot hang (#51):
  * mainline 7.1 has no restart handler for the AL-324, so machine_restart()
  * finds nothing that resets, prints "Reboot failed" and halts (looks like a
  * hang at "Restarting system"); a power-cycle is the only recovery.
  *
- * Ported from the vendor 4.1.37 drivers/power/reset/alpine-reboot.c: the vendor
- * set the (since-removed) arm_pm_restart hook; we use the modern sys-off handler
+ * Ported from the Ubiquiti GPL 4.1.37 drivers/power/reset/alpine-reboot.c: the stock
+ * driver set the (since-removed) arm_pm_restart hook; we use the modern sys-off handler
  * framework instead. The SP805 register sequence is unchanged, and matches the
  * manual reset validated in scripts/reboot-to-uboot.tcl.
  *

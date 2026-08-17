@@ -26,4 +26,4 @@ Discovered via `https://fw-update.ui.com/api/firmware-latest?filter=eq~~platform
   bytes are not `<!DOCTYPE`.
 
 Fetched with curl by explicit approval - playwrong has no binary-download tool.
-The vendor checksum is what makes that safe; do not skip verification.
+The stock checksum is what makes that safe; do not skip verification.

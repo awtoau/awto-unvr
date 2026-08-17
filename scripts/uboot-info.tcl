@@ -1,7 +1,7 @@
 # In-depth, READ-ONLY U-Boot info dump. Run at the U-Boot prompt:
 #   ./dev.py console-tcl scripts/uboot-info.tcl > docs/hw-reference/uboot-info-<date>.md
 # Every command here is informational (no erase/write/dhcp/boot). Captures the
-# full vendor env, board info, NAND/NOR/USB/PCI/GPIO/clock state.
+# full stock env, board info, NAND/NOR/USB/PCI/GPIO/clock state.
 proc run {cmd} {
     puts "\n===== $cmd ====="
     send $cmd

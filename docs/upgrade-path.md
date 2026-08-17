@@ -61,7 +61,7 @@ Sizes rounded. Full sha256 in the API response.
 ## Recommended ladder
 
 Ubiquiti publishes no supported-upgrade matrix, so this is reasoning from the
-boundaries in the data, not from vendor guidance:
+boundaries in the data, not from Ubiquiti guidance:
 
 ```
 1.3.35  ->  1.4.9   ->  2.3.14  ->  3.1.16  ->  4.1.22  ->  5.1.25
@@ -101,7 +101,7 @@ from doing it.
 
 `ubnt-tools` is a multi-call binary providing `fwupdate` / `fwsplit` / `fwinfo`.
 It verifies the image with OpenSSL `d2i_PUBKEY` + `EVP_Verify*` before writing
-(`ERROR: Bad FW Image Signature` on failure), so an unmodified vendor `.bin`
+(`ERROR: Bad FW Image Signature` on failure), so an unmodified stock `.bin`
 passes and a tampered one does not.
 
 Get the image onto the box first — TFTP is the reliable transport

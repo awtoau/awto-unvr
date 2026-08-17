@@ -191,7 +191,7 @@ Each phase boots and is reverted by power-cycle (RAM payload, no flash write).
   ext4 USB or SATA; GRUB loads the mainline `Image` + initramfs; Linux enters at
   the EL EDK2 hands off (EL2 per current chain).
 - This is the payoff: a standard UEFI+ACPI/DT boot for TrueNAS/Fedora/Debian
-  without the vendor initramfs.
+  without the stock initramfs.
 
 ---
 

@@ -161,7 +161,7 @@ extracted it offline (92970 bytes) without needing a running device.
 | `CONFIG_AL_ETH_ALLOC_FRAG` | `y` | frag allocator (not PAGE, not SKB) |
 | `CONFIG_AL_ETH_FORCE_SFP_1G` | not set | SFP+ not pinned to 1G |
 
-Built into the vendor kernel (from `modules.builtin`, so no `.ko` to lift):
+Built into the stock kernel (from `modules.builtin`, so no `.ko` to lift):
 `al_eth_drv`, `al_dma_drv`, `soc/alpine/hal`, `soc/alpine/al_hal_export`.
 Shipped as modules: `al_nand`, `marvell10g`, `phylink`, `ubnthal`, `ubnt_common`,
 `ui-hdd-pwrctl`.

@@ -1,6 +1,6 @@
-# Probe the eMMC via the vendor U-Boot USB path — the definitive test.
-# The UNVR family reaches its eMMC over a USB bridge (vendor `bootemmc` = `usb start`),
-# and Linux showed 0 devices on the xHCI bus. This runs the vendor path at U-Boot:
+# Probe the eMMC via the stock U-Boot USB path — the definitive test.
+# The UNVR family reaches its eMMC over a USB bridge (stock `bootemmc` = `usb start`),
+# and Linux showed 0 devices on the xHCI bus. This runs the stock path at U-Boot:
 # if `usb start` enumerates a storage device, the bridge+eMMC are populated/reachable;
 # if not, the bridge is unpopulated on this NAND SKU. Read-only — no flashing.
 # Run at (or into) the U-Boot prompt:  ./dev.py console-tcl scripts/probe-mmc-uboot.tcl

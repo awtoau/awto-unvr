@@ -51,9 +51,9 @@ Two chips, told apart by erase size: **NAND = 256 KB erase**, **SPI-NOR = 4 KB**
 | 11 | `config` | 14675968 | 4K | SPI-NOR | **ext4**, UUID `e98263ea-…` |
 | 12 | `cksum` | 4096 | 4K | SPI-NOR | **100% zeroed** |
 
-> **Our current use (Fedora) — the table above is the vendor 1.3.35 baseline.**
+> **Our current use (Fedora) — the table above is the stock 1.3.35 baseline.**
 > We repurposed the **`rootfs` region (mtd3)**: `scripts/flash-nand.py` writes our
-> **Fedora kernel @`0x1300000` + DTB @`0x2800000`** into it. The vendor `linux_kernel`
+> **Fedora kernel @`0x1300000` + DTB @`0x2800000`** into it. The stock `linux_kernel`
 > (mtd2 @`0x300000`) is left **intact as recovery**, and Fedora's real rootfs is on the
 > **SSD** (root=PARTUUID). See [fedora-on-ssd.md](fedora-on-ssd.md); MTD redesign #30, #54.
 

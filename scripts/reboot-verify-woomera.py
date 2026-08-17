@@ -89,7 +89,7 @@ def main():
         log("DONE — verification battery complete (see log)")
         s.close(); return 0
     log(f"BOOT FAILED: {result}")
-    log("RECOVER: catch vendor U-Boot (reboot-to-uboot) then:\n"
+    log("RECOVER: catch stock U-Boot (reboot-to-uboot) then:\n"
         "  ext4load scsi 0:2 0x02000000 /boot/uImage-unvr-ea16-7.1-fedora-gz.bak\n"
         "  ext4load scsi 0:2 0x04078000 /boot/alpine-v2-ubnt-unvr-ea16-7.1-fedora.dtb.bak\n"
         "  bootm 0x02000000 - 0x04078000")

@@ -2,7 +2,7 @@
 """Fetch the UNVR firmware .bin from Ubiquiti and verify it.
 
 - playwrong has no binary-download tool (only `pdf` writes files, PDF-only), so
-  this uses curl by explicit approval. The vendor publishes an sha256, so the
+  this uses curl by explicit approval. Ubiquiti publishes an sha256, so the
   silent-wrong-content failure the no-curl rule guards against is detectable.
 - Verification is mandatory: size AND sha256 must match the fw-update.ui.com API
   values, or the file is deleted rather than left looking valid.
@@ -105,7 +105,7 @@ Discovered via `https://fw-update.ui.com/api/firmware-latest?filter=eq~~platform
   bytes are not `<!DOCTYPE`.
 
 Fetched with curl by explicit approval - playwrong has no binary-download tool.
-The vendor checksum is what makes that safe; do not skip verification.
+The stock checksum is what makes that safe; do not skip verification.
 """
     (SOURCES / "README.md").write_text(doc)
     log(f"wrote {SOURCES / 'README.md'}")

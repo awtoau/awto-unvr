@@ -1,7 +1,7 @@
 # Linux 6.18.44 LTS for UNVR ea16 — forward-port of the 6.12 build
 
 Goal: same netboot bring-up as [linux-6.12-build.md](linux-6.12-build.md) but on
-**6.18.44 LTS**. Cross-built on the host, netboot only (no flashing, vendor NAND
+**6.18.44 LTS**. Cross-built on the host, netboot only (no flashing, stock NAND
 untouched). This doc records ONLY the 6.12 -> 6.18 deltas; the mechanism
 (embedded initramfs, gpio-hog drive power, uImage/bootm) is unchanged — see the
 6.12 doc for it.
@@ -84,7 +84,7 @@ not "pci"/"pcie") — same as 4.19/6.12, no functional effect.
 - Only warnings (non-fatal): `-Wmissing-prototypes` (HAL statics), a few
   `-Wimplicit-fallthrough`, two `-Wframe-larger-than` (serdes 3216 B, ssm_crypto
   2336 B), and one `al_eth_main.c:846 'phydev' used uninitialized`. All
-  pre-existing in the vendor code; none blocks the build. **Runtime bind on
+  pre-existing in the Annapurna code; none blocks the build. **Runtime bind on
   6.18 is unverified** (see risks).
 
 ## Build (reproduce)

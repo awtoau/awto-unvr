@@ -5,7 +5,7 @@ Status: **written, NOT built or tested.** Everything to finish it is below.
 ## What / why
 
 Linux `reboot` on woomera hangs at "Restarting system" (#51) because mainline 7.1
-has **no restart handler** for the AL-324. The vendor's mechanism is the **SP805
+has **no restart handler** for the AL-324. The stock mechanism is the **SP805
 watchdog** (`wdt0` @ `0xfd88c000`): arm it for an immediate reset and the SoC resets
 to U-Boot. We **validated this works** manually — `scripts/reboot-to-uboot.tcl` armed
 `/dev/watchdog` and the box reset cleanly to U-Boot with no power-cycle.
@@ -18,8 +18,8 @@ to U-Boot. We **validated this works** manually — `scripts/reboot-to-uboot.tcl
 - **`/mnt/2tb/unvr-port-refs/linux-alpine-v2/modules/al_reboot/al_reboot.c`** — the driver.
 - **`.../al_reboot/Makefile`** — OOT build.
 
-Ported from the vendor GPL `linux-arm64-unvr-4.1.37-ubnt/drivers/power/reset/alpine-reboot.c`.
-**Only port change:** the vendor set `arm_pm_restart = ...` (that hook was removed after
+Ported from the Ubiquiti GPL `linux-arm64-unvr-4.1.37-ubnt/drivers/power/reset/alpine-reboot.c`.
+**Only port change:** the stock driver set `arm_pm_restart = ...` (that hook was removed after
 kernel 5.x) → we use `register_restart_handler()` with a `notifier_block`. SP805 register
 sequence is identical: unlock `WDTLOCK=0x1ACCE551`, `WDTLOAD=1`, `WDTCONTROL=INT|RESET`.
 
@@ -54,7 +54,7 @@ as before (hang) — no worse than today; recover with `reboot-to-uboot.tcl` or 
 Once proven, add `al_reboot` to the OOT list in
 `scripts/build-linux-71-fedora.py` (the `for m in ("al_eth","al_dma","al_ssm","al_sgpo")`
 loop → add `"al_reboot"`), so it ships in the module tree and autoloads. Then a NAND
-reflash carries it. (Or build it in via `CONFIG_POWER_RESET_ALPINE` if we vendor the
+reflash carries it. (Or build it in via `CONFIG_POWER_RESET_ALPINE` if we import the
 source into the kernel tree.)
 
 ## Watch-outs
@@ -70,4 +70,4 @@ source into the kernel tree.)
 ## Related
 
 - #51 (reboot hang — this fixes it), #60 (early watchdog), `scripts/reboot-to-uboot.tcl`
-  (the manual SP805 reset we validated), the vendor `alpine-reboot.c` source cited above.
+  (the manual SP805 reset we validated), the Ubiquiti GPL `alpine-reboot.c` source cited above.

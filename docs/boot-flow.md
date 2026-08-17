@@ -6,7 +6,7 @@ Extracted from `tmp/sections/01-uboot.bin` (1.33 MB, section 1 of the container)
 **Canonical U-Boot env (full default chain, OLD vs NEW deltas): [nor-boot-chain.md](nor-boot-chain.md) §4.**
 The env excerpt below is what the netboot recipe needs.
 
-The bootloader contains the **Annapurna `al_eth` driver**, the `Annapurna` vendor
+The bootloader contains the **Annapurna `al_eth` driver**, the `Annapurna`
 string, `eth0`–`eth3`, the `Net:` init banner, PHY handling and
 `Waiting for PHY realtime link` ✅. Networking is not an initramfs-only feature.
 
@@ -80,7 +80,7 @@ All ✅ verified: extracted from the kernel of `sources/UNVR-5.1.25.bin` with
 `CONFIG_INITRAMFS_SOURCE`, so a 17.5 MB gzip'd newc cpio is embedded in the
 Image. Extracted tree: `tmp/sections/initramfs-0/`.
 
-Vendor build path (from `CONFIG_INITRAMFS_SOURCE`):
+Stock build path (from `CONFIG_INITRAMFS_SOURCE`):
 `/home/dio/jenkins_slave/workspace/irmware.debbox_unifi-nvr_v5.1.25/unvr4.alpine-2/build/target-unvr4.alpine/image/unvr-image/initramfs.cpio`
 — note `debbox`, matching `thezim/debbox-kernel` naming.
 

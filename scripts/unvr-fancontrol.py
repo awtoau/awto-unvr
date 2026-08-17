@@ -6,7 +6,7 @@ controller powers up in manual/fixed mode; this puts it in hardware AUTOMATIC
 mode with a temp-curve so fans ramp with temperature and the chip enforces it
 even if userspace dies.
 
-Interim curve: driven by temp3 (the board sensor the vendor curve targets).
+Interim curve: driven by temp3 (the board sensor the stock curve targets).
 temp3 is ambient-ish, so this is not SoC-load-aware - the proper fix is the
 al_thermal SoC-die sensor (issue #44). Chosen to keep fans ALWAYS ON (Tmin below
 the ~36 C resting temp, so they never cut out) and ramp to full by 55 C; the

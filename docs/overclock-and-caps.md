@@ -17,7 +17,7 @@ alpine_ubnt/board.c`, live `hw-reference/20260816-104601/`, `preboot-alboot-deco
 
 - **CPU is clocked well below its ceiling. [P]** Cores run **1.7 GHz**; the SoC's own
   strap table allows CPU PLL up to **2.7 GHz** on Alpine V2. ~1 GHz of headroom in the
-  vendor's own bin table, before even challenging the marking.
+  stock own bin table, before even challenging the marking.
 - **DRAM is below ceiling too. [P]** DDR4-**1866** (NB PLL 933.33 MHz); strap table
   allows NB PLL up to **1300 MHz = DDR4-2600**; DDR controller enum goes to DDR4-3200.
 - **Overclock levers (found, register-exact):**
@@ -81,7 +81,7 @@ BogoMIPS 116.66 is timer-derived (arch_timer 58.33 MHz), NOT the core clock — 
 | 0x7 | 1.9 GHz | | **0xE** | **2.7 GHz ← table max** |
 | 0x8 | 2.1 GHz | | 0xF | 2.0 GHz |
 
-Note: 2.7 GHz is the vendor bin table max; A57 r1p3 on 28 nm typically rates ~2.0–2.5 GHz.
+Note: 2.7 GHz is the stock bin table max; A57 r1p3 on 28 nm typically rates ~2.0–2.5 GHz.
 Treat 1.8–2.0 GHz as the low-risk target, above that per the "challenge the marking" test.
 
 ### CPU PLL register table (CPU PLL @ `0xfd860d00`)

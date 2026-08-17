@@ -5,11 +5,11 @@ Subject: [PATCH 3/5] arm64: dts: amazon: add Ubiquiti UNVR ea16 (NAND-boot)
  board
 
 - UNVR board sysid 0xEA16: boots + roots from NAND, no eMMC. Derived
-  from the community ea1a UNVR DTS and grounded in this unit's vendor
+  from the community ea1a UNVR DTS and grounded in this unit's stock
   live DTB.
 - vs ea1a: sysid ea16 in bootargs (+ubnthal.sysid=ea16); NAND
   controller enabled with the 5-partition map; SPI-NOR partition map
-  corrected to real layout; ramoops region moved to vendor reserve.
+  corrected to real layout; ramoops region moved to stock reserve.
 - gpio-hog: PCA9575 @0x21 lines 0-3 driven output-high at chip-probe to
   power SATA bays 1-4 before userspace (no mainline hdd-pwrctl driver).
 - Register alpine-v2-ubnt-unvr-ea16.dtb in the amazon Makefile.
@@ -41,7 +41,7 @@ index 000000000..826c963a5
 + * Device Tree Source for Ubiquiti UNVR — board sysid 0xEA16 (NAND-boot, NO eMMC)
 + *
 + * Derived from alpine-v2-ubnt-unvr.dts (the port's ea1a / eMMC UNVR) and
-+ * grounded in this unit's vendor-kernel live DTB:
++ * grounded in this unit's stock kernel live DTB:
 + *   docs/hw-reference/20260816-104601/live.dts   (dumped from the running 4.19 kernel)
 + *   docs/nand-1.3.35.md, docs/nor-boot-chain.md, docs/identity-partitions.md
 + *
@@ -56,8 +56,8 @@ index 000000000..826c963a5
 + *   1. sysid ea1a -> ea16 in bootargs; add ubnthal.sysid=ea16.
 + *   2. NAND controller ENABLED with this unit's 5-partition map.
 + *   3. SPI-NOR partition map corrected to this unit's real layout (adds the
-+ *      "cksum" tail partition; config size 0xdff000; vendor labels).
-+ *   4. ramoops moved to 0x92000000 to match the vendor reserved region and stay
++ *      "cksum" tail partition; config size 0xdff000; stock partition labels).
++ *   4. ramoops moved to 0x92000000 to match the stock reserved region and stay
 + *      clear of the low kernel + embedded-initramfs load area used for netboot.
 + *   5. model string tagged "(ea16)".
 + * Everything else (RAM, PCIe, MSI-X, eth0-3, i2c/gpio, sgpo, LEDs, thermal,
@@ -112,7 +112,7 @@ index 000000000..826c963a5
 +		#size-cells = <2>;
 +		ranges;
 +
-+		/* Matches the vendor reserved region; clear of the low netboot area. */
++		/* Matches the stock reserved region; clear of the low netboot area. */
 +		ramoops@92000000 {
 +			compatible = "ramoops";
 +			reg = <0x00 0x92000000 0x00 0x200000>;
@@ -373,7 +373,7 @@ index 000000000..826c963a5
 +				 * Power the SATA bays at boot. There is no mainline
 +				 * ui,hdd-pwrctl driver, so hog the PCA9575 power-enable
 +				 * lines (bays 1-4 = lines 0-3, active-high) as
-+				 * output-high. On the vendor kernel these exact lines
++				 * output-high. On the stock kernel these exact lines
 +				 * (gpiochip base 480, offsets 0-3) power the fitted
 +				 * drives on ata5/ata7. No userspace needed.
 +				 */
@@ -640,7 +640,7 @@ index 000000000..826c963a5
 +		 * from eMMC). Layout from docs/nand-1.3.35.md (verified on hardware):
 +		 *   al_boot      0x00000000 +0x00200000  (2 MiB, currently erased)
 +		 *   device_tree  0x00200000 +0x00100000  (1 MiB, currently erased)
-+		 *   linux_kernel 0x00300000 +0x01000000  (16 MiB, vendor uImage)
++		 *   linux_kernel 0x00300000 +0x01000000  (16 MiB, stock uImage)
 +		 *   rootfs       0x01300000 +0x3ec00000  (~1004 MiB, squashfs)
 +		 *   chike        0x3ff00000 +0x00100000  (1 MiB)
 +		 * 1 GiB NAND total.

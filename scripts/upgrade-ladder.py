@@ -46,7 +46,7 @@ STAGE_DIR = "/mnt/.rwfs/upgrade"
 # 5.1.25 renamed it to /etc/ssl/fw.pub - do not copy that path backwards.
 PUB_KEY = "/etc/ssl/unas.pub"
 
-# Vendor default console credentials, recorded in secrets.yaml (gitignored).
+# Stock default console credentials, recorded in secrets.yaml (gitignored).
 # The password changed across generations: 1.3.35/1.4.9 = "ubnt", 2.3.14 and
 # every al324 build after = "ui" (verified against each firmware's baked-in
 # /etc/shadow: $5$ SHA-256 crypt, cracked to "ui"). Try the newer one first.
@@ -442,7 +442,7 @@ def hop(row: dict, ver: str) -> bool:
         log(f"  no {PUB_KEY} in rootfs - al324 keeps it in the initramfs, "
             "which verifies before writing")
 
-    # Hand the flash to the vendor's own path rather than driving nandwrite
+    # Hand the flash to the stock own path rather than driving nandwrite
     # ourselves. `mount_premount` finds ${MNT_RWFS}/upgrade/fw-image.bin before
     # UniFi OS starts, runs this generation's upgrade_firmware (fwsplit ->
     # nandwrite, including the 4-byte LE length prefix the kernel partition

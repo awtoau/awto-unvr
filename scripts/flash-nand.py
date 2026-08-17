@@ -2,8 +2,8 @@
 """Flash the Fedora kernel + DTB into NAND and set U-Boot to boot it standalone.
 
 Runs against a device ALREADY at the U-Boot prompt (ALPINE_UBNT_NAS_ALL>). tftp's
-our gzip uImage + ea16 DTB from the host and writes them into the DEAD vendor
-rootfs region of NAND (the vendor kernel @0x300000 is left intact as recovery),
+our gzip uImage + ea16 DTB from the host and writes them into the DEAD stock
+rootfs region of NAND (the stock kernel @0x300000 is left intact as recovery),
 then sets bootcmd to nand-read + bootm and saveenv. Rootfs stays on the SSD
 (root=PARTUUID, already in bootargs). Fully NAND-side; SSD untouched.
 
@@ -66,7 +66,7 @@ def main():
     s.connect(str(SOCK))
     # confirm we're at the prompt
     step(s, "", "ALPINE_UBNT_NAS_ALL>", 5, "at U-Boot prompt")
-    log("=== flashing Fedora kernel+DTB to NAND (vendor kernel @0x300000 preserved) ===")
+    log("=== flashing Fedora kernel+DTB to NAND (stock kernel @0x300000 preserved) ===")
     step(s, f"setenv ipaddr {IPADDR}", "ALPINE_UBNT_NAS_ALL>", 5, "set ipaddr")
     step(s, f"setenv serverip {SERVERIP}", "ALPINE_UBNT_NAS_ALL>", 5, "set serverip")
     # kernel

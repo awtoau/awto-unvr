@@ -32,4 +32,4 @@
 
 ## RE / repurpose notes
 
-- Nothing to reprogram (RAM). The actionable item is **reading the SPD at 0x57** to close [hardware.md](../hardware.md) open questions and to know the exact timings if ever re-initialising DRAM outside the vendor preboot.
+- Nothing to reprogram (RAM). The actionable item is **reading the SPD at 0x57** to close [hardware.md](../hardware.md) open questions and to know the exact timings if ever re-initialising DRAM outside the stock preboot.

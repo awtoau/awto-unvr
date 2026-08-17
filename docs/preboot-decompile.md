@@ -202,7 +202,7 @@ they set capability state and log, they do not abort OS boot.
 
 ## Function name map — significant functions
 
-Vendor names recovered from `__func__` strings the AL HAL / contractor stage3 leave
+Annapurna/contractor names recovered from `__func__` strings the AL HAL / contractor stage3 leave
 in `.rodata` (log calls pass the enclosing function's `__func__`). Extractor:
 `scripts/name-preboot-funcs.py` (reads the full NUL-terminated string from
 `tmp/alboot-payload.bin` at each label's rodata VA — defeats Ghidra's ~32-char label

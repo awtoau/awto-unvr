@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Make woomera boot Fedora standalone from the SSD — set U-Boot bootcmd + saveenv.
 
-The vendor U-Boot (ubnt_nas, 2015.07) has CONFIG_SCSI_AHCI + CMD_SCSI + CMD_EXT4,
+The stock U-Boot (ubnt_nas, 2015.07) has CONFIG_SCSI_AHCI + CMD_SCSI + CMD_EXT4,
 so it can read the SATA SSD directly — no NAND flashing. This catches U-Boot,
 records the ORIGINAL bootcmd (for recovery), verifies `scsi init` finds a disk,
 then sets bootcmd to load our gzip uImage + DTB from /boot on the ext4 root and

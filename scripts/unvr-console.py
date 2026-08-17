@@ -49,7 +49,7 @@ def stamp():
 
 
 # Bauds worth trying, likeliest first. 115200 is what U-Boot's own loadbootargs
-# sets (console=ttyS0,115200); the rest are common vendor alternatives.
+# sets (console=ttyS0,115200); the rest are common alternatives.
 SWEEP_BAUDS = [115200, 57600, 38400, 9600, 19200, 230400, 460800, 921600]
 
 

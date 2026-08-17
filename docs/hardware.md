@@ -89,12 +89,12 @@ NAND, NO eMMC.**
 **eMMC probe (2026-08-17, live Fedora, `tmp/probe-emmc.tcl` + `probe-usb.tcl`):**
 Linux sees **no eMMC** — no `/sys/class/mmc_host`, no `/dev/mmcblk*`, nothing in
 `dmesg | grep mmc/sdhci/emmc`. **No MMC controller node exists in the SoC dtsi or
-the vendor 4.19 DTB** — the AL-324's eMMC is not on a native SD host. The family
-accesses it over **USB** (vendor U-Boot `bootemmc` = `usb start`), but the xHCI
+the stock 4.19 DTB** — the AL-324's eMMC is not on a native SD host. The family
+accesses it over **USB** (stock U-Boot `bootemmc` = `usb start`), but the xHCI
 host (ASM1042A `0001:01:00.0`) enumerates **0 downstream devices** — the USB-eMMC
 **bridge is not populated/powered on this SKU**, so the populated BGA has no host.
 lsblk = only SATA (`sda` SSD, `sdb`/`sdc` WDC 8 TB) + zram. **To confirm the
-bridge:** at U-Boot, `usb start; usb tree` — the vendor path; if it finds a
+bridge:** at U-Boot, `usb start; usb tree` — the stock path; if it finds a
 device the bridge+eMMC are reachable, else the bridge is unpopulated.
 
 Boot medium follows sysid: **ea16 → `bootnand`** (this unit); ea1a UNVR / ea20
@@ -138,7 +138,7 @@ matte-black QFP **U1** in the SATA area is unread.
 
 | Item | Detail | Evidence |
 |---|---|---|
-| Temperature (board) | ADT7475 temp1/2/3 — **live on Fedora** `hwmon0`; temp2≈34.5°C temp3≈36.5°C at idle. temp3 is the vendor's fan-curve sensor | ✅ Fedora verified |
+| Temperature (board) | ADT7475 temp1/2/3 — **live on Fedora** `hwmon0`; temp2≈34.5°C temp3≈36.5°C at idle. temp3 is the stock fan-curve sensor | ✅ Fedora verified |
 | Temperature (SoC die) | al-thermal `@fd860a00` node in DTS, but `al_thermal` driver **NOT built** → no die temp / no kernel thermal zones | ⚠ #44 |
 | Fans | 2 × spinning (fan1/fan3 ~4500 RPM; fan2/fan4 absent), ADT7475 PWM. **Auto curve live** via `unvr-fancontrol.service` (temp3, Tmin30/Tmax55°C, hw mode 2). Proper SoC-temp control needs al_thermal (#44) | ✅ Fedora verified |
 | I2C | SPD at 0x57; `Setting bus to 4` at boot — at least 5 buses. adt7475/s35390a on the PCA9546 mux (ch3/ch0) | ✅ |
@@ -196,7 +196,7 @@ matte-black QFP **U1** in the SATA area is unread.
 - What the second, unpopulated EEPROM region is for.
 - The `chike` NAND partition holds a 2095×1692 JPEG with Exif — purpose unknown.
 - Whether `dtt_get_temp[0..2]` maps to the three fan-adjacent sensors.
-- SFP+ module type/vendor — `ethtool` gave no module data on the vendor kernel.
+- SFP+ module type/vendor — `ethtool` gave no module data on the stock kernel.
 
 ## MMIO and address map
 

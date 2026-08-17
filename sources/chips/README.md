@@ -21,7 +21,7 @@ All PDFs fetched via playwrong (`mcp__playwrong__pdf`), never curl/wget.
 |---|---|---|
 | **MT29F8G08ABBCAH4** (full DS) | Micron datasheet login-gated; all distributor hotlinks (Mouser/Verical/Farnell) 403/block or serve a wrong-density family doc | Running-kernel ground truth + Avaq 1-page card (above). Part page: micron.com/…/mt29f8g08abbcah4-it-c |
 | **PCA9575** | NXP `docs/en/data-sheet/PCA9575.pdf` hotlink-protected (HTTP 404 to any non-browser fetch); distributor htmldatasheets 410/gone | NXP product page (full text), datasheet **Rev 5.0, 2023-05-31** — open URL in a browser |
-| **AL-324 / Alpine V2** | NDA (Amazon/Annapurna), no public datasheet | HAL headers (`delroth/alpine_hal`), mainline DT, vendor kernel |
+| **AL-324 / Alpine V2** | NDA (Amazon/Annapurna), no public datasheet | HAL headers (`delroth/alpine_hal`), mainline DT, stock kernel |
 | **ASM1042A** | ASMedia NDA, no public datasheet | lspci/lsusb, Linux xhci-pci quirks |
 | **DDR4 DRAM** | part unconfirmed (soldered) | read SPD @ I²C 0x57 to identify, then fetch |
 | **SFP+ optic** | module unconfirmed | `ethtool -m` / EEPROM 0x50 to identify, then fetch |

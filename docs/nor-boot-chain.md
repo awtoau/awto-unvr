@@ -311,7 +311,7 @@ secret / entropy pool).
   generation, not this 2020-12-16/2026 U-Boot. HAL for a rebuild recoverable from
   `fabianishere/udm-kernel` + `delroth/alpine_hal` ([sources.md](sources.md),
   [licence-audit.md](licence-audit.md)).
-- S2 / al-boot / stage3 are proprietary vendor code (no GPL strings) — unpublished
+- S2 / al-boot / stage3 are proprietary Annapurna code (no GPL strings) — unpublished
   is expected, not a violation.
 
 ## 8. OLD vs NEW boot-code diff (`scripts/diff-nor-blobs.py`)

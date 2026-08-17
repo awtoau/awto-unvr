@@ -4,7 +4,7 @@ Goal: recover THIS board's (`sysid 0xea16`, UNVR4) `al_ddr_init_cfg` values that
 GPLv2 Annapurna DDR HAL needs. Result **overturns the prior hypothesis** that DDR is
 trained by a CVOS "agent" fed a config struct from the main core.
 
-Evidence base: carved blobs + Ghidra decompile in `docs/nor-reference/`, vendor GPL u-boot
+Evidence base: carved blobs + Ghidra decompile in `docs/nor-reference/`, Ubiquiti GPL U-Boot
 `board/annapurna-labs/`, kernel HAL `urnvr-kernel-4.19.152/.../HAL/ddr/`.
 Raw offsets/dumps: [tmp/logs/ddr-config-reverse.md](../tmp/logs/ddr-config-reverse.md).
 Marks: ✅ confirmed (byte/disasm evidence) · ⚠ needs live HW read · ✎ correction to prior RE.
@@ -27,7 +27,7 @@ Marks: ✅ confirmed (byte/disasm evidence) · ⚠ needs live HW read · ✎ cor
   al_boot. DDR board-specificity = the EEPROM contents + bootstrap straps on this unit. ✅
 - Core→core handoff after training = `struct shared_parameters { u32 magic=0x31415926;
   u64 ddr_size; }` at SRAM **`0xfbff4150`**. al_boot Stage-3 only *reads* it. ✅
-- **EEPROM RESOLVED (2026-08-17):** live 0x57 dumped + decoded through the vendor algorithm
+- **EEPROM RESOLVED (2026-08-17):** live 0x57 dumped + decoded through the Annapurna S2 algorithm
   → full `al_ddr_init_cfg` for ea16 ([ddr-s2-parser-analysis.md](ddr-s2-parser-analysis.md)).
   DDR4-1866 CL13, 4 GiB, x16, 1 rank. Only `al_bootstrap.ddr_pll_freq` (running-point strap)
   remains live-open, SPD-bounded to ≤1866. ⚠
@@ -64,7 +64,7 @@ ptr = (AL_PBS_INT_MEM_SRAM_BASE + PBS_INT_MEM_SHARED_PARAMS_OFFSET);
 | off | field | writer | reader |
 |---|---|---|---|
 | +0x00 | `magic_num` = 0x31415926 | S2 `FUN_f22044b8` | al_boot `FUN_01002f08` (`preboot-alboot-decompiled.c:1604`), U-Boot `shared_params_valid` |
-| +0x04 | `al_ddr_init` retry count (u8) — vendor extension over the GPL struct ✅ | S2 `FUN_f22003d8` | — |
+| +0x04 | `al_ddr_init` retry count (u8) — Annapurna extension over the GPL struct ✅ | S2 `FUN_f22003d8` | — |
 | +0x08 | `ddr_size` (u64, bytes) | S2 `FUN_f22003d8` | al_boot `stg3_board_init` (`:1197-1207`), U-Boot |
 
 al_boot's fallback when the magic is absent is **0x20000000 (512 MiB)** ✅. For ea16
@@ -379,7 +379,7 @@ static 0x3c-byte table at 0xf220602c `{1,8,43,1,100,16,15,16,128,15,128,128,15,1
 0xfd883000, 0xfd884000}` ❓ unidentified. A port using the current header must not assume
 these offsets.
 
-All EEPROM-sourced fields now **RESOLVED** from the live 0x57 dump (decoded through the vendor
+All EEPROM-sourced fields now **RESOLVED** from the live 0x57 dump (decoded through the Annapurna
 algorithm — [ddr-s2-parser-analysis.md](ddr-s2-parser-analysis.md), `scripts/decode-ddr-records.py`).
 Only `ddr_pll_freq` (strap) remains live-open, and it only picks the *running* point on an
 SPD-bounded (≤1866) ladder.
@@ -409,7 +409,7 @@ Total from the size math (`FUN_f22003d8:439-452`): `ranks(1) << (row+col+bank+bg
 ## 7. Open / unrecoverable from the blobs
 
 Structural + per-unit config now known. The EEPROM is dumped
-(`docs/nor-reference/ddr-config-eeprom-0x57-8k.bin`) and decoded through the vendor algorithm
+(`docs/nor-reference/ddr-config-eeprom-0x57-8k.bin`) and decoded through the Annapurna S2 algorithm
 (`scripts/decode-ddr-records.py` → `tmp/logs/decode-ddr-records.log`; analysis
 [ddr-s2-parser-analysis.md](ddr-s2-parser-analysis.md)). What remains is **one strap**:
 
@@ -456,11 +456,11 @@ committing an `alpine_ddr_cfg.c` for the SPL.
 
 ## 9. Licence note
 
-Nothing here is copied vendor code. The findings are register/EEPROM layout facts and
+Nothing here is copied Annapurna code. The findings are register/EEPROM layout facts and
 value→enum tables **already present verbatim in the GPLv2 kernel HAL headers**
-(`al_hal_ddr_init.h`, `al_hal_ddr.h`, `al_hal_iomap.h`) and the GPLv2 vendor U-Boot
+(`al_hal_ddr_init.h`, `al_hal_ddr.h`, `al_hal_iomap.h`) and the GPLv2 stock U-Boot
 (`shared_params.h`, `dev_info_layout.h`). The SPD format is JEDEC. The only novel output is
-the per-unit EEPROM byte map — data about this board, not vendor code.
+the per-unit EEPROM byte map — data about this board, not Annapurna code.
 
 ## ✅ LIVE-CONFIRMED on ea16 (2026-08-17)
 
@@ -495,7 +495,7 @@ over the serial console → `docs/nor-reference/ddr-config-eeprom-0x57-8k.bin` (
   It only *looks* wrong to a stock decoder because **byte4[3:0] density code = 0** (left
   unset) — the S2 derives density from row/col/bank/bg geometry, not the density code, so a
   `decode_ddr4_spd()` that trusts byte4[3:0] mis-reports 256 Mb. Decode via the S2 parser.
-- **Decoded ea16 config** (through the vendor algorithm): DDR4, x16, 1 rank, 64-bit bus,
+- **Decoded ea16 config** (through the Annapurna S2 algorithm): DDR4, x16, 1 rank, 64-bit bus,
   16 row / 10 col / 2 bank / 1 bank-group ⇒ **4 GiB** ✅; **DDR4-1866 CL13 CWL10** ⚠
   (SPD-capped, see §2a); impedance from `0xCC` (odt=RZQ4/60 Ω, dic=RZQ7/34 Ω, odt_dyn=DIS,
   phy_rout=34 Ω, phy_odt=56 Ω). Full table in the analysis doc.

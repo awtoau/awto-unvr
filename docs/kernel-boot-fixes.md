@@ -1,7 +1,7 @@
 # Kernel boot-log fixes (7.1.8 woomera)
 
 Root cause + fix per boot-log error. Source of record for the OOT module fixes.
-The module sources are now vendored in-repo under `modules/` (single
+The module sources are now imported in-repo under `modules/` (single
 source-of-truth, same pattern as the ea16 DTS); the fixes below live as tracked
 source there. Tracked patches in `patches/` remain as per-fix diffs.
 
@@ -107,16 +107,16 @@ File: `dts/alpine-v2-ubnt-unvr-ea16.dts`.
 
 ## Module-source tracking gap — CLOSED
 
-- OOT module sources vendored in-repo: `modules/{al_eth,al_ssm,al_dma,al_sgpo,al_reboot}`
+- OOT module sources imported in-repo: `modules/{al_eth,al_ssm,al_dma,al_sgpo,al_reboot}`
   (source-only: `.c/.h/Makefile`; artifacts gitignored via `modules/.gitignore`).
-- Vendored copies carry the fixes as tracked source: iofic UBSAN (Bug 1) in the
+- Imported copies carry the fixes as tracked source: iofic UBSAN (Bug 1) in the
   three `al_hal_iofic_regs.h` + `al_hal_udma_iofic_regs.h`; al_ssm crypto (Bug 2)
   in `al_ssm/al_ssm_main.c`.
 - Build scripts (`build-linux-71-fedora.py`, `build-linux-71-ea16.py`,
   `build-linux-618-ea16.py`) copy each OOT module FROM `modules/` (like the DTS).
   al_sgpo's 7.1 `gpio_chip.set`-returns-int fix stays a build-time adaptation
-  (`adapt_sgpo`/`adapt_module`, idempotent str-replace); vendored al_sgpo.c is pristine.
+  (`adapt_sgpo`/`adapt_module`, idempotent str-replace); imported al_sgpo.c is pristine.
 - PORT tree `linux-alpine-v2/modules/<m>` replaced with symlinks -> `modules/<m>`,
   so no consumer reads a stale copy and drift can't recur. rtl8370mb left in PORT
-  (no build compiles it; not vendored).
-- Vendored via `scripts/vendor-modules.py`.
+  (no build compiles it; not imported).
+- Imported via `scripts/import-oot-modules.py`.

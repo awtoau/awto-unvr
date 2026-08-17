@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Stage every ladder firmware onto the UNVR's USERDEV stick.
 
-Downloads each release to sources/ (sha256-verified against the vendor API),
+Downloads each release to sources/ (sha256-verified against the Ubiquiti API),
 then TFTPs it to ${MNT_RWFS}/firmware/ on the device so upgrades can be applied
 with no network.
 

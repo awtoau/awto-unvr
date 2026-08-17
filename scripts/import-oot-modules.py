@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Vendor the out-of-tree Annapurna kernel-module sources INTO this repo.
+"""Import the out-of-tree Annapurna kernel-module sources INTO this repo.
 
 Same pattern as the ea16 board DTS: the repo copy under modules/ is the tracked
 source-of-truth; build scripts copy FROM here; the PORT tree keeps a symlink back
@@ -16,13 +16,13 @@ Source-only: .c/.h/Makefile/Kbuild/README.md. Build artifacts (.o/.ko/.cmd/.mod*
 Idempotent: if PORT/modules/<m> is already a symlink (into this repo), its copy
 is skipped (it would copy the repo onto itself).
 
-Run: python scripts/vendor-modules.py  (logs to tmp/logs/vendor-modules.log)
+Run: python scripts/import-oot-modules.py  (logs to tmp/logs/import-oot-modules.log)
 """
 import os, shutil, pathlib, sys
 
 REPO = "/mnt/2tb/git/awto-unvr"
 PORT = "/mnt/2tb/unvr-port-refs/linux-alpine-v2/modules"
-# Vendored: the OOT al_* module source trees. rtl8370mb/al_thermal excluded (no
+# Imported: the OOT al_* module source trees. rtl8370mb/al_thermal excluded (no
 # build script compiles them; al_thermal doesn't exist).
 MODULES = ("al_eth", "al_ssm", "al_dma", "al_sgpo", "al_reboot")
 
@@ -30,7 +30,7 @@ SRC_EXT = {".c", ".h"}
 SRC_NAMES = {"Makefile", "Kbuild", "README.md"}
 GITIGNORE = """\
 # Build artifacts from out-of-tree `make M=...` — never committed.
-# Source (.c/.h/Makefile/Kbuild) is the tracked vendored copy.
+# Source (.c/.h/Makefile/Kbuild) is the tracked imported copy.
 *.o
 *.ko
 *.mod
@@ -43,7 +43,7 @@ modules.order
 .tmp_versions/
 """
 
-LOG = os.path.join(REPO, "tmp/logs/vendor-modules.log")
+LOG = os.path.join(REPO, "tmp/logs/import-oot-modules.log")
 _logf = None
 
 
@@ -59,7 +59,7 @@ def is_source(name):
     return os.path.splitext(name)[1] in SRC_EXT or name in SRC_NAMES
 
 
-def vendor_one(m):
+def import_one(m):
     src = os.path.join(PORT, m)
     dst = os.path.join(REPO, "modules", m)
     if os.path.islink(src):
@@ -73,7 +73,7 @@ def vendor_one(m):
             continue
         shutil.copy2(sp, os.path.join(dst, name))
         n += 1
-    log(f"{m}: vendored {n} source files -> modules/{m}")
+    log(f"{m}: imported {n} source files -> modules/{m}")
     return n
 
 
@@ -81,11 +81,11 @@ def main():
     global _logf
     os.makedirs(os.path.dirname(LOG), exist_ok=True)
     _logf = open(LOG, "a")
-    log("=== vendor-modules ===")
+    log("=== import-oot-modules ===")
     os.makedirs(os.path.join(REPO, "modules"), exist_ok=True)
     total = 0
     for m in MODULES:
-        total += vendor_one(m)
+        total += import_one(m)
     gi = os.path.join(REPO, "modules/.gitignore")
     pathlib.Path(gi).write_text(GITIGNORE)
     log(f"wrote {gi}")

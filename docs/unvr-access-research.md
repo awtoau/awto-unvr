@@ -1,8 +1,8 @@
-# UNVR vendor/official access paths — research
+# UNVR stock/official access paths — research
 
 Six questions on how to get a shell / push our own kernel/firmware to the stock
 UNVR (Alpine V2 / AL-324, UniFi OS + Protect). Method A = web (playwrong), method
-B = reverse the vendor firmware on disk.
+B = reverse the stock firmware on disk.
 
 Firmware reversed: `sources/UNVR-5.1.25.bin` → squashfs @ 15242534 (zstd),
 `unsquashfs -o 15242534`. Kernel config pulled via
@@ -10,7 +10,7 @@ Firmware reversed: `sources/UNVR-5.1.25.bin` → squashfs @ 15242534 (zstd),
 (IKCFG in-kernel, `CONFIG_IKCONFIG=y`). Firmware extracts are ephemeral (not
 committed). Paths below written `fw:/...` = path inside the extracted rootfs.
 
-Evidence marks: ✅ confirmed (read it here) · 〄 inferred · 📄 vendor/community claim.
+Evidence marks: ✅ confirmed (read it here) · 〄 inferred · 📄 Ubiquiti/community claim.
 
 Live update API (fetched): the whole update chain is confirmed reachable, see Q3.
 
@@ -20,7 +20,7 @@ Live update API (fetched): the whole update chain is confirmed reachable, see Q3
 
 **SSH: YES, official, web-UI toggle.** ✅
 
-- Vendor doc: SSH is a supported (if discouraged) access method. UniFi **Consoles
+- Ubiquiti doc: SSH is a supported (if discouraged) access method. UniFi **Consoles
   (UDM Pro / UNVR / CloudKey): SSH disabled by default**; enable at
   **Settings → Control Plane → Console → check SSH**. Older UI:
   Settings → System. Username always `root`.
@@ -158,9 +158,9 @@ Live response (playwrong-fetched
 
 ---
 
-## Q4 — Vendor toggle to enable TELNET / SSH / debug shell
+## Q4 — Stock toggle to enable TELNET / SSH / debug shell
 
-**SSH: single vendor toggle, no serial needed.** ✅ — highest-value Q1/Q4 result.
+**SSH: single stock toggle, no serial needed.** ✅ — highest-value Q1/Q4 result.
 
 - The toggle is **`ubnt-systool sshd <true|false>`** (`fw:/sbin/ubnt-systool`
   `do_sshd`, L854) ✅:
@@ -176,7 +176,7 @@ Live response (playwrong-fetched
 - Password set via **`ubnt-systool sshpasswd set <crypt>`** →
   `echo "root:<hash>" | chpasswd -e` (L1919) ✅. Get = reads root line from
   `/etc/shadow`.
-- Related vendor sub-toggles (all in `ubnt-systool`) ✅:
+- Related stock sub-toggles (all in `ubnt-systool`) ✅:
   `sshd-port <n>` (rewrites `Port` in sshd_config), `sshd-passwdauth
   <true|false>` (rewrites `PasswordAuthentication`), `sshd-authkeys [file]`
   (installs `/root/.ssh/authorized_keys`). → key-based root login is a supported
@@ -186,14 +186,14 @@ Live response (playwrong-fetched
 `systemctl enable --now ssh`) to get network root SSH.** The web toggle does
 exactly this.
 
-**Telnet: not a vendor service, but the applet is on the box.** ✅
+**Telnet: not a stock service, but the applet is on the box.** ✅
 
 - No `telnetd`/`in.telnetd` systemd unit; not enabled. But
   `fw:/bin/busybox` includes the **`telnetd` and `telnet` applets** ✅ — a root
   shell can `busybox telnetd -l /bin/login -p <port>` manually. Not gated by
   anything but root (DAC); no SELinux/lockdown (Q5).
 - Recovery mode (SPI-NOR `mtd5`, hold reset ~10 s) exposes **telnet `root`/`ubnt`**
-  📄 — a separate vendor debug path that survives a bad `/boot` uImage.
+  📄 — a separate stock debug path that survives a bad `/boot` uImage.
 
 **Debug shell:** `fw:/lib/systemd/system/debug-shell.service` exists (systemd's
 `/dev/tty9` root bash) but is not wired into a target — enable-able from root
@@ -229,7 +229,7 @@ own `CONFIG_IKCONFIG`) unless noted.
   the cleanest custom-image route given a root shell: `flashcp`/`nandwrite` our
   own uImage/uboot. (Dump first — prior RE and `sources.md` §12.)
 - **Raw I2C.** `CONFIG_I2C_CHARDEV=y` → `/dev/i2c-*` ✅. `busybox`
-  `i2cget/i2cset/i2cdump/i2cdetect` present ✅. Vendor daemons already use it:
+  `i2cget/i2cset/i2cdump/i2cdetect` present ✅. Stock daemons already use it:
   `fw:/sbin/rpsd` (`/dev/i2c-`), `fw:/usr/sbin/sfpd` (`/dev/i2c-%d`) ✅. → reach
   the RPS power monitor and the otherwise-disabled `i2c_gen` bus from userspace
   (stop the daemon first to avoid contention).
@@ -257,7 +257,7 @@ own `CONFIG_IKCONFIG`) unless noted.
 
 ---
 
-## Q6 — Vendor file-transfer / remote services (push a custom image)
+## Q6 — Stock file-transfer / remote services (push a custom image)
 
 What ships, whether it listens, and whether we can push with it. Firmware = `fw:`.
 `busybox` applets from `fw:/bin/busybox` ✅.
@@ -278,7 +278,7 @@ What ships, whether it listens, and whether we can push with it. Firmware = `fw:
 | socat | **absent** ✅ | — | — |
 | xinetd | **absent** ✅ | — | — |
 
-Vendor update/transfer endpoints:
+Stock update/transfer endpoints:
 - `ubnt-systool fwupdate <url>` ✅ accepts a **URL** (wget/curl) — but still
   signature-checked (Q2). Not a custom-image path.
 - `/api/consoleGroups/firmware` nginx endpoint (Q2) — cloud/group push, signed.

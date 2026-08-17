@@ -5,7 +5,7 @@ by our existing chain — no netboot, no UEFI, no GRUB, no dracut. Replaces the
 throwaway RAM initramfs with a real distro. Device hostname: **woomera**.
 
 - Boot chain: `ROM → S2 → al_boot → U-Boot → our 7.1.8 uImage+DTB → root=/dev/sda2 (Fedora)`.
-- Fully reversible: vendor NAND untouched; only the U-Boot env changes.
+- Fully reversible: stock NAND untouched; only the U-Boot env changes.
 - Tracking: #40. Related: persistent-boot, storage-repurpose.
 
 ## The "hack" — why stock Fedora boots without its bootloader
@@ -123,8 +123,8 @@ woomera boots Fedora with **no host**: `scripts/flash-nand.py` verified end-to-e
   U-Boot doesn't do the internal-PCIe AXI-snoop our kernel does). So the kernel
   can't be loaded from the SSD by U-Boot.
 - **Kernel in NAND, rootfs on SSD**: the 18.5 MB gzip uImage doesn't fit the 16 MiB
-  `linux_kernel` slot (mtd2 @0x300000), so it's written into the **dead vendor
-  rootfs region** — kernel @NAND `0x1300000`, DTB @`0x2800000`. The vendor kernel
+  `linux_kernel` slot (mtd2 @0x300000), so it's written into the **dead stock
+  rootfs region** — kernel @NAND `0x1300000`, DTB @`0x2800000`. The stock kernel
   @`0x300000` is **left intact** as recovery. Full Fedora config kept.
 - **bootcmd** (saved to NOR env):
   `nand read 0x02000000 0x1300000 0x1200000; nand read 0x04078000 0x2800000 0x20000; bootm 0x02000000 - 0x04078000`

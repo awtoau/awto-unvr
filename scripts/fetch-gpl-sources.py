@@ -2,7 +2,7 @@
 """Fetch + verify + unpack Ubiquiti GPL source archives (archive.org).
 
 The UDM-Pro (UDMP) is Alpine V2 / AL-324 - the same SoC as our UNVR - so its
-GPL dump carries the vendor U-Boot source, Alpine bootloader/DDR-init, AL-324
+GPL dump carries the stock U-Boot source, Alpine bootloader/DDR-init, AL-324
 BSP, kernel, and the real al_* drivers + DTS. UDMSE is (probably) the same SoC,
 newer firmware. UDM/UDR are different SoCs (kept as tarballs, not unpacked).
 

@@ -3,7 +3,7 @@
 One-shot, read-only kernel module: `ioremap`s an MMIO region and prints it to
 `dmesg`, then auto-unloads. The way to peek at hardware registers when
 `/dev/mem` is blocked by `STRICT_DEVMEM`/`IO_STRICT_DEVMEM` (stock + hardened
-kernels — including the vendor 4.19 and a fresh Fedora before our rebuild).
+kernels — including the stock 4.19 and a fresh Fedora before our rebuild).
 
 ## Build (against the TARGET kernel's tree — vermagic must match the box)
 - `make KDIR=/mnt/2tb/unvr-port-refs/linux-v7.1.8 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu-`

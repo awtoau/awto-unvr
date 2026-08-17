@@ -9,7 +9,7 @@
 
 ## Patches (apply in order)
 
-| # | file | target | ours / upstream / vendor |
+| # | file | target | ours / upstream / Annapurna |
 |---|------|--------|--------------------------|
 | 0001 | `0001-PCI-al-add-Alpine-V2-internal-PCIe-host-controller-d.patch` | new `drivers/pci/controller/pcie-al-internal.c` + Kconfig + Makefile | driver = COMMUNITY; Kconfig/Makefile glue = OURS |
 | 0002 | `0002-PCI-al-pre-set-DBI-base-for-external-DWC-PCIe-xHCI-U.patch` | `drivers/pci/controller/dwc/pcie-al.c` (in-place DBI-fix) | OURS |
@@ -33,12 +33,12 @@
 - Enclosure drivers (AHCI, i2c-dw, PCA954x mux, PCA953x gpio, ADT7475, S35390A)
   are all `=y` in 0005 → bind automatically once the internal bus enumerates.
 
-## Out-of-tree drivers (vendored, built via `make -C <src> M=…`, NOT in kernel tree)
+## Out-of-tree drivers (imported, built via `make -C <src> M=…`, NOT in kernel tree)
 
 - `al_eth`, `al_dma`, `al_ssm`, `al_sgpo` — from the community port
-  `github.com/bcyangkmluohmars/linux-alpine-v2` (6.12-era, vendor GPL HAL +
+  `github.com/bcyangkmluohmars/linux-alpine-v2` (6.12-era, Annapurna GPL HAL +
   community glue). Ancestry: al_eth ← delroth/al_eth-standalone; HAL ← Annapurna
-  vendor GPL.
+  GPL.
 - `al_eth` / `al_dma` / `al_ssm`: built UNCHANGED against 6.12 / 6.18 / 7.1 — no
   patch. `al_sgpo`: one API fix (0006) for kernels ≥ 6.15.
 
@@ -46,7 +46,7 @@
 
 - OURS: pcie-al.c DBI-fix, ea16 DTS + gpio-hog, Kconfig/Makefile glue for
   PCIE_AL_INTERNAL, al_sgpo int-return fix. Everything else = pristine upstream
-  kernel + community/vendor OOT drivers integrated unmodified.
+  kernel + community/Annapurna OOT drivers integrated unmodified.
 
 ## Rebase notes (base per series)
 

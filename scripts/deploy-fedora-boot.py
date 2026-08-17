@@ -6,7 +6,7 @@ SSD root, keeping the current (known-good) kernel+DTB as .bak for U-Boot fallbac
 Every file is sha256-verified after transfer. Does NOT reboot — verify first, then
 reboot separately (scripts/reboot-and-verify or a manual `reboot`). NAND untouched.
 
-Fallback if the new kernel doesn't boot: at the vendor U-Boot prompt,
+Fallback if the new kernel doesn't boot: at the stock U-Boot prompt,
   ext4load scsi 0:2 0x02000000 /boot/uImage-unvr-ea16-7.1-fedora-gz.bak
   ext4load scsi 0:2 0x04078000 /boot/alpine-v2-ubnt-unvr-ea16-7.1-fedora.dtb.bak
   bootm 0x02000000 - 0x04078000

@@ -1,7 +1,7 @@
 # DDR bring-up port — Annapurna HAL → U-Boot SPL (AL-324 / Alpine V2)
 
 Goal: from-reset standalone U-Boot SPL initialises DDR4 without the proprietary preboot.
-Unblocks "standalone replace vendor U-Boot" (target 2, `uboot-port-plan.md` §5) and #29
+Unblocks "standalone replace stock U-Boot" (target 2, `uboot-port-plan.md` §5) and #29
 DRAM-overclock (BIST/margins).
 
 Marks: ✅ confirmed this session · ⚠ needs on-device test · 📄 from source.
@@ -10,14 +10,14 @@ Key insight (CONFIRMED ✅): the DDR init is **open, not to be reversed**. Two b
 GPLv2 copies of the Annapurna DDR HAL exist:
 - `/mnt/2tb/unvr-port-refs/delroth-alpine_hal/ddr/` (the RE drop).
 - `/mnt/2tb/unvr-port-refs/urnvr-kernel-4.19.152/drivers/soc/alpine/HAL/ddr/` (ships in the
-  **vendor GPL kernel**).
+  **Ubiquiti GPL kernel**).
 - `diff -q` on `al_hal_ddr_init_alpine_v2.c` (5608 lines each) → **IDENTICAL**. The delroth
-  copy is the same source the vendor already publishes under GPLv2. Use the **kernel-tree
+  copy is the same source Ubiquiti already publishes under GPLv2. Use the **kernel-tree
   copy** as the license-clean origin (§License).
 
 The HAL is the "how" (generic training/BIST). The **"what" — OUR board's DDR config** (speed
 bin, CL/tRCD/tRP, addrmap, ranks, impedance) — was the only missing piece and is now
-**RESOLVED (#67)**: decoded from the live `0x57` EEPROM through the vendor S2 algorithm →
+**RESOLVED (#67)**: decoded from the live `0x57` EEPROM through the Annapurna S2 algorithm →
 full `al_ddr_init_cfg` for ea16 (**DDR4-1866 CL13, 4 GiB, ×16, 1 rank**, impedance from the
 `0xCC` block). See [ddr-s2-parser-analysis.md](ddr-s2-parser-analysis.md) (byte-exact +
 drop-in portable C). Only `al_bootstrap.ddr_pll_freq` (running-point strap, SPD-bounded
@@ -125,15 +125,15 @@ has the JEDEC constants the HAL cross-checks):
 
 ### Param sources, in confidence order
 1. **SPD EEPROM @ I²C 0x57 (PRIMARY, authoritative for `org`/`tmg`/`addrmap`)** ✅ readable
-   live — vendor `stage2_loader` reads it (`dram-ddr4.md:6`). DDR4 SPD (SPD5, JEDEC 4.1.2.12)
+   live — Annapurna `stage2_loader` reads it (`dram-ddr4.md:6`). DDR4 SPD (SPD5, JEDEC 4.1.2.12)
    gives density, width, ranks, speed bin, CL support map, tRCD/tRP/tRAS/tRC/tRFC/tFAW.
    **First step below writes the reader/decoder.** SPD does NOT contain `impedance_ctrl`.
 2. **Live trained controller/PHY readback (PRIMARY for `impedance_ctrl` + actual freq)** ⚠ —
    run `al_ddr_cfg_init` (§5) against the running controller, dump MRs (MR0=CL/BL, MR1=ODT/DIC,
    MR2=CWL/RTT_WR, MR5=RTT_PARK, MR6=VREFDQ) and PHY impedance regs. This recovers the exact
-   ODT/DIC/VREF/ROUT the vendor preboot programmed — the numbers SPD can't give. Do this from a
+   ODT/DIC/VREF/ROUT the stock preboot programmed — the numbers SPD can't give. Do this from a
    chainloaded U-Boot before attempting SPL.
-3. **Vendor preboot al_boot** — DEAD END for a param table ✅: `preboot-decompile.md` confirms
+3. **Stock preboot al_boot** — DEAD END for a param table ✅: `preboot-decompile.md` confirms
    DDR training is delegated to the **CVOS agent** (`agent_wakeup v2.10`, mailbox 0xf0070000/
    0xf0090000, poll `0xfbff4150==0x31415926`); al_boot only pokes mailboxes. No timings/cfg in
    the payload. The agent binary (separate) could hold a cfg but is not needed given SPD+readback.
@@ -166,21 +166,21 @@ retrain. Init handle first: `al_ddr_cfg_init(0xf0070000, 0xf0080000, 0xf0088000,
   `al_ddr_phy_datx_bist_pre[_adv]` (disable VT calc), `al_ddr_phy_datx_bist(cfg, params,
   err_status)`, `al_ddr_phy_datx_bist_post[_adv]`. Params `struct al_ddr_bist_params`
   (`:813`: mode LOOPBACK/DRAM, pattern WALK0/WALK1/LFSR/USER, word count). Sweeping RDQS/WDQS
-  delay while running BIST = the shmoo the vendor `dram_margins` produces.
-  - NOTE ✅: vendor `dram_margins` runs a **prebuilt SRAM agent blob** (`cmd_dram_margins.c`
+  delay while running BIST = the shmoo the Annapurna `dram_margins` produces.
+  - NOTE ✅: Annapurna `dram_margins` runs a **prebuilt SRAM agent blob** (`cmd_dram_margins.c`
     memcpy's `agent_ddr_margins_arr` to SRAM), NOT HAL calls. Our port uses the HAL BIST
     directly — cleaner, no blob.
-  - ⚠ RUNTIME: vendor `dram_margins` **crashed the live U-Boot with a Synchronous Abort**
+  - ⚠ RUNTIME: Annapurna `dram_margins` **crashed the live U-Boot with a Synchronous Abort**
     (read-only capture, [uboot-2015.07-hal-capture.md](uboot-2015.07-hal-capture.md)) —
     the blob is fragile; treat as read-with-care. Extra reason to use the HAL BIST path.
 - **A/C BIST:** `al_ddr_phy_ac_bist(cfg, err_status, pat)` (`:1362`).
 - **ECC status/inject (needs ECC on — likely OFF on this board, see §3):** `al_ddr_ecc_status_get`,
   `al_ddr_ecc_cfg_get`, `al_ddr_ecc_data_poison_enable/disable`, `al_ddr_ecc_corr/uncorr_*_clear`
-  (`al_hal_ddr.h:1381`+; vendor wrappers `cmd_ddr.c:86/145`).
+  (`al_hal_ddr.h:1381`+; Annapurna U-Boot wrappers `cmd_ddr.c:86/145`).
 - **Training results:** `al_ddr_phy_training_results_get/print` (`:1439`) — per-octet WL/DQS-gate/
   read/write-eye deltas; `al_ddr_phy_training_results` struct `:1290`.
 - **Address translate (for targeted poison/BIST):** `al_ddr_address_translate_sys2dram`
-  (vendor `cmd_ddr.c:175`).
+  (Annapurna `cmd_ddr.c:175`).
 - **PMU (bandwidth counters, not margins):** `al_hal_ddr_pmu.h` — `al_ddr_pmu_*` on
   `AL_NB_SERVICE_BASE`. Useful for perf, separate from shmoo.
 
@@ -199,15 +199,15 @@ Prereq: Stage-1 chainload U-Boot builds ✅ (`uboot-port-plan.md` §9). DDR work
 - **S1 params:** freeze `al_ddr_init_cfg` for our board from SPD (§Params src 1) + live readback
   (src 2). Store as `board/annapurna/alpine/alpine_ddr_cfg.c`.
 - **S2 SPL skeleton:** `CONFIG_SPL` running from SoC SRAM (`AL_LL_SRAM_BASE 0xf2000000`, S2 link
-  base 0xf2200000). SPL does: minimal clock/PLL (vendor `pll_init.c` + `al_pll_init`), then
+  base 0xf2200000). SPL does: minimal clock/PLL (Annapurna `pll_init.c` + `al_pll_init`), then
   `al_ddr_init(&cfg)`, then load U-Boot-proper to 0x1100000.
 - **S3 wire HAL into SPL:** compile `al_hal_ddr_init_alpine_v2.c` + `al_hal_ddr_alpine_v2.c` +
   `al_hal_ddr.c` + reg headers with `AL_DEV_ID=AL_DEV_ID_ALPINE_V2`. Shim `al_hal_reg_utils`/
   `al_hal_plat_services` (readl/writel, udelay, printf) to U-Boot equivalents (§7).
-- **S4 boot-ROM handshake ⚠:** to boot from reset without vendor S2, the mask ROM must accept
+- **S4 boot-ROM handshake ⚠:** to boot from reset without Annapurna S2, the mask ROM must accept
   our SPL in the **S2 SPI-loader format** (`"S2"` header, SPI off 0, link 0xf2200000 —
   `nor-boot-chain.md` §1, `preboot-decompile.md`). Contract NOT yet fully reversed (S2 jumptable
-  @0xf22000fc unrecovered). Fallback: keep vendor S2, replace only al_boot's DDR-agent step.
+  @0xf22000fc unrecovered). Fallback: keep Annapurna S2, replace only al_boot's DDR-agent step.
 - **S5 remap:** program DRAM remap for the 3–4 GiB PCIe hole (`al_addr_map_dram_remap_set`) to
   reproduce the two-bank layout.
 
@@ -226,12 +226,12 @@ Same rule as the MTD/NAND work: do whatever we like, because every test is non-p
 and the persistent thing is backed up. Layered, weakest failure to worst:
 
 1. **Test in RAM/SRAM, never NOR.** The overclock SPL is loaded + run via the *existing*
-   vendor chain (reboot → vendor U-Boot → load SPL to SRAM → jump). NOR's S2 blob is
+   stock boot chain (reboot → stock U-Boot → load SPL to SRAM → jump). NOR's S2 blob is
    untouched → a hang/failed-train recovers by **power cycle** (boots normally).
 2. **DDR config is volatile.** PLL + controller/PHY are registers; a power-cycle/SoC reset
    wipes them to defaults. No "stuck overclocked" state exists.
 3. **Watchdog catches a training hang.** Arm SP805 (`0xfd88c000`) before `al_ddr_init`; a
-   deadlock at an unstable freq → watchdog reset → BootROM → vendor chain.
+   deadlock at an unstable freq → watchdog reset → BootROM → stock boot chain.
 4. **Validation gate — never trust un-validated DRAM.** Run memtest + HAL BIST (§5) at the
    new freq BEFORE handing DRAM to anything. Instability = detectable BIST/memtest failure,
    not silent corruption. Fail → fall back to known-good, don't proceed.
@@ -243,7 +243,7 @@ Staged progression, each step BIST-gated: **1866 (SPD-validated) → 2133 → 24
 K4A8G165WB-BCRC die's marked bin the SPD capped) → push until BIST fails, record the margin.
 
 ## 7. Dependencies to port alongside DDR
-- **PLL/clock** before DDR: vendor `board/annapurna-labs/common/pll_init.c` + `al_pll_init`
+- **PLL/clock** before DDR: Annapurna `board/annapurna-labs/common/pll_init.c` + `al_pll_init`
   (`preboot FUN_01023ed4`). Sets DDR ref clock → `tmg.ref_clk_freq_mhz` / `ddr_freq`.
 - **SerDes:** NOT needed for DDR (only PCIe/SATA PHY). Skip for SPL DDR.
 - **HAL plat shim** (§6). No serdes/PCIe pulled in by the DDR files (checked — DDR src includes
@@ -254,18 +254,18 @@ K4A8G165WB-BCRC die's marked bin the SPD capped) → push until BIST fails, reco
   `al_hal_ddr_init.h:1-34`). Same header on the kernel-tree copy.
 - U-Boot is **GPLv2**. Using the HAL under its **GPLv2** option is compatible ✅.
 - Prefer the **kernel-tree copy** (`urnvr-kernel-4.19.152/.../HAL/ddr/`) as origin: it ships in
-  the vendor's published GPL source, so provenance is a clean GPLv2 distribution (not an RE of a
+  the stock published GPL source, so provenance is a clean GPLv2 distribution (not an RE of a
   binary). It is byte-identical to delroth's (`diff -q` = IDENTICAL ✅).
 - Keep the tri-license header intact on every ported file; record derivation in
   `docs/issues/36-licence-derivation-ledger.md`.
 
 ## Concrete status + next
 - **DONE — DDR cfg (#67):** live `0x57` dumped (`scripts/read-ddr-spd.py`, 16-bit path) +
-  decoded through the vendor algorithm ([ddr-s2-parser-analysis.md](ddr-s2-parser-analysis.md))
+  decoded through the Annapurna S2 algorithm ([ddr-s2-parser-analysis.md](ddr-s2-parser-analysis.md))
   → full ea16 `al_ddr_init_cfg`. The §3 "what" is resolved.
 - **DONE — chainload U-Boot:** builds (`scripts/uboot-build.py`); `CMD_MEMTEST` widened +
   `CMD_MEMORY` (md/mw) added for live DDR-register inspection.
-- **NEXT (S0):** test the chainload U-Boot on woomera (reboot → vendor U-Boot → load
+- **NEXT (S0):** test the chainload U-Boot on woomera (reboot → stock U-Boot → load
   `u-boot.bin` @0x1100000 → `go` → `mtest` on live DRAM). Port the HAL + a `ddr` command
   backed by `al_ddr_cfg_init` for BIST/margins on the running controller (§5). No SPL yet.
 - **NEXT (S2/S3 — overclock):** SPL from SRAM (§6) using the decoded cfg → `al_ddr_init` at a

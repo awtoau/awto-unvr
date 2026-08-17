@@ -1,7 +1,7 @@
 # Making our DTS the hardware-of-record — what's configured outside the DT
 
-Reverse-engineered by diffing our ea16 DTS against the live vendor DTB
-(`hw-reference/20260816-104601/live.dts`), vendor GPL U-Boot `board.c`, `ubnthal.ko`,
+Reverse-engineered by diffing our ea16 DTS against the live stock DTB
+(`hw-reference/20260816-104601/live.dts`), Ubiquiti GPL U-Boot `board.c`, `ubnthal.ko`,
 and the 5.1.25 userland. 2026-08-17.
 
 **Architecture fact:** Ubiquiti U-Boot builds a **`/soc/board-cfg` DT subtree at
@@ -21,7 +21,7 @@ the items below in.
 - **S2 — Bluetooth CSR8811 (BT4.2), and our DTS mislabels the UART.** `hci-device-up`
   runs `hciattach` on **`/dev/ttyS1` or `/dev/ttyS3`** with `csr8x11-…psr` firmware;
   `ubnthal` EEPROM has `BtMACAddrCount`/`bt%d.macaddr`. **Our DTS labels uart2/ttyS2 as
-  "Bluetooth CSR" — wrong UART** (vendor never uses ttyS2). Either BT sits on ttyS1/S3,
+  "Bluetooth CSR" — wrong UART** (Ubiquiti never uses ttyS2). Either BT sits on ttyS1/S3,
   or UNVR doesn't populate it. **Owner-confirmed: NO Bluetooth on this board.** So the
   CSR8811 is shared-platform code only; **our DTS `ttyS2` "Bluetooth CSR" label is wrong.**
   The `rpsd` reverse shows **`ttyS2` is actually the RPS PHY UART** (RS-232 via MAX3221
@@ -36,14 +36,14 @@ the items below in.
 
 ## Confirmed gaps in our ea16 DTS (actionable)
 
-| # | Gap | What the vendor sets | DT to add |
+| # | Gap | What Ubiquiti sets | DT to add |
 |---|---|---|---|
 | **C1** | **SGPO LED behaviour** | `sgpo_init`: `group_mode="two"`, `sata_mode="active-presence"`, per-group mode/init/invert/stretch/blink masks + timing (`live.dts:1208-1255`) — consumed by U-Boot AND the `al-sgpo` driver | replicate `sgpo_init` props on our `sgpo` node (else SATA LEDs don't blink/stretch as designed) |
 | **C2** | SerDes per-lane TX EQ | `board-cfg/serdes` amp/post/pre-emph per lane: SATA grp1&2 (amp7,post6), 10G grp3 lane0 (amp7,post7,pre1) (`live.dts:1257-1548`) | keep in U-Boot; **document** (needed only if we own SerDes init) |
 | **C3** | eth2 SFP mgmt bus + retimer | `port2 i2c-id=2` (SFP DOM/EEPROM bus); `retimer{br410,i2c 1:0x56,ch B,disabled}` (`live.dts:1573-1604`) | `sfp` node on the cage i2c + `sfp=<&sfp>` on the 10G port — only if going mainline phylink |
 | **C4** | **SFP+ 1G-link LED** (`sfp_1g`) | PCA9575@0x20 pin2 = global gpio **498**, via al_eth `gpio_spd_1g` (`board.c:787`) — only a *comment* in our DTS | `gpio-leds` child `led-sfp-1g { gpios=<&i2c_gpio0 2 ...> }` |
 | **C5** | **PCA9575@0x20 init + straps** | `lines-initial-states=0xd688`, `-vals=0x123`, `baseidx=0x1f0` (`board.c:548`); pins 12/14/15 (gpio 508/510/511)=strap/status/present inputs | initial-states/vals or explicit `gpio-hog`s |
-| **C6** | `al-sata-sw-leds` incomplete | vendor `led@0..7` (both AHCI ctrls, 8 ports) each with `fault-led=<0x1ec..0x1ef>` (`live.dts:1666`); ours has `led@0..3`, no fault-led | add `led@4..7` + `fault-led` phandle (or document 4-bay subset) |
+| **C6** | `al-sata-sw-leds` incomplete | stock `led@0..7` (both AHCI ctrls, 8 ports) each with `fault-led=<0x1ec..0x1ef>` (`live.dts:1666`); ours has `led@0..3`, no fault-led | add `led@4..7` + `fault-led` phandle (or document 4-bay subset) |
 | **C7** | `25g` SFP-speed LED | gpio0.0 labelled `25g` (al_eth `gpio_spd_25g`, `board.c:812`), off on 10G | minor — gpio-led or leave |
 
 ## Mechanism / identity (the "master key", not DT hardware)

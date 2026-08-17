@@ -1,12 +1,12 @@
 # Mainline Linux port — roadmap (UNVR / Alpine V2)
 
-Turn Ubiquiti's frozen 4.19.152 vendor kernel into a **mainline** Linux for this
+Turn Ubiquiti's frozen 4.19.152 stock kernel into a **mainline** Linux for this
 box (custom NAS: TrueNAS/Fedora/Debian). Strategy owner: Dan. Spine of this doc =
 the eight-phase strategy below; every row annotated with the **live hardware
 evidence** captured 2026-08-16.
 
 - Ground-truth evidence: [hw-reference/20260816-104601/](hw-reference/20260816-104601/)
-  and the decompiled vendor DT [live.dts](hw-reference/20260816-104601/live.dts).
+  and the decompiled stock DT [live.dts](hw-reference/20260816-104601/live.dts).
 - Refreshed chip table: [hardware.md](hardware.md).
 - Do NOT restate the finding docs — links below.
 - Issue numbers below are the **live GitHub** set (`awtoau/awto-unvr` #4–#30).
@@ -37,7 +37,7 @@ Build: [linux-6.12-build.md](linux-6.12-build.md); `scripts/build-linux-612-ea16
 `/mnt/2tb/unvr-port-refs/build-out/` (Image, uImage, ea16 DTB, initramfs, modules,
 config).
 
-- **Proved:** 4 cores online, 4 GiB RAM, initramfs shell on `ttyS0`, vendor NAND
+- **Proved:** 4 cores online, 4 GiB RAM, initramfs shell on `ttyS0`, stock NAND
   untouched. Boot method (unsigned tftp bootm) validated end-to-end.
 - **Gaps at that boot:** SATA empty (no PCIe internal AXI-snoop glue / hdd-pwrctl
   → Stage 5 / live #9,#18); net = `lo` only (`al_eth.ko` built, not loaded → Stage 7).
@@ -108,7 +108,7 @@ upstream. (Everything past "SW RAID" is post-milestone.)
   - **Module signing / lockdown OFF** in the stock kernel config
     (`CONFIG_MODULE_SIG` unset, no lockdown). See
     [porting-reference.md](porting-reference.md).
-  - U-Boot is writeable (mtd0 flags 0xc00) but **frozen** — vendor never rewrites
+  - U-Boot is writeable (mtd0 flags 0xc00) but **frozen** — Ubiquiti never rewrites
     it on ea16, so we build ON TOP of the existing U-Boot, not replacing it. See
     [uboot-update-path.md](uboot-update-path.md).
 - sysid **ea16** confirmed live ([ubnthal.txt](hw-reference/20260816-104601/ubnthal.txt):
@@ -120,7 +120,7 @@ upstream. (Everything past "SW RAID" is post-milestone.)
 ## Target architecture — strategy vs. live capture
 
 Each row: hardware → preferred mainline solution → **what the capture shows**.
-Compatible strings taken from the vendor DT / live drivers; "unconfirmed" means the
+Compatible strings taken from the stock DT / live drivers; "unconfirmed" means the
 capture does not prove register compatibility.
 
 | Hardware | Mainline solution | Live evidence | Status |
@@ -258,7 +258,7 @@ Live evidence:
   `al_mod_eth_lm_retimer_ds125.c` — [porting-reference.md](porting-reference.md)
   warns a straight swap to the UDM revision is unsafe for this reason.
 - **SFP module EEPROM not captured** — decode it on hardware before finalising.
-- Most likely place vendor reuse helps — but only **after** matching PCS/SerDes
+- Most likely place stock-code reuse helps — but only **after** matching PCS/SerDes
   registers.
 
 ### Phase 6 — RAID acceleration
@@ -284,7 +284,7 @@ ownership, LEDs/fans, MTD partitions, PCIe topology, SATA ports, fixed regulator
 It must **not** encode driver impl details or values copied blindly from old board
 files. Get the **partition map right from the start**:
 
-- Live vendor DT already has the **corrected** NAND map — NO spurious `device_tree`
+- Live stock DT already has the **corrected** NAND map — NO spurious `device_tree`
   partition, and NO `partition@1`: `al_boot@0`, `linux_kernel@2` (0x300000),
   `rootfs@3` (0x1300000), `chike@4` (0x3ff00000). Confirms the persistent
   `fdt rm /soc/nand-flash/partition@1` fix is live. See
@@ -331,7 +331,7 @@ Altera" is a hypothesis, not a safe decision. Tracked as **issue 01**.
 ## Evidence — the live capture
 
 Location: [hw-reference/20260816-104601/](hw-reference/20260816-104601/). The
-vendor kernel's own DT decompiled to
+stock kernel's own DT decompiled to
 [live.dts](hw-reference/20260816-104601/live.dts) (from `live.dtb`, 28672 B).
 Kernel: `4.19.152-alpine-unvr`, firmware `UNVR4.al324.v5.1.25`.
 
@@ -343,7 +343,7 @@ Key nodes / facts the port depends on:
   SoC service blocks al-ccu/al-nb-service/al-pbs/alpine-mc.
 - **al_eth nodes**: driver binds by PCI ID (`1c36:0001` 1G, `1c36:0002` 10G), MMIO
   `0xfe000000`/`0xfe020000` under the internal-PCIe window. Bare `eth0..eth3`
-  platform nodes exist in vendor DT (`0xfc000000`+, irq 61–64) but are **unused**
+  platform nodes exist in stock DT (`0xfc000000`+, irq 61–64) but are **unused**
   by the driver.
 - **PCIe controllers**: internal `annapurna-labs,alpine-internal-pcie` ECAM
   `0xfbc00000`; external0 `annapurna-labs,alpine-external-pcie` `0xfd800000` (ECAM

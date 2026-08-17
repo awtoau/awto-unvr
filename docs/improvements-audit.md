@@ -153,7 +153,7 @@ all namespaces incl `USER_NS`, `SECCOMP_FILTER`, `FANOTIFY`, `INOTIFY_USER`,
 ## Dimension 6 — Overclock (#29, not applied)
 
 ### 6.1 Wire a conservative CPU overclock to ~2.0 GHz — Med
-- Cores are at 1.7 GHz; vendor strap table goes to 2.7 GHz. With **no cpufreq**, this is the only compute lever — a flat ~18% uplift at 2.0 GHz for md parity, al_ssm-independent crypto, Samba, dnf, builds.
+- Cores are at 1.7 GHz; stock strap table goes to 2.7 GHz. With **no cpufreq**, this is the only compute lever — a flat ~18% uplift at 2.0 GHz for md parity, al_ssm-independent crypto, Samba, dnf, builds.
 - Runtime path (recipe in `overclock-and-caps.md`): MMIO writes to CPU PLL `setup_0` @ `0xfd860d40` (target 2.0 GHz = `0x81030114`), poll lock @ `0xfd860d1c`. **Must do the bypass dance** (`setup_6 |= BYPASS` → change → clear+RELOCK → poll) because all 4 cores run from this PLL; a naive single write can glitch/hang.
 - Risk: moderate, and **recoverable** — not persisted in OTP; a bad OC just needs a reboot. Gate it on die-temp feedback → depends on 1.4 (al_thermal). Prefer a small kernel/early-boot step over a loose devmem sequence.
 - Recommendation: land 1.8–2.0 GHz as a togglable boot service; leave 2.4 GHz+ and any DRAM OC (boot-strap only, needs PHY retrain, can brick the boot) out of the milestone.
@@ -173,7 +173,7 @@ all namespaces incl `USER_NS`, `SECCOMP_FILTER`, `FANOTIFY`, `INOTIFY_USER`,
 - Documented tradeoff (no dracut → no relabel path). Residual: no MAC confinement of sshd/Samba/containers. To re-enable later: boot once with a relabel initramfs or `touch /.autorelabel` + `enforcing=0`, then flip to enforcing. Track as a follow-up, not a milestone blocker.
 
 ### 7.3 Unsigned boot / physical console — accept, document — Med
-- Boot chain is unsigned (#2) and `serial-getty@ttyS0` + open U-Boot mean physical UART access can `init=/bin/bash` past any login. Vendor U-Boot is frozen, so this is accepted; document that physical security is the boundary. Optionally set a U-Boot env password (frozen U-Boot may not support it).
+- Boot chain is unsigned (#2) and `serial-getty@ttyS0` + open U-Boot mean physical UART access can `init=/bin/bash` past any login. Stock U-Boot is frozen, so this is accepted; document that physical security is the boundary. Optionally set a U-Boot env password (frozen U-Boot may not support it).
 
 ### 7.4 Cheap hardening toggles are off — Low
 - `SLAB_FREELIST_HARDENED`, `SLAB_FREELIST_RANDOM`, `BUG_ON_DATA_CORRUPTION`, `INIT_ON_FREE` all unset. `LSM=` lists `yama` but `SECURITY_YAMA` isn't built (silently ignored).

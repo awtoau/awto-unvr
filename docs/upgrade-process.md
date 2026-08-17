@@ -39,7 +39,7 @@ Each hop, in order:
 5. **Quiet the console** — `dmesg -n 1` (emergency-only) so kernel spam doesn't
    swamp the flash output. Reverted implicitly by the reboot.
 6. **Signature check** — see the per-generation gotcha below.
-7. **Hand off to the vendor path** — `sync; sync; reboot`. `mount_premount` finds
+7. **Hand off to the stock path** — `sync; sync; reboot`. `mount_premount` finds
    `${MNT_RWFS}/upgrade/fw-image.bin` before UniFi OS starts, runs this
    generation's `upgrade_firmware` (fwsplit → `nandwrite`, incl. the 4-byte LE
    length prefix on the kernel partition), deletes the image, reboots. We do **not**

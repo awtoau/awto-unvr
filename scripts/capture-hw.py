@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Capture the live hardware picture from the running UNVR over the serial console.
 
-Reference material for custom-Linux bring-up on the AL-324: the vendor kernel's
+Reference material for custom-Linux bring-up on the AL-324: the stock kernel's
 own view of the SoC - DTB, drivers, PCI/SATA topology, SFP, sensors, GPIO, memory
 map. Text goes straight over the console; small binaries (live DTB, SFP EEPROM)
 come back base64-encoded on the same channel, so there is no TFTP dependency.

@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Atomic netboot: catch U-Boot, tftp kernel+DTB, bootm - all in one socket session.
 
-Why one process: the vendor U-Boot has a ~50s watchdog at the prompt. Catching
+Why one process: the stock U-Boot has a ~50s watchdog at the prompt. Catching
 the prompt in one tool call and sending commands in the next leaves a gap the
-watchdog resets into, and the next autoboot lands in the vendor OS. This streams
+watchdog resets into, and the next autoboot lands in the stock OS. This streams
 ESC to catch the prompt, then fires the whole netboot sequence back-to-back on
 the same socket, reading for each command's completion marker (no log-follower
 race). tftp keeps U-Boot busy so the watchdog never idles out.
@@ -143,7 +143,7 @@ def main() -> int:
 
     rd = "-"
     if a.initrd:
-        # This vendor U-Boot (2015.07) lacks CONFIG_SUPPORT_RAW_INITRD, so the raw
+        # This stock U-Boot (2015.07) lacks CONFIG_SUPPORT_RAW_INITRD, so the raw
         # addr:size syntax fails ("Wrong Ramdisk Image Format"). The initrd must be
         # a uImage-wrapped ramdisk (scripts/mkuimage.py --ramdisk); bootm then reads
         # its header, no :size needed. ~35MB at ~2.5MB/s ~14s; 60s limit = margin.

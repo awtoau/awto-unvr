@@ -1,6 +1,6 @@
-# Vendor U-Boot live capture — read-only (2026-08-17)
+# Stock U-Boot live capture — read-only (2026-08-17)
 
-Live runtime dump of the running vendor bootloader
+Live runtime dump of the running stock bootloader
 `U-Boot 2015.07-alpine_db-2.21-HAL (Dec 16 2020)`. This is the **runtime-evidence**
 companion to the static-RE boot-chain docs; it does not restate their analysis.
 
@@ -14,7 +14,7 @@ companion to the static-RE boot-chain docs; it does not restate their analysis.
 
 ## Runtime-only findings (not derivable from static RE)
 
-- **`dram_margins` crashed U-Boot with a Synchronous Abort** — the vendor SRAM agent blob
+- **`dram_margins` crashed U-Boot with a Synchronous Abort** — the Annapurna SRAM agent blob
   is fragile; read-with-care. Folded into [uboot-ddr-port.md](uboot-ddr-port.md) §5.
 - **`usb start` finds nothing** → the eMMC (over USB, `bootemmc`) is stranded on this unit,
   confirming the hostless-eMMC probe in [hardware.md](hardware.md).

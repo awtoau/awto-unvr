@@ -11,12 +11,12 @@ Cortex-A57 aarch64, 4 GiB, sysid **0xea16**. Host name for the box: **woomera**.
   [fedora-on-ssd.md](fedora-on-ssd.md) §PERSISTENT. #40 closed.
   - U-Boot **can't read SATA** (`scsi init` → 0 devices; no AXI-snoop), so the
     18.5 MB gzip Fedora uImage lives in NAND: kernel @`0x1300000`, DTB @`0x2800000`
-    (the dead vendor-rootfs region). Vendor kernel @`0x300000` left intact as recovery.
+    (the dead stock rootfs region). Stock kernel @`0x300000` left intact as recovery.
   - `bootcmd`: `nand read 0x02000000 0x1300000 0x1200000; nand read 0x04078000 0x2800000 0x20000; bootm 0x02000000 - 0x04078000`.
-    Root `root=PARTUUID=…` ext4 on SSD `sda2`. Reversible — vendor NAND kernel untouched.
+    Root `root=PARTUUID=…` ext4 on SSD `sda2`. Reversible — stock NAND kernel untouched.
 - **Boot chain fully reversed** — ROM→S2→al_boot(stage2/3 CVOS HAL)→U-Boot→kernel.
   Canonical: [nor-boot-chain.md](nor-boot-chain.md), [preboot-decompile.md](preboot-decompile.md).
-- **Firmware ladder** to 5.1.25 (vendor). [firmware-5.1.25.md](firmware-5.1.25.md).
+- **Firmware ladder** to 5.1.25 (stock). [firmware-5.1.25.md](firmware-5.1.25.md).
 - **Kernel port, 3 versions, all netboot-verified full-platform**:
   6.12.103 → 6.18.44 LTS → **7.1.8 (latest stable)**. Each: 8 internal-PCIe
   devices, 2×8TB SATA @6G + Samsung SSD, eth0 (1G) + eth1 (10G SFP), al_ssm
@@ -36,7 +36,7 @@ Cortex-A57 aarch64, 4 GiB, sysid **0xea16**. Host name for the box: **woomera**.
   - **GPIO/switch/LED map** — [gpio-switches-leds.md](gpio-switches-leds.md): reset=gpio38,
     `ulogo_white`=gpio37; gpio 33/34 = RPS (not SW1/SW2 — those are unknown, need a probe).
   - **I2C/SPI scan** — active `i2c_pld` bus has no INA/ISL power monitor; `i2c_gen`
-    (vendor "bus 11") is **disabled** in the ea16 DTS; unidentified 0x57 device (#62).
+    (stock "bus 11") is **disabled** in the ea16 DTS; unidentified 0x57 device (#62).
   - **JTAG-candidate header** lead — unpopulated 2-row PTH at the SoC top edge
     ([components.md](components.md) test-points); needs a macro.
 - **Drive power root-caused** — PCA9575 @0x21 pwren, gpio-hog auto-powers bays.
@@ -60,7 +60,7 @@ Cortex-A57 aarch64, 4 GiB, sysid **0xea16**. Host name for the box: **woomera**.
 | sdb | WD82PURZ 8 TB | work store / RAID pair |
 | sdc | WD82PURZ 8 TB | work store / RAID pair |
 
-Vendor USERDEV USB fully backed up (`images/unvr-usb-*.img`), then unplugged — that
+Stock USERDEV USB fully backed up (`images/unvr-usb-*.img`), then unplugged — that
 shifted SSD/HDD from sdb/… down to sda/…. Two 8 TB disks → repurpose plan
 (analyse read-only → wipe → one Linux boot, one work store).
 
@@ -83,7 +83,7 @@ shifted SSD/HDD from sdb/… down to sda/…. Two 8 TB disks → repurpose plan
 - **`panic=15`** in bootargs — a console/host drop kills the PID-1 initramfs shell
   → "Attempted to kill init" panic; panic=15 auto-reboots instead of stranding.
 - **Reboot from Linux hangs** (#51, no restart driver yet) — power-cycle to reboot.
-- Console creds (vendor): root:ui (al324 gen). Fedora root pw `unvr` (CHANGE).
+- Console creds (stock): root:ui (al324 gen). Fedora root pw `unvr` (CHANGE).
   See [credentials.md](credentials.md).
 
 ## Issue index (by theme)

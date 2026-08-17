@@ -179,12 +179,12 @@ the real `HAL_TOP`, version 2.6, with `file_list_base.mk`,
 same tree (imported from the UDM GPL drop), and adds `ddr/` — the DDR init
 absent from every kernel-side copy. That plus vanilla `.S` files is near-complete.
 
-Second independent vendor snapshot: `SVoxel/R9000` (Netgear, AL-514) carries the
+Second independent OEM snapshot: `SVoxel/R9000` (Netgear, AL-514) carries the
 same Annapurna U-Boot forked from **v2015.01** — keeps its `.S` files, HAL
 equally stripped, no UBNT targets. Diffing it against the UNVR 2015.07 tree
 separates Annapurna BSP from Ubiquiti changes.
 
-## `al_boot` is two vendors' code, neither published ✅
+## `al_boot` is two firms' code, neither published ✅
 
 **(a) Annapurna al-boot v2.10.0** — build path
 `/project/users/barak/tasks/al-boot-release/…/alpine-v2-al-boot-v2.10.0.tmp/`,

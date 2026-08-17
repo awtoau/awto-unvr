@@ -1,7 +1,7 @@
 # S2 stage2_loader DDR parser — Ghidra analysis + portable port
 
 Rigorous reverse of the DDR config path in `docs/nor-reference/preboot-s2-decompiled.c`
-(stage2_loader v2.22.3, Thumb-2 @ `0xf2200000`). Goal: reuse the vendor's exact algorithm
+(stage2_loader v2.22.3, Thumb-2 @ `0xf2200000`). Goal: reuse the stock exact algorithm
 in the U-Boot SPL. Every claim cites `function@addr` + decompile line; table data recovered
 from `s2-loader-stage2_v2.22.3-25044B.bin`, never guessed.
 

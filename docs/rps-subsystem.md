@@ -1,7 +1,7 @@
 # RPS (Redundant Power / PSE) subsystem
 
 Reverse-engineered from `sbin/rpsd` (5.1.25) — full binary pin/protocol walk
-(`scripts/rps_walk.py`), the live vendor DTB, `RPS.jpg`, and Ubiquiti's USP-RPS
+(`scripts/rps_walk.py`), the live stock DTB, `RPS.jpg`, and Ubiquiti's USP-RPS
 spec. **The RPS connector IS populated on this 4-bay UNVR (ea16)** (owner-confirmed).
 2026-08-17.
 
@@ -79,7 +79,7 @@ the ttyS2 JSON link.)
 
 - **`gpio 33` (rps_prnt)** is the RPS-connection-detect input — a natural hook to sense
   an external signal and drive a reset (SP805 watchdog) or `poweroff`, though it's
-  claimed by rpsd under the vendor OS (free for us on Fedora).
+  claimed by rpsd under the stock OS (free for us on Fedora).
 - **Spare PCA9575@0x20 inputs (gpio 508/510/511)** — cleanest for a NEW trigger.
 - **SW1/SW2** — physical buttons, GPIO TBD (probe) — ideal on-board momentary trigger.
 
@@ -92,7 +92,7 @@ the ttyS2 JSON link.)
   suggest one exists on the ORing path).
   - **Scan result (2026-08-17, `scripts/i2c-spi-scan.py`):** the *active* i2c bus
     (`i2c_pld` @0xfd880000) has **no monitor** in the INA/ISL range 0x40–0x49 — only
-    mux/RTC/adt7475/pca9575/SFP. The **general bus `i2c_gen` @0xfd894000** (the vendor's
+    mux/RTC/adt7475/pca9575/SFP. The **general bus `i2c_gen` @0xfd894000** (the stock
     "bus 11", where the INA230/ISL28022/INA237 monitors sit) is **`status="disabled"`** in
     the ea16 DTS, so nothing probes it. → To confirm ea16 has/lacks the monitor, **enable
     `i2c_gen` and rescan 0x40–0x49**. Unrelated: an unidentified 32-bit-register device sits

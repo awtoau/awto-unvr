@@ -1,7 +1,7 @@
 # Linux 7.1.8 for UNVR ea16 — forward-port of the 6.18 build
 
 Goal: same netboot bring-up as [linux-6.18-build.md](linux-6.18-build.md) but on
-**7.1.8**. Cross-built on the host, netboot only (no flashing, vendor NAND
+**7.1.8**. Cross-built on the host, netboot only (no flashing, stock NAND
 untouched). This doc records ONLY the 6.18 -> 7.1 deltas; the mechanism
 (embedded initramfs, gpio-hog drive power, uImage/bootm) is unchanged — see the
 6.12 / 6.18 docs.
@@ -69,7 +69,7 @@ warnings on the *disabled* `pcie-external1/2/3` nodes (node name not "pci"/"pcie
 - All three build against 7.1.8 with **no source edits** — the 6.12 `kcompat.h`
   and HAL are still API-compatible (netdev/phylink/dmaengine/crypto drift did not
   materialise, same as 6.18).
-- Only warnings (non-fatal, all pre-existing in vendor code):
+- Only warnings (non-fatal, all pre-existing in Annapurna code):
   `al_hal_serdes_25g.c` frame 3216 B; three `al_hal_ssm_*` frames 2336 B;
   `al_eth_main.c:846 'phydev' used uninitialized`. **Runtime bind on 7.1
   unverified** (see risks).
@@ -123,13 +123,13 @@ embedded initramfs has all four `al_*.ko` + `modules.dep`.
 ## Netboot — use scripts/netboot.py (atomic catch+tftp+bootm)
 
 `./scripts/netboot.py --tag 7.1` — streams ESC to catch U-Boot, then fires the
-whole sequence on one socket session. Needed because the vendor U-Boot has a
+whole sequence on one socket session. Needed because the stock U-Boot has a
 **~50s watchdog at the prompt**: catching in one step and sending commands in
 another leaves a gap the watchdog resets into, and the next autoboot lands in
-the vendor OS. tftp keeps U-Boot busy so the watchdog stays fed.
+the stock OS. tftp keeps U-Boot busy so the watchdog stays fed.
 
-- Order matters: send `reboot` from the vendor shell FIRST, wait for shutdown to
-  start, THEN launch netboot.py — streaming ESC at the vendor bash prompt
+- Order matters: send `reboot` from the stock shell FIRST, wait for shutdown to
+  start, THEN launch netboot.py — streaming ESC at the stock bash prompt
   triggers tab-completion (`--More--` pager), not U-Boot capture.
 - Adds `panic=15` to bootargs → a panic auto-reboots to U-Boot instead of
   stranding (a host/console drop kills the PID-1 initramfs shell → "Attempted to

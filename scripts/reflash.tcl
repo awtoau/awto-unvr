@@ -1,4 +1,4 @@
-# Reflash woomera's Fedora kernel+DTB into NAND (vendor kernel @0x300000 kept as recovery).
+# Reflash woomera's Fedora kernel+DTB into NAND (stock kernel @0x300000 kept as recovery).
 # Run:  ./dev.py console-tcl scripts/reflash.tcl
 # Prereqs:
 #   - gzip uImage + DTB staged in the tftp dir as the names below (mkuimage.py --gzip).

@@ -11,7 +11,7 @@ Record the **cage** (on-board connector) and the **module** (removable optic) se
 
 ## Inserted module (optic) — UNCONFIRMED
 
-- **Known:** a **third-party Intel** SFP+ module is fitted (per project notes). Exact model/vendor **not captured** — `ethtool -m` returned "No data available" on the vendor 4.19.152 kernel (no SFF-8472 diagnostics path).
+- **Known:** a **third-party Intel** SFP+ module is fitted (per project notes). Exact model/vendor **not captured** — `ethtool -m` returned "No data available" on the stock 4.19.152 kernel (no SFF-8472 diagnostics path).
 - **Type:** behaves as a 10G optic (`10G_OPTIC` LM mode). Could be SR/LR fibre or a 10GBASE optic; not distinguished yet.
 
 ## How to confirm the module
@@ -22,9 +22,9 @@ Record the **cage** (on-board connector) and the **module** (removable optic) se
 
 ## Datasheet
 
-- **None** — module unidentified. Once ethtool/EEPROM names the part, fetch that vendor's optic datasheet.
+- **None** — module unidentified. Once ethtool/EEPROM names the part, fetch that stock optic datasheet.
 
 ## RE / repurpose notes
 
-- Vendor kernel gives no DOM — closing this needs either a mainline sfp/phylink kernel or a direct I²C EEPROM read.
+- Stock kernel gives no DOM — closing this needs either a mainline sfp/phylink kernel or a direct I²C EEPROM read.
 - Third-party optic already works in the cage → the port does not enforce a vendor lock at the optic level.

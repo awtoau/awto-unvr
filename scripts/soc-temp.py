@@ -3,7 +3,7 @@
 
 Interim CPU-temp readout until al_thermal is built into the kernel (#44). The
 on-die thermal sense unit @ 0xfd860a00 has a status register (unit.status @ +0xc)
-carrying a 12-bit ADC readout; convert with the vendor formula (offsets from
+carrying a 12-bit ADC readout; convert with the Annapurna formula (offsets from
 al_hal_thermal_sensor.c, Alpine V2). Root only.
 """
 import mmap, struct, sys
