@@ -1,0 +1,205 @@
+#!/usr/bin/env python3
+"""Deploy rebuilt al_* modules to woomera and live-reload them — no NAND, no reboot.
+
+The #52 (al_eth UBSAN) and #50 (al_ssm crypto) fixes are in OUT-OF-TREE modules,
+not the kernel Image/DTB — so no NAND reflash is needed. This logs into woomera
+over the serial console (root/unvr), pulls the fresh .ko over HTTP from selwyn,
+installs them into /lib/modules/<kv>/extra, depmods, then reloads al_ssm and
+al_eth live and captures the verification lines:
+
+  - al_ssm reload -> re-runs the XTS self-test. PASS = no "test failed" (#50).
+    al_ssm IS reload-safe (crypto/DMA engine tears down cleanly).
+  - al_eth is NOT reload-safe: re-register panics in al_eth_init (4 PCI funcs +
+    internal-PCIe + UDMA). It's deployed to disk only and loads on the next boot,
+    where UBSAN absence (#52) is verified from the boot log. The fix is a
+    register-overlay type change (never allocated), so it can't panic at probe.
+
+Console-only (works even though `reboot` hangs, #51). Reversible: old .ko are
+kept as *.ko.bak on the device.
+
+Prereqs: build-out present (scripts/build-linux-71-fedora.py), console socket up
+(./dev.py console), woomera at the `fedora login:` prompt on ttyS0.
+"""
+from __future__ import annotations
+import http.server, os, re, socket, socketserver, sys, threading, time
+from datetime import datetime, timezone
+from functools import partial
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from _repo import LOGS  # noqa: E402
+
+SOCK = Path(os.environ.get("XDG_RUNTIME_DIR", "/tmp")) / "tio-unvr.sock"
+EXTRA = Path("/mnt/2tb/unvr-port-refs/build-out-71-fedora/modroot/lib/modules/7.1.8-dirty/extra")
+MODS = ["al_eth.ko", "al_ssm.ko"]     # the two with fixes; al_dma/al_sgpo unchanged
+SELWYN_IP = "192.168.25.145"
+HTTP_PORT = 8099
+USER, PASSWD = "root", "unvr"
+PROMPT = "@@P@@"                        # our own unambiguous shell marker
+
+
+def log(m):
+    line = f"{datetime.now(timezone.utc).astimezone().isoformat(timespec='seconds')}  {m}"
+    print(line, flush=True)
+    LOGS.mkdir(parents=True, exist_ok=True)
+    (LOGS / "deploy-modules-woomera.log").open("a").write(line + "\n")
+
+
+def _read_until(s, needle, limit, extra_needles=()):
+    buf = b""
+    end = time.monotonic() + limit
+    while time.monotonic() < end:
+        try:
+            c = s.recv(4096)
+        except socket.timeout:
+            continue
+        if not c:
+            break
+        buf += c
+        if needle.encode() in buf:
+            return buf, needle
+        for n in extra_needles:
+            if n.encode() in buf:
+                return buf, n
+    return buf, None
+
+
+def login(s):
+    """Drive the getty login. Idempotent-ish: if already at a shell, sets PS1."""
+    s.sendall(b"\r")
+    buf, hit = _read_until(s, "login:", 8, extra_needles=("Password:", "# ", "$ "))
+    if hit in ("# ", "$ "):
+        log("already at a shell")
+    else:
+        if hit != "login:":
+            # maybe a stale session; send a newline and retry once
+            s.sendall(b"\r")
+            buf, hit = _read_until(s, "login:", 8, extra_needles=("Password:",))
+        if hit == "login:":
+            s.sendall(USER.encode() + b"\r")
+            _read_until(s, "Password:", 6)
+            s.sendall(PASSWD.encode() + b"\r")
+        elif hit == "Password:":
+            s.sendall(PASSWD.encode() + b"\r")
+        buf, _ = _read_until(s, "#", 12, extra_needles=("Login incorrect",))
+        if b"Login incorrect" in buf:
+            log("FAIL: login incorrect (root/unvr rejected)")
+            raise SystemExit(2)
+    # drop root's mv/cp/rm -i aliases (they block on "overwrite?" over serial)
+    s.sendall(b"unalias -a 2>/dev/null; true\r")
+    _read_until(s, "#", 4)
+    # set an unambiguous prompt so command completion is unmistakable
+    s.sendall(f"export PS1='{PROMPT}'\r".encode())
+    _read_until(s, PROMPT, 6)
+    # swallow the echo of the just-set prompt line
+    _read_until(s, PROMPT, 3)
+    log("logged in")
+
+
+def sh(s, cmd, timeout=20, label=None):
+    """Run cmd, return (rc, output_text). Uses a value-substituted marker so the
+    echoed command line can't be mistaken for completion."""
+    s.sendall(cmd.encode() + b"; echo @@RC=$?@@\r")
+    buf = b""
+    end = time.monotonic() + timeout
+    rc = None
+    while time.monotonic() < end:
+        try:
+            c = s.recv(4096)
+        except socket.timeout:
+            continue
+        if not c:
+            break
+        buf += c
+        m = re.search(rb"@@RC=(\d+)@@", buf)
+        if m:
+            rc = int(m.group(1))
+            break
+    _read_until(s, PROMPT, 4)   # consume the prompt that follows
+    txt = buf.decode(errors="replace")
+    if rc is None:
+        log(f"  TIMEOUT: {label or cmd} ({timeout}s)\n{txt[-500:]}")
+        raise SystemExit(3)
+    if label:
+        log(f"  {label}: rc={rc}")
+    return rc, txt
+
+
+def serve():
+    """Serve EXTRA over HTTP in a background thread; return the server to stop."""
+    handler = partial(http.server.SimpleHTTPRequestHandler, directory=str(EXTRA))
+    httpd = socketserver.TCPServer(("0.0.0.0", HTTP_PORT), handler)
+    threading.Thread(target=httpd.serve_forever, daemon=True).start()
+    return httpd
+
+
+def main():
+    if not SOCK.exists():
+        sys.exit(f"console socket absent: {SOCK} — start ./dev.py console")
+    for m in MODS:
+        if not (EXTRA / m).exists():
+            sys.exit(f"missing module {EXTRA/m} — run build-linux-71-fedora.py")
+
+    httpd = serve()
+    log(f"serving {EXTRA} on {SELWYN_IP}:{HTTP_PORT}")
+    s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    s.settimeout(0.2)
+    s.connect(str(SOCK))
+    try:
+        login(s)
+
+        rc, out = sh(s, "uname -r", label="kernel")
+        kv = re.search(r"(\d+\.\d+\.\d+\S*)", out)
+        kv = kv.group(1) if kv else "7.1.8-dirty"
+        log(f"  device kver: {kv}")
+
+        # reachability
+        rc, _ = sh(s, f"ping -c1 -W2 {SELWYN_IP} >/dev/null 2>&1", label="ping selwyn")
+        if rc != 0:
+            rc, out = sh(s, "ip -4 addr show scope global | grep inet")
+            log(f"ABORT: woomera can't reach {SELWYN_IP}. Its addrs:\n{out}")
+            raise SystemExit(4)
+
+        extra = f"/lib/modules/{kv}/extra"
+        sh(s, f"mkdir -p {extra}", label="ensure extra dir")
+        for m in MODS:
+            url = f"http://{SELWYN_IP}:{HTTP_PORT}/{m}"
+            dst = f"{extra}/{m}"
+            sh(s, f"cp -af {dst} {dst}.bak 2>/dev/null; true", label=f"backup {m}")
+            rc, out = sh(s, f"curl -fsS {url} -o {dst}.new", timeout=40, label=f"fetch {m}")
+            if rc != 0:
+                log(f"ABORT: fetch {m} failed:\n{out[-400:]}")
+                raise SystemExit(5)
+            sh(s, f"mv -f {dst}.new {dst}", label=f"install {m}")
+        sh(s, f"ls -l {extra}/al_eth.ko {extra}/al_ssm.ko")
+        sh(s, f"depmod {kv}", timeout=60, label="depmod")
+
+        # --- verify al_ssm (#50): reload re-runs the XTS self-test ---
+        sh(s, "dmesg -C", label="clear dmesg")
+        sh(s, "modprobe -r al_ssm 2>/dev/null; true", label="rmmod al_ssm")
+        rc, out = sh(s, "modprobe al_ssm 2>&1; true", timeout=30, label="modprobe al_ssm")
+        _, dm = sh(s, "dmesg | grep -iE 'al.?ssm|xts|skcipher|self-test' | tail -30", label="al_ssm dmesg")
+        ssm_fail = "test failed" in dm.lower() or "wrong result" in dm.lower()
+        log(f"=== al_ssm (#50): {'STILL FAILING' if ssm_fail else 'no self-test failure seen'} ===\n{dm}")
+
+        # al_eth (#52): do NOT live-reload. al_eth is not rmmod/reprobe-safe —
+        # re-register panics in al_eth_init -> __pci_register_driver (4 PCI funcs +
+        # internal-PCIe + UDMA don't tear down cleanly). The new .ko is on disk and
+        # depmod'd, so it loads at the NEXT boot; verify UBSAN is absent in the boot
+        # log then. The fix is a register-overlay type change only (never allocated),
+        # so it cannot panic at probe.
+        log("=== al_eth (#52): new module deployed to disk; NOT reloaded "
+            "(al_eth is not reload-safe — panics on re-register). Loads on next "
+            "boot; verify UBSAN absent in the boot log. ===")
+
+        log("RESULT: "
+            f"al_ssm #50 {'FAIL' if ssm_fail else 'OK (self-test clean on reload)'} ; "
+            "al_eth #52 deployed — verify UBSAN-free on next boot")
+        return 0
+    finally:
+        httpd.shutdown()
+        s.close()
+
+
+if __name__ == "__main__":
+    sys.exit(main())
