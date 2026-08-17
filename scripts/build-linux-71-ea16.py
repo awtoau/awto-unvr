@@ -194,7 +194,10 @@ def configure():
             "--disable", "WERROR",
             "--disable", "TRIM_UNUSED_KSYMS",
             "--enable", "PCIE_AL", "--enable", "PCIE_AL_INTERNAL",
-            "--enable", "EXPERT", "--enable", "GPIO_SYSFS"]
+            "--enable", "EXPERT", "--enable", "GPIO_SYSFS",
+            # unrestricted /dev/mem for SoC MMIO poking from userspace (DDR/reg RE)
+            "--enable", "DEVMEM",
+            "--disable", "STRICT_DEVMEM", "--disable", "IO_STRICT_DEVMEM"]
     if PROD:
         # Production: no embedded initramfs -> kernel runs systemd from
         # root=PARTUUID. Add the exact Fedora/systemd-required symbols the audit

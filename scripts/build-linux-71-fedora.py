@@ -55,6 +55,10 @@ def configure():
          "--disable", "MODULE_SIG", "--disable", "MODULE_SIG_ALL",
          "--disable", "MODULE_SIG_FORCE", "--disable", "SYSTEM_REVOCATION_KEYS",
          "--disable", "SECURITY_LOCKDOWN_LSM",
+         # unrestricted /dev/mem: read/write SoC MMIO from userspace (DDR
+         # controller/PHY regs, live hardware RE). Our own box, owner directive.
+         "--enable", "DEVMEM",
+         "--disable", "STRICT_DEVMEM", "--disable", "IO_STRICT_DEVMEM",
          "--enable", "DEBUG_INFO_NONE",
          "--disable", "WERROR"])
     run(["make", "-C", SRC, "olddefconfig"])
