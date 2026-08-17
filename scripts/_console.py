@@ -52,7 +52,12 @@ def login(s):
     if hit == "login:":
         s.sendall(USER.encode() + b"\r"); _ru(s, "Password:", 6)
         s.sendall(PASSWD.encode() + b"\r"); _ru(s, "]#", 12, extra=("incorrect",))
-    s.sendall(b"unalias -a 2>/dev/null; true\r"); _ru(s, "]#", 4, extra=(PROMPT,))
+    # Quiet the shell so output parses cleanly: systemd 256+ sets PROMPT_COMMAND
+    # to emit OSC-3008 "context" markers (machineid/cwd/... ) that interleave with
+    # command output. Unset it, force TERM=dumb so nothing re-enables terminal
+    # integration, then a bare marker prompt.
+    s.sendall(b"unalias -a 2>/dev/null; unset PROMPT_COMMAND; export TERM=dumb; true\r")
+    _ru(s, "]#", 4, extra=(PROMPT,))
     s.sendall(f"export PS1='{PROMPT}'\r".encode()); _ru(s, PROMPT, 6); _ru(s, PROMPT, 3)
 
 
@@ -74,7 +79,9 @@ def sh(s, cmd, timeout=30):
         if m:
             rc = int(m.group(1)); break
     _ru(s, PROMPT, 4)
-    txt = re.sub(r"\x1b\[[0-9;?]*[a-zA-Z]", "", buf.decode(errors="replace"))
-    txt = re.sub(r"\x1b\][0-9;].*?(\x07|\x1b\\)", "", txt)
+    txt = buf.decode(errors="replace")
+    txt = re.sub(r"\x1b\[[0-9;?]*[a-zA-Z]", "", txt)              # CSI
+    txt = re.sub(r"\x1b\][^\x07\x1b]*(?:\x07|\x1b\\)?", "", txt)  # OSC (complete or truncated)
+    txt = re.sub(r"\]3008;[^\r\n]*", "", txt)                     # leaked OSC-3008 body remnant
     lines = [l for l in txt.splitlines() if "@@RC=" not in l and "; echo @@RC" not in l]
     return rc, "\n".join(lines).strip()
