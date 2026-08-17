@@ -27,7 +27,7 @@ the GPL source" note is out of date.
 | SoC | Annapurna Labs (Amazon) Alpine V2, quad Cortex-A57 @ 1.7 GHz |
 | Arch | **aarch64** |
 | RAM | 4 GB |
-| Board ID | `ea1a` (UNVR). UDM Pro is `ea15`. |
+| Board ID | **`ea16`** (this UNVR, no-eMMC; the linux-alpine-v2 port targets the eMMC `ea1a`). UDM Pro is `ea15`. |
 | Boot media | 8 GB USB stick, **glued down** (older units). Newer use eMMC. |
 | Net | 10GbE SFP+ + 1GbE RJ45 |
 | Bays | 4 hot-swap |

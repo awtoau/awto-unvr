@@ -28,7 +28,7 @@ drivers. Anything sharing this SoC shares the porting problem — and the fixes.
 
 | Device | Notes |
 |---|---|
-| **Ubiquiti UNVR** | Ours. Board ID `ea1a` ✅. 4-bay, 10G SFP+ + 1G, 4 GB RAM |
+| **Ubiquiti UNVR** | Ours. Board ID `ea16` ✅ (no-eMMC variant; the eMMC UNVR is `ea1a`). 4-bay, 10G SFP+ + 1G, 4 GB RAM |
 | Ubiquiti UNVR Pro | Same family, different UART location and eMMC boot |
 | Ubiquiti UDM-Pro | Board ID `ea15` ✅. **Much larger community — most technique flows from here** |
 | Ubiquiti UNAS / UNAS Pro | 📄 same SoC family |

@@ -200,7 +200,7 @@ guess: 7 SPI partitions (mtd0–6) + `al_boot`(7) + `device_tree`(8) +
 `linux_kernel`(**9**) + `rootfs`(**10**). That is precisely what 2.3.14 and
 5.1.25 hardcode. It is a permanent fix, unlike the volatile `fdt rm`.
 
-Confidence, stated honestly:
+Confidence:
 
 - **High** that the ea16 DTB in 5.1.25's U-Boot yields mtd9/mtd10 — read
   directly out of the binary, both DTB and the SPI/NAND tables.

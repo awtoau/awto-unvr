@@ -228,7 +228,7 @@ to run at EL2.
 
 ---
 
-## 6. Honest gaps + risks
+## 6. Gaps + risks
 
 - **Entry EL unconfirmed.** Chain hands Linux EL2; whether `go`/`bootm` enters EDK2
   at EL2 or EL1 is not read on bench. EDK2 must match. Mitigation: print `CurrentEL`

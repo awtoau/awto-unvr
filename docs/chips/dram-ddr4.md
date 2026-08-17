@@ -1,6 +1,7 @@
-# DRAM — 4 GiB DDR4 (part UNCONFIRMED)
+# DRAM — 4 GiB DDR4 (Samsung K4A8G165WB-BCRC ×4)
 
-- **Part: unknown** — soldered-down DDR4, no marking read yet.
+- **Part: Samsung K4A8G165WB-BCRC** ×4 — 8 Gb ×16 DDR4, soldered. **Photo-confirmed**
+  (`SEC 013 / K4A8G16 / 5WB-BCRC`, refs U3/U4 + 2). 4 × 8 Gb = 4 GiB.
 - **Function:** main system memory.
 - **Confirmed:** U-Boot `DRAM: 4 GiB`, `SPD I2C Address: 57`; stage2_loader reads SPD to bring up DRAM. ✅ live.
 

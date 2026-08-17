@@ -254,7 +254,7 @@ Pipeline inside `ghidra-analyse.py` (analyzeHeadless):
 - `scripts/ghidra/ApplyAlRegs.java` — apply `.sym` labels + `.equ.tsv` equates (postScript).
 - `scripts/ghidra/ExportAll.java` — decompile-all exporter (postScript; from awto-2000).
 
-## Honesty / uncertain
+## Uncertain / low-confidence
 - The `.java` scripts are adapted from awto-2000's proven `SetupMemory.java` /
   `ExportAll.java` and use the same Ghidra APIs, but were **not re-run headless in
   this session** (no analysis was launched). The **Python** parser/pipeline IS tested
