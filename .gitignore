@@ -10,6 +10,8 @@ sources/*.tgz
 # Chip datasheets ARE tracked (owner directive) - sources/chips/ is NOT ignored.
 !sources/chips/
 !sources/chips/**
+# Board photos: large, non-regenerable captures. Manifest in sources/README.md.
+sources/photos/
 
 # ---------------------------------------------------------------------------
 # MTD dumps: NOTHING is tracked.

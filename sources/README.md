@@ -27,3 +27,16 @@ Discovered via `https://fw-update.ui.com/api/firmware-latest?filter=eq~~platform
 
 Fetched with curl by explicit approval - playwrong has no binary-download tool.
 The vendor checksum is what makes that safe; do not skip verification.
+
+## photos/Photos-1-001.zip
+
+| | |
+|---|---|
+| Contents | 131 files — board macro photos (`*.jpg`) + one `*.mp4`, of the UNVR mainboard for chip ID |
+| Captured | 2026-08-16 (owner) |
+| Size | 254851611 bytes (zip), 131 files |
+| sha256 | `93ecabaa07dcac86e88afea5037b42c97fe2a0ecacb9fef2c6875ba27259c663` |
+
+Non-regenerable owner captures → gitignored (`sources/photos/`), not committed to
+the public repo. Source for the chip cross-check in [`../docs/hardware.md`](../docs/hardware.md)
+("Physical chip IDs"). Extract to a scratch dir to view; do not add the images to git.
