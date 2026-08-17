@@ -54,3 +54,6 @@ secrets/
 
 tmp/
 __pycache__/
+
+# Ignition MCP writes this per-session with a local port — machine-local, not shared
+.vscode/mcp.json
