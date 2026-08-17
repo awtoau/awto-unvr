@@ -44,7 +44,7 @@ MIN_FREE_GB = 15
 
 IH_MAGIC, IH_OS_LINUX, IH_ARCH_ARM64, IH_TYPE_KERNEL, IH_COMP_NONE = \
     0x27051956, 5, 22, 2, 0
-LOAD_ADDR = ENTRY_ADDR = 0x08080000
+LOAD_ADDR = ENTRY_ADDR = 0x08000000
 
 # Production mode: no embedded initramfs, so the kernel runs /sbin/init (systemd)
 # from the real root (root=PARTUUID=..., kernel's own rootwait waits for SATA).
