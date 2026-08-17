@@ -849,5 +849,13 @@
  * unknown"). Disable it to match timer1/2/3 (already disabled in the dtsi).
  */
 &timer0 {
-	status = "disabled";
+	/*
+	 * SP804 deferred forever because an arm,primecell device needs "apb_pclk"
+	 * BY NAME for the AMBA bus-clock lookup; the dtsi node has clocks=<&sbclk>
+	 * with no clock-names. Fix (not disable): name it. One clock named apb_pclk
+	 * is used for both the timer and the bus (valid per the sp804 binding).
+	 * UNVERIFIED on hardware — confirm the timer probes once the boot-source
+	 * (which kernel+DTB U-Boot actually loads) is resolved so DTB changes test.
+	 */
+	clock-names = "apb_pclk";
 };
