@@ -59,6 +59,9 @@ def configure():
          # controller/PHY regs, live hardware RE). Our own box, owner directive.
          "--enable", "DEVMEM",
          "--disable", "STRICT_DEVMEM", "--disable", "IO_STRICT_DEVMEM",
+         # 4K-sector erase: the vendor's NOR config/cksum partitions are 4K-aligned
+         # (not 64K), so with 64K-only erase the kernel force-read-onlys them.
+         "--enable", "MTD_SPI_NOR_USE_4K_SECTORS",
          "--enable", "DEBUG_INFO_NONE",
          "--disable", "WERROR"])
     run(["make", "-C", SRC, "olddefconfig"])

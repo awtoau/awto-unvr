@@ -197,7 +197,10 @@ def configure():
             "--enable", "EXPERT", "--enable", "GPIO_SYSFS",
             # unrestricted /dev/mem for SoC MMIO poking from userspace (DDR/reg RE)
             "--enable", "DEVMEM",
-            "--disable", "STRICT_DEVMEM", "--disable", "IO_STRICT_DEVMEM"]
+            "--disable", "STRICT_DEVMEM", "--disable", "IO_STRICT_DEVMEM",
+            # 4K-sector erase so the 4K-aligned NOR config/cksum partitions aren't
+            # force-read-only (they don't align to 64K erase blocks).
+            "--enable", "MTD_SPI_NOR_USE_4K_SECTORS"]
     if PROD:
         # Production: no embedded initramfs -> kernel runs systemd from
         # root=PARTUUID. Add the exact Fedora/systemd-required symbols the audit
