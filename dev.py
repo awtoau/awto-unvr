@@ -27,6 +27,7 @@ import shutil
 import socket
 import subprocess
 import sys
+import time
 from collections import deque
 from datetime import datetime
 from pathlib import Path
@@ -335,39 +336,226 @@ def cmd_console_attach(_extra: list[str]) -> int:
     return 1
 
 
-@command("send a line to the console and print what comes back",
-         args="<text> [...]", kind="action")
+# Keyword tokens for --raw sends (control bytes you can't type as an arg).
+_RAW_TOKENS = {"CR": b"\r", "LF": b"\n", "CRLF": b"\r\n", "ENTER": b"\r",
+               "ESC": b"\x1b", "TAB": b"\t", "SPACE": b" ", "NUL": b"\x00",
+               "CTRL-C": b"\x03", "CTRL-D": b"\x04", "CTRL-M": b"\r"}
+
+
+def _raw_bytes(tokens: list[str]) -> bytes:
+    """Expand --raw args: keyword tokens (CR/LF/ESC/...) or \\xNN / \\r / \\n /
+    \\t escapes. Anything else is sent literally (UTF-8)."""
+    out = b""
+    for t in tokens:
+        if t in _RAW_TOKENS:
+            out += _RAW_TOKENS[t]
+        else:
+            out += t.encode().decode("unicode_escape").encode("latin-1")
+    return out
+
+
+@command("send to the console; optionally wait for a pattern before returning",
+         args="[--raw] [--expect NEEDLE [--timeout S]] <text|CR|LF|ESC ...>",
+         kind="action")
 def cmd_console_send(extra: list[str]) -> int:
-    """Agent-facing write path. Connects to tio's socket, sends one line, then
-    reads whatever arrives. The read window is 1.5 s: a shell echoes and
-    responds in milliseconds, so this is ~1000x the expected latency and still
-    returns promptly. On no reply the caller sees empty output, not a hang."""
+    """The one console write primitive - use this instead of writing a new script.
+
+      ./dev.py console-send printenv bootcmd            # send a line (+CR)
+      ./dev.py console-send --raw ESC                   # send a bare ESC byte
+      ./dev.py console-send --expect 'ALPINE_UBNT_NAS_ALL>' setenv x 1
+      ./dev.py console-send --raw --expect Bytes CRLF   # send CRLF, wait for it
+
+    Without --expect it sends and reads a 1.5 s window (a shell echoes in ms, so
+    ~1000x latency; empty output on no reply, never a hang). With --expect it
+    reads UNTIL the needle appears - a condition, not a delay - and returns
+    immediately when it does. --timeout is a FAILSAFE only (default 10 s: covers
+    a U-Boot/shell command; raise it for tftp/nand writes). On expiry it prints
+    what it captured and logs a loud FAIL naming the needle + elapsed, exit 3.
+    --raw expands CR/LF/CRLF/ESC/TAB/CTRL-C/... and \\xNN escapes and does NOT
+    append a CR (you control the line ending)."""
     if not _console_pid():
         log("console not running - start it with ./dev.py console", "ERROR")
         return 1
-    line = " ".join(extra)
+    raw = False
+    expect: str | None = None
+    timeout = 10.0
+    words: list[str] = []
+    it = iter(extra)
+    for a in it:
+        if a == "--raw":
+            raw = True
+        elif a == "--expect":
+            expect = next(it, None)
+            if expect is None:
+                log("--expect needs a NEEDLE", "ERROR"); return 2
+        elif a == "--timeout":
+            v = next(it, None)
+            if v is None or not v.replace(".", "", 1).isdigit():
+                log("--timeout needs seconds", "ERROR"); return 2
+            timeout = float(v)
+        else:
+            words.append(a)
+    payload = _raw_bytes(words) if raw else (" ".join(words).encode() + b"\r")
+
     try:
         s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        s.settimeout(1.5)
+        s.settimeout(0.2)
         s.connect(str(CONSOLE_SOCK))
     except OSError as e:
         log(f"cannot connect to {CONSOLE_SOCK}: {e}", "ERROR")
         return 1
-    s.sendall(line.encode() + b"\r")
+    s.sendall(payload)
+
     got = b""
-    try:
-        while True:
-            chunk = s.recv(4096)
+    if expect is None:                       # legacy: fixed read window
+        end = time.monotonic() + 1.5
+        while time.monotonic() < end:
+            try:
+                chunk = s.recv(4096)
+            except socket.timeout:
+                continue
             if not chunk:
                 break
             got += chunk
-    except socket.timeout:
-        pass
-    finally:
         s.close()
-    sys.stdout.buffer.write(got)
-    sys.stdout.buffer.flush()
-    return 0
+        sys.stdout.buffer.write(got); sys.stdout.buffer.flush()
+        return 0
+
+    needle = expect.encode()                 # wait for the condition
+    t0 = time.monotonic()
+    end = t0 + timeout
+    while time.monotonic() < end:
+        try:
+            chunk = s.recv(4096)
+        except socket.timeout:
+            continue
+        if not chunk:
+            break
+        got += chunk
+        if needle in got:
+            s.close()
+            sys.stdout.buffer.write(got); sys.stdout.buffer.flush()
+            return 0
+    s.close()
+    sys.stdout.buffer.write(got); sys.stdout.buffer.flush()
+    log(f"FAIL: {expect!r} not seen in {time.monotonic()-t0:.1f}s "
+        f"(failsafe {timeout:.0f}s)", "ERROR")
+    return 3
+
+
+# Home of the pure-Python mini Jim-Tcl interpreter (written for espjtag). Reused
+# here so console automation is Tcl scripts, same as the espjtag Tcl harness.
+ESPJTAG_TCL = Path("/mnt/2tb/git/espjtag/scripts")
+
+
+def _load_minijimtcl():
+    import importlib
+    if str(ESPJTAG_TCL) not in sys.path:
+        sys.path.insert(0, str(ESPJTAG_TCL))
+    try:
+        return importlib.import_module("mini_jimtcl")
+    except ModuleNotFoundError as e:
+        raise RuntimeError(f"mini_jimtcl.py not found under {ESPJTAG_TCL} ({e})")
+
+
+class _ConsoleTcl:
+    """MiniJimTcl with send/send_raw/expect wired to the tio console socket. ONE
+    persistent socket for the whole script, so expect sees output from a prior
+    send (per-call connect would lose it). expect waits for a CONDITION (the
+    needle) with a failsafe timeout that raises TclError (so Tcl `catch` works)."""
+
+    def __init__(self, mod):
+        self.s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        self.s.settimeout(0.2)
+        self.s.connect(str(CONSOLE_SOCK))
+        self.buf = b""
+        self.TclError = mod.TclError
+        self.tcl = mod.MiniJimTcl()
+        self.tcl.register("send", self._send)
+        self.tcl.register("send_raw", self._send_raw)
+        self.tcl.register("expect", self._expect)
+
+    def _send(self, a: list[str]) -> str:
+        self.s.sendall(" ".join(a).encode() + b"\r")
+        return ""
+
+    def _send_raw(self, a: list[str]) -> str:
+        self.s.sendall(_raw_bytes(a))
+        return ""
+
+    def _expect(self, a: list[str]) -> str:
+        if not a:
+            raise self.TclError("expect: needs a NEEDLE")
+        needle = a[0].encode()
+        timeout = float(a[1]) if len(a) > 1 else 10.0   # failsafe; expect waits on the needle
+        end = time.monotonic() + timeout
+        while True:
+            i = self.buf.find(needle)
+            if i >= 0:
+                cut = i + len(needle)
+                out, self.buf = self.buf[:cut], self.buf[cut:]
+                return out.decode(errors="replace")
+            if time.monotonic() >= end:
+                raise self.TclError(f"expect: {a[0]!r} not seen in {timeout:.0f}s")
+            try:
+                chunk = self.s.recv(4096)
+            except socket.timeout:
+                continue
+            if not chunk:
+                raise self.TclError("expect: console socket closed")
+            self.buf += chunk
+
+    def close(self):
+        try:
+            self.s.close()
+        except OSError:
+            pass
+
+
+@command("drive the console with a Tcl script (send/expect via mini_jimtcl)",
+         args="<script.tcl> | -e '<tcl>'", kind="action")
+def cmd_console_tcl(extra: list[str]) -> int:
+    """Reuses espjtag's mini_jimtcl - full Tcl (set/if/while/proc/catch/...) plus
+    three console leaf commands:
+      send <words...>       line + CR
+      send_raw <CR|ESC|..>  raw bytes, no CR (keywords + \\xNN, as console-send)
+      expect <needle> [s]   read UNTIL needle (a condition); TclError after [s]=10 failsafe
+    e.g.  ./dev.py console-tcl reflash.tcl
+          ./dev.py console-tcl -e 'send_raw CR; expect "login:"'
+    A reflash.tcl is just: expect PROMPT; send "tftpboot ..."; expect "Bytes transferred"; ..."""
+    if not _console_pid():
+        log("console not running - start it with ./dev.py console", "ERROR")
+        return 1
+    if not extra:
+        log("usage: ./dev.py console-tcl <script.tcl> | -e '<tcl>'", "ERROR")
+        return 2
+    if extra[0] == "-e":
+        script = " ".join(extra[1:])
+    else:
+        p = Path(extra[0])
+        if not p.exists():
+            log(f"no such script: {p}", "ERROR")
+            return 2
+        script = p.read_text()
+    try:
+        mod = _load_minijimtcl()
+    except RuntimeError as e:
+        log(str(e), "ERROR")
+        return 1
+    ct = _ConsoleTcl(mod)
+    try:
+        out = ct.tcl.eval(script)
+        if out:
+            print(out)
+        return 0
+    except ct.TclError as e:
+        log(f"tcl: {e}", "ERROR")
+        return 3
+    except Exception as e:                    # interpreter/runtime error
+        log(f"tcl error: {e}", "ERROR")
+        return 3
+    finally:
+        ct.close()
 
 
 @command("write a bounded tail of the console log somewhere safe to open",
