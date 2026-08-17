@@ -23,8 +23,10 @@ the items below in.
   `ubnthal` EEPROM has `BtMACAddrCount`/`bt%d.macaddr`. **Our DTS labels uart2/ttyS2 as
   "Bluetooth CSR" — wrong UART** (vendor never uses ttyS2). Either BT sits on ttyS1/S3,
   or UNVR doesn't populate it. **Owner-confirmed: NO Bluetooth on this board.** So the
-  CSR8811 is shared-platform code only; **our DTS `ttyS2` "Bluetooth CSR" label is wrong**
-  — remove/relabel it (no `bluetooth` node needed).
+  CSR8811 is shared-platform code only; **our DTS `ttyS2` "Bluetooth CSR" label is wrong.**
+  The `rpsd` reverse shows **`ttyS2` is actually the RPS PHY UART** (RS-232 via MAX3221
+  `U122`, 115200 8N1 JSON — see [rps-subsystem.md](rps-subsystem.md)) — **relabel `ttyS2`
+  as the RPS UART**, not Bluetooth.
 - **S3 — RPS/PSE is a hidden power-monitor + UART + expander subsystem (Pro).** `rpsd`
   drives 12 V/54 V enable, over-current, `54V_STBY_PG`, battery-guard, and
   `oring12v/54v power_crit` **power monitoring** (dedicated ORing power-monitor IC over

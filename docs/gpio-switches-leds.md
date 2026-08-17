@@ -12,14 +12,14 @@ gpio4=32, gpio5=40, sgpo=48 (64 lines), pca9575@0x29=464, @0x21=480, @0x20=496.
 - **Physical:** two momentary tactiles by the RTC (`photos/20260816_231647.jpg`),
   silk `SW2` (left) / `SW1` (right), next to the S-35390A (U5050) + coin cell
   (`RTC BATT1`, MS621), between C135/C136. No function silkscreen.
-- **GPIO:** the two orphan SoC inputs on gpio4 — **GPIO 33 (gpio4.1)** and
-  **GPIO 34 (gpio4.2)**, both `in`, owner `sysfs` (gpio.txt). Exact SW→pin needs a
-  continuity probe.
-- **Function: NONE in shipping firmware.** No boot-mode/strap read in U-Boot
-  (`board.c` reads no GPIO strap; recovery = UART/XMODEM or TOC fallback only), no
-  preboot strap, no userland daemon polls them. Exported to sysfs (likely by
-  `ubnthal.ko`) but unused → **factory-test / debug buttons, dormant in production.**
-  NOT boot-select, NOT recovery, NOT factory-reset.
+- **GPIO: UNKNOWN — correction.** gpio 33/34 were earlier guessed to be SW1/SW2 (the
+  two orphan `sysfs`-owned inputs in gpio.txt), but the `rpsd` binary reverse proves
+  **gpio 33 = `rps_prnt` (RPS present)** and **gpio 34 = `12v_lp` (12 V load sense)** —
+  those are the RPS sense inputs (see [rps-subsystem.md](rps-subsystem.md)), exported by
+  rpsd, not the buttons. **So SW1/SW2's actual GPIO is unknown — needs a continuity probe.**
+- **Function:** no boot-mode/strap read in U-Boot or preboot, and no daemon polls
+  buttons on gpio 33/34 (those are RPS). SW1/SW2 look like factory-test / debug buttons,
+  but until we know their pins that's provisional. NOT boot-select/recovery/factory-reset.
 
 ## Reset button — press-duration semantics
 
@@ -76,8 +76,8 @@ Missing: a straight-down macro of the `RPS IN` contacts for a per-pin physical t
 | 0 | gpio0.0 | SFP+ speed-indication LED (al_eth `"25g"`) | out |
 | 3 | gpio0.3 | U-Boot drives output-low; Linux unclaimed; **unknown** | out |
 | 31 | gpio3.7 | `ulogo_blue` LED, active-low, default-on | out |
-| **33** | gpio4.1 | **SW1/SW2 (dormant input)** | in |
-| **34** | gpio4.2 | **SW1/SW2 (dormant input)** | in |
+| **33** | gpio4.1 | **RPS present** (`rps_prnt`, rpsd input) — NOT SW1/SW2 | in |
+| **34** | gpio4.2 | **12 V load sense** (`12v_lp`, rpsd input) — NOT SW1/SW2 | in |
 | 37 | gpio4.5 | **`ulogo_white` LED**, active-low (U-Boot `resetled=gpio clear 37`) | out |
 | 38 | gpio4.6 | Reset button, `KEY_RESTART`, active-low, IRQ | in |
 | 42 | gpio5.2 | HDD `force-power-on-wa`, active-high | out |
