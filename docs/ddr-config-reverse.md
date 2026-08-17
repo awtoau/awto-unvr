@@ -27,8 +27,10 @@ Marks: ✅ confirmed (byte/disasm evidence) · ⚠ needs live HW read · ✎ cor
   al_boot. DDR board-specificity = the EEPROM contents + bootstrap straps on this unit. ✅
 - Core→core handoff after training = `struct shared_parameters { u32 magic=0x31415926;
   u64 ddr_size; }` at SRAM **`0xfbff4150`**. al_boot Stage-3 only *reads* it. ✅
-- **Still needed from hardware:** 278 bytes of EEPROM (7-byte pointer + 256-byte SPD +
-  22-byte impedance record) and `al_bootstrap.ddr_pll_freq`. ⚠
+- **EEPROM RESOLVED (2026-08-17):** live 0x57 dumped + decoded through the vendor algorithm
+  → full `al_ddr_init_cfg` for ea16 ([ddr-s2-parser-analysis.md](ddr-s2-parser-analysis.md)).
+  DDR4-1866 CL13, 4 GiB, x16, 1 rank. Only `al_bootstrap.ddr_pll_freq` (running-point strap)
+  remains live-open, SPD-bounded to ≤1866. ⚠
 
 ---
 
@@ -179,8 +181,15 @@ a board-table lookup.
 Matches `enum al_ddr_freq` (`al_hal_ddr_init.h:70`) exactly. If the SPD cannot support the
 requested tCK, `ddr_freq_change_according_to_spd` reprograms the NB PLL (0xfd860c00) down the
 ladder — targets 933,333,333 / 800,000,000 / 666,666,666 / 533,333,333 Hz ✅ — and retries.
-The K4A8G165WB-**BCRC** marking is a 2400 speed bin ⚠, which would give tCK 833 ps →
-`AL_DDR_FREQ_2400`; unconfirmed until `ddr_pll_freq` is read live.
+
+**RESOLVED: ea16 runs DDR4-1866, NOT 2400** ✎ (from the live SPD, [ddr-s2-parser-analysis.md]
+(ddr-s2-parser-analysis.md)). The SPD `tCKAVGmin = 1071 ps` (byte 18/125) and the CAS map
+tops out at CL14 — i.e. the DIMM declares **1866** as its fastest. The K4A8G165WB-**BCRC**
+marking is a 2400 bin, but this SPD **caps the part at 1866**: a 2400 request (tCK 833 ps)
+fails the `param_2+1 < tCKmin` gate (`FUN_f2201140`, `preboot-s2-decompiled.c:1480`) and the
+loader downshifts the NB PLL. Decoded `tmg`: CL 13, CWL 10, tRAS 34 ns, tRC 47.92 ns,
+tRFC1/2/4 350/260/160 ns (JEDEC 8 Gbit). The *running* freq = `al_bootstrap.ddr_pll_freq`
+(live read still open) but is SPD-bounded to 1866.
 
 ### 2b. `impedance_ctrl` ← I²C EEPROM override block ✅ (byte-exact, header-matched)
 
@@ -250,20 +259,26 @@ Record base = **0x400** by default, or `DEV_INFO[0x0a] | DEV_INFO[0x0b]<<8` when
 LSB/MSB_OFFSET 10/11` in `u-boot/board/annapurna-labs/alpine_ubnt/dev_info_layout.h`).
 Offsets > 0xFF use a **2-byte big-endian** EEPROM pointer (`FUN_f22044d0`).
 
-Four magic-guarded records, relative to that base ✅:
+Four magic-guarded records, relative to that base ✅ (byte-exact live values → RESOLVED,
+reader fn per record; full layout [ddr-s2-parser-analysis.md](ddr-s2-parser-analysis.md)):
 
-| off | len | magic | content |
-|---|---|---|---|
-| +0x00 | 7 | `0xAA` | `spd_i2c_addr`, `spd_off` (u16 LE), `aux_i2c_addr`, `aux_off` (u16 LE) |
-| +0x0b | 3 | `0xBB` | DRAM-voltage GPIO pin (< 0x38), polarity |
-| +0x0e | 0x16 | `0xCC` | `dqs_res` selector byte, then the 20-byte impedance table |
-| +0x24 | 2 | `0xDD` | UART divisor override |
+| off | len | magic | reader | content | ea16 live |
+|---|---|---|---|---|---|
+| +0x00 | 7 | `0xAA` | `FUN_f220093c` | `spd_i2c_addr`, `spd_off` (u16 LE), `aux_i2c_addr`, `aux_off` (u16 LE) | `aa ff 40 04 00 00 00` → addr=strap(0x57), off=0x0440, aux=0⇒dimms 1 |
+| +0x0b | 3 | `0xBB` | `FUN_f2200d10` | GPIO pin (0xff=off, else <0x38), polarity | `bb ff 00` → **disabled** |
+| +0x0e | 0x16 | `0xCC` | `FUN_f2200a58` | `dqs_sel` byte, then 20-byte impedance table (4 cases×5 B) | `cc 01 04 00 07 38 22 …` |
+| +0x24 | 2 | `0xDD` | `FUN_f22003c8` | UART divisor override | absent (0xff) |
 
-Then **256 bytes of SPD** from `(spd_i2c_addr, spd_off)`; a 1-byte probe at
-`(aux_i2c_addr, aux_off)` sets `dimms = 1` or `2`. On i²c failure the loader scans
-addresses **0x50 → 0x58**, printing `SPD I2C Address: %02x` per attempt. Our unit prints
-exactly `SPD I2C Address: 57`, so 0x57 came from the `0xAA` record ⚠ (a scan would have
-printed 0x50…0x57 too).
+Then **256 bytes of SPD** from `(spd_i2c_addr, spd_off)` — for ea16 the SPD lives on the SAME
+device (0x57) at `spd_off = 0x0440` (a genuine CRC-valid JEDEC DDR4 image, both CRCs pass). A
+1-byte probe at `(aux_i2c_addr, aux_off)` sets `dimms = 1` or `2`; ea16 `aux_i2c_addr=0` ⇒
+dimms=1. On i²c failure the loader scans **0x50 → 0x58**, printing `SPD I2C Address: %02x` per
+attempt. Our unit prints exactly `SPD I2C Address: 57`, from the `0xAA` record (strap fallback,
+`spd_i2c_addr=0xff`).
+
+The 20-byte impedance table is indexed `idx = (dimms-1)*10 + (ranks/dimms-1)*5`; ea16
+(dimms=1, ranks=1) uses bytes `04 00 07 38 22` = `{odt=RZQ4/60 Ω, odt_dyn=DIS, dic=RZQ7/34 Ω,
+phy_odt=56 Ω, phy_rout=34 Ω}` (decode tables recovered from the .bin, §2b).
 
 **This explains issue #62:** the SPD sits at a **16-bit offset**; `i2cdump` uses 1-byte
 addressing and read window 0x0000-0x00FF instead. Readout task in §7.
@@ -364,43 +379,49 @@ static 0x3c-byte table at 0xf220602c `{1,8,43,1,100,16,15,16,128,15,128,128,15,1
 0xfd883000, 0xfd884000}` ❓ unidentified. A port using the current header must not assume
 these offsets.
 
+All EEPROM-sourced fields now **RESOLVED** from the live 0x57 dump (decoded through the vendor
+algorithm — [ddr-s2-parser-analysis.md](ddr-s2-parser-analysis.md), `scripts/decode-ddr-records.py`).
+Only `ddr_pll_freq` (strap) remains live-open, and it only picks the *running* point on an
+SPD-bounded (≤1866) ladder.
+
 | member | source | ea16 status |
 |---|---|---|
 | `ddr_cfg` (bases/rev) | fixed | ✅ nb `0xf0070000`, ctrl `0xf0080000`, phy `0xf0088000`, rev V2 |
-| `org.data_width` | SPD byte 13 | ⚠ 64-bit expected (4 × x16) — SPD authoritative |
-| `org.ranks` | SPD byte 12 bits 5:3, × dimms | ⚠ read SPD |
-| `org.dimms` | aux-address probe | ⚠ expected 1 (soldered) |
-| `org.ddr_type` / `ddr_device` | SPD bytes 2 / 12 | ✅ DDR4 / x16 (marking) — confirm from SPD |
-| `org.ecc_is_supported` | SPD byte 13 bits 4:3 | ✅ 0 (no ECC device in BOM) |
-| `org.rdimm` / `udimm_addr_mirroring` | SPD bytes 3 / 0x88 | ⚠ read SPD (expect 0 / 0) |
-| `tmg.ref_clk_freq_mhz` / `ddr_freq` | `al_bootstrap.ddr_pll_freq` | ⚠ read straps; 2400 expected |
-| `tmg.cl / cwl / t_*_ps` | **SPD only** | ⚠ NOT in blob — read SPD |
-| `addrmap.*` | derived from density/width/ranks | ⚠ derive after SPD (algorithm recovered, 0xf2200816) |
-| `impedance_ctrl.dic/odt/odt_dyn/phy_rout/phy_odt` | EEPROM `0xCC` block, else defaults | ✅ defaults + decode tables byte-exact (§2b) / ⚠ read the block |
-| `impedance_ctrl.rtt_park / host_initial_vref / vrefdq / phy_rout_pu/pd / phy_pu_odt / wr_odt_map / rd_odt_map` | stage2 hardcoded | ✅ recovered exactly (§2b) |
-| `impedance_ctrl.dqs_res / dqsn_res` | EEPROM `base+0x0f` | ✅ both cases recovered / ⚠ read the byte |
+| `org.data_width` | SPD byte 13 | ✅ **64-bit** (byte13&7=3⇒enum1) |
+| `org.ranks` | SPD byte 12 bits 5:3, × dimms | ✅ **1** (byte12=0x02) |
+| `org.dimms` | aux-address probe | ✅ **1** (aux_i2c_addr=0) |
+| `org.ddr_type` / `ddr_device` | SPD bytes 2 / 12 | ✅ **DDR4 / x16** (byte2=0x0c, byte12&7=2) |
+| `org.ecc_is_supported` | SPD byte 13 bits 4:3 | ✅ **0** (byte13&0x18=0) |
+| `org.rdimm` / `udimm_addr_mirroring` | SPD bytes 3 / 0x88 | ✅ **0 / 0** (UDIMM, byte3=0x02) |
+| `tmg.ref_clk_freq_mhz` / `ddr_freq` | `al_bootstrap.ddr_pll_freq` (running), SPD (cap) | ✅ **≤1866** (SPD tCKmin=1071 ps); ⚠ exact running freq needs live `ddr_pll_freq` |
+| `tmg.cl / cwl / t_*_ps` | **SPD** | ✅ **CL13, CWL10**; tRAS 34 / tRC 47.92 / tRFC1 350 / tRFC2 260 / tRFC4 160 ns, tFAW 30 / tRRD_S 5.3 / tRRD_L 6.4 / tCCD_L 5.355 ns (@1866) |
+| `addrmap.*` | derived from density/width/ranks | ✅ **16 row / 10 col / 2 bank / 1 bg** (`FUN_f2200816` output: col→sys7-13, bank→17-18, row→14-16,19-31) |
+| `impedance_ctrl.dic/odt/odt_dyn/phy_rout/phy_odt` | EEPROM `0xCC` block | ✅ **dic=RZQ7(34 Ω), odt=RZQ4(60 Ω), odt_dyn=DIS, phy_rout=34 Ω, phy_odt=56 Ω** (0xCC present) |
+| `impedance_ctrl.rtt_park / host_initial_vref / vrefdq / phy_rout_pu/pd / phy_pu_odt / wr_odt_map / rd_odt_map` | stage2 hardcoded | ✅ rtt_park=DIS, vref=40, vrefdq=25, pu={13,11}, pd={13,13}, pu_odt={7,7}, wr={1,2,0,0}, rd={0,0,0,0} |
+| `impedance_ctrl.dqs_res / dqsn_res` | EEPROM `0xCC` dqs_sel | ✅ **PULL_DOWN_500 / PULL_UP_500** (dqs_sel=1) |
 | `misc.training_en` | stage2 fixed | ✅ 1 (blob does full training) |
+
+Total from the size math (`FUN_f22003d8:439-452`): `ranks(1) << (row+col+bank+bg = 29) × 8 B`
+= **4 GiB** ✅ — matches live `DRAM: 4 GiB`.
 
 ---
 
 ## 7. Open / unrecoverable from the blobs
 
-Everything structural is now known. What remains is **278 bytes of per-unit EEPROM data plus
-two strapping values**:
+Structural + per-unit config now known. The EEPROM is dumped
+(`docs/nor-reference/ddr-config-eeprom-0x57-8k.bin`) and decoded through the vendor algorithm
+(`scripts/decode-ddr-records.py` → `tmp/logs/decode-ddr-records.log`; analysis
+[ddr-s2-parser-analysis.md](ddr-s2-parser-analysis.md)). What remains is **one strap**:
 
 | unknown | why it matters | how to get it |
 |---|---|---|
-| `al_bootstrap.i2c_preload_addr` | which I²C address holds the records | read PBS regfile 0xfd8a8000 live, or scan 0x50-0x57 for `0xAA` at offset 0x400 |
-| 7-byte record @ EEPROM 0x400 | gives `spd_off` (16-bit!) | `i2ctransfer` on `i2c-0`, 2-byte offset |
-| 256-byte SPD image | `org`, `tmg`, `addrmap` | same, at `(spd_i2c_addr, spd_off)` |
-| 22-byte record @ base+0x0e | `odt`, `odt_dyn`, `dic`, `phy_odt`, `phy_rout`, `dqs_res` | same |
-| `al_bootstrap.ddr_pll_freq` | `tmg.ddr_freq`, `tmg.ref_clk_freq_mhz` | live PBS read, or infer from the trained controller |
+| `al_bootstrap.ddr_pll_freq` | picks the *running* point on the freq ladder (SPD bounds it to ≤1866) → exact `tmg.ddr_freq`, `ref_clk_freq_mhz`, and CL/CWL | live PBS read (0xfd8a8000) via `/dev/mem`, or infer from the trained controller (§8) |
 
-`scripts/read-ddr-spd.py` exists but uses 1-byte addressing — it needs the 2-byte-offset path
-and the `0xAA` indirection. Remaining task: extend it for the 2-byte offset + `0xAA`
-indirection, dump all four records to `tmp/logs/`, decode SPD + the 20-byte impedance table
-(§2b), then cross-check every field against the live `al_ddr_cfg_init` readback (§8) before
-committing `alpine_ddr_cfg.c` for the SPL ([uboot-ddr-port.md](uboot-ddr-port.md) §6).
+`al_bootstrap.i2c_preload_addr` is resolved by the dump itself (records present at 0x57 offset
+0x400; `spd_i2c_addr=0xff` ⇒ strap fallback, live console prints `SPD I2C Address: 57`).
+Remaining SPL task: feed the decoded `al_ddr_init_cfg` (this doc / analysis doc) into
+`alpine_ddr_cfg.c`, then cross-check against the live `al_ddr_cfg_init` readback (§8) before
+committing ([uboot-ddr-port.md](uboot-ddr-port.md) §6).
 
 No further gain from reversing the DDR *algorithm*: it is the open GPLv2
 `al_hal_ddr_init_alpine_v2.c` (5608 lines) already in the kernel tree — the same "how".
@@ -460,20 +481,29 @@ DDR4 marker present.
 `scripts/read-ddr-spd.py` (16-bit `i2ctransfer` path) dumped the whole 8 KiB of `0x57`
 over the serial console → `docs/nor-reference/ddr-config-eeprom-0x57-8k.bin` (tracked).
 
-- **Records at `0x400`** (byte-exact):
-  - `0400: aa ff 40 04 00 00 00 00 00 08 00` — `0xAA` pointer → `0x0440` (LE `40 04`)
-  - `0x40b: bb ff 00` — `0xBB` DRAM-voltage GPIO
-  - `0x40e: cc 01 04 00 07 38 22 04 00 07 38 22` — `0xCC` impedance override
-  - `0x440: 00 00 0c 02 40 21 …` — DDR config record (`byte2=0x0C` = DDR4)
-- **The `0x440` record is a Ubiquiti-custom layout, NOT a standard JEDEC 512-byte SPD**
-  (`byte0≠0x23`; `byte4` density code ≠ the known 8 Gbit K4A8G165WB). A stock JEDEC
-  decoder mis-locks on a stray `0x0C` and yields nonsense — decode against the S2
-  parser (`docs/nor-reference/preboot-s2-decompiled.c`), not `decode_ddr4_spd()`.
+- **Records at `0x400`** (byte-exact, decoded — full analysis
+  [ddr-s2-parser-analysis.md](ddr-s2-parser-analysis.md), decoder
+  `scripts/decode-ddr-records.py`):
+  - `0400: aa ff 40 04 00 00 00` — `0xAA` pointer: `spd_i2c_addr=0xff`(⇒strap 0x57),
+    `spd_off=0x0440`, `aux_i2c_addr=0x00`(⇒dimms=1)
+  - `0x40b: bb ff 00` — `0xBB` DRAM-voltage GPIO: `pin=0xff` ⇒ **disabled** (DDR4 fixed 1.2 V)
+  - `0x40e: cc 01 04 00 07 38 22 …` — `0xCC` impedance: `dqs_sel=1`, case[0]=`04 00 07 38 22`
+  - `0x440: 00 00 0c 02 40 21 …` — SPD image (`byte2=0x0C` = DDR4)
+- **The `0x440` record IS a genuine CRC-valid JEDEC DDR4 SPD** ✎ (corrects the earlier
+  "Ubiquiti-custom, not JEDEC" note). Both JEDEC CRC-16s pass (block1 `0xfbbc`, block2
+  `0x0000`); the S2 reads standard JEDEC offsets (`al_ddr4_spd_parse` = `FUN_f2201140`).
+  It only *looks* wrong to a stock decoder because **byte4[3:0] density code = 0** (left
+  unset) — the S2 derives density from row/col/bank/bg geometry, not the density code, so a
+  `decode_ddr4_spd()` that trusts byte4[3:0] mis-reports 256 Mb. Decode via the S2 parser.
+- **Decoded ea16 config** (through the vendor algorithm): DDR4, x16, 1 rank, 64-bit bus,
+  16 row / 10 col / 2 bank / 1 bank-group ⇒ **4 GiB** ✅; **DDR4-1866 CL13 CWL10** ⚠
+  (SPD-capped, see §2a); impedance from `0xCC` (odt=RZQ4/60 Ω, dic=RZQ7/34 Ω, odt_dyn=DIS,
+  phy_rout=34 Ω, phy_odt=56 Ω). Full table in the analysis doc.
 - **`0x57` holds DDR config only** — the `0x000` region is `36 1c 36 1c …`, not the
   ubnthal plaintext schema. Board **identity lives in NOR**, not here → settles
   dt-gaps M1 (0x57 is *not* the identity EEPROM).
 
-Remaining for #67: decode the `0x440` record + `0xCC` impedance against the S2 parser
-→ exact org/tmg/addrmap + impedance; read `al_bootstrap.ddr_pll_freq` (SRAM `0xfbff4150`)
-via `/dev/mem`. Then fold into §2c / §6 and unblock the U-Boot DDR SPL (#65).
+Remaining for #67: read `al_bootstrap.ddr_pll_freq` (SRAM `0xfbff4150`) via `/dev/mem` to
+pin the *running* freq (SPD bounds it to ≤1866). Static config is otherwise resolved →
+unblocks the U-Boot DDR SPL (#65).
 
