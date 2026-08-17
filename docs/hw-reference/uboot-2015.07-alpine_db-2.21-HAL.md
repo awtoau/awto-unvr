@@ -25,10 +25,12 @@ watchdog reset (`scripts/reboot-to-uboot.tcl`) — no power-cycle.
 - NOR env at `env_offset=0x1c0000` (+redund `0x1d0000`); `pld_i2c_addr=0x57`.
 
 **Reconcile / conflict:**
-- **I2C mux:** U-Boot enumerates **`PCA9548@0x71`** with **8 channels** (buses 1–8),
-  but the board photo reads **`TCA9546A`/PW546A** (4-channel) and the DTS uses
-  `pca9546`. Likely a 4-ch part with U-Boot using a generic 8-ch label — but
-  worth an explicit check (the extra 4 buses may be dead). ⚠
+- **I2C mux:** U-Boot enumerates **`PCA9548@0x71`** with 8 channels, but that's a
+  generic mislabel — **RESOLVED as a 4-channel PCA9546/TCA9546A**: the live vendor
+  capture (`20260816-104601/i2c-devices.txt`) shows `pca9546 @0x71` with only 4
+  child buses (`chan_id 0–3`), matching the photo (`PW546A`) and the DTS. U-Boot
+  buses 5–8 are dead. Full I2C map: pca9575 @0x20/21/29 + pca9546 @0x71 on bus 0;
+  s35390a RTC @0x30 (claims 0x30–0x37) on mux ch0; adt7475 @0x2e on mux ch3.
 - `cpu_set_speed` + `thermal_get` present in U-Boot but not surfaced in Linux.
 
 **Fan control (vendor, for reference):** `slowfan` = `i2c dev 4; i2c mw 0x2e 0x5c/0x5d/0x5e 0xe8; i2c mw 0x2e 0x30/0x31/0x32 $fanspeed` (ADT747x at **0x2e on i2c bus 4**, `fanspeed=0x50`). `resetled=gpio clear 37`; `preboot=ble;$resetled;run slowfan`.
