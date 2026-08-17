@@ -439,3 +439,19 @@ value→enum tables **already present verbatim in the GPLv2 kernel HAL headers**
 (`al_hal_ddr_init.h`, `al_hal_ddr.h`, `al_hal_iomap.h`) and the GPLv2 vendor U-Boot
 (`shared_params.h`, `dev_info_layout.h`). The SPD format is JEDEC. The only novel output is
 the per-unit EEPROM byte map — data about this board, not vendor code.
+
+## ✅ LIVE-CONFIRMED on ea16 (2026-08-17)
+
+Read `0x57` @ 16-bit offset `0x400` on `i2c-0`:
+`i2ctransfer -y 0 w2@0x57 0x04 0x00 r128` →
+```
+0xaa 0xff 0x40 0x04 00 00 00 00 00 0x08 00   <- 0xAA pointer record (SPD @ ...)
+0xbb 0xff 00                                  <- 0xBB DRAM-voltage GPIO
+0xcc 0x01 0x04 00 0x07 0x38 0x22 0x04 00 0x07 0x38 0x22 ...  <- 0xCC impedance override
+...
+0x0c 0x02 0x40 0x21 ...                        <- JEDEC SPD: byte2=0x0C = DDR4  ✅
+```
+Confirms the reverse end-to-end: records at 16-bit offset base 0x400, magic-guarded,
+DDR4 SPD present. Next: dump the full 512-byte SPD + decode (`scripts/read-ddr-spd.py`
+with the 2-byte-offset + 0xAA-indirection path) → exact ea16 timings for the #65 DDR port.
+
