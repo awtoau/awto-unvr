@@ -12,7 +12,7 @@
   - DRAM1 `0x200000000`, 1 GiB (`0x40000000`) — above 4 GiB.
 - **Voltage:** DDR4 nominal **1.2 V** (VDD/VDDQ), 2.5 V VPP — standard, not board-programmable.
 - **Controller:** on-SoC `annapurna-labs,alpine-mc` (memctl @ `0xf0080000`) — [hardware.md#mmio-and-address-map](../hardware.md#mmio-and-address-map).
-- **SPD:** an SPD EEPROM is present at **I²C 0x57** (stage2_loader reads it). This is itself a small chip; reading it yields the exact DRAM part + timings.
+- **SPD: none readable.** U-Boot prints `SPD I2C Address: 57`, but a live dump of 0x57 is **not a valid DDR4 SPD** (byte2 ≠ 0x0C) and not the identity EEPROM — unidentified, see #62. DRAM is soldered (no DIMM/SPD), so **timings come from live-controller readback** (`al_ddr_cfg_init`), not SPD — see [../uboot-ddr-port.md](../uboot-ddr-port.md).
 
 ## How to confirm the part
 

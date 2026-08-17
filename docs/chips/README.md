@@ -28,8 +28,11 @@ location) live in [../components.md](../components.md) — not duplicated here.
 
 ## Resolved (were "unconfirmed" in the first draft)
 
-- **DDR4 = Samsung K4A8G165WB** — photo-confirmed ×4. **No SPD EEPROM** (soldered): the
-  I²C **0x57** device is the **AT24C64 identity EEPROM** (U5), *not* DDR SPD.
+- **DDR4 = Samsung K4A8G165WB** — photo-confirmed ×4. **No readable DDR4 SPD**
+  (soldered DRAM): I²C **0x57** responds but its content is **neither valid DDR4 SPD**
+  (byte2 ≠ 0x0C) **nor the identity EEPROM** (no MAC/sysid) — an unidentified
+  32-bit-strided device, see #62. DDR timings must come from **live-controller
+  readback**, not SPD.
 - **SFP+ = Finisar FTLX8571D3BCL** 10G-SR — read live (0x50 = SFF-8079 EEPROM, 0x51 =
   SFF-8472 DDM). Behind PCA9546 channel 1.
 - **1G PHY = AR8033**, not AR8031/Marvell; the 10G port is an **SFP optic, no PHY**.
