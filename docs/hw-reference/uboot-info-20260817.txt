@@ -1,0 +1,390 @@
+
+===== version =====
+ version
+
+U-Boot 2015.07-alpine_db-2.21-HAL (Dec 16 2020 - 05:54:51 +0800)
+aarch64-linux-gnu-gcc (Debian 6.3.0-18) 6.3.0 20170516
+GNU ld (GNU Binutils for Debian) 2.28
+ALPINE_UBNT_NAS_ALL>
+
+===== bdinfo =====
+ bdinfo
+arch_number = 0x00000000
+boot_params = 0x00000100
+DRAM bank   = 0x00000000
+-> start    = 0x00000000
+-> size     = 0x40000000
+DRAM bank   = 0x00000001
+-> start    = 0x40000000
+-> size     = 0x40000000
+DRAM bank   = 0x00000002
+-> start    = 0x80000000
+-> size     = 0x40000000
+DRAM bank   = 0x00000003
+-> start    = 0x200000000
+-> size     = 0x40000000
+current eth = al_eth1
+ip_addr     = 192.168.25.140
+baudrate    = 115200 bps
+TLB addr    = 0x03FE0000
+relocaddr   = 0x03F1E000
+reloc off   = 0x02E1E000
+irq_sp      = 0x03B18C90
+sp start    = 0x03B18C90
+ALPINE_UBNT_NAS_ALL>
+
+===== printenv =====
+ printenv
+arch=arm
+autoload=n
+board=alpine_ubnt
+board_name=alpine_ubnt
+boot_instance_active=0
+boot_instance_non_active=1
+bootargs=console=ttyS0,115200 root=PARTUUID=dcdc291e-9956-48cd-9d7c-48219877881a rootfstype=ext4 rw rootwait selinux=0 panic=15 reboot=cold
+bootargsextra=reboot=warm reboot=warm reboot=warm reboot=warm
+bootcmd=nand read 0x02000000 0x1300000 0x1200000; nand read 0x04078000 0x2800000 0x20000; bootm 0x02000000 - 0x04078000
+bootcmd_orig=cp.b $fdtaddr $loadaddr_dt 7ffc; fdt addr $loadaddr_dt; run loadbootargs; run multiboot
+bootcmdrecovery=setenv bootargsextra $bootargsextra boot=recovery; run bootcmdspi
+bootcmdspi=cp.b $fdtaddr $loadaddr_dt 7ffc; fdt addr $loadaddr_dt; run loadbootargs;run bootspi
+bootdelay=2
+bootemmc=lcd_print "Loading OS from emmc ...";usb start;ext4load usb 0 $loadaddr_payload uImage;bootm $loadaddr_payload - $fdtaddr ;lcd_print Failed!
+bootfrom=bootnand
+bootnand=lcd_print "Loading OS from nand ...";nand set_partition_offset $nand_pt_addr_kernel;nand read $loadaddr $nand_pt_addr_kernel 4;setenvmem filesize $loadaddr;incenv filesize 4;nand read $loadaddr $nand_pt_addr_kernel $filesize;nand set_partition_offset $nand_pt_addr_al_boot;bootm $loadaddr_payload - $fdtaddr;lcd_print bootnand Failed!
+bootspi=lcd_print "Loading OS from spi...";sf probe;sf read $loadaddr $spi_pt_addr_kernel 4;setenvmem filesize $loadaddr;incenv filesize 4;sf read $loadaddr $spi_pt_addr_kernel $filesize;bootm $loadaddr_payload - $fdtaddr;lcd_print bootspi Failed!
+bootupd=lcd_print "Updating al-boot" "to SPI"; tftpboot ${loadaddr} ${tftpdir}boot.img; if test $? -ne 0; then run fail; exit; fi;sf probe; sf erase 0 +${filesize}; sf write ${loadaddr} 0 ${filesize}; echo bootupd done;echo Notice: Changes in default environment variables will only take effect once the;echo environment variables are deleted from flash using the 'delenv' script;lcd_print "Done"
+cpu=armv8
+cvos_tags=0x01000000
+cvos_tags_seed_a=0x01000004
+cvos_tags_seed_b=0x01000008
+cvos_tags_validate=mw.l ${cvos_tags} 0xcf05cf05
+delenv=lcd_print "Deleting env..."; sf probe; sf erase ${env_offset} +2000;if test -n ${env_offset_redund}; then sf erase ${env_offset_redund} +2000;fi;lcd_print "Done"
+dt_filename=dt.img
+dt_is_from_toc=1
+dt_location=81000
+dtupd=lcd_print "Updating DT" "to SPI"; tftpboot $loadaddr_dt ${tftpdir}${dt_filename};if test $? -ne 0; then run fail; exit; fi;if test ${dt_is_from_toc} != 1; then; else flash_contents_obj_read_mem $loadaddr $loadaddr_dt;if test $? -ne 0; then run fail; exit; fi;fi;sf probe; sf erase ${dt_location} +${filesize}; sf write ${loadaddr_dt} ${dt_location} ${filesize};echo dtupd done;lcd_print "Done"
+eepromupd=confirm_msg "Perform EEPROM update? [y/n] ";if test $? -ne 0; then exit; fi;tftpboot ${tftpdir}eeprom.bin;if test $? -ne 0; then exit; fi;i2c probe ${pld_i2c_addr};if test $? -ne 0; then exit; fi;i2c write $fileaddr ${pld_i2c_addr} 0.2 $filesize;if test $? -ne 0; then exit;fi;echo eepromupd done
+env_offset=1c0000
+env_offset_redund=1d0000
+eth1addr=74:ac:b9:41:a8:11
+eth2addr=74:ac:b9:41:a8:12
+ethact=al_eth1
+ethprime=al_eth1
+fail=echo Failed!; lcd_print "Failed!"
+fanspeed=0x50
+fdt_high=0xffffffffffffffff
+fdtaddr=3b1a210
+fileaddr=4078000
+filesize=39b5
+fwupd=tftpboot ${tftpdir}uboot_script_fw_update.bin;source ${loadaddr}
+ipaddr=192.168.25.140
+kernelupd=lcd_print "Updating kernel...";tftpboot $loadaddr_payload ${tftpdir}uImage;if test $? -ne 0; then run fail; exit; fi;nand set_partition_offset $nand_pt_addr_kernel;mw.l $loadaddr $filesize;incenv filesize 4;nand erase.spread $nand_pt_addr_kernel $filesize;nand write $loadaddr $nand_pt_addr_kernel $filesize;nand set_partition_offset $nand_pt_addr_al_boot;echo kernelupd done;lcd_print "Done"
+loadaddr=0x08000000
+loadaddr_dt=0x04078000
+loadaddr_payload=0x08000004
+loadaddr_rootfs_chk=0x07000000
+loadbootargs=setenv bootargs pci=pcie_bus_perf console=ttyS0,115200 sysid=$sysid ubnthal.sysid=$sysid $bootargsextra; printenv bootargs
+mem=65535k
+multiboot=run $bootfrom;echo "Failed to boot from emmc";run bootspi;echo "Failed to boot from spi"
+nand_pt_addr_al_boot=0x0
+nand_pt_addr_kernel=0x00300000
+nand_pt_size_al_boot=0x00200000
+nand_pt_size_kernel=0x01000000
+pld_i2c_addr=57
+preboot=ble;$resetled;run slowfan;
+reboot=warm
+resetled=gpio clear 37
+scsidevs=0
+serverip=192.168.25.145
+skip_eth_halt=0
+slowfan=i2c dev 4;i2c mw 0x2e 0x5c 0xe8;i2c mw 0x2e 0x5d 0xe8;i2c mw 0x2e 0x5e 0xe8;i2c mw 0x2e 0x30 $fanspeed;i2c mw 0x2e 0x31 $fanspeed;i2c mw 0x2e 0x32 $fanspeed
+soc=alpine_v2
+spi_pt_addr_kernel=0x00200000
+spi_pt_size_kernel=0x01000000
+spikernelupd=lcd_print "Updating kernel...";tftpboot $loadaddr_payload ${tftpdir}uImage;if test $? -ne 0; then run fail; exit; fi;mw.l $loadaddr $filesize;incenv filesize 4;sf probe;sf erase $spi_pt_addr_kernel $spi_pt_size_kernel;sf write $loadaddr $spi_pt_addr_kernel $filesize;echo spikernelupd done;lcd_print "Done"
+sysid=ea16
+vendor=annapurna-labs
+
+Environment size: 5034/16379 bytes
+ALPINE_UBNT_NAS_ALL>
+
+===== env info =====
+ env info
+env - environment handling commands
+
+Usage:
+env default [-f] -a - [forcibly] reset default environment
+env default [-f] var [...] - [forcibly] reset variable(s) to their default values
+env delete [-f] var [...] - [forcibly] delete variable(s)
+env edit name - edit environment variable
+env exists name - tests for existence of variable
+env export [-t | -b | -c] [-s size] addr [var ...] - export environment
+env grep [-e] [-n | -v | -b] string [...] - search environment
+env import [-d] [-t [-r] | -b | -c] addr [size] - import environment
+env print [-a | name ...] - print environment
+env run var [...] - run commands in an environment variable
+env set [-f] name [arg ...]
+env setmem name <address>
+env inc name <inc val (hex)>
+
+ALPINE_UBNT_NAS_ALL>
+
+===== coninfo =====
+ coninfo
+List of available devices:
+serial   80000003 SIO stdin stdout stderr 
+eserial1 00000003 .IO 
+eserial0 00000003 .IO 
+ALPINE_UBNT_NAS_ALL>
+
+===== help =====
+ help
+?       - alias for 'help'
+al_pcie_ext- Enable AL PCIe external
+base    - print or set address offset
+bdinfo  - print Board Info structure
+ble     - transmit bluetooth advertising packets
+boot    - boot default, i.e., run 'bootcmd'
+bootd   - boot default, i.e., run 'bootcmd'
+bootm   - boot application image from memory
+bootmenu- ANSI terminal bootmenu
+bootp   - boot image via network using BOOTP/TFTP protocol
+bootz   - boot Linux zImage image from memory
+cmp     - memory compare
+confirm_msg- get user input and updates "?" varialbe to 0 if 'y' was entered
+coninfo - print console devices and information
+cp      - memory copy
+cpu_aborts_enable_set- Set enabling state of CPU aborts
+cpu_set_speed- Set CPU speed
+crc32   - checksum calculation
+ddr_ecc_poison- DDR ECC poisoning
+ddr_ecc_stats- DDR ECC statistics
+ddr_training_results- DDR training results
+dev_info- Show the device configuration values
+dhcp    - boot image via network using DHCP/TFTP protocol
+dhcprelease- release IP address previously leased by DHCP server
+dm      - Driver model low level access
+dram_margins- The command provides current DRAM RDQS/WDQS margins by running a shmoo based on the DDR controller BIST feature
+dtt     - Read temperature from Digital Thermometer and Thermostat
+echo    - echo args to console
+editenv - edit environment variable
+eeprom_per_device- EEPROM per device operations
+env     - environment handling commands
+erase   - erase FLASH memory
+eth_1g_params_set- configure 1G link parameters.these parameters will also be applied in Linux
+
+eth_freeze_serdes_settings- freeze serdes parameters to be used in the upper layer (disable by default)
+* enabling it will cause the upper layer to avoid replacing these parameters
+* enabled mode should be used in case the serdes parameter were set in the u-boot
+
+eth_link_training_enable- enable / disable link training
+
+eth_lm_debug_enable- enable / disable link management debug enable
+
+eth_mac_mode_set- override the mac mode from the device tree
+
+eth_retimer_config- override retimer configuration
+
+exit    - exit script
+ext4load- load binary file from a Ext4 filesystem
+ext4ls  - list files in a directory (default /)
+ext4size- determine a file's size
+false   - do nothing, unsuccessfully
+fdt     - flattened device tree utility commands
+flash_contents_boot_mode_default_app_set- Set default application loaded by the pre-boot code
+flash_contents_boot_mode_default_app_show- Show default application loaded by the pre-boot code
+flash_contents_instance_invalidate- Invalidate a boot instance
+flash_contents_instance_revalidate- Revalidate a boot instance
+flash_contents_obj_info_print- Print a specific flash object information
+flash_contents_obj_read- Read a specific flash object
+flash_contents_obj_read_mem- Read a specific flash object from memory
+flash_contents_obj_update- Update a specific flash object
+flash_contents_obj_validate- Validate a specific flash object
+flash_contents_set_dev- Set flash contents current device
+flash_contents_toc_print- Print the flash contents TOC
+flinfo  - print FLASH memory information
+go      - start application at address 'addr'
+gpio    - query and control gpio pins
+gpt     - GUID Partition Table
+grepenv - search environment variables
+help    - print command description/usage
+i2c     - I2C sub-system
+iminfo  - print header information for application image
+imxtract- extract a part of a multi-image
+incenv  - increment environment variable
+iodma_init- Initialize the RAID and memory services accelerator
+iodma_memcpy- Memory copy using the RAID and memory services accelerator
+iodma_memset- Memory set using the RAID and memory services accelerator
+iodma_terminate- Terminates the RAID and memory services accelerator
+is_nand_boot- Returns 1 if boot device is NAND
+itest   - return true/false on integer compare
+lcd_print- Clears LCD display
+loadb   - load binary file over serial line (kermit mode)
+loads   - load S-Record file over serial line
+loadx   - load binary file over serial line (xmodem mode)
+loady   - load binary file over serial line (ymodem mode)
+loop    - infinite loop on address range
+md      - memory display
+md5sum  - compute MD5 message digest
+mdio    - MDIO utility commands
+mem_pattern_set- set values alternately according to the even and odd values
+mii     - MII utility commands
+mm      - memory modify (auto-incrementing address)
+mtest   - simple RAM read/write test
+muio_mux- Multi usage I/O pins (MUIO) multiplexing control - debug
+mw      - memory write (fill)
+nand    - NAND sub-system
+nboot   - boot from NAND device
+nfs     - boot image via network using NFS protocol
+nm      - memory modify (constant address)
+part    - disk partition related commands
+pca953x - pca953x gpio access
+pci     - list and access PCI Configuration Space
+ping    - send ICMP ECHO_REQUEST to network host
+printenv- print environment variables
+protect - enable or disable FLASH write protection
+pxe     - commands to get and boot from pxe files
+reset   - Perform RESET of the CPU
+run     - run commands in an environment variable
+saveenv - save environment variables to persistent storage
+scripth - Show help menu for available scripts
+scsi    - SCSI sub-system
+scsi_get_disk_count- Returns connected disk count
+scsiboot- boot from SCSI device
+serdes  - Serdes debug
+setenv  - set environment variables
+setenvmem- set environment variable from memory
+setexpr - set environment variable as the result of eval expression
+sf      - SPI flash sub-system
+sgpo    - control SGPO pins
+showvar - print local hushshell variables
+sleep   - delay execution for some time
+source  - run script from memory
+sysboot - command to get and boot from syslinux files
+test    - minimal test like /bin/sh
+tftpboot- boot image via network using TFTP protocol
+tftpput - TFTP put command, for uploading files to a server
+thermal_get- Thermal sensor get readout
+thermal_init- Initialize the thermal sensor
+trace_dump- Trace dump
+true    - do nothing, successfully
+usb     - USB sub-system
+usbboot - boot from USB device
+version - print monitor, compiler and linker version
+wfi     - CPU wait for interrupt CPU idle)
+ALPINE_UBNT_NAS_ALL>
+
+===== nand info =====
+ nand info
+
+Device 0: nand0, sector size 256 KiB
+  Page size       4096 b
+  OOB size         224 b
+  Erase size    262144 b
+  subpagesize     4096 b
+  options     0x     200
+  bbt options 0x       0
+ALPINE_UBNT_NAS_ALL>
+
+===== nand device =====
+ nand device
+
+Device 0: nand0, sector size 256 KiB
+  Page size       4096 b
+  OOB size         224 b
+  Erase size    262144 b
+  subpagesize     4096 b
+  options     0x     200
+  bbt options 0x       0
+ALPINE_UBNT_NAS_ALL>
+
+===== nand bad =====
+ nand bad
+
+Device 0 bad blocks:
+ALPINE_UBNT_NAS_ALL>
+
+===== mtdparts =====
+ mtdparts
+Unknown command 'mtdparts' - try 'help'
+ALPINE_UBNT_NAS_ALL>
+
+===== sf probe =====
+ sf probe
+SF: Detected MX25U25635F with page size 256 Bytes, erase size 4 KiB, total 32 MiB
+ALPINE_UBNT_NAS_ALL>
+
+===== mmc list =====
+ mmc list
+Unknown command 'mmc' - try 'help'
+ALPINE_UBNT_NAS_ALL>
+
+===== i2c bus =====
+ i2c bus
+Bus 0:	dw_0
+Bus 1:	dw_0->PCA9548@0x71:0
+Bus 2:	dw_0->PCA9548@0x71:1
+Bus 3:	dw_0->PCA9548@0x71:2
+Bus 4:	dw_0->PCA9548@0x71:3
+Bus 5:	dw_0->PCA9548@0x71:4
+Bus 6:	dw_0->PCA9548@0x71:5
+Bus 7:	dw_0->PCA9548@0x71:6
+Bus 8:	dw_0->PCA9548@0x71:7
+ALPINE_UBNT_NAS_ALL>
+
+===== pci enum =====
+ pci enum
+pci_bus_to_hose() failed
+ALPINE_UBNT_NAS_ALL>
+
+===== pci =====
+ pci
+Scanning PCI devices on bus 0
+BusDevFun  VendorId   DeviceId   Device Class       Sub-Class
+_____________________________________________________________
+00.01.00   0x1c36     0x0001     Network controller      0x00
+00.02.00   0x1c36     0x0002     Network controller      0x00
+00.04.00   0x1c36     0x0022     Cryptographic device    0x00
+00.05.00   0x1c36     0x0022     Mass storage controller 0x04
+00.08.00   0x1c36     0x0031     Mass storage controller 0x06
+00.09.00   0x1c36     0x0031     Mass storage controller 0x06
+ALPINE_UBNT_NAS_ALL>
+
+===== dm tree =====
+ dm tree
+ Class       Probed   Name
+----------------------------------------
+ root        [ + ]    root_driver
+ usb         [ + ]    `-- xhci_pci
+ usb_hub     [ + ]        `-- usb_hub
+ALPINE_UBNT_NAS_ALL>
+
+===== clocks =====
+ clocks
+Unknown command 'clocks' - try 'help'
+ALPINE_UBNT_NAS_ALL>
+
+===== gpio status -a =====
+ gpio status -a
+gpio - query and control gpio pins
+
+Usage:
+gpio <input|set|clear|toggle> <pin>
+    - input/set/clear/toggle the specified pin
+gpio status [-a] [<bank> | <pin>]  - show [all/claimed] GPIOs
+ALPINE_UBNT_NAS_ALL>
+
+===== date =====
+ date
+Unknown command 'date' - try 'help'
+ALPINE_UBNT_NAS_ALL>
+
+===== usb tree =====
+ usb tree
+USB device tree:
+ +-1  Hub (5 Gb/s, 0mA)
+     U-Boot XHCI Host Controller 
+   
+ALPINE_UBNT_NAS_ALL>
+
+UBOOT-DUMP-DONE
