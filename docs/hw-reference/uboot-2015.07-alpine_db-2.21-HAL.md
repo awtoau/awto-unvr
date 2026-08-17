@@ -50,5 +50,5 @@ Absent here: `mmc`, `mtdparts`, `clocks`, `date`.
 ## Full dump
 
 Verbatim read-only capture (complete, incl. env MACs/IPs):
-[`uboot-info-20260817.txt`](uboot-info-20260817.txt) — the full `printenv`,
-`help`, `bdinfo`, `nand/sf/i2c/pci/dm` output.
+[`uboot-2015.07-alpine_db-2.21-HAL.txt`](uboot-2015.07-alpine_db-2.21-HAL.txt) —
+the full `printenv`, `help`, `bdinfo`, `nand/sf/i2c/pci/dm` output.
