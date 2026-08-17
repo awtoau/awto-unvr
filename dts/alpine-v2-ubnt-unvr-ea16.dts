@@ -348,13 +348,12 @@
 				};
 			};
 
-			/* PCA9575 #2 (0x29) */
-			i2c_gpio2: gpio@29 {
-				compatible = "nxp,pca9575";
-				reg = <0x29>;
-				gpio-controller;
-				#gpio-cells = <2>;
-			};
+			/*
+			 * PCA9575 #2 (0x29): NOT populated on the 4-bay UNVR — it
+			 * drives Pro bays 5-8 (dt-gaps, "unpopulated, correctly
+			 * absent"). Node omitted so the pca953x driver never probes
+			 * an absent chip (was failing -121/EREMOTEIO at boot).
+			 */
 
 			/*
 			 * Board config/identity EEPROM (U5, AT24C64 — 8 KiB,
