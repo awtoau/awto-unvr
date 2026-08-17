@@ -154,6 +154,50 @@ def parse_i2cdump(text: str) -> bytes:
     return bytes(vals)
 
 
+def read_eeprom_16bit(s, bus, addr, start, length, chunk=128):
+    """Read a 16-bit-addressed EEPROM (AT24C64) via i2ctransfer.
+    0x57 is NOT a plain SPD at offset 0: it is a 16-bit-addressed config EEPROM
+    (records at base 0x400). A 1-byte i2cdump at offset 0 reads the wrong region.
+    Each transfer writes a 2-byte offset then reads up to 255 bytes."""
+    data = bytearray()
+    off = start
+    end = start + length
+    while off < end:
+        n = min(chunk, end - off)
+        hi, lo = (off >> 8) & 0xff, off & 0xff
+        _, out = sh(s, f"i2ctransfer -y {bus} w2@0x{addr:02x} 0x{hi:02x} 0x{lo:02x} r{n}", 20)
+        vals = re.findall(r"0x([0-9a-fA-F]{2})", out)
+        got = bytes(int(v, 16) for v in vals[:n])
+        if len(got) != n:
+            log(f"WARN: offset 0x{off:04x} wanted {n} got {len(got)} bytes: {out[:120]!r}")
+        data += got
+        off += n
+    return bytes(data)
+
+
+def find_ddr4_spd(blob: bytes):
+    """Locate a DDR4 SPD inside a raw EEPROM dump: SPD byte0=0x23 (size), byte2=0x0C
+    (DDR4). Returns (offset, spd_bytes) or (None, b'')."""
+    for i in range(0, len(blob) - 3):
+        if blob[i + 2] == 0x0C and (blob[i] & 0x0f) in (0x2, 0x3):  # 0x23/0x22 size codes
+            return i, blob[i:i + 512]
+    # fallback: any byte2==0x0C
+    for i in range(0, len(blob) - 3):
+        if blob[i + 2] == 0x0C:
+            return i, blob[i:i + 512]
+    return None, b""
+
+
+def _hex(b, base=0):
+    out = []
+    for i in range(0, len(b), 16):
+        row = b[i:i + 16]
+        hexs = " ".join(f"{x:02x}" for x in row)
+        asc = "".join(chr(x) if 32 <= x < 127 else "." for x in row)
+        out.append(f"{base + i:04x}: {hexs:<47} {asc}")
+    return "\n".join(out)
+
+
 # ---------------------- console driver (from i2c-spi-scan.py) ----------------------
 
 def _ru(s, needle, limit, extra=()):
@@ -243,17 +287,23 @@ def main():
         s.close(); return 1
     log(f"SPD @ 0x{SPD_ADDR:02x} on i2c bus {bus}")
 
-    _, dump = sh(s, f"i2cdump -y -r 0-255 {bus} 0x{SPD_ADDR:02x} b", 30)
-    log(f"i2cdump page0 (0-255):\n{dump}")
-    spd = parse_i2cdump(dump)
-    # DDR4 SPD is 512 bytes across 2 pages; page select via 0x36/0x37 SPA cmds.
-    # Bytes 320-348 (mfr/part) live in page1. Try SPA1 then read 0x00-0x7f again.
-    sh(s, f"i2cset -y {bus} 0x37 0x00 2>/dev/null; true", 10)
-    _, dump2 = sh(s, f"i2cdump -y -r 64-95 {bus} 0x{SPD_ADDR:02x} b", 30)
-    log(f"i2cdump page1 (mfr/part region):\n{dump2}")
+    # 0x57 is a 16-bit-addressed AT24C64 config EEPROM (records at base 0x400),
+    # NOT a plain SPD at offset 0. Dump the full 8 KiB via i2ctransfer.
+    log("dumping full 8 KiB via 16-bit i2ctransfer (records live at base 0x400)...")
+    blob = read_eeprom_16bit(s, bus, SPD_ADDR, 0x0000, 0x2000)
+    raw_path = LOGS / "ddr-eeprom-0x57-full.bin"
+    raw_path.write_bytes(blob)
+    log(f"saved {len(blob)} bytes -> {raw_path}")
+    log("identity region 0x000-0x040:\n" + _hex(blob[0x000:0x040], 0x000))
+    log("DDR-records region 0x400-0x480:\n" + _hex(blob[0x400:0x480], 0x400))
 
-    log("\n===== DDR4 SPD decode (page0 fields) =====\n" + decode_ddr4_spd(spd))
-    log("\nDONE — full log in tmp/logs/read-ddr-spd.log")
+    off, spd = find_ddr4_spd(blob)
+    if off is None:
+        log("no DDR4 SPD (byte2==0x0C) found in the dump — inspect the hexdumps above")
+        s.close(); return 1
+    log(f"DDR4 SPD found at EEPROM offset 0x{off:04x} ({len(spd)} bytes captured)")
+    log("\n===== DDR4 SPD decode =====\n" + decode_ddr4_spd(spd))
+    log("\nDONE — full log + raw dump (ddr-eeprom-0x57-full.bin) in tmp/logs/")
     s.close()
     return 0
 

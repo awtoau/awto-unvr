@@ -453,6 +453,27 @@ Read `0x57` @ 16-bit offset `0x400` on `i2c-0`:
 0x0c 0x02 0x40 0x21 ...                        <- JEDEC SPD: byte2=0x0C = DDR4  ✅
 ```
 Confirms the reverse end-to-end: records at 16-bit offset base 0x400, magic-guarded,
-DDR4 SPD present. Next: dump the full 512-byte SPD + decode (`scripts/read-ddr-spd.py`
-with the 2-byte-offset + 0xAA-indirection path) → exact ea16 timings for the #65 DDR port.
+DDR4 marker present.
+
+### Full 8 KiB dump — 2026-08-17 (#67)
+
+`scripts/read-ddr-spd.py` (16-bit `i2ctransfer` path) dumped the whole 8 KiB of `0x57`
+over the serial console → `docs/nor-reference/ddr-config-eeprom-0x57-8k.bin` (tracked).
+
+- **Records at `0x400`** (byte-exact):
+  - `0400: aa ff 40 04 00 00 00 00 00 08 00` — `0xAA` pointer → `0x0440` (LE `40 04`)
+  - `0x40b: bb ff 00` — `0xBB` DRAM-voltage GPIO
+  - `0x40e: cc 01 04 00 07 38 22 04 00 07 38 22` — `0xCC` impedance override
+  - `0x440: 00 00 0c 02 40 21 …` — DDR config record (`byte2=0x0C` = DDR4)
+- **The `0x440` record is a Ubiquiti-custom layout, NOT a standard JEDEC 512-byte SPD**
+  (`byte0≠0x23`; `byte4` density code ≠ the known 8 Gbit K4A8G165WB). A stock JEDEC
+  decoder mis-locks on a stray `0x0C` and yields nonsense — decode against the S2
+  parser (`docs/nor-reference/preboot-s2-decompiled.c`), not `decode_ddr4_spd()`.
+- **`0x57` holds DDR config only** — the `0x000` region is `36 1c 36 1c …`, not the
+  ubnthal plaintext schema. Board **identity lives in NOR**, not here → settles
+  dt-gaps M1 (0x57 is *not* the identity EEPROM).
+
+Remaining for #67: decode the `0x440` record + `0xCC` impedance against the S2 parser
+→ exact org/tmg/addrmap + impedance; read `al_bootstrap.ddr_pll_freq` (SRAM `0xfbff4150`)
+via `/dev/mem`. Then fold into §2c / §6 and unblock the U-Boot DDR SPL (#65).
 
