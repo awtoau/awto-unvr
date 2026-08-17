@@ -34,39 +34,16 @@ gpio4=32, gpio5=40, sgpo=48 (64 lines), pca9575@0x29=464, @0x21=480, @0x20=496.
 - The **~10 s-at-power-on recovery is a separate U-Boot function**.
 - Disable: `ubnt-systool` / `infctld -n`.
 
-## RPS / UPS-connector LED
+## RPS connector (PSE) — summary
 
-- Rear `RPS POWER ON` LED by the `RPS IN` connector (`photos/20260816_225150.jpg`),
-  with fuse `FD1` + series resistor `R12800`.
-- **`RPS POWER ON` LED = hardwired rail power-present indicator** (FD1 + R12800),
-  not SoC-GPIO-driven (no RPS LED in the DTB or `libuled`).
-- **RPS = PSE (power-sourcing), not mains-UPS** (no nut/upsd). `rpsd`+`rps-ctrl`
-  (`rpsd.service`): 12 V/54 V rail-enable + PSU-power-good + over-current + present-
-  sense over GPIO, + disk-driven budgeting (`999-rpsd.rules`→`rpsd_power_budget`).
-  Signals `rps_pin_*`: 12v/54v ×(en,sw,oc,lp,psu_pg,guard,batt_guard,out_oc_oring),
-  `rps_prnt`, `pd_prnt`, `uart_tx/rx`. UART smart-module path (`ttyRPS*`) is UDM/UXG
-  only — not on ea16. **The RPS connector IS populated on this 4-bay board
-  (owner-confirmed) — NOT Pro-only.** Full detail in [rps-subsystem.md](rps-subsystem.md).
-- **Connector:** mates the standard **USP-RPS** (54 V+12 V DC, 52 V@11.54 A=600 W/port)
-  → large: paralleled 54 V+GND power blades + 12 V + 3.3 V-CMOS logic + a 3.3 V-TTL UART.
-- **Pin numbers are compiled into `rpsd`, NOT the EEPROM.** Identity EEPROM (mtd04
-  @0x1f0000) holds only sysid 0xea16 / hwrev 0x0777 / MAC / serial 113-02832-29 / RSA
-  key — no pin table. ea16 ∈ rpsd board group `{ea16,ea1a,ea20,ea51,ea67}` (UNVR/UNAS).
-  `rpsd`/`libubnt.so.1` resolves each `rps_pin_*` → a real PL061/PCA9575 sysfs GPIO at
-  runtime (`i2c_gpioexp_find_base`). **Exact ea16 numbers:** on a running *vendor* unit,
-  `cat /var/run/rpsd.conf` + `cat /sys/kernel/debug/gpio`.
+Populated **PSE** power port on this 4-bay board (owner-confirmed, **not** Pro-only):
+redundant **54 V + 12 V** ORed with the main supply. On ea16, `rpsd` uses only
+**`/dev/ttyS2`** (RS-232 via MAX3221 `U122`) + two SoC-GPIO sense inputs — **gpio 33 =
+`rps_prnt`**, **gpio 34 = `12v_lp`** (these are the two `sysfs` inputs once mis-assigned
+to SW1/SW2). The rear `RPS POWER ON` LED is a hardwired rail indicator, not GPIO.
 
-### Repurposing the RPS connector for remote reset / poweroff
-
-All RPS sense pins are Linux-pollable inputs → an external edge → hard reset (SP805
-watchdog) or graceful poweroff. Ranked candidates:
-1. **`rps_pin_rps_prnt`** (RPS-present input, real connector contact, 3.3 V CMOS) → poll
-   `/sys/class/gpio/gpioN/value` → `systemctl poweroff` / `echo b >/proc/sysrq-trigger`.
-2. **PCA9575@0x20 pins 12/14/15 (gpio 508/510/511)** — spare board inputs, not tied to
-   bay control → cleanest for a NEW external trigger.
-3. **SW1/SW2 (gpio 33/34)** — dormant IRQ-capable PL061 inputs → on-board momentary
-   trigger (add a `gpio-keys` node emitting `KEY_POWER`/`KEY_RESTART`).
-Missing: a straight-down macro of the `RPS IN` contacts for a per-pin physical table.
+**Full mechanism, protocol, pin map, connector, and remote-reset/poweroff repurposing
+→ [rps-subsystem.md](rps-subsystem.md).**
 
 ## Full GPIO / LED / expander map
 
