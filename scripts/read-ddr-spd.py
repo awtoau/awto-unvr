@@ -17,20 +17,17 @@ SPD decode is offline (pure byte math) so it also runs on a saved hexdump:
     read-ddr-spd.py --file <hexdump>   # 512 bytes, i2cdump/hexdump/raw all accepted
 """
 from __future__ import annotations
-import argparse, os, re, socket, sys, time
+import argparse, re, sys
 from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from _repo import LOGS  # noqa: E402
 
-SOCK = Path(os.environ.get("XDG_RUNTIME_DIR", "/tmp")) / "tio-unvr.sock"
-PROMPT = "@@P@@"
-USER, PASSWD = "root", "unvr"
-SPD_ADDR = 0x57
+import _console as con  # noqa: E402
 
-# read-window budgets: serial console at 115200 8N1; a 256-byte i2cdump prints in
-# well under a second, but dnf install can take ~minutes. Each _ru/sh states its own.
+login, sh = con.login, con.sh   # console driver lives in scripts/_console.py
+SPD_ADDR = 0x57
 
 
 def log(m):
@@ -198,49 +195,6 @@ def _hex(b, base=0):
     return "\n".join(out)
 
 
-# ---------------------- console driver (from i2c-spi-scan.py) ----------------------
-
-def _ru(s, needle, limit, extra=()):
-    buf = b""; end = time.monotonic() + limit
-    while time.monotonic() < end:
-        try: c = s.recv(4096)
-        except socket.timeout: continue
-        if not c: break
-        buf += c
-        if needle.encode() in buf: return buf, needle
-        for n in extra:
-            if n.encode() in buf: return buf, n
-    return buf, None
-
-
-def login(s):
-    s.sendall(b"\r")
-    _, hit = _ru(s, "]#", 6, extra=("login:", PROMPT))
-    if hit == "login:":
-        s.sendall(USER.encode() + b"\r"); _ru(s, "Password:", 6)
-        s.sendall(PASSWD.encode() + b"\r"); _ru(s, "]#", 12, extra=("incorrect",))
-    s.sendall(b"unalias -a 2>/dev/null; true\r"); _ru(s, "]#", 4, extra=(PROMPT,))
-    s.sendall(f"export PS1='{PROMPT}'\r".encode()); _ru(s, PROMPT, 6); _ru(s, PROMPT, 3)
-    log("shell ready")
-
-
-def sh(s, cmd, timeout=30):
-    s.sendall(cmd.encode() + b"; echo @@RC=$?@@\r")
-    buf = b""; end = time.monotonic() + timeout; rc = None
-    while time.monotonic() < end:
-        try: c = s.recv(4096)
-        except socket.timeout: continue
-        if not c: break
-        buf += c
-        m = re.search(rb"@@RC=(\d+)@@", buf)
-        if m: rc = int(m.group(1)); break
-    _ru(s, PROMPT, 4)
-    txt = re.sub(r"\x1b\[[0-9;?]*[a-zA-Z]", "", buf.decode(errors="replace"))
-    txt = re.sub(r"\x1b\][0-9;].*?(\x07|\x1b\\)", "", txt)
-    lines = [l for l in txt.splitlines() if "@@RC=" not in l and "; echo @@RC" not in l]
-    return rc, "\n".join(lines).strip()
-
-
 def find_spd_bus(s):
     """Return the i2c bus number whose i2cdetect shows 0x57, else None."""
     _, out = sh(s, 'for b in /sys/class/i2c-dev/i2c-*; do n=$(basename $b|sed s/i2c-//); '
@@ -268,10 +222,10 @@ def main():
         log("\n" + decode_ddr4_spd(spd))
         return 0
 
-    if not SOCK.exists():
-        sys.exit(f"console socket absent: {SOCK} (start tio) — or use --file")
-    s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-    s.settimeout(0.2); s.connect(str(SOCK))
+    try:
+        s = con.connect()
+    except FileNotFoundError as e:
+        sys.exit(f"{e} — or use --file")
     login(s)
 
     have = sh(s, "command -v i2cdetect >/dev/null && command -v i2cdump >/dev/null "
