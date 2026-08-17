@@ -354,9 +354,35 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 			};
+
+			/*
+			 * Board config/identity EEPROM (U5, AT24C64 — 8 KiB,
+			 * 16-bit addressed). This one chip holds BOTH the ubnthal
+			 * identity schema (boardid/systemid/serial/MACs) AND the
+			 * DDR config records at offset 0x400 (0xAA SPD-pointer,
+			 * 0xBB voltage-GPIO, 0xCC impedance, + the JEDEC DDR4 SPD)
+			 * — live-confirmed via `i2ctransfer -y 0 w2@0x57 ...`.
+			 * Binds `at24` -> nvmem sysfs (/sys/bus/i2c/devices/…/eeprom)
+			 * so userspace reads it with a proper driver, no pokes.
+			 * See docs/ddr-config-reverse.md, dt-gaps M1.
+			 */
+			eeprom@57 {
+				compatible = "atmel,24c64";
+				reg = <0x57>;
+				pagesize = <32>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+			};
 		};
 
-		/* I2C general-purpose bus (disabled on UNVR) */
+		/*
+		 * I2C general-purpose bus. Carries the RPS ORing power-monitor IC
+		 * (12 V / 54 V rail V·I·P — docs/rps-subsystem.md). ENABLED so the
+		 * bus enumerates as /dev/i2c-N and the monitor can be probed with
+		 * i2cdetect. Its exact addr + compatible is still open (dt-gaps S3);
+		 * once identified, add a hwmon child here (ina2xx/pmbus) so `sensors`
+		 * reads the rails — no register pokes.
+		 */
 		i2c_gen: i2c@fd894000 {
 			compatible = "snps,designware-i2c";
 			reg = <0x00 0xfd894000 0x00 0x1000>;
@@ -365,7 +391,7 @@
 			clock-frequency = <100000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			status = "disabled";
+			status = "okay";
 		};
 
 		/* Pinctrl — mux function selection for SoC pads */
@@ -787,7 +813,13 @@
 	status = "okay";
 };
 
-/* UART2: active (Bluetooth CSR module) */
+/*
+ * UART2 (ttyS2) = the RPS-connector PHY UART — RS-232 via MAX3221 (U122) on
+ * the RPS header, 115200 8N1 JSON (see docs/rps-subsystem.md). NOT Bluetooth:
+ * owner-confirmed no BT on this board; the vendor "CSR" path is UDM-Pro shared
+ * code (docs/dt-gaps-hardware-of-record.md S2). Also usable as a 2nd RS-232
+ * console. Binds 8250 -> /dev/ttyS2.
+ */
 &uart2 {
 	status = "okay";
 };
