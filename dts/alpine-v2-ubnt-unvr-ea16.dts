@@ -134,7 +134,14 @@
 				     <GIC_SPI 99 IRQ_TYPE_LEVEL_HIGH>;
 		};
 
-		/* PBS (Peripheral Bus System) */
+		/*
+		 * PBS (Peripheral Bus System) @ fd8a8000. This same block also
+		 * holds the SoC pad pinmux: pinmux is set by U-Boot before Linux
+		 * (dt-gaps M2) and no mainline driver binds it, so there is no
+		 * separate pinctrl@fd8a8000 node (it would duplicate this unit
+		 * address). Add an alpine-pinctrl child here if a mainline pinctrl
+		 * driver ever lands.
+		 */
 		pbs: pbs@fd8a8000 {
 			compatible = "annapurna-labs,al-pbs";
 			reg = <0x00 0xfd8a8000 0x00 0x1000>;
@@ -194,12 +201,6 @@
 			clocks = <&sbclk>;
 			clock-names = "apb_pclk";
 			status = "disabled";
-		};
-
-		/* Reboot controller (triggers watchdog reset) */
-		reboot: reboot {
-			compatible = "annapurna-labs,alpine-reboot";
-			wdt-parent = <&wdt0>;
 		};
 
 		/* GPIO controllers (PL061) — 6 banks, 8 pins each */
@@ -394,12 +395,6 @@
 			status = "okay";
 		};
 
-		/* Pinctrl — mux function selection for SoC pads */
-		pinctrl: pinctrl@fd8a8000 {
-			compatible = "annapurna-labs,alpine-pinctrl";
-			reg = <0x00 0xfd8a8000 0x00 0x1000>;
-		};
-
 		/*
 		 * Ethernet ports (Annapurna Labs out-of-tree al_eth driver)
 		 * Port 1: 1GbE RJ45 — RGMII, external PHY at MDIO addr 4 (AR8031/33)
@@ -478,7 +473,7 @@
 		};
 
 		/* External PCIe ports 1-3 — disabled on UNVR */
-		pcie_external1: pcie-external1 {
+		pcie_external1: pcie@fd820000 {
 			compatible = "pci-host-ecam-generic";
 			device_type = "pci";
 			reg = <0x00 0xfd820000 0x00 0x20000>;
@@ -503,7 +498,7 @@
 			status = "disabled";
 		};
 
-		pcie_external2: pcie-external2 {
+		pcie_external2: pcie@fd840000 {
 			compatible = "pci-host-ecam-generic";
 			device_type = "pci";
 			reg = <0x00 0xfd840000 0x00 0x20000>;
@@ -528,7 +523,7 @@
 			status = "disabled";
 		};
 
-		pcie_external3: pcie-external3 {
+		pcie_external3: pcie@fd900000 {
 			compatible = "pci-host-ecam-generic";
 			device_type = "pci";
 			reg = <0x00 0xfd900000 0x00 0x20000>;
@@ -671,6 +666,17 @@
 		};
 	};
 
+	/*
+	 * Reboot controller (triggers watchdog reset). At root, not under /soc:
+	 * it has no reg/ranges, so a unit address under the simple-bus soc would
+	 * be malformed. al_reboot binds by compatible via root-node platform
+	 * population; the wdt-parent phandle is location-independent.
+	 */
+	reboot: reboot {
+		compatible = "annapurna-labs,alpine-reboot";
+		wdt-parent = <&wdt0>;
+	};
+
 	/* Thermal zone — critical shutdown at 105 C */
 	thermal-zones {
 		cpu-thermal {
@@ -724,8 +730,11 @@
 	hdd-pwrctl {
 		compatible = "ui,hdd-pwrctl";
 		force-power-on-wa = <&gpio5 2 GPIO_ACTIVE_HIGH>;
+		#address-cells = <1>;
+		#size-cells = <0>;
 
 		hdd@0 {
+			reg = <0>;
 			slot-no = <1>;
 			pwren     = <&i2c_gpio1 0 GPIO_ACTIVE_HIGH>;
 			present   = <&i2c_gpio1 4 GPIO_ACTIVE_LOW>;
@@ -733,6 +742,7 @@
 		};
 
 		hdd@1 {
+			reg = <1>;
 			slot-no = <2>;
 			pwren     = <&i2c_gpio1 1 GPIO_ACTIVE_HIGH>;
 			present   = <&i2c_gpio1 5 GPIO_ACTIVE_LOW>;
@@ -740,6 +750,7 @@
 		};
 
 		hdd@2 {
+			reg = <2>;
 			slot-no = <3>;
 			pwren     = <&i2c_gpio1 2 GPIO_ACTIVE_HIGH>;
 			present   = <&i2c_gpio1 6 GPIO_ACTIVE_LOW>;
@@ -747,6 +758,7 @@
 		};
 
 		hdd@3 {
+			reg = <3>;
 			slot-no = <4>;
 			pwren     = <&i2c_gpio1 3 GPIO_ACTIVE_HIGH>;
 			present   = <&i2c_gpio1 7 GPIO_ACTIVE_LOW>;
@@ -757,8 +769,11 @@
 	/* SATA activity/presence LEDs — via SGPO controller */
 	sata-leds {
 		compatible = "annapurna-labs,al-sata-sw-leds";
+		#address-cells = <1>;
+		#size-cells = <0>;
 
 		led@0 {
+			reg = <0>;
 			label = "sata:host0:port0";
 			pci_domain = <0>;
 			pci_bus = <0>;
@@ -769,6 +784,7 @@
 		};
 
 		led@1 {
+			reg = <1>;
 			label = "sata:host0:port2";
 			pci_domain = <0>;
 			pci_bus = <0>;
@@ -779,6 +795,7 @@
 		};
 
 		led@2 {
+			reg = <2>;
 			label = "sata:host1:port0";
 			pci_domain = <0>;
 			pci_bus = <0>;
@@ -789,6 +806,7 @@
 		};
 
 		led@3 {
+			reg = <3>;
 			label = "sata:host1:port2";
 			pci_domain = <0>;
 			pci_bus = <0>;
