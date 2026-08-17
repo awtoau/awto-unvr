@@ -6,6 +6,10 @@
 # Offsets match scripts/flash-nand.py. Chainload-safe: NOR U-Boot binary untouched, env only.
 
 # --- catch the U-Boot prompt: send ESC, poll for the prompt, up to ~120 tries ---
+# --- LAN config: EDIT for your setup (device = ipaddr, tftp host = serverip) ---
+set ipaddr   192.168.25.140
+set serverip 192.168.25.145
+
 proc catch_uboot {} {
     for {set i 0} {$i < 120} {incr i} {
         send_raw ESC
@@ -17,8 +21,8 @@ catch_uboot
 puts "AT-UBOOT"
 
 # --- network ---
-send "setenv ipaddr 192.168.25.140";   expect "ALPINE_UBNT_NAS_ALL>"
-send "setenv serverip 192.168.25.145"; expect "ALPINE_UBNT_NAS_ALL>"
+send "setenv ipaddr $ipaddr";     expect "ALPINE_UBNT_NAS_ALL>"
+send "setenv serverip $serverip"; expect "ALPINE_UBNT_NAS_ALL>"
 
 # --- kernel: tftp 0x02000000 -> NAND 0x1300000, span 0x1200000 ---
 send "tftpboot 0x02000000 uImage-unvr-ea16-7.1-fedora-gz"; expect "Bytes transferred" 60
