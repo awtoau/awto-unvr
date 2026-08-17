@@ -1,0 +1,93 @@
+diff --git a/modules/al_ssm/al_ssm_main.c b/modules/al_ssm/al_ssm_main.c
+index 7bca705..012c0e1 100644
+--- a/modules/al_ssm/al_ssm_main.c
++++ b/modules/al_ssm/al_ssm_main.c
+@@ -75,6 +75,7 @@ struct al_ssm_reqctx {
+ 	struct skcipher_request *req;
+ 	struct al_ssm_dev *dev;
+ 	enum al_crypto_dir dir;
++	enum al_crypto_sa_enc_type enc_type;
+ 	void *src_virt;
+ 	void *dst_virt;
+ 	u8 *iv_buf;
+@@ -146,6 +147,7 @@ static int al_ssm_alloc_resources(struct al_ssm_reqctx *rctx,
+ 
+ 	rctx->dev = dev;
+ 	rctx->dir = dir;
++	rctx->enc_type = ctx->enc_type;
+ 	rctx->nbytes = nbytes;
+ 
+ 	if (nbytes == 0 || nbytes > AL_SSM_MAX_DATA_SIZE)
+@@ -334,12 +336,34 @@ static int al_ssm_submit_and_poll(struct al_ssm_reqctx *rctx)
+ 
+ /* ── Completion polling ───────────────────────────────────────────────── */
+ 
++/*
++ * Copy engine output back to req->dst and, for CBC, update req->iv to the last
++ * ciphertext block (7.1 skcipher IV-chaining contract). XTS/others: no update.
++ * Reads the IV from the private bounce buffers (src_virt/dst_virt), so in-place
++ * (req->src == req->dst) is correct even though req->src is overwritten here.
++ */
++static void al_ssm_copy_result(struct al_ssm_reqctx *rctx)
++{
++	struct skcipher_request *req = rctx->req;
++
++	scatterwalk_map_and_copy(rctx->dst_virt, req->dst, 0, rctx->nbytes, 1);
++
++	if (rctx->enc_type == AL_CRYPT_AES_CBC && rctx->nbytes >= AES_BLOCK_SIZE) {
++		/* enc: last block of ciphertext (dst); dec: last block of input (src) */
++		const u8 *last = (rctx->dir == AL_CRYPT_ENCRYPT ?
++				  (const u8 *)rctx->dst_virt :
++				  (const u8 *)rctx->src_virt) +
++				 rctx->nbytes - AES_BLOCK_SIZE;
++		memcpy(req->iv, last, AES_BLOCK_SIZE);
++	}
++}
++
+ static void al_ssm_complete_one(struct al_ssm_reqctx *rctx, int err)
+ {
+ 	struct skcipher_request *req = rctx->req;
+ 
+ 	if (!err)
+-		scatterwalk_map_and_copy(rctx->dst_virt, req->dst, 0, rctx->nbytes, 1);
++		al_ssm_copy_result(rctx);
+ 	al_ssm_free_resources(rctx);
+ 	skcipher_request_complete(req, err);
+ }
+@@ -406,8 +430,7 @@ static void al_ssm_drain_backlog(struct al_ssm_dev *dev)
+ 		}
+ 		if (rc == 0) {
+ 			/* Completed synchronously */
+-			scatterwalk_map_and_copy(rctx->dst_virt, rctx->req->dst,
+-						 0, rctx->nbytes, 1);
++			al_ssm_copy_result(rctx);
+ 			al_ssm_free_resources(rctx);
+ 			skcipher_request_complete(rctx->req, 0);
+ 		} else if (rc == -EINPROGRESS) {
+@@ -481,9 +504,8 @@ static int al_ssm_enqueue(struct al_ssm_ctx *ctx, struct skcipher_request *req,
+ 	rc = al_ssm_submit_and_poll(rctx);
+ 
+ 	if (rc == 0) {
+-		/* Completed synchronously — copy result and return success */
+-		scatterwalk_map_and_copy(rctx->dst_virt, req->dst,
+-					0, rctx->nbytes, 1);
++		/* Completed synchronously — copy result + output IV, return success */
++		al_ssm_copy_result(rctx);
+ 		al_ssm_free_resources(rctx);
+ 		return 0;
+ 	}
+@@ -774,6 +796,14 @@ static int al_ssm_pci_probe(struct pci_dev *pdev, const struct pci_device_id *en
+ 	if (rc)
+ 		goto err_dma_disable;
+ 
++	/*
++	 * Configure the XTS tweak-calculation swap register (HAL default:
++	 * pre-increment byte swap). Mandatory XTS init: without it the tweak seed
++	 * byte order is wrong, so xts(aes) yields wrong ciphertext for any non-zero
++	 * IV/sector (the all-zero self-test vector 0 masks it; vector 1 fails).
++	 */
++	al_crypto_xts_cfg_set(&dev->ssm_dma, dev->unit_info.crypto_regs_base, NULL);
++
+ 	dev->wq = alloc_workqueue("al_ssm_wq", WQ_HIGHPRI | WQ_UNBOUND, 0);
+ 	if (!dev->wq) { rc = -ENOMEM; goto err_free_channel; }
+ 	INIT_DELAYED_WORK(&dev->poll_work, al_ssm_poll_completions);
