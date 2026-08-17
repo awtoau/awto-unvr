@@ -44,7 +44,7 @@ LOG = LOGS / "dev.log"
 # --------------------------------------------------------------------------
 # 115200 8N1 is not a guess: U-Boot's own `loadbootargs` sets
 # console=ttyS0,115200. Confirmed by baud sweep against the live unit.
-CONSOLE_BAUD = 115200
+CONSOLE_BAUD = int(os.environ.get("UNVR_CONSOLE_BAUD", "115200"))  # override for baud tests (e.g. 1000000)
 # Prefer the CP2102: Silicon Labs boards are 3.3 V logic natively, which is what
 # the UNVR UART wants. PL2303 cables vary and some are 5 V.
 CONSOLE_PORTS = [
