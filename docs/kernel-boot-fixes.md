@@ -1,9 +1,9 @@
 # Kernel boot-log fixes (7.1.8 woomera)
 
-Root cause + fix per boot-log error. Source of record for the OOT module fixes,
-which live in the refs tree (`/mnt/2tb/unvr-port-refs/linux-alpine-v2/modules/`),
-NOT in this repo — see "Module-source tracking gap" below. Tracked patches in
-`patches/`.
+Root cause + fix per boot-log error. Source of record for the OOT module fixes.
+The module sources are now vendored in-repo under `modules/` (single
+source-of-truth, same pattern as the ea16 DTS); the fixes below live as tracked
+source there. Tracked patches in `patches/` remain as per-fix diffs.
 
 Captured from: `tmp/logs/woomera-boot-dmesg.log` (kernel 7.1.8-dirty).
 
@@ -105,12 +105,18 @@ File: `dts/alpine-v2-ubnt-unvr-ea16.dts`.
   ata1/2/4/6/8 empty (link down). AHCI correctly waiting for spinning disks —
   normal, not a defect.
 
-## Module-source tracking gap
+## Module-source tracking gap — CLOSED
 
-- The OOT module sources (`al_ssm`, `al_eth`, `al_dma`, …) live in the refs tree
-  `/mnt/2tb/unvr-port-refs/linux-alpine-v2/modules/`, NOT in this repo — same
-  drift risk as the DTS had before it was vendored here.
-- Fixes are recorded as tracked patches under `patches/` so they survive, but
-  the source tree they apply to is not versioned with the repo.
-- Decision for the parent: vendor the module sources into the repo (as was done
-  for the DTS) so the fixes and their target move together.
+- OOT module sources vendored in-repo: `modules/{al_eth,al_ssm,al_dma,al_sgpo,al_reboot}`
+  (source-only: `.c/.h/Makefile`; artifacts gitignored via `modules/.gitignore`).
+- Vendored copies carry the fixes as tracked source: iofic UBSAN (Bug 1) in the
+  three `al_hal_iofic_regs.h` + `al_hal_udma_iofic_regs.h`; al_ssm crypto (Bug 2)
+  in `al_ssm/al_ssm_main.c`.
+- Build scripts (`build-linux-71-fedora.py`, `build-linux-71-ea16.py`,
+  `build-linux-618-ea16.py`) copy each OOT module FROM `modules/` (like the DTS).
+  al_sgpo's 7.1 `gpio_chip.set`-returns-int fix stays a build-time adaptation
+  (`adapt_sgpo`/`adapt_module`, idempotent str-replace); vendored al_sgpo.c is pristine.
+- PORT tree `linux-alpine-v2/modules/<m>` replaced with symlinks -> `modules/<m>`,
+  so no consumer reads a stale copy and drift can't recur. rtl8370mb left in PORT
+  (no build compiles it; not vendored).
+- Vendored via `scripts/vendor-modules.py`.

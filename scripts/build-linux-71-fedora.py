@@ -19,6 +19,7 @@ import os, sys, struct, zlib, subprocess, shutil, pathlib, time, multiprocessing
 
 SRC   = "/mnt/2tb/unvr-port-refs/linux-v7.1.8"
 PORT  = "/mnt/2tb/unvr-port-refs/linux-alpine-v2"
+REPO  = "/mnt/2tb/git/awto-unvr"   # OOT al_* module sources vendored here (modules/)
 OUT   = "/mnt/2tb/unvr-port-refs/build-out-71-fedora"
 FEDORA_CONFIG = "/mnt/2tb/git/awto-unvr/tmp/fedora-kernel/fedora-aarch64.config"
 DTS_NAME = "alpine-v2-ubnt-unvr-ea16"
@@ -113,7 +114,8 @@ def build():
         mpath = os.path.join(OUT, m)
         if os.path.exists(mpath):
             shutil.rmtree(mpath)
-        shutil.copytree(os.path.join(PORT, "modules", m), mpath)
+        # vendored source-of-truth: repo modules/ (carries iofic + crypto fixes).
+        shutil.copytree(os.path.join(REPO, "modules", m), mpath)
         if m == "al_sgpo":
             adapt_sgpo(mpath)
         try:

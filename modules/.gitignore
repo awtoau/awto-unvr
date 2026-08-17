@@ -1,0 +1,12 @@
+# Build artifacts from out-of-tree `make M=...` — never committed.
+# Source (.c/.h/Makefile/Kbuild) is the tracked vendored copy.
+*.o
+*.ko
+*.mod
+*.mod.c
+*.mod.o
+.*.cmd
+*.cmd
+Module.symvers
+modules.order
+.tmp_versions/

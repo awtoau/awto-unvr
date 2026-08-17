@@ -270,7 +270,8 @@ def build_oot_modules():
     results = {}
     for m in ("al_eth", "al_dma", "al_ssm", "al_sgpo"):
         mpath = os.path.join(mdst, m)
-        shutil.copytree(os.path.join(PORT, "modules", m), mpath)
+        # vendored source-of-truth: repo modules/ (carries iofic + crypto fixes).
+        shutil.copytree(os.path.join(REPO, "modules", m), mpath)
         adapt_module(m, mpath)
         log(f"=== out-of-tree {m} ===")
         try:
