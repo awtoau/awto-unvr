@@ -13,8 +13,21 @@
 #include <init.h>
 #include <asm/armv8/mmu.h>
 #include <asm/global_data.h>
+#include <asm/io.h>
 
 DECLARE_GLOBAL_DATA_PTR;
+
+/*
+ * A57 CoreSight debug-enable. cpus_secure @ nb-service +0x8:
+ *   bit0 DBGEN, bit1 NIDEN, bit2 SPIDEN, bit3 SPNIDEN.
+ * RW, NOT fuse-locked on this board (the secure-boot debug-kill latch at
+ * 0xfd8a81e0 is unwritten — unsigned boot), resets to 0, and no vendor code
+ * ever asserts it — so the SWJ-DP pads (the unpopulated 2-row header at the
+ * SoC top edge) are dead unless we set it. We default it ON so JTAG/SWD is
+ * live for bring-up/debug. See docs/unvr-access-research.md, #48.
+ */
+#define AL_CPUS_SECURE		0xf0070008UL
+#define AL_DBG_ALL		0xf	/* DBGEN|NIDEN|SPIDEN|SPNIDEN */
 
 /*
  * Flat MMU map:
@@ -56,6 +69,8 @@ struct mm_region *mem_map = alpine_mem_map;
 
 int board_init(void)
 {
+	/* Assert A57 debug-enable so the JTAG/SWD TAP is live (see above). */
+	writel(AL_DBG_ALL, (void __iomem *)AL_CPUS_SECURE);
 	return 0;
 }
 

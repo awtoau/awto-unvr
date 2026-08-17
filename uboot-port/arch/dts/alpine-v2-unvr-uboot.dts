@@ -19,6 +19,7 @@
 
 	aliases {
 		serial0 = &uart0;
+		serial2 = &uart2;	/* RPS-connector UART — usable as a 2nd console */
 	};
 
 	chosen {
@@ -94,6 +95,23 @@
 			compatible = "ns16550a";
 			reg = <0x0 0xfd883000 0x0 0x1000>;
 			interrupts = <0 17 4>;		/* GIC_SPI 17 LEVEL_HIGH */
+			clock-frequency = <500000000>;
+			reg-shift = <2>;
+			reg-io-width = <4>;
+			status = "okay";
+		};
+
+		/*
+		 * uart2 = the RPS-connector UART (ttyS2), RS-232 via MAX3221 (U122)
+		 * out on JB4. Enabled as serial2 so it can serve as a SECOND console
+		 * (`setenv stdout serial2; setenv stdin serial2`) — a spare RS-232
+		 * console when RPS is unused. See docs/rps-subsystem.md,
+		 * docs/uboot-hw-test-suite.md. RPS itself runs 115200 8N1 JSON.
+		 */
+		uart2: serial@fd885000 {
+			compatible = "ns16550a";
+			reg = <0x0 0xfd885000 0x0 0x1000>;
+			interrupts = <0 19 4>;		/* GIC_SPI 19 LEVEL_HIGH */
 			clock-frequency = <500000000>;
 			reg-shift = <2>;
 			reg-io-width = <4>;
