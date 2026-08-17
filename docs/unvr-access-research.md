@@ -337,11 +337,19 @@ Not the stock image: our Fedora-44 build on the SSD (kernel `7.1.8-dirty`). SSH 
 the intended default — `build-fedora-rootfs.py` ships sshd enabled + `PermitRootLogin
 yes` ([fedora-on-ssd.md](fedora-on-ssd.md) L65). Serial console was bring-up only.
 
-- **Address: `192.168.25.149/24` on `enp0s1`, DHCP lease** — NOT the netboot-era
-  static `.140`. `build-fedora-rootfs.py` runs systemd-networkd DHCP on all ethernet,
-  so the box takes a lease; `.140` never applied to the Fedora rootfs.
-- MAC `74:ac:b9:41:a8:11` (OUI 74:AC:B9 = Ubiquiti). Fedora 44 aarch64,
-  `SSH-2.0-OpenSSH_10.2`, password auth OK as `root`.
+- **Address: DHCP lease on `enp0s1`, it MOVES.** Never write it down — resolve it.
+  | When | Address |
+  |---|---|
+  | 2026-08-16T22:33 | `192.168.25.149/24` |
+  | 2026-08-18T08:34 | `192.168.25.106/24` (.149 reassigned to a non-Ubiquiti host) |
+  NOT the netboot-era static `.140`: `build-fedora-rootfs.py` runs systemd-networkd
+  DHCP on all ethernet, so the box takes a lease; `.140` never applied to the Fedora
+  rootfs. `ssh` to a stale address fails **refused** (another host answers) or
+  **timeout** (nobody there) — neither means the box is down.
+- MAC `74:ac:b9:41:a8:11` (OUI 74:AC:B9 = Ubiquiti) — the only stable handle.
+  Fedora 44 aarch64, `SSH-2.0-OpenSSH_10.2`, password auth OK as `root`.
+- **Find it: `python3 scripts/find-woomera-ssh.py`** — sweeps by MAC OUI, prints the
+  current address. Run this instead of trusting any address in these docs.
 - Found 2026-08-16T22:33+10:00 from `192.168.25.145/24` via
   `scripts/find-woomera-ssh.py` + MAC OUI (no serial). Gotcha: Fedora does not tag
   its SSH banner, so the distro-string heuristic is useless — MAC OUI is the
@@ -350,10 +358,11 @@ yes` ([fedora-on-ssd.md](fedora-on-ssd.md) L65). Serial console was bring-up onl
   13 hosts but named none.
 
 Open hardening (was draft issue 38, not filed to GitHub):
-- Hostname is `fedora`, not `woomera` — `hostnamectl` follow-up
-  ([fedora-on-ssd.md](fedora-on-ssd.md) L123) never run.
+- ~~Hostname is `fedora`~~ — **done**, reports `woomera` as of 2026-08-18T08:34.
 - Root password still the build default (`build-fedora-rootfs.py` L67, marked CHANGE
   THIS) + `PermitRootLogin yes` → any LAN host can root the box over SSH.
+- **Clock is wrong** — box said `22:35` when the host said `08:34` (~10 h out). No
+  RTC battery / no NTP sync. Breaks file mtimes, build stamps and log correlation.
 - Key-based login not set up — `ssh-copy-id` blocked by the agent permission
   classifier 2026-08-16; needs the owner to run/grant it.
 - DHCP lease, not a reservation — address moves on its own (what rotted `.140`).
