@@ -35,6 +35,7 @@ import os, sys, struct, zlib, subprocess, shutil, pathlib, time, multiprocessing
 
 SRC   = "/mnt/2tb/unvr-port-refs/linux-v6.18.44"
 PORT  = "/mnt/2tb/unvr-port-refs/linux-alpine-v2"
+REPO  = "/mnt/2tb/git/awto-unvr"   # ea16 board DTS hardware-of-record lives here (dts/)
 OUT   = "/mnt/2tb/unvr-port-refs/build-out-618"
 OUT612 = "/mnt/2tb/unvr-port-refs/build-out"   # source of the reusable initramfs
 DTS_NAME = "alpine-v2-ubnt-unvr-ea16"
@@ -85,8 +86,10 @@ def prep_tree():
     amazon = os.path.join(SRC, "arch/arm64/boot/dts/amazon")
     shutil.copy(os.path.join(PORT, "configs/unvr_defconfig"),
                 os.path.join(SRC, "arch/arm64/configs/unvr_defconfig"))
-    for f in ("dts/alpine-v2-ubnt-unvr-ea16.dts", "dts/alpine-v2-ubnt-unvr.dts",
-              "dts/alpine-v2-ubnt-udmpro.dts"):
+    # ea16 board DTS = the repo's tracked hardware-of-record (single source of
+    # truth, dts/). Reference boards (unvr/udmpro) still come from PORT.
+    shutil.copy(os.path.join(REPO, "dts", f"{DTS_NAME}.dts"), amazon)
+    for f in ("dts/alpine-v2-ubnt-unvr.dts", "dts/alpine-v2-ubnt-udmpro.dts"):
         s = os.path.join(PORT, f)
         if os.path.exists(s):
             shutil.copy(s, amazon)
