@@ -12,8 +12,9 @@ board `alpine_v2_ubnt one nas v5.0`, BOM `113-2832-29`, CM = **MSI**, UL `E24877
   **unpopulated** (footprint, no part). Photo = best `docs/photos/20260816_<hhmmss>.jpg` frame.
 
 > **Designator gotcha — SoC is U2, not U1.** [hardware.md](hardware.md)'s "Main silicon" table
-> calls the SoC "U1" as shorthand; the **physical silk is U2**. **`U1` is a genuinely separate,
-> unresolved QFP** in the SATA/USB corner (see Unidentified). Do not conflate them.
+> calls the SoC "U1" as shorthand; the **physical silk is U2**. **`U1` is a genuinely separate
+> chip** — the **LMK00338-class clock fan-out buffer** in the SATA/USB corner (see Unidentified).
+> Do not conflate them.
 
 ---
 
@@ -139,8 +140,8 @@ per-drive + DDR staggered gating (231327/232437 SoC-left edge).
 
 | Ref | What / marking | Best guess | Location (photo · area) | Status | Value / interest |
 |---|---|---|---|---|---|
-| **U1** | ~32–40-pin QFP + own osc **OSC1**; marking worn every frame (`88E6..0X / SMP20W2B / [M]` read one frame) | Marvell **88E6xxx** switch **OR** ASM1061 PCIe→SATA/USB bridge | 230619/225706 · SATA/USB corner | uncertain | **priority macro** — settles "is there a switch?"; AL-324 already has 2 SATA + 2 MACs |
-| OSC1 | 4-pad SMD oscillator, mark illegible | U1 ref clock | 230614 · by U1 | uncertain | |
+| **U1** | ~24–32-pin QFN + own osc **OSC1**; marking contested — `9YARF4G3 / K00338` (clear macro, [photos/u1-lmk00338-clock-buffer.jpg](photos/u1-lmk00338-clock-buffer.jpg)) vs `88E6..0X / SMP20W2B` (worn earlier frame) | **TI/National LMK00338-class clock fan-out buffer** (1 ref in → 8 diff pairs out): dedicated `OSC1` reference + the `RA6xx` array bank = series terminations on the diff outputs. NOT a switch or SATA controller — topology is wrong for both, and a 1-RJ45 NAS on an AL-324 (already 2 SATA + 2 MACs) needs neither. 2019 date codes fit the TI-era part. | 230619/225706 · SATA/USB corner | likely | resolves the "is there a switch?" open item |
+| OSC1 | 4-pad SMD oscillator, mark illegible | U1 (LMK00338) reference clock | 230614 · by U1 | uncertain | |
 | U48 | ~10-pin QFN, marking illegible | RPS ORing power-monitor candidate | RPS area | uncertain | ORing monitor — macro needed. [rps-subsystem.md](rps-subsystem.md) |
 | U5052 | `P617A / 03 01 / 948` (MSOP-8/10) | current-sense amp / supervisor / small analog | 225411/230555 · near RTC/shunt | uncertain | not in known list |
 | U13 | `64?B / 7604`? (QFN ~16-lead) | small logic/controller | 225407 · by reset edge | uncertain | |
@@ -159,6 +160,6 @@ per-drive + DDR staggered gating (231327/232437 SoC-left edge).
 ### Ranked chase list
 
 1. **Macro the SoC-top-edge 2-row header** → confirm/deny JTAG/SWD (best lead).
-2. **Macro U1** (SATA/USB corner, by OSC1) → Marvell switch vs ASM1061.
+2. ~~Macro U1~~ — **done**: LMK00338-class clock buffer (K00338 marking + OSC1 + RA6xx output arrays). Not a switch/SATA ctrl.
 3. **Continuity-probe** JB4 per-blade rail map + SW1/SW2 GPIO.
 4. Macro `MB_DCIN` pin count; ID `U48` (RPS monitor), `U5052`, `U13`, `U16`.
