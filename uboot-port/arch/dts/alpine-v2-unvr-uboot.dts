@@ -153,6 +153,23 @@
 			bus-range = <0x00 0x00>;
 		};
 
+		/* SoC GPIO (PL061). gpio3=fd88a000 (lines 24-31), gpio4=fd88b000
+		 * (lines 32-39). "arm,pl061" only (drop primecell -> no AMBA needed).
+		 * Carries: ulogo_blue (gpio3.7), ulogo_white (gpio4.5), rps_prnt
+		 * (gpio4.1), 12v_lp (gpio4.2), reset button (gpio4.6). */
+		gpio3: gpio@fd88a000 {
+			compatible = "arm,pl061";
+			reg = <0x0 0xfd88a000 0x0 0x1000>;
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+		gpio4: gpio@fd88b000 {
+			compatible = "arm,pl061";
+			reg = <0x0 0xfd88b000 0x0 0x1000>;
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+
 		/*
 		 * I2C "i2c-pld" (DesignWare) @ fd880000, 100 kHz. Hosts the PCA9575
 		 * GPIO expanders. We need @0x21 to POWER THE SATA BAYS before AHCI:
@@ -209,5 +226,7 @@
 		led-d3 { label = "d3"; gpios = <&i2c_gpio1 14 0>; default-state = "on"; };
 		led-d4 { label = "d4"; gpios = <&i2c_gpio1 15 0>; default-state = "on"; };
 		led-sfp { label = "sfp"; gpios = <&i2c_gpio0 2 1>; default-state = "on"; };
+		led-white { label = "white"; gpios = <&gpio4 5 1>; default-state = "on"; };
+		led-blue { label = "blue"; gpios = <&gpio3 7 1>; default-state = "on"; };
 	};
 };
