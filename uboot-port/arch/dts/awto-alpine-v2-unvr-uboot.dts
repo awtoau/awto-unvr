@@ -130,10 +130,13 @@
 		/*
 		 * Internal PCIe host — an ECAM-compatible window at 0xfbc00000
 		 * fronting the SoC's integrated PCI endpoints (bus 0 only): 2×
-		 * AHCI SATA (1c36:0031, class AHCI 1.0), eth, crypto, DMA. Linux
-		 * uses "pci-host-ecam-generic" here; U-Boot's PCIE_ECAM_GENERIC
-		 * binds the same. We ENUMERATE OURSELVES + assign BARs — never
-		 * rely on stock U-Boot's enumeration (it doesn't exist standalone).
+		 * AHCI SATA (1c36:0031, class AHCI 1.0), eth, crypto, DMA. We use
+		 * "pci-host-ecam-generic" (U-Boot's PCIE_ECAM_GENERIC binds it);
+		 * Linux uses the vendor "annapurna-labs,alpine-internal-pcie" host
+		 * driver instead — the ONLY delta is that driver does the AXI snoop
+		 * coherency fixup (see the note below + issue #74). Endpoints bind by
+		 * PCI ID regardless of the host compatible. We ENUMERATE OURSELVES +
+		 * assign BARs — never rely on stock U-Boot (no standalone enumeration).
 		 *   reg    = ECAM config space (1 MB, one 4 KB window per devfn)
 		 *   ranges = 32-bit non-prefetch MMIO, PCI 0xfe000000 -> CPU 1:1, 16 MB
 		 * MSI/interrupts omitted: U-Boot polls AHCI.
