@@ -44,3 +44,20 @@ The stock checksum is what makes that safe; do not skip verification.
 - 34 pages (a truncated fetch has fewer). Not an HTML login page.
 - Title present: "LMK00338 8-Output PCIe ... Clock Buffer and Level Translator".
 - Pin table lists 40-lead WQFN, `OSCin`/`OSCout`, `CLKoutA0..A3` + `CLKoutB0..B3`.
+
+## S-35390A — RTC (behind PCA9546 mux ch0)
+
+| | |
+|---|---|
+| URL | <https://www.ablic.com/en/doc/datasheet/real_time_clock/S35390A_E.pdf> |
+| Doc | ABLIC S-35390A 2-wire real-time clock datasheet |
+| Revision | Rev.4.2_04 (© 2004-2018) |
+| Retrieved | 2026-08-18 (via playwrong `pdf`) |
+| Size | 741338 bytes |
+| Why | RTC on i2c mux ch0 wedges the bus — POC/BLD "indefinite status", RESET, V_DET. See docs/rtc-s35390a-fault.md |
+
+### Telling a good copy from a bad one
+
+- 57 pages (a truncated fetch has fewer). Not an HTML login page.
+- STATUS1 register (Fig 12): B0 POC, B1 BLD, B7 RESET.
+- V_DET = 1.0 V typ (0.65–1.35 V), Table 6/7; communicate ≥ 1.3 V, Table 4.
