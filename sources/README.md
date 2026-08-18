@@ -44,3 +44,15 @@ The stock checksum is what makes that safe; do not skip verification.
 - 34 pages (a truncated fetch has fewer). Not an HTML login page.
 - Title present: "LMK00338 8-Output PCIe ... Clock Buffer and Level Translator".
 - Pin table lists 40-lead WQFN, `OSCin`/`OSCout`, `CLKoutA0..A3` + `CLKoutB0..B3`.
+
+## FCC internal-photos PDFs — board RE reference
+
+| file | size | what |
+|---|---|---|
+| `fcc-unvr-internal.pdf` | 975 KB | FCC internal-photos exhibit for the UNVR — board shots used to ID components (UB1/U10 expanders, U48 ORing monitor, etc.) |
+| `fcc-udmpro-internal.pdf` | 5.8 MB | FCC internal-photos exhibit for the UDM-Pro (6-bay sibling) — cross-reference for shared silicon |
+
+- Provenance: FCC ID equipment-authorization "Internal Photos" exhibits, retrieved 2026-08-16.
+  Re-findable via an FCC-ID search (fcc.report / fccid.io) for the device's FCC ID (on the
+  chassis label). Exact source URLs not recorded — recover from the label if a fresh copy is needed.
+- Good vs bad copy: opens as a multi-page PDF of board photographs, not an HTML login/error page.
