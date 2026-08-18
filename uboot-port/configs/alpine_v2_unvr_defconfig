@@ -82,6 +82,7 @@ CONFIG_GPIO_HOG=y
 CONFIG_LED=y
 CONFIG_LED_GPIO=y
 CONFIG_CMD_LED=y
+CONFIG_LED_BLINK=y
 # diagnostics (were the 4 "Unknown command" gaps)
 CONFIG_CMD_DM=y
 CONFIG_CMD_CLK=y

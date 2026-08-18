@@ -208,6 +208,6 @@
 		led-d2 { label = "d2"; gpios = <&i2c_gpio1 13 0>; default-state = "on"; };
 		led-d3 { label = "d3"; gpios = <&i2c_gpio1 14 0>; default-state = "on"; };
 		led-d4 { label = "d4"; gpios = <&i2c_gpio1 15 0>; default-state = "on"; };
-		led-sfp { label = "sfp"; gpios = <&i2c_gpio0 2 0>; default-state = "on"; };
+		led-sfp { label = "sfp"; gpios = <&i2c_gpio0 2 1>; default-state = "on"; };
 	};
 };
