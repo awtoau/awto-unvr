@@ -731,6 +731,24 @@ def cmd_chainload(extra: list[str]) -> int:
     return cmd_console_tcl([tcl])
 
 
+@command("flash the built kernel+DTB into NAND + set U-Boot to boot it "
+         "(scripts/flash-nand.py)", kind="action")
+def cmd_flash(extra: list[str]) -> int:
+    return _run_script("scripts/flash-nand.py", extra)
+
+
+@command("netboot: catch U-Boot, tftp kernel+DTB, bootm in one session "
+         "(scripts/netboot.py)", args="--tag <7.1|6.18> [opts]", kind="action")
+def cmd_netboot(extra: list[str]) -> int:
+    return _run_script("scripts/netboot.py", extra)
+
+
+@command("boot the flashed kernel + wait for Fedora login "
+         "(scripts/boot-verify.tcl)", kind="action")
+def cmd_boot_verify(_extra: list[str]) -> int:
+    return cmd_console_tcl(["scripts/boot-verify.tcl"])
+
+
 @command("fail-fast pre-commit gate: " + " + ".join(GATE), kind="aggregate")
 def cmd_gate(_extra: list[str]) -> int:
     for name in GATE:
