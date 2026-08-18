@@ -13,7 +13,7 @@ board `alpine_v2_ubnt one nas v5.0`, BOM `113-2832-29`, CM = **MSI**, UL `E24877
 
 > **Designator gotcha — SoC is U2, not U1.** [hardware.md](hardware.md)'s "Main silicon" table
 > calls the SoC "U1" as shorthand; the **physical silk is U2**. **`U1` is a genuinely separate
-> chip** — the **LMK00338-class clock fan-out buffer** in the SATA/USB corner (see Unidentified).
+> chip** — the **LMK00338 clock fan-out buffer** (confirmed) in the SATA/USB corner (see Unidentified).
 > Do not conflate them.
 
 ---
@@ -140,8 +140,8 @@ per-drive + DDR staggered gating (231327/232437 SoC-left edge).
 
 | Ref | What / marking | Best guess | Location (photo · area) | Status | Value / interest |
 |---|---|---|---|---|---|
-| **U1** | ~24–32-pin QFN + own osc **OSC1**; marking contested — `9YARF4G3 / K00338` (clear macro, [photos/u1-lmk00338-clock-buffer.jpg](photos/u1-lmk00338-clock-buffer.jpg)) vs `88E6..0X / SMP20W2B` (worn earlier frame) | **TI/National LMK00338-class clock fan-out buffer** (1 ref in → 8 diff pairs out): dedicated `OSC1` reference + the `RA6xx` array bank = series terminations on the diff outputs. NOT a switch or SATA controller — topology is wrong for both, and a 1-RJ45 NAS on an AL-324 (already 2 SATA + 2 MACs) needs neither. 2019 date codes fit the TI-era part. | 230619/225706 · SATA/USB corner | likely | resolves the "is there a switch?" open item |
-| OSC1 | 4-pad SMD oscillator, mark illegible | U1 (LMK00338) reference clock | 230614 · by U1 | uncertain | |
+| **U1** | 40-pin WQFN 6×6mm (10 pins/side, counted [photos/u1-lmk00338-clock-buffer.jpg](photos/u1-lmk00338-clock-buffer.jpg)) + own osc **OSC1**; NS logo + `9?ARF4G3 / K00338` = LMK00338 ("LM" dropped, legacy National mark) | **National/TI LMK00338** 8-output HCSL clock fan-out buffer (1 ref in → 8 diff pairs, 2 banks of 4). Pin-match: pkg 40-WQFN = datasheet RTA (48-pin was wrong); `OSC1` → OSCin/CLKin; `RA6xx` array bank = series-R on the 8 HCSL diff outputs. NOT a switch/SATA ctrl — topology wrong for both; AL-324 (2 SATA + 2 MACs) needs neither. 2019 codes fit. [sources/lmk00338.pdf] | 230619/225706 · SATA/USB corner | **confirmed** | resolves the "is there a switch?" open item |
+| OSC1 | 4-pad SMD can oscillator, mark illegible | U1 (LMK00338) reference clock — single osc feeds the buffer input | 230614 · by U1 | confirmed role | |
 | U48 | ~10-pin QFN, marking illegible | RPS ORing power-monitor candidate | RPS area | uncertain | ORing monitor — macro needed. [rps-subsystem.md](rps-subsystem.md) |
 | U5052 | `P617A / 03 01 / 948` (MSOP-8/10) | current-sense amp / supervisor / small analog | 225411/230555 · near RTC/shunt | uncertain | not in known list |
 | U13 | `64?B / 7604`? (QFN ~16-lead) | small logic/controller | 225407 · by reset edge | uncertain | |
@@ -160,6 +160,6 @@ per-drive + DDR staggered gating (231327/232437 SoC-left edge).
 ### Ranked chase list
 
 1. **Macro the SoC-top-edge 2-row header** → confirm/deny JTAG/SWD (best lead).
-2. ~~Macro U1~~ — **done**: LMK00338-class clock buffer (K00338 marking + OSC1 + RA6xx output arrays). Not a switch/SATA ctrl.
+2. ~~Macro U1~~ — **CONFIRMED LMK00338**: 40-WQFN (10 pins/side) + NS-logo `K00338` marking + OSC1 + RA6xx output arrays. Not a switch/SATA ctrl.
 3. **Continuity-probe** JB4 per-blade rail map + SW1/SW2 GPIO.
 4. Macro `MB_DCIN` pin count; ID `U48` (RPS monitor), `U5052`, `U13`, `U16`.

@@ -15,14 +15,14 @@ signal names. **Needs a straight-down macro shot to confirm pinout.** Secondary
 candidate: a **4-pin inline header near `FD5`** (pin-1 square pad, photo `_231436`-area).
 No `TCK/TDO/TMS/TDI/TRST/TX/RX/BOOT` silk anywhere on the board.
 
-## ⚠ The "Ethernet switch" question — UNRESOLVED (conflicting reads)
+## The "Ethernet switch" question — RESOLVED (no switch)
 
-The board *may* carry an extra networking/controller chip, but the agents disagreed —
-**do not treat as settled:**
-- **`U1`** — a ~32-40-pin QFP with its **own oscillator `OSC1`**, in the **SATA/USB
-  corner** next to the ASM1042A. Read variously as a **Marvell 88E6xxx managed switch**
-  (batch 3) OR an **ASM1061-class PCIe→SATA / 2nd USB3 bridge** (batch 1). Marking worn
-  on every frame. **Needs a clear macro to settle.**
+- **`U1` = National/TI LMK00338** 8-output HCSL clock fan-out buffer — CONFIRMED, not a
+  switch or SATA bridge. Evidence: 40-pin WQFN 6×6mm (10 pins/side, counted in the clear
+  macro `u1-lmk00338-clock-buffer.jpg`); NS logo + marking `9?ARF4G3 / K00338` (= LMK00338,
+  "LM" dropped); adjacent single oscillator `OSC1` → the buffer input; `RA6xx` series-R
+  array bank = terminations on the 8 differential outputs. Earlier "Marvell 88E6xxx switch"
+  / "ASM1061 bridge" reads were misreads of a worn frame. Datasheet `sources/lmk00338.pdf`.
 - A batch-4 "**Atheros 48-pin switch**" (photo `_231702`) is **CONFIRMED = the AR8033
   1G PHY (U51)**, not a switch (inspected the photo): a ~48-pin Atheros QFN sitting by
   its **25 MHz crystal `Y8`** in the RTC-cluster area. A real Atheros/QCA switch
@@ -35,7 +35,7 @@ The board *may* carry an extra networking/controller chip, but the agents disagr
 
 ## New / notable parts (not previously cataloged)
 
-- **`U1`** (see above) — mystery QFP + OSC1, SATA/USB corner. **Priority ID.**
+- **`U1`** (see above) — **LMK00338** clock fan-out buffer + OSC1, SATA/USB corner. Confirmed.
 - **Power tree fully mapped:** `VR1` = SoC-core VRM (uP1708/UB3 controller, `R002`=2 mΩ /
   `R005`=5 mΩ current-sense shunts, `1R0`/`R33` chokes, 330 µF/6.3 V + 100 µF/47 µF-35 V
   caps); `VR2` = Anpec-class buck (`ADEN`, 1R0 inductor); `VR7`, `VR13`; distributed
@@ -66,7 +66,6 @@ candidate header above), a **6-TP row by the NAND** (`TP93-103` + series R), and
 ## Open items (ranked)
 
 1. **Macro the SoC-top-edge unpopulated header** → confirm/deny JTAG/SWD (our best lead).
-2. **Macro `U1` (SATA/USB corner, by OSC1)** → Marvell switch vs ASM1061 vs other — settles
-   the "is there a switch" question.
+2. ~~Macro `U1`~~ — **done: LMK00338 clock buffer** (40-WQFN, NS-logo `K00338`, OSC1 + RA6xx). No switch.
 3. Macro `MB_DCIN` contacts (pin count) and the `RPS IN`/`JB4` blades (rail map).
 4. ID `U48` (RPS ORing monitor), `U5052`, `U13`, `U16`.

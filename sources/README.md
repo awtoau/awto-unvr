@@ -27,3 +27,20 @@ Discovered via `https://fw-update.ui.com/api/firmware-latest?filter=eq~~platform
 
 Fetched with curl by explicit approval - playwrong has no binary-download tool.
 The stock checksum is what makes that safe; do not skip verification.
+
+## lmk00338.pdf
+
+| | |
+|---|---|
+| URL | <https://www.ti.com/lit/ds/symlink/lmk00338.pdf> |
+| Doc | TI LMK00338 datasheet, SNAS636C |
+| Revision | Rev C, July 2021 (first released Dec 2013) |
+| Retrieved | 2026-08-18 (via playwrong `pdf`) |
+| Size | 2038698 bytes |
+| Why | Confirms U1 = LMK00338 (40-WQFN, 8-output HCSL clock fan-out buffer) |
+
+### Telling a good copy from a bad one
+
+- 34 pages (a truncated fetch has fewer). Not an HTML login page.
+- Title present: "LMK00338 8-Output PCIe ... Clock Buffer and Level Translator".
+- Pin table lists 40-lead WQFN, `OSCin`/`OSCout`, `CLKoutA0..A3` + `CLKoutB0..B3`.
