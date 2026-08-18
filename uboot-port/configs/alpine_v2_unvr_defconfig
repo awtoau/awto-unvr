@@ -8,7 +8,21 @@ CONFIG_NR_DRAM_BANKS=2
 CONFIG_ENV_SIZE=0x10000
 CONFIG_DEFAULT_DEVICE_TREE="alpine-v2-unvr-uboot"
 CONFIG_SYS_LOAD_ADDR=0x02000000
-CONFIG_BOOTDELAY=2
+# -1 = never autoboot: our U-Boot always stops at its prompt on start ("stop on
+# reset"). Prevents auto-running bootcmd (which can hang on a bad bootm before we
+# have OF_LIBFDT + a working sysreset). Boot on demand with `run bootcmd` / `boot`.
+CONFIG_BOOTDELAY=-1
+CONFIG_HUSH_PARSER=y
+# Kernel cmdline — bootm fixes this into the DTB's /chosen/bootargs. Matches the
+# live /proc/cmdline (rootfs on SSD sda2 by PARTUUID). Without it: no root -> panic.
+CONFIG_USE_BOOTARGS=y
+CONFIG_BOOTARGS="console=ttyS0,115200 root=PARTUUID=dcdc291e-9956-48cd-9d7c-48219877881a rootfstype=ext4 rw rootwait selinux=0 panic=15"
+# Canary in OUR U-Boot (chainloaded, so a bad bootcmd can't crash-loop the box).
+# 0x10000000 is 16-aligned so itest.l is alignment-safe; survives warm reset
+# (DRAM persists). Set it (mw 0x10000000 0xb0075709) to stay at our prompt on the
+# next boot instead of booting off the SSD.
+CONFIG_USE_BOOTCOMMAND=y
+CONFIG_BOOTCOMMAND="if itest.l *0x10000000 == 0xb0075709; then echo == CANARY set - staying in U-Boot ==; else scsi scan; ext4load scsi 0:2 0x02000000 /boot/uImage-unvr-ea16-7.1-fedora-gz && ext4load scsi 0:2 0x04078000 /boot/alpine-v2-ubnt-unvr-ea16-7.1-fedora.dtb && bootm 0x02000000 - 0x04078000; fi"
 CONFIG_OF_CONTROL=y
 CONFIG_DM=y
 CONFIG_DM_SERIAL=y
@@ -48,6 +62,13 @@ CONFIG_DOS_PARTITION=y
 CONFIG_FS_EXT4=y
 CONFIG_CMD_EXT4=y
 CONFIG_CMD_FS_GENERIC=y
+# boot the gzip uImage off the SSD: bootm + legacy image + gzip; decompress
+# buffer must exceed the ~57 MB uncompressed arm64 Image (64 MB here).
+CONFIG_CMD_BOOTM=y
+CONFIG_CMD_BOOTI=y
+CONFIG_LEGACY_IMAGE_FORMAT=y
+CONFIG_GZIP=y
+CONFIG_SYS_BOOTM_LEN=0x4000000
 # --- I2C + GPIO: power the SATA bays (PCA9575 @0x21 hog) before AHCI scan ---
 CONFIG_CLK=y
 CONFIG_DM_I2C=y
@@ -57,3 +78,8 @@ CONFIG_DM_GPIO=y
 CONFIG_DM_PCA953X=y
 CONFIG_CMD_GPIO=y
 CONFIG_GPIO_HOG=y
+# diagnostics (were the 4 "Unknown command" gaps)
+CONFIG_CMD_DM=y
+CONFIG_CMD_CLK=y
+CONFIG_CMD_PART=y
+CONFIG_CMD_MMC=y

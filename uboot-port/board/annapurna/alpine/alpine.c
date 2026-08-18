@@ -84,7 +84,19 @@ int dram_init_banksize(void)
 	return fdtdec_setup_memory_banksize();
 }
 
-/* Reset is handled by PSCI (sysreset-psci); nothing to do here. */
+/*
+ * `reset` via the SP805 watchdog — the simple, working AL-324 reset.
+ * PSCI SYSTEM_RESET does NOT work here (Linux `reboot` hangs, #51); stock
+ * U-Boot and the al_reboot driver both reset through the SP805. Arm wdt0 with
+ * a tiny timeout and spin: RESEN fires a SoC reset in ~2 counts.
+ * wdt0 @0xfd88c000: Load 0x000, Control 0x008 (INTEN|RESEN=0x3), Lock 0xC00.
+ */
+#define SP805_WDT_BASE	0xfd88c000UL
 void reset_cpu(void)
 {
+	writel(0x1ACCE551, (void __iomem *)(SP805_WDT_BASE + 0xC00)); /* unlock */
+	writel(0x100,      (void __iomem *)(SP805_WDT_BASE + 0x000)); /* load */
+	writel(0x3,        (void __iomem *)(SP805_WDT_BASE + 0x008)); /* INTEN|RESEN */
+	while (1)
+		;
 }
