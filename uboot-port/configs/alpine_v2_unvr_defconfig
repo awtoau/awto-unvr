@@ -78,6 +78,10 @@ CONFIG_DM_GPIO=y
 CONFIG_DM_PCA953X=y
 CONFIG_CMD_GPIO=y
 CONFIG_GPIO_HOG=y
+# named LEDs via the `led` command (pca9575-backed: SFP + bay faults)
+CONFIG_LED=y
+CONFIG_LED_GPIO=y
+CONFIG_CMD_LED=y
 # diagnostics (were the 4 "Unknown command" gaps)
 CONFIG_CMD_DM=y
 CONFIG_CMD_CLK=y

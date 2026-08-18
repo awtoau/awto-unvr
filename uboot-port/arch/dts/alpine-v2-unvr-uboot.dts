@@ -82,6 +82,7 @@
 		clock-frequency = <500000000>;
 	};
 
+
 	gic: interrupt-controller@f0200000 {
 		compatible = "arm,gic-v3";
 		#interrupt-cells = <3>;
@@ -140,6 +141,7 @@
 		 * APP_CONTROL (0x220) for cache-coherent DMA — add via a board hook
 		 * if AHCI DMA reads come back incoherent. (pcie-al-internal.c ref.)
 		 */
+
 		pci@fbc00000 {
 			compatible = "pci-host-ecam-generic";
 			device_type = "pci";
@@ -171,7 +173,15 @@
 			#size-cells = <0>;
 			status = "okay";
 
-			gpio@21 {
+			/* @0x20 — SFP+ 1G link LED on pin 2 (see LED map). */
+			i2c_gpio0: gpio@20 {
+				compatible = "nxp,pca9575";
+				reg = <0x20>;
+				gpio-controller;
+				#gpio-cells = <2>;
+			};
+
+			i2c_gpio1: gpio@21 {
 				compatible = "nxp,pca9575";
 				reg = <0x21>;
 				gpio-controller;
@@ -186,5 +196,18 @@
 				hdd-pwren3-hog { gpio-hog; gpios = <3 0>; output-high; line-name = "hdd-pwren3"; };
 			};
 		};
+	};
+
+	/* Named LEDs -> the `led` command (led <label> on|off, led list). All
+	 * default-on so a running our-U-Boot lights the panel. pca9575-backed only
+	 * for now: SFP (@0x20 pin2) + bay1-4 fault (@0x21 lines12-15, orange).
+	 * Logo (al_gpio) + bay activity (SGPO) LEDs need those driver ports. */
+	leds {
+		compatible = "gpio-leds";
+		led-d1 { label = "d1"; gpios = <&i2c_gpio1 12 0>; default-state = "on"; };
+		led-d2 { label = "d2"; gpios = <&i2c_gpio1 13 0>; default-state = "on"; };
+		led-d3 { label = "d3"; gpios = <&i2c_gpio1 14 0>; default-state = "on"; };
+		led-d4 { label = "d4"; gpios = <&i2c_gpio1 15 0>; default-state = "on"; };
+		led-sfp { label = "sfp"; gpios = <&i2c_gpio0 2 0>; default-state = "on"; };
 	};
 };
