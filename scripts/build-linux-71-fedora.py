@@ -92,9 +92,30 @@ def adapt_sgpo(mpath):
     pathlib.Path(f).write_text(t)
 
 
+def stage_dts():
+    """Copy the repo-tracked DTS + DTSI into the kernel tree so the build ALWAYS
+    compiles the tracked source. Previously only build-linux-71-ea16.py staged the
+    board DTS; running this script alone compiled whatever stale copy was last left
+    in the kernel tree -> edits to dts/ silently didn't take ("bugs keep coming
+    back"). Repo dts/ is now the single source of truth (dts + the alpine-v2.dtsi
+    include). Reference boards still come from PORT."""
+    amazon = os.path.join(SRC, "arch/arm64/boot/dts/amazon")
+    staged = []
+    for f in sorted(os.listdir(os.path.join(REPO, "dts"))):
+        if f.endswith((".dts", ".dtsi")):
+            shutil.copy(os.path.join(REPO, "dts", f), amazon)
+            staged.append(f)
+    for f in ("dts/alpine-v2-ubnt-unvr.dts", "dts/alpine-v2-ubnt-udmpro.dts"):
+        s = os.path.join(PORT, f)
+        if os.path.exists(s):
+            shutil.copy(s, amazon)
+    log(f"staged DTS/DTSI from repo dts/: {', '.join(staged)}")
+
+
 def build():
     os.makedirs(OUT, exist_ok=True)
     configure()
+    stage_dts()
     kv = kver()
     log(f"KVER={kv}")
     run(["make", "-C", SRC, f"-j{NPROC}", "Image", "dtbs", "modules"])

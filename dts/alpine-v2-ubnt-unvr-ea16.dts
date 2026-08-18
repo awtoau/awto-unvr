@@ -282,13 +282,28 @@
 			interrupts = <GIC_SPI 21 IRQ_TYPE_LEVEL_HIGH>;
 			clocks = <&sbclk>;
 			clock-frequency = <100000>;
+			/* SDA hold = 300 ns, from the stock working DTB (live.dts:255,
+			 * i2c-sda-hold-time-ns=0x12c). Without it the DW driver reuses the
+			 * leftover DW_IC_SDA_HOLD register value (U-Boot/reset), which is
+			 * too short and makes the timing-fussy s35390a RTC lose arbitration
+			 * / hold SDA -> whole-bus wedge + `controller timed out` flood.
+			 * The tolerant devices (adt7475/EEPROM/PCA9575) never noticed.
+			 * (stock's i2c-*-scl-*cnt-raw props are ACPI/vendor-only; mainline
+			 * computes SCL counts itself, so only the hold time was missing.) */
+			i2c-sda-hold-time-ns = <300>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 
-			/* PCA9546 4-channel I2C mux */
+			/* PCA9546 4-channel I2C mux.
+			 * idle-disconnect: deselect all channels between accesses so a
+			 * stuck downstream device (the s35390a on ch0 can hold SDA after
+			 * an interrupted transfer — see docs/rtc-s35390a-fault.md) cannot
+			 * persistently poison the main bus / ch3. Reduces exposure; does
+			 * NOT recover a held ch0 (that needs the RTC clocked/power-cycled). */
 			i2c_mux: i2c-mux@71 {
 				compatible = "nxp,pca9546";
 				reg = <0x71>;
+				i2c-mux-idle-disconnect;
 				#address-cells = <1>;
 				#size-cells = <0>;
 
