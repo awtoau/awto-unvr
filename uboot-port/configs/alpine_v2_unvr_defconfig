@@ -30,3 +30,30 @@ CONFIG_SYS_ALT_MEMTEST=y
 # runtime `mtest <start> <end>` overrides for any bank incl. 0x2_00000000.
 CONFIG_SYS_MEMTEST_START=0x10000000
 CONFIG_SYS_MEMTEST_END=0x40000000
+# --- SATA/SSD boot: self-enumerate the internal PCIe (ECAM @0xfbc00000),
+# assign BARs ourselves, bind class-based AHCI-PCI, mount ext4. Assume nothing
+# from stock U-Boot. Mainline AHCI issues the SSS/SUD spin-up stock U-Boot omits.
+CONFIG_PCI=y
+CONFIG_PCIE_ECAM_GENERIC=y
+CONFIG_CMD_PCI=y
+CONFIG_BLK=y
+CONFIG_SCSI=y
+CONFIG_AHCI=y
+CONFIG_SCSI_AHCI=y
+CONFIG_AHCI_PCI=y
+CONFIG_CMD_SCSI=y
+CONFIG_PARTITIONS=y
+CONFIG_EFI_PARTITION=y
+CONFIG_DOS_PARTITION=y
+CONFIG_FS_EXT4=y
+CONFIG_CMD_EXT4=y
+CONFIG_CMD_FS_GENERIC=y
+# --- I2C + GPIO: power the SATA bays (PCA9575 @0x21 hog) before AHCI scan ---
+CONFIG_CLK=y
+CONFIG_DM_I2C=y
+CONFIG_SYS_I2C_DW=y
+CONFIG_CMD_I2C=y
+CONFIG_DM_GPIO=y
+CONFIG_DM_PCA953X=y
+CONFIG_CMD_GPIO=y
+CONFIG_GPIO_HOG=y

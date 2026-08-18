@@ -74,6 +74,14 @@
 		      <0x2 0x00000000 0x0 0x40000000>;
 	};
 
+	/* System-bus clock (500 MHz) — feeds the DW I2C IP so its 100 kHz
+	 * dividers are computed against the real rate, not the 166 MHz fallback. */
+	sbclk: sbclk {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <500000000>;
+	};
+
 	gic: interrupt-controller@f0200000 {
 		compatible = "arm,gic-v3";
 		#interrupt-cells = <3>;
@@ -116,6 +124,67 @@
 			reg-shift = <2>;
 			reg-io-width = <4>;
 			status = "okay";
+		};
+
+		/*
+		 * Internal PCIe host — an ECAM-compatible window at 0xfbc00000
+		 * fronting the SoC's integrated PCI endpoints (bus 0 only): 2×
+		 * AHCI SATA (1c36:0031, class AHCI 1.0), eth, crypto, DMA. Linux
+		 * uses "pci-host-ecam-generic" here; U-Boot's PCIE_ECAM_GENERIC
+		 * binds the same. We ENUMERATE OURSELVES + assign BARs — never
+		 * rely on stock U-Boot's enumeration (it doesn't exist standalone).
+		 *   reg    = ECAM config space (1 MB, one 4 KB window per devfn)
+		 *   ranges = 32-bit non-prefetch MMIO, PCI 0xfe000000 -> CPU 1:1, 16 MB
+		 * MSI/interrupts omitted: U-Boot polls AHCI.
+		 * Annapurna extra NOT here yet: AXI SMCC snoop (cfg 0x110-0x170) +
+		 * APP_CONTROL (0x220) for cache-coherent DMA — add via a board hook
+		 * if AHCI DMA reads come back incoherent. (pcie-al-internal.c ref.)
+		 */
+		pci@fbc00000 {
+			compatible = "pci-host-ecam-generic";
+			device_type = "pci";
+			#address-cells = <3>;
+			#size-cells = <2>;
+			#interrupt-cells = <1>;
+			reg = <0x0 0xfbc00000 0x0 0x100000>;
+			ranges = <0x02000000 0x0 0xfe000000  0x0 0xfe000000  0x0 0x01000000>;
+			bus-range = <0x00 0x00>;
+		};
+
+		/*
+		 * I2C "i2c-pld" (DesignWare) @ fd880000, 100 kHz. Hosts the PCA9575
+		 * GPIO expanders. We need @0x21 to POWER THE SATA BAYS before AHCI:
+		 * on a warm reset the expander drops its outputs, so the drives are
+		 * unpowered and every SATA link times out. Same hog the kernel DTS
+		 * uses (bays 1-4 = lines 0-3, active-high). This is the "just power
+		 * the drive" step — replicated from upstream, not invented.
+		 */
+		i2c@fd880000 {
+			compatible = "snps,designware-i2c";
+			reg = <0x0 0xfd880000 0x0 0x1000>;
+			clocks = <&sbclk>;
+			/* 400 kHz (Fast-mode) = rated max for THIS bus: PCA9575 alone
+			 * does 1 MHz (Fm+) but the shared PCA9546 mux + AT24C64 cap at
+			 * 400 kHz. Kernel runs 100 kHz (conservative); we run the max. */
+			clock-frequency = <400000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "okay";
+
+			gpio@21 {
+				compatible = "nxp,pca9575";
+				reg = <0x21>;
+				gpio-controller;
+				#gpio-cells = <2>;
+
+				/* One hog per line — U-Boot's gpio-hog only takes the
+				 * FIRST gpio in a list, so a single node with 4 gpios
+				 * powered only bay 1. Bays 1-4 = lines 0-3, active-high. */
+				hdd-pwren0-hog { gpio-hog; gpios = <0 0>; output-high; line-name = "hdd-pwren0"; };
+				hdd-pwren1-hog { gpio-hog; gpios = <1 0>; output-high; line-name = "hdd-pwren1"; };
+				hdd-pwren2-hog { gpio-hog; gpios = <2 0>; output-high; line-name = "hdd-pwren2"; };
+				hdd-pwren3-hog { gpio-hog; gpios = <3 0>; output-high; line-name = "hdd-pwren3"; };
+			};
 		};
 	};
 };
