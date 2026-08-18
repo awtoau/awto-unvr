@@ -91,7 +91,7 @@ needs SPL-from-SRAM.
 ## 3. Device tree approach
 
 - **Stage-1 DTS:** hand-written minimal, self-contained (no Linux include chain):
-  `arch/arm/dts/alpine-v2-unvr-uboot.dts` — cpus(4×A57)+PSCI+GIC-v3+arch-timer+UART0+memory.
+  `arch/arm/dts/awto-alpine-v2-unvr-uboot.dts` — cpus(4×A57)+PSCI+GIC-v3+arch-timer+UART0+memory.
   All addresses from `docs/hardware.md` / the Linux `amazon/alpine-v2.dtsi`. Built ✅.
 - **UART0** absolute `0xfd883000`, `ns16550a`, `reg-shift=2`, `reg-io-width=4`,
   `clock-frequency=500000000` (from `amazon/alpine-v2.dtsi:160`; the Linux node sits at bus
@@ -242,12 +242,12 @@ Files:
 - `uboot-port/include/configs/alpine.h` — minimal.
 - `uboot-port/configs/alpine_v2_unvr_defconfig` — `TARGET_ALPINE_V2_UNVR`, `TEXT_BASE=0x01100000`,
   `INIT_SP=0x05000000`, 2 DRAM banks, `ns16550`+`DM_SERIAL`, `GIC_V3`, `NO_NET`.
-- `uboot-port/arch/dts/alpine-v2-unvr-uboot.dts` — the Stage-1 DTS (§3).
+- `uboot-port/arch/dts/awto-alpine-v2-unvr-uboot.dts` — the Stage-1 DTS (§3).
 
 **Build result (v2026.07, `aarch64-linux-gnu-gcc 16.1.1`):**
 - `alpine_v2_unvr_defconfig` accepted ✅ (board Kconfig wiring valid).
 - Full build **OK ✅** → `u-boot` = ARM aarch64 ELF; `u-boot-dtb.bin` = **321 KB** (the
-  `go 0x1100000` payload); our `alpine.o` + `alpine-v2-unvr-uboot.dtb` (5.7 KB) compiled in;
+  `go 0x1100000` payload); our `alpine.o` + `awto-alpine-v2-unvr-uboot.dtb` (5.7 KB) compiled in;
   `TEXT_BASE=0x01100000`, `ARM64`, `SYS_NS16550`, `DM_SERIAL` all set.
 
 **Toolchain/env gotcha (blocked the first two builds):** OpenSSL **3.5** (Fedora 44) removed

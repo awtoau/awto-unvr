@@ -257,12 +257,42 @@
 				pagesize = <32>;
 			};
 
-			/* PCA9546 i2c mux @0x71 (present, probes) gates: ch0 -> s35390a
-			 * RTC @0x30, ch3 -> adt7475 monitor @0x2e. NODE DELIBERATELY OMITTED
-			 * from our U-Boot: every behind-mux access times out / hangs the DW
-			 * bus (same regression Linux 7.1 hits — docs/i2c-map.md), and neither
-			 * device is needed to boot. Left as a bare device (`i2c probe` sees
-			 * 0x71) — do NOT add mux children until the behind-mux timeout is fixed. */
+			/* PCA9546 i2c mux @0x71 as real child buses so `i2c bus` /
+			 * `i2c dev <n>; i2c probe` scan each channel (needs I2C_MUX +
+			 * I2C_MUX_PCA954x). ch0 -> s35390a RTC @0x30 + SFP EEPROM @0x50;
+			 * ch3 -> adt7475 FAN CONTROLLER @0x2e; ch1/ch2 empty. The mux
+			 * uclass deselects (writes 0x00) after every access, so a wedged
+			 * ch0 can't hold the parent bus between transfers. Only touch ch0
+			 * deliberately — the s35390a can still hold SDA mid-transfer. */
+			i2c_mux: i2c-mux@71 {
+				compatible = "nxp,pca9546";
+				reg = <0x71>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				i2c@0 {
+					reg = <0>;
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					rtc@30 {
+						compatible = "sii,s35390a";
+						reg = <0x30>;
+					};
+				};
+
+				i2c@3 {
+					reg = <3>;
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					/* adt7475 PWM fan controller (temp/voltage + fan drive) */
+					adt7475@2e {
+						compatible = "adi,adt7475";
+						reg = <0x2e>;
+					};
+				};
+			};
 		};
 
 		/* Second DW i2c "i2c-gen" @0xfd894000. Carries the 2x RPS ORing power

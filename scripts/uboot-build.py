@@ -38,7 +38,7 @@ FILES = {
     "board/annapurna/alpine/pl061.c":      "board/annapurna/alpine/pl061.c",
     "include/configs/alpine.h":            "include/configs/alpine.h",
     "configs/alpine_v2_unvr_defconfig":    "configs/alpine_v2_unvr_defconfig",
-    "arch/dts/alpine-v2-unvr-uboot.dts":   "arch/arm/dts/alpine-v2-unvr-uboot.dts",
+    "arch/dts/awto-alpine-v2-unvr-uboot.dts": "arch/arm/dts/awto-alpine-v2-unvr-uboot.dts",
 }
 
 KCONFIG = os.path.join(TREE, "arch/arm/Kconfig")
@@ -92,7 +92,7 @@ def unstage():
     if os.path.isdir(board):
         shutil.rmtree(board)
     for dst in ("include/configs/alpine.h", "configs/alpine_v2_unvr_defconfig",
-                "arch/arm/dts/alpine-v2-unvr-uboot.dts"):
+                "arch/arm/dts/awto-alpine-v2-unvr-uboot.dts"):
         p = os.path.join(TREE, dst)
         if os.path.exists(p):
             os.remove(p)

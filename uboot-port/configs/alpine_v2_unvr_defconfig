@@ -6,7 +6,7 @@ CONFIG_CUSTOM_SYS_INIT_SP_ADDR=0x05000000
 CONFIG_SYS_MALLOC_LEN=0x400000
 CONFIG_NR_DRAM_BANKS=2
 CONFIG_ENV_SIZE=0x10000
-CONFIG_DEFAULT_DEVICE_TREE="alpine-v2-unvr-uboot"
+CONFIG_DEFAULT_DEVICE_TREE="awto-alpine-v2-unvr-uboot"
 CONFIG_SYS_LOAD_ADDR=0x02000000
 # -1 = never autoboot: our U-Boot always stops at its prompt on start ("stop on
 # reset"). Prevents auto-running bootcmd (which can hang on a bad bootm before we
@@ -80,6 +80,12 @@ CONFIG_CLK=y
 CONFIG_DM_I2C=y
 CONFIG_SYS_I2C_DW=y
 CONFIG_CMD_I2C=y
+# PCA9546 mux (@0x71) as real child buses: `i2c bus` enumerates ch0-ch3 and
+# each is probeable via `i2c dev <n>; i2c probe`. Without this the mux is a bare
+# 0x71 device and behind-mux chips (RTC/SFP/adt7475) need manual register pokes.
+# Driver from mainline (drivers/i2c/muxes/pca954x.c).
+CONFIG_I2C_MUX=y
+CONFIG_I2C_MUX_PCA954x=y
 CONFIG_DM_GPIO=y
 CONFIG_DM_PCA953X=y
 CONFIG_CMD_GPIO=y
