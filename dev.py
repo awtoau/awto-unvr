@@ -660,6 +660,77 @@ def cmd_clean(_extra: list[str]) -> int:
     return 0
 
 
+# --------------------------------------------------------------------------
+# Build + box: wrap the U-Boot / Fedora builds and the chainload flow so a
+# session runs one command instead of re-deriving the tftp + catch dance.
+# --------------------------------------------------------------------------
+TFTP_ROOT = TMP / "tftp"
+CHAINLOAD_BIN = TFTP_ROOT / "u-boot-chainload.bin"
+UBOOT_BIN = TMP / "uboot-build" / "u-boot.bin"
+
+
+def _run_script(rel: str, extra: list[str]) -> int:
+    p = REPO / rel
+    if not p.exists():
+        log(f"{rel} not found", "ERROR")
+        return 1
+    cmd = [sys.executable, str(p), *extra]
+    log("run: " + " ".join(cmd))
+    return subprocess.call(cmd, cwd=REPO)
+
+
+@command("build our U-Boot chainload image (scripts/uboot-build.py)",
+         args="[--clean]", kind="action")
+def cmd_build_uboot(extra: list[str]) -> int:
+    return _run_script("scripts/uboot-build.py", extra)
+
+
+@command("build the Fedora 7.1 kernel + DTB + al_* modules "
+         "(scripts/build-linux-71-fedora.py)", kind="action")
+def cmd_build_fedora(extra: list[str]) -> int:
+    return _run_script("scripts/build-linux-71-fedora.py", extra)
+
+
+def _ensure_tftpd(port: int = 69) -> None:
+    """Start scripts/tftpd.py serving tmp/tftp if nothing is bound on `port`.
+    Waits for the bind: expected <100 ms, bounded 40x50ms=2s, then warn+proceed
+    (the chainload catch loop is long enough to tolerate a late bind)."""
+    def bound() -> bool:
+        r = subprocess.run(["ss", "-lun", f"sport = :{port}"],
+                           capture_output=True, text=True)
+        return "UNCONN" in r.stdout
+    if bound():
+        return
+    TFTP_ROOT.mkdir(parents=True, exist_ok=True)
+    log("starting tftpd (root tmp/tftp)")
+    subprocess.Popen([sys.executable, str(REPO / "scripts" / "tftpd.py"),
+                      "--root", "tmp/tftp", "--port", str(port)],
+                     cwd=REPO, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                     start_new_session=True)
+    for _ in range(40):
+        if bound():
+            return
+        time.sleep(0.05)
+    log("tftpd not bound after 2s - continuing anyway", "WARN")
+
+
+@command("stage the built U-Boot + chainload it onto the box "
+         "(tftpd + catch stock + tftpboot + go)",
+         args="[chainload.tcl]", kind="action")
+def cmd_chainload(extra: list[str]) -> int:
+    if not UBOOT_BIN.exists():
+        log(f"no {UBOOT_BIN.relative_to(REPO)} - run ./dev.py build-uboot first",
+            "ERROR")
+        return 1
+    TFTP_ROOT.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(UBOOT_BIN, CHAINLOAD_BIN)
+    log(f"staged {CHAINLOAD_BIN.relative_to(REPO)} ({UBOOT_BIN.stat().st_size} bytes)")
+    _ensure_tftpd()
+    tcl = extra[0] if extra else "scripts/chainload-and-test.tcl"
+    log(f"chainloading via {tcl} (reset the box now to hit stock U-Boot)")
+    return cmd_console_tcl([tcl])
+
+
 @command("fail-fast pre-commit gate: " + " + ".join(GATE), kind="aggregate")
 def cmd_gate(_extra: list[str]) -> int:
     for name in GATE:
