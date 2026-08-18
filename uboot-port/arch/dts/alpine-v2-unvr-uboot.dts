@@ -153,21 +153,52 @@
 			bus-range = <0x00 0x00>;
 		};
 
-		/* SoC GPIO (PL061). gpio3=fd88a000 (lines 24-31), gpio4=fd88b000
-		 * (lines 32-39). "arm,pl061" only (drop primecell -> no AMBA needed).
-		 * Carries: ulogo_blue (gpio3.7), ulogo_white (gpio4.5), rps_prnt
-		 * (gpio4.1), 12v_lp (gpio4.2), reset button (gpio4.6). */
+		/* SoC GPIO (PL061), 6 banks × 8 = 48 lines. "arm,pl061" only (drop
+		 * primecell -> no AMBA needed). gpio-line-names = the live MUIO
+		 * pinmux map (read 2026-08-18, docs/gpio-map.md) so `gpio status`
+		 * self-labels every ball: mux func 0=GPIO / nand / uart2(RPS) /
+		 * sgpo / eth-led. "spare*" = GPIO-mode, no known consumer (SW1/SW2/
+		 * strap candidates). NAND-bus lines named so they're not mistaken
+		 * for free. */
+		gpio0: gpio@fd887000 {
+			compatible = "arm,pl061"; reg = <0x0 0xfd887000 0x0 0x1000>;
+			gpio-controller; #gpio-cells = <2>;
+			gpio-line-names = "sfp-25g-led", "spare1", "spare2", "spare3",
+					  "spare4", "spare5", "nand-d0", "nand-d1";
+		};
+		gpio1: gpio@fd888000 {
+			compatible = "arm,pl061"; reg = <0x0 0xfd888000 0x0 0x1000>;
+			gpio-controller; #gpio-cells = <2>;
+			gpio-line-names = "nand-d2", "nand-d3", "nand-d4", "nand-d5",
+					  "nand-d6", "nand-d7", "nand-d8", "nand-d9";
+		};
+		gpio2: gpio@fd889000 {
+			compatible = "arm,pl061"; reg = <0x0 0xfd889000 0x0 0x1000>;
+			gpio-controller; #gpio-cells = <2>;
+			gpio-line-names = "nand-d10", "nand-d11", "nand-d12", "nand-cs",
+					  "spare20", "sgpo", "spare22", "spare23";
+		};
+		gpio5: gpio@fd897000 {
+			compatible = "arm,pl061"; reg = <0x0 0xfd897000 0x0 0x1000>;
+			gpio-controller; #gpio-cells = <2>;
+			gpio-line-names = "spare40", "spare41", "hdd-force-pwr", "spare43",
+					  "spare44", "spare45", "spare46", "spare47";
+		};
 		gpio3: gpio@fd88a000 {
 			compatible = "arm,pl061";
 			reg = <0x0 0xfd88a000 0x0 0x1000>;
 			gpio-controller;
 			#gpio-cells = <2>;
+			gpio-line-names = "sgpo", "sgpo", "uart2-rps-rx", "uart2-rps-tx",
+					  "spare28", "spare29", "eth-led", "ulogo-blue";
 		};
 		gpio4: gpio@fd88b000 {
 			compatible = "arm,pl061";
 			reg = <0x0 0xfd88b000 0x0 0x1000>;
 			gpio-controller;
 			#gpio-cells = <2>;
+			gpio-line-names = "spare32", "rps-prnt", "12v-lp", "spare35",
+					  "spare36", "ulogo-white", "reset-btn", "spare39";
 		};
 
 		/*
