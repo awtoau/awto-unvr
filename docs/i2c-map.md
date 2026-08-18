@@ -30,28 +30,42 @@ it silently *skips* 0x00-0x02/0x28-0x2f/0x40-0x4f unless `-r` read-probe is forc
 - Bay-activity LEDs are **not** i2c: SGPO `fd8b4000` → external **74VHC595 (UB20)** shift
   register, sgpo lines 16-23. See [gpio-switches-leds.md](gpio-switches-leds.md).
 
-## KNOWN BUG — behind-mux i2c times out on mainline 7.1
+## KNOWN BUG — mux **ch0 (s35390a RTC)** wedges the i2c bus
 
-- **Every device behind the PCA9546 mux times out**: RTC (ch0) probe `-5`, SFP EEPROM 0x50
-  (ch0) "Read failed", adt7475 (ch3) probe `-110` (reads "ADT7475 rev 2" then times out).
-  Direct bus-0 devices (0x20/0x21/0x57/0x71) work.
-- **Stock 5.1 reads all of these fine** → mainline-7.1 regression in the i2c-designware /
-  pca954x path, not hardware. DT is identical to the reference (plain `nxp,pca9546`, no
-  `i2c-mux-idle-disconnect`).
+Corrected 2026-08-18 (an earlier note wrongly said "all behind-mux fails" — it doesn't).
+
+- **Behind-mux WORKS.** ch3 **adt7475 reads fine at 100 kHz** (`0x3d = 0x75`), and a
+  nonexistent address on ch3 NAKs cleanly + the bus survives (deselect + main-bus read both
+  OK after). So the mux, DW i2c, timing, and NAK-handling are all fine.
+- **Only ch0 is bad.** Selecting ch0 and touching *any* address (even a nonexistent one)
+  **holds SDA low at the pin level** and wedges the whole bus — `i2c reset` can't clear it,
+  only a SoC reset. ch0's device is the **s35390a RTC** (0x30); the SFP EEPROM (0x50) shares
+  ch0, so it's collateral. Reproduces in stock U-Boot, our U-Boot, and Linux 7.1.
+- **A healthy s35390a does not hold SDA** — a browned-out one does. Prime suspect: a
+  **discharged MS621 rechargeable backup cell** leaving the RTC in a bad state. Fits every
+  observation (RTC-only, pin-level hold, unrecoverable by re-init, all three i2c stacks).
+- **No software recovery available in-controller:** the AL-324 DW i2c core is **v1.20**
+  (IC_COMP_VERSION `0x3132302a`); it lacks hardware SDA-stuck-recovery (IC_ENABLE[3], a
+  v2.00a+ feature — bit doesn't stick), and the driver refuses to clock a bus it sees busy
+  (IC_STATUS idle, TX_ABRT_SOURCE 0, yet transfers return -121/EREMOTEIO). Only a GPIO
+  bit-bang deblock of the pld SCL/SDA could free it — and the pld bus isn't in the MUIO GPIO
+  map, so that route likely doesn't exist.
 - **Symptom = console flood.** al_eth's link manager polls the SFP EEPROM (0x50, ch0) every
-  ~2 s (`al_eth_module_detect` → `al_eth_i2c_byte_read`); each poll times out → endless
-  `i2c_designware fd880000.i2c: controller timed out`. Confirmed by ftrace stack.
-- **Mitigation:** keep the SFP port (`enp0s2`) **down** until fixed — stops the flood (0 new
-  timeouts), but the SFP is unusable meanwhile. It re-floods when the port is up.
-- **Candidate fixes (untested):** add `i2c-mux-idle-disconnect` to the mux node + rebuild the
-  Fedora DTB (mux-channel race under al_eth's concurrent polling); or an al_eth SFP-i2c
-  retry/backoff so an unreadable module doesn't hammer at 2 s. Also breaks RTC + hwmon fan
-  control, so worth a real fix.
+  ~2 s (`al_eth_module_detect` → `al_eth_i2c_byte_read`); each poll hits the wedged ch0→
+  endless `i2c_designware fd880000.i2c: controller timed out`. Confirmed by ftrace stack.
+- **Mitigation:** unbind al_eth from the SFP port — `echo 0000:00:02.0 > /sys/bus/pci/drivers/al_eth/unbind`
+  (or keep `enp0s2` down). Stops the flood (0 new timeouts); RJ45/SSH unaffected. Not persistent.
+- **Real fix path:** confirm/charge the MS621 cell first (path 2 — costs nothing, box charges
+  it while running). If the cell is fine and ch0 still wedges → genuine s35390a fault, then
+  invest in a GPIO bit-bang i2c deblock. Also add `i2c-mux-idle-disconnect` regardless, so a
+  wedged ch0 can't poison the main bus / other channels.
 
 ## Re-scan recipe
 
 - Linux: `i2cdetect -l`; per-bus map `for d in /sys/bus/i2c/devices/*; do echo $(basename $d) $(cat $d/name); done`.
   Force read-probe for hidden devices: `i2cdetect -y -r <bus>` (behind-mux buses can stall on
   per-address timeouts — bounded ranges only).
-- U-Boot: `i2c dev <n>; i2c probe`. Do **not** hand-force the mux channel (`i2c mw 0x71 …`)
-  while LED blink is running — it hangs the DW bus (needs SP805 reset). Use a mux DT node instead.
+- U-Boot: `i2c dev <n>; i2c probe`. ch3 is reachable via `i2c mw 0x71 0 8 1` then
+  `i2c md 0x2e 3d 1` (adt7475 = 0x75). Do **not** select ch0 (`i2c mw 0x71 0 1 1`) + read —
+  it wedges the bus and needs an SP805 reset. (Our U-Boot LED blink is now solid-on so a
+  wedge no longer floods — see defconfig PREBOOT.)
