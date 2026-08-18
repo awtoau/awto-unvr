@@ -13,7 +13,7 @@ CONFIG_SYS_LOAD_ADDR=0x02000000
 # have OF_LIBFDT + a working sysreset). Boot on demand with `run bootcmd` / `boot`.
 CONFIG_BOOTDELAY=-1
 CONFIG_USE_PREBOOT=y
-CONFIG_PREBOOT="led d1 blink 300; led d2 blink 300; led d3 blink 300; led d4 blink 300"
+CONFIG_PREBOOT="led d1 blink 300; led d2 blink 300; led d3 blink 300; led d4 blink 300; led white blink 300; led blue blink 300; led sfp blink 300"
 CONFIG_HUSH_PARSER=y
 # Kernel cmdline — bootm fixes this into the DTB's /chosen/bootargs. Matches the
 # live /proc/cmdline (rootfs on SSD sda2 by PARTUUID). Without it: no root -> panic.
@@ -85,6 +85,7 @@ CONFIG_LED=y
 CONFIG_LED_GPIO=y
 CONFIG_CMD_LED=y
 CONFIG_LED_BLINK=y
+CONFIG_LED_SW_BLINK=y
 CONFIG_CYCLIC=y
 # diagnostics (were the 4 "Unknown command" gaps)
 CONFIG_CMD_DM=y
