@@ -8,12 +8,12 @@ it silently *skips* 0x00-0x02/0x28-0x2f/0x40-0x4f unless `-r` read-probe is forc
 
 | Linux bus | Controller / source | Devices |
 |-----------|---------------------|---------|
-| i2c-0 | DW @0xfd880000 "i2c-pld" | 0x20, 0x21 PCA9575; 0x57 24C64 EEPROM; 0x71 PCA9546 mux |
-| i2c-1 | DW @0xfd894000 "i2c-gen" | **empty** AND unusable — pins 30/31 muxed to ETH-LED/GPIO, not I2C_GEN (func2). Needs a pinmux change to use (#64) |
+| i2c-0 | DW @0xfd880000 "i2c-pld" (our dts `i2c_pld`) | 0x20, 0x21 PCA9575; 0x57 24C64 EEPROM; 0x71 PCA9546 mux |
+| i2c-1 | DW @0xfd894000 "i2c-gen" (our dts `i2c_gen`) | Carries the **2× RPS ORing power monitors** (12 V + 54 V rails — U48-area, physically present, powered off the mainboard ORing FET path). **Unreachable so far**: pins 30/31 aren't muxed to I2C_GEN (func2), so a probe can't drive the bus — an empty scan is the pinmux, NOT absence (#64). |
 | i2c-2 | mux ch0 | 0x30 s35390a **RTC**; 0x50 **SFP module EEPROM** (al_eth, not in DT) |
 | i2c-3 | mux ch1 | empty |
 | i2c-4 | mux ch2 | empty |
-| i2c-5 | mux ch3 | 0x2e **adt7475** fan/temp/voltage monitor |
+| i2c-5 | mux ch3 | 0x2e **adt7475** — the **PWM fan controller** (temp/voltage sense + fan drive) |
 
 ## Chips (physical, photo-confirmed)
 
@@ -23,8 +23,15 @@ it silently *skips* 0x00-0x02/0x28-0x2f/0x40-0x4f unless `-r` read-probe is forc
   (UB1), `_231415` (U10).
 - **0x21** = bay control: pwren lines 0-3 (gpio-hog output-high), presence 4-7, fault LEDs 12-15.
 - **0x20** = SFP+ 1G link LED (pin 2) + straps.
-- **adt7475** (U27, behind mux ch3) = the board **voltage/temp/fan monitor** ("the current
-  monitor"). rev 2. SENSORS_ADT7475.
+- **adt7475** (U27, behind mux ch3) = the **PWM fan controller** — 3 temp + 2 voltage inputs
+  drive 3 PWM fan outputs (stock env `slowfan` pokes 0x2e regs 0x30-0x32/0x5c-0x5e). rev 2.
+  SENSORS_ADT7475. NOT the RPS current monitor.
+- **2× RPS ORing power monitors** (INA/ISL class, V·I·P per rail) on the `i2c_gen` bus
+  (fd894000): one for the **12 V** rail, one for the **54 V** rail. Watch the on-board ORing
+  FET path (`Q536/Q537/Q14/Q59/Q590`, `docs/rps-subsystem.md`), so they are **powered and
+  present whether or not an external RPS module is plugged in** — the RPS input just ORs into
+  the same rail. Physical candidate **U48** (~10-pin QFN, RPS area — `docs/photo-catalog.md`).
+  Addr + exact part still open (#64); reachable only once pins 30/31 mux to I2C_GEN.
 - **s35390a** RTC (behind mux ch0), coin cell SII MS621.
 - **24C64** EEPROM @0x57 = DDR-config blob (reads 0x1c36-repeating, not plain SPD) — #67.
 - Bay-activity LEDs are **not** i2c: SGPO `fd8b4000` → external **74VHC595 (UB20)** shift
@@ -41,9 +48,14 @@ Corrected 2026-08-18 (an earlier note wrongly said "all behind-mux fails" — it
   **holds SDA low at the pin level** and wedges the whole bus — `i2c reset` can't clear it,
   only a SoC reset. ch0's device is the **s35390a RTC** (0x30); the SFP EEPROM (0x50) shares
   ch0, so it's collateral. Reproduces in stock U-Boot, our U-Boot, and Linux 7.1.
-- **A healthy s35390a does not hold SDA** — a browned-out one does. Prime suspect: a
-  **discharged MS621 rechargeable backup cell** leaving the RTC in a bad state. Fits every
-  observation (RTC-only, pin-level hold, unrecoverable by re-init, all three i2c stacks).
+- **Root cause = a dropped DT timing property, not a dead chip.** Mainline's ea16 DTB lost
+  `i2c-sda-hold-time-ns` (stock had 0x12c = 300 ns). Without it the DW driver reuses the
+  leftover DW_IC_SDA_HOLD value — too short — so the SDA data edge drifts into the SCL-high
+  window and the timing-fussy s35390a mis-reads a phantom START/STOP, aborts the transfer and
+  holds SDA (its datasheet "Reset After Communication Interruption", Fig 46). The tolerant
+  chips (adt7475/EEPROM/PCA9575) don't care; only the RTC does. Fix committed: restore
+  `i2c-sda-hold-time-ns = <300>` on both `i2c_pld` nodes. See [rtc-s35390a-fault.md](rtc-s35390a-fault.md).
+  The chip is fine — this was a validated production board.
 - **No software recovery available in-controller:** the AL-324 DW i2c core is **v1.20**
   (IC_COMP_VERSION `0x3132302a`); it lacks hardware SDA-stuck-recovery (IC_ENABLE[3], a
   v2.00a+ feature — bit doesn't stick), and the driver refuses to clock a bus it sees busy
@@ -55,9 +67,11 @@ Corrected 2026-08-18 (an earlier note wrongly said "all behind-mux fails" — it
   endless `i2c_designware fd880000.i2c: controller timed out`. Confirmed by ftrace stack.
 - **Mitigation:** unbind al_eth from the SFP port — `echo 0000:00:02.0 > /sys/bus/pci/drivers/al_eth/unbind`
   (or keep `enp0s2` down). Stops the flood (0 new timeouts); RJ45/SSH unaffected. Not persistent.
-- **Real fix path:** confirm/charge the MS621 cell first (path 2 — costs nothing, box charges
-  it while running). If the cell is fine and ch0 still wedges → genuine s35390a fault, then
-  invest in a GPIO bit-bang i2c deblock. Also add `i2c-mux-idle-disconnect` regardless, so a
+- **Real fix path:** restored `i2c-sda-hold-time-ns = <300>` (done) — this is the fix; the
+  RTC is a healthy validated part, not a browned-out cell. If a chip is *already* latched into
+  the SDA-hold state from a prior boot, clear it once with the datasheet recovery (START + 63
+  SCL clocks + STOP) — needs raw clocking (U-Boot board init or a `scl-gpios` bit-bang) since
+  the DW v1.20 core has no HW deblock. Keep `i2c-mux-idle-disconnect` on the PCA9546 so a
   wedged ch0 can't poison the main bus / other channels.
 
 ## Re-scan recipe

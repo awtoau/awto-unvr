@@ -265,10 +265,11 @@
 			 * 0x71) — do NOT add mux children until the behind-mux timeout is fixed. */
 		};
 
-		/* Second DW i2c "i2c-gen" @0xfd894000. Empty on ea16 (scanned live,
-		 * no devices — docs/i2c-map.md) but enabled so `i2c dev 1; i2c probe`
-		 * can confirm nothing hides here. Stock ea16 DTS marks it disabled;
-		 * we keep it live for RE. clock via sbclk, same 400 kHz. */
+		/* Second DW i2c "i2c-gen" @0xfd894000. Carries the 2x RPS ORing power
+		 * monitors (12V + 54V rails, U48-area — docs/i2c-map.md). A live probe
+		 * reads EMPTY, but that is the PINMUX not absence: pins 30/31 aren't
+		 * muxed to I2C_GEN (func2), so the controller can't drive the bus (#64).
+		 * Enabled anyway for RE. clock via sbclk, same 400 kHz. */
 		i2c@fd894000 {
 			compatible = "snps,designware-i2c";
 			reg = <0x0 0xfd894000 0x0 0x1000>;

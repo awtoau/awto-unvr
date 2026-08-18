@@ -1,6 +1,6 @@
 # RTC s35390a / ch0 i2c wedge — likely cause + the datasheet recovery
 
-Datasheet: [sources/S35390A_E.pdf](../sources/S35390A_E.pdf) (ABLIC Rev.4.2). Tests 2026-08-18.
+Datasheet: [sources/chips/S-35390A.pdf](../sources/chips/S-35390A.pdf) (ABLIC Rev.4.2), chip doc [docs/chips/s-35390a.md](chips/s-35390a.md). Tests 2026-08-18.
 
 ## One-line
 Something on PCA9546 mux **ch0 holds SDA low** and wedges the i2c bus. ch0's only device
