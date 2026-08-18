@@ -8,8 +8,10 @@
  */
 
 #include <config.h>
+#include <command.h>
 #include <dm.h>
 #include <fdtdec.h>
+#include <i2c.h>
 #include <init.h>
 #include <asm/armv8/mmu.h>
 #include <asm/global_data.h>
@@ -69,10 +71,78 @@ struct mm_region *mem_map = alpine_mem_map;
 
 int board_init(void)
 {
+	/* awto plus splash (figlet, standard font) */
+	puts("\n"
+	"                _                _           \n"
+	"  __ ___      _| |_ ___    _ __ | |_   _ ___ \n"
+	" / _` \\ \\ /\\ / / __/ _ \\  | '_ \\| | | | / __|\n"
+	"| (_| |\\ V  V /| || (_) | | |_) | | |_| \\__ \\\n"
+	" \\__,_| \\_/\\_/  \\__\\___/  | .__/|_|\\__,_|___/\n"
+	"                          |_|                \n\n");
+
 	/* Assert A57 debug-enable so the JTAG/SWD TAP is live (see above). */
 	writel(AL_DBG_ALL, (void __iomem *)AL_CPUS_SECURE);
 	return 0;
 }
+
+/* The S-35390A transmits every data byte LSB-first (bit-reversed). */
+static u8 s35_rev(u8 b)
+{
+	b = (b >> 4) | (b << 4);
+	b = ((b & 0xCC) >> 2) | ((b & 0x33) << 2);
+	b = ((b & 0xAA) >> 1) | ((b & 0x55) << 1);
+	return b;
+}
+
+/*
+ * Initialize the S-35390A RTC (0x30, behind PCA9546 mux ch0 on i2c bus 0):
+ * write STATUS1 RESET (B7) | 24H (B6) per its datasheet. Byte is bit-reversed
+ * on the wire. Selects mux ch0, writes, reads back STATUS1, deselects.
+ * Invoked by the `rtcinit` command (below), not automatically.
+ */
+static void rtc_s35390a_init(void)
+{
+	struct udevice *mux, *rtc;
+	u8 v, st;
+	int rc, rr, gm, gr, sel;
+
+	gm = i2c_get_chip_for_busnum(0, 0x71, 0, &mux);	/* mux control, no offset */
+	if (gm) {
+		printf("rtc-s35390a: get_chip mux=%d\n", gm);
+		return;
+	}
+
+	v = 0x01;					/* select mux ch0 FIRST */
+	sel = dm_i2c_write(mux, 0, &v, 1);
+
+	gr = i2c_get_chip_for_busnum(0, 0x30, 0, &rtc);	/* now reachable via ch0 */
+	if (gr) {
+		printf("rtc-s35390a: sel=%d get_chip rtc=%d\n", sel, gr);
+	} else {
+		v = s35_rev(0x80 | 0x40);		/* RESET | 24H, bit-reversed */
+		rc = dm_i2c_write(rtc, 0, &v, 1);
+		rr = dm_i2c_read(rtc, 0, &st, 1);
+		printf("rtc-s35390a: sel=%d RESET.wr=%d STATUS1.rd=%d val=0x%02x\n",
+		       sel, rc, rr, rr ? 0 : s35_rev(st));
+	}
+
+	v = 0x00;					/* deselect mux */
+	dm_i2c_write(mux, 0, &v, 1);
+}
+
+/*
+ * Manual command, NOT auto at boot: while the RTC is stuck (holding SDA on ch0),
+ * selecting ch0 + accessing 0x30 wedges the whole pld bus (pca9575 LEDs + bay
+ * power then fail). Run `rtcinit` deliberately once the RTC is reachable.
+ */
+static int do_rtcinit(struct cmd_tbl *cmdtp, int flag, int argc,
+		      char *const argv[])
+{
+	rtc_s35390a_init();
+	return 0;
+}
+U_BOOT_CMD(rtcinit, 1, 0, do_rtcinit,
+	   "initialize the s35390a RTC (write RESET via mux ch0)", "");
 
 int dram_init(void)
 {

@@ -217,6 +217,10 @@
 			 * does 1 MHz (Fm+) but the shared PCA9546 mux + AT24C64 cap at
 			 * 400 kHz. Kernel runs 100 kHz (conservative); we run the max. */
 			clock-frequency = <400000>;
+			/* SDA hold time = the stock board value (live.dts:
+			 * i2c-sda-hold-time-ns = 0x12c = 300 ns), which mainline dropped.
+			 * Restored for parity with stock. Effect on the RTC: unverified. */
+			i2c-sda-hold-time-ns = <300>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "okay";
