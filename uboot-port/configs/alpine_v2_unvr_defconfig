@@ -13,7 +13,11 @@ CONFIG_SYS_LOAD_ADDR=0x02000000
 # have OF_LIBFDT + a working sysreset). Boot on demand with `run bootcmd` / `boot`.
 CONFIG_BOOTDELAY=-1
 CONFIG_USE_PREBOOT=y
-CONFIG_PREBOOT="led d1 blink 300; led d2 blink 300; led d3 blink 300; led d4 blink 300; led white blink 300; led blue blink 300; led sfp blink 300"
+# Solid-on, NOT blink: the software blink is CYCLIC and re-writes the pca9575
+# expanders (@0x20/@0x21) forever. If the i2c bus wedges (e.g. the s35390a on
+# mux ch0 — docs/i2c-map.md), every blink cycle fails and FLOODS the console.
+# Panel LEDs still light; blink stays available as a manual `led <l> blink` cmd.
+CONFIG_PREBOOT="led d1 on; led d2 on; led d3 on; led d4 on; led white on; led blue on; led sfp on"
 CONFIG_HUSH_PARSER=y
 # Kernel cmdline — bootm fixes this into the DTB's /chosen/bootargs. Matches the
 # live /proc/cmdline (rootfs on SSD sda2 by PARTUUID). Without it: no root -> panic.

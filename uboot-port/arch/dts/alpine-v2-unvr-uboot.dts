@@ -243,6 +243,36 @@
 				hdd-pwren2-hog { gpio-hog; gpios = <2 0>; output-high; line-name = "hdd-pwren2"; };
 				hdd-pwren3-hog { gpio-hog; gpios = <3 0>; output-high; line-name = "hdd-pwren3"; };
 			};
+
+			/* DDR-config EEPROM @0x57 (AT24C64, 16-bit addr). Reads
+			 * 0x1c36-repeating — the DDR bootstrap blob (issue #67), not
+			 * plain SPD. Node lets `i2c md` use the right 2-byte offset. */
+			eeprom@57 {
+				compatible = "atmel,24c64";
+				reg = <0x57>;
+				pagesize = <32>;
+			};
+
+			/* PCA9546 i2c mux @0x71 (present, probes) gates: ch0 -> s35390a
+			 * RTC @0x30, ch3 -> adt7475 monitor @0x2e. NODE DELIBERATELY OMITTED
+			 * from our U-Boot: every behind-mux access times out / hangs the DW
+			 * bus (same regression Linux 7.1 hits — docs/i2c-map.md), and neither
+			 * device is needed to boot. Left as a bare device (`i2c probe` sees
+			 * 0x71) — do NOT add mux children until the behind-mux timeout is fixed. */
+		};
+
+		/* Second DW i2c "i2c-gen" @0xfd894000. Empty on ea16 (scanned live,
+		 * no devices — docs/i2c-map.md) but enabled so `i2c dev 1; i2c probe`
+		 * can confirm nothing hides here. Stock ea16 DTS marks it disabled;
+		 * we keep it live for RE. clock via sbclk, same 400 kHz. */
+		i2c@fd894000 {
+			compatible = "snps,designware-i2c";
+			reg = <0x0 0xfd894000 0x0 0x1000>;
+			clocks = <&sbclk>;
+			clock-frequency = <400000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "okay";
 		};
 	};
 
