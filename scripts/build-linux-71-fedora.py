@@ -112,8 +112,18 @@ def stage_dts():
     log(f"staged DTS/DTSI from repo dts/: {', '.join(staged)}")
 
 
+def check_dts_shared():
+    """Fail the build if the shared i2c timing facts drift between the two DTS
+    trees (docs/rtc-s35390a-fault.md). Guard until they are unified (#75)."""
+    chk = os.path.join(os.path.dirname(os.path.abspath(__file__)), "check-dts-shared.py")
+    if subprocess.run([sys.executable, chk]).returncode:
+        log("ABORT: DTS shared-fact check failed")
+        sys.exit(1)
+
+
 def build():
     os.makedirs(OUT, exist_ok=True)
+    check_dts_shared()
     configure()
     stage_dts()
     kv = kver()

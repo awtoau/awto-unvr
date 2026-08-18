@@ -137,10 +137,20 @@ def clean():
     unstage()
 
 
+def check_dts_shared():
+    """Fail the build if the shared i2c timing facts drift between the two DTS
+    trees (docs/rtc-s35390a-fault.md). Guard until they are unified (#75)."""
+    chk = os.path.join(os.path.dirname(os.path.abspath(__file__)), "check-dts-shared.py")
+    if subprocess.run([sys.executable, chk]).returncode:
+        log("ABORT: DTS shared-fact check failed")
+        sys.exit(1)
+
+
 if __name__ == "__main__":
     os.makedirs(os.path.dirname(LOG), exist_ok=True)
     if "--clean" in sys.argv:
         clean()
     else:
+        check_dts_shared()
         stage()
         sys.exit(build())
