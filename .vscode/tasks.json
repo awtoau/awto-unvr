@@ -30,7 +30,7 @@
       // Quit tio with Ctrl-t q. Raw log -> tmp/logs/tio-woomera.log.
       "label": "woomera: serial console (tio)",
       "type": "shell",
-      "command": "tio /dev/serial/by-id/usb-Silicon_Labs_CP2102_USB_to_UART_Bridge_Controller_0001-if00-port0 -b 115200 -S unix:${env:XDG_RUNTIME_DIR}/tio-unvr.sock -L --log-file ${workspaceFolder}/tmp/logs/tio-woomera.log --log-append --log-strip",
+      "command": "sh -c 'fuser -s /dev/serial/by-id/usb-Silicon_Labs_CP2102_USB_to_UART_Bridge_Controller_0001-if00-port0 2>/dev/null || rm -f ${env:XDG_RUNTIME_DIR}/tio-unvr.sock; exec tio /dev/serial/by-id/usb-Silicon_Labs_CP2102_USB_to_UART_Bridge_Controller_0001-if00-port0 -b 115200 -S unix:${env:XDG_RUNTIME_DIR}/tio-unvr.sock -L --log-file ${workspaceFolder}/tmp/logs/tio-woomera.log --log-append --log-strip'",
       "isBackground": true,
       "options": { "cwd": "${workspaceFolder}", "mcp": { "interactive": true } },
       "presentation": { "panel": "dedicated", "focus": true, "clear": true },
