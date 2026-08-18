@@ -13,6 +13,35 @@ to U-Boot. We **validated this works** manually — `scripts/reboot-to-uboot.tcl
 `al_reboot` registers a proper kernel **restart handler** that pokes the SP805, so
 `reboot`/`shutdown -r`/`systemctl reboot` Just Work.
 
+## Reset mechanism — RE-confirmed (2026-08-18)
+
+Deep source/disassembly dive (2 agents). **SP805 watchdog is THE canonical AL-324
+whole-SoC reset** — same registers stock U-Boot, stock Linux, and we all use.
+
+- **Canonical reset = SP805 `wdt0` @ `0xfd88c000`:** unlock `WDTLOCK(0xC00)=0x1ACCE551`,
+  `WDTLOAD(0x000)=1`, `WDTCONTROL(0x008)=INT_ENABLE|RESET_ENABLE`, spin. Used by:
+  - stock U-Boot `reset_cpu()` — GPL `board/annapurna-labs/common/al_board.c:190`.
+  - stock Linux `alpine_wdt_restart()` — GPL `drivers/power/reset/alpine-reboot.c:40`
+    (author Hani Ayoub @ Annapurna Labs), hooked via `arm_pm_restart` (:70).
+  - our `modules/al_reboot/al_reboot.c` (this driver) and our U-Boot `reset_cpu()`
+    (`uboot-port/board/annapurna/alpine/alpine.c`).
+- **PSCI `SYSTEM_RESET` (0x84000009) is NON-functional — do NOT use `SYSRESET_PSCI`.**
+  Proof is vendor code: Annapurna's own kernel **overrides** the auto-registered PSCI
+  restart with the watchdog poke (they wouldn't if PSCI reset worked). PSCI `VERSION`
+  + `CPU_ON` DO work (4 cores boot via PSCI). #51 hang = mainline 7.1 fires the
+  SYSTEM_RESET `smc`, the monitor no-ops it, and with no SP805 fallback it halts.
+- **Why the handler can't be read:** the resident EL3 monitor is installed by the
+  **boot ROM / preboot secure firmware**, NOT U-Boot. On this box U-Boot runs at **EL2**
+  (dmesg "All CPU(s) started at EL2"), its EL3-install path never executes, its `vbar`
+  is the stock panic vectors, and there are **0 `smc` instructions** in the 674 KB
+  U-Boot image. The monitor is absent from every recovered blob (U-Boot, al_boot, S2),
+  so SYSTEM_RESET's code is unreadable — but the vendor bypass is dispositive.
+- **`fabric_software_reset` @ `0xf007003c` is a dead end** (the "cleaner reset" candidate):
+  it's a **sub-block** reset — `LEVEL` field 0=fabric/1=GIC/2=SMMU, not the SoC. Present
+  on V2 (nb-service `0xf0070000`, same offset as V3) but **no code anywhere writes it**.
+  `cpus_software_reset` (`0xf0070024`) is per-core SMP bring-up only. No Alpine generation
+  (V1/V3/V4) uses anything but SP805 for whole-SoC reset.
+
 ## Files
 
 - **`/mnt/2tb/unvr-port-refs/linux-alpine-v2/modules/al_reboot/al_reboot.c`** — the driver.

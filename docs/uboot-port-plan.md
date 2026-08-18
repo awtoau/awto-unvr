@@ -117,6 +117,7 @@ driver | mainline status | glue/DT needed | port from
 **I2C** (DW `fd880000`,`fd894000`) | ✅ `designware_i2c` | DT `snps,designware-i2c` | direct
 **NAND** (`fa100000`, Micron MT29F8G08) | ❌ AL-NAND is a **custom** controller, not Denali | new raw-NAND driver | Annapurna `board/annapurna-labs/common/al_nand.c` + `early_nand.c`; kernel `al_nand`
 **GIC-v3 / timer / PSCI** | ✅ | DT nodes (have them) | direct
+**Reset (`reset`)** | ✅ done | `reset_cpu()` pokes SP805 `wdt0` @`0xfd88c000` (unlock/load/control INT\|RESET). NOT PSCI `SYSTEM_RESET` (unimplemented in the resident EL3 monitor — #51) nor `fabric_software_reset` (sub-block only). RE-confirmed, see [reboot-driver-handover.md](reboot-driver-handover.md) | stock `al_board.c:190`
 **MSI-X** (`al,alpine-msix`) | ❌ (not needed for U-Boot polled I/O) | skip for U-Boot | n/a
 **SerDes** (`fd8c0000`) | ❌ custom | only needed if we bring up PCIe/SATA PHY from reset (target 2); chainload inherits preboot's serdes | Annapurna `board/.../common/cmd_serdes*.c`; delroth `drivers/serdes/`
 **Thermal** (`fd860a00`) | ❌ custom | optional cmd | Annapurna `cmd_thermal.c`; delroth
