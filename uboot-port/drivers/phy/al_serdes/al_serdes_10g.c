@@ -111,6 +111,43 @@ static void __iomem *al_serdes_dt_base(const char *reg_name)
 	return (void __iomem *)(uintptr_t)addr;
 }
 
+/* ---- HSSP SerDes group D (the REAL SFP+ 10G lane) -------------------------
+ * CORRECTION (root cause of the 10G SError): the UNVR SFP+ 10G is on the HSSP
+ * SerDes complex, GROUP D (serdes-grp 3, lane 0), NOT the 25G complex that
+ * al_hal_serdes_25g targets. On this board the 25G complex (group E) is board-
+ * cfg SKIP / powered-down, so the 25G indirect reg model external-aborts on the
+ * first access. al_boot preboot already muxes + powers + clock-routes + KR/10G-
+ * configures group D (al_serdes_init_cores @ PBS 0xfd8a8000) before our U-Boot
+ * runs, so we RETARGET to group D and read status via the HSSP reg model - no
+ * firmware blob, no heavy re-init needed.
+ * Group base = complex base + offset; groups {A,B,C,D,E} = {0,0x400,0x800,0xc00,
+ * 0x2000}. HSSP regs: gen.version@0x0, gen.reg_addr@0x10, gen.reg_data@0x14. */
+#define AL_HSSP_GRP_D_OFF	0xc00		/* serdes-grp 3 (GRP_D) */
+#define AL_HSSP_GEN_VERSION	0x00
+#define AL_HSSP_GEN_REG_ADDR	0x10
+#define AL_HSSP_GEN_REG_DATA	0x14
+/* SRDS_CORE_REG_ADDR(page,type,offset) = (page<<13)|(type<<12)|offset */
+#define AL_HSSP_ADDR(page, type, off)	(((page) << 13) | ((type) << 12) | (off))
+#define AL_HSSP_TYPE_PMA	0
+#define AL_HSSP_RXRANDET_REG	41	/* PMA reg 41: RX random-data detect */
+#define AL_HSSP_RXRANDET_STAT	0x20	/* bit 5 set = signal detected */
+
+/* Group-D base (SFP+ lane) from the DT complex "serdes" base. */
+static void __iomem *al_hssp_grp_d_base(void)
+{
+	void __iomem *sbase = al_serdes_dt_base("serdes");	/* complex base */
+
+	return sbase ? sbase + AL_HSSP_GRP_D_OFF : NULL;
+}
+
+/* Indirect HSSP register read: lane page, PMA/PCS type, 8-bit reg number. */
+static u8 al_hssp_reg_read(void __iomem *grp, unsigned page, unsigned type,
+			   u16 off)
+{
+	writel(AL_HSSP_ADDR(page, type, off), grp + AL_HSSP_GEN_REG_ADDR);
+	return (u8)readl(grp + AL_HSSP_GEN_REG_DATA);
+}
+
 /* Build a per-call HAL object bound to the SerDes PMA base. No HW side effects. */
 static int al_serdes_obj_get(struct al_serdes_grp_obj *obj, void __iomem **base)
 {
@@ -154,86 +191,69 @@ int al_serdes_10g_init(void)
 	void __iomem *pcs;
 	int rc;
 
-	rc = al_serdes_obj_get(&obj, &base);
-	if (rc)
-		return rc;
+	void __iomem *grp = al_hssp_grp_d_base();
+	u32 version;
+	u8 rxdet;
 
-	printf("serdes: 25G PMA @ %p, configuring SFP+ lane %d for fixed 10G (KR/AN/LT off)\n",
-	       base, AL_SFP_LANE);
+	(void)obj; (void)base; (void)rc;
+	if (!grp) {
+		printf("serdes: no '%s' DT node / 'serdes' reg\n",
+		       AL_SERDES_DT_COMPAT);
+		return -ENODEV;
+	}
 
 	/*
-	 * mode_set_kr == al_serdes_25g_group_cfg_10g_mode: writes gen.ctrl for
-	 * 10G (speed field 9 = 0x901100), resets POR/CM0/lanes, runs the lane
-	 * calibration (LEQ/CDR/bbstep/afe/tx-pll-wa), releases the lanes and
-	 * checks FW init status. This is the fixed 10.3125G electrical mode with
-	 * NO Clause-73 AN and NO Clause-72 LT.
+	 * Go/no-go: read HSSP group-D gen.version. On the OLD (wrong) 25G target
+	 * this first read external-aborts (SError -> box reset). On group D - which
+	 * al_boot preboot already powered/clocked/KR-configured - it returns the
+	 * SerDes revision. A plausible value here == the retarget is correct.
 	 */
-	if (!obj.mode_set_kr) {
-		printf("serdes: mode_set_kr unavailable\n");
-		return -ENOSYS;
-	}
-	rc = obj.mode_set_kr(&obj);
-	if (rc) {
-		printf("serdes: 10G group config FAILED (%d)\n", rc);
-		return rc;
-	}
+	version = readl(grp + AL_HSSP_GEN_VERSION);
+	printf("serdes: HSSP group D (SFP+ lane %d) @ %p, gen.version=0x%08x\n",
+	       AL_SFP_LANE, grp, version);
 
-	/* Apply the 10G optic TX/RX equaliser overrides on the SFP+ lane. */
-	if (obj.tx_advanced_params_set)
-		obj.tx_advanced_params_set(&obj, AL_SFP_LANE, &optic_tx_params);
-	if (obj.rx_advanced_params_set)
-		obj.rx_advanced_params_set(&obj, AL_SFP_LANE, &optic_rx_params);
+	/*
+	 * preboot already ran al_serdes_hssp_group_cfg_eth_kr_mode(156MHz) on this
+	 * group, so the lane is in fixed-10G KR. We do NOT re-init here - just read
+	 * the PMA RX-signal-detect for the SFP+ lane via the HSSP indirect model.
+	 */
+	rxdet = al_hssp_reg_read(grp, AL_SFP_LANE, AL_HSSP_TYPE_PMA,
+				 AL_HSSP_RXRANDET_REG);
+	printf("serdes: lane %d signal_detect=%s (pma rxrandet=0x%02x)\n",
+	       AL_SFP_LANE, (rxdet & AL_HSSP_RXRANDET_STAT) ? "yes" : "no", rxdet);
 
-	/* 10GBASE-R PCS, if the DT exposes it. */
-	pcs = al_serdes_dt_base("pcs");
-	if (pcs) {
-		printf("serdes: configuring 10GBASE-R PCS @ %p\n", pcs);
-		al_serdes_pcs_10gr_config(pcs);
-	} else {
-		printf("serdes: no 'pcs' reg in DT — PCS left to the MAC agent\n");
-	}
-
-	printf("serdes: 10G init done; run 'serdes status' to read lane lock\n");
+	/*
+	 * PCS is DEFERRED to the MAC driver. al_eth_dm_10g configures the 10GBASE-R
+	 * PCS as part of the MAC ("Configured MAC to KR mode", 10GbE_Serial path in
+	 * al_hal_eth_mac_v1_v2). Poking the "pcs" MAC-adapter window directly here
+	 * (base 0xfe120000, unconfirmed) external-aborts on read (0xfe120a04) and is
+	 * redundant with the MAC path - so the serdes driver no longer touches it.
+	 */
+	(void)pcs;
+	printf("serdes: 10G init done (HSSP group D); PCS owned by the MAC driver\n");
 	return 0;
 }
 
 void al_serdes_10g_status(void)
 {
-	struct al_serdes_grp_obj obj;
-	void __iomem *base;
-	void __iomem *pcs;
+	void __iomem *grp = al_hssp_grp_d_base();
+	u8 rxdet;
 
-	if (al_serdes_obj_get(&obj, &base))
+	if (!grp) {
+		printf("serdes: no 'serdes' DT base\n");
 		return;
-
-	printf("serdes: 25G PMA @ %p, SFP+ lane %d:\n", base, AL_SFP_LANE);
-
-	if (obj.fw_is_alive)
-		printf("  fw_alive     : %s\n",
-		       obj.fw_is_alive(&obj) ? "yes" : "no");
-	if (obj.pll_lock_get)
-		printf("  pll_lock     : %s\n",
-		       obj.pll_lock_get(&obj) ? "LOCKED" : "no");
-	if (obj.signal_is_detected)
-		printf("  signal_detect: %s\n",
-		       obj.signal_is_detected(&obj, AL_SFP_LANE) ? "yes" : "no");
-	if (obj.cdr_is_locked)
-		printf("  cdr_lock     : %s\n",
-		       obj.cdr_is_locked(&obj, AL_SFP_LANE) ? "LOCKED" : "no");
-	if (obj.rx_valid)
-		printf("  rx_valid     : %s\n",
-		       obj.rx_valid(&obj, AL_SFP_LANE) ? "yes" : "no");
-
-	pcs = al_serdes_dt_base("pcs");
-	if (pcs) {
-		u16 br = al_serdes_kr_pcs_read(pcs, AL_KR_PCS_BASE_R_STATUS2);
-		u32 st = readl(pcs + AL_PCS_10G_LL_STATUS);
-
-		printf("  pcs_block_lock: %s (BASE-R status2 0x%04x)\n",
-		       (br & AL_KR_PCS_BLOCK_LOCK) ? "LOCKED" : "no", br);
-		printf("  pcs_fec_locked: %s\n",
-		       (st & AL_PCS_10G_LL_STATUS_FEC_LOCKED) ? "yes" : "no");
 	}
+
+	printf("serdes: HSSP group D @ %p, SFP+ lane %d:\n", grp, AL_SFP_LANE);
+	printf("  gen.version  : 0x%08x\n", readl(grp + AL_HSSP_GEN_VERSION));
+
+	rxdet = al_hssp_reg_read(grp, AL_SFP_LANE, AL_HSSP_TYPE_PMA,
+				 AL_HSSP_RXRANDET_REG);
+	printf("  signal_detect: %s (pma rxrandet=0x%02x)\n",
+	       (rxdet & AL_HSSP_RXRANDET_STAT) ? "yes" : "no", rxdet);
+
+	/* PCS block-lock / FEC is read by the MAC driver, not here - the "pcs"
+	 * MAC-adapter window aborts on direct read (0xfe120a04). See al_eth_dm_10g. */
 }
 
 static int do_serdes(struct cmd_tbl *cmdtp, int flag, int argc,
