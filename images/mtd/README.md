@@ -1,6 +1,11 @@
 # Woomera MTD flash snapshots — index
 
-- Binary dumps **relocated out of the repo on 2026-08-17** to `/mnt/2tb/git_debris/woomera-mtd/`.
+**Canonical flash/partition map: [`docs/mtd.md`](../../docs/mtd.md)** — both chips
+(NOR + NAND), all 12 partitions, offsets, sizes, what's raw vs filesystem. Read
+that first; this dir is the per-snapshot evidence index.
+
+- Binary dumps **relocated out of the repo on 2026-08-17** to `/mnt/2tb/git_debris/woomera-mtd/`
+  (real hexdumps: `xxd` the `mtdNN-*.img` under the matching subdir there).
   - Per-snapshot subdir structure mirrored identically at that path.
   - Reason: ~1.5 GB non-regenerable evidence, too big for the git tree.
 - **Per-snapshot `README.md` manifests remain here** — they are the durable, tracked index.
