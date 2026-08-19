@@ -12,8 +12,16 @@ ccflags-y += -I$(srctree)/drivers/net/al_eth/hal/include
 ccflags-y += -Wno-unused-variable -Wno-unused-function -Wno-sign-compare
 ccflags-y += -Wno-unused-but-set-variable -Wno-missing-prototypes
 
+# VERBOSE TRACE (eth-debug): -DDEBUG makes al_dbg()->debug() and the driver's
+# debug()/dev_dbg() print for every eth object (driver + eth/UDMA HAL) - the
+# full UDMA descriptor-fetch / adapter bring-up trace. Scoped to this directory
+# only (DDR/serdes are separate Makefiles). Remove once the TX path is proven.
+ccflags-y += -DDEBUG
+
 obj-$(CONFIG_AL_ETH) += al_eth_dm.o
 obj-$(CONFIG_AL_ETH) += al_eth_stubs.o
+# 10G SFP+ (eth2, 1c36:0002) - DRAFT front-end; same HAL subset, no new objects.
+obj-$(CONFIG_AL_ETH_10G) += al_eth_dm_10g.o
 
 # --- curated HAL subset (delroth-alpine_hal), RGMII 1G path only ---
 obj-$(CONFIG_AL_ETH) += hal/iofic/al_hal_iofic.o

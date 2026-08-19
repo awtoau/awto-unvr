@@ -1,0 +1,14 @@
+# Catch a BOOTING/cycling box at stock U-Boot (sustained ESC spam), then tftp our
+# U-Boot to 0x1100000 and `go`, stopping at unvr#. No SP805 reset — use this when
+# the box is already rebooting on its own (vs uboot-test.tcl which resets from our
+# unvr#). tftpd must serve u-boot-chainload.bin; firewalld must allow tftp.
+set ok 0
+for {set i 0} {$i < 2400} {incr i} { send_raw ESC; if {[catch {expect "ALPINE_UBNT_NAS_ALL>" 1}] == 0} { set ok 1; break } }
+if {!$ok} { puts "NO-STOCK (box not booting through stock in the window)"; return }
+send "setenv ipaddr 192.168.25.140";   expect "ALPINE_UBNT_NAS_ALL>" 6
+send "setenv serverip 192.168.25.145"; expect "ALPINE_UBNT_NAS_ALL>" 6
+send "tftpboot 0x1100000 u-boot-chainload.bin"; catch {expect "Bytes transferred" 40}
+expect "ALPINE_UBNT_NAS_ALL>" 6
+send "go 0x1100000"
+if {[catch {expect "unvr#" 15}]} { puts "NO-UNVR (go failed / tftp failed)"; return }
+puts "=== LIVE at unvr# — DMA-fix build on hardware ==="

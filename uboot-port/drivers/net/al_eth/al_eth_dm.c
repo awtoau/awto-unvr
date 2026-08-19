@@ -83,6 +83,34 @@
 #define AL_ETH_MDIO_CLK_KHZ	1000
 #define AL_ETH_REF_CLK		AL_ETH_REF_FREQ_500_MHZ
 
+/*
+ * al_udma master DRAM reach. The M2S/S2M AXI master only decodes DRAM in the
+ * LOW window - the preboot SB address-map leaves the 2-3GB band undecoded for
+ * it, so an AXI read/write there is answered by no target and hangs forever
+ * (m2s.state=0x2222, drhp frozen, no AXI error, infinite timeout). U-Boot's
+ * heap relocates to the top of the 3GB bank (~0xbfxxxxxx), so plain memalign()
+ * hands the engine unreachable addresses. ALL al_udma-visible memory (the
+ * descriptor ring, the RX buffers it writes, and the TX data it reads) must
+ * live in low DRAM. Carve it from a fixed low window. gd->ram_size stays 3GB,
+ * so SATA/kernel keep the whole range (the AHCI master reaches high DRAM fine).
+ * Proven-analogue: stock caps itself to 64MB (board.c dram_init) and its al_udma
+ * user iodma.c memaligns from that low heap. Ref: docs eth-udma issue.
+ */
+#define AL_ETH_DMA_LOW_BASE	0x02000000UL	/* 32MB: low, master-reachable, below reloc U-Boot */
+#define AL_ETH_DMA_LOW_SIZE	0x00100000UL	/* 1MB window - both 1G + 10G instances fit */
+static uintptr_t al_eth_dma_low_next = AL_ETH_DMA_LOW_BASE;
+
+static void *al_eth_dma_low_alloc(size_t size)
+{
+	uintptr_t p = ALIGN(al_eth_dma_low_next, ARCH_DMA_MINALIGN);
+	uintptr_t end = p + ALIGN(size, ARCH_DMA_MINALIGN);
+
+	if (end > AL_ETH_DMA_LOW_BASE + AL_ETH_DMA_LOW_SIZE)
+		return NULL;	/* window exhausted */
+	al_eth_dma_low_next = end;
+	return (void *)p;
+}
+
 struct al_eth_dm_priv {
 	struct al_hal_eth_adapter	adapter;
 	void __iomem			*udma_regs;
@@ -92,8 +120,9 @@ struct al_eth_dm_priv {
 	struct al_udma_q		*tx_q;
 	struct al_udma_q		*rx_q;
 
-	void				*desc_block;	/* descriptor rings */
-	uchar				*rx_buf[AL_ETH_RX_BUFFERS];
+	void				*desc_block;	/* descriptor rings (low DRAM) */
+	uchar				*rx_buf[AL_ETH_RX_BUFFERS];	/* low DRAM */
+	uchar				*tx_bounce;	/* low-DRAM TX bounce buffer */
 	unsigned int			rx_head;	/* next RX buffer to reclaim */
 
 	struct mii_dev			*mdio_bus;
@@ -168,24 +197,44 @@ static int al_eth_dm_cfg_write(void *handle, int where, uint32_t val)
 }
 
 /*
- * Set this eth function's AXI master COHERENT (SMCC SNOOP_OVR|SNOOP_EN=0x3),
- * exactly matching the internal AHCI controller that DMAs to high DRAM
- * successfully on this same bus-0 internal-PCIe fabric (board al_snoop_one sets
- * AHCI's SMCC=0x3). So CCI/CCU coherency IS functional here - the eth just needs
- * the same coherent attribute. Must run after adapter_init (resets SMCC to 0).
- * eth is slot <= 5 -> all 4 sub-masters + APP_CONTROL low16=0x3ff.
+ * Replicate al_unit_adapter_init() on this eth function's PCI config space.
+ * We pass unit_adapter = NULL to the HAL (avoids the io_fabric closure), so the
+ * HAL SKIPS al_unit_adapter_init and only warns "non optimal adapter config".
+ * That init is not optional: it does three things the M2S/TX master needs, and
+ * all are reset by adapter_init/FLR, so they MUST run post-adapter_init here.
+ *   1. snoop_enable  - SMCC SNOOP_OVR|SNOOP_EN=0x3 (all 4 sub-masters) + axcache
+ *                      0x3ff in GEN_CTL_11 (0x220). Coherent AXI master, like the
+ *                      AHCI that DMAs to high DRAM fine on this same fabric.
+ *   2. error_track   - disable (SMCC_CONF_2 bit8), func 0 only. Matches stock.
+ *   3. rob_cfg       - reset then enable READ_ROB_EN|WRITE_ROB_EN in GEN_CTL_19
+ *                      (0x240). The ROB gates the master's DRAM reads; without it
+ *                      the M2S descriptor fetch is never serviced (drhp stuck,
+ *                      m2s.state=0x2222). This was the missing step. HAL init
+ *                      passes (rd_en,rd_inorder,wr_en,wr_inorder)=(1,0,1,0).
  */
-#define AL_ETH_SMCC		0x110
+#define AL_ETH_SMCC		0x110	/* GEN_CTL: SMCC sub-master 0 */
 #define AL_ETH_SMCC_BUNDLE	0x20
 #define AL_ETH_SMCC_COHERENT	0x3	/* SNOOP_OVR|SNOOP_EN - coherent, like AHCI */
-#define AL_ETH_APP_CONTROL	0x220
+#define AL_ETH_SMCC_CONF_2	0x114	/* per-func error-track control */
+#define AL_ETH_DIS_ERR_TRACK	0x100	/* SMCC_CONF_2 bit 8 */
+#define AL_ETH_APP_CONTROL	0x220	/* GEN_CTL_11: axcache */
 #define AL_ETH_APP_LO16		0x3ff
+#define AL_ETH_GEN_CTL_19	0x240	/* ROB config */
+#define AL_ETH_RD_ROB_EN	0x00000001	/* bit 0 */
+#define AL_ETH_WR_ROB_EN	0x00010000	/* bit 16 */
+#define AL_ETH_RD_ROB_RESET	0x00008000	/* bit 15 */
+#define AL_ETH_WR_ROB_RESET	0x80000000	/* bit 31 */
 
-static void al_eth_dm_snoop_setup(struct udevice *dev)
+static void al_eth_dm_unit_adapter_setup(struct udevice *dev)
 {
 	u32 v;
 	int i;
 
+	/* 1. snoop_enable: coherent AXI master (all 4 sub-masters) + axcache.
+	 * NB: snoop ON vs OFF was tested on-box - the M2S descriptor read hangs
+	 * IDENTICALLY either way (m2s.state=0x2222, drhp frozen, mstr_to=0, no error
+	 * latched). So coherency is NOT the TX-hang cause; the master's read never
+	 * reaches DRAM regardless. Left coherent (stock default). See docs/eth issue. */
 	dm_pci_read_config32(dev, AL_ETH_SMCC, &v);
 	v |= AL_ETH_SMCC_COHERENT;
 	dm_pci_write_config32(dev, AL_ETH_SMCC, v);
@@ -195,6 +244,22 @@ static void al_eth_dm_snoop_setup(struct udevice *dev)
 	dm_pci_read_config32(dev, AL_ETH_APP_CONTROL, &v);
 	v = (v & 0xffff0000) | AL_ETH_APP_LO16;
 	dm_pci_write_config32(dev, AL_ETH_APP_CONTROL, v);
+
+	/* 2. error_track: ENABLE (clear DIS bit) - DIAGNOSTIC. Stock disables it;
+	 * we leave it on so a failed M2S read latches in the AXI-err attr regs
+	 * (al_eth_dm_dump_axi_err). Flip back to |= once the TX path is proven. */
+	dm_pci_read_config32(dev, AL_ETH_SMCC_CONF_2, &v);
+	v &= ~AL_ETH_DIS_ERR_TRACK;
+	dm_pci_write_config32(dev, AL_ETH_SMCC_CONF_2, v);
+
+	/* 3. rob_cfg: reset both ROBs, then enable read+write ROB */
+	dm_pci_read_config32(dev, AL_ETH_GEN_CTL_19, &v);
+	v |= AL_ETH_RD_ROB_RESET | AL_ETH_WR_ROB_RESET;
+	dm_pci_write_config32(dev, AL_ETH_GEN_CTL_19, v);
+	v &= ~(AL_ETH_RD_ROB_RESET | AL_ETH_WR_ROB_RESET);
+	dm_pci_write_config32(dev, AL_ETH_GEN_CTL_19, v);
+	v |= AL_ETH_RD_ROB_EN | AL_ETH_WR_ROB_EN;
+	dm_pci_write_config32(dev, AL_ETH_GEN_CTL_19, v);
 }
 
 /* TX-state dump (stock-style diagnostic). Reads the M2S engine state + Q0 ring
@@ -208,6 +273,40 @@ static void al_eth_dm_dump_tx(struct al_eth_dm_priv *priv, const char *tag)
 	printf("al_eth[%s]: m2s.state=%08x tx0 drhp=%08x drtp=%08x dcp=%08x crhp=%08x qpkt=%08x\n",
 	       tag, readl(u + 0x200), readl(u + 0x1034), readl(u + 0x103c),
 	       readl(u + 0x1040), readl(u + 0x104c), readl(u + 0x10c0));
+	printf("al_eth[%s]: desc_block=%p rx_buf0=%p tx_bounce=%p (want low ~0x02xxxxxx)\n",
+	       tag, priv->desc_block, priv->rx_buf[0], priv->tx_bounce);
+	/* NB: do NOT read Q0 cfg/pref/tdrbp (0x1000/0x1020/0x1028..0x1030) - like
+	 * tdrtp_inc (0x1038) these M2S regs data-abort (SError) on read on this rev.
+	 * EN_PREF is set by al_udma_states_set (al_hal_udma_main.c) and the queue
+	 * did reach NORMAL, so prefetch IS enabled; the read to DRAM is what hangs. */
+}
+
+/* DIAGNOSTIC: dump the unit-adapter AXI-master READ error attributes (config
+ * space). Answers why the M2S descriptor-prefetch read never completes:
+ *   ADDR_TO  = address decode timeout -> the master's read is NOT routed to a
+ *              slave (DRAM window missing) - a routing/decode fault.
+ *   COMP_TO  = completion timeout      -> routed but the slave never answered.
+ * Also prints the latched failing address (0x1C8/0x1CC) + the master TO config
+ * (0x1D0 low16 = RD timeout; 0 == wait forever, so a stall never latches). Needs
+ * error tracking ENABLED (unit_adapter_setup leaves it on for this build). */
+#define AL_ETH_RD_ERR_ATTR	0x1B8
+#define AL_ETH_RD_ERR_LO	0x1C8
+#define AL_ETH_RD_ERR_HI	0x1CC
+#define AL_ETH_AXI_MSTR_TO	0x1D0
+static void al_eth_dm_dump_axi_err(struct udevice *dev)
+{
+	u32 attr = 0, lo = 0, hi = 0, to = 0;
+
+	dm_pci_read_config32(dev, AL_ETH_RD_ERR_ATTR, &attr);
+	dm_pci_read_config32(dev, AL_ETH_RD_ERR_LO, &lo);
+	dm_pci_read_config32(dev, AL_ETH_RD_ERR_HI, &hi);
+	dm_pci_read_config32(dev, AL_ETH_AXI_MSTR_TO, &to);
+	printf("al_eth[axi-rd-err]: attr=%08x addr_to=%d comp_err=%d comp_to=%d "
+	       "err_blk=%d rd_parity=%d mstr_id=%u comp_stat=%u fail_addr=%08x%08x "
+	       "mstr_to(rd)=%04x\n",
+	       attr, !!(attr & 0x100), !!(attr & 0x200), !!(attr & 0x400),
+	       !!(attr & 0x800), !!(attr & 0x1000), (attr >> 2) & 0x7, attr & 0x3,
+	       hi, lo, to & 0xffff);
 }
 
 /* ---- DMA / adapter bring-up (mirror of vendor al_eth_dev_init) --------- */
@@ -250,7 +349,7 @@ static int al_eth_dm_dma_init(struct udevice *dev)
 
 	/* Coherent AXI master (SMCC=0x3), matching the working AHCI on this fabric.
 	 * Must run post-adapter_init (it resets SMCC to 0). */
-	al_eth_dm_snoop_setup(dev);
+	al_eth_dm_unit_adapter_setup(dev);
 
 	memset(&txp, 0, sizeof(txp));
 	txp.size = AL_ETH_DESCS_PER_Q;
@@ -387,7 +486,13 @@ static int al_eth_dm_send(struct udevice *dev, void *packet, int length)
 	 * not enabled in this chainloaded U-Boot). Propagated to the data descs via
 	 * AL_ETH_TX_PKT_UDMA_FLAGS in al_eth_tx_pkt_prepare. THE TX-completion fix. */
 	pkt.flags = AL_ETH_TX_FLAGS_NO_SNOOP;
-	pkt.bufs[0].addr = (al_phys_addr_t)(uintptr_t)packet;
+	/* Bounce TX through low DRAM: the caller's packet is in U-Boot's high heap
+	 * (~3GB), which the al_udma master can't read. Copy into the low-DRAM bounce
+	 * buffer and hand the engine THAT address (see al_eth_dma_low_alloc). */
+	if (length > PKTSIZE_ALIGN)
+		length = PKTSIZE_ALIGN;
+	memcpy(priv->tx_bounce, packet, length);
+	pkt.bufs[0].addr = (al_phys_addr_t)(uintptr_t)priv->tx_bounce;
 	pkt.bufs[0].len = length;
 
 	ndesc = al_eth_tx_pkt_prepare(priv->tx_q, &pkt);
@@ -396,7 +501,7 @@ static int al_eth_dm_send(struct udevice *dev, void *packet, int length)
 		return -EIO;
 	}
 	/* publish the packet + TX descriptors to the UDMA before kicking it. */
-	al_eth_cache_flush(packet, length);
+	al_eth_cache_flush(priv->tx_bounce, length);
 	al_eth_cache_flush(priv->desc_block, AL_ETH_DESC_BLOCK_SIZE);
 	al_eth_tx_dma_action(priv->tx_q, ndesc);
 	al_eth_dm_dump_tx(priv, "doorbell");
@@ -413,6 +518,7 @@ static int al_eth_dm_send(struct udevice *dev, void *packet, int length)
 			dev_err(dev, "TX completion timeout: %d descs left after %d us\n",
 				ndesc, poll);
 			al_eth_dm_dump_tx(priv, "timeout");
+			al_eth_dm_dump_axi_err(dev);
 			/* NB: no al_eth_mac_tx_flush_config here - it is unsupported in
 			 * RGMII (mode 0) and only prints "tx flush not supported". */
 			return -ETIMEDOUT;
@@ -577,19 +683,23 @@ static int al_eth_dm_probe(struct udevice *dev)
 	priv->phy_if = PHY_INTERFACE_MODE_RGMII;
 	priv->phy_addr = AL_ETH_DEFAULT_PHY_ADDR;
 
-	/* descriptor rings - 1:1 mapped DRAM, so virt == phys. */
-	priv->desc_block = memalign(ARCH_DMA_MINALIGN,
-				    ALIGN(AL_ETH_DESC_BLOCK_SIZE, ARCH_DMA_MINALIGN));
+	/* descriptor rings + RX buffers + TX bounce - MUST be low DRAM (the al_udma
+	 * master can't reach U-Boot's ~3GB heap; see al_eth_dma_low_alloc). 1:1
+	 * mapped, so virt == phys. */
+	priv->desc_block = al_eth_dma_low_alloc(AL_ETH_DESC_BLOCK_SIZE);
 	if (!priv->desc_block)
 		return -ENOMEM;
 	memset(priv->desc_block, 0, AL_ETH_DESC_BLOCK_SIZE);
 
 	for (i = 0; i < AL_ETH_RX_BUFFERS; i++) {
-		priv->rx_buf[i] = memalign(ARCH_DMA_MINALIGN,
-					   ALIGN(PKTSIZE_ALIGN, ARCH_DMA_MINALIGN));
+		priv->rx_buf[i] = al_eth_dma_low_alloc(PKTSIZE_ALIGN);
 		if (!priv->rx_buf[i])
 			return -ENOMEM;
 	}
+
+	priv->tx_bounce = al_eth_dma_low_alloc(PKTSIZE_ALIGN);
+	if (!priv->tx_bounce)
+		return -ENOMEM;
 
 	priv->mdio_bus = mdio_alloc();
 	if (!priv->mdio_bus)
