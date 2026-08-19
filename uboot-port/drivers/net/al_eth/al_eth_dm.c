@@ -153,6 +153,18 @@ static void al_eth_cache_inval(void *p, size_t len)
 	invalidate_dcache_range(s, e);
 }
 
+/* PCI config accessors for al_eth_flr_rmn (Function-Level Reset via config
+ * space). handle == the eth udevice; mirror of stock al_eth_flr_read/write. */
+static int al_eth_dm_cfg_read(void *handle, int where, uint32_t *val)
+{
+	return dm_pci_read_config32((struct udevice *)handle, where, val);
+}
+
+static int al_eth_dm_cfg_write(void *handle, int where, uint32_t val)
+{
+	return dm_pci_write_config32((struct udevice *)handle, where, val);
+}
+
 /* ---- DMA / adapter bring-up (mirror of vendor al_eth_dev_init) --------- */
 
 static int al_eth_dm_dma_init(struct udevice *dev)
@@ -177,6 +189,16 @@ static int al_eth_dm_dma_init(struct udevice *dev)
 	ap.serdes_lane = 0;
 	ap.unit_adapter = NULL;	/* board_late_init already did PCI/snoop init */
 	ap.common_mode = AL_ETH_COMMON_MODE_INVALID;
+
+	/*
+	 * FLR the eth to a CLEAN state before init. Stock's al_eth does this in its
+	 * halt path (al_eth_flr_rmn: reset 1G MAC + function-level reset). The
+	 * auto-chainload leaves the eth in stock's used state; re-initing it without
+	 * a reset wedges the UDMA TX - the descriptor posts but the completion never
+	 * fires ("TX completion timeout", "dma state didn't change" -110). This is
+	 * THE missing step (stock GPL al_eth.c:1157). Uses our dm_pci accessors.
+	 */
+	al_eth_flr_rmn(al_eth_dm_cfg_read, al_eth_dm_cfg_write, dev, priv->mac_regs);
 
 	err = al_eth_adapter_init(&priv->adapter, &ap);
 	if (err) {
