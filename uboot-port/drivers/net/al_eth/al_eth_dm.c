@@ -259,8 +259,15 @@ static int al_eth_dm_start(struct udevice *dev)
 		return -EIO;
 	}
 
-	/* HARDWARE-TODO: re-config the MAC to the PHY-negotiated speed/duplex
-	 * (al_eth_mac_link_config) - the vendor driver left this as a TODO too. */
+	/* Re-config the MAC to the PHY-negotiated speed/duplex. dma_init latched
+	 * the RGMII MAC to 1G (that path clears ENA_AUTO), so without this a link
+	 * that negotiates 100M (the live RJ45 does) clocks the datapath at gigabit
+	 * while the PHY runs 25 MHz -> frames dropped, link "up", ping silently
+	 * fails. Review #1. an_enable=FALSE: take the phylib-negotiated result. */
+	al_eth_mac_link_config(&priv->adapter, AL_FALSE, AL_FALSE,
+			       priv->phy->speed,
+			       priv->phy->duplex == DUPLEX_FULL);
+
 	priv->started = true;
 	return 0;
 }
