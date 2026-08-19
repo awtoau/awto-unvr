@@ -211,6 +211,17 @@ static int al_pcie_snoop_fix(void)
 			dm_pci_read_config32(dev, PCI_VENDOR_ID, &vendor);
 			if ((vendor & 0xffff) != AL_VENDOR)
 				continue;
+			/*
+			 * SKIP the two al_eth devices (1c36:0001 RJ45, 0002 SFP+).
+			 * Stock U-Boot never touches their SMCC/APP_CONTROL and its eth
+			 * works, i.e. eth DMA is already coherent by default. Our writes
+			 * here BREAK eth TX (UDMA won't complete) AND persist across a warm
+			 * reset, poisoning stock's eth on the next boot (auto-chainload
+			 * tftp then fails). Only AHCI/crypto/dma need the snoop fix.
+			 */
+			if (((vendor >> 16) & 0xffff) == 0x0001 ||
+			    ((vendor >> 16) & 0xffff) == 0x0002)
+				continue;
 			bdf = dm_pci_get_bdf(dev);
 			al_snoop_one(dev, PCI_DEV(bdf));
 			printf("al-snoop: %02x:%02x.%x slot %u done\n",
