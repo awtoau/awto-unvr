@@ -17,8 +17,8 @@ Builds on: [nor-boot-chain.md](nor-boot-chain.md), [bootloader.md](bootloader.md
   `JAVA_HOME_OVERRIDE=/usr/lib/jvm/java-21-temurin-jdk` in
   `<ghidra>/support/launch.properties` (both installs on this box).
 - **Verified working:** headless import + auto-analysis + decompile-all of the
-  435,892-B al_boot payload → **317 functions, 0 decompile failures**, ~20 s
-  wall. S2 blob → 78 functions. Real data-flow C (coprocessor cache ops, recovered
+  **304,816-B** al_boot payload → **377 functions, 0 decompile failures**, ~20 s
+  wall. S2 blob → 82 functions. Real data-flow C (coprocessor cache ops, recovered
   `switch` on sysid, RSA loops). JDK 25 previously hung indefinitely on the same input.
 - Runner: `scripts/ghidra-decompile.py` (wraps analyzeHeadless + `ExportAll.java`,
   reused from awto-2000). Log `tmp/logs/ghidra-decompile.log`.
@@ -35,19 +35,21 @@ TOC (`scripts/parse-al-toc.py` on `01-uboot.bin`, magic `0x070c070c` @0x80000):
 
 Two proprietary code blobs inside `preboot`:
 
-- **S2 first-stage** — container 0x00000, 25,044 B, magic `"S2"`, **stringless**
-  boot-ROM SPI loader. Thumb-2, link base **0xF2200000** (SRAM). Carved:
-  `docs/nor-reference/s2-loader-stage2_v2.22.3-25044B.bin` (filename is a misnomer —
-  this is the S2 SPI loader, NOT the `stage2_loader v2.22.3` banner code).
-- **al_boot payload** — img-hdr (magic `0x000b9ec7`) @container 0x20000, payload
-  @container **0x21000**, size **0x6a6b4 (435,892 B)**, **ARM A32, load 0x01000000**.
-  Contains BOTH banners: Annapurna al-boot v2.10.0 (`stage2_loader v2.22.3`,
-  `agent_wakeup v2.10`) AND contractor `Stage 3 v2.22.0` (multi_dt). Re-carve:
-  `container[0x21000:0x21000+0x6a6b4]` → verified byte-exact at VA 0x0100167c.
+- **S2 first-stage** — container 0x00000, 25,044 B, magic `"S2"`. NOT stringless and
+  NOT pure Thumb: A32 entry stub 0x20-0x98, Thumb-2 body from 0x98 (it IS the
+  `stage2_loader v2.22.3` DDR trainer). Link base **0xF2200000** (SRAM). Carved:
+  `docs/nor-reference/s2-loader-stage2_v2.22.3-25044B.bin`.
+- **al_boot payload** — img-hdr (magic `0x000b9ec7`) @container 0x20000, u32 length
+  prefix @0x21000, payload @container **0x21004**, size **0x4a6b0 (304,816 B)**, 4-byte
+  trailer `a3 34 a4 03` @0x6b6b4, **ARM A32, load 0x01000000**. Contains both banners:
+  Annapurna al-boot v2.10.0 (`stage2_loader v2.22.3`, `agent_wakeup v2.10`) AND
+  contractor `Stage 3 v2.22.0` (multi_dt). Carve:
+  `container[0x21004:0x6b6b4]`. (The img-hdr field @+0x28 = 0x6a6b4 is length+0x20000 —
+  the old 435,892 B / 0x21000 carve swept in the TOC + `dt` DTB as junk; see
+  [preboot-coverage.md](preboot-coverage.md).)
 
-Confirmation method: img-hdr payload-size @+0x28, load/entry @+0x30/+0x38; dispatch
-opcode at file-off 0x167c == `e3097308` (`movw r7,#0x9308`), matching
-preboot-dt-selection.asm at VA 0x0100167c.
+Confirmation method: img-hdr payload-size @+0x28, load/entry @+0x30/+0x38; length prefix
+@0x21000 = 0x4a6b0; dispatch opcode `movw r7,#0x9308` present in the multi_dt switch.
 
 Decompiled artifacts (this doc's evidence):
 - `docs/nor-reference/preboot-alboot-decompiled.c` / `-disassembly.asm` (317 fns)
@@ -209,11 +211,14 @@ in `.rodata` (log calls pass the enclosing function's `__func__`). Extractor:
 truncation; keeps only clean C-identifier strings). Full machine map (89 auto-named):
 `tmp/logs/name-preboot-funcs.log`.
 
-**Coverage:** al_boot payload has **~311 defined functions** (2223 `FUN_`
-call-site occurrences). **~70 significant** boot-critical + HW-access functions named
-below (full names). The remaining ~220 are leaf helpers / HAL internals / allocator
-(`mspace_*`) / string ops — left as `FUN_`, not worth naming. **S2 stage: 0 strings →
-all 77 stay `FUN_`** (stringless boot-ROM loader).
+**Coverage (verified 100% — [preboot-coverage.md](preboot-coverage.md)):** on the
+**corrected carve** (304,816 B @0x01000000, not the +4/oversized old load) al_boot has
+**377 functions**, **119 auto-named** via `__func__` (`preboot-alboot-names.sym`). Every
+byte is classified: 55.3% A32 code, 8.5% defined data, 36.2% attributed undefined
+(blob57 embedded non-ARM data 57 KB, zero/BSS 30 KB, embedded AArch64 resume-agent
+20 KB = 66 fns, tables/pools 2 KB). **0 undiscovered A32 code.** **S2 is NOT stringless
+and NOT pure Thumb**: 82 functions, mixed A32 entry stub (0x20-0x98) + Thumb body, full
+DDR stack with strings; DDR-init subgraph 100% named (`preboot-s2-names.sym`).
 
 Names in `code` are recovered `__func__`; names in (parens) are functional labels
 from hand-RE (no `__func__` logged). "d" = auto-name confidence: h=high (`__func__`
@@ -346,13 +351,37 @@ recurs, hits≥4), m=medium (hits 2–3), R=hand-RE.
 | 0x010129dc / 0x0100ceb0 / 0x01010c00 | (log/printf) | AL logging helpers |
 | 0x010274e8 / 0x01027508 | (poke fabric / agent-mailbox reg) | writes `0xf0070000` / `0xf0090000` |
 
-## S2 first-stage (Thumb-2 @0xF2200000) — for completeness
+## S2 first-stage (A32 entry + Thumb-2 body @0xF2200000) — the DDR trainer
 
-- 78 functions, zero strings. Boot-ROM-loaded SPI loader; touches only SPI/UART/
-  PBS/I2C/GPIO. Loads the al_boot payload (container 0x21000) to 0x01000000 and
-  jumps. Entry region `0xf2200098`; a jumptable at 0xf22000fc Ghidra could not
-  fully recover (dispatch by loaded function pointers). Not on the critical path
-  for a mainline port (BootROM+S2 stay in mask ROM / factory NOR).
+Corrects the old "78 fns, zero strings, stringless SPI loader" note ✎. S2 IS the DDR
+trainer (`stage2_loader v2.22.3`) — see [ddr-config-reverse.md](ddr-config-reverse.md),
+[ddr-s2-parser-analysis.md](ddr-s2-parser-analysis.md). Coverage verified 100%
+([preboot-coverage.md](preboot-coverage.md)).
+
+- **82 functions**, code 67.0%, data 20.2%, undef 12.8% (all data), **0 code gaps**.
+- **Mixed mode:** header 0x0-0x20 (data), **A32 entry stub 0x20-0x98** (SCTLR I-cache
+  enable, `mrc/mcr`), **Thumb-2 body from 0x98** (memcpy32 @0x98, memset @0xb4, then the
+  DDR/TOC code). The A32 stub + `0xf220005c` (MPIDR core-id) + `0xf22014b4` (Thumb
+  wrapper) were undiscovered until seeded; now disassembled.
+- Loads the al_boot payload (`01-uboot.bin[0x21004:0x6b6b4]`, 304,816 B) to 0x01000000,
+  writes `shared_parameters` (magic 0x31415926, ddr_size) to SRAM 0xfbff4150, jumps.
+- **DDR-init call graph 100% named** — `docs/nor-reference/preboot-s2-names.{sym,md}`
+  (31 confirmed, 25 speculative `s_`, 0 bare over the 56-fn subgraph). Named annotated
+  disassembly (the primary artifact): `docs/nor-reference/preboot-s2-disassembly.asm`.
+
+## Coverage verification (100%) — [preboot-coverage.md](preboot-coverage.md)
+
+- Byte accounting via `scripts/ghidra/CoverageReport.java` +
+  `scripts/measure-preboot-coverage.py`; iterated to **0 undiscovered code** in both
+  blobs (seed entry, disassemble capstone-verified code gaps, re-measure).
+- **al_boot 304,816 B:** code 55.3% (377 fns) / data 8.5% / undef 36.2% (all attributed:
+  blob57 57 KB non-ARM data, zero/BSS 30 KB, AArch64 agent 20 KB=66 fns, tables 2 KB).
+- **S2 25,044 B:** code 67.0% (82 fns) / data 20.2% / undef 12.8% (all data).
+- **Only region not decoded-to-meaning:** `blob57` @0x0103469d (57 KB, 18.8% of al_boot)
+  — proven not-ARM-code, unreferenced, entropy 6.66; candidate SerDes-25G PHY microcode.
+- New pipeline flags: `ghidra-analyse.py --entry/--entry-thumb/--disasm-gaps`;
+  `SeedEntry.java`, `DisasmGaps.java`, `CoverageReport.java`; annotation via
+  `annotate-preboot.py` + `build-s2-name-ledger.py`.
 
 ## Superseded by [ddr-config-reverse.md](ddr-config-reverse.md)
 

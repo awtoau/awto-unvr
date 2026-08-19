@@ -1,0 +1,31 @@
+# S2 stage2_loader v2.22.3 curated function names (hand-RE + DDR call graph).
+# Sources: ddr-config-reverse.md, ddr-s2-parser-analysis.md (verified against the
+# fresh entry-seeded export). VA<TAB>name. Merged over auto __func__ names.
+0xf2200020	s2_entry_a32_stub
+0xf220005c	cpu_affinity_id
+0xf2200098	memcpy32_unrolled
+0xf22000b4	memset_unrolled
+0xf2200124	s2_main
+0xf22002c8	bootstrap_parse_nb_pll_init
+0xf2200360	eeprom_read
+0xf22003b0	rec_read_aa
+0xf22003b8	rec_read_bb
+0xf22003c0	rec_read_cc
+0xf22003c8	rec_read_dd
+0xf22003d8	ddr_bringup_orchestrator
+0xf2200628	ddr_freq_change_according_to_spd
+0xf2200816	ddr_build_addrmap
+0xf220093c	ddr_init_spd_get
+0xf2200a58	set_dram_impedance_ctrl_from_eeprom
+0xf2200d10	dram_voltage_gpio
+0xf2200dcc	jedec_crc16
+0xf2200df8	ddr3_cwl_from_tck
+0xf2200e74	ddr4_cwl_from_tck
+0xf2200ed8	ddr_cl_solve
+0xf2200f30	al_ddr3_spd_parse
+0xf2201140	al_ddr4_spd_parse
+0xf22013e8	al_ddr_spd_parse
+0xf22018f4	al_ddr_cfg_init
+0xf2201a90	al_ddr_init
+0xf22044b8	shared_params_write_magic
+0xf22044d0	i2c_eeprom_read

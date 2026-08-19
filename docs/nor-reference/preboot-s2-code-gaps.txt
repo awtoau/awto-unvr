@@ -1,0 +1,2 @@
+0xf220005c arm
+0xf22014b4 thumb

@@ -1,5 +1,36 @@
 
-; ==== FUN_f2200098 @ f2200098 ====
+; ==== s2_entry_a32_stub @ f2200020 ====   [FUN_f2200020]
+f2200020:  mrc p15,0x0,r5,cr1,cr0,0x0
+f2200024:  orr r5,r5,#0x1000
+f2200028:  mcr p15,0x0,r5,cr1,cr0,0x0
+f220002c:  isb SY
+f2200030:  cpy r5,r1
+f2200034:  bl 0xf2200078
+f2200038:  cpy r1,r5
+f220003c:  ldr r5,[0xf2200058]
+f2200040:  ldr sp,[r5,#0x0]
+f2200044:  blx 0xf2200124   ; -> s2_main
+
+; ==== cpu_affinity_id @ f220005c ====   [FUN_f220005c]
+f220005c:  mrc p15,0x0,r0,cr0,cr0,0x5
+f2200060:  cpy r1,r0
+f2200064:  and r0,r0,#0xff
+f2200068:  and r1,r1,#0xff00
+f220006c:  mov r1,r1, lsr #0x6
+f2200070:  add r0,r1,r0
+f2200074:  bx lr
+
+; ==== FUN_f2200078 @ f2200078 ====
+f2200078:  mrc p15,0x0,r1,cr1,cr0,0x2
+f220007c:  orr r1,r1,#0xff00000
+f2200080:  mcr p15,0x0,r1,cr1,cr0,0x2
+f2200084:  dsb SY
+f2200088:  isb SY
+f220008c:  mov r1,#0x40000000
+f2200090:  vmsr fpexc,r1
+f2200094:  bx lr
+
+; ==== memcpy32_unrolled @ f2200098 ====   [FUN_f2200098]
 f2200098:  stmdb sp!,{r4,r5,r6,r7,r8,r9,r10,r11}
 f220009c:  ldmia r1!,{r4,r5,r6,r7,r8,r9,r10,r11}
 f22000a0:  stmia r0!,{r4,r5,r6,r7,r8,r9,r10,r11}
@@ -8,7 +39,7 @@ f22000a8:  bne 0xf220009c
 f22000ac:  ldmia sp!,{r4,r5,r6,r7,r8,r9,r10,r11}
 f22000b0:  bx lr
 
-; ==== FUN_f22000b4 @ f22000b4 ====
+; ==== memset_unrolled @ f22000b4 ====   [FUN_f22000b4]
 f22000b4:  stmdb sp!,{r4,r5,r6,r7,r8,r9,r10,r11}
 f22000b8:  cpy r4,r1
 f22000bc:  cpy r5,r1
@@ -31,14 +62,14 @@ f22000f4:  isb SY
 f22000f8:  dsb SY
 f22000fc:  cpy pc,r0
 
-; ==== FUN_f2200100 @ f2200100 ====
+; ==== s_freq_helper_a @ f2200100 ====   [FUN_f2200100]
 f2200100:  cmp r0,#0x0
 f2200104:  beq 0xf2200110
 f2200108:  sub r0,r0,#0x1
-f220010c:  b 0xf2200100
+f220010c:  b 0xf2200100   ; -> s_freq_helper_a
 f2200110:  bx lr
 
-; ==== FUN_f2200114 @ f2200114 ====
+; ==== s_freq_helper_b @ f2200114 ====   [FUN_f2200114]
 f2200114:  mcr p15,0x0,r0,cr14,cr0,0x0
 f2200118:  bx lr
 
@@ -46,18 +77,18 @@ f2200118:  bx lr
 f220011c:  ldr r3,[0xf2200120]
 f220011e:  bx r3
 
-; ==== FUN_f2200124 @ f2200124 ====
+; ==== s2_main @ f2200124 ====   [FUN_f2200124]
 f2200124:  push {r4,r5,r6,lr}
 f2200126:  sub sp,#0x88
 f2200128:  ldr r5,[0xf2200280]
-f220012a:  bl 0xf22002c8
+f220012a:  bl 0xf22002c8   ; -> bootstrap_parse_nb_pll_init
 f220012e:  bl 0xf22014c8
 f2200132:  bl 0xf22002bc
 f2200136:  ldrb r3,[r5,#0x1c]
 f2200138:  cbz r3,0xf220016a
-f220013a:  bl 0xf22003d0
+f220013a:  bl 0xf22003d0   ; -> s_rec_present_check
 f220013e:  mov r4,r0
-f2200140:  bl 0xf22003c8
+f2200140:  bl 0xf22003c8   ; -> rec_read_dd
 f2200144:  ldrb.w r3,[r4,#0x24]
 f2200148:  cmp r3,#0xdd
 f220014a:  ittet ne
@@ -74,7 +105,7 @@ f2200164:  strh r3,[r2,#0x14]
 f2200166:  ldrb r3,[r5,#0x1c]
 f2200168:  cbnz r3,0xf220019c
 f220016a:  ldr r4,[0xf220028c]
-f220016c:  bl 0xf22003d8
+f220016c:  bl 0xf22003d8   ; -> ddr_bringup_orchestrator
 f2200170:  ldrb r3,[r5,#0x1c]
 f2200172:  cbz r3,0xf220017e
 f2200174:  ldr r2,[0xf2200290]
@@ -91,7 +122,7 @@ f220018c:  bl 0xf22041b4
 f2200190:  mov r5,r0
 f2200192:  cbz r0,0xf22001a0
 f2200194:  ldr r0,[0xf2200294]
-f2200196:  bl 0xf2201716
+f2200196:  bl 0xf2201716   ; -> s_al_err_printf
 f220019a:  b 0xf220019a
 f220019c:  ldr r4,[0xf2200298]
 f220019e:  b 0xf220016c
@@ -102,7 +133,7 @@ f22001a6:  ldr r2,[sp,#0x18]
 f22001a8:  bl 0xf220437e
 f22001ac:  cbz r0,0xf22001b6
 f22001ae:  ldr r0,[0xf22002a0]
-f22001b0:  bl 0xf2201716
+f22001b0:  bl 0xf2201716   ; -> s_al_err_printf
 f22001b4:  str r5,[sp,#0x14]
 f22001b6:  ldr r2,[sp,#0x14]
 f22001b8:  movs r3,#0x0
@@ -114,10 +145,10 @@ f22001c2:  stm sp,{r3,r5,r6}
 f22001c6:  movs r3,#0xd
 f22001c8:  lsls r2,r2,#0x1c
 f22001ca:  orrs r2,r3
-f22001cc:  bl 0xf22041ec
+f22001cc:  bl 0xf22041ec   ; -> al_flash_toc_find_id_with_fallback
 f22001d0:  cbz r0,0xf22001f8
 f22001d2:  ldr r0,[0xf22002a4]
-f22001d4:  bl 0xf2201716
+f22001d4:  bl 0xf2201716   ; -> s_al_err_printf
 f22001d8:  ldr r2,[sp,#0x14]
 f22001da:  movs r3,#0x0
 f22001dc:  mov r0,r4
@@ -126,10 +157,10 @@ f22001e0:  stm sp,{r3,r5,r6}
 f22001e4:  movs r3,#0x4
 f22001e6:  lsls r2,r2,#0x1c
 f22001e8:  orrs r2,r3
-f22001ea:  bl 0xf22041ec
+f22001ea:  bl 0xf22041ec   ; -> al_flash_toc_find_id_with_fallback
 f22001ee:  cbz r0,0xf2200246
 f22001f0:  ldr r0,[0xf22002a4]
-f22001f2:  bl 0xf2201716
+f22001f2:  bl 0xf2201716   ; -> s_al_err_printf
 f22001f6:  b 0xf220019a
 f22001f8:  ldr r3,[sp,#0x10]
 f22001fa:  cmp r3,#0x0
@@ -143,7 +174,7 @@ f220020a:  mov.w r3,#0x1000
 f220020e:  bl 0xf22044a0
 f2200212:  cbz r0,0xf220021c
 f2200214:  ldr r0,[0xf22002a8]
-f2200216:  bl 0xf2201716
+f2200216:  bl 0xf2201716   ; -> s_al_err_printf
 f220021a:  b 0xf220019a
 f220021c:  ldr r5,[sp,#0x30]
 f220021e:  movs r2,#0x4
@@ -157,7 +188,7 @@ f2200230:  ldr r2,[sp,#0x1c]
 f2200232:  blx r4
 f2200234:  mov.w r4,#0x1000000
 f2200238:  ldr r0,[0xf22002ac]
-f220023a:  bl 0xf2201716
+f220023a:  bl 0xf2201716   ; -> s_al_err_printf
 f220023e:  mov r0,r4
 f2200240:  blx 0xf22000ec
 f2200244:  b 0xf220019a
@@ -165,23 +196,23 @@ f2200246:  ldr r3,[sp,#0x10]
 f2200248:  cmp r3,#0x0
 f220024a:  bge 0xf2200254
 f220024c:  ldr r0,[0xf22002b0]
-f220024e:  bl 0xf2201716
+f220024e:  bl 0xf2201716   ; -> s_al_err_printf
 f2200252:  b 0xf220019a
 f2200254:  add r2,sp,#0x40
 f2200256:  mov r0,r4
 f2200258:  ldr r1,[sp,#0x30]
-f220025a:  bl 0xf2204394
+f220025a:  bl 0xf2204394   ; -> al_flash_obj_header_read_and_validate
 f220025e:  cbz r0,0xf2200268
 f2200260:  ldr r0,[0xf22002b4]
-f2200262:  bl 0xf2201716
+f2200262:  bl 0xf2201716   ; -> s_al_err_printf
 f2200266:  b 0xf220019a
 f2200268:  mov r0,r4
 f220026a:  ldr r1,[sp,#0x30]
 f220026c:  ldr r2,[sp,#0x70]
-f220026e:  bl 0xf2204430
+f220026e:  bl 0xf2204430   ; -> al_flash_obj_data_load
 f2200272:  cbz r0,0xf220027c
 f2200274:  ldr r0,[0xf22002b8]
-f2200276:  bl 0xf2201716
+f2200276:  bl 0xf2201716   ; -> s_al_err_printf
 f220027a:  b 0xf220019a
 f220027c:  ldr r4,[sp,#0x78]
 f220027e:  b 0xf2200238
@@ -190,7 +221,7 @@ f220027e:  b 0xf2200238
 f22002bc:  ldr r0,[0xf22002c4]
 f22002be:  b.w 0xf2201716
 
-; ==== FUN_f22002c8 @ f22002c8 ====
+; ==== bootstrap_parse_nb_pll_init @ f22002c8 ====   [FUN_f22002c8]
 f22002c8:  push {r4,lr}
 f22002ca:  sub sp,#0x20
 f22002cc:  ldr r4,[0xf2200328]
@@ -202,10 +233,10 @@ f22002d8:  add r3,sp,#0xc
 f22002da:  ldr r1,[r4,#0x14]
 f22002dc:  ldr r0,[0xf2200334]
 f22002de:  subs r2,r1,r2
-f22002e0:  ldr r1,[0xf2200338]
+f22002e0:  ldr r1,[0xf2200338]   ; [0xf2200338]=0xf22048a9 "NB PLL"
 f22002e2:  it ne
 f22002e4:  mov.ne r2,#0x1
-f22002e6:  bl 0xf2203db0
+f22002e6:  bl 0xf2203db0   ; -> al_pll_init
 f22002ea:  cbnz r0,0xf2200310
 f22002ec:  add.w r1,sp,#0x3
 f22002f0:  add r2,sp,#0x4
@@ -215,7 +246,7 @@ f22002f8:  mov r1,r0
 f22002fa:  cbnz r0,0xf2200310
 f22002fc:  add r2,sp,#0x8
 f22002fe:  add r0,sp,#0xc
-f2200300:  bl 0xf2203ee8
+f2200300:  bl 0xf2203ee8   ; -> al_pll_channel_freq_get
 f2200304:  cbnz r0,0xf2200310
 f2200306:  ldr r2,[sp,#0x8]
 f2200308:  mov.w r3,#0x3e8
@@ -224,26 +255,26 @@ f220030e:  str r3,[r4,#0x4]
 f2200310:  ldr r4,[r4,#0x4]
 f2200312:  lsrs r4,r4,#0x4
 f2200314:  mov r0,r4
-f2200316:  blx 0xf2200114
+f2200316:  blx 0xf2200114   ; -> s_freq_helper_b
 f220031a:  ldr r2,[0xf220033c]
 f220031c:  movw r3,#0x1004
 f2200320:  str r4,[r2,r3]
 f2200322:  add sp,#0x20
 f2200324:  pop {r4,pc}
 
-; ==== FUN_f2200340 @ f2200340 ====
+; ==== s_freq_helper_c @ f2200340 ====   [FUN_f2200340]
 f2200340:  ldr r3,[0xf2200358]
 f2200342:  push {r4,lr}
 f2200344:  lsrs r4,r0,#0x4
 f2200346:  str r0,[r3,#0x4]
 f2200348:  mov r0,r4
-f220034a:  blx 0xf2200114
+f220034a:  blx 0xf2200114   ; -> s_freq_helper_b
 f220034e:  ldr r2,[0xf220035c]
 f2200350:  movw r3,#0x1004
 f2200354:  str r4,[r2,r3]
 f2200356:  pop {r4,pc}
 
-; ==== FUN_f22003b0 @ f22003b0 ====
+; ==== rec_read_aa @ f22003b0 ====   [FUN_f22003b0]
 f2200360:  ldr r3,[0xf220039c]
 f2200362:  mov r2,r1
 f2200364:  push {r4,lr}
@@ -258,7 +289,7 @@ f2200378:  add r1,r0
 f220037a:  add r3,r0
 f220037c:  ldr r0,[0xf22003a8]
 f220037e:  ldrb.w r0,[r0,#0x27]
-f2200382:  bl 0xf22044d0
+f2200382:  bl 0xf22044d0   ; -> i2c_eeprom_read
 f2200386:  cbz r0,0xf2200398
 f2200388:  ldr r0,[0xf22003ac]
 f220038a:  pop.w {r4,lr}
@@ -270,30 +301,30 @@ f22003b0:  movs r1,#0x7
 f22003b2:  movs r0,#0x0
 f22003b4:  b.w 0xf2200360
 
-; ==== FUN_f22003b8 @ f22003b8 ====
+; ==== rec_read_bb @ f22003b8 ====   [FUN_f22003b8]
 f22003b8:  movs r1,#0x3
 f22003ba:  movs r0,#0xb
 f22003bc:  b.w 0xf2200360
 
-; ==== FUN_f22003c0 @ f22003c0 ====
+; ==== rec_read_cc @ f22003c0 ====   [FUN_f22003c0]
 f22003c0:  movs r1,#0x16
 f22003c2:  movs r0,#0xe
 f22003c4:  b.w 0xf2200360
 
-; ==== FUN_f22003c8 @ f22003c8 ====
+; ==== rec_read_dd @ f22003c8 ====   [FUN_f22003c8]
 f22003c8:  movs r1,#0x2
 f22003ca:  movs r0,#0x24
 f22003cc:  b.w 0xf2200360
 
-; ==== FUN_f22003d0 @ f22003d0 ====
+; ==== s_rec_present_check @ f22003d0 ====   [FUN_f22003d0]
 f22003d0:  ldr r0,[0xf22003d4]
 f22003d2:  bx lr
 
-; ==== FUN_f22003d8 @ f22003d8 ====
+; ==== ddr_bringup_orchestrator @ f22003d8 ====   [FUN_f22003d8]
 f22003d8:  push {r3,r4,r5,r6,r7,r8,r9,r10,r11,lr}
 f22003dc:  ldr r4,[0xf22005dc]
-f22003de:  bl 0xf22044b8
-f22003e2:  bl 0xf22044c8
+f22003de:  bl 0xf22044b8   ; -> shared_params_write_magic
+f22003e2:  bl 0xf22044c8   ; -> s_shared_params_write_size
 f22003e6:  vmov.i32 d16,#0x0
 f22003ea:  movs r3,#0x0
 f22003ec:  ldr r6,[0xf22005e0]
@@ -301,20 +332,20 @@ f22003ee:  mov r5,r0
 f22003f0:  strb r3,[r0,#0x4]
 f22003f2:  vstr.64 d16,[r0,#0x8]
 f22003f6:  mov r8,r6
-f22003f8:  bl 0xf2200814
+f22003f8:  bl 0xf2200814   ; -> s_cfg_get_helper
 f22003fc:  ldr r1,[0xf22005e4]
 f22003fe:  mov r3,r4
 f2200400:  ldr r2,[0xf22005e8]
 f2200402:  ldr r0,[0xf22005ec]
-f2200404:  bl 0xf22018f4
+f2200404:  bl 0xf22018f4   ; -> al_ddr_cfg_init
 f2200408:  ldr r2,[0xf22005f0]
 f220040a:  add.w r0,r4,#0x104
 f220040e:  ldr r3,[r6,#0x4]
 f2200410:  udiv r3,r3,r2
 f2200414:  str r3,[r4,#0x6c]
-f2200416:  bl 0xf220061c
+f2200416:  bl 0xf220061c   ; -> s_orch_helper
 f220041a:  ldr r0,[0xf22005f4]
-f220041c:  bl 0xf2200628
+f220041c:  bl 0xf2200628   ; -> ddr_freq_change_according_to_spd
 f2200420:  ldrb r3,[r6,#0x19]
 f2200422:  cbnz r3,0xf220043a
 f2200424:  ldr r3,[0xf22005f8]
@@ -338,13 +369,13 @@ f220044a:  str r3,[r4,#0x24]
 f220044c:  ldr r6,[0xf22005f4]
 f220044e:  ldr r1,[0xf2200600]
 f2200450:  mov r0,r6
-f2200452:  bl 0xf2200816
+f2200452:  bl 0xf2200816   ; -> ddr_build_addrmap
 f2200456:  ldr r2,[0xf2200604]
 f2200458:  ldr r1,[r4,#0x14]
 f220045a:  ldr r0,[r4,#0x18]
-f220045c:  bl 0xf2200a58
+f220045c:  bl 0xf2200a58   ; -> set_dram_impedance_ctrl_from_eeprom
 f2200460:  ldr r0,[r6,#0x24]
-f2200462:  bl 0xf2200d10
+f2200462:  bl 0xf2200d10   ; -> dram_voltage_gpio
 f2200466:  ldr r2,[r6,#0x0]
 f2200468:  ldr r3,[r6,#0x8]
 f220046a:  ldr.w r12,[r6,#0x10]
@@ -418,21 +449,21 @@ f220051e:  adds r3,r1,r3
 f2200520:  cmp r3,#0x67
 f2200522:  bls 0xf2200566
 f2200524:  ldr r0,[0xf220060c]
-f2200526:  bl 0xf2201716
+f2200526:  bl 0xf2201716   ; -> s_al_err_printf
 f220052a:  movs r3,#0x2
 f220052c:  ldr.w r10,[0xf22005dc]
 f2200530:  mov.w r8,#0x0
 f2200534:  strb.w r3,[r4,#0x70]
 f2200538:  mov r0,r10
 f220053a:  add.w r8,r8,#0x1
-f220053e:  bl 0xf2201a90
+f220053e:  bl 0xf2201a90   ; -> al_ddr_init
 f2200542:  mov r9,r0
 f2200544:  cbz r0,0xf22005ae
 f2200546:  cmp.w r8,#0x3e8
 f220054a:  bne 0xf2200538
 f220054c:  movs r1,#0x0
 f220054e:  ldr r0,[0xf2200610]
-f2200550:  bl 0xf2201716
+f2200550:  bl 0xf2201716   ; -> s_al_err_printf
 f2200554:  b 0xf22005be
 f2200556:  movs r6,#0x6
 f2200558:  b 0xf22004ac
@@ -477,7 +508,7 @@ f22005b2:  beq 0xf22005be
 f22005b4:  mov r2,r8
 f22005b6:  mov r1,r9
 f22005b8:  ldr r0,[0xf2200614]
-f22005ba:  bl 0xf2201716
+f22005ba:  bl 0xf2201716   ; -> s_al_err_printf
 f22005be:  add.w r8,r8,#0xffffffff
 f22005c2:  cmp.w r9,#0x0
 f22005c6:  beq 0xf220056a
@@ -489,12 +520,12 @@ f22005d4:  cmp r3,#0x0
 f22005d6:  bne.w 0xf220044c
 f22005da:  b 0xf220043c
 
-; ==== FUN_f220061c @ f220061c ====
+; ==== s_orch_helper @ f220061c ====   [FUN_f220061c]
 f220061c:  ldr r3,[0xf2200624]
 f220061e:  str r3,[r0,#0x0]
 f2200620:  bx lr
 
-; ==== FUN_f2200628 @ f2200628 ====
+; ==== ddr_freq_change_according_to_spd @ f2200628 ====   [FUN_f2200628]
 f2200628:  push {r4,r5,r6,r7,r8,r9,r10,r11,lr}
 f220062c:  mov r7,r0
 f220062e:  ldr.w r9,[0xf220080c]
@@ -503,13 +534,13 @@ f2200634:  movs r0,#0x0
 f2200636:  ldr.w r10,[0xf2200810]
 f220063a:  add r2,sp,#0x14
 f220063c:  add r1,sp,#0x10
-f220063e:  bl 0xf220093c
+f220063e:  bl 0xf220093c   ; -> ddr_init_spd_get
 f2200642:  ldr r3,[sp,#0x10]
 f2200644:  cbnz r3,0xf220065a
-f2200646:  ldr r1,[0xf22007c0]
+f2200646:  ldr r1,[0xf22007c0]   ; [0xf22007c0]=0xf2204969 "ddr_init_dimm_params_get"
 f2200648:  mvn r4,#0x12
 f220064c:  ldr r0,[0xf22007c4]
-f220064e:  bl 0xf2201716
+f220064e:  bl 0xf2201716   ; -> s_al_err_printf
 f2200652:  mov r0,r4
 f2200654:  add sp,#0x34
 f2200656:  pop.w {r4,r5,r6,r7,r8,r9,r10,r11,pc}
@@ -525,20 +556,20 @@ f2200672:  ldr r0,[sp,#0x10]
 f2200674:  udiv r1,r1,r3
 f2200678:  add r3,sp,#0x18
 f220067a:  udiv r1,r10,r1
-f220067e:  bl 0xf22013e8
+f220067e:  bl 0xf22013e8   ; -> al_ddr_spd_parse
 f2200682:  cbz r0,0xf220068e
 f2200684:  ldr r0,[0xf22007c8]
-f2200686:  bl 0xf2201716
+f2200686:  bl 0xf2201716   ; -> s_al_err_printf
 f220068a:  movs r0,#0x1
 f220068c:  b 0xf220063a
 f220068e:  ldr r4,[sp,#0x18]
 f2200690:  cmp r4,#0x0
 f2200692:  beq.w 0xf22007b0
 f2200696:  ldr r4,[r7,#0x20]
-f2200698:  ldr r1,[0xf22007cc]
+f2200698:  ldr r1,[0xf22007cc]   ; [0xf22007cc]=0xf2204948 "ddr_freq_change_according_to_spd"
 f220069a:  ldr r0,[0xf22007d0]
 f220069c:  mov r2,r4
-f220069e:  bl 0xf2201716
+f220069e:  bl 0xf2201716   ; -> s_al_err_printf
 f22006a2:  movw r3,#0x442
 f22006a6:  cmp r4,r3
 f22006a8:  bls 0xf22006da
@@ -552,19 +583,19 @@ f22006ba:  movw r3,#0x753
 f22006be:  cmp r4,r3
 f22006c0:  bls 0xf2200714
 f22006c2:  mov r2,r4
-f22006c4:  ldr r1,[0xf22007cc]
+f22006c4:  ldr r1,[0xf22007cc]   ; [0xf22007cc]=0xf2204948 "ddr_freq_change_according_to_spd"
 f22006c6:  mvn r4,#0x15
 f22006ca:  ldr r0,[0xf22007d4]
-f22006cc:  bl 0xf2201716
-f22006d0:  ldr r1,[0xf22007c0]
+f22006cc:  bl 0xf2201716   ; -> s_al_err_printf
+f22006d0:  ldr r1,[0xf22007c0]   ; [0xf22007c0]=0xf2204969 "ddr_init_dimm_params_get"
 f22006d2:  ldr r0,[0xf22007d8]
-f22006d4:  bl 0xf2201716
+f22006d4:  bl 0xf2201716   ; -> s_al_err_printf
 f22006d8:  b 0xf2200652
 f22006da:  ldr r5,[0xf22007dc]
 f22006dc:  mov r2,r5
-f22006de:  ldr r1,[0xf22007e0]
+f22006de:  ldr r1,[0xf22007e0]   ; [0xf22007e0]=0xf220493e "pll_fixup"
 f22006e0:  ldr r0,[0xf22007d0]
-f22006e2:  bl 0xf2201716
+f22006e2:  bl 0xf2201716   ; -> s_al_err_printf
 f22006e6:  ldr r3,[0xf22007e4]
 f22006e8:  cmp r5,r3
 f22006ea:  beq 0xf220072c
@@ -573,13 +604,13 @@ f22006ee:  ldr r3,[0xf22007e8]
 f22006f0:  cmp r5,r3
 f22006f2:  beq 0xf220074c
 f22006f4:  mov r2,r5
-f22006f6:  ldr r1,[0xf22007e0]
+f22006f6:  ldr r1,[0xf22007e0]   ; [0xf22007e0]=0xf220493e "pll_fixup"
 f22006f8:  mvn r4,#0x15
 f22006fc:  ldr r0,[0xf22007ec]
-f22006fe:  bl 0xf2201716
-f2200702:  ldr r1,[0xf22007cc]
+f22006fe:  bl 0xf2201716   ; -> s_al_err_printf
+f2200702:  ldr r1,[0xf22007cc]   ; [0xf22007cc]=0xf2204948 "ddr_freq_change_according_to_spd"
 f2200704:  ldr r0,[0xf22007f0]
-f2200706:  bl 0xf2201716
+f2200706:  bl 0xf2201716   ; -> s_al_err_printf
 f220070a:  b 0xf22006d0
 f220070c:  ldr r5,[0xf22007f4]
 f220070e:  b 0xf22006dc
@@ -602,12 +633,12 @@ f2200732:  add r3,sp,#0x1c
 f2200734:  movs r2,#0x1
 f2200736:  ldr r0,[0xf22007f8]
 f2200738:  movs r1,#0x0
-f220073a:  bl 0xf2203db0
+f220073a:  bl 0xf2203db0   ; -> al_pll_init
 f220073e:  mov r4,r0
 f2200740:  cbz r0,0xf220075a
-f2200742:  ldr r1,[0xf22007e0]
+f2200742:  ldr r1,[0xf22007e0]   ; [0xf22007e0]=0xf220493e "pll_fixup"
 f2200744:  ldr r0,[0xf22007fc]
-f2200746:  bl 0xf2201716
+f2200746:  bl 0xf2201716   ; -> s_al_err_printf
 f220074a:  b 0xf2200702
 f220074c:  movs r6,#0x1
 f220074e:  mov r11,r6
@@ -618,10 +649,10 @@ f2200758:  b 0xf2200732
 f220075a:  mov.w r2,#0x3e8
 f220075e:  mov r1,r11
 f2200760:  add r0,sp,#0x1c
-f2200762:  bl 0xf2203e50
+f2200762:  bl 0xf2203e50   ; -> al_pll_freq_set
 f2200766:  mov r4,r0
 f2200768:  cbz r0,0xf2200770
-f220076a:  ldr r1,[0xf22007e0]
+f220076a:  ldr r1,[0xf22007e0]   ; [0xf22007e0]=0xf220493e "pll_fixup"
 f220076c:  ldr r0,[0xf2200800]
 f220076e:  b 0xf2200746
 f2200770:  mov.w r3,#0x3e8
@@ -633,16 +664,16 @@ f220077c:  str r3,[sp,#0x8]
 f220077e:  movs r3,#0x1
 f2200780:  str r3,[sp,#0x4]
 f2200782:  mov r3,r4
-f2200784:  bl 0xf2203f50
+f2200784:  bl 0xf2203f50   ; -> al_pll_channel_div_set
 f2200788:  mov r4,r0
 f220078a:  cbz r0,0xf2200792
-f220078c:  ldr r1,[0xf22007e0]
+f220078c:  ldr r1,[0xf22007e0]   ; [0xf22007e0]=0xf220493e "pll_fixup"
 f220078e:  ldr r0,[0xf2200804]
 f2200790:  b 0xf2200746
 f2200792:  movw r0,#0x9c40
-f2200796:  blx 0xf2200100
+f2200796:  blx 0xf2200100   ; -> s_freq_helper_a
 f220079a:  mov r0,r5
-f220079c:  bl 0xf2200340
+f220079c:  bl 0xf2200340   ; -> s_freq_helper_c
 f22007a0:  ldr r1,[0xf2200808]
 f22007a2:  ldr.w r3,[r9,#0x4]
 f22007a6:  ldr r2,[r7,#0x4]
@@ -656,10 +687,10 @@ f22007b8:  mul r2,r8,r2
 f22007bc:  str r2,[r3,#0x4]
 f22007be:  b 0xf2200652
 
-; ==== FUN_f2200814 @ f2200814 ====
+; ==== s_cfg_get_helper @ f2200814 ====   [FUN_f2200814]
 f2200814:  bx lr
 
-; ==== FUN_f2200816 @ f2200816 ====
+; ==== ddr_build_addrmap @ f2200816 ====   [FUN_f2200816]
 f2200816:  push {r4,r5,r6,r7,r8,lr}
 f220081a:  ldr r5,[r0,#0x0]
 f220081c:  ldrb r3,[r5,#0x0]
@@ -788,7 +819,7 @@ f2200934:  strb r3,[r6,r4]
 f2200936:  adds r4,#0x1
 f2200938:  b 0xf22008b4
 
-; ==== FUN_f220093c @ f220093c ====
+; ==== ddr_init_spd_get @ f220093c ====   [FUN_f220093c]
 f220093c:  push {r0,r1,r4,r5,r6,r7,r8,r9,r10,lr}
 f2200940:  mov r8,r1
 f2200942:  mov r7,r2
@@ -803,23 +834,23 @@ f2200952:  movs r3,#0x55
 f2200954:  strh r0,[r4,#0x2]
 f2200956:  strb r3,[r4,#0x4]
 f2200958:  strh r0,[r4,#0x6]
-f220095a:  bl 0xf22003d0
+f220095a:  bl 0xf22003d0   ; -> s_rec_present_check
 f220095e:  mov r5,r0
-f2200960:  bl 0xf22003b0
+f2200960:  bl 0xf22003b0   ; -> rec_read_aa
 f2200964:  ldrb r3,[r5,#0x0]
 f2200966:  cmp r3,#0xaa
 f2200968:  beq 0xf2200992
 f220096a:  ldr r0,[0xf2200a34]
-f220096c:  bl 0xf2201716
+f220096c:  bl 0xf2201716   ; -> s_al_err_printf
 f2200970:  ldr r0,[0xf2200a38]
-f2200972:  bl 0xf2201716
+f2200972:  bl 0xf2201716   ; -> s_al_err_printf
 f2200976:  ldr r5,[0xf2200a30]
 f2200978:  ldr.w r9,[0xf2200a54]
 f220097c:  ldr r3,[r6,#0x0]
 f220097e:  cmp r3,#0x58
 f2200980:  ble 0xf22009c8
 f2200982:  ldr r0,[0xf2200a3c]
-f2200984:  bl 0xf2201716
+f2200984:  bl 0xf2201716   ; -> s_al_err_printf
 f2200988:  movs r3,#0x0
 f220098a:  str.w r3,[r8,#0x0]
 f220098e:  str r3,[r7,#0x0]
@@ -849,7 +880,7 @@ f22009c4:  strh r2,[r4,#0x6]
 f22009c6:  b 0xf2200976
 f22009c8:  ldrb r1,[r5,#0x0]
 f22009ca:  mov r0,r9
-f22009cc:  bl 0xf2201716
+f22009cc:  bl 0xf2201716   ; -> s_al_err_printf
 f22009d0:  ldrb r0,[r5,#0x0]
 f22009d2:  cbz r0,0xf2200a1a
 f22009d4:  ldr r4,[0xf2200a44]
@@ -857,12 +888,12 @@ f22009d6:  mov.w r2,#0x100
 f22009da:  ldrh r1,[r5,#0x2]
 f22009dc:  mov r3,r4
 f22009de:  mov r10,r4
-f22009e0:  bl 0xf22044d0
+f22009e0:  bl 0xf22044d0   ; -> i2c_eeprom_read
 f22009e4:  cbz r0,0xf2200a00
 f22009e6:  ldr r0,[0xf2200a48]
-f22009e8:  bl 0xf2201716
+f22009e8:  bl 0xf2201716   ; -> s_al_err_printf
 f22009ec:  ldr r0,[0xf2200a4c]
-f22009ee:  bl 0xf2201716
+f22009ee:  bl 0xf2201716   ; -> s_al_err_printf
 f22009f2:  ldr r3,[r6,#0x0]
 f22009f4:  movs r2,#0x0
 f22009f6:  strb r3,[r5,#0x0]
@@ -875,7 +906,7 @@ f2200a02:  cbz r0,0xf2200a12
 f2200a04:  add.w r3,sp,#0x7
 f2200a08:  movs r2,#0x1
 f2200a0a:  ldrh r1,[r5,#0x6]
-f2200a0c:  bl 0xf22044d0
+f2200a0c:  bl 0xf22044d0   ; -> i2c_eeprom_read
 f2200a10:  cbz r0,0xf2200a1e
 f2200a12:  movs r4,#0x0
 f2200a14:  str.w r10,[r8,#0x0]
@@ -887,7 +918,7 @@ f2200a22:  str r4,[r7,#0x0]
 f2200a24:  add sp,#0x8
 f2200a26:  pop.w {r4,r5,r6,r7,r8,r9,r10,pc}
 
-; ==== FUN_f2200a58 @ f2200a58 ====
+; ==== set_dram_impedance_ctrl_from_eeprom @ f2200a58 ====   [FUN_f2200a58]
 f2200a58:  movs r3,#0x1
 f2200a5a:  push {r4,r5,r6,r7,r8,r9,r10,lr}
 f2200a5e:  cmp r0,r3
@@ -934,9 +965,9 @@ f2200aba:  movw r3,#0xd0d
 f2200abe:  strh r3,[r4,#0x8]
 f2200ac0:  movw r3,#0x707
 f2200ac4:  strh r3,[r4,#0xa]
-f2200ac6:  bl 0xf22003d0
+f2200ac6:  bl 0xf22003d0   ; -> s_rec_present_check
 f2200aca:  mov r5,r0
-f2200acc:  bl 0xf22003c0
+f2200acc:  bl 0xf22003c0   ; -> rec_read_cc
 f2200ad0:  ldrb r1,[r5,#0x10]
 f2200ad2:  ldrb r2,[r5,#0xe]
 f2200ad4:  ldrb r3,[r5,#0xf]
@@ -1035,9 +1066,9 @@ f2200bd6:  b 0xf2200a9e
 f2200bd8:  adds r3,#0x1
 f2200bda:  cmp r3,#0xa
 f2200bdc:  bne 0xf2200b8c
-f2200bde:  ldr r1,[0xf2200ce8]
+f2200bde:  ldr r1,[0xf2200ce8]   ; [0xf2200ce8]=0xf2204b3f "set_dram_impedance_ctrl_from_eeprom"
 f2200be0:  ldr r0,[0xf2200cec]
-f2200be2:  bl 0xf2201716
+f2200be2:  bl 0xf2201716   ; -> s_al_err_printf
 f2200be6:  b 0xf2200b9c
 f2200be8:  movs r2,#0x1
 f2200bea:  ldr r3,[0xf2200cf0]
@@ -1056,17 +1087,17 @@ f2200c0a:  cmp r2,#0x7
 f2200c0c:  beq 0xf2200ca8
 f2200c0e:  cmp r2,#0x5
 f2200c10:  beq 0xf2200cac
-f2200c12:  ldr r1,[0xf2200ce8]
+f2200c12:  ldr r1,[0xf2200ce8]   ; [0xf2200ce8]=0xf2204b3f "set_dram_impedance_ctrl_from_eeprom"
 f2200c14:  ldr r0,[0xf2200cf4]
-f2200c16:  bl 0xf2201716
+f2200c16:  bl 0xf2201716   ; -> s_al_err_printf
 f2200c1a:  b 0xf2200c3a
 f2200c1c:  movs r2,#0x2
 f2200c1e:  b 0xf2200bea
 f2200c20:  movs r2,#0x3
 f2200c22:  b 0xf2200bea
-f2200c24:  ldr r1,[0xf2200ce8]
+f2200c24:  ldr r1,[0xf2200ce8]   ; [0xf2200ce8]=0xf2204b3f "set_dram_impedance_ctrl_from_eeprom"
 f2200c26:  ldr r0,[0xf2200cf8]
-f2200c28:  bl 0xf2201716
+f2200c28:  bl 0xf2201716   ; -> s_al_err_printf
 f2200c2c:  b 0xf2200bf4
 f2200c2e:  movs r2,#0x0
 f2200c30:  ldr r3,[0xf2200cfc]
@@ -1118,17 +1149,17 @@ f2200cae:  b 0xf2200c30
 f2200cb0:  adds r3,#0x1
 f2200cb2:  cmp r3,#0xf
 f2200cb4:  bne 0xf2200c50
-f2200cb6:  ldr r1,[0xf2200ce8]
+f2200cb6:  ldr r1,[0xf2200ce8]   ; [0xf2200ce8]=0xf2204b3f "set_dram_impedance_ctrl_from_eeprom"
 f2200cb8:  mov.w r10,#0x0
 f2200cbc:  ldr r0,[0xf2200d08]
-f2200cbe:  bl 0xf2201716
+f2200cbe:  bl 0xf2201716   ; -> s_al_err_printf
 f2200cc2:  b 0xf2200c62
 f2200cc4:  adds r3,#0x1
 f2200cc6:  cmp r3,#0xb
 f2200cc8:  bne 0xf2200c78
-f2200cca:  ldr r1,[0xf2200ce8]
+f2200cca:  ldr r1,[0xf2200ce8]   ; [0xf2200ce8]=0xf2204b3f "set_dram_impedance_ctrl_from_eeprom"
 f2200ccc:  ldr r0,[0xf2200d0c]
-f2200cce:  bl 0xf2201716
+f2200cce:  bl 0xf2201716   ; -> s_al_err_printf
 f2200cd2:  movs r3,#0x0
 f2200cd4:  b 0xf2200c8a
 f2200cd6:  cmp.w r10,#0x0
@@ -1138,12 +1169,12 @@ f2200cde:  cmp r3,#0x0
 f2200ce0:  bne 0xf2200c9e
 f2200ce2:  b 0xf2200ca2
 
-; ==== FUN_f2200d10 @ f2200d10 ====
+; ==== dram_voltage_gpio @ f2200d10 ====   [FUN_f2200d10]
 f2200d10:  push {r3,r4,r5,r6,r7,lr}
 f2200d12:  mov r6,r0
-f2200d14:  bl 0xf22003d0
+f2200d14:  bl 0xf22003d0   ; -> s_rec_present_check
 f2200d18:  mov r5,r0
-f2200d1a:  bl 0xf22003b8
+f2200d1a:  bl 0xf22003b8   ; -> rec_read_bb
 f2200d1e:  ldrb r3,[r5,#0xb]
 f2200d20:  cmp r3,#0xbb
 f2200d22:  bne 0xf2200daa
@@ -1160,8 +1191,8 @@ f2200d3a:  ldrb r5,[r5,#0xd]
 f2200d3c:  cmp r0,#0x5
 f2200d3e:  bhi 0xf2200db2
 f2200d40:  tbb [pc,r0]
-f2200d4a:  ldr r0,[0xf2200dbc]
-f2200d4c:  bl 0xf2201716
+f2200d4a:  ldr r0,[0xf2200dbc]   ; [0xf2200dbc]=0xf2204caa "spd dram voltage support is not properly set"
+f2200d4c:  bl 0xf2201716   ; -> s_al_err_printf
 f2200d50:  movs r0,#0x1
 f2200d52:  sub.w r1,r4,#0x28
 f2200d56:  and r6,r4,#0x7
@@ -1197,12 +1228,12 @@ f2200da0:  sub.hi.w r4,r4,#0x2740000
 f2200da4:  sub.hi.w r4,r4,#0x39000
 f2200da8:  str r3,[r2,r4]
 f2200daa:  pop {r3,r4,r5,r6,r7,pc}
-f2200dac:  ldr r0,[0xf2200dc8]
-f2200dae:  bl 0xf2201716
+f2200dac:  ldr r0,[0xf2200dc8]   ; [0xf2200dc8]=0xf2204cd7 "spd dram voltage supported 1.25[V] is invalid"
+f2200dae:  bl 0xf2201716   ; -> s_al_err_printf
 f2200db2:  movs r0,#0x2
 f2200db4:  b 0xf2200d52
 
-; ==== FUN_f2200dcc @ f2200dcc ====
+; ==== jedec_crc16 @ f2200dcc ====   [FUN_f2200dcc]
 f2200dcc:  push {r4,r5,lr}
 f2200dce:  add r1,r0
 f2200dd0:  movs r3,#0x0
@@ -1222,7 +1253,7 @@ f2200df2:  subs r2,#0x1
 f2200df4:  bne 0xf2200de8
 f2200df6:  b 0xf2200dd6
 
-; ==== FUN_f2200df8 @ f2200df8 ====
+; ==== ddr3_cwl_from_tck @ f2200df8 ====   [FUN_f2200df8]
 f2200df8:  push {r3,lr}
 f2200dfa:  movw r3,#0x9c3
 f2200dfe:  cmp r1,r3
@@ -1247,9 +1278,9 @@ f2200e2e:  bhi 0xf2200e64
 f2200e30:  movw r3,#0x2ed
 f2200e34:  cmp r1,r3
 f2200e36:  bhi 0xf2200e68
-f2200e38:  ldr r1,[0xf2200e6c]
+f2200e38:  ldr r1,[0xf2200e6c]   ; [0xf2200e6c]=0xf2204d05 "al_ddr_spd_compute_cas_write_latency_ddr3"
 f2200e3a:  ldr r0,[0xf2200e70]
-f2200e3c:  bl 0xf2201716
+f2200e3c:  bl 0xf2201716   ; -> s_al_err_printf
 f2200e40:  mvn r0,#0x4
 f2200e44:  pop {r3,pc}
 f2200e46:  movs r3,#0x5
@@ -1272,7 +1303,7 @@ f2200e66:  b 0xf2200e48
 f2200e68:  movs r3,#0xc
 f2200e6a:  b 0xf2200e48
 
-; ==== FUN_f2200e74 @ f2200e74 ====
+; ==== ddr4_cwl_from_tck @ f2200e74 ====   [FUN_f2200e74]
 f2200e74:  push {r3,lr}
 f2200e76:  movw r3,#0x4e1
 f2200e7a:  cmp r1,r3
@@ -1290,9 +1321,9 @@ f2200e98:  cmp r1,r3
 f2200e9a:  bhi 0xf2200ec6
 f2200e9c:  cmp.w r1,#0x2a8
 f2200ea0:  bhi 0xf2200eca
-f2200ea2:  ldr r1,[0xf2200ed0]
+f2200ea2:  ldr r1,[0xf2200ed0]   ; [0xf2200ed0]=0xf2204d2f "al_ddr_spd_compute_cas_write_latency_ddr4"
 f2200ea4:  ldr r0,[0xf2200ed4]
-f2200ea6:  bl 0xf2201716
+f2200ea6:  bl 0xf2201716   ; -> s_al_err_printf
 f2200eaa:  mvn r0,#0x4
 f2200eae:  pop {r3,pc}
 f2200eb0:  movs r3,#0x9
@@ -1311,7 +1342,7 @@ f2200ec8:  b 0xf2200eb2
 f2200eca:  movs r3,#0x10
 f2200ecc:  b 0xf2200eb2
 
-; ==== FUN_f2200ed8 @ f2200ed8 ====
+; ==== ddr_cl_solve @ f2200ed8 ====   [FUN_f2200ed8]
 f2200ed8:  push {r3,r4,r5,lr}
 f2200eda:  subs r4,r3,#0x1
 f2200edc:  add r2,r4
@@ -1322,9 +1353,9 @@ f2200ee8:  tst r5,r1
 f2200eea:  beq 0xf2200efe
 f2200eec:  cmp r2,#0x20
 f2200eee:  bne 0xf2200f06
-f2200ef0:  ldr r1,[0xf2200f24]
+f2200ef0:  ldr r1,[0xf2200f24]   ; [0xf2200f24]=0xf2204d59 "al_ddr_spd_compute_cas_latency"
 f2200ef2:  ldr r0,[0xf2200f28]
-f2200ef4:  bl 0xf2201716
+f2200ef4:  bl 0xf2201716   ; -> s_al_err_printf
 f2200ef8:  mvn r0,#0x4
 f2200efc:  pop {r3,r4,r5,pc}
 f2200efe:  cmp r2,#0x1f
@@ -1335,16 +1366,16 @@ f2200f06:  muls r3,r2
 f2200f08:  movw r1,#0x4e20
 f2200f0c:  cmp r3,r1
 f2200f0e:  bls 0xf2200f1a
-f2200f10:  ldr r1,[0xf2200f24]
+f2200f10:  ldr r1,[0xf2200f24]   ; [0xf2200f24]=0xf2204d59 "al_ddr_spd_compute_cas_latency"
 f2200f12:  ldr r0,[0xf2200f2c]
-f2200f14:  bl 0xf2201716
+f2200f14:  bl 0xf2201716   ; -> s_al_err_printf
 f2200f18:  b 0xf2200ef8
 f2200f1a:  ldr r3,[r0,#0x4]
 f2200f1c:  movs r0,#0x0
 f2200f1e:  str r2,[r3,#0x38]
 f2200f20:  b 0xf2200efc
 
-; ==== FUN_f2200f30 @ f2200f30 ====
+; ==== al_ddr3_spd_parse @ f2200f30 ====   [FUN_f2200f30]
 f2200f30:  push {r4,r5,r6,r7,r8,lr}
 f2200f34:  mov r7,r3
 f2200f36:  ldrb r3,[r0,#0x7]
@@ -1353,9 +1384,9 @@ f2200f3a:  mov r6,r1
 f2200f3c:  mov r5,r2
 f2200f3e:  lsls r0,r3,#0x1d
 f2200f40:  bne 0xf2200f4c
-f2200f42:  ldr r1,[0xf2201124]
+f2200f42:  ldr r1,[0xf2201124]   ; [0xf2201124]=0xf2204d78 "al_ddr3_spd_parse"
 f2200f44:  ldr r0,[0xf2201128]
-f2200f46:  bl 0xf2201716
+f2200f46:  bl 0xf2201716   ; -> s_al_err_printf
 f2200f4a:  b 0xf2201020
 f2200f4c:  ldr r0,[r2,#0x0]
 f2200f4e:  ubfx r3,r3,#0x3,#0x3
@@ -1426,7 +1457,7 @@ f2200ff8:  cmp r6,r2
 f2200ffa:  str r2,[r5,#0x20]
 f2200ffc:  bcs 0xf220103a
 f2200ffe:  ldr r0,[0xf220112c]
-f2201000:  bl 0xf2201716
+f2201000:  bl 0xf2201716   ; -> s_al_err_printf
 f2201004:  cbz r7,0xf220103a
 f2201006:  movs r3,#0x1
 f2201008:  mov.w r8,#0x0
@@ -1436,9 +1467,9 @@ f2201010:  movs r3,#0x0
 f2201012:  b 0xf2200f6c
 f2201014:  movs r3,#0x1
 f2201016:  b 0xf2200f6c
-f2201018:  ldr r1,[0xf2201124]
+f2201018:  ldr r1,[0xf2201124]   ; [0xf2201124]=0xf2204d78 "al_ddr3_spd_parse"
 f220101a:  ldr r0,[0xf2201130]
-f220101c:  bl 0xf2201716
+f220101c:  bl 0xf2201716   ; -> s_al_err_printf
 f2201020:  mvn r8,#0x15
 f2201024:  mov r0,r8
 f2201026:  pop.w {r4,r5,r6,r7,r8,pc}
@@ -1463,19 +1494,19 @@ f2201054:  sdiv r2,r2,r7
 f2201058:  lsls r1,r1,#0x4
 f220105a:  mla r2,r0,r12,r2
 f220105e:  mov r0,r5
-f2201060:  bl 0xf2200ed8
+f2201060:  bl 0xf2200ed8   ; -> ddr_cl_solve
 f2201064:  mov r8,r0
 f2201066:  cbz r0,0xf2201072
-f2201068:  ldr r1,[0xf2201124]
+f2201068:  ldr r1,[0xf2201124]   ; [0xf2201124]=0xf2204d78 "al_ddr3_spd_parse"
 f220106a:  ldr r0,[0xf2201138]
-f220106c:  bl 0xf2201716
+f220106c:  bl 0xf2201716   ; -> s_al_err_printf
 f2201070:  b 0xf2201024
 f2201072:  mov r1,r6
 f2201074:  mov r0,r5
-f2201076:  bl 0xf2200df8
+f2201076:  bl 0xf2200df8   ; -> ddr3_cwl_from_tck
 f220107a:  mov r8,r0
 f220107c:  cbz r0,0xf2201084
-f220107e:  ldr r1,[0xf2201124]
+f220107e:  ldr r1,[0xf2201124]   ; [0xf2201124]=0xf2204d78 "al_ddr3_spd_parse"
 f2201080:  ldr r0,[0xf220113c]
 f2201082:  b 0xf220106c
 f2201084:  ldrb r1,[r4,#0x11]
@@ -1543,7 +1574,7 @@ f220111c:  ldrb r3,[r4,#0x6]
 f220111e:  str r3,[r5,#0x24]
 f2201120:  b 0xf2201024
 
-; ==== FUN_f2201140 @ f2201140 ====
+; ==== al_ddr4_spd_parse @ f2201140 ====   [FUN_f2201140]
 f2201140:  push {r4,r5,r6,r7,r8,lr}
 f2201144:  mov r8,r1
 f2201146:  ldrb r1,[r0,#0xc]
@@ -1638,12 +1669,12 @@ f2201222:  mov r3,r8
 f2201224:  lsls r1,r1,#0x7
 f2201226:  mla r2,r0,r6,r2
 f220122a:  mov r0,r5
-f220122c:  bl 0xf2200ed8
+f220122c:  bl 0xf2200ed8   ; -> ddr_cl_solve
 f2201230:  mov r6,r0
 f2201232:  cbz r0,0xf2201294
-f2201234:  ldr r1,[0xf22013c4]
+f2201234:  ldr r1,[0xf22013c4]   ; [0xf22013c4]=0xf2204d8a "al_ddr4_spd_parse"
 f2201236:  ldr r0,[0xf22013c8]
-f2201238:  bl 0xf2201716
+f2201238:  bl 0xf2201716   ; -> s_al_err_printf
 f220123c:  b 0xf2201260
 f220123e:  movs r2,#0x1
 f2201240:  ldr r3,[r5,#0x0]
@@ -1651,13 +1682,13 @@ f2201242:  b 0xf2201162
 f2201244:  movs r2,#0x2
 f2201246:  ldr r3,[r5,#0x0]
 f2201248:  b 0xf2201162
-f220124a:  ldr r1,[0xf22013c4]
+f220124a:  ldr r1,[0xf22013c4]   ; [0xf22013c4]=0xf2204d8a "al_ddr4_spd_parse"
 f220124c:  ldr r0,[0xf22013cc]
-f220124e:  bl 0xf2201716
+f220124e:  bl 0xf2201716   ; -> s_al_err_printf
 f2201252:  b 0xf220125c
-f2201254:  ldr r1,[0xf22013c4]
+f2201254:  ldr r1,[0xf22013c4]   ; [0xf22013c4]=0xf2204d8a "al_ddr4_spd_parse"
 f2201256:  ldr r0,[0xf22013d0]
-f2201258:  bl 0xf2201716
+f2201258:  bl 0xf2201716   ; -> s_al_err_printf
 f220125c:  mvn r6,#0x15
 f2201260:  mov r0,r6
 f2201262:  pop.w {r4,r5,r6,r7,r8,pc}
@@ -1665,7 +1696,7 @@ f2201266:  movs r3,#0x0
 f2201268:  b 0xf2201182
 f220126a:  movs r3,#0x1
 f220126c:  b 0xf2201182
-f220126e:  ldr r1,[0xf22013c4]
+f220126e:  ldr r1,[0xf22013c4]   ; [0xf22013c4]=0xf2204d8a "al_ddr4_spd_parse"
 f2201270:  ldr r0,[0xf22013d4]
 f2201272:  b 0xf2201258
 f2201274:  ldrb.w r3,[r4,#0x83]
@@ -1676,7 +1707,7 @@ f220127e:  mov r1,r6
 f2201280:  ldr r0,[0xf22013dc]
 f2201282:  b 0xf220124e
 f2201284:  ldr r0,[0xf22013e0]
-f2201286:  bl 0xf2201716
+f2201286:  bl 0xf2201716   ; -> s_al_err_printf
 f220128a:  cmp r7,#0x0
 f220128c:  beq 0xf2201204
 f220128e:  movs r3,#0x1
@@ -1684,10 +1715,10 @@ f2201290:  str r3,[r7,#0x0]
 f2201292:  b 0xf2201260
 f2201294:  mov r1,r8
 f2201296:  mov r0,r5
-f2201298:  bl 0xf2200e74
+f2201298:  bl 0xf2200e74   ; -> ddr4_cwl_from_tck
 f220129c:  mov r6,r0
 f220129e:  cbz r0,0xf22012a6
-f22012a0:  ldr r1,[0xf22013c4]
+f22012a0:  ldr r1,[0xf22013c4]   ; [0xf22013c4]=0xf2204d8a "al_ddr4_spd_parse"
 f22012a2:  ldr r0,[0xf22013e4]
 f22012a4:  b 0xf2201238
 f22012a6:  ldrsb.w r2,[r4,#0x75]
@@ -1772,23 +1803,23 @@ f2201392:  str r2,[r3,#0x8]
 f2201394:  ldrb r3,[r4,#0xb]
 f2201396:  movs r2,#0x8
 f2201398:  str r3,[r5,#0x24]
-f220139a:  bl 0xf22017a4
+f220139a:  bl 0xf22017a4   ; -> s_spd4_timing_get
 f220139e:  ldr r0,[r5,#0x0]
 f22013a0:  movs r2,#0x8
 f22013a2:  add.w r1,r4,#0x46
 f22013a6:  adds r0,#0x28
-f22013a8:  bl 0xf22017a4
+f22013a8:  bl 0xf22017a4   ; -> s_spd4_timing_get
 f22013ac:  ldr r0,[r5,#0x0]
 f22013ae:  movs r2,#0x2
 f22013b0:  add.w r1,r4,#0x44
 f22013b4:  adds r0,#0x30
-f22013b6:  bl 0xf22017a4
+f22013b6:  bl 0xf22017a4   ; -> s_spd4_timing_get
 f22013ba:  ldr r3,[r5,#0x0]
 f22013bc:  movs r2,#0x1
 f22013be:  str r2,[r3,#0x1c]
 f22013c0:  b 0xf2201260
 
-; ==== FUN_f22013e8 @ f22013e8 ====
+; ==== al_ddr_spd_parse @ f22013e8 ====   [FUN_f22013e8]
 f22013e8:  push {r3,r4,r5,r6,r7,lr}
 f22013ea:  mov r4,r0
 f22013ec:  mov r7,r1
@@ -1803,7 +1834,7 @@ f22013fe:  cmp r3,#0x0
 f2201400:  ite ge
 f2201402:  mov.ge r1,#0x7e
 f2201404:  mov.lt r1,#0x75
-f2201406:  bl 0xf2200dcc
+f2201406:  bl 0xf2200dcc   ; -> jedec_crc16
 f220140a:  ldrb.w r2,[r4,#0x7e]
 f220140e:  ubfx r3,r0,#0x8,#0x8
 f2201412:  uxtb r0,r0
@@ -1814,7 +1845,7 @@ f220141c:  cmp r2,r3
 f220141e:  bne 0xf2201468
 f2201420:  movs r1,#0x7e
 f2201422:  add.w r0,r4,#0x80
-f2201426:  bl 0xf2200dcc
+f2201426:  bl 0xf2200dcc   ; -> jedec_crc16
 f220142a:  ldrb.w r2,[r4,#0xfe]
 f220142e:  ubfx r3,r0,#0x8,#0x8
 f2201432:  uxtb r0,r0
@@ -1833,17 +1864,17 @@ f220144c:  mov r1,r7
 f220144e:  strb r2,[r3,#0x18]
 f2201450:  mov r3,r6
 f2201452:  mov r2,r5
-f2201454:  bl 0xf2200f30
+f2201454:  bl 0xf2200f30   ; -> al_ddr3_spd_parse
 f2201458:  mov r4,r0
 f220145a:  cbz r0,0xf2201464
-f220145c:  ldr r1,[0xf22014a0]
+f220145c:  ldr r1,[0xf22014a0]   ; [0xf22014a0]=0xf2204d9c "al_ddr_spd_parse"
 f220145e:  ldr r0,[0xf22014a4]
-f2201460:  bl 0xf2201716
+f2201460:  bl 0xf2201716   ; -> s_al_err_printf
 f2201464:  mov r0,r4
 f2201466:  pop {r3,r4,r5,r6,r7,pc}
-f2201468:  ldr r1,[0xf22014a0]
+f2201468:  ldr r1,[0xf22014a0]   ; [0xf22014a0]=0xf2204d9c "al_ddr_spd_parse"
 f220146a:  ldr r0,[0xf22014a8]
-f220146c:  bl 0xf2201716
+f220146c:  bl 0xf2201716   ; -> s_al_err_printf
 f2201470:  mvn r4,#0x15
 f2201474:  b 0xf2201464
 f2201476:  cmp r3,#0xc
@@ -1855,16 +1886,25 @@ f2201480:  mov r1,r7
 f2201482:  strb r2,[r3,#0x18]
 f2201484:  mov r3,r6
 f2201486:  mov r2,r5
-f2201488:  bl 0xf2201140
+f2201488:  bl 0xf2201140   ; -> al_ddr4_spd_parse
 f220148c:  mov r4,r0
 f220148e:  cmp r0,#0x0
 f2201490:  beq 0xf2201464
-f2201492:  ldr r1,[0xf22014a0]
+f2201492:  ldr r1,[0xf22014a0]   ; [0xf22014a0]=0xf2204d9c "al_ddr_spd_parse"
 f2201494:  ldr r0,[0xf22014ac]
 f2201496:  b 0xf2201460
-f2201498:  ldr r1,[0xf22014a0]
+f2201498:  ldr r1,[0xf22014a0]   ; [0xf22014a0]=0xf2204d9c "al_ddr_spd_parse"
 f220149a:  ldr r0,[0xf22014b0]
 f220149c:  b 0xf220146c
+
+; ==== FUN_f22014b4 @ f22014b4 ====
+f22014b4:  push {r3,lr}
+f22014b6:  mov r3,r1
+f22014b8:  add.w r1,r0,#0xf8000000
+f22014bc:  mov r0,r3
+f22014be:  bl 0xf22017a4   ; -> s_spd4_timing_get
+f22014c2:  movs r0,#0x0
+f22014c4:  pop {r3,pc}
 
 ; ==== FUN_f22014c8 @ f22014c8 ====
 f22014c8:  ldr r3,[0xf22014d8]
@@ -1902,30 +1942,30 @@ f220177c:  movs r0,#0x0
 f220177e:  str r2,[r3,#0x8]
 f2201780:  pop {r4,r5,pc}
 
-; ==== FUN_f22014dc @ f22014dc ====
+; ==== s_printf_emit @ f22014dc ====   [FUN_f22014dc]
 f22014dc:  push {r4,lr}
 f22014de:  uxtb r1,r0
 f22014e0:  mov r4,r0
 f22014e2:  movs r0,#0x0
-f22014e4:  bl 0xf220178c
+f22014e4:  bl 0xf220178c   ; -> s_printf_helper
 f22014e8:  cmp r4,#0xa
 f22014ea:  bne 0xf22014f4
 f22014ec:  movs r1,#0xd
 f22014ee:  movs r0,#0x0
-f22014f0:  bl 0xf220178c
+f22014f0:  bl 0xf220178c   ; -> s_printf_helper
 f22014f4:  mov r0,r4
 f22014f6:  pop {r4,pc}
 
-; ==== FUN_f22014f8 @ f22014f8 ====
+; ==== s_printf_putc @ f22014f8 ====   [FUN_f22014f8]
 f22014f8:  push {r4,lr}
 f22014fa:  subs r4,r0,#0x1
 f22014fc:  ldrb.w r0,[r4,#0x1]!
 f2201500:  cbnz r0,0xf2201504
 f2201502:  pop {r4,pc}
-f2201504:  bl 0xf22014dc
+f2201504:  bl 0xf22014dc   ; -> s_printf_emit
 f2201508:  b 0xf22014fc
 
-; ==== FUN_f220150a @ f220150a ====
+; ==== s_printf_fmt_num @ f220150a ====   [FUN_f220150a]
 f220150a:  cmp r0,#0x0
 f220150c:  push {r4,r5,r6,r7,r8,lr}
 f2201510:  ldr r4,[sp,#0x18]
@@ -1985,13 +2025,13 @@ f2201594:  strb.w r5,[r4],#0x1
 f2201598:  strb r1,[r3,#0x0]
 f220159a:  b 0xf2201572
 
-; ==== FUN_f220159c @ f220159c ====
+; ==== s_printf_fmt_str @ f220159c ====   [FUN_f220159c]
 f220159c:  push {r4,lr}
 f220159e:  mov r4,r1
 f22015a0:  ldr.w r1,[r12,#0x8]
 f22015a4:  mov r3,r0
 f22015a6:  cbnz r1,0xf22015b0
-f22015a8:  bl 0xf22014f8
+f22015a8:  bl 0xf22014f8   ; -> s_printf_putc
 f22015ac:  mov r0,r4
 f22015ae:  pop {r4,pc}
 f22015b0:  ldrd r0,r2,[r12,#0x0]
@@ -2017,12 +2057,12 @@ f22015dc:  ldrb.w r4,[r0],#0x1
 f22015e0:  strb r4,[r3,#0x0]
 f22015e2:  b 0xf22015c6
 
-; ==== FUN_f22015e4 @ f22015e4 ====
+; ==== s_printf_pad @ f22015e4 ====   [FUN_f22015e4]
 f22015e4:  push {r3,lr}
 f22015e6:  mov r1,r0
 f22015e8:  ldr.w r3,[r12,#0x8]
 f22015ec:  cbnz r3,0xf22015f6
-f22015ee:  bl 0xf22014dc
+f22015ee:  bl 0xf22014dc   ; -> s_printf_emit
 f22015f2:  movs r0,#0x1
 f22015f4:  pop {r3,pc}
 f22015f6:  ldrd r0,r2,[r12,#0x0]
@@ -2040,7 +2080,7 @@ f2201612:  b 0xf22015f2
 f2201614:  movs r0,#0x0
 f2201616:  b 0xf22015f4
 
-; ==== FUN_f2201618 @ f2201618 ====
+; ==== s_vprintf_core @ f2201618 ====   [FUN_f2201618]
 f2201618:  push {r4,r5,r6,lr}
 f220161a:  sub sp,#0x38
 f220161c:  mov r4,r3
@@ -2133,16 +2173,16 @@ f22016d6:  movs r2,#0xa
 f22016d8:  str r1,[sp,#0x8]
 f22016da:  mov r1,r3
 f22016dc:  ldr.w r0,[r4],#0x4
-f22016e0:  bl 0xf220150a
+f22016e0:  bl 0xf220150a   ; -> s_printf_fmt_num
 f22016e4:  mov r1,r0
 f22016e6:  add.w r12,sp,#0x10
 f22016ea:  mov r0,r6
-f22016ec:  bl 0xf220159c
+f22016ec:  bl 0xf220159c   ; -> s_printf_fmt_str
 f22016f0:  b 0xf220162c
 f22016f2:  ldr.w r0,[r4],#0x4
 f22016f6:  add.w r12,sp,#0x10
 f22016fa:  uxtb r0,r0
-f22016fc:  bl 0xf22015e4
+f22016fc:  bl 0xf22015e4   ; -> s_printf_pad
 f2201700:  b 0xf220162c
 f2201702:  ldr.w r0,[r4],#0x4
 f2201706:  movs r1,#0x0
@@ -2153,7 +2193,7 @@ f2201710:  b 0xf22016ec
 f2201712:  adds r1,#0x1
 f2201714:  b 0xf2201708
 
-; ==== FUN_f2201716 @ f2201716 ====
+; ==== s_al_err_printf @ f2201716 ====   [FUN_f2201716]
 f2201716:  push {r0,r1,r2,r3}
 f2201718:  push {r0,r1,r2,lr}
 f220171a:  add r3,sp,#0x10
@@ -2161,13 +2201,13 @@ f220171c:  ldr.w r2,[r3],#0x4
 f2201720:  mov.w r1,#0xffffffff
 f2201724:  movs r0,#0x0
 f2201726:  str r3,[sp,#0x4]
-f2201728:  bl 0xf2201618
+f2201728:  bl 0xf2201618   ; -> s_vprintf_core
 f220172c:  add sp,#0xc
 f220172e:  pop.w lr
 f2201732:  add sp,#0x10
 f2201734:  bx lr
 
-; ==== FUN_f220178c @ f220178c ====
+; ==== s_printf_helper @ f220178c ====   [FUN_f220178c]
 f220178c:  ldr r3,[0xf22017a0]
 f220178e:  ldr.w r3,[r3,r0,lsl #0x2]
 f2201792:  add.w r0,r3,#0x14
@@ -2177,7 +2217,7 @@ f220179a:  bpl 0xf2201796
 f220179c:  str r1,[r3,#0x0]
 f220179e:  bx lr
 
-; ==== FUN_f22017a4 @ f22017a4 ====
+; ==== s_spd4_timing_get @ f22017a4 ====   [FUN_f22017a4]
 f22017a4:  push {r3,r4,r5,r6,r7,lr}
 f22017a6:  mov r5,r2
 f22017a8:  eor.w r2,r0,r1
@@ -2210,7 +2250,7 @@ f22017e2:  lsls r7,r7,#0x5
 f22017e4:  and r5,r5,#0x1f
 f22017e8:  add r4,r7
 f22017ea:  add r6,r7
-f22017ec:  blx 0xf2200098
+f22017ec:  blx 0xf2200098   ; -> memcpy32_unrolled
 f22017f0:  mov r3,r6
 f22017f2:  cmp r5,#0x3
 f22017f4:  mov r6,r3
@@ -2223,7 +2263,7 @@ f2201804:  ldrb.w r3,[r6,#0x1]!
 f2201808:  strb.w r3,[r4],#0x1
 f220180c:  b 0xf22017ba
 
-; ==== FUN_f220180e @ f220180e ====
+; ==== s_ddr_train_step @ f220180e ====   [FUN_f220180e]
 f220180e:  push {r4,r5,r6,r7,r8,lr}
 f2201812:  mov r7,r1
 f2201814:  mov r4,r2
@@ -2243,7 +2283,7 @@ f2201836:  add.w r5,r5,r8, lsl #0x5
 f220183a:  mov r2,r8
 f220183c:  mov r1,r6
 f220183e:  and r4,r4,#0x1f
-f2201842:  blx 0xf22000b4
+f2201842:  blx 0xf22000b4   ; -> memset_unrolled
 f2201846:  cmp r4,#0x3
 f2201848:  bgt 0xf2201856
 f220184a:  adds r0,r5,r4
@@ -2259,7 +2299,7 @@ f2201862:  cmp r0,r5
 f2201864:  bne 0xf220185e
 f2201866:  pop.w {r4,r5,r6,r7,r8,pc}
 
-; ==== FUN_f220186a @ f220186a ====
+; ==== s_ddr_delay_step @ f220186a ====   [FUN_f220186a]
 f220186a:  push {r3,r4,r5,r6,r7,lr}
 f220186c:  mov r7,r0
 f220186e:  mov r6,r1
@@ -2274,12 +2314,12 @@ f220187e:  pop {r3,r4,r5,r6,r7,pc}
 f2201880:  cbz r4,0xf220188c
 f2201882:  movs r0,#0x1
 f2201884:  subs r4,#0x1
-f2201886:  bl 0xf2204518
+f2201886:  bl 0xf2204518   ; -> s_udelay
 f220188a:  b 0xf2201874
 f220188c:  mvn r0,#0x9f
 f2201890:  b 0xf220187e
 
-; ==== FUN_f2201894 @ f2201894 ====
+; ==== al_ddr_mode_register_set @ f2201894 ====   [FUN_f2201894]
 f2201894:  push {r4,r5,r6,r7,r8,lr}
 f2201898:  mov r8,r1
 f220189a:  ldr r5,[r0,#0x4]
@@ -2289,12 +2329,12 @@ f22018a0:  movs r2,#0x0
 f22018a2:  movw r3,#0x1388
 f22018a6:  movs r1,#0x1
 f22018a8:  add.w r0,r5,#0x18
-f22018ac:  bl 0xf220186a
+f22018ac:  bl 0xf220186a   ; -> s_ddr_delay_step
 f22018b0:  mov r7,r0
 f22018b2:  cbz r0,0xf22018c2
-f22018b4:  ldr r1,[0xf22018ec]
+f22018b4:  ldr r1,[0xf22018ec]   ; [0xf22018ec]=0xf2205033 "al_ddr_mode_register_set"
 f22018b6:  ldr r0,[0xf22018f0]
-f22018b8:  bl 0xf2201716
+f22018b8:  bl 0xf2201716   ; -> s_al_err_printf
 f22018bc:  mov r0,r7
 f22018be:  pop.w {r4,r5,r6,r7,r8,pc}
 f22018c2:  lsls r3,r4,#0xc
@@ -2315,7 +2355,7 @@ f22018e6:  eors r3,r2
 f22018e8:  str r3,[r5,#0x10]
 f22018ea:  b 0xf22018bc
 
-; ==== FUN_f22018f4 @ f22018f4 ====
+; ==== al_ddr_cfg_init @ f22018f4 ====   [FUN_f22018f4]
 f22018f4:  stm r3,{r0,r1,r2}
 f22018f8:  ldr r1,[0xf2201930]
 f22018fa:  ldr r2,[r2,#0x0]
@@ -2331,17 +2371,17 @@ f220190c:  cmp r2,r1
 f220190e:  bne 0xf2201914
 f2201910:  movs r2,#0x2
 f2201912:  b 0xf2201904
-f2201914:  ldr r1,[0xf2201938]
+f2201914:  ldr r1,[0xf2201938]   ; [0xf2201938]=0xf220504c "al_ddr_rev_get"
 f2201916:  ldr r0,[0xf220193c]
-f2201918:  bl 0xf2201716
+f2201918:  bl 0xf2201716   ; -> s_al_err_printf
 f220191c:  movw r2,#0xd15
-f2201920:  ldr r1,[0xf2201940]
+f2201920:  ldr r1,[0xf2201940]   ; [0xf2201940]=0xf220505b "al_ddr_cfg_init"
 f2201922:  ldr r0,[0xf2201944]
-f2201924:  bl 0xf2201716
+f2201924:  bl 0xf2201716   ; -> s_al_err_printf
 f2201928:  mvn r0,#0x4
 f220192c:  b 0xf2201908
 
-; ==== FUN_f2201948 @ f2201948 ====
+; ==== s_ddr_train_step2 @ f2201948 ====   [FUN_f2201948]
 f2201948:  ldrb r2,[r0,#0xc]
 f220194a:  ldr r3,[r0,#0x8]
 f220194c:  cmp r2,#0x1
@@ -2357,7 +2397,7 @@ f2201960:  bic.eq r2,r2,#0x1
 f2201964:  str.eq r2,[r3,#0x28]
 f2201966:  bx lr
 
-; ==== FUN_f2201968 @ f2201968 ====
+; ==== al_ddr_ctrl_wait_for_normal_operating_mode @ f2201968 ====   [FUN_f2201968]
 f2201968:  push {r3,r4,r5,lr}
 f220196a:  movw r4,#0x1389
 f220196e:  ldr r5,[r0,#0x4]
@@ -2370,25 +2410,25 @@ f220197c:  pop {r3,r4,r5,pc}
 f220197e:  subs r4,#0x1
 f2201980:  beq 0xf220198a
 f2201982:  movs r0,#0x1
-f2201984:  bl 0xf2204518
+f2201984:  bl 0xf2204518   ; -> s_udelay
 f2201988:  b 0xf2201970
-f220198a:  ldr r1,[0xf2201998]
+f220198a:  ldr r1,[0xf2201998]   ; [0xf2201998]=0xf2205111 "al_ddr_ctrl_wait_for_normal_operating_mode"
 f220198c:  ldr r0,[0xf220199c]
-f220198e:  bl 0xf2201716
+f220198e:  bl 0xf2201716   ; -> s_al_err_printf
 f2201992:  mvn r0,#0x9f
 f2201996:  b 0xf220197c
 
-; ==== FUN_f22019a0 @ f22019a0 ====
+; ==== al_ddr_phy_wait_for_init_done @ f22019a0 ====   [FUN_f22019a0]
 f22019a0:  push {r3,r4,r5,lr}
 f22019a2:  mov r5,r0
 f22019a4:  movw r4,#0x1389
 f22019a8:  movs r0,#0x1
-f22019aa:  bl 0xf2204518
+f22019aa:  bl 0xf2204518   ; -> s_udelay
 f22019ae:  ldr r3,[r5,#0x30]
 f22019b0:  lsls r3,r3,#0x1f
 f22019b2:  bpl 0xf22019cc
 f22019b4:  movs r0,#0x1
-f22019b6:  bl 0xf2204518
+f22019b6:  bl 0xf2204518   ; -> s_udelay
 f22019ba:  ldr r3,[0xf22019e8]
 f22019bc:  ldr r2,[r5,#0x30]
 f22019be:  ands r3,r2
@@ -2400,15 +2440,15 @@ f22019ca:  b 0xf22019e4
 f22019cc:  subs r4,#0x1
 f22019ce:  beq 0xf22019d8
 f22019d0:  movs r0,#0x1
-f22019d2:  bl 0xf2204518
+f22019d2:  bl 0xf2204518   ; -> s_udelay
 f22019d6:  b 0xf22019ae
-f22019d8:  ldr r1,[0xf22019ec]
+f22019d8:  ldr r1,[0xf22019ec]   ; [0xf22019ec]=0xf220516c "al_ddr_phy_wait_for_init_done"
 f22019da:  ldr r0,[0xf22019f0]
-f22019dc:  bl 0xf2201716
+f22019dc:  bl 0xf2201716   ; -> s_al_err_printf
 f22019e0:  mvn r0,#0x9f
 f22019e4:  pop {r3,r4,r5,pc}
 
-; ==== FUN_f22019f4 @ f22019f4 ====
+; ==== s_ddr_train_step3 @ f22019f4 ====   [FUN_f22019f4]
 f22019f4:  push {r4}
 f22019f6:  ldr.w r4,[r0,#0x200]
 f22019fa:  bic.w r1,r4,r1
@@ -2418,7 +2458,7 @@ f2201a04:  dmb #0x1f
 f2201a08:  pop.w r4
 f2201a0c:  b.w 0xf22019a0
 
-; ==== FUN_f2201a10 @ f2201a10 ====
+; ==== al_ddr_phy_vt_calc_disable @ f2201a10 ====   [FUN_f2201a10]
 f2201a10:  ldrb r2,[r0,#0xc]
 f2201a12:  push {r3,r4,r5,lr}
 f2201a14:  ldr r4,[r0,#0x8]
@@ -2438,7 +2478,7 @@ f2201a32:  pop {r3,r4,r5,pc}
 f2201a34:  subs r5,#0x1
 f2201a36:  beq 0xf2201a74
 f2201a38:  movs r0,#0x1
-f2201a3a:  bl 0xf2204518
+f2201a3a:  bl 0xf2204518   ; -> s_udelay
 f2201a3e:  b 0xf2201a2a
 f2201a40:  cmp r2,#0x2
 f2201a42:  bne 0xf2201a66
@@ -2454,20 +2494,20 @@ f2201a58:  bmi 0xf2201a30
 f2201a5a:  subs r5,#0x1
 f2201a5c:  beq 0xf2201a74
 f2201a5e:  movs r0,#0x1
-f2201a60:  bl 0xf2204518
+f2201a60:  bl 0xf2204518   ; -> s_udelay
 f2201a64:  b 0xf2201a54
-f2201a66:  ldr r1,[0xf2201a84]
+f2201a66:  ldr r1,[0xf2201a84]   ; [0xf2201a84]=0xf220513c "al_ddr_phy_vt_calc_disable"
 f2201a68:  ldr r0,[0xf2201a88]
-f2201a6a:  bl 0xf2201716
+f2201a6a:  bl 0xf2201716   ; -> s_al_err_printf
 f2201a6e:  mvn r0,#0x15
 f2201a72:  b 0xf2201a32
-f2201a74:  ldr r1,[0xf2201a84]
+f2201a74:  ldr r1,[0xf2201a84]   ; [0xf2201a84]=0xf220513c "al_ddr_phy_vt_calc_disable"
 f2201a76:  ldr r0,[0xf2201a8c]
-f2201a78:  bl 0xf2201716
+f2201a78:  bl 0xf2201716   ; -> s_al_err_printf
 f2201a7c:  mvn r0,#0x9f
 f2201a80:  b 0xf2201a32
 
-; ==== FUN_f2201a90 @ f2201a90 ====
+; ==== al_ddr_init @ f2201a90 ====   [FUN_f2201a90]
 f2201a90:  push {r4,r5,r6,r7,r8,r9,r10,r11,lr}
 f2201a94:  mov r10,r0
 f2201a96:  ldr.w r4,[r10,#0x0]
@@ -2475,7 +2515,7 @@ f2201a9a:  movs r3,#0x3f
 f2201a9c:  sub sp,#0x144
 f2201a9e:  movs r0,#0x64
 f2201aa0:  str r3,[r4,#0x38]
-f2201aa2:  bl 0xf2204518
+f2201aa2:  bl 0xf2204518   ; -> s_udelay
 f2201aa6:  ldr r3,[r4,#0x38]
 f2201aa8:  bic r3,r3,#0x19
 f2201aac:  str r3,[r4,#0x38]
@@ -3090,7 +3130,7 @@ f220219c:  ldr.w r1,[r12,#0x0]
 f22021a0:  cmp r1,#0x1
 f22021a2:  beq 0xf2202262
 f22021a4:  ldr r0,[0xf2202450]
-f22021a6:  bl 0xf2201716
+f22021a6:  bl 0xf2201716   ; -> s_al_err_printf
 f22021aa:  mvn r4,#0x15
 f22021ae:  mov r0,r4
 f22021b0:  add sp,#0x144
@@ -3951,7 +3991,7 @@ f2202bd0:  ldr r1,[sp,#0xc]
 f2202bd2:  cmp r1,#0x0
 f2202bd4:  bne.w 0xf2202eb0
 f2202bd8:  ldr r0,[0xf2202d4c]
-f2202bda:  bl 0xf2201716
+f2202bda:  bl 0xf2201716   ; -> s_al_err_printf
 f2202bde:  b.w 0xf22021aa
 f2202be2:  orr r4,r4,#0x200
 f2202be6:  b 0xf22024c8
@@ -3959,7 +3999,7 @@ f2202be8:  ldr.w r2,[r10,#0xa8]
 f2202bec:  cmp r1,r2
 f2202bee:  bcs 0xf2202bfa
 f2202bf0:  ldr r0,[0xf2202d50]
-f2202bf2:  bl 0xf2201716
+f2202bf2:  bl 0xf2201716   ; -> s_al_err_printf
 f2202bf6:  b.w 0xf22021aa
 f2202bfa:  sub.w r2,r1,#0x9
 f2202bfe:  cmp r2,#0xf
@@ -4287,7 +4327,7 @@ f220304a:  str r3,[r7,#0x4]
 f220304c:  ldr.w r3,[r7,#0x680]
 f2203050:  bic r3,r3,#0x3800
 f2203054:  str.w r3,[r7,#0x680]
-f2203058:  bl 0xf2204518
+f2203058:  bl 0xf2204518   ; -> s_udelay
 f220305c:  mov r2,r8
 f220305e:  ldrb.w r4,[r10,#0x28]
 f2203062:  add.w r0,r10,#0xbe
@@ -4326,7 +4366,7 @@ f22030f4:  mov.w r0,#0x3e8
 f22030f8:  bic r3,r3,#0x3800
 f22030fc:  orr r3,r3,#0x800
 f2203100:  str.w r3,[r7,#0x680]
-f2203104:  bl 0xf2204518
+f2203104:  bl 0xf2204518   ; -> s_udelay
 f2203108:  add.w r2,r10,#0xc4
 f220310c:  movs r3,#0x0
 f220310e:  ldr.w r1,[r10,#0x14]
@@ -4486,7 +4526,7 @@ f2203308:  str r6,[r7,#0x18]
 f220330a:  str r3,[r7,#0x4]
 f220330c:  dmb #0x1f
 f2203310:  mov r0,r7
-f2203312:  bl 0xf22019a0
+f2203312:  bl 0xf22019a0   ; -> al_ddr_phy_wait_for_init_done
 f2203316:  ldr.w r2,[r7,#0x680]
 f220331a:  mvns r3,r2
 f220331c:  and r3,r3,#0x8000000
@@ -4499,12 +4539,12 @@ f2203332:  ldr r3,[0xf220352c]
 f2203334:  str r3,[r7,#0x4]
 f2203336:  dmb #0x1f
 f220333a:  mov r0,r7
-f220333c:  bl 0xf22019a0
+f220333c:  bl 0xf22019a0   ; -> al_ddr_phy_wait_for_init_done
 f2203340:  ldr.w r4,[r10,#0xe4]
 f2203344:  cbnz r4,0xf2203374
 f2203346:  mov r0,r10
 f2203348:  mov.w r5,#0x320032
-f220334c:  bl 0xf2201a10
+f220334c:  bl 0xf2201a10   ; -> al_ddr_phy_vt_calc_disable
 f2203350:  mov r3,r4
 f2203352:  ldr r4,[0xf2203530]
 f2203354:  ldr.w r1,[r10,#0x8]
@@ -4517,7 +4557,7 @@ f2203368:  adds r3,#0x1
 f220336a:  cmp r3,#0x9
 f220336c:  bne 0xf2203358
 f220336e:  mov r0,r10
-f2203370:  bl 0xf2201948
+f2203370:  bl 0xf2201948   ; -> s_ddr_train_step2
 f2203374:  ldr r6,[0xf2203534]
 f2203376:  add.w r2,r10,#0x148
 f220337a:  movs r1,#0x0
@@ -4579,7 +4619,7 @@ f2203416:  ldrb.w r4,[r10,#0x28]
 f220341a:  cmp r4,#0x1
 f220341c:  bne.w 0xf220356a
 f2203420:  movs r0,#0xa
-f2203422:  bl 0xf2204518
+f2203422:  bl 0xf2204518   ; -> s_udelay
 f2203426:  ldrb.w r3,[r10,#0x64]
 f220342a:  cmp r3,#0xff
 f220342c:  bne.w 0xf2203548
@@ -4587,13 +4627,13 @@ f2203430:  mov r1,r4
 f2203432:  movs r3,#0x88
 f2203434:  movs r2,#0x7
 f2203436:  mov r0,r10
-f2203438:  bl 0xf2201894
+f2203438:  bl 0xf2201894   ; -> al_ddr_mode_register_set
 f220343c:  mov r4,r0
 f220343e:  cmp r0,#0x0
 f2203440:  beq.w 0xf2203548
-f2203444:  ldr r1,[0xf220353c]
+f2203444:  ldr r1,[0xf220353c]   ; [0xf220353c]=0xf2205157 "al_ddr_ctrl_dfi_init"
 f2203446:  ldr r0,[0xf2203540]
-f2203448:  bl 0xf2201716
+f2203448:  bl 0xf2201716   ; -> s_al_err_printf
 f220344c:  b.w 0xf22021ae
 f2203450:  orr r3,r3,#0x20
 f2203454:  b 0xf22030d8
@@ -4666,7 +4706,7 @@ f220354e:  movs r3,#0xd8
 f2203550:  movs r2,#0x7
 f2203552:  movs r1,#0x1
 f2203554:  mov r0,r10
-f2203556:  bl 0xf2201894
+f2203556:  bl 0xf2201894   ; -> al_ddr_mode_register_set
 f220355a:  mov r4,r0
 f220355c:  cmp r0,#0x0
 f220355e:  bne.w 0xf2203444
@@ -4674,7 +4714,7 @@ f2203562:  ldr r3,[r5,#0x10]
 f2203564:  bic r3,r3,#0x8
 f2203568:  str r3,[r5,#0x10]
 f220356a:  mov r0,r10
-f220356c:  bl 0xf2201968
+f220356c:  bl 0xf2201968   ; -> al_ddr_ctrl_wait_for_normal_operating_mode
 f2203570:  ldr.w r3,[r10,#0xe4]
 f2203574:  cbnz r3,0xf22035be
 f2203576:  ldr.w r2,[r10,#0x8]
@@ -4713,11 +4753,11 @@ f22035d6:  movs r2,#0x24
 f22035d8:  movs r1,#0x0
 f22035da:  str r3,[sp,#0x14]
 f22035dc:  add r0,sp,#0xd0
-f22035de:  bl 0xf220180e
+f22035de:  bl 0xf220180e   ; -> s_ddr_train_step
 f22035e2:  movs r2,#0x24
 f22035e4:  movs r1,#0x0
 f22035e6:  add r0,sp,#0xf8
-f22035e8:  bl 0xf220180e
+f22035e8:  bl 0xf220180e   ; -> s_ddr_train_step
 f22035ec:  ldr.w r2,[r10,#0x4]
 f22035f0:  ldr.w r5,[r10,#0x8]
 f22035f4:  ldr.w r3,[r2,#0x1b0]
@@ -4735,13 +4775,13 @@ f2203616:  eors r3,r1
 f2203618:  str.w r3,[r2,#0x180]
 f220361c:  dmb #0x1f
 f2203620:  movs r0,#0x5
-f2203622:  bl 0xf2204518
+f2203622:  bl 0xf2204518   ; -> s_udelay
 f2203626:  mov r0,r10
-f2203628:  bl 0xf2201a10
+f2203628:  bl 0xf2201a10   ; -> al_ddr_phy_vt_calc_disable
 f220362c:  movw r2,#0xe01
 f2203630:  movs r1,#0x0
 f2203632:  ldr.w r0,[r10,#0x8]
-f2203636:  bl 0xf22019f4
+f2203636:  bl 0xf22019f4   ; -> s_ddr_train_step3
 f220363a:  mov r4,r0
 f220363c:  cmp r0,#0x0
 f220363e:  bne.w 0xf2203764
@@ -4802,7 +4842,7 @@ f22036e0:  bne.w 0xf220384e
 f22036e4:  mov r1,r4
 f22036e6:  movw r2,#0xf001
 f22036ea:  ldr.w r0,[r10,#0x8]
-f22036ee:  bl 0xf22019f4
+f22036ee:  bl 0xf22019f4   ; -> s_ddr_train_step3
 f22036f2:  mov r4,r0
 f22036f4:  cmp r0,#0x0
 f22036f6:  bne.w 0xf220384e
@@ -4826,7 +4866,7 @@ f2203732:  bic r3,r3,#0xf0
 f2203736:  orr r3,r3,#0x80
 f220373a:  str.w r3,[r5,#0x41c]
 f220373e:  ldr.w r6,[r5,#0x200]
-f2203742:  bl 0xf22019f4
+f2203742:  bl 0xf22019f4   ; -> s_ddr_train_step3
 f2203746:  ldr.w r3,[r5,#0x200]
 f220374a:  eors r6,r3
 f220374c:  and r6,r6,#0xf0000000
@@ -4883,7 +4923,7 @@ f22037dc:  ldr.w r3,[r11,#0x10]
 f22037e0:  movs r0,#0x1
 f22037e2:  bic r3,r3,#0x4000000
 f22037e6:  str.w r3,[r11,#0x10]
-f22037ea:  bl 0xf2204518
+f22037ea:  bl 0xf2204518   ; -> s_udelay
 f22037ee:  ldr.w r2,[r11,#0x10]
 f22037f2:  movs r1,#0x0
 f22037f4:  ldr.w r0,[r10,#0x8]
@@ -4892,7 +4932,7 @@ f22037fa:  and r3,r3,#0x4000000
 f22037fe:  eors r3,r2
 f2203800:  movw r2,#0xc01
 f2203804:  str.w r3,[r11,#0x10]
-f2203808:  bl 0xf22019f4
+f2203808:  bl 0xf22019f4   ; -> s_ddr_train_step3
 f220380c:  ldr r3,[sp,#0x4]
 f220380e:  mov r4,r0
 f2203810:  str r3,[sp,#0x10]
@@ -4921,7 +4961,7 @@ f2203844:  str r3,[sp,#0x8]
 f2203846:  bne 0xf2203816
 f2203848:  cmp r4,#0x0
 f220384a:  beq.w 0xf2203642
-f220384e:  ldr.w r11,[0xf2203a3c]
+f220384e:  ldr.w r11,[0xf2203a3c]   ; [0xf2203a3c]=0xf2205519 "PASS"
 f2203852:  movs r5,#0x0
 f2203854:  ldr.w r3,[r10,#0x8]
 f2203858:  str r3,[sp,#0x8]
@@ -4931,7 +4971,7 @@ f2203860:  str r2,[sp,#0x4]
 f2203862:  cmp r3,#0x0
 f2203864:  beq.w 0xf2203a50
 f2203868:  ldr r3,[sp,#0x8]
-f220386a:  ldr r0,[0xf2203a28]
+f220386a:  ldr r0,[0xf2203a28]   ; [0xf2203a28]=0xf220539c "DX%d: "
 f220386c:  add.w r1,r3,r5, lsl #0x8
 f2203870:  ldr.w r2,[r1,#0x7e0]
 f2203874:  ldr.w r7,[r1,#0x7e8]
@@ -4942,13 +4982,13 @@ f2203884:  ldr.w r8,[r1,#0x7dc]
 f2203888:  mov r1,r5
 f220388a:  str r3,[sp,#0xc]
 f220388c:  str r2,[sp,#0x10]
-f220388e:  bl 0xf2201716
+f220388e:  bl 0xf2201716   ; -> s_al_err_printf
 f2203892:  ldr r3,[sp,#0xc]
 f2203894:  ldr r2,[sp,#0x10]
 f2203896:  lsls r2,r2,#0x19
 f2203898:  bpl.w 0xf2203a40
-f220389c:  ldr r0,[0xf2203a2c]
-f220389e:  bl 0xf2201716
+f220389c:  ldr r0,[0xf2203a2c]   ; [0xf2203a2c]=0xf22053a3 "Write Leveling Error"
+f220389e:  bl 0xf2201716   ; -> s_al_err_printf
 f22038a2:  b 0xf2203a4a
 f22038a4:  movs r3,#0x5
 f22038a6:  b 0xf2203784
@@ -4996,7 +5036,7 @@ f2203922:  cbnz r3,0xf2203930
 f2203924:  ldr r0,[0xf2203a30]
 f2203926:  mvn r4,#0x4
 f220392a:  ldr r1,[sp,#0x8]
-f220392c:  bl 0xf2201716
+f220392c:  bl 0xf2201716   ; -> s_al_err_printf
 f2203930:  ldr r3,[sp,#0xc]
 f2203932:  subs r3,#0x1
 f2203934:  uxtb r3,r3
@@ -5039,7 +5079,7 @@ f22039a0:  str r2,[sp,#0x20]
 f22039a2:  mvn r4,#0x4
 f22039a6:  ldr r1,[sp,#0x8]
 f22039a8:  str r3,[sp,#0x24]
-f22039aa:  bl 0xf2201716
+f22039aa:  bl 0xf2201716   ; -> s_al_err_printf
 f22039ae:  ldr r2,[sp,#0x20]
 f22039b0:  ldr r3,[sp,#0x24]
 f22039b2:  add.w r8,r8,#0xffffffff
@@ -5053,7 +5093,7 @@ f22039ca:  and r3,r3,#0x3000
 f22039ce:  eors r3,r2
 f22039d0:  mov.w r2,#0x10001
 f22039d4:  str.w r3,[r5,#0x204]
-f22039d8:  bl 0xf22019f4
+f22039d8:  bl 0xf22019f4   ; -> s_ddr_train_step3
 f22039dc:  mov r4,r0
 f22039de:  cmp r0,#0x0
 f22039e0:  bne.w 0xf22036ce
@@ -5082,15 +5122,15 @@ f2203a20:  bne 0xf22039e8
 f2203a22:  b 0xf220367e
 f2203a40:  uxth r1,r3
 f2203a42:  cbz r1,0xf2203a98
-f2203a44:  ldr r0,[0xf2203b2c]
-f2203a46:  bl 0xf2201716
+f2203a44:  ldr r0,[0xf2203b2c]   ; [0xf2203b2c]=0xf22053b8 "Read DQS Gate Error, Failing ranks bitwise 0x%02x"
+f2203a46:  bl 0xf2201716   ; -> s_al_err_printf
 f2203a4a:  ldr r0,[0xf2203b30]
-f2203a4c:  bl 0xf2201716
+f2203a4c:  bl 0xf2201716   ; -> s_al_err_printf
 f2203a50:  adds r5,#0x1
 f2203a52:  cmp r5,#0x9
 f2203a54:  bne.w 0xf220385a
 f2203a58:  mov r0,r10
-f2203a5a:  bl 0xf2201948
+f2203a5a:  bl 0xf2201948   ; -> s_ddr_train_step2
 f2203a5e:  ldr.w r3,[r10,#0x4]
 f2203a62:  ldr.w r1,[r3,#0x1b0]
 f2203a66:  mvns r2,r1
@@ -5104,45 +5144,45 @@ f2203a7a:  ldr.w r2,[r3,#0x180]
 f2203a7e:  bic r2,r2,#0x80000000
 f2203a82:  str.w r2,[r3,#0x180]
 f2203a86:  dmb #0x1f
-f2203a8a:  bl 0xf2201968
+f2203a8a:  bl 0xf2201968   ; -> al_ddr_ctrl_wait_for_normal_operating_mode
 f2203a8e:  cmp r4,#0x0
 f2203a90:  beq.w 0xf2203576
 f2203a94:  b.w 0xf22021ae
 f2203a98:  uxth.w r1,r9
 f2203a9c:  cbz r1,0xf2203aa2
-f2203a9e:  ldr r0,[0xf2203b34]
+f2203a9e:  ldr r0,[0xf2203b34]   ; [0xf2203b34]=0xf22053ea "Read Leveling Error, Failing ranks bitwise 0x%02x"
 f2203aa0:  b 0xf2203a46
 f2203aa2:  uxth.w r1,r8
 f2203aa6:  cbz r1,0xf2203aac
-f2203aa8:  ldr r0,[0xf2203b38]
+f2203aa8:  ldr r0,[0xf2203b38]   ; [0xf2203b38]=0xf220541c "Write Level Adjust Error, Failing ranks bitwise 0x%02x"
 f2203aaa:  b 0xf2203a46
 f2203aac:  lsls r3,r7,#0xb
 f2203aae:  bpl 0xf2203ab4
-f2203ab0:  ldr r0,[0xf2203b3c]
+f2203ab0:  ldr r0,[0xf2203b3c]   ; [0xf2203b3c]=0xf2205453 "Static Read Error"
 f2203ab2:  b 0xf220389e
 f2203ab4:  lsls r0,r7,#0x1f
 f2203ab6:  bpl 0xf2203abc
-f2203ab8:  ldr r0,[0xf2203b40]
+f2203ab8:  ldr r0,[0xf2203b40]   ; [0xf2203b40]=0xf2205465 "Read Deskew Error"
 f2203aba:  b 0xf220389e
 f2203abc:  lsls r1,r7,#0x1d
 f2203abe:  bpl 0xf2203ac4
-f2203ac0:  ldr r0,[0xf2203b44]
+f2203ac0:  ldr r0,[0xf2203b44]   ; [0xf2203b44]=0xf2205477 "Write Deskew Error"
 f2203ac2:  b 0xf220389e
 f2203ac4:  lsls r2,r7,#0x1b
 f2203ac6:  bpl 0xf2203acc
-f2203ac8:  ldr r0,[0xf2203b48]
+f2203ac8:  ldr r0,[0xf2203b48]   ; [0xf2203b48]=0xf220548a "Read Eye Centering Error"
 f2203aca:  b 0xf220389e
 f2203acc:  lsls r3,r7,#0x19
 f2203ace:  bpl 0xf2203ad4
-f2203ad0:  ldr r0,[0xf2203b4c]
+f2203ad0:  ldr r0,[0xf2203b4c]   ; [0xf2203b4c]=0xf22054a3 "Write Eye Centering Error"
 f2203ad2:  b 0xf220389e
 f2203ad4:  ubfx r1,r6,#0x10,#0x4
 f2203ad8:  cbz r1,0xf2203ade
-f2203ada:  ldr r0,[0xf2203b50]
+f2203ada:  ldr r0,[0xf2203b50]   ; [0xf2203b50]=0xf22054bd "DRAM Vref Error, Failing ranks bitwise 0x%02x"
 f2203adc:  b 0xf2203a46
 f2203ade:  ubfx r1,r6,#0x8,#0x4
 f2203ae2:  cbz r1,0xf2203ae8
-f2203ae4:  ldr r0,[0xf2203b54]
+f2203ae4:  ldr r0,[0xf2203b54]   ; [0xf2203b54]=0xf22054eb "Host Vref Error, Failing ranks bitwise 0x%02x"
 f2203ae6:  b 0xf2203a46
 f2203ae8:  mov r0,r11
 f2203aea:  b 0xf220389e
@@ -5345,7 +5385,7 @@ f2203d78:  bx lr
 f2203d7a:  movs r0,#0x0
 f2203d7c:  bx lr
 
-; ==== FUN_f2203d7e @ f2203d7e ====
+; ==== s_pll_reg_a @ f2203d7e ====   [FUN_f2203d7e]
 f2203d7e:  ldr r0,[r0,#0x1c]
 f2203d80:  ubfx r0,r0,#0x8,#0x4
 f2203d84:  subs r0,#0x6
@@ -5355,7 +5395,7 @@ f2203d8a:  mov.hi r0,#0x0
 f2203d8c:  mov.ls r0,#0x1
 f2203d8e:  bx lr
 
-; ==== FUN_f2203d90 @ f2203d90 ====
+; ==== s_pll_reg_b @ f2203d90 ====   [FUN_f2203d90]
 f2203d90:  lsrs r3,r1,#0x1
 f2203d92:  tst r1,#0x1
 f2203d96:  add.w r0,r0,r3, lsl #0x2
@@ -5370,7 +5410,7 @@ f2203daa:  orr.eq r3,r2
 f2203dac:  str r3,[r0,#0x20]
 f2203dae:  bx lr
 
-; ==== FUN_f2203db0 @ f2203db0 ====
+; ==== al_pll_init @ f2203db0 ====   [FUN_f2203db0]
 f2203db0:  cmp r2,#0x1
 f2203db2:  push {r4,lr}
 f2203db4:  strd r0,r1,[r3,#0x0]
@@ -5400,9 +5440,9 @@ f2203de6:  str r2,[r3,#0x8]
 f2203de8:  movs r2,#0x13
 f2203dea:  str r2,[r3,#0xc]
 f2203dec:  b 0xf2203dd0
-f2203dee:  ldr r1,[0xf2203e10]
+f2203dee:  ldr r1,[0xf2203e10]   ; [0xf2203e10]=0xf22055fc "al_pll_init"
 f2203df0:  ldr r0,[0xf2203e14]
-f2203df2:  bl 0xf2201716
+f2203df2:  bl 0xf2201716   ; -> s_al_err_printf
 f2203df6:  mvn r0,#0x15
 f2203dfa:  b 0xf2203dd0
 
@@ -5431,7 +5471,7 @@ f2203e48:  adds r3,#0x1
 f2203e4a:  adds r5,#0x18
 f2203e4c:  b 0xf2203e34
 
-; ==== FUN_f2203e50 @ f2203e50 ====
+; ==== al_pll_freq_set @ f2203e50 ====   [FUN_f2203e50]
 f2203e50:  push {r3,r4,r5,r6,r7,lr}
 f2203e52:  mov r4,r0
 f2203e54:  mov r6,r2
@@ -5444,8 +5484,8 @@ f2203e60:  bgt 0xf2203e74
 f2203e62:  bne 0xf2203e80
 f2203e64:  mov r2,r1
 f2203e66:  ldr r0,[0xf2203edc]
-f2203e68:  ldr r1,[0xf2203ee0]
-f2203e6a:  bl 0xf2201716
+f2203e68:  ldr r1,[0xf2203ee0]   ; [0xf2203ee0]=0xf2205608 "al_pll_freq_set"
+f2203e6a:  bl 0xf2201716   ; -> s_al_err_printf
 f2203e6e:  mvn r0,#0x15
 f2203e72:  pop {r3,r4,r5,r6,r7,pc}
 f2203e74:  ldrb r7,[r5,#0x0]
@@ -5485,15 +5525,15 @@ f2203ec0:  cmp r6,#0x0
 f2203ec2:  beq 0xf2203eb6
 f2203ec4:  movs r0,#0x1
 f2203ec6:  subs r6,#0x1
-f2203ec8:  bl 0xf2204518
+f2203ec8:  bl 0xf2204518   ; -> s_udelay
 f2203ecc:  b 0xf2203eae
-f2203ece:  ldr r1,[0xf2203ee0]
+f2203ece:  ldr r1,[0xf2203ee0]   ; [0xf2203ee0]=0xf2205608 "al_pll_freq_set"
 f2203ed0:  ldr r0,[0xf2203ee4]
-f2203ed2:  bl 0xf2201716
+f2203ed2:  bl 0xf2201716   ; -> s_al_err_printf
 f2203ed6:  mvn r0,#0x3b
 f2203eda:  b 0xf2203e72
 
-; ==== FUN_f2203ee8 @ f2203ee8 ====
+; ==== al_pll_channel_freq_get @ f2203ee8 ====   [FUN_f2203ee8]
 f2203ee8:  movs r3,#0x0
 f2203eea:  push {r4,r5,r6,lr}
 f2203eec:  mov r5,r0
@@ -5501,7 +5541,7 @@ f2203eee:  ldr r0,[r0,#0x0]
 f2203ef0:  mov r6,r1
 f2203ef2:  str r3,[r2,#0x0]
 f2203ef4:  mov r4,r2
-f2203ef6:  bl 0xf2203d7e
+f2203ef6:  bl 0xf2203d7e   ; -> s_pll_reg_a
 f2203efa:  cbz r0,0xf2203f2a
 f2203efc:  mov r0,r5
 f2203efe:  bl 0xf2203d4c
@@ -5528,13 +5568,13 @@ f2203f30:  udiv r0,r2,r0
 f2203f34:  str r0,[r4,#0x0]
 f2203f36:  movs r0,#0x0
 f2203f38:  b 0xf2203f2a
-f2203f3a:  ldr r1,[0xf2203f48]
+f2203f3a:  ldr r1,[0xf2203f48]   ; [0xf2203f48]=0xf2205618 "al_pll_channel_freq_get"
 f2203f3c:  ldr r0,[0xf2203f4c]
-f2203f3e:  bl 0xf2201716
+f2203f3e:  bl 0xf2201716   ; -> s_al_err_printf
 f2203f42:  mvn r0,#0x4
 f2203f46:  b 0xf2203f2a
 
-; ==== FUN_f2203f50 @ f2203f50 ====
+; ==== al_pll_channel_div_set @ f2203f50 ====   [FUN_f2203f50]
 f2203f50:  push {r4,r5,r6,r7,r8,lr}
 f2203f54:  mov r8,r1
 f2203f56:  bic r1,r2,#0x3fc
@@ -5544,9 +5584,9 @@ f2203f60:  add r0,sp,#0x18
 f2203f62:  ldmia r0,{r0,r6,r7}
 f2203f64:  cbz r1,0xf2203f7a
 f2203f66:  movw r3,#0x3ff
-f2203f6a:  ldr r1,[0xf2203fd8]
+f2203f6a:  ldr r1,[0xf2203fd8]   ; [0xf2203fd8]=0xf2205630 "al_pll_channel_div_set"
 f2203f6c:  ldr r0,[0xf2203fdc]
-f2203f6e:  bl 0xf2201716
+f2203f6e:  bl 0xf2201716   ; -> s_al_err_printf
 f2203f72:  mvn r0,#0x15
 f2203f76:  pop.w {r4,r5,r6,r7,r8,pc}
 f2203f7a:  uxth r4,r2
@@ -5557,31 +5597,31 @@ f2203f84:  orr r4,r4,#0x4000
 f2203f88:  orr r2,r4,#0x1000
 f2203f8c:  mov r1,r8
 f2203f8e:  ldr r0,[r5,#0x0]
-f2203f90:  bl 0xf2203d90
+f2203f90:  bl 0xf2203d90   ; -> s_pll_reg_b
 f2203f94:  cbnz r6,0xf2203f9a
 f2203f96:  movs r0,#0x0
 f2203f98:  b 0xf2203f76
 f2203f9a:  orr r2,r4,#0x3000
 f2203f9e:  ldr r0,[r5,#0x0]
-f2203fa0:  bl 0xf2203d90
+f2203fa0:  bl 0xf2203d90   ; -> s_pll_reg_b
 f2203fa4:  movs r0,#0x3
-f2203fa6:  bl 0xf2204518
+f2203fa6:  bl 0xf2204518   ; -> s_udelay
 f2203faa:  ldr r0,[r5,#0x0]
-f2203fac:  bl 0xf2203d7e
+f2203fac:  bl 0xf2203d7e   ; -> s_pll_reg_a
 f2203fb0:  cbnz r0,0xf2203fb4
 f2203fb2:  cbnz r7,0xf2203fcc
 f2203fb4:  ldr r0,[r5,#0x0]
-f2203fb6:  bl 0xf2203d7e
+f2203fb6:  bl 0xf2203d7e   ; -> s_pll_reg_a
 f2203fba:  cmp r0,#0x0
 f2203fbc:  bne 0xf2203f96
-f2203fbe:  ldr r1,[0xf2203fd8]
+f2203fbe:  ldr r1,[0xf2203fd8]   ; [0xf2203fd8]=0xf2205630 "al_pll_channel_div_set"
 f2203fc0:  ldr r0,[0xf2203fe0]
-f2203fc2:  bl 0xf2201716
+f2203fc2:  bl 0xf2201716   ; -> s_al_err_printf
 f2203fc6:  mvn r0,#0x3b
 f2203fca:  b 0xf2203f76
 f2203fcc:  movs r0,#0x1
 f2203fce:  subs r7,#0x1
-f2203fd0:  bl 0xf2204518
+f2203fd0:  bl 0xf2204518   ; -> s_udelay
 f2203fd4:  b 0xf2203faa
 
 ; ==== FUN_f2203fe4 @ f2203fe4 ====
@@ -5595,7 +5635,7 @@ f2203ff0:  ldrb.w r2,[r3],#0x1
 f2203ff4:  add r0,r2
 f2203ff6:  b 0xf2203fea
 
-; ==== FUN_f2203ff8 @ f2203ff8 ====
+; ==== _pre_boot_validate @ f2203ff8 ====   [FUN_f2203ff8]
 f2203ff8:  push {r4,r5,r6,r7,r8,r9,r10,r11,lr}
 f2203ffc:  sub sp,#0x64
 f2203ffe:  mov r6,r1
@@ -5659,9 +5699,9 @@ f2204076:  bne 0xf22040f4
 f2204078:  ldr r3,[sp,#0x14]
 f220407a:  cmp r3,r8
 f220407c:  beq 0xf22040b6
-f220407e:  ldr r1,[0xf2204100]
+f220407e:  ldr r1,[0xf2204100]   ; [0xf2204100]=0xf2205cfc "_pre_boot_validate"
 f2204080:  ldr r0,[0xf2204104]
-f2204082:  bl 0xf2201716
+f2204082:  bl 0xf2201716   ; -> s_al_err_printf
 f2204086:  mvn r5,#0x4
 f220408a:  b 0xf22040ec
 f220408c:  mov r0,r6
@@ -5686,7 +5726,7 @@ f22040b4:  b 0xf2204068
 f22040b6:  movs r2,#0x48
 f22040b8:  add r1,sp,#0x18
 f22040ba:  mov r0,r4
-f22040bc:  bl 0xf22017a4
+f22040bc:  bl 0xf22017a4   ; -> s_spd4_timing_get
 f22040c0:  ldr r3,[sp,#0x18]
 f22040c2:  str r3,[r4,#0x0]
 f22040c4:  ldr r3,[sp,#0x1c]
@@ -5712,12 +5752,12 @@ f22040ea:  str r3,[r4,#0x3c]
 f22040ec:  mov r0,r5
 f22040ee:  add sp,#0x64
 f22040f0:  pop.w {r4,r5,r6,r7,r8,r9,r10,r11,pc}
-f22040f4:  ldr r1,[0xf2204100]
+f22040f4:  ldr r1,[0xf2204100]   ; [0xf2204100]=0xf2205cfc "_pre_boot_validate"
 f22040f6:  ldr r0,[0xf2204108]
-f22040f8:  bl 0xf2201716
+f22040f8:  bl 0xf2201716   ; -> s_al_err_printf
 f22040fc:  b 0xf22040ec
 
-; ==== FUN_f220410c @ f220410c ====
+; ==== al_flash_toc_validate @ f220410c ====   [FUN_f220410c]
 f220410c:  push {r4,r5,r6,r7,r8,r9,lr}
 f2204110:  mov r5,r1
 f2204112:  sub sp,#0x3c
@@ -5761,9 +5801,9 @@ f2204162:  cbnz r0,0xf2204194
 f2204164:  ldr r3,[sp,#0x0]
 f2204166:  cmp r3,r9
 f2204168:  beq 0xf220419c
-f220416a:  ldr r1,[0xf22041a8]
+f220416a:  ldr r1,[0xf22041a8]   ; [0xf22041a8]=0xf2205c50 "al_flash_toc_validate"
 f220416c:  ldr r0,[0xf22041ac]
-f220416e:  bl 0xf2201716
+f220416e:  bl 0xf2201716   ; -> s_al_err_printf
 f2204172:  mvn r4,#0x4
 f2204176:  b 0xf220419c
 f2204178:  movs r2,#0x20
@@ -5779,9 +5819,9 @@ f220418c:  adds r5,#0x20
 f220418e:  add r9,r0
 f2204190:  adds r6,#0x1
 f2204192:  b 0xf2204150
-f2204194:  ldr r1,[0xf22041a8]
+f2204194:  ldr r1,[0xf22041a8]   ; [0xf22041a8]=0xf2205c50 "al_flash_toc_validate"
 f2204196:  ldr r0,[0xf22041b0]
-f2204198:  bl 0xf2201716
+f2204198:  bl 0xf2201716   ; -> s_al_err_printf
 f220419c:  mov r0,r4
 f220419e:  add sp,#0x3c
 f22041a0:  pop.w {r4,r5,r6,r7,r8,r9,pc}
@@ -5801,7 +5841,7 @@ f22041cc:  add r3,sp,#0x4
 f22041ce:  mov r2,sp
 f22041d0:  mov r1,r4
 f22041d2:  mov r0,r7
-f22041d4:  bl 0xf220410c
+f22041d4:  bl 0xf220410c   ; -> al_flash_toc_validate
 f22041d8:  cbz r0,0xf22041e0
 f22041da:  add r4,r8
 f22041dc:  adds r5,#0x1
@@ -5811,7 +5851,7 @@ f22041e2:  str r4,[r3,#0x0]
 f22041e4:  add sp,#0x8
 f22041e6:  pop.w {r4,r5,r6,r7,r8,pc}
 
-; ==== FUN_f22041ec @ f22041ec ====
+; ==== al_flash_toc_find_id_with_fallback @ f22041ec ====   [FUN_f22041ec]
 f22041ec:  push {r4,r5,r6,r7,r8,r9,r10,r11,lr}
 f22041f0:  sub sp,#0x64
 f22041f2:  mov r5,r1
@@ -5875,7 +5915,7 @@ f2204284:  movs r2,#0x20
 f2204286:  mov r0,r6
 f2204288:  add.w r1,sp,r2
 f220428c:  str r4,[r3,#0x0]
-f220428e:  bl 0xf22017a4
+f220428e:  bl 0xf22017a4   ; -> s_spd4_timing_get
 f2204292:  ldr r3,[sp,#0x20]
 f2204294:  str r3,[r6,#0x0]
 f2204296:  ldr r3,[sp,#0x2c]
@@ -5890,12 +5930,12 @@ f22042a6:  mov r0,r7
 f22042a8:  add sp,#0x64
 f22042aa:  pop.w {r4,r5,r6,r7,r8,r9,r10,r11,pc}
 f22042ae:  mov r7,r0
-f22042b0:  ldr r1,[0xf22042bc]
+f22042b0:  ldr r1,[0xf22042bc]   ; [0xf22042bc]=0xf2205c66 "al_flash_toc_find_id_with_fallback"
 f22042b2:  ldr r0,[0xf22042c0]
-f22042b4:  bl 0xf2201716
+f22042b4:  bl 0xf2201716   ; -> s_al_err_printf
 f22042b8:  b 0xf22042a6
 
-; ==== FUN_f22042c4 @ f22042c4 ====
+; ==== al_flash_toc_stage2_active_instance_get_with_fallback @ f22042c4 ====   [FUN_f22042c4]
 f22042c4:  push {r4,r5,r6,r7,r8,r9,r10,r11,lr}
 f22042c8:  sub sp,#0x3c
 f22042ca:  ldr r5,[r0,r1]
@@ -5925,10 +5965,10 @@ f220430a:  mov r7,r0
 f220430c:  cmp r7,r11
 f220430e:  bne 0xf2204320
 f2204310:  mov r2,r5
-f2204312:  ldr r1,[0xf2204360]
+f2204312:  ldr r1,[0xf2204360]   ; [0xf2204360]=0xf2205c89 "al_flash_toc_stage2_active_instance_get_with_fallback"
 f2204314:  mvn r4,#0x15
 f2204318:  ldr r0,[0xf2204364]
-f220431a:  bl 0xf2201716
+f220431a:  bl 0xf2201716   ; -> s_al_err_printf
 f220431e:  b 0xf22042f0
 f2204320:  movs r2,#0x20
 f2204322:  add r1,sp,#0x18
@@ -5953,9 +5993,9 @@ f220434a:  str.w r3,[r9,#0x0]
 f220434e:  b 0xf22042f0
 f2204350:  adds r7,#0x1
 f2204352:  b 0xf220430c
-f2204354:  ldr r1,[0xf2204360]
+f2204354:  ldr r1,[0xf2204360]   ; [0xf2204360]=0xf2205c89 "al_flash_toc_stage2_active_instance_get_with_fallback"
 f2204356:  ldr r0,[0xf2204368]
-f2204358:  bl 0xf2201716
+f2204358:  bl 0xf2201716   ; -> s_al_err_printf
 f220435c:  b 0xf22042f0
 
 ; ==== FUN_f220436c @ f220436c ====
@@ -5964,7 +6004,7 @@ f220436e:  add r4,sp,#0xc
 f2204370:  str r4,[sp,#0x4]
 f2204372:  ldr r4,[sp,#0x18]
 f2204374:  str r4,[sp,#0x0]
-f2204376:  bl 0xf22042c4
+f2204376:  bl 0xf22042c4   ; -> al_flash_toc_stage2_active_instance_get_with_fallback
 f220437a:  add sp,#0x10
 f220437c:  pop {r4,pc}
 
@@ -5978,7 +6018,7 @@ f2204388:  bl 0xf220436c
 f220438c:  add sp,#0xc
 f220438e:  pop.w pc
 
-; ==== FUN_f2204394 @ f2204394 ====
+; ==== al_flash_obj_header_read_and_validate @ f2204394 ====   [FUN_f2204394]
 f2204394:  push {r4,r5,r6,lr}
 f2204396:  sub sp,#0x48
 f2204398:  mov r3,r0
@@ -5989,9 +6029,9 @@ f22043a0:  mov r1,sp
 f22043a2:  blx r3
 f22043a4:  mov r5,r0
 f22043a6:  cbz r0,0xf22043b6
-f22043a8:  ldr r1,[0xf220441c]
+f22043a8:  ldr r1,[0xf220441c]   ; [0xf220441c]=0xf2205cbf "al_flash_obj_header_read_and_validate"
 f22043aa:  ldr r0,[0xf2204420]
-f22043ac:  bl 0xf2201716
+f22043ac:  bl 0xf2201716   ; -> s_al_err_printf
 f22043b0:  mov r0,r5
 f22043b2:  add sp,#0x48
 f22043b4:  pop {r4,r5,r6,pc}
@@ -6005,19 +6045,19 @@ f22043c4:  ldr r6,[0xf2204424]
 f22043c6:  ldr r3,[sp,#0x0]
 f22043c8:  cmp r3,r6
 f22043ca:  beq 0xf22043e4
-f22043cc:  ldr r1,[0xf220441c]
+f22043cc:  ldr r1,[0xf220441c]   ; [0xf220441c]=0xf2205cbf "al_flash_obj_header_read_and_validate"
 f22043ce:  ldr r0,[0xf2204428]
-f22043d0:  bl 0xf2201716
+f22043d0:  bl 0xf2201716   ; -> s_al_err_printf
 f22043d4:  mov r1,r6
 f22043d6:  ldr r0,[0xf220442c]
 f22043d8:  ldr r2,[sp,#0x0]
-f22043da:  bl 0xf2201716
+f22043da:  bl 0xf2201716   ; -> s_al_err_printf
 f22043de:  mvn r5,#0x4
 f22043e2:  b 0xf22043b0
 f22043e4:  movs r2,#0x48
 f22043e6:  mov r1,sp
 f22043e8:  mov r0,r4
-f22043ea:  bl 0xf22017a4
+f22043ea:  bl 0xf22017a4   ; -> s_spd4_timing_get
 f22043ee:  ldr r3,[sp,#0x0]
 f22043f0:  str r3,[r4,#0x0]
 f22043f2:  ldr r3,[sp,#0x4]
@@ -6042,7 +6082,7 @@ f2204416:  ldr r3,[sp,#0x3c]
 f2204418:  str r3,[r4,#0x3c]
 f220441a:  b 0xf22043b0
 
-; ==== FUN_f2204430 @ f2204430 ====
+; ==== al_flash_obj_data_load @ f2204430 ====   [FUN_f2204430]
 f2204430:  push {r4,r5,r6,r7,r8,lr}
 f2204434:  mov r5,r1
 f2204436:  sub sp,#0x50
@@ -6074,16 +6114,16 @@ f220446a:  bl 0xf2203fe4
 f220446e:  ldr r3,[sp,#0x4]
 f2204470:  cmp r3,r0
 f2204472:  beq 0xf2204480
-f2204474:  ldr r1,[0xf2204494]
+f2204474:  ldr r1,[0xf2204494]   ; [0xf2204494]=0xf2205ce5 "al_flash_obj_data_load"
 f2204476:  mvn r4,#0x4
 f220447a:  ldr r0,[0xf2204498]
-f220447c:  bl 0xf2201716
+f220447c:  bl 0xf2201716   ; -> s_al_err_printf
 f2204480:  mov r0,r4
 f2204482:  add sp,#0x50
 f2204484:  pop.w {r4,r5,r6,r7,r8,pc}
-f2204488:  ldr r1,[0xf2204494]
+f2204488:  ldr r1,[0xf2204494]   ; [0xf2204494]=0xf2205ce5 "al_flash_obj_data_load"
 f220448a:  ldr r0,[0xf220449c]
-f220448c:  bl 0xf2201716
+f220448c:  bl 0xf2201716   ; -> s_al_err_printf
 f2204490:  b 0xf2204480
 
 ; ==== FUN_f22044a0 @ f22044a0 ====
@@ -6092,21 +6132,21 @@ f22044a2:  ldr r4,[sp,#0x18]
 f22044a4:  stm sp,{r2,r3,r4}
 f22044a8:  mov.w r3,#0x21000
 f22044ac:  mov.w r2,#0x20000
-f22044b0:  bl 0xf2203ff8
+f22044b0:  bl 0xf2203ff8   ; -> _pre_boot_validate
 f22044b4:  add sp,#0x10
 f22044b6:  pop {r4,pc}
 
-; ==== FUN_f22044b8 @ f22044b8 ====
+; ==== shared_params_write_magic @ f22044b8 ====   [FUN_f22044b8]
 f22044b8:  ldr r3,[0xf22044c0]
 f22044ba:  ldr r2,[0xf22044c4]
 f22044bc:  str r2,[r3,#0x0]
 f22044be:  bx lr
 
-; ==== FUN_f22044c8 @ f22044c8 ====
+; ==== s_shared_params_write_size @ f22044c8 ====   [FUN_f22044c8]
 f22044c8:  ldr r0,[0xf22044cc]
 f22044ca:  bx lr
 
-; ==== FUN_f22044d0 @ f22044d0 ====
+; ==== i2c_eeprom_read @ f22044d0 ====   [FUN_f22044d0]
 f22044d0:  cmp r1,#0xff
 f22044d2:  push {r4,r5,r6,r7,lr}
 f22044d4:  mov r7,r3
@@ -6121,21 +6161,21 @@ f22044e4:  strh.w r1,[sp,#0xc]
 f22044e8:  ldr r2,[0xf2204510]
 f22044ea:  add r0,sp,#0x10
 f22044ec:  ldr r1,[0xf2204514]
-f22044ee:  bl 0xf2204694
+f22044ee:  bl 0xf2204694   ; -> s_i2c_xfer_a
 f22044f2:  cbnz r0,0xf2204504
 f22044f4:  add r3,sp,#0xc
 f22044f6:  mov r2,r4
 f22044f8:  strd r6,r7,[sp,#0x0]
 f22044fc:  mov r1,r5
 f22044fe:  add r0,sp,#0x10
-f2204500:  bl 0xf22046fc
+f2204500:  bl 0xf22046fc   ; -> s_i2c_xfer_b
 f2204504:  add sp,#0x24
 f2204506:  pop {r4,r5,r6,r7,pc}
 f2204508:  movs r4,#0x1
 f220450a:  strb.w r3,[sp,#0xc]
 f220450e:  b 0xf22044e8
 
-; ==== FUN_f2204518 @ f2204518 ====
+; ==== s_udelay @ f2204518 ====   [FUN_f2204518]
 f2204518:  ldr r3,[0xf2204564]
 f220451a:  movw r12,#0x2710
 f220451e:  push {r4,r5,r6,r7,lr}
@@ -6167,7 +6207,7 @@ f220455c:  add r3,r2
 f220455e:  mov r2,r1
 f2204560:  b 0xf2204546
 
-; ==== FUN_f2204574 @ f2204574 ====
+; ==== al_i2c_xfer_finish @ f2204574 ====   [FUN_f2204574]
 f2204574:  push {r3,r4,r5,r6,r7,lr}
 f2204576:  mov r4,r0
 f2204578:  ldr r6,[r0,#0x0]
@@ -6193,10 +6233,10 @@ f22045a6:  pop {r3,r4,r5,r6,r7,pc}
 f22045a8:  ldr r3,[r4,#0x4]
 f22045aa:  cmp r3,r5
 f22045ac:  bcs 0xf22045bc
-f22045ae:  ldr r1,[0xf22045ec]
+f22045ae:  ldr r1,[0xf22045ec]   ; [0xf22045ec]=0xf2205e29 "al_i2c_xfer_finish"
 f22045b0:  mvn r5,#0x9f
 f22045b4:  ldr r0,[0xf22045f0]
-f22045b6:  bl 0xf2201716
+f22045b6:  bl 0xf2201716   ; -> s_al_err_printf
 f22045ba:  b 0xf2204588
 f22045bc:  movs r1,#0x1
 f22045be:  ldr r3,[r4,#0x8]
@@ -6214,13 +6254,13 @@ f22045d4:  ldr r0,[r4,#0xc]
 f22045d6:  blx r3
 f22045d8:  ldr r3,[r7,#0x70]
 f22045da:  b 0xf220458e
-f22045dc:  ldr r1,[0xf22045ec]
+f22045dc:  ldr r1,[0xf22045ec]   ; [0xf22045ec]=0xf2205e29 "al_i2c_xfer_finish"
 f22045de:  mvn r5,#0x9f
 f22045e2:  ldr r0,[0xf22045f4]
-f22045e4:  bl 0xf2201716
+f22045e4:  bl 0xf2201716   ; -> s_al_err_printf
 f22045e8:  b 0xf2204592
 
-; ==== FUN_f2204660 @ f2204660 ====
+; ==== al_i2c_perform_write @ f2204660 ====   [FUN_f2204660]
 f22045f8:  push {r3,r4,r5,r6,r7,r8,r9,lr}
 f22045fc:  mov r6,r0
 f22045fe:  ldr.w r8,[r0,#0x0]
@@ -6249,9 +6289,9 @@ f2204634:  b 0xf2204626
 f2204636:  ldr r3,[r6,#0x4]
 f2204638:  cmp r3,r5
 f220463a:  bcs 0xf220464c
-f220463c:  ldr r1,[0xf2204658]
+f220463c:  ldr r1,[0xf2204658]   ; [0xf2204658]=0xf2205e14 "al_i2c_perform_write"
 f220463e:  ldr r0,[0xf220465c]
-f2204640:  bl 0xf2201716
+f2204640:  bl 0xf2201716   ; -> s_al_err_printf
 f2204644:  mvn r0,#0x9f
 f2204648:  pop.w {r3,r4,r5,r6,r7,r8,r9,pc}
 f220464c:  movs r1,#0x1
@@ -6281,7 +6321,7 @@ f220468e:  mov r0,r3
 f2204690:  pop {r4,r5}
 f2204692:  bx lr
 
-; ==== FUN_f2204694 @ f2204694 ====
+; ==== s_i2c_xfer_a @ f2204694 ====   [FUN_f2204694]
 f2204694:  ldrh.w r3,[r2,#0x6c]
 f2204698:  push {r4,lr}
 f220469a:  ldrb r4,[r1,#0x18]
@@ -6327,7 +6367,7 @@ f22046f2:  b 0xf22046c8
 f22046f4:  mov r4,r3
 f22046f6:  b 0xf22046d2
 
-; ==== FUN_f22046fc @ f22046fc ====
+; ==== s_i2c_xfer_b @ f22046fc ====   [FUN_f22046fc]
 f22046fc:  push {r4,r5,r6,r7,r8,r9,r10,lr}
 f2204700:  mov r4,r3
 f2204702:  uxth r1,r1
@@ -6337,7 +6377,7 @@ f2204708:  mov r2,r4
 f220470a:  ldr.w r8,[sp,#0x20]
 f220470e:  mov r5,r0
 f2204710:  ldr.w r9,[sp,#0x24]
-f2204714:  bl 0xf2204660
+f2204714:  bl 0xf2204660   ; -> al_i2c_perform_write
 f2204718:  cbnz r0,0xf2204772
 f220471a:  mov r6,r8
 f220471c:  mov r10,r8
@@ -6369,7 +6409,7 @@ f2204760:  mul r3,r3,r8
 f2204764:  cmp r3,r4
 f2204766:  bcs 0xf2204776
 f2204768:  mov r0,r5
-f220476a:  bl 0xf2204574
+f220476a:  bl 0xf2204574   ; -> al_i2c_xfer_finish
 f220476e:  mvn r0,#0x9f
 f2204772:  pop.w {r4,r5,r6,r7,r8,r9,r10,pc}
 f2204776:  movs r1,#0x1
