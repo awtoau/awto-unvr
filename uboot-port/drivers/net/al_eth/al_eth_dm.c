@@ -29,6 +29,7 @@
 #include <pci.h>
 #include <phy.h>
 #include <spi_flash.h>
+#include <cpu_func.h>
 #include <linux/delay.h>
 #include <asm/io.h>
 #include <dm/device_compat.h>
@@ -127,6 +128,31 @@ static int al_eth_dm_mdio_write(struct mii_dev *bus, int addr, int devad,
 	return al_eth_mdio_write(&priv->adapter, addr, MDIO_DEVAD_NONE, reg, val);
 }
 
+/*
+ * DMA cache maintenance. The al_eth UDMA is NOT guaranteed cache-coherent in
+ * U-Boot - it rests on the #74 AXI SMCC snoop fix, which on the box left TX
+ * completions never reaching the CPU (descriptor posted, "TX completion
+ * timeout"). So do explicit maintenance around every descriptor/buffer handoff:
+ * flush = publish CPU writes to the engine, invalidate = pull engine writes
+ * back to the CPU. desc_block + rx_buf are ARCH_DMA_MINALIGN aligned; round the
+ * ends so we never touch a neighbouring cache line.
+ */
+static void al_eth_cache_flush(void *p, size_t len)
+{
+	uintptr_t s = rounddown((uintptr_t)p, ARCH_DMA_MINALIGN);
+	uintptr_t e = roundup((uintptr_t)p + len, ARCH_DMA_MINALIGN);
+
+	flush_dcache_range(s, e);
+}
+
+static void al_eth_cache_inval(void *p, size_t len)
+{
+	uintptr_t s = rounddown((uintptr_t)p, ARCH_DMA_MINALIGN);
+	uintptr_t e = roundup((uintptr_t)p + len, ARCH_DMA_MINALIGN);
+
+	invalidate_dcache_range(s, e);
+}
+
 /* ---- DMA / adapter bring-up (mirror of vendor al_eth_dev_init) --------- */
 
 static int al_eth_dm_dma_init(struct udevice *dev)
@@ -210,6 +236,12 @@ static int al_eth_dm_dma_init(struct udevice *dev)
 	}
 	al_eth_rx_buffer_action(priv->rx_q, AL_ETH_RX_BUFFERS);
 
+	/* RX buffers are about to be DMA-written: drop any stale dirty lines, and
+	 * publish the just-posted descriptors before the MAC starts pulling them. */
+	for (i = 0; i < AL_ETH_RX_BUFFERS; i++)
+		al_eth_cache_inval(priv->rx_buf[i], PKTSIZE_ALIGN);
+	al_eth_cache_flush(priv->desc_block, AL_ETH_DESC_BLOCK_SIZE);
+
 	al_eth_mac_start(&priv->adapter);
 
 	/* MDIO clock config, then bring the PHY up via phylib. */
@@ -292,9 +324,14 @@ static int al_eth_dm_send(struct udevice *dev, void *packet, int length)
 		dev_err(dev, "tx_pkt_prepare produced 0 descriptors\n");
 		return -EIO;
 	}
+	/* publish the packet + TX descriptors to the UDMA before kicking it. */
+	al_eth_cache_flush(packet, length);
+	al_eth_cache_flush(priv->desc_block, AL_ETH_DESC_BLOCK_SIZE);
 	al_eth_tx_dma_action(priv->tx_q, ndesc);
 
 	while (ndesc) {
+		/* pull the TX completion the engine just wrote back to us. */
+		al_eth_cache_inval(priv->desc_block, AL_ETH_DESC_BLOCK_SIZE);
 		done = al_eth_comp_tx_get(priv->tx_q);
 		ndesc -= done;
 		if (!ndesc)
@@ -319,6 +356,9 @@ static int al_eth_dm_recv(struct udevice *dev, int flags, uchar **packetp)
 	int ndesc;
 
 	memset(&pkt, 0, sizeof(pkt));
+	/* pull the RX completion + the received buffer the engine wrote. */
+	al_eth_cache_inval(priv->desc_block, AL_ETH_DESC_BLOCK_SIZE);
+	al_eth_cache_inval(priv->rx_buf[priv->rx_head], PKTSIZE_ALIGN);
 	ndesc = al_eth_pkt_rx(priv->rx_q, &pkt);
 	if (!ndesc)
 		return -EAGAIN;
@@ -342,12 +382,17 @@ static int al_eth_dm_free_pkt(struct udevice *dev, uchar *packet, int length)
 	buf.addr = (al_phys_addr_t)(uintptr_t)priv->rx_buf[priv->rx_head];
 	buf.len = PKTSIZE_ALIGN;
 
+	/* this buffer will be DMA-written again: drop stale lines before re-posting. */
+	al_eth_cache_inval(priv->rx_buf[priv->rx_head], PKTSIZE_ALIGN);
+
 	err = al_eth_rx_buffer_add(priv->rx_q, &buf, AL_ETH_RX_FLAGS_INT, NULL);
 	if (err) {
 		dev_err(dev, "rx_buffer_add (recycle) failed: %d\n", err);
 		return err;
 	}
 	al_eth_rx_buffer_action(priv->rx_q, 1);
+	/* publish the recycled descriptor to the UDMA. */
+	al_eth_cache_flush(priv->desc_block, AL_ETH_DESC_BLOCK_SIZE);
 
 	if (++priv->rx_head == AL_ETH_RX_BUFFERS)
 		priv->rx_head = 0;
