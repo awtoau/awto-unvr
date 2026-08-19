@@ -214,11 +214,13 @@ static int al_pcie_snoop_fix(void)
 				continue;
 			/*
 			 * SKIP the two al_eth devices (1c36:0001 RJ45, 0002 SFP+).
-			 * Stock U-Boot never touches their SMCC/APP_CONTROL and its eth
-			 * works, i.e. eth DMA is already coherent by default. Our writes
-			 * here BREAK eth TX (UDMA won't complete) AND persist across a warm
-			 * reset, poisoning stock's eth on the next boot (auto-chainload
-			 * tftp then fails). Only AHCI/crypto/dma need the snoop fix.
+			 * eth DOES need SMCC snoop (M2S/TX reads descriptors from
+			 * cacheable DRAM), but it must be applied AFTER the eth adapter
+			 * FLR/init - those reset SMCC to default. Setting it here (pre-eth-
+			 * probe) does not stick, and left set it poisons stock's eth across
+			 * a warm reset. So the al_eth driver enables snoop on its own
+			 * function post-init (al_eth_dm_snoop_enable), mirroring stock's
+			 * kernel (bind-time, pcie-al-internal.c). Here we do AHCI/crypto/dma.
 			 */
 			if (((vendor >> 16) & 0xffff) == 0x0001 ||
 			    ((vendor >> 16) & 0xffff) == 0x0002)

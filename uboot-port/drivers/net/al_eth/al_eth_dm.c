@@ -12,10 +12,12 @@
  * mac_config(RGMII) -> mac_link_config -> rx_buffer_add -> mac_start), re-expressed
  * as DM eth_ops.
  *
- * DMA coherency: relies on the #74 AXI SMCC snoop fix (board_late_init) that makes
- * the internal-PCIe units cache-coherent, so no explicit cache maintenance here -
- * same assumption as the vendor driver on this coherent SoC. If a HW bring-up shows
- * stale descriptors/buffers, add flush/invalidate around TX submit + RX consume.
+ * DMA coherency: the eth M2S/TX engine snoops the CPU dcache ONLY after this
+ * driver enables SMCC snoop on the eth function itself (al_eth_dm_snoop_enable),
+ * post-FLR/adapter-init - board_late_init's snoop pass excludes eth and would be
+ * wiped by the adapter reset anyway (stock's kernel does the same at driver-bind).
+ * Explicit flush/invalidate around TX submit + RX consume is kept as a belt-and-
+ * -suspenders safety net.
  *
  * HARDWARE-TODO markers below flag values/paths that can only be finalised on the box.
  */
@@ -165,6 +167,38 @@ static int al_eth_dm_cfg_write(void *handle, int where, uint32_t val)
 	return dm_pci_write_config32((struct udevice *)handle, where, val);
 }
 
+/*
+ * Enable AXI SMCC cache-coherent DMA snoop on THIS eth function.
+ * Must run AFTER the FLR + adapter init (both reset SMCC to default = snoop
+ * OFF). Without it the eth M2S/TX engine reads TX descriptors from cacheable
+ * DRAM without snooping the CPU dcache -> stale descriptor -> TX never
+ * completes ("TX completion timeout"). Stock's kernel applies this at
+ * driver-bind, i.e. post-reset (linux pcie-al-internal.c); applying it once
+ * pre-reset in board_late_init does not stick. Mirrors board al_snoop_one;
+ * eth is slot <= 5 -> all 4 sub-masters.
+ */
+#define AL_ETH_SMCC		0x110
+#define AL_ETH_SMCC_BUNDLE	0x20
+#define AL_ETH_SMCC_SNOOP	0x3	/* SNOOP_OVR|SNOOP_EN */
+#define AL_ETH_APP_CONTROL	0x220
+#define AL_ETH_APP_LO16		0x3ff
+
+static void al_eth_dm_snoop_enable(struct udevice *dev)
+{
+	u32 v;
+	int i;
+
+	dm_pci_read_config32(dev, AL_ETH_SMCC, &v);
+	v |= AL_ETH_SMCC_SNOOP;
+	dm_pci_write_config32(dev, AL_ETH_SMCC, v);
+	for (i = 1; i < 4; i++)
+		dm_pci_write_config32(dev, AL_ETH_SMCC + i * AL_ETH_SMCC_BUNDLE, v);
+
+	dm_pci_read_config32(dev, AL_ETH_APP_CONTROL, &v);
+	v = (v & 0xffff0000) | AL_ETH_APP_LO16;
+	dm_pci_write_config32(dev, AL_ETH_APP_CONTROL, v);
+}
+
 /* ---- DMA / adapter bring-up (mirror of vendor al_eth_dev_init) --------- */
 
 static int al_eth_dm_dma_init(struct udevice *dev)
@@ -205,6 +239,10 @@ static int al_eth_dm_dma_init(struct udevice *dev)
 		dev_err(dev, "al_eth_adapter_init failed: %d\n", err);
 		return err;
 	}
+
+	/* now that FLR + adapter_init have reset the function, enable DMA snoop
+	 * (they clear it) - THE fix for the TX-completion timeout. */
+	al_eth_dm_snoop_enable(dev);
 
 	memset(&txp, 0, sizeof(txp));
 	txp.size = AL_ETH_DESCS_PER_Q;
