@@ -228,6 +228,42 @@ int board_late_init(void)
 	return 0;
 }
 
+/*
+ * `fan <duty>` — set all 3 adt7475 fans (0x2e, behind mux ch3 = i2c bus 2) to a
+ * manual PWM duty 0-255. Regs: 0x5c-0x5e PWM config (0xe8 = manual mode),
+ * 0x30-0x32 PWM duty. Matches the stock `slowfan` env. `fan` with no arg reads
+ * back the current duties.
+ */
+static int do_fan(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
+{
+	struct udevice *adt;
+	int rc, i;
+
+	rc = i2c_get_chip_for_busnum(2, 0x2e, 1, &adt);
+	if (rc) {
+		printf("fan: adt7475 not found on bus 2 (rc=%d)\n", rc);
+		return CMD_RET_FAILURE;
+	}
+	if (argc < 2) {
+		for (i = 0; i < 3; i++)
+			printf("fan%d PWM duty = %u\n", i + 1,
+			       dm_i2c_reg_read(adt, 0x30 + i));
+		return CMD_RET_SUCCESS;
+	}
+	int duty = simple_strtoul(argv[1], NULL, 0);
+
+	if (duty > 255)
+		duty = 255;
+	for (i = 0; i < 3; i++) {
+		dm_i2c_reg_write(adt, 0x5c + i, 0xe8);	/* manual mode */
+		dm_i2c_reg_write(adt, 0x30 + i, duty);	/* duty */
+	}
+	printf("fan: set PWM1-3 = %d (manual)\n", duty);
+	return CMD_RET_SUCCESS;
+}
+U_BOOT_CMD(fan, 2, 0, do_fan,
+	   "set all 3 fans to a manual PWM duty (0-255), or read current", "[duty]");
+
 int dram_init(void)
 {
 	return fdtdec_setup_mem_size_base();
