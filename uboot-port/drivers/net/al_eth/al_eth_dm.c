@@ -211,12 +211,11 @@ static int al_eth_dm_dma_init(struct udevice *dev)
 	al_udma_q_handle_get(&priv->adapter.tx_udma, 0, &priv->tx_q);
 	al_udma_q_handle_get(&priv->adapter.rx_udma, 0, &priv->rx_q);
 
-	/* RGMII 1G, external AR8033 PHY drives the link. */
+	/* RGMII 1G. Do NOT call al_eth_mac_link_config: stock SKIPS it for
+	 * external-PHY RGMII (al_eth.c: only for SGMII, or RGMII && !ext_phy).
+	 * The external AR8033 drives the link and the MAC follows via RGMII
+	 * in-band signalling; forcing mac_link_config wedges the UDMA TX. */
 	al_eth_mac_config(&priv->adapter, AL_ETH_MAC_MODE_RGMII);
-	al_eth_mac_link_config(&priv->adapter,
-			       AL_FALSE,	/* not 1000base-x (RGMII copper) */
-			       AL_TRUE,		/* let PHY autoneg drive it */
-			       1000, AL_TRUE);
 	al_eth_rx_pkt_limit_config(&priv->adapter, 30, 1518);
 
 	/* prime the RX ring */
@@ -295,15 +294,11 @@ static int al_eth_dm_start(struct udevice *dev)
 		return -EIO;
 	}
 
-	/* Re-config the MAC to the PHY-negotiated speed/duplex. dma_init latched
-	 * the RGMII MAC to 1G (that path clears ENA_AUTO), so without this a link
-	 * that negotiates 100M (the live RJ45 does) clocks the datapath at gigabit
-	 * while the PHY runs 25 MHz -> frames dropped, link "up", ping silently
-	 * fails. Review #1. an_enable=FALSE: take the phylib-negotiated result. */
-	al_eth_mac_link_config(&priv->adapter, AL_FALSE, AL_FALSE,
-			       priv->phy->speed,
-			       priv->phy->duplex == DUPLEX_FULL);
-
+	/* No al_eth_mac_link_config here either — stock doesn't do it for
+	 * external-PHY RGMII (the AR8033 + MAC RGMII in-band handle speed). The
+	 * earlier forced 1G/100M mac_link_config wedged the UDMA TX (completion
+	 * never fires). If a real speed-sync problem surfaces later, revisit with
+	 * the RGMII in-band path, not a forced mac_link_config. */
 	priv->started = true;
 	return 0;
 }
