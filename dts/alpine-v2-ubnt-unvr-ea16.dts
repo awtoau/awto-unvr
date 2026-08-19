@@ -316,9 +316,16 @@
 					#address-cells = <1>;
 					#size-cells = <0>;
 
+					/* OFFLINE for now (status="disabled"): U-Boot does the RTC
+					 * reset-at-probe (clears POC/BLD before Linux, alpine.c), and
+					 * keeping Linux off ch0's RTC avoids re-triggering the SDA-hold
+					 * wedge (docs/rtc-s35390a-fault.md, #86) so the ch0/SFP-EEPROM
+					 * segment stays scannable + no al_eth poll flood. Fedora keeps
+					 * time via NTP. Re-enable once a Linux-side ch0 recovery exists. */
 					rtc@30 {
 						compatible = "sii,s35390a";
 						reg = <0x30>;
+						status = "disabled";
 					};
 				};
 

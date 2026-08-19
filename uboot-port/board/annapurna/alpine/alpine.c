@@ -95,11 +95,22 @@ static u8 s35_rev(u8 b)
 	return b;
 }
 
+/* S-35390A STATUS1 flags (normal bit order, after s35_rev). */
+#define S35_POC		0x01	/* B0 power-on */
+#define S35_BLD		0x02	/* B1 battery-low */
+#define S35_24H		0x40	/* B6 24-hour mode */
+#define S35_RESET	0x80	/* B7 reset (write-only) */
+
 /*
- * Initialize the S-35390A RTC (0x30, behind PCA9546 mux ch0 on i2c bus 0):
- * write STATUS1 RESET (B7) | 24H (B6) per its datasheet. Byte is bit-reversed
- * on the wire. Selects mux ch0, writes, reads back STATUS1, deselects.
- * Invoked by the `rtcinit` command (below), not automatically.
+ * Reset-at-probe for the S-35390A RTC (0x30, behind PCA9546 mux ch0, i2c bus 0).
+ * Mirrors the stock 4.1.37 driver: read STATUS1, and ONLY if POC/BLD (abnormal
+ * power state) write RESET|24H — otherwise leave a running clock alone (an
+ * unconditional RESET clobbers the time every boot). Clearing POC/BLD keeps the
+ * chip out of the datasheet "indefinite status" that can hold ch0 SDA and wedge
+ * the DW i2c bus once Linux touches it (docs/rtc-s35390a-fault.md). Doing it here,
+ * before Linux (which keeps the RTC offline for now), means the chip is clean and
+ * the ch0/SFP-EEPROM segment stays scannable. Data is LSB-first (bit-reversed).
+ * Runs at boot (board_late_init) and as the `rtcinit` command.
  */
 static void rtc_s35390a_init(void)
 {
@@ -120,11 +131,21 @@ static void rtc_s35390a_init(void)
 	if (gr) {
 		printf("rtc-s35390a: sel=%d get_chip rtc=%d\n", sel, gr);
 	} else {
-		v = s35_rev(0x80 | 0x40);		/* RESET | 24H, bit-reversed */
-		rc = dm_i2c_write(rtc, 0, &v, 1);
-		rr = dm_i2c_read(rtc, 0, &st, 1);
-		printf("rtc-s35390a: sel=%d RESET.wr=%d STATUS1.rd=%d val=0x%02x\n",
-		       sel, rc, rr, rr ? 0 : s35_rev(st));
+		rr = dm_i2c_read(rtc, 0, &st, 1);	/* STATUS1 first */
+		if (rr) {
+			printf("rtc-s35390a: sel=%d STATUS1 read failed rc=%d\n", sel, rr);
+		} else {
+			st = s35_rev(st);		/* to normal bit order */
+			if (st & (S35_POC | S35_BLD)) {
+				v = s35_rev(S35_RESET | S35_24H);
+				rc = dm_i2c_write(rtc, 0, &v, 1);
+				printf("rtc-s35390a: sel=%d POC/BLD 0x%02x -> RESET|24H wr=%d\n",
+				       sel, st, rc);
+			} else {
+				printf("rtc-s35390a: sel=%d STATUS1=0x%02x clean, clock kept\n",
+				       sel, st);
+			}
+		}
 	}
 
 	v = 0x00;					/* deselect mux */
@@ -132,9 +153,10 @@ static void rtc_s35390a_init(void)
 }
 
 /*
- * Manual command, NOT auto at boot: while the RTC is stuck (holding SDA on ch0),
- * selecting ch0 + accessing 0x30 wedges the whole pld bus (pca9575 LEDs + bay
- * power then fail). Run `rtcinit` deliberately once the RTC is reachable.
+ * `rtcinit` command — the same reset-at-probe as the automatic board_late_init
+ * call, for a deliberate re-run. Historically kept manual because a stuck ch0
+ * wedged the pld bus; with i2c-sda-hold-time restored + the PCA9546 mux driver
+ * (idle-disconnect), ch0 access is safe, so it also runs at boot now.
  */
 static int do_rtcinit(struct cmd_tbl *cmdtp, int flag, int argc,
 		      char *const argv[])
@@ -225,6 +247,7 @@ U_BOOT_CMD(snoopfix, 1, 0, do_snoopfix,
 int board_late_init(void)
 {
 	al_pcie_snoop_fix();
+	rtc_s35390a_init();	/* reset-at-probe: clear POC/BLD before Linux (#86) */
 	return 0;
 }
 
