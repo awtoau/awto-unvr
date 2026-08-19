@@ -364,6 +364,11 @@ def cmd_console_send(extra: list[str]) -> int:
       ./dev.py console-send --raw ESC                   # send a bare ESC byte
       ./dev.py console-send --expect 'ALPINE_UBNT_NAS_ALL>' setenv x 1
       ./dev.py console-send --raw --expect Bytes CRLF   # send CRLF, wait for it
+      ./dev.py console-send --raw --expect 'unvr#|ALPINE_UBNT_NAS_ALL>' CR
+
+    --expect takes `|`-separated needles and returns on the FIRST to appear
+    (one call to probe our-prompt vs stock vs login, not N). It prints
+    "<<MATCHED: needle>>" so you know which fired.
 
     Without --expect it sends and reads a 1.5 s window (a shell echoes in ms, so
     ~1000x latency; empty output on no reply, never a hang). With --expect it
@@ -421,7 +426,10 @@ def cmd_console_send(extra: list[str]) -> int:
         sys.stdout.buffer.write(got); sys.stdout.buffer.flush()
         return 0
 
-    needle = expect.encode()                 # wait for the condition
+    # `--expect` matches ANY of `|`-separated needles (one call instead of N
+    # probes for unvr#/stock/login). On match, prints "<<MATCHED: needle>>" so
+    # the caller knows which fired without a second round-trip.
+    needles = [n.encode() for n in expect.split("|") if n]
     t0 = time.monotonic()
     end = t0 + timeout
     while time.monotonic() < end:
@@ -432,13 +440,15 @@ def cmd_console_send(extra: list[str]) -> int:
         if not chunk:
             break
         got += chunk
-        if needle in got:
+        hit = next((n for n in needles if n in got), None)
+        if hit is not None:
             s.close()
             sys.stdout.buffer.write(got); sys.stdout.buffer.flush()
+            print(f"\n<<MATCHED: {hit.decode(errors='replace')}>>")
             return 0
     s.close()
     sys.stdout.buffer.write(got); sys.stdout.buffer.flush()
-    log(f"FAIL: {expect!r} not seen in {time.monotonic()-t0:.1f}s "
+    log(f"FAIL: none of {expect!r} seen in {time.monotonic()-t0:.1f}s "
         f"(failsafe {timeout:.0f}s)", "ERROR")
     return 3
 
