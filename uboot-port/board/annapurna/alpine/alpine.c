@@ -17,6 +17,7 @@
 #include <asm/armv8/mmu.h>
 #include <asm/global_data.h>
 #include <asm/io.h>
+#include <linux/delay.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -309,15 +310,54 @@ int dram_init_banksize(void)
 }
 
 /*
+ * FLR the al_eth devices before a reset so the NEXT boot (stock U-Boot) gets
+ * CLEAN eth. Our eth bring-up can wedge the UDMA (adapter_init -110), and a warm
+ * SoC reset does NOT clear that - it poisons stock's eth on the following boot,
+ * so the auto-chainload tftp times out (proven: cold boot works, warm doesn't).
+ * A PCIe Function-Level Reset returns the whole function to defaults via config
+ * space. Best-effort - never blocks the reset; a no-op if FLR is unsupported.
+ * UNTESTED on hardware (box was offline when added).
+ */
+static void al_eth_flr_all(void)
+{
+	struct udevice *bus, *dev;
+
+	for (uclass_first_device(UCLASS_PCI, &bus); bus;
+	     uclass_next_device(&bus)) {
+		for (device_find_first_child(bus, &dev); dev;
+		     device_find_next_child(&dev)) {
+			u32 vendor;
+			u16 ctl;
+			int pos;
+
+			dm_pci_read_config32(dev, PCI_VENDOR_ID, &vendor);
+			if ((vendor & 0xffff) != AL_VENDOR)
+				continue;
+			if (((vendor >> 16) & 0xffff) != 0x0001 &&
+			    ((vendor >> 16) & 0xffff) != 0x0002)
+				continue;
+			pos = dm_pci_find_capability(dev, PCI_CAP_ID_EXP);
+			if (!pos)
+				continue;
+			dm_pci_read_config16(dev, pos + PCI_EXP_DEVCTL, &ctl);
+			dm_pci_write_config16(dev, pos + PCI_EXP_DEVCTL,
+					      ctl | PCI_EXP_DEVCTL_BCR_FLR);
+		}
+	}
+	udelay(100000);	/* PCIe: an FLR completes within 100 ms */
+}
+
+/*
  * `reset` via the SP805 watchdog — the simple, working AL-324 reset.
  * PSCI SYSTEM_RESET does NOT work here (Linux `reboot` hangs, #51); stock
- * U-Boot and the al_reboot driver both reset through the SP805. Arm wdt0 with
- * a tiny timeout and spin: RESEN fires a SoC reset in ~2 counts.
+ * U-Boot and the al_reboot driver both reset through the SP805. Load = 0x100
+ * (256 counts) then RESEN fires the SoC reset. FLR eth first (see above).
  * wdt0 @0xfd88c000: Load 0x000, Control 0x008 (INTEN|RESEN=0x3), Lock 0xC00.
  */
 #define SP805_WDT_BASE	0xfd88c000UL
 void reset_cpu(void)
 {
+	al_eth_flr_all();	/* hand stock CLEAN eth across the warm reset */
 	writel(0x1ACCE551, (void __iomem *)(SP805_WDT_BASE + 0xC00)); /* unlock */
 	writel(0x100,      (void __iomem *)(SP805_WDT_BASE + 0x000)); /* load */
 	writel(0x3,        (void __iomem *)(SP805_WDT_BASE + 0x008)); /* INTEN|RESEN */
