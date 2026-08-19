@@ -28,6 +28,7 @@
 #include <net.h>
 #include <pci.h>
 #include <phy.h>
+#include <spi_flash.h>
 #include <linux/delay.h>
 #include <asm/io.h>
 #include <dm/device_compat.h>
@@ -50,9 +51,12 @@
 #define AL_ETH_BAR_EC		PCI_BASE_ADDRESS_4	/* AL_ETH_EC_BAR   = 4 */
 #define AL_ETH_BAR_MAC		PCI_BASE_ADDRESS_2	/* AL_ETH_MAC_BAR  = 2 */
 
-/* Ring sizing - one TX + one RX queue, mirror of the vendor driver. */
+/* Ring sizing - one TX + one RX queue. The UDMA ring depth must be a power of 2
+ * and >= AL_UDMA_MIN_Q_SIZE (32) - al_hal_udma_main.c rejects smaller with
+ * "queue size too small" -> rx_buffer_add -ENOSPC. It is INDEPENDENT of how many
+ * RX buffers we prime (PKTBUFSRX, typically 4); 32 is the minimum legal depth. */
 #define AL_ETH_RX_BUFFERS	PKTBUFSRX
-#define AL_ETH_DESCS_PER_Q	(AL_ETH_RX_BUFFERS + 1)
+#define AL_ETH_DESCS_PER_Q	32
 #define AL_ETH_CDESC_SIZE	16
 #define AL_ETH_Q_DESCS_SIZE	(AL_ETH_DESCS_PER_Q * AL_ETH_CDESC_SIZE)
 
@@ -380,6 +384,39 @@ static int al_eth_dm_free_pkt_noop(struct udevice *dev)
 	return al_eth_dm_free_pkt(dev, NULL, 0);
 }
 
+/*
+ * The per-unit MAC lives in the SPI-NOR identity partition (mtd4 "EEPROM",
+ * flash offset 0x1f0000), base MAC at +0x0000 - which is this RJ45 port
+ * (1c36:0001 = Linux eth0). Read it over the DM SPI-NOR so a working interface
+ * needs no manually-set env ethaddr (#89). Same dw-apb-ssi flash as our env
+ * (docs/mtd.md). The eth uclass calls this when env has no ethaddr.
+ */
+#define AL_ETH_MAC_ROM_OFFSET	0x1f0000
+
+static int al_eth_dm_read_rom_hwaddr(struct udevice *dev)
+{
+	struct eth_pdata *pdata = dev_get_plat(dev);
+	struct udevice *flash;
+	int ret;
+
+	ret = uclass_first_device_err(UCLASS_SPI_FLASH, &flash);
+	if (ret) {
+		dev_dbg(dev, "no SPI-NOR to read MAC: %d\n", ret);
+		return ret;
+	}
+	ret = spi_flash_read_dm(flash, AL_ETH_MAC_ROM_OFFSET, ARP_HLEN,
+				pdata->enetaddr);
+	if (ret) {
+		dev_dbg(dev, "MAC read from NOR failed: %d\n", ret);
+		return ret;
+	}
+	if (!is_valid_ethaddr(pdata->enetaddr)) {
+		dev_dbg(dev, "NOR MAC %pM invalid\n", pdata->enetaddr);
+		return -EINVAL;
+	}
+	return 0;
+}
+
 static const struct eth_ops al_eth_dm_ops = {
 	.start		= al_eth_dm_start,
 	.send		= al_eth_dm_send,
@@ -387,6 +424,7 @@ static const struct eth_ops al_eth_dm_ops = {
 	.free_pkt	= al_eth_dm_free_pkt,
 	.stop		= al_eth_dm_stop,
 	.write_hwaddr	= al_eth_dm_write_hwaddr,
+	.read_rom_hwaddr = al_eth_dm_read_rom_hwaddr,
 };
 
 /* ---- bind / probe ------------------------------------------------------ */
@@ -452,10 +490,28 @@ static int al_eth_dm_probe(struct udevice *dev)
 	return 0;
 }
 
+static int al_eth_dm_remove(struct udevice *dev)
+{
+	struct al_eth_dm_priv *priv = dev_get_priv(dev);
+
+	/* Unregister the MDIO bus on teardown. Without this the bus (named after
+	 * dev->name) leaks registered when U-Boot removes the device - e.g. boot
+	 * enumeration removing it after "no valid MAC" - and the next probe fails
+	 * with "non unique device name". priv persists across probe/remove, so
+	 * NULL it to force a fresh mdio_alloc on re-probe. */
+	if (priv->mdio_bus) {
+		mdio_unregister(priv->mdio_bus);
+		mdio_free(priv->mdio_bus);
+		priv->mdio_bus = NULL;
+	}
+	return 0;
+}
+
 U_BOOT_DRIVER(al_eth_dm) = {
 	.name		= "al_eth_dm",
 	.id		= UCLASS_ETH,
 	.probe		= al_eth_dm_probe,
+	.remove		= al_eth_dm_remove,
 	.ops		= &al_eth_dm_ops,
 	.priv_auto	= sizeof(struct al_eth_dm_priv),
 	.plat_auto	= sizeof(struct eth_pdata),
