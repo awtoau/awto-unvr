@@ -144,10 +144,11 @@ static void rtc_s35390a_init(void)
 }
 
 /*
- * `rtcinit` command — the same reset-at-probe as the automatic board_late_init
- * call, for a deliberate re-run. Historically kept manual because a stuck ch0
- * wedged the pld bus; with i2c-sda-hold-time restored + ch0 reached via the mux
- * child bus (uclass deselects after each transfer), it is safe to run at boot.
+ * `rtcinit` command — reset-at-probe (clear POC/BLD) on DELIBERATE demand only.
+ * NOT run at boot: touching ch0 still wedges the pld bus (docs/i2c-map.md), so
+ * this will wedge until the SDA-hold is genuinely fixed (#78/#86). Recover a
+ * wedge with an SP805 reset. Reached via the mux child bus (bus 1 = ch0) so the
+ * uclass owns select/deselect; harmless once the underlying hold is resolved.
  */
 static int do_rtcinit(struct cmd_tbl *cmdtp, int flag, int argc,
 		      char *const argv[])
@@ -238,7 +239,15 @@ U_BOOT_CMD(snoopfix, 1, 0, do_snoopfix,
 int board_late_init(void)
 {
 	al_pcie_snoop_fix();
-	rtc_s35390a_init();	/* reset-at-probe: clear POC/BLD before Linux (#86) */
+	/*
+	 * Do NOT touch ch0 (s35390a RTC) here. Selecting ch0 + reading ANY
+	 * address holds SDA low and wedges the whole pld bus (docs/i2c-map.md) -
+	 * even reading STATUS1 for reset-at-probe. An auto call here re-wedged the
+	 * bus every boot (LEDs/eth/SATA-bay power all -121), and SP805 reset only
+	 * un-wedged it until the next board_late_init. RTC is offline in Linux for
+	 * now, so there is no consumer to serve. Reset it only via the deliberate
+	 * `rtcinit` command, and only once the SDA-hold is genuinely fixed (#78/#86).
+	 */
 	return 0;
 }
 
