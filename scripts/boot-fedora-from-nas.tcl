@@ -4,6 +4,11 @@
 #   ./dev.py console-tcl scripts/boot-fedora-from-nas.tcl
 send_raw CR
 expect "awto-nas#" 8
+# scsi devices aren't probed until scanned — fresh boot has none registered yet
+# (bit us: "Bad device specification scsi 0" on ext4load without this first).
+# 20s = 1.25x the ~15s a scan has taken in practice (3 disks, AHCI link retries).
+send "scsi scan"
+expect "awto-nas#" 20
 send "ext4load scsi 0:2 0x02000000 /boot/uImage-unvr-ea16-7.1-fedora-gz"
 expect "awto-nas#" 20
 send "ext4load scsi 0:2 0x04078000 /boot/alpine-v2-ubnt-unvr-ea16-7.1-fedora.dtb"
