@@ -45,12 +45,19 @@ LOG = LOGS / "dev.log"
 # 115200 8N1 is not a guess: U-Boot's own `loadbootargs` sets
 # console=ttyS0,115200. Confirmed by baud sweep against the live unit.
 CONSOLE_BAUD = int(os.environ.get("UNVR_CONSOLE_BAUD", "115200"))  # override for baud tests (e.g. 1000000)
-# Prefer the CP2102: Silicon Labs boards are 3.3 V logic natively, which is what
-# the UNVR UART wants. PL2303 cables vary and some are 5 V.
+# The UNVR console is the CP2102 (Silicon Labs, 3.3 V logic — what the UNVR UART
+# wants). Match it ONLY by its stable by-id path.
+# Do NOT fall back to bare /dev/ttyUSB<N>: those numbers are assigned in USB
+# enumeration order and silently point at whatever adapter happens to be there -
+# on this host that was an unrelated PL2303 (often 5 V, wrong for the UNVR UART).
+# If the CP2102 is absent, _console_port() returns None and the caller errors
+# clearly ("CP2102 not connected") instead of driving the wrong device.
+# Override the path with UNVR_CONSOLE_PORT for a one-off different adapter.
 CONSOLE_PORTS = [
-    "/dev/serial/by-id/usb-Silicon_Labs_CP2102_USB_to_UART_Bridge_Controller_0001-if00-port0",
-    "/dev/ttyUSB1",
-    "/dev/ttyUSB0",
+    os.environ.get(
+        "UNVR_CONSOLE_PORT",
+        "/dev/serial/by-id/usb-Silicon_Labs_CP2102_USB_to_UART_Bridge_Controller_0001-if00-port0",
+    ),
 ]
 CONSOLE_SOCK = Path(os.environ.get("XDG_RUNTIME_DIR", "/tmp")) / "tio-unvr.sock"
 CONSOLE_LOG = LOGS / "unvr-console.log"
