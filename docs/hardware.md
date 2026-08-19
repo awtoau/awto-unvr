@@ -194,7 +194,10 @@ matte-black QFP **U1** in the SATA area is unread.
 - ~~PCA9575 full pin map~~ **RESOLVED** — full map in [gpio-switches-leds.md](gpio-switches-leds.md)
   (@0x20 SFP-1G-LED + straps; @0x21 bay pwr/present/fault; @0x29 = Pro bays 5–8, unpopulated).
 - What the second, unpopulated EEPROM region is for.
-- The `chike` NAND partition holds a 2095×1692 JPEG with Exif — purpose unknown.
+- The `chike` NAND partition = a 2095×1692 selfie of two people, shot on a Samsung
+  SM-G975F (Galaxy S10+) 2019-06-07, edited in Windows Photo Editor 2019-10-28 —
+  a factory/dev leftover with **zero firmware users**; 5.1.25 dropped the partition.
+  Image: `docs/photos/chike-firmware-selfie.jpg`. See [mtd.md](mtd.md).
 - Whether `dtt_get_temp[0..2]` maps to the three fan-adjacent sensors.
 - SFP+ module type/vendor — `ethtool` gave no module data on the stock kernel.
 
