@@ -128,6 +128,53 @@
 		};
 
 		/*
+		 * DDR memory controller (Alpine V2 / AL-324). Consumed by the `ddr`
+		 * command (board/annapurna/alpine/al_ddr) which reads its three
+		 * register bases by reg-name via ofnode — NEVER hardcoded (#84).
+		 *   nb   = nb-service (rev/int)   0xf0070000
+		 *   ctrl = uMCTL2 controller      0xf0080000
+		 *   phy  = DWC PUB PHY            0xf0088000
+		 * docs/hardware.md / docs/uboot-ddr-port.md §4.
+		 */
+		ddr: memory-controller@f0080000 {
+			compatible = "annapurna-labs,al-ddr";
+			reg = <0x0 0xf0070000 0x0 0x10000>,	/* nb-service */
+			      <0x0 0xf0080000 0x0 0x8000>,	/* uMCTL2 ctrl */
+			      <0x0 0xf0088000 0x0 0x8000>;	/* PUB PHY */
+			reg-names = "nb", "ctrl", "phy";
+			status = "okay";
+		};
+
+		/*
+		 * 25G SerDes PMA (AL-324 / Alpine V2) — the SFP+ 10G port's PHY.
+		 * Consumed by CONFIG_AL_SERDES (drivers/phy/al_serdes); the `serdes`
+		 * command reads both bases by reg-name via ofnode, never hardcoded.
+		 * docs/hardware.md: serdes PMA @ 0xfd8c0000 size 0x2400.
+		 *
+		 * "pcs" = the eth2 MAC-adapter window that also holds the 10GBASE-R
+		 * PCS sub-block (0xfe120000/0x10000) — SHARED with the eth/MAC path;
+		 * optional (absent -> PCS left to the MAC agent). HW: confirm the
+		 * exact PCS base on the box and reconcile with the eth MAC datapath.
+		 */
+		serdes: serdes@fd8c0000 {
+			compatible = "annapurna-labs,al-serdes-25g";
+			reg = <0x0 0xfd8c0000 0x0 0x00002400>,	/* serdes PMA */
+			      <0x0 0xfe120000 0x0 0x00010000>;	/* pcs (MAC adapter) */
+			reg-names = "serdes", "pcs";
+			status = "okay";
+		};
+
+		/*
+		 * 1G Ethernet (eth1 / al_eth1, RJ45): NO platform node here. It is a
+		 * PCI-enumerated endpoint on the internal PCIe (vendor 0x1c36 dev
+		 * 0x0001, bus 0) — the al_eth DM driver binds by PCI ID and maps its
+		 * three BARs (UDMA/EC/MAC), so the bare eth0..3 nodes at 0xfc000000+
+		 * in the stock DT are unused (docs/hardware.md). RGMII, external
+		 * AR8033 PHY on the internal MDIO bus at addr 4; the driver drives
+		 * the PHY via phylib. DMA coherency: the #74 SMCC snoop fix.
+		 */
+
+		/*
 		 * Internal PCIe host — an ECAM-compatible window at 0xfbc00000
 		 * fronting the SoC's integrated PCI endpoints (bus 0 only): 2×
 		 * AHCI SATA (1c36:0031, class AHCI 1.0), eth, crypto, DMA. We use

@@ -35,7 +35,18 @@ CONFIG_DM=y
 CONFIG_DM_SERIAL=y
 CONFIG_SYS_NS16550=y
 CONFIG_GIC_V3=y
-CONFIG_NO_NET=y
+# --- Networking: al_eth 1G RJ45 (RGMII, eth1 @ 0xfc100000), ping/tftp/dhcp.
+# DM_ETH driver + curated Annapurna HAL subset (drivers/net/al_eth). RGMII only
+# (no serdes) — 10G SFP+ (eth2) intentionally excluded. #83.
+CONFIG_NET=y
+CONFIG_DM_ETH=y
+CONFIG_AL_ETH=y
+CONFIG_PHYLIB=y
+CONFIG_PHY_ATHEROS=y
+CONFIG_CMD_NET=y
+CONFIG_CMD_PING=y
+CONFIG_CMD_DHCP=y
+CONFIG_CMD_MII=y
 # CONFIG_TOOLS_LIBCRYPTO is not set
 # CONFIG_TOOLS_KWBIMAGE is not set
 # CONFIG_FIT_SIGNATURE is not set
@@ -103,3 +114,5 @@ CONFIG_CMD_DM=y
 CONFIG_CMD_CLK=y
 CONFIG_CMD_PART=y
 CONFIG_CMD_MMC=y
+# --- 10G SFP+ SerDes/PCS (drivers/phy/al_serdes, #83 later:10G)
+CONFIG_AL_SERDES=y
