@@ -39,9 +39,9 @@ it silently *skips* 0x00-0x02/0x28-0x2f/0x40-0x4f unless `-r` read-probe is forc
 
 ## KNOWN BUG — mux ch0 (s35390a RTC) wedges the bus
 
-Selecting ch0 + touching any address holds SDA low and wedges the whole pld bus (RTC @0x30 is
-the culprit; SFP EEPROM @0x50 is collateral). Root cause = a dropped `i2c-sda-hold-time-ns`,
-fixed by restoring it — **full analysis, fix, and recovery in
+Selecting ch0 + touching any address holds SDA low and wedges the whole pld bus (s35390a RTC
+@0x30 strongly implicated; SFP EEPROM @0x50 also on ch0, not yet isolated). Likely cause = a
+dropped `i2c-sda-hold-time-ns`, fixed by restoring it — **full analysis, fix, and recovery in
 [rtc-s35390a-fault.md](rtc-s35390a-fault.md)**. Behind-mux is otherwise fine (ch3 adt7475 reads
 clean).
 
