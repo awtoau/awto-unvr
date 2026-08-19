@@ -209,6 +209,22 @@ Define structs from the decompile + GPL headers and apply them so C reads cleanl
 
 ---
 
+### Iterative naming loop (off a persistent ledger)
+
+Don't name one-shot — converge the call graph by looping off a ledger file.
+
+1. **Ledger** = `<blob>-names.sym` (`name\t0xADDR`, applied by `ApplyAlRegs.java`
+   like the register `.sym`) + a `<blob>-names.md` (addr, name, confidence, 1-line
+   rationale). This is the document every pass works off and grows.
+2. **Seed (confirmed)**: map each `__func__`/error string → the `FUN_` that
+   references it (via its `DAT_` pointer). Ground-truth names.
+3. **Speculate (context)**: for each bare `FUN_`, infer from caller (helper of
+   `al_ddr_init` → `ddr_*`), registers poked (uMCTL2 → `ddr_ctrl_*`, PUB PHY →
+   `ddr_phy_*`), strings touched. Prefix speculative `s_`.
+4. **Re-apply + iterate**: re-run with `--sym-dir` including the names ledger;
+   each newly-named fn gives context to name its neighbours. Loop until the target
+   subgraph has no bare `FUN_`. The ledger is the durable, reviewable output.
+
 ## 7. Mechanical / token-cheap workflow
 
 One command per blob; cache and reuse register symbols across blobs.
