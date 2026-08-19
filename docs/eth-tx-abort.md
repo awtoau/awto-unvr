@@ -38,15 +38,22 @@ IDENTIFY (a DMA to a high-DRAM buffer), on the SAME bus-0 internal-PCIe fabric, 
 high-DRAM reachability are all functional. The failure is **specific to the eth UDMA
 master** — it alone cannot get a response to a DRAM read.
 
-## Next diagnostic (NOT yet run — needs a cold-cycle)
-Point the TX descriptor ring at a **low** fixed DRAM address (e.g. desc_block =
-0x10000000) and re-test:
-- If `dcp` advances -> the eth UDMA master reads low DRAM but not high -> address/window
-  specific (pursue an eth-master inbound/routing window vs AHCI's).
-- If it still aborts -> the eth UDMA master is not routed to DRAM at all, independent of
-  address -> a per-function master-enable / host-bridge bring-up the eth needs and AHCI
-  gets elsewhere (candidate: the `al_hal_pcie` host-bridge init our ECAM-only PCI path
-  skips; or the stubbed `al_unit_adapter_init`).
+## Low-address diagnostic — RUN (2026-08-19): master NOT routed to DRAM
+Pinned the TX descriptor ring at low DRAM (desc_block = 0x10000000; confirmed live
+`drbp=0x10000000, drbp_high=0`). Result: **still aborts identically** (state=0x2222,
+dcp=0). So it is NOT address/window specific — **the eth UDMA master cannot reach DRAM at
+any address**, while AHCI (same bus-0 internal-PCIe fabric) can.
+
+Conclusion: the eth needs a per-function master-enable / routing that our ECAM-only PCI
+path never applies and AHCI gets elsewhere. Prime suspects:
+- **`al_unit_adapter_init` is STUBBED** (hal/.../al_eth_stubs.c) — it configures the eth
+  unit's AXI master / ROB / fabric bridge; stubbed = the UDMA master is never wired to the
+  fabric. `ap.unit_adapter=NULL` in al_eth_dm_dma_init skips it and logs "non optimal
+  adapter configuration". This is the leading candidate now.
+- The `al_hal_pcie` host-bridge bring-up our ECAM-only PCI path skips (alpine.c note) —
+  stock's full host-bridge init may establish the eth function's inbound routing.
+Next: read the REAL al_unit_adapter_init (delroth-alpine_hal) — what fabric/master regs it
+programs — and either un-stub it for the eth unit or replicate the specific master-enable.
 
 ## Notes / gotchas
 - **Never `md` 0xfe001038** (drtp_inc, write-only) — reading it data-aborts U-Boot.

@@ -168,28 +168,26 @@ static int al_eth_dm_cfg_write(void *handle, int where, uint32_t val)
 }
 
 /*
- * Enable AXI SMCC cache-coherent DMA snoop on THIS eth function.
- * Must run AFTER the FLR + adapter init (both reset SMCC to default = snoop
- * OFF). Without it the eth M2S/TX engine reads TX descriptors from cacheable
- * DRAM without snooping the CPU dcache -> stale descriptor -> TX never
- * completes ("TX completion timeout"). Stock's kernel applies this at
- * driver-bind, i.e. post-reset (linux pcie-al-internal.c); applying it once
- * pre-reset in board_late_init does not stick. Mirrors board al_snoop_one;
- * eth is slot <= 5 -> all 4 sub-masters.
+ * Set this eth function's AXI master COHERENT (SMCC SNOOP_OVR|SNOOP_EN=0x3),
+ * exactly matching the internal AHCI controller that DMAs to high DRAM
+ * successfully on this same bus-0 internal-PCIe fabric (board al_snoop_one sets
+ * AHCI's SMCC=0x3). So CCI/CCU coherency IS functional here - the eth just needs
+ * the same coherent attribute. Must run after adapter_init (resets SMCC to 0).
+ * eth is slot <= 5 -> all 4 sub-masters + APP_CONTROL low16=0x3ff.
  */
 #define AL_ETH_SMCC		0x110
 #define AL_ETH_SMCC_BUNDLE	0x20
-#define AL_ETH_SMCC_SNOOP	0x3	/* SNOOP_OVR|SNOOP_EN */
+#define AL_ETH_SMCC_COHERENT	0x3	/* SNOOP_OVR|SNOOP_EN - coherent, like AHCI */
 #define AL_ETH_APP_CONTROL	0x220
 #define AL_ETH_APP_LO16		0x3ff
 
-static void al_eth_dm_snoop_enable(struct udevice *dev)
+static void al_eth_dm_snoop_setup(struct udevice *dev)
 {
 	u32 v;
 	int i;
 
 	dm_pci_read_config32(dev, AL_ETH_SMCC, &v);
-	v |= AL_ETH_SMCC_SNOOP;
+	v |= AL_ETH_SMCC_COHERENT;
 	dm_pci_write_config32(dev, AL_ETH_SMCC, v);
 	for (i = 1; i < 4; i++)
 		dm_pci_write_config32(dev, AL_ETH_SMCC + i * AL_ETH_SMCC_BUNDLE, v);
@@ -238,43 +236,21 @@ static int al_eth_dm_dma_init(struct udevice *dev)
 	ap.common_mode = AL_ETH_COMMON_MODE_INVALID;
 
 	/*
-	 * FLR the eth to a CLEAN state before init. Stock's al_eth does this in its
-	 * halt path (al_eth_flr_rmn: reset 1G MAC + function-level reset). The
-	 * auto-chainload leaves the eth in stock's used state; re-initing it without
-	 * a reset wedges the UDMA TX - the descriptor posts but the completion never
-	 * fires ("TX completion timeout", "dma state didn't change" -110). This is
-	 * THE missing step (stock GPL al_eth.c:1157). Uses our dm_pci accessors.
+	 * NO al_eth_flr_rmn here. AHCI (no FLR) DMAs to DRAM fine; the eth's FLR is
+	 * the one thing eth does that AHCI does not, and it resets adapter/master
+	 * routing state our ECAM-only path never re-establishes (no al_hal_pcie
+	 * host-bridge bring-up) -> the M2S descriptor read is never serviced (pure
+	 * AXI timeout, empty abort log, m2s.state=0x2222, dcp=0). Bisecting it out.
 	 */
-	al_eth_flr_rmn(al_eth_dm_cfg_read, al_eth_dm_cfg_write, dev, priv->mac_regs);
-
 	err = al_eth_adapter_init(&priv->adapter, &ap);
 	if (err) {
 		dev_err(dev, "al_eth_adapter_init failed: %d\n", err);
 		return err;
 	}
 
-	/* now that FLR + adapter_init have reset the function, enable DMA snoop
-	 * (they clear it). */
-	al_eth_dm_snoop_enable(dev);
-
-	/*
-	 * We chainload from stock U-Boot, which USED this eth (ran tftp to load us)
-	 * and never reset its UDMA. So we inherit a dirty queue: stale ring pointers
-	 * and the M2S engine stuck in ABORT (m2s.state=0x2222, confirmed on-box).
-	 * adapter_init's NORMAL cannot clear a terminal ABORT, so the engine never
-	 * consumes our descriptor -> TX completion timeout. Stock's al_eth_halt does
-	 * al_udma_q_reset here; we must too. Force the engines DOWN (clears ABORT),
-	 * reset both queues (clears stale ring-id/head pointers); the queue_config
-	 * below then re-inits the rings clean and we return the engines to NORMAL.
-	 * "Assume nothing" - and a prerequisite for replacing stock U-Boot outright.
-	 */
-	al_udma_q_handle_get(&priv->adapter.tx_udma, 0, &priv->tx_q);
-	al_udma_q_handle_get(&priv->adapter.rx_udma, 0, &priv->rx_q);
-	al_eth_dm_dump_tx(priv, "inherited");
-	al_udma_state_set(&priv->adapter.tx_udma, UDMA_DISABLE);
-	al_udma_state_set(&priv->adapter.rx_udma, UDMA_DISABLE);
-	al_udma_q_reset(priv->tx_q);
-	al_udma_q_reset(priv->rx_q);
+	/* Coherent AXI master (SMCC=0x3), matching the working AHCI on this fabric.
+	 * Must run post-adapter_init (it resets SMCC to 0). */
+	al_eth_dm_snoop_setup(dev);
 
 	memset(&txp, 0, sizeof(txp));
 	txp.size = AL_ETH_DESCS_PER_Q;
@@ -302,11 +278,7 @@ static int al_eth_dm_dma_init(struct udevice *dev)
 	al_eth_queue_enable(&priv->adapter, UDMA_RX, 0);
 	al_udma_q_handle_get(&priv->adapter.tx_udma, 0, &priv->tx_q);
 	al_udma_q_handle_get(&priv->adapter.rx_udma, 0, &priv->rx_q);
-
-	/* rings are re-configured clean; bring the engines back to NORMAL. */
-	al_udma_state_set(&priv->adapter.tx_udma, UDMA_NORMAL);
-	al_udma_state_set(&priv->adapter.rx_udma, UDMA_NORMAL);
-	al_eth_dm_dump_tx(priv, "post-reset");
+	al_eth_dm_dump_tx(priv, "post-init");
 
 	/* RGMII 1G. Do NOT call al_eth_mac_link_config: stock SKIPS it for
 	 * external-PHY RGMII (al_eth.c: only for SGMII, or RGMII && !ext_phy).
