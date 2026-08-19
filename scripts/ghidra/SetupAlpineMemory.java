@@ -65,12 +65,16 @@ public class SetupAlpineMemory extends GhidraScript {
         {"eth4",  0xfe15c000L, 0x1000L, false},
         {"eth5",  0xfe15d000L, 0x1000L, false},
     };
-    // Preboot-only SoC-fabric regions (not in Linux DT; from preboot-decompile.md).
+    // Preboot-only SoC-fabric regions (not in Linux DT; from preboot-decompile.md,
+    // ddr-config-reverse.md). The S2 DDR trainer + al_boot touch these.
     static final Object[][] PREBOOT = {
         {"s2_sram",    0xf2200000L, 0x40000L, true},  // S2 first-stage link base (SRAM)
-        {"agent_mb0",  0xf0070000L, 0x1000L, false},  // CVOS agent mailbox
-        {"agent_mb1",  0xf0090000L, 0x1000L, false},
-        {"ddr_ready",  0xfbff4000L, 0x1000L, false},  // _DAT_fbff4150 = 0x31415926 poll
+        {"nb_service", 0xf0070000L, 0x1000L, false},  // AL_NB_SERVICE_BASE (was "agent mb")
+        {"ddr_ctrl",   0xf0080000L, 0x8000L, false},  // DDR uMCTL2 controller (al_ddr_cfg_init)
+        {"ddr_phy",    0xf0088000L, 0x8000L, false},  // DDR PUB PHY (training regs)
+        {"ccu",        0xf0090000L, 0x1000L, false},  // CCU / io-coherency
+        {"nb_pll",     0xfd860000L, 0x2000L, false},  // NB PLL (DDR clock, 0xfd860c00)
+        {"ddr_ready",  0xfbff4000L, 0x1000L, false},  // shared_parameters @0xfbff4150 (magic/ddr_size)
     };
 
     @Override public void run() throws Exception {

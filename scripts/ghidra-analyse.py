@@ -50,6 +50,12 @@ def main() -> int:
                     help="load VA (derive from AL TOC via parse-al-toc.py; never guess)")
     ap.add_argument("--preboot", action="store_true",
                     help="also map SoC-fabric regions (0xf00xxxxx, 0xfbffxxxx, S2 SRAM)")
+    ap.add_argument("--entry", type=lambda s: int(s, 0), default=None,
+                    help="seed a reset entry VA so auto-analysis follows it (SeedEntry.java)")
+    ap.add_argument("--entry-thumb", action="store_true",
+                    help="the --entry point is Thumb (T32); default A32")
+    ap.add_argument("--disasm-gaps", type=Path, default=None,
+                    help="file of hex VAs (verified code) to disassemble pre-analysis (DisasmGaps.java)")
     ap.add_argument("--sym-dir", type=Path, default=None,
                     help="dir of *.sym / *.equ.tsv from gen-al-reg-symbols.py")
     ap.add_argument("--out", type=Path, default=REPO / "tmp" / "ghidra-out")
@@ -78,12 +84,19 @@ def main() -> int:
     ]
     if a.preboot:
         cmd += ["preboot"]
+    if a.entry is not None:
+        cmd += ["-preScript", "SeedEntry.java", hex(a.entry),
+                "thumb" if a.entry_thumb else "arm"]
+    if a.disasm_gaps is not None:
+        cmd += ["-preScript", "DisasmGaps.java", str(a.disasm_gaps),
+                "thumb" if a.entry_thumb else "arm"]
     if a.sym_dir:
         syms = sorted(glob.glob(str(a.sym_dir / "*.sym")))
         syms += sorted(glob.glob(str(a.sym_dir / "*.equ.tsv")))
         if syms:
             cmd += ["-postScript", "ApplyAlRegs.java"] + syms
-    cmd += ["-postScript", "ExportAll.java", str(a.out), "-deleteProject"]
+    cmd += ["-postScript", "ExportAll.java", str(a.out)]
+    cmd += ["-postScript", "CoverageReport.java", str(a.out), "-deleteProject"]
 
     logging.info("RUN: %s", " ".join(cmd))
     try:
