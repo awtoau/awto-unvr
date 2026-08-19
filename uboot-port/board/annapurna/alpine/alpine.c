@@ -13,6 +13,7 @@
 #include <fdtdec.h>
 #include <i2c.h>
 #include <init.h>
+#include <pci.h>
 #include <asm/armv8/mmu.h>
 #include <asm/global_data.h>
 #include <asm/io.h>
@@ -143,6 +144,89 @@ static int do_rtcinit(struct cmd_tbl *cmdtp, int flag, int argc,
 }
 U_BOOT_CMD(rtcinit, 1, 0, do_rtcinit,
 	   "initialize the s35390a RTC (write RESET via mux ch0)", "");
+
+/*
+ * Alpine internal-PCIe AXI-snoop fix (#74). The on-SoC units behind the internal
+ * PCIe (eth/dma/crypto/AHCI, PCI vendor 0x1c36) need SMCC snoop enabled for
+ * cache-coherent DMA; without it AHCI/DMA reads come back incoherent. Generic
+ * ECAM doesn't do this — the stock vendor host driver did. Ref: linux
+ * pcie-al-internal.c.
+ *   SMCC sub-master 0 @ cfg 0x110, +0x20 for SM 1/2/3; SNOOP_OVR|SNOOP_EN = 0x3.
+ *   APP_CONTROL @ 0x220: low 16 bits = 0x3ff, keep upper 16.
+ *   slot <= 5: all 4 sub-masters; slot > 5: SM0 only. All devices: APP_CONTROL.
+ * These live in extended config space (>0xff) — ECAM reaches them.
+ */
+#define AL_SMCC		0x110
+#define AL_SMCC_BUNDLE	0x20
+#define AL_SMCC_SNOOP	0x3	/* SNOOP_OVR|SNOOP_EN */
+#define AL_APP_CONTROL	0x220
+#define AL_APP_LO16	0x3ff
+#define AL_SLOT_THRESH	5
+#define AL_VENDOR	0x1c36
+
+static void al_snoop_one(struct udevice *dev, uint slot)
+{
+	u32 v;
+	int i;
+
+	dm_pci_read_config32(dev, AL_SMCC, &v);
+	v |= AL_SMCC_SNOOP;
+	dm_pci_write_config32(dev, AL_SMCC, v);
+	if (slot <= AL_SLOT_THRESH)
+		for (i = 1; i < 4; i++)
+			dm_pci_write_config32(dev, AL_SMCC + i * AL_SMCC_BUNDLE, v);
+
+	dm_pci_read_config32(dev, AL_APP_CONTROL, &v);
+	v = (v & 0xffff0000) | AL_APP_LO16;
+	dm_pci_write_config32(dev, AL_APP_CONTROL, v);
+}
+
+static int al_pcie_snoop_fix(void)
+{
+	struct udevice *bus, *dev;
+	int n = 0;
+
+	for (uclass_first_device(UCLASS_PCI, &bus); bus;
+	     uclass_next_device(&bus)) {
+		for (device_find_first_child(bus, &dev); dev;
+		     device_find_next_child(&dev)) {
+			pci_dev_t bdf;
+			u32 vendor;
+
+			/* config access works on bound children — no probe */
+			dm_pci_read_config32(dev, PCI_VENDOR_ID, &vendor);
+			if ((vendor & 0xffff) != AL_VENDOR)
+				continue;
+			bdf = dm_pci_get_bdf(dev);
+			al_snoop_one(dev, PCI_DEV(bdf));
+			printf("al-snoop: %02x:%02x.%x slot %u done\n",
+			       PCI_BUS(bdf), PCI_DEV(bdf), PCI_FUNC(bdf),
+			       PCI_DEV(bdf));
+			n++;
+		}
+	}
+	printf("al-snoop: configured %d internal PCIe device(s)\n", n);
+	return n;
+}
+
+static int do_snoopfix(struct cmd_tbl *cmdtp, int flag, int argc,
+		       char *const argv[])
+{
+	return al_pcie_snoop_fix() > 0 ? 0 : 1;
+}
+U_BOOT_CMD(snoopfix, 1, 0, do_snoopfix,
+	   "enable AXI SMCC snoop on the internal PCIe devices (coherent DMA)", "");
+
+/*
+ * Apply the snoop fix automatically at boot (after relocation, before bootcmd /
+ * any AHCI or eth DMA). Enumerates PCI as a side effect; later `scsi scan`
+ * reuses it. Verified: SMCC 0x110 -> 0x3 on all 6 internal devices (#74).
+ */
+int board_late_init(void)
+{
+	al_pcie_snoop_fix();
+	return 0;
+}
 
 int dram_init(void)
 {

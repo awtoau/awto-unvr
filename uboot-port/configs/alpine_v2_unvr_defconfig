@@ -12,6 +12,7 @@ CONFIG_SYS_LOAD_ADDR=0x02000000
 # reset"). Prevents auto-running bootcmd (which can hang on a bad bootm before we
 # have OF_LIBFDT + a working sysreset). Boot on demand with `run bootcmd` / `boot`.
 CONFIG_BOOTDELAY=-1
+CONFIG_BOARD_LATE_INIT=y
 CONFIG_USE_PREBOOT=y
 # Solid-on, NOT blink: the software blink is CYCLIC and re-writes the pca9575
 # expanders (@0x20/@0x21) forever. If the i2c bus wedges (e.g. the s35390a on
