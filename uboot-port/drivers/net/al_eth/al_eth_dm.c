@@ -199,6 +199,19 @@ static void al_eth_dm_snoop_enable(struct udevice *dev)
 	dm_pci_write_config32(dev, AL_ETH_APP_CONTROL, v);
 }
 
+/* TX-state dump (stock-style diagnostic). Reads the M2S engine state + Q0 ring
+ * pointers straight from BAR0. NEVER read 0x1038 (drtp_inc is write-only -
+ * reading it data-aborts). m2s.state nibbles: field 1 = NORMAL/active,
+ * 2 = ABORT. Healthy idle = 0x00000000; all-2s (0x2222) = engine aborted. */
+static void al_eth_dm_dump_tx(struct al_eth_dm_priv *priv, const char *tag)
+{
+	void __iomem *u = priv->udma_regs;
+
+	printf("al_eth[%s]: m2s.state=%08x tx0 drhp=%08x drtp=%08x dcp=%08x crhp=%08x qpkt=%08x\n",
+	       tag, readl(u + 0x200), readl(u + 0x1034), readl(u + 0x103c),
+	       readl(u + 0x1040), readl(u + 0x104c), readl(u + 0x10c0));
+}
+
 /* ---- DMA / adapter bring-up (mirror of vendor al_eth_dev_init) --------- */
 
 static int al_eth_dm_dma_init(struct udevice *dev)
@@ -241,8 +254,27 @@ static int al_eth_dm_dma_init(struct udevice *dev)
 	}
 
 	/* now that FLR + adapter_init have reset the function, enable DMA snoop
-	 * (they clear it) - THE fix for the TX-completion timeout. */
+	 * (they clear it). */
 	al_eth_dm_snoop_enable(dev);
+
+	/*
+	 * We chainload from stock U-Boot, which USED this eth (ran tftp to load us)
+	 * and never reset its UDMA. So we inherit a dirty queue: stale ring pointers
+	 * and the M2S engine stuck in ABORT (m2s.state=0x2222, confirmed on-box).
+	 * adapter_init's NORMAL cannot clear a terminal ABORT, so the engine never
+	 * consumes our descriptor -> TX completion timeout. Stock's al_eth_halt does
+	 * al_udma_q_reset here; we must too. Force the engines DOWN (clears ABORT),
+	 * reset both queues (clears stale ring-id/head pointers); the queue_config
+	 * below then re-inits the rings clean and we return the engines to NORMAL.
+	 * "Assume nothing" - and a prerequisite for replacing stock U-Boot outright.
+	 */
+	al_udma_q_handle_get(&priv->adapter.tx_udma, 0, &priv->tx_q);
+	al_udma_q_handle_get(&priv->adapter.rx_udma, 0, &priv->rx_q);
+	al_eth_dm_dump_tx(priv, "inherited");
+	al_udma_state_set(&priv->adapter.tx_udma, UDMA_DISABLE);
+	al_udma_state_set(&priv->adapter.rx_udma, UDMA_DISABLE);
+	al_udma_q_reset(priv->tx_q);
+	al_udma_q_reset(priv->rx_q);
 
 	memset(&txp, 0, sizeof(txp));
 	txp.size = AL_ETH_DESCS_PER_Q;
@@ -271,6 +303,11 @@ static int al_eth_dm_dma_init(struct udevice *dev)
 	al_udma_q_handle_get(&priv->adapter.tx_udma, 0, &priv->tx_q);
 	al_udma_q_handle_get(&priv->adapter.rx_udma, 0, &priv->rx_q);
 
+	/* rings are re-configured clean; bring the engines back to NORMAL. */
+	al_udma_state_set(&priv->adapter.tx_udma, UDMA_NORMAL);
+	al_udma_state_set(&priv->adapter.rx_udma, UDMA_NORMAL);
+	al_eth_dm_dump_tx(priv, "post-reset");
+
 	/* RGMII 1G. Do NOT call al_eth_mac_link_config: stock SKIPS it for
 	 * external-PHY RGMII (al_eth.c: only for SGMII, or RGMII && !ext_phy).
 	 * The external AR8033 drives the link and the MAC follows via RGMII
@@ -287,7 +324,8 @@ static int al_eth_dm_dma_init(struct udevice *dev)
 		};
 
 		err = al_eth_rx_buffer_add(priv->rx_q, &buf,
-					   AL_ETH_RX_FLAGS_INT, NULL);
+					   AL_ETH_RX_FLAGS_INT |
+					   AL_ETH_RX_FLAGS_NO_SNOOP, NULL);
 		if (err) {
 			dev_err(dev, "rx_buffer_add[%d] failed: %d\n", i, err);
 			return err;
@@ -371,6 +409,12 @@ static int al_eth_dm_send(struct udevice *dev, void *packet, int length)
 
 	memset(&pkt, 0, sizeof(pkt));
 	pkt.num_of_bufs = 1;
+	/* NO_SNOOP: the M2S engine reads the descriptor+buffer as PLAIN DRAM reads
+	 * (serviced by our flush below) instead of snooping reads, which stall
+	 * forever here - the fabric never answers the snoop (CCI I/O-coherency is
+	 * not enabled in this chainloaded U-Boot). Propagated to the data descs via
+	 * AL_ETH_TX_PKT_UDMA_FLAGS in al_eth_tx_pkt_prepare. THE TX-completion fix. */
+	pkt.flags = AL_ETH_TX_FLAGS_NO_SNOOP;
 	pkt.bufs[0].addr = (al_phys_addr_t)(uintptr_t)packet;
 	pkt.bufs[0].len = length;
 
@@ -383,6 +427,7 @@ static int al_eth_dm_send(struct udevice *dev, void *packet, int length)
 	al_eth_cache_flush(packet, length);
 	al_eth_cache_flush(priv->desc_block, AL_ETH_DESC_BLOCK_SIZE);
 	al_eth_tx_dma_action(priv->tx_q, ndesc);
+	al_eth_dm_dump_tx(priv, "doorbell");
 
 	while (ndesc) {
 		/* pull the TX completion the engine just wrote back to us. */
@@ -395,9 +440,9 @@ static int al_eth_dm_send(struct udevice *dev, void *packet, int length)
 		if (++poll >= AL_ETH_TX_POLL_MAX) {
 			dev_err(dev, "TX completion timeout: %d descs left after %d us\n",
 				ndesc, poll);
-			/* flush the TX datapath so a later send can recover */
-			al_eth_mac_tx_flush_config(&priv->adapter, AL_TRUE);
-			al_eth_mac_tx_flush_config(&priv->adapter, AL_FALSE);
+			al_eth_dm_dump_tx(priv, "timeout");
+			/* NB: no al_eth_mac_tx_flush_config here - it is unsupported in
+			 * RGMII (mode 0) and only prints "tx flush not supported". */
 			return -ETIMEDOUT;
 		}
 	}
