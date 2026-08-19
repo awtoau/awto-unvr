@@ -118,3 +118,28 @@ CONFIG_CMD_PART=y
 CONFIG_CMD_MMC=y
 # --- 10G SFP+ SerDes/PCS (drivers/phy/al_serdes, #83 later:10G)
 CONFIG_AL_SERDES=y
+# --- SPI-NOR (MX25U25635F @ dw-apb-ssi 0xfd882000): persistent env + per-unit MAC
+# DesignWare APB SSI master + mainline spi-nor. Gives raw NOR access for our env
+# (Factory partition mtd3 @0x1e0000, unused by stock) and the MAC (EEPROM mtd4
+# @0x1f0000, read via al_eth read_rom_hwaddr). docs/mtd.md.
+CONFIG_DM_SPI=y
+CONFIG_DW_SPI=y
+CONFIG_SPI=y
+CONFIG_SPI_FLASH=y
+CONFIG_DM_SPI_FLASH=y
+CONFIG_SPI_FLASH_MACRONIX=y
+CONFIG_SPI_FLASH_SFDP_SUPPORT=y
+CONFIG_CMD_SF=y
+CONFIG_SF_DEFAULT_SPEED=37500000
+CONFIG_SF_DEFAULT_MODE=0x0
+# env in the Factory partition (mtd3): 64KB @0x1e0000, 4KB erase sectors. Replaces
+# ENV_IS_NOWHERE -> setenv/saveenv now persist across reset (#81). Own store, NOT
+# stock's mtd1/mtd2, so our boot flow never inherits stock bootcmd/bootargs.
+CONFIG_ENV_IS_IN_SPI_FLASH=y
+CONFIG_ENV_OFFSET=0x1E0000
+CONFIG_ENV_SECT_SIZE=0x1000
+CONFIG_ENV_SPI_BUS=0
+CONFIG_ENV_SPI_CS=0
+CONFIG_ENV_SPI_MAX_HZ=37500000
+CONFIG_ENV_SPI_MODE=0x0
+CONFIG_CMD_SAVEENV=y
