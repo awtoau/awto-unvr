@@ -7,6 +7,21 @@ Two flash chips, 12 MTD partitions. Stock 5.1.x layout, captured live
 byte-range on a chip (read / write / **erase-whole-sector**). Some hold a
 filesystem (config = ext4, rootfs), most hold raw blobs or images.
 
+## Who defines the layout (there is no on-media table)
+
+The flash chips carry **no partition table** — no GPT/MBR, no ONFI table. The layout
+is a pure software convention in the **Device Tree** (`fixed-partitions` nodes,
+`partition@N { label=…; reg=<off size>; }`):
+- **Ubiquiti's DT source is the authority.** 5.1.25 "deleted" chike/cksum by shipping
+  a DTB with fewer partition nodes — nothing was erased, the nodes were just dropped.
+- Boot chain: compiled DTB (multi-DT container) → **U-Boot selects by sysid**
+  (`0xea16 → index 0`) → **kernel reads `fixed-partitions`** → `/dev/mtdN` (numbers =
+  registration order; NOR probes before NAND).
+- **How we know this layout:** live `/proc/mtd` + live DTB (`docs/hw-reference/.../
+  live.dts`) + reversed U-Boot DTB-selection (`docs/uboot-update-path.md`).
+- **We ship our own DTB/U-Boot**, so the layout — and our env offset — is ours to
+  define. Nothing in hardware fixes it.
+
 ## Two devices — tell them apart by erase size
 
 | | SPI-NOR | NAND |
@@ -38,7 +53,7 @@ before the kernel.
 | mtd5 | recovery kernel | NOR | 0x200000 | 0x1000000 | 16 MB | image | no | fallback kernel (on NOR) |
 | mtd6 | **config** | NOR | 0x1200000 | 0xdff000 | ~14 MB | **ext4** | **yes** | mounted `/tmp/.config`; persistent settings |
 | mtd7 | cksum | NOR | 0x1fff000 | 0x1000 | 4 KB | raw | **yes** | **all-`0x00`, inert** — not a live checksum |
-| mtd8 | al_boot | NAND | 0x000000 | 0x200000 | 2 MB | image | no | Annapurna al_boot / S2-loader area |
+| mtd8 | al_boot | NAND | 0x000000 | 0x200000 | 2 MB | **erased (0xFF)** | no | empty on this unit — real al_boot/S2 is in the **NOR** preboot region (0x0–0x80000), not here |
 | — | *(hole)* | NAND | 0x200000 | 0x100000 | 1 MB | unpart. | — | reserved gap before kernel |
 | mtd9 | linux_kernel | NAND | 0x300000 | 0x1000000 | 16 MB | image | no | stock main kernel |
 | mtd10 | rootfs | NAND | 0x1300000 | 0x3ec00000 | ~1005 MB | filesystem | no | root FS (1004 MB, 10× GitHub limit) |
@@ -48,7 +63,13 @@ NOR sum = `0x2000000` = 32 MB (no gaps). Board-id is read at flash `0x1f000c` =
 mtd4 + 0x0C (`docs/nor-boot-chain.md`). `cksum` is 100 % zeros — protects nothing,
 which is *why* repurposing mtd3 for our env is safe.
 
-### mtd4 EEPROM = the identity blob (raw, no filesystem)
+### mtd4 "EEPROM" = the identity blob (raw, no filesystem)
+**Naming trap:** mtd4 is *not* a separate EEPROM chip — it is a 64 KB region of the
+**NOR** flash (MX25U25635F @ 0x1f0000) that Ubiquiti *labelled* "EEPROM". The one
+real EEPROM chip is the **24C64 at i2c `0x57`**, which holds the **DDR-config blob**,
+not identity (see `docs/i2c-map.md`). The MAC is here, in NOR, reached over SPI —
+the same path as the mtd3 env.
+
 | off | sz | field | value |
 |---|---|---|---|
 | 0x0000 | 6 | base MAC | `74:ac:b9:41:a8:11` ← RJ45 port (al_eth 1c36:0001 = eth0) |
