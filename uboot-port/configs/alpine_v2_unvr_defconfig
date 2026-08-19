@@ -123,8 +123,12 @@ CONFIG_AL_SERDES=y
 # (Factory partition mtd3 @0x1e0000, unused by stock) and the MAC (EEPROM mtd4
 # @0x1f0000, read via al_eth read_rom_hwaddr). docs/mtd.md.
 CONFIG_DM_SPI=y
-CONFIG_DW_SPI=y
+CONFIG_DESIGNWARE_SPI=y
 CONFIG_SPI=y
+# MTD gates the whole "SPI Flash Support" Kconfig menu (drivers/mtd/Kconfig
+# `if MTD`) - without it SPI_FLASH/DM_SPI_FLASH/CMD_SF/ENV_IS_IN_SPI_FLASH all
+# silently drop.
+CONFIG_MTD=y
 CONFIG_SPI_FLASH=y
 CONFIG_DM_SPI_FLASH=y
 CONFIG_SPI_FLASH_MACRONIX=y
