@@ -4,6 +4,11 @@ Full catalog: **`/mnt/2tb/unvr-port-refs/MANIFEST.md`** (20 sources, cloned 2026
 This is the in-repo index of the ones that matter per task — read it before hunting for HAL/driver
 source, so nothing gets "lost" again.
 
+**Research writeup:** [hal-provenance-and-cross-system.md](hal-provenance-and-cross-system.md) — HAL
+provenance (delroth = UDM GPL extraction, verified by hash), the i2c/RTC ch0-wedge cross-system
+survey, and the ccr2004/board-param findings. Read that for the *conclusions*; this file is the
+*source list*.
+
 ## Ethernet — U-Boot TCP port (RGMII 1G first, then 10G)
 - **HAL (the engine):** `delroth-alpine_hal/` — github.com/delroth/alpine_hal @ eb6b9f1. The full
   Annapurna HAL: `include/`+`drivers/` for eth, udma, udma_fast, serdes, iofic, pcie, **ddr**,

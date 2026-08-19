@@ -15,6 +15,7 @@ All PDFs fetched via playwrong (`mcp__playwrong__pdf`), never curl/wget.
 | `ADT7475.pdf` | ADI/onsemi ADT7475 fan/thermal | bdtic.com `DataSheet/ADI/ADT7475.pdf` | ADI Rev A | **68 pages**; "dBCool Remote Thermal Monitor and Fan Controller" |
 | `MT29F8G08ABBCAH4-avaq-summary.pdf` | Micron MT29F8G08ABBCAH4 NAND | avaq.com uploads mirror | 1-page spec card (**not** full DS) | **1 page**; confirms "1.8V 8G-bit 1G x 8 63-Pin VFBGA" |
 | `nxp-ethernet-macs-interfaces-controllers.pdf` | NXP QorIQ MAC/PCS overview (P/T/LS/LA/LX) — incl. **mEMAC**, MDIO ctrl, SerDes/PCS bring-up | community.nxp.com Layerscape attachment 9285 (P. Billings, DN Apps) | Rev 22-Oct-2020 | **79 pages**; title "ETHERNET- MACs, Interfaces, & Mgmt Controllers Overview"; covers mEMAC + MDC/MDIO. Ref for AL-324 10G-MAC=mEMAC-family (MorethanIP) analysis |
+| `altera_tse_ug_ethernet.pdf` | Altera/Intel Triple-Speed Ethernet (TSE) MAC user guide — the **1G MAC core** front-ended by AL-UDMA on eth1 (10/100/1000 MAC, MDIO, FIFO, cmd_config) | intel.com/altera `ug_ethernet.pdf` | UG-01008, matches the MTIP TSE core | **178 pages**; title "Triple Speed Ethernet User Guide"; covers cmd_config / MDIO / 1000BASE. Ref for the al_eth 1G RGMII register semantics (#83) |
 
 ## Not obtainable automatically (documented from public specs instead)
 
