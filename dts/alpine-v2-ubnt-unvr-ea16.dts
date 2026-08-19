@@ -648,14 +648,16 @@
 					read-only;
 				};
 
-				/* Fallback kernel image (16 MiB, on NOR). */
+				/* STOCK U-Boot loads this on a recovery boot (recovery_mem_read
+				 * + AL_RECOVERY_OFFSET, board.c). Fallback kernel, 16 MiB. */
 				partition@200000 {
 					reg = <0x200000 0x1000000>;
 					label = "recovery kernel";
 				};
 
-				/* ext4 filesystem: persistent device settings (mounted
-				 * /tmp/.config on stock). Wiped by a factory reset. */
+				/* ext4: persistent device settings (mounted /tmp/.config).
+				 * Linux/userspace only — STOCK U-Boot never touches it. Wiped by
+				 * a factory reset. Stock-usage summary: docs/mtd.md. */
 				partition@1200000 {
 					reg = <0x1200000 0xdff000>;
 					label = "config";
@@ -709,13 +711,15 @@
 				label = "device_tree";
 			};
 
-			/* Kernel image (stock uImage; our Fedora flash writes here too). */
+			/* STOCK U-Boot loads the kernel from here on a normal boot.
+			 * (Our Fedora flash writes here too.) */
 			partition@300000 {
 				reg = <0x00300000 0x01000000>;
 				label = "linux_kernel";
 			};
 
-			/* Root filesystem (~1004 MiB; squashfs on stock). */
+			/* Root filesystem (~1004 MiB; squashfs on stock). bootargs root=
+			 * target only — the kernel mounts it; U-Boot never reads it. */
 			partition@1300000 {
 				reg = <0x01300000 0x3ec00000>;
 				label = "rootfs";

@@ -63,6 +63,29 @@ NOR sum = `0x2000000` = 32 MB (no gaps). Board-id is read at flash `0x1f000c` =
 mtd4 + 0x0C (`docs/nor-boot-chain.md`). `cksum` is 100 % zeros — protects nothing,
 which is *why* repurposing mtd3 for our env is safe.
 
+## What stock U-Boot uses at boot (and what's free)
+
+Verified from the GPL source (`UBNT-source-code/.../board/annapurna-labs/alpine_ubnt/
+board.c`) + the live boot log. Stock U-Boot 2015.07 touches ONLY these:
+
+| Partition | Stock U-Boot | Why (source) |
+|---|---|---|
+| u-boot (mtd0) | **runs from** | preboot + TOC + stock U-Boot image itself |
+| u-boot env (mtd1) | **reads/writes env** | `al_config_env_offset_get()`; bootcmd, eth1addr |
+| u-boot env redundant (mtd2) | **redundant env** | env redundancy pair |
+| EEPROM (mtd4) | **reads (identity)** | `eeprom_per_device_init()` (power), MAC, board config ID |
+| recovery kernel (mtd5) | **loads on recovery** | `recovery_mem_read` + `AL_RECOVERY_OFFSET` (board.c:213/381) |
+| linux_kernel (NAND) | **loads kernel** | normal boot |
+| rootfs (NAND) | bootargs target only | `root=` — the kernel mounts it; U-Boot doesn't read it |
+
+**FREE — NOT used by stock U-Boot (safe to repurpose):**
+- **Factory (mtd3)** — blank `0xFF` → repurposed as OUR U-Boot env (#81).
+- **config (mtd6)** — Linux ext4 (userspace `/tmp/.config`); U-Boot never touches it.
+- **cksum (mtd7)** — inert, all-`0x00`.
+- **al_boot (NAND)** — empty (the al_boot code is in the NOR).
+- **device_tree (NAND)** — empty (the DTB comes from the NOR TOC / multi-DT).
+- **chike (NAND)** — dead firmware selfie.
+
 ### mtd4 "EEPROM" = the identity blob (raw, no filesystem)
 **Naming trap:** mtd4 is *not* a separate EEPROM chip — it is a 64 KB region of the
 **NOR** flash (MX25U25635F @ 0x1f0000) that Ubiquiti *labelled* "EEPROM". The one
