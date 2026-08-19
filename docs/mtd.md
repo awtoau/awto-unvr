@@ -22,21 +22,31 @@ filesystem (config = ext4, rootfs), most hold raw blobs or images.
 In `/proc/mtd` the **erasesize column is the giveaway**: `00001000` = NOR,
 `00040000` = NAND.
 
-## SPI-NOR (spi0.0, MX25U25635F, 32 MB) — fills exactly
+## Partition table — all 12, both chips
 
-| mtd | name | offset | size | human | content | in-repo | notes |
-|---|---|---|---|---|---|---|---|
-| mtd0 | u-boot | 0x000000 | 0x1c0000 | 1.75 MB | image | no | stock U-Boot 2015.07 |
-| mtd1 | u-boot env | 0x1c0000 | 0x10000 | 64 KB | env blob | **yes** | key=val; **holds `eth1addr`** |
-| mtd2 | u-boot env redundant | 0x1d0000 | 0x10000 | 64 KB | env blob | **yes** | backup env |
-| mtd3 | Factory | 0x1e0000 | 0x10000 | 64 KB | raw | **yes** | 100% `0xFF`, never written |
-| mtd4 | **EEPROM** | 0x1f0000 | 0x10000 | 64 KB | raw blob | **yes** | **identity** — see below |
-| mtd5 | recovery kernel | 0x200000 | 0x1000000 | 16 MB | image | no | fallback kernel (on NOR) |
-| mtd6 | **config** | 0x1200000 | 0xdff000 | ~14 MB | **ext4** | **yes** | mounted `/tmp/.config`; persistent settings |
-| mtd7 | cksum | 0x1fff000 | 0x1000 | 4 KB | raw | **yes** | checksums |
+NAND offsets **restart at 0x0** because it is a separate chip (the `chip` column,
+not the offset, disambiguates). NOR fills 32 MB with no gaps; NAND has a 1 MB hole
+before the kernel.
 
-Sum = `0x2000000` = 32 MB (no gaps). Board-id is read at flash `0x1f000c` =
-mtd4 + 0x0C (`docs/nor-boot-chain.md`).
+| mtd | name | chip | offset | size | human | content | in-repo | notes |
+|---|---|---|---|---|---|---|---|---|
+| mtd0 | u-boot | NOR | 0x000000 | 0x1c0000 | 1.75 MB | image | no | stock U-Boot 2015.07 |
+| mtd1 | u-boot env | NOR | 0x1c0000 | 0x10000 | 64 KB | env blob | **yes** | key=val; **holds `eth1addr`** |
+| mtd2 | u-boot env redundant | NOR | 0x1d0000 | 0x10000 | 64 KB | env blob | **yes** | backup env |
+| mtd3 | Factory | NOR | 0x1e0000 | 0x10000 | 64 KB | raw | **yes** | `0xFF`, unused → **awto-U-Boot env** (#81) |
+| mtd4 | **EEPROM** | NOR | 0x1f0000 | 0x10000 | 64 KB | raw blob | **yes** | **identity** — see below; MAC source (#89) |
+| mtd5 | recovery kernel | NOR | 0x200000 | 0x1000000 | 16 MB | image | no | fallback kernel (on NOR) |
+| mtd6 | **config** | NOR | 0x1200000 | 0xdff000 | ~14 MB | **ext4** | **yes** | mounted `/tmp/.config`; persistent settings |
+| mtd7 | cksum | NOR | 0x1fff000 | 0x1000 | 4 KB | raw | **yes** | **all-`0x00`, inert** — not a live checksum |
+| mtd8 | al_boot | NAND | 0x000000 | 0x200000 | 2 MB | image | no | Annapurna al_boot / S2-loader area |
+| — | *(hole)* | NAND | 0x200000 | 0x100000 | 1 MB | unpart. | — | reserved gap before kernel |
+| mtd9 | linux_kernel | NAND | 0x300000 | 0x1000000 | 16 MB | image | no | stock main kernel |
+| mtd10 | rootfs | NAND | 0x1300000 | 0x3ec00000 | ~1005 MB | filesystem | no | root FS (1004 MB, 10× GitHub limit) |
+| mtd11 | chike | NAND | 0x3ff00000 | 0x100000 | 1 MB | raw | **yes** | UBNT-specific tail region |
+
+NOR sum = `0x2000000` = 32 MB (no gaps). Board-id is read at flash `0x1f000c` =
+mtd4 + 0x0C (`docs/nor-boot-chain.md`). `cksum` is 100 % zeros — protects nothing,
+which is *why* repurposing mtd3 for our env is safe.
 
 ### mtd4 EEPROM = the identity blob (raw, no filesystem)
 | off | sz | field | value |
@@ -63,16 +73,6 @@ Real hexdump source: `xxd .../mtdNN-EEPROM-*.img` under
 `/mnt/2tb/git_debris/woomera-mtd/`. MAC sourcing for our U-Boot (#89): read 6 B at
 mtd4+0x0000 via `read_rom_hwaddr`. Full field map: `docs/identity-partitions.md`,
 `docs/nor-reference/eeprom-fieldmap.json`.
-
-## NAND (al-nand, MT29F8G08ABBCAH4, 1 GB)
-
-| mtd | name | offset | size | human | content | in-repo | notes |
-|---|---|---|---|---|---|---|---|
-| mtd8 | al_boot | 0x000000 | 0x200000 | 2 MB | image | no | Annapurna al_boot / S2-loader area |
-| — | *(hole)* | 0x200000 | 0x100000 | 1 MB | unpartitioned | — | reserved gap before kernel |
-| mtd9 | linux_kernel | 0x300000 | 0x1000000 | 16 MB | image | no | stock main kernel |
-| mtd10 | rootfs | 0x1300000 | 0x3ec00000 | ~1005 MB | filesystem | no | root FS (1004 MB, 10× GitHub limit) |
-| mtd11 | chike | 0x3ff00000 | 0x100000 | 1 MB | raw | **yes** | UBNT-specific tail region |
 
 Our Fedora-on-NAND layout **differs** from stock (kernel@0x1300000, dtb@0x2800000,
 factory recovery@0x300000) — see the `nand-boot-layout-recovery` memory / flash flow.
