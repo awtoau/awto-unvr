@@ -19,7 +19,8 @@ REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 NODE = "i2c@fd880000"                     # the shared pld bus, both trees
 EXPECT = {
-    "clock-frequency":      400000,       # Fast-mode, rated max (mux + AT24C64 cap)
+    "clock-frequency":      100000,       # Standard-mode: stock's speed, needed so the
+                                          # s35390a RTC on ch0 does not wedge (rtc-s35390a-fault.md)
     "i2c-sda-hold-time-ns": 300,          # stock value; dropping it wedges the RTC
 }
 FILES = [

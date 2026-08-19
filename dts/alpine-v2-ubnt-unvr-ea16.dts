@@ -281,10 +281,15 @@
 			reg = <0x00 0xfd880000 0x00 0x1000>;
 			interrupts = <GIC_SPI 21 IRQ_TYPE_LEVEL_HIGH>;
 			clocks = <&sbclk>;
-			/* 400 kHz (Fast-mode) = rated max for this shared bus: PCA9575 does
-			 * 1 MHz but the PCA9546 mux + AT24C64 cap at 400 kHz. Matches U-Boot;
-			 * kernel's old 100 kHz was conservative inheritance, not a limit. */
-			clock-frequency = <400000>;
+			/* 100 kHz (Standard-mode) = stock's speed. NOT max-by-default:
+			 * the s35390a RTC on mux ch0 is timing-fussy and at 400 kHz mis-reads
+			 * a phantom START/STOP and holds SDA -> whole-bus wedge, unrecoverable
+			 * in SW on this bus (pld-i2c SCL/SDA have no GPIO alt for a bit-bang
+			 * deblock, and the DW v1.20 core has no HW SDA-stuck recovery - see
+			 * docs/rtc-s35390a-fault.md). Stock ran 100 kHz and talked to the RTC
+			 * fine; slower SCL = more setup/hold margin = no latch. The tolerant
+			 * devices (PCA9575/EEPROM/mux/adt7475) don't care about the speed. */
+			clock-frequency = <100000>;
 			/* SDA hold = 300 ns, from the stock working DTB (live.dts:255,
 			 * i2c-sda-hold-time-ns=0x12c). Without it the DW driver reuses the
 			 * leftover DW_IC_SDA_HOLD register value (U-Boot/reset), which is
