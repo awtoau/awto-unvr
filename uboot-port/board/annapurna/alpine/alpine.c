@@ -102,61 +102,52 @@ static u8 s35_rev(u8 b)
 #define S35_RESET	0x80	/* B7 reset (write-only) */
 
 /*
- * Reset-at-probe for the S-35390A RTC (0x30, behind PCA9546 mux ch0, i2c bus 0).
- * Mirrors the stock 4.1.37 driver: read STATUS1, and ONLY if POC/BLD (abnormal
- * power state) write RESET|24H — otherwise leave a running clock alone (an
- * unconditional RESET clobbers the time every boot). Clearing POC/BLD keeps the
- * chip out of the datasheet "indefinite status" that can hold ch0 SDA and wedge
- * the DW i2c bus once Linux touches it (docs/rtc-s35390a-fault.md). Doing it here,
- * before Linux (which keeps the RTC offline for now), means the chip is clean and
- * the ch0/SFP-EEPROM segment stays scannable. Data is LSB-first (bit-reversed).
- * Runs at boot (board_late_init) and as the `rtcinit` command.
+ * Reset-at-probe for the S-35390A RTC (0x30, behind PCA9546 mux ch0 = i2c bus 1,
+ * the first mux child i2c@0 in the DT). Reached via the DM mux CHILD bus, NOT a
+ * hand-poke of the 0x71 select register: the mux uclass selects ch0, runs the
+ * transfer, and deselects (writes 0x00) after it — so nothing our code does can
+ * leave ch0 latched and wedge the parent bus (Linux i2c/SATA-bay power live on
+ * it). A manual select/deselect straddling get_chip could strand ch0 if the RTC
+ * holds SDA between the two writes; the child bus makes deselect the uclass's job.
+ * Mirrors stock 4.1.37: read STATUS1, and ONLY if POC/BLD (abnormal power state)
+ * write RESET|24H — otherwise leave a running clock alone (an unconditional RESET
+ * clobbers the time every boot). Clearing POC/BLD keeps the chip out of the
+ * datasheet "indefinite status" (docs/rtc-s35390a-fault.md). Data is LSB-first
+ * (bit-reversed). Runs at boot (board_late_init) and as the `rtcinit` command.
  */
 static void rtc_s35390a_init(void)
 {
-	struct udevice *mux, *rtc;
+	struct udevice *rtc;
 	u8 v, st;
-	int rc, rr, gm, gr, sel;
+	int rc, rr, gr;
 
-	gm = i2c_get_chip_for_busnum(0, 0x71, 0, &mux);	/* mux control, no offset */
-	if (gm) {
-		printf("rtc-s35390a: get_chip mux=%d\n", gm);
+	gr = i2c_get_chip_for_busnum(1, 0x30, 0, &rtc);	/* bus 1 = mux ch0 child */
+	if (gr) {
+		printf("rtc-s35390a: get_chip (bus1/ch0) rtc=%d\n", gr);
 		return;
 	}
 
-	v = 0x01;					/* select mux ch0 FIRST */
-	sel = dm_i2c_write(mux, 0, &v, 1);
-
-	gr = i2c_get_chip_for_busnum(0, 0x30, 0, &rtc);	/* now reachable via ch0 */
-	if (gr) {
-		printf("rtc-s35390a: sel=%d get_chip rtc=%d\n", sel, gr);
-	} else {
-		rr = dm_i2c_read(rtc, 0, &st, 1);	/* STATUS1 first */
-		if (rr) {
-			printf("rtc-s35390a: sel=%d STATUS1 read failed rc=%d\n", sel, rr);
-		} else {
-			st = s35_rev(st);		/* to normal bit order */
-			if (st & (S35_POC | S35_BLD)) {
-				v = s35_rev(S35_RESET | S35_24H);
-				rc = dm_i2c_write(rtc, 0, &v, 1);
-				printf("rtc-s35390a: sel=%d POC/BLD 0x%02x -> RESET|24H wr=%d\n",
-				       sel, st, rc);
-			} else {
-				printf("rtc-s35390a: sel=%d STATUS1=0x%02x clean, clock kept\n",
-				       sel, st);
-			}
-		}
+	rr = dm_i2c_read(rtc, 0, &st, 1);		/* STATUS1 first */
+	if (rr) {
+		printf("rtc-s35390a: STATUS1 read failed rc=%d\n", rr);
+		return;
 	}
 
-	v = 0x00;					/* deselect mux */
-	dm_i2c_write(mux, 0, &v, 1);
+	st = s35_rev(st);				/* to normal bit order */
+	if (st & (S35_POC | S35_BLD)) {
+		v = s35_rev(S35_RESET | S35_24H);
+		rc = dm_i2c_write(rtc, 0, &v, 1);
+		printf("rtc-s35390a: POC/BLD 0x%02x -> RESET|24H wr=%d\n", st, rc);
+	} else {
+		printf("rtc-s35390a: STATUS1=0x%02x clean, clock kept\n", st);
+	}
 }
 
 /*
  * `rtcinit` command — the same reset-at-probe as the automatic board_late_init
  * call, for a deliberate re-run. Historically kept manual because a stuck ch0
- * wedged the pld bus; with i2c-sda-hold-time restored + the PCA9546 mux driver
- * (idle-disconnect), ch0 access is safe, so it also runs at boot now.
+ * wedged the pld bus; with i2c-sda-hold-time restored + ch0 reached via the mux
+ * child bus (uclass deselects after each transfer), it is safe to run at boot.
  */
 static int do_rtcinit(struct cmd_tbl *cmdtp, int flag, int argc,
 		      char *const argv[])
