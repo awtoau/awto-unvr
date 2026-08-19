@@ -731,6 +731,22 @@ def cmd_chainload(extra: list[str]) -> int:
     return cmd_console_tcl([tcl])
 
 
+@command("put the FRESH build on the box + stop at unvr# for hands-on testing: "
+         "SP805-reset -> catch stock -> tftp -> go (scripts/uboot-test.tcl)",
+         kind="action")
+def cmd_uboot_test(_extra: list[str]) -> int:
+    if not UBOOT_BIN.exists():
+        log(f"no {UBOOT_BIN.relative_to(REPO)} - run ./dev.py build-uboot first",
+            "ERROR")
+        return 1
+    TFTP_ROOT.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(UBOOT_BIN, CHAINLOAD_BIN)
+    log(f"staged {CHAINLOAD_BIN.relative_to(REPO)} ({UBOOT_BIN.stat().st_size} bytes)")
+    _ensure_tftpd()
+    log("uboot-test: reset+catch+tftp+go, then STOP at unvr# (no auto-tests)")
+    return cmd_console_tcl(["scripts/uboot-test.tcl"])
+
+
 @command("flash the built kernel+DTB into NAND + set U-Boot to boot it "
          "(scripts/flash-nand.py)", kind="action")
 def cmd_flash(extra: list[str]) -> int:
