@@ -43,6 +43,18 @@ CONFIG_GIC_V3=y
 CONFIG_NET=y
 CONFIG_DM_ETH=y
 CONFIG_AL_ETH=y
+CONFIG_AL_ETH_10G=y
+# VERBOSE logging at level 7 (LOGL_DEBUG) - full DM-bind/ofnode/driver-debug
+# trace. Deliberately NOT level 8 (LOGL_DEBUG_CONTENT): level 8 is where
+# designware_spi.c does log_content("tx/rx=..") PER BYTE, which (a) floods and
+# (b) stalls the SPI reader until the 64KB env read OVERRUNS the Rx FIFO ->
+# spi_flash_read() fails -> default env. That's a real dw_spi fragility (its
+# overflow guard assumes a fast consumer). Cap at 7 to keep verbose safe.
+# Per-driver al_dbg->debug() (eth/serdes) is separate, via -DDEBUG in Makefiles.
+CONFIG_LOG=y
+CONFIG_LOGLEVEL=7
+CONFIG_LOG_MAX_LEVEL=7
+CONFIG_LOG_DEFAULT_LEVEL=7
 CONFIG_PHYLIB=y
 CONFIG_PHY_ATHEROS=y
 CONFIG_CMD_NET=y
@@ -80,8 +92,40 @@ CONFIG_PARTITIONS=y
 CONFIG_EFI_PARTITION=y
 CONFIG_DOS_PARTITION=y
 CONFIG_FS_EXT4=y
+CONFIG_EXT4_WRITE=y
 CONFIG_CMD_EXT4=y
 CONFIG_CMD_FS_GENERIC=y
+# FAT (EFI System Partition) + GPT/partition tooling
+CONFIG_FS_FAT=y
+CONFIG_FAT_WRITE=y
+CONFIG_CMD_FAT=y
+CONFIG_CMD_GPT=y
+CONFIG_CMD_PART=y
+CONFIG_PARTITION_UUIDS=y
+CONFIG_CMD_FS_UUID=y
+CONFIG_CMD_UUID=y
+CONFIG_LIB_UUID=y
+# benchmarking + data-integrity (proves DMA reads: checksum a large read)
+CONFIG_CMD_TIME=y
+CONFIG_CMD_CRC32=y
+CONFIG_CMD_MD5SUM=y
+CONFIG_MD5=y
+CONFIG_CMD_SHA1SUM=y
+CONFIG_SHA1=y
+CONFIG_CMD_MEMINFO=y
+CONFIG_CMD_UNZIP=y
+# distro / EFI / extlinux boot paths (Fedora BLS + grub)
+CONFIG_EFI_LOADER=y
+CONFIG_CMD_BOOTEFI=y
+CONFIG_BOOTSTD=y
+CONFIG_BOOTSTD_FULL=y
+CONFIG_BOOTMETH_DISTRO=y
+CONFIG_BOOTMETH_EXTLINUX=y
+CONFIG_BOOTMETH_EFI=y
+CONFIG_CMD_PXE=y
+CONFIG_CMD_SYSBOOT=y
+CONFIG_CMD_BOOTMENU=y
+CONFIG_MENU=y
 # boot the gzip uImage off the SSD: bootm + legacy image + gzip; decompress
 # buffer must exceed the ~57 MB uncompressed arm64 Image (64 MB here).
 CONFIG_CMD_BOOTM=y

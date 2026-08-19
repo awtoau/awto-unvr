@@ -8,3 +8,17 @@ config AL_ETH
 	  mode (UNVR eth1 @ 0xfc100000, PCI 1c36:0001, AR8033 PHY on MDIO addr 4).
 	  MAC + UDMA + clause-22 MDIO only; no serdes/KR/PCS (10G SFP+ excluded).
 	  Bundles a curated subset of the Annapurna Labs HAL under hal/.
+
+config AL_ETH_10G
+	bool "Annapurna Labs al_eth 10G SFP+ (eth2, 1c36:0002) - DRAFT"
+	depends on AL_ETH
+	select AL_SERDES
+	help
+	  DM_ETH driver for the Alpine V2 10G SFP+ port (UNVR eth2, PCI 1c36:0002)
+	  in AL_ETH_MAC_MODE_10GbE_Serial (fixed 10.3125 Gbps, KR AN/LT off). Reuses
+	  the same UDMA/EC datapath as AL_ETH; adds the SerDes lane + 10GBASE-R PCS
+	  front-end (via CONFIG_AL_SERDES) and no-PHY PCS-block-lock link. No new HAL
+	  objects (10GbE_Serial is served by the already-compiled mac_v1_v2).
+
+	  DRAFT / compile-only: needs on-box iteration AND the shared UDMA TX fix
+	  before it passes traffic. See docs/eth-10g-plan.md.
