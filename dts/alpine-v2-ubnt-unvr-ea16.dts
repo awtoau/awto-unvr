@@ -596,10 +596,14 @@
 				#size-cells = <1>;
 
 				/*
-				 * Stock U-Boot 2015.07 AND the proprietary preboot: the
-				 * first 0x80000 holds S2 + al_boot + stage3 (the code we run
-				 * every boot; being decompiled). This is where "al_boot" the
-				 * CODE lives — NOT the empty NAND al_boot partition.
+				 * Preboot + stock U-Boot, laid out by the Annapurna TOC @0x80000
+				 * (magic 0x070c070c). Exact offsets within this partition:
+				 *   0x00000  preboot obj  = S2 + al_boot + stage3 (payload @0x21000)
+				 *   0x80000  the TOC itself
+				 *   0xA1000  uboot obj    = stock U-Boot 2015.07 (hdr @0xA1048,
+				 *            AArch64, loads/runs at RAM 0x1100000), fills to 0x1c0000
+				 * "al_boot" the CODE lives here (in preboot), NOT the empty NAND
+				 * al_boot partition. docs/bootloader.md, nor-boot-chain.md.
 				 */
 				partition@0 {
 					reg = <0x000000 0x1c0000>;
