@@ -48,6 +48,10 @@ FILES = {
     "include/configs/alpine.h":            "include/configs/alpine.h",
     "configs/alpine_v2_unvr_defconfig":    "configs/alpine_v2_unvr_defconfig",
     "arch/dts/awto-alpine-v2-unvr-uboot.dts": "arch/arm/dts/awto-alpine-v2-unvr-uboot.dts",
+    # DW i2c: patched to honor explicit raw SCL hcnt/lcnt from DT so we can pin
+    # stock's proven s35390a-safe pld-bus timing (docs/rtc-s35390a-fault.md).
+    "drivers/i2c/designware_i2c.c":        "drivers/i2c/designware_i2c.c",
+    "drivers/i2c/designware_i2c.h":        "drivers/i2c/designware_i2c.h",
 }
 
 # Whole subtrees copied verbatim: scaffold rel-dir -> tree rel-dir.

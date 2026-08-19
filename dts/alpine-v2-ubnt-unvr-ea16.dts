@@ -295,10 +295,19 @@
 			 * leftover DW_IC_SDA_HOLD register value (U-Boot/reset), which is
 			 * too short and makes the timing-fussy s35390a RTC lose arbitration
 			 * / hold SDA -> whole-bus wedge + `controller timed out` flood.
-			 * The tolerant devices (adt7475/EEPROM/PCA9575) never noticed.
-			 * (stock's i2c-*-scl-*cnt-raw props are ACPI/vendor-only; mainline
-			 * computes SCL counts itself, so only the hold time was missing.) */
+			 * The tolerant devices (adt7475/EEPROM/PCA9575) never noticed. */
 			i2c-sda-hold-time-ns = <300>;
+			/* Stock's proven raw SCL counts (live.dts:249-254) so the
+			 * s35390a doesn't wedge. At clock-frequency=100000 the SS
+			 * pair is used; fs/hs carried for completeness. Honored by
+			 * our patched U-Boot DW i2c driver (docs/rtc-s35390a-fault.md);
+			 * mainline Linux ignores these (non-standard vendor props). */
+			i2c-ss-scl-hcnt-raw = <0x855>;
+			i2c-ss-scl-lcnt-raw = <0xb0b>;
+			i2c-fs-scl-hcnt-raw = <0x19d>;
+			i2c-fs-scl-lcnt-raw = <0x320>;
+			i2c-hs-scl-hcnt-raw = <0xf3>;
+			i2c-hs-scl-lcnt-raw = <0x198>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 

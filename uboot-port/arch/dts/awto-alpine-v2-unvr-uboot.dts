@@ -300,6 +300,16 @@
 			 * i2c-sda-hold-time-ns = 0x12c = 300 ns), which mainline dropped.
 			 * Restored for parity with stock. Effect on the RTC: unverified. */
 			i2c-sda-hold-time-ns = <300>;
+			/* Stock's proven raw SCL counts (live.dts:249-254) so the
+			 * s35390a doesn't wedge (docs/rtc-s35390a-fault.md). At
+			 * clock-frequency=100000 the SS pair is used; fs/hs carried
+			 * for completeness. Honored by our patched DW i2c driver. */
+			i2c-ss-scl-hcnt-raw = <0x855>;
+			i2c-ss-scl-lcnt-raw = <0xb0b>;
+			i2c-fs-scl-hcnt-raw = <0x19d>;
+			i2c-fs-scl-lcnt-raw = <0x320>;
+			i2c-hs-scl-hcnt-raw = <0xf3>;
+			i2c-hs-scl-lcnt-raw = <0x198>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "okay";
