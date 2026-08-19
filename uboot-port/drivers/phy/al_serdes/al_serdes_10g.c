@@ -1,0 +1,263 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+/*
+ * Annapurna Labs 25G-SerDes + 10GBASE-R PCS bring-up for the UNVR SFP+ port
+ * (eth2). Fixed 10.3125 Gbps, KR auto-neg + link-training DISABLED.
+ *
+ * Copyright (C) 2026 Awto / Daniel Tyrrell <dan@awto.au>
+ * Co-authored with Claude (Anthropic).
+ * Derived from Annapurna Labs HAL (Copyright (C) Annapurna Labs Ltd, GPLv2 OR
+ * BSD-3-Clause); reimplemented on U-Boot primitives.
+ *
+ * Scope: SerDes PMA (25G HAL) + the 10GBASE-R PCS + the fixed-10G link-mgmt
+ * bits. It does NOT touch the MAC/UDMA/DM_ETH driver (a separate effort). The
+ * SerDes electrical mode here is the HAL's "KR" = 10.3125G NRZ; Clause-73 AN /
+ * Clause-72 LT are a MAC-KR-FSM feature that is deliberately NOT invoked, so
+ * the lane comes up at a fixed rate (10G_OPTIC / passive-DAC use case).
+ *
+ * COMPILE-VERIFIED ONLY. A human iterates the real lane bring-up on the box.
+ * Hardware-iteration points are tagged "HW:" below.
+ */
+
+#include <command.h>
+#include <dm/ofnode.h>
+#include <linux/delay.h>
+#include <linux/errno.h>
+#include <asm/io.h>
+#include <vsprintf.h>
+
+#include "al_hal_serdes_25g.h"		/* pulls interface + common + shim */
+#include "al_serdes_10g.h"
+
+/* DT: our U-Boot dts is the hardware-of-record (docs/hardware.md). Bases are
+ * read via ofnode by reg-name, never hardcoded.
+ *   reg-name "serdes" -> SerDes PMA  (fd8c0000, size 0x2400)
+ *   reg-name "pcs"    -> eth2 MAC-adapter window that holds the 10GBASE-R PCS
+ *                        sub-block (OPTIONAL; shared with the eth/MAC agent's
+ *                        node — HW: confirm the exact base on the box).
+ */
+#define AL_SERDES_DT_COMPAT	"annapurna-labs,al-serdes-25g"
+
+/*
+ * The SFP+ lane. HW: confirm which physical 25G lane the SFP+ TX/RX pair is
+ * wired to on the AL-324 (LN0 vs LN1) before trusting per-lane status.
+ */
+#define AL_SFP_LANE		AL_SRDS_LANE_0
+
+/*
+ * 10GBASE-R PCS register offsets inside the "pcs" (MAC-adapter) window.
+ * Transcribed from al_hal_eth_mac_regs.h so we do NOT pull in the MAC HAL:
+ *   kr        @ 0xa00 : pcs_addr +0x00, pcs_data +0x04 (Clause-45 indirect)
+ *   gen_v3    @ 0xe00 : pcs_10g_ll_cfg +0x38, pcs_10g_ll_status +0x3c
+ * PCS block-lock (10G serial) = KR-PCS BASE-R Status 2 (reg 0x21), bit 15.
+ */
+#define AL_PCS_KR_ADDR		0xa00	/* kr.pcs_addr  */
+#define AL_PCS_KR_DATA		0xa04	/* kr.pcs_data  */
+#define AL_PCS_10G_LL_CFG	0xe38	/* gen_v3.pcs_10g_ll_cfg    */
+#define AL_PCS_10G_LL_STATUS	0xe3c	/* gen_v3.pcs_10g_ll_status */
+#define AL_PCS_10G_LL_STATUS_FEC_LOCKED	(1u << 0)
+#define AL_KR_PCS_BASE_R_STATUS2	0x21	/* Clause-45 dev3 reg 0x21 */
+#define AL_KR_PCS_BLOCK_LOCK		(1u << 15)
+/* 10GbE-Serial PCS cfg value (al_hal_eth_main 10GbE_Serial path). HW: verify. */
+#define AL_PCS_10G_LL_CFG_10GR	0x00000050
+
+/*
+ * 10G optic TX/RX equaliser params — mirror al_init_eth_lm.c's 10G_OPTIC static
+ * values (optic_tx_params / optic_rx_params). HW: these are the vendor optic
+ * defaults; retune per the actual SFP/DAC on the box (rx_equalization sweep).
+ */
+static struct al_serdes_adv_tx_params optic_tx_params = {
+	.override		= AL_TRUE,
+	.amp			= 0x1,
+	.total_driver_units	= 0x13,
+	.c_plus_1		= 0x2,
+	.c_plus_2		= 0,
+	.c_minus_1		= 0,
+	.slew_rate		= 0,
+};
+
+static struct al_serdes_adv_rx_params optic_rx_params = {
+	.override		= AL_TRUE,
+	.dcgain			= 0x0,
+	.dfe_3db_freq		= 0x7,
+	.dfe_gain		= 0x0,
+	.dfe_first_tap_ctrl	= 0x0,
+	.dfe_secound_tap_ctrl	= 0x8,
+	.dfe_third_tap_ctrl	= 0x0,
+	.dfe_fourth_tap_ctrl	= 0x8,
+	.low_freq_agc_gain	= 0x7,
+	.precal_code_sel	= 0,
+	.high_freq_agc_boost	= 0x4,
+};
+
+/* Resolve a reg base by reg-name on the serdes DT node. Returns NULL if absent. */
+static void __iomem *al_serdes_dt_base(const char *reg_name)
+{
+	ofnode node;
+	int idx;
+	fdt_addr_t addr;
+
+	node = ofnode_by_compatible(ofnode_null(), AL_SERDES_DT_COMPAT);
+	if (!ofnode_valid(node))
+		return NULL;
+
+	idx = ofnode_stringlist_search(node, "reg-names", reg_name);
+	if (idx < 0)
+		return NULL;
+
+	addr = ofnode_get_addr_index(node, idx);
+	if (addr == FDT_ADDR_T_NONE)
+		return NULL;
+
+	return (void __iomem *)(uintptr_t)addr;
+}
+
+/* Build a per-call HAL object bound to the SerDes PMA base. No HW side effects. */
+static int al_serdes_obj_get(struct al_serdes_grp_obj *obj, void __iomem **base)
+{
+	void __iomem *sbase = al_serdes_dt_base("serdes");
+
+	if (!sbase) {
+		printf("serdes: no '%s' DT node / 'serdes' reg\n",
+		       AL_SERDES_DT_COMPAT);
+		return -ENODEV;
+	}
+	al_serdes_25g_handle_init(sbase, obj);
+	if (base)
+		*base = sbase;
+	return 0;
+}
+
+/*
+ * 10GBASE-R PCS bring-up (optional). Selects the 10G-serial PCS via the MAC
+ * adapter's pcs_10g_ll_cfg. HW: the MAC agent owns the full adapter datapath +
+ * reset ordering; this is the minimal PCS-mode write for standalone bring-up
+ * and must be reconciled with the MAC config at merge / verified on the box.
+ */
+static void al_serdes_pcs_10gr_config(void __iomem *pcs)
+{
+	writel(AL_PCS_10G_LL_CFG_10GR, pcs + AL_PCS_10G_LL_CFG);
+	/* PCS reset settle. 1 us: al_hal_eth_main AL_ETH_KR_PCS_RESET_DELAY. */
+	udelay(1);
+}
+
+/* Indirect Clause-45 read of a KR-PCS register through the MAC adapter. */
+static u16 al_serdes_kr_pcs_read(void __iomem *pcs, u16 reg)
+{
+	writel(reg, pcs + AL_PCS_KR_ADDR);
+	return (u16)readl(pcs + AL_PCS_KR_DATA);
+}
+
+int al_serdes_10g_init(void)
+{
+	struct al_serdes_grp_obj obj;
+	void __iomem *base;
+	void __iomem *pcs;
+	int rc;
+
+	rc = al_serdes_obj_get(&obj, &base);
+	if (rc)
+		return rc;
+
+	printf("serdes: 25G PMA @ %p, configuring SFP+ lane %d for fixed 10G (KR/AN/LT off)\n",
+	       base, AL_SFP_LANE);
+
+	/*
+	 * mode_set_kr == al_serdes_25g_group_cfg_10g_mode: writes gen.ctrl for
+	 * 10G (speed field 9 = 0x901100), resets POR/CM0/lanes, runs the lane
+	 * calibration (LEQ/CDR/bbstep/afe/tx-pll-wa), releases the lanes and
+	 * checks FW init status. This is the fixed 10.3125G electrical mode with
+	 * NO Clause-73 AN and NO Clause-72 LT.
+	 */
+	if (!obj.mode_set_kr) {
+		printf("serdes: mode_set_kr unavailable\n");
+		return -ENOSYS;
+	}
+	rc = obj.mode_set_kr(&obj);
+	if (rc) {
+		printf("serdes: 10G group config FAILED (%d)\n", rc);
+		return rc;
+	}
+
+	/* Apply the 10G optic TX/RX equaliser overrides on the SFP+ lane. */
+	if (obj.tx_advanced_params_set)
+		obj.tx_advanced_params_set(&obj, AL_SFP_LANE, &optic_tx_params);
+	if (obj.rx_advanced_params_set)
+		obj.rx_advanced_params_set(&obj, AL_SFP_LANE, &optic_rx_params);
+
+	/* 10GBASE-R PCS, if the DT exposes it. */
+	pcs = al_serdes_dt_base("pcs");
+	if (pcs) {
+		printf("serdes: configuring 10GBASE-R PCS @ %p\n", pcs);
+		al_serdes_pcs_10gr_config(pcs);
+	} else {
+		printf("serdes: no 'pcs' reg in DT — PCS left to the MAC agent\n");
+	}
+
+	printf("serdes: 10G init done; run 'serdes status' to read lane lock\n");
+	return 0;
+}
+
+void al_serdes_10g_status(void)
+{
+	struct al_serdes_grp_obj obj;
+	void __iomem *base;
+	void __iomem *pcs;
+
+	if (al_serdes_obj_get(&obj, &base))
+		return;
+
+	printf("serdes: 25G PMA @ %p, SFP+ lane %d:\n", base, AL_SFP_LANE);
+
+	if (obj.fw_is_alive)
+		printf("  fw_alive     : %s\n",
+		       obj.fw_is_alive(&obj) ? "yes" : "no");
+	if (obj.pll_lock_get)
+		printf("  pll_lock     : %s\n",
+		       obj.pll_lock_get(&obj) ? "LOCKED" : "no");
+	if (obj.signal_is_detected)
+		printf("  signal_detect: %s\n",
+		       obj.signal_is_detected(&obj, AL_SFP_LANE) ? "yes" : "no");
+	if (obj.cdr_is_locked)
+		printf("  cdr_lock     : %s\n",
+		       obj.cdr_is_locked(&obj, AL_SFP_LANE) ? "LOCKED" : "no");
+	if (obj.rx_valid)
+		printf("  rx_valid     : %s\n",
+		       obj.rx_valid(&obj, AL_SFP_LANE) ? "yes" : "no");
+
+	pcs = al_serdes_dt_base("pcs");
+	if (pcs) {
+		u16 br = al_serdes_kr_pcs_read(pcs, AL_KR_PCS_BASE_R_STATUS2);
+		u32 st = readl(pcs + AL_PCS_10G_LL_STATUS);
+
+		printf("  pcs_block_lock: %s (BASE-R status2 0x%04x)\n",
+		       (br & AL_KR_PCS_BLOCK_LOCK) ? "LOCKED" : "no", br);
+		printf("  pcs_fec_locked: %s\n",
+		       (st & AL_PCS_10G_LL_STATUS_FEC_LOCKED) ? "yes" : "no");
+	}
+}
+
+static int do_serdes(struct cmd_tbl *cmdtp, int flag, int argc,
+		     char *const argv[])
+{
+	const char *sub = (argc > 1) ? argv[1] : "all";
+
+	if (!strcmp(sub, "init"))
+		return al_serdes_10g_init() ? CMD_RET_FAILURE : CMD_RET_SUCCESS;
+	if (!strcmp(sub, "status")) {
+		al_serdes_10g_status();
+		return CMD_RET_SUCCESS;
+	}
+	if (!strcmp(sub, "all")) {
+		int rc = al_serdes_10g_init();
+
+		al_serdes_10g_status();
+		return rc ? CMD_RET_FAILURE : CMD_RET_SUCCESS;
+	}
+	return CMD_RET_USAGE;
+}
+
+U_BOOT_CMD(serdes, 2, 0, do_serdes,
+	   "bring up the SFP+ 25G-SerDes lane at fixed 10G + read lane status",
+	   "init    - configure the lane for fixed 10GBASE-R (KR/AN/LT off)\n"
+	   "serdes status  - read PLL/signal/CDR/rx-valid + PCS block-lock\n"
+	   "serdes         - init then status");

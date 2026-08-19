@@ -1,0 +1,15 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+
+config AL_SERDES
+	bool "Annapurna Labs 25G SerDes + 10GBASE-R PCS (UNVR SFP+ bring-up)"
+	depends on OF_CONTROL
+	help
+	  Bring up the Annapurna Labs (AL-324 / Alpine V2) 25G SerDes lane for
+	  the UNVR's 10G SFP+ port at a FIXED 10.3125 Gbps (10GBASE-R), with KR
+	  auto-neg and link-training DISABLED. Adds the `serdes` command to run
+	  the init and read lane status (PLL lock, signal-detect, CDR lock,
+	  rx-valid, PCS block-lock). Base addresses come from the device tree.
+
+	  This is the SerDes/PCS (PMA) half of 10G ethernet only; the MAC/UDMA
+	  come from the al_eth driver. Compile-only — the lane bring-up needs
+	  on-hardware iteration.
