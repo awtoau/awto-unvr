@@ -1,4 +1,10 @@
-# RTC s35390a / ch0 i2c wedge — a CODE fault in how we drive ch0, NOT a hardware fault
+# RTC s35390a / ch0 i2c wedge — a CODE fault (FIXED for targeted access), NOT hardware
+
+**FIXED (2026-08-19, on-box):** pinning stock's raw SCL hcnt/lcnt counts on the pld i2c
+node makes `i2c md 0x30 0 1` read the s35390a STATUS1 cleanly (0x00) where it previously
+returned -121 / wedged the bus. Commit "i2c: honor stock's raw SCL hcnt/lcnt". The fix is
+CODE (our DW i2c driver computed too-tight SCL edges); the chip and cell were always good.
+Remaining: a full `i2c probe` (all addresses) still wedges — targeted RTC access works.
 
 Datasheet: [sources/chips/S-35390A.pdf](../sources/chips/S-35390A.pdf) (ABLIC Rev.4.2), chip doc
 [docs/chips/s-35390a.md](chips/s-35390a.md). Single source for the ch0 wedge — other docs link here.
