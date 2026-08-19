@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Import the out-of-tree Annapurna kernel-module sources INTO this repo.
 
-Same pattern as the ea16 board DTS: the repo copy under modules/ is the tracked
-source-of-truth; build scripts copy FROM here; the PORT tree keeps a symlink back
-so no consumer reads a stale copy and drift can't recur.
+The repo copy under modules/ is the tracked source-of-truth; ALL build scripts
+(71 / 618 / 612) copy FROM here directly — NO symlinks. The PORT tree is a
+read-only upstream reference, used only for the FIRST import of a new module.
 
 Fixes captured as tracked source (were untracked mods in the linux-alpine-v2 repo):
   * iofic UBSAN: al_eth/al_ssm/al_dma al_hal_iofic_regs.h -> ctrl[4] +
@@ -13,8 +13,8 @@ Fixes captured as tracked source (were untracked mods in the linux-alpine-v2 rep
 Source-only: .c/.h/Makefile/Kbuild/README.md. Build artifacts (.o/.ko/.cmd/.mod*
 /Module.symvers/modules.order) are skipped and gitignored under modules/.
 
-Idempotent: if PORT/modules/<m> is already a symlink (into this repo), its copy
-is skipped (it would copy the repo onto itself).
+Safe/idempotent: never overwrites an existing tracked modules/<m> (which carries
+our fixes) — it imports only a module not yet in the repo.
 
 Run: python scripts/import-oot-modules.py  (logs to tmp/logs/import-oot-modules.log)
 """
@@ -62,8 +62,11 @@ def is_source(name):
 def import_one(m):
     src = os.path.join(PORT, m)
     dst = os.path.join(REPO, "modules", m)
-    if os.path.islink(src):
-        log(f"{m}: PORT copy is already a symlink -> {os.readlink(src)}; skip copy")
+    if not os.path.isdir(src):
+        log(f"{m}: not in PORT; repo modules/{m} is the source of truth (already imported)")
+        return 0
+    if os.path.isdir(dst):
+        log(f"{m}: modules/{m} already tracked (carries our fixes) - NOT overwriting from PORT")
         return 0
     os.makedirs(dst, exist_ok=True)
     n = 0

@@ -25,6 +25,7 @@ import os, sys, struct, zlib, subprocess, shutil, pathlib, time
 
 SRC   = "/mnt/2tb/unvr-port-refs/linux-6.12"
 PORT  = "/mnt/2tb/unvr-port-refs/linux-alpine-v2"
+REPO  = "/mnt/2tb/git/awto-unvr"   # al_* module source-of-truth (modules/)
 OUT   = "/mnt/2tb/unvr-port-refs/build-out"
 DTS_NAME = "alpine-v2-ubnt-unvr-ea16"
 IMAGE_TAG = "alpine-v2-builder"
@@ -97,8 +98,10 @@ def prep_modules():
     if os.path.exists(dst):
         shutil.rmtree(dst)
     os.makedirs(dst)
+    # Copy straight from the repo's tracked module source-of-truth (same as the
+    # 7.1/6.18 builds) — no PORT-tree symlink hop.
     for m in ("al_eth", "al_dma", "al_ssm", "al_sgpo"):
-        shutil.copytree(os.path.join(PORT, "modules", m), os.path.join(dst, m))
+        shutil.copytree(os.path.join(REPO, "modules", m), os.path.join(dst, m))
 
 
 def docker_build():
