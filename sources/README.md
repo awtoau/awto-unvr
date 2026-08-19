@@ -44,3 +44,24 @@ The stock checksum is what makes that safe; do not skip verification.
 - 34 pages (a truncated fetch has fewer). Not an HTML login page.
 - Title present: "LMK00338 8-Output PCIe ... Clock Buffer and Level Translator".
 - Pin table lists 40-lead WQFN, `OSCin`/`OSCout`, `CLKoutA0..A3` + `CLKoutB0..B3`.
+
+## chips/altera_tse_ug_ethernet.pdf
+
+| | |
+|---|---|
+| URL | <https://www.manuallib.com/download//THREE-SPEED-ETHERNET-MEGACORE-FUNCTION-USER-MANUAL.PDF> |
+| Doc | Altera Triple-Speed Ethernet MegaCore Function User Guide, UG-01008-3.0 |
+| Revision | Software v12.0, June 2012 |
+| Retrieved | 2026-08-19 (via playwrong `pdf`) |
+| Size | 2516688 bytes |
+| Why | Reference for the TSE MAC register map + `command_config` bits; the AL-324 1G "al_eth" MAC is this MTIP/TSE core (register layout + cmd_cfg bits identical to vendor `struct al_eth_mac_1g`). |
+
+Other mirrors tried and blocked/dead: mouser.com (HTML block page), fpga.world
+(no route). manuallib served the full document.
+
+### Telling a good copy from a bad one
+
+- 178 pages (a truncated fetch has fewer). Not an HTML block page.
+- Title present: "Triple-Speed Ethernet MegaCore Function User Guide", UG-01008-3.0.
+- Text contains `command_config`, `rx_section_full`, `mdio_phy0`, and the
+  scatter-gather DMA descriptor section.

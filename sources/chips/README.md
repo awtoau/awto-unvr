@@ -14,6 +14,7 @@ All PDFs fetched via playwrong (`mcp__playwrong__pdf`), never curl/wget.
 | `S-35390A.pdf` | ABLIC/Seiko S-35390A RTC | ablic.com `S35390A_E.pdf` | Rev 4.2 (2018) | **57 pages**; "S-35390A 2-WIRE REAL-TIME CLOCK" |
 | `ADT7475.pdf` | ADI/onsemi ADT7475 fan/thermal | bdtic.com `DataSheet/ADI/ADT7475.pdf` | ADI Rev A | **68 pages**; "dBCool Remote Thermal Monitor and Fan Controller" |
 | `MT29F8G08ABBCAH4-avaq-summary.pdf` | Micron MT29F8G08ABBCAH4 NAND | avaq.com uploads mirror | 1-page spec card (**not** full DS) | **1 page**; confirms "1.8V 8G-bit 1G x 8 63-Pin VFBGA" |
+| `nxp-ethernet-macs-interfaces-controllers.pdf` | NXP QorIQ MAC/PCS overview (P/T/LS/LA/LX) — incl. **mEMAC**, MDIO ctrl, SerDes/PCS bring-up | community.nxp.com Layerscape attachment 9285 (P. Billings, DN Apps) | Rev 22-Oct-2020 | **79 pages**; title "ETHERNET- MACs, Interfaces, & Mgmt Controllers Overview"; covers mEMAC + MDC/MDIO. Ref for AL-324 10G-MAC=mEMAC-family (MorethanIP) analysis |
 
 ## Not obtainable automatically (documented from public specs instead)
 
@@ -25,3 +26,4 @@ All PDFs fetched via playwrong (`mcp__playwrong__pdf`), never curl/wget.
 | **ASM1042A** | ASMedia NDA, no public datasheet | lspci/lsusb, Linux xhci-pci quirks |
 | **DDR4 DRAM** | part unconfirmed (soldered) | read SPD @ I²C 0x57 to identify, then fetch |
 | **SFP+ optic** | module unconfirmed | `ethtool -m` / EEPROM 0x50 to identify, then fetch |
+| **QorIQ DPAA RM** (full mEMAC register chapter) | only mirror found (supchen.cn) has an **expired TLS cert**; nxp.com RM login-gated | Register-level mEMAC facts taken from GPL source: u-boot `include/fsl_memac.h` + Linux `drivers/net/ethernet/freescale/fman/fman_memac.c`; NXP repo `nxp-qoriq/dpaa-im/fsl_memac.h` (deepwiki) |
