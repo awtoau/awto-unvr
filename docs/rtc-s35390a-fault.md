@@ -28,13 +28,23 @@ Datasheet: [sources/chips/S-35390A.pdf](../sources/chips/S-35390A.pdf) (ABLIC Re
 
 ## Suspected code bug (to pin — this is the open work)
 Stock Linux 5.1 worked; ours wedges. Candidates, in order:
-1. **i2c SCL timing not matching stock's proven values.** Stock's DTB carries explicit raw counts
-   `i2c-{ss,fs,hs}-scl-{h,l}cnt-raw` AND `i2c-sda-hold-time-ns` (live.dts:249-255). We restored ONLY
-   `sda-hold-time-ns=300` and left the DW driver to *compute* the SCL h/l counts from
-   clock-frequency + the 500 MHz input clock. If our computed SCL edges differ from stock's raw
-   counts, the timing-fussy s35390a mis-samples a phantom START/STOP and aborts the transfer.
-   **Fix to try: set the raw hcnt/lcnt props to stock's exact values on `i2c_pld` in both DTS.**
-   (100 kHz alone did NOT fix it — so speed is not the whole story; the exact edge counts are.)
+1. **i2c SCL timing not matching stock's proven values (leading candidate).** Stock's DTB carries
+   explicit raw counts AND sda-hold (live.dts:249-255):
+   `ss hcnt=0x855 lcnt=0xb0b, fs hcnt=0x19d lcnt=0x320, hs hcnt=0xf3 lcnt=0x198, sda-hold=0x12c`.
+   We restored ONLY `sda-hold-time-ns=300` and let the DW driver *compute* the SCL h/l counts.
+   - Verified in the mainline driver (drivers/i2c/designware_i2c.c): the OF-bound
+     `snps,designware-i2c` path ALWAYS computes via `dw_i2c_calc_timing()` — `priv->scl_sda_cfg`
+     (the explicit-count override at set_bus_speed:254-264) is wired ONLY for the Intel Baytrail
+     PCI variant (designware_i2c_pci.c:70 byt_config). It does NOT read `i2c-*-scl-*cnt-raw` from DT.
+   - `dw_i2c_calc_timing()` back-solves for the MINIMUM legal SCL high/low; stock's raw counts are
+     LARGER (ss: 0x855/0xb0b ~= 4.27/5.65 us at the 500 MHz ic_clk vs the ~4.0/4.7 us minimum). So
+     stock ran deliberately more conservative SCL timing than mainline computes — plausibly what the
+     fussy s35390a needs. 100 kHz alone did NOT fix it, consistent with edge-COUNTS (not speed).
+   - **Fix path (needs a small driver change, then DTS):** patch designware_i2c.c to read
+     `i2c-{ss,fs,hs}-scl-{h,l}cnt-raw` + `i2c-sda-hold-time-ns` into a `dw_scl_sda_cfg` and set
+     `priv->scl_sda_cfg` when present (mirror byt_config); then add stock's raw counts to `i2c_pld`
+     in both DTS. Alternative (DTS-only, indirect): tune `i2c-scl-rising-time-ns`/
+     `i2c-scl-falling-time-ns` until the computed counts match stock's. Needs a cold-cycle to test.
 2. **Mux select/deselect sequence.** How we select ch0 and whether we deselect correctly around the
    RTC access — a malformed select/transfer/deselect can leave the s35390a mid-frame.
 3. **s35390a access sequence.** The mainline driver's probe reads STATUS1 first; the chip's odd
