@@ -25,6 +25,7 @@ import sys
 import time
 import zlib
 
+ROOT_PASSWORD = "unvr"  # documented default, see docs/fedora-on-ssd.md
 SRC = "/mnt/2tb/unvr-port-refs/linux-v7.1.8"
 PORT = "/mnt/2tb/unvr-port-refs/linux-alpine-v2"
 REPO = "/mnt/2tb/git/awto-unvr"  # OOT al_* module sources imported here (modules/)
@@ -53,6 +54,49 @@ def log(m):
 def run(cmd, **kw):
     log("+ " + (cmd if isinstance(cmd, str) else " ".join(cmd)))
     subprocess.run(cmd, check=True, env=ENV, **kw)
+
+
+def trim_to_woomera_modules():
+    """Trim Fedora's generic-hardware driver pile down to what woomera's own
+    lsmod actually uses (localmodconfig) - debug/dev kernel, board is fixed
+    hardware, not a generic PC. Only touches =m stock Fedora drivers; our own
+    al_* OOT modules build via a separate M= invocation, unaffected either
+    way. Skippable (WARN, not FATAL) if the box isn't reachable right now."""
+    try:
+        host = subprocess.check_output(
+            [sys.executable, "scripts/ssh-woomera.py", "--print"],
+            cwd=REPO,
+            text=True,
+            timeout=15,
+        ).strip()
+        lsmod = subprocess.check_output(
+            [
+                "sshpass",
+                "-p",
+                ROOT_PASSWORD,
+                "ssh",
+                "-o",
+                "ConnectTimeout=8",
+                "-o",
+                "StrictHostKeyChecking=accept-new",
+                "-o",
+                "PreferredAuthentications=password",
+                "-o",
+                "PubkeyAuthentication=no",
+                f"root@{host}",
+                "lsmod",
+            ],
+            text=True,
+            timeout=15,
+        )
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired, OSError) as e:
+        log(f"WARN: couldn't reach woomera for lsmod ({e}) - skipping localmodconfig")
+        return
+    lsmod_path = os.path.join(OUT, "woomera-lsmod.txt")
+    os.makedirs(OUT, exist_ok=True)
+    pathlib.Path(lsmod_path).write_text(lsmod)
+    run(["make", "-C", SRC, f"LSMOD={lsmod_path}", "localmodconfig"])
+    log(f"trimmed to woomera's lsmod ({len(lsmod.splitlines()) - 1} modules)")
 
 
 def configure():
@@ -111,8 +155,18 @@ def configure():
             "DEBUG_INFO_NONE",
             "--disable",
             "WERROR",
+            # bring-up/dev kernel: bias toward hang-recoverability over
+            # performance (#97) - sysrq default-on for serial BREAK+key
+            # recovery, panic_timeout so a panic reboots instead of halting.
+            "--set-val",
+            "MAGIC_SYSRQ_DEFAULT_ENABLE",
+            "1",
+            "--set-val",
+            "PANIC_TIMEOUT",
+            "10",
         ]
     )
+    trim_to_woomera_modules()
     run(["make", "-C", SRC, "olddefconfig"])
     dotcfg = pathlib.Path(os.path.join(SRC, ".config")).read_text()
     for sym in (
