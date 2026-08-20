@@ -810,6 +810,14 @@
 			label = "ulogo_white";
 			gpios = <&gpio4 5 GPIO_ACTIVE_LOW>;
 		};
+
+		/* PCA9575 #0 (0x20) pin 2 - SFP+ 1G link LED, active-low
+		 * (uboot-port commit 30438a0). Was undeclared in Linux DT -
+		 * no /sys/class/leds entry, only reachable via raw gpiod. */
+		led-sfp {
+			label = "sfp_1g";
+			gpios = <&i2c_gpio0 2 GPIO_ACTIVE_LOW>;
+		};
 	};
 
 	/*
