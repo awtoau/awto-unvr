@@ -491,7 +491,7 @@ int al_udma_s2m_q_comp_set(struct al_udma_q *udma_q,
 
 /** UDMA Target-ID control configuration per queue */
 void al_udma_gen_tgtid_conf_queue_set(
-	struct unit_regs		*unit_regs,
+	struct unit_regs __iomem	*unit_regs,
 	struct al_udma_gen_tgtid_conf	*conf,
 	uint32_t qid);
 

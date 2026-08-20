@@ -1081,11 +1081,11 @@ int al_udma_s2m_q_comp_set(struct al_udma_q *udma_q,
 
 /* UDMA Target-ID control configuration per queue */
 void al_udma_gen_tgtid_conf_queue_set(
-	struct unit_regs		*unit_regs,
+	struct unit_regs __iomem	*unit_regs,
 	struct al_udma_gen_tgtid_conf	*conf,
 	uint32_t qid)
 {
-	uint32_t *tx_tgtid_reg, *rx_tgtid_reg, *tx_tgtaddr_reg, *rx_tgtaddr_reg;
+	uint32_t __iomem *tx_tgtid_reg, *rx_tgtid_reg, *tx_tgtaddr_reg, *rx_tgtaddr_reg;
 	unsigned int rev_id;
 
 	al_assert(qid < DMA_MAX_Q);
@@ -1152,7 +1152,7 @@ void al_udma_gen_tgtid_conf_queue_set(
 
 /* UDMA Target-ID control configuration */
 void al_udma_gen_tgtid_conf_set(
-	struct unit_regs		*unit_regs,
+	struct unit_regs __iomem	*unit_regs,
 	struct al_udma_gen_tgtid_conf	*conf)
 {
 	int i;
@@ -1163,7 +1163,7 @@ void al_udma_gen_tgtid_conf_set(
 
 /* UDMA Target-ID MSIX control configuration */
 void al_udma_gen_tgtid_msix_conf_set(
-	struct unit_regs			*unit_regs,
+	struct unit_regs __iomem		*unit_regs,
 	struct al_udma_gen_tgtid_msix_conf	*conf)
 {
 	al_reg_write32_masked(
