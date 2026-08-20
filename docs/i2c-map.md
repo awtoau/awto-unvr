@@ -6,14 +6,22 @@ it silently *skips* 0x00-0x02/0x28-0x2f/0x40-0x4f unless `-r` read-probe is forc
 
 ## Buses
 
+`i2c_gen` (0xfd894000) is disabled, matching stock (both 1.3.35 and 5.1.25 firmware leave it
+disabled - no RPS monitor driver exists in any Ubiquiti firmware, #64; U48 is very likely a
+pure analog part with no digital interface at all - MUIO pins 30/31, i2c_gen's SCL/SDA, are
+actually muxed to ETH-LED and ulogo_blue per the live 48-ball read, docs/gpio-map.md - there
+was never a real i2c bus there regardless). Enabling it was a mistake that shifted every
+board-params-derived i2c adapter number by one and broke the SFP+ EEPROM read (#98).
+
 | Linux bus | Controller / source | Devices |
 |-----------|---------------------|---------|
 | i2c-0 | DW @0xfd880000 "i2c-pld" (our dts `i2c_pld`) | 0x20, 0x21 PCA9575; 0x57 24C64 EEPROM; 0x71 PCA9546 mux |
-| i2c-1 | DW @0xfd894000 "i2c-gen" (our dts `i2c_gen`) | Live bus. Carries the **2× RPS ORing power monitors** (12 V + 54 V rails — U48-area, powered off the mainboard ORing FET path, **on** regardless of RPS module). A plain scan reads empty because these are INA/ISL-class parts at **0x40–0x49** — exactly the range a DW quick-write probe **skips** (see header note). Use a **read-probe** (`i2cdetect -r` / `i2c md <addr>`) to see them. Exact addr + part TBD (#64). |
-| i2c-2 | mux ch0 | 0x30 s35390a **RTC**; 0x50 **SFP module EEPROM** (al_eth, not in DT) |
-| i2c-3 | mux ch1 | empty |
-| i2c-4 | mux ch2 | empty |
-| i2c-5 | mux ch3 | 0x2e **adt7475** — the **PWM fan controller** (temp/voltage sense + fan drive) |
+| i2c-1 | mux ch0 | 0x30 s35390a **RTC** (0x30-0x37, its own multi-address quirk) |
+| i2c-2 | mux ch1 | 0x50 **SFP module EEPROM** (al_eth, not in DT) |
+| i2c-3 | mux ch2 | empty |
+| i2c-4 | mux ch3 | 0x2e **adt7475** — the **PWM fan controller** (temp/voltage sense + fan drive) |
+
+`i2c-gen` (0xfd894000) is disabled - no adapter number allocated for it.
 
 ## Chips (physical, photo-confirmed)
 
@@ -22,7 +30,9 @@ it silently *skips* 0x00-0x02/0x28-0x2f/0x40-0x4f unless `-r` read-probe is forc
   **unpopulated** ("pca953x 0-0029: failed reading register"). Photos `20260816_232614`
   (UB1), `_231415` (U10).
 - **0x21** = bay control: pwren lines 0-3 (gpio-hog output-high), presence 4-7, fault LEDs 12-15.
-- **0x20** = SFP+ 1G link LED (pin 2) + straps.
+- **0x20** = straps + `sfp_1g` LED, pin 2, ACTIVE_HIGH (per live stock board-cfg capture).
+  Chip/pin/polarity confirmed correct; pin still produces no visible light under direct
+  GPIO test (#98) - possible hardware population/wiring issue, not a software fix.
 - **adt7475** (U27, behind mux ch3) = the **PWM fan controller** — 3 temp + 2 voltage inputs
   drive 3 PWM fan outputs (stock env `slowfan` pokes 0x2e regs 0x30-0x32/0x5c-0x5e). rev 2.
   SENSORS_ADT7475. NOT the RPS current monitor.
@@ -40,7 +50,8 @@ it silently *skips* 0x00-0x02/0x28-0x2f/0x40-0x4f unless `-r` read-probe is forc
 ## KNOWN BUG — mux ch0 (s35390a RTC) wedges the bus
 
 Selecting ch0 + touching any address holds SDA low and wedges the whole pld bus (s35390a RTC
-@0x30 strongly implicated; SFP EEPROM @0x50 also on ch0, not yet isolated). Likely cause = a
+@0x30 strongly implicated). The SFP EEPROM @0x50 is on ch1, a separate bus, uninvolved in this
+wedge. Likely cause = a
 dropped `i2c-sda-hold-time-ns`, fixed by restoring it — **full analysis, fix, and recovery in
 [rtc-s35390a-fault.md](rtc-s35390a-fault.md)**. Behind-mux is otherwise fine (ch3 adt7475 reads
 clean).

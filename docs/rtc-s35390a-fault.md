@@ -24,8 +24,9 @@ Datasheet: [sources/chips/S-35390A.pdf](../sources/chips/S-35390A.pdf) (ABLIC Re
 ## What happens (symptom)
 - Selecting PCA9546/TCA9546 **ch0** + touching *any* address (even a nonexistent one) makes the
   s35390a hold **SDA low** at the pin and wedges the whole pld bus; `i2c reset` doesn't clear it.
-- ch0 devices: **s35390a RTC @0x30** + **SFP EEPROM @0x50**. SCL is never held (S-35390A SCL is
-  input-only); only SDA is driven low.
+- ch0 device: **s35390a RTC @0x30-0x37** (its own multi-address quirk) — SCL is never held
+  (S-35390A SCL is input-only); only SDA is driven low. The SFP EEPROM @0x50 is on ch1, a
+  separate bus, uninvolved in this wedge.
 - ch3 (**adt7475** fan ctrl) reads cleanly, NAKs a nonexistent address cleanly, bus survives — so
   the mux, the DW controller, and NAK handling are fine in general. **Only our ch0 access wedges.**
 - Datasheet Fig 46 ("Reset After Communication Interruption"): if a transfer to the s35390a is
@@ -89,8 +90,8 @@ Stock Linux 5.1 worked; ours wedges. Candidates, in order:
 - `i2c-sda-hold-time-ns = <300>` restored on both `i2c_pld` nodes (helped, not sufficient).
 - Idle mux deselect (U-Boot mux uclass writes 0x00 after each access; Linux
   `i2c-mux-idle-disconnect`) — reduces main-bus exposure.
-- Linux `rtc@30 status=disabled`, and the al_eth SFP-EEPROM poll (0x50 on ch0, every ~2 s) is the
-  last ch0 toucher / console-flood source — configure eth2 fixed 10gbase-r with no EEPROM probe.
+- Linux `rtc@30 status=disabled` is the last ch0 toucher / console-flood source. The al_eth
+  SFP-EEPROM poll (0x50) is on ch1, uninvolved in this wedge.
 - These keep the bus usable; they do NOT fix the underlying code bug.
 
 ## Open questions

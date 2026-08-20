@@ -144,7 +144,41 @@ def sync_modules() -> None:
     ).returncode
     if rc != 0:
         sys.exit(f"ABORT: depmod on woomera failed (rc={rc}) - refusing to deploy")
+    _verify_sync_integrity(host)
     log("module sync + depmod OK")
+
+
+def _verify_sync_integrity(host: str) -> None:
+    """2026-08-20: rsync exited 0 and depmod exited 0, but al_eth's declared
+    dependency phylink.ko landed on the box at 0 bytes (145K locally) - a
+    silent, undetected transfer failure. rsync's own exit code alone isn't
+    proof the files are intact; check for zero-byte .ko files, which should
+    never legitimately exist, as a cheap post-sync integrity signal."""
+    out = subprocess.run(
+        [
+            "sshpass",
+            "-p",
+            ROOT_PASSWORD,
+            "ssh",
+            "-o",
+            "StrictHostKeyChecking=accept-new",
+            "-o",
+            "PreferredAuthentications=password",
+            "-o",
+            "PubkeyAuthentication=no",
+            f"root@{host}",
+            f"find /lib/modules/{KVER} -name '*.ko' -size 0",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    ).stdout.strip()
+    if out:
+        bad = out.splitlines()
+        sys.exit(
+            f"ABORT: {len(bad)} zero-byte .ko file(s) after sync (transfer "
+            f"silently failed) - refusing to deploy: {', '.join(bad[:5])}"
+        )
 
 
 def _mtime(p: Path) -> str:

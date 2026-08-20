@@ -20,7 +20,7 @@ board-cfg (`docs/porting-roadmap.md` Phase 5), stock U-Boot `al_eth.c` + `board.
 | LM mode | `AL_ETH_LM_MODE_10G_OPTIC` — **fixed 10.3125 Gbps, no KR AN/LT** | hardware.md:425; roadmap:256 |
 | SerDes | **group 3, lane 0, 156.25 MHz** ref | roadmap:254-255 |
 | Retimer | `br410` present-but-**disabled** → skip | roadmap:256 |
-| SFP EEPROM | i2c `0x50`, behind pld PCA9546 mux `0x71` **ch0** | i2c-map.md; al_eth.c:82 `SFP_I2C_ADDR 0x50` |
+| SFP EEPROM | i2c `0x50`, behind pld PCA9546 mux `0x71` **ch1** | i2c-map.md; al_eth.c:82 `SFP_I2C_ADDR 0x50` |
 
 Boot-log "al_eth2 [PRIME]" (hardware.md:38): `[PRIME]` is U-Boot's *active* NIC
 marker, not a mode — the 1G port carries it in our current boot. No 10G meaning.
@@ -105,16 +105,13 @@ Front-end deltas vs the 1G path are **bold**. Everything else is copied from
 ## 5. SFP module detection (I2C)
 
 - Path: pld i2c bus (`i2c_pld` @ `0xfd880000`, Linux i2c-0) → PCA9546 mux `0x71`
-  **ch0** → SFP EEPROM `0x50` (SFF-8472). U-Boot: `i2c dev 0; i2c mw 0x71 0 1 1`
-  (select ch0); read `0x50`.
+  **ch1** → SFP EEPROM `0x50` (SFF-8472). U-Boot: `i2c dev 0; i2c mw 0x71 0 2 1`
+  (select ch1); read `0x50`.
 - Presence/type bytes (SFF-8079/8472): byte 0 = identifier (`0x03` = SFP), byte 3 =
   10G compliance codes (10GBASE-SR/LR bits), bytes 12/8 = nominal bitrate. Stock reads
   these via `al_eth_i2c_byte_read(bus, 0x50, addr, &val)` (`al_eth.c:440-457`).
-- **BLOCKER:** mux ch0 also carries the `s35390a` RTC (`0x30`),
-  which currently **wedges the whole pld bus** (dropped `i2c-sda-hold-time-ns=300`,
-  see `rtc-s35390a-fault.md`). **SFP EEPROM reads over ch0 are blocked until that fix
-  lands.** Do not select ch0 in the current tree without it (needs SP805 reset to
-  recover — i2c-map.md).
+- The `s35390a` RTC (`0x30`) is on ch0, a separate bus from the SFP EEPROM - the RTC
+  ch0 wedge (`rtc-s35390a-fault.md`) never actually blocked SFP EEPROM access.
 - Gating: stock sets `sfp_detect_needed=TRUE` only for **auto-detect** media
   (`AUTO_DETECT`/`AUTO_DETECT_AUTO_SPEED`/`25G*`), then LM reads the EEPROM and returns
   `-ENETDOWN` if the read fails (`al_eth.c:697-700`). For plain **`10g-serial`
