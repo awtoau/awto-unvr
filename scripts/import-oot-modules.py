@@ -18,7 +18,11 @@ our fixes) — it imports only a module not yet in the repo.
 
 Run: python scripts/import-oot-modules.py  (logs to tmp/logs/import-oot-modules.log)
 """
-import os, shutil, pathlib, sys
+
+import os
+import pathlib
+import shutil
+import sys
 
 REPO = "/mnt/2tb/git/awto-unvr"
 PORT = "/mnt/2tb/unvr-port-refs/linux-alpine-v2/modules"
@@ -50,7 +54,8 @@ _logf = None
 def log(m):
     print(m, flush=True)
     if _logf:
-        _logf.write(m + "\n"); _logf.flush()
+        _logf.write(m + "\n")
+        _logf.flush()
 
 
 def is_source(name):
@@ -63,10 +68,14 @@ def import_one(m):
     src = os.path.join(PORT, m)
     dst = os.path.join(REPO, "modules", m)
     if not os.path.isdir(src):
-        log(f"{m}: not in PORT; repo modules/{m} is the source of truth (already imported)")
+        log(
+            f"{m}: not in PORT; repo modules/{m} is the source of truth (already imported)"
+        )
         return 0
     if os.path.isdir(dst):
-        log(f"{m}: modules/{m} already tracked (carries our fixes) - NOT overwriting from PORT")
+        log(
+            f"{m}: modules/{m} already tracked (carries our fixes) - NOT overwriting from PORT"
+        )
         return 0
     os.makedirs(dst, exist_ok=True)
     n = 0

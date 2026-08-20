@@ -4,13 +4,13 @@
 Draft format: line1 `# <title>`, then a `labels: a, b` line, a `---`, then body.
 Idempotent: skips a draft whose exact title already exists as an issue.
 """
-import re
+
 import subprocess
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from _repo import REPO  # noqa: E402
+from _repo import REPO
 
 REPOSLUG = "awtoau/awto-unvr"
 ISSUES = REPO / "docs" / "issues"
@@ -22,11 +22,24 @@ def sh(*args, check=True):
 
 
 def existing_titles() -> set[str]:
-    r = sh("gh", "issue", "list", "--repo", REPOSLUG, "--state", "all",
-           "--limit", "200", "--json", "title", check=False)
+    r = sh(
+        "gh",
+        "issue",
+        "list",
+        "--repo",
+        REPOSLUG,
+        "--state",
+        "all",
+        "--limit",
+        "200",
+        "--json",
+        "title",
+        check=False,
+    )
     if r.returncode != 0:
         return set()
     import json
+
     return {i["title"] for i in json.loads(r.stdout or "[]")}
 
 
@@ -68,8 +81,17 @@ def main():
         if title in have:
             log(f"skip (exists): {p.name} -> {title!r}")
             continue
-        args = ["gh", "issue", "create", "--repo", REPOSLUG,
-                "--title", title, "--body", body]
+        args = [
+            "gh",
+            "issue",
+            "create",
+            "--repo",
+            REPOSLUG,
+            "--title",
+            title,
+            "--body",
+            body,
+        ]
         for lab in labels:
             args += ["--label", lab]
         r = sh(*args, check=False)
@@ -79,7 +101,9 @@ def main():
             created += 1
         else:
             log(f"FAIL: {p.name}: {r.stderr.strip()[:200]}")
-    log(f"done. {created} created, {len(drafts)-created} skipped/failed of {len(drafts)}")
+    log(
+        f"done. {created} created, {len(drafts) - created} skipped/failed of {len(drafts)}"
+    )
 
 
 if __name__ == "__main__":

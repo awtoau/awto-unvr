@@ -5,6 +5,7 @@ Disassembles with aarch64-linux-gnu-objdump, tracks adrp page bases per
 register, and reports code addresses that materialise a target address.
 Optionally dumps the surrounding disassembly window.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -20,14 +21,22 @@ INSN = re.compile(r"^\s*([0-9a-f]+):\s+([0-9a-f]{8})\s+(\S+)\s*([^/]*)")
 
 
 def disasm(path: Path) -> list[str]:
-    r = subprocess.run(["aarch64-linux-gnu-objdump", "-d", str(path)],
-                       capture_output=True, text=True, check=True)
+    r = subprocess.run(
+        ["aarch64-linux-gnu-objdump", "-d", str(path)],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
     return r.stdout.splitlines()
 
 
 def disasm_raw(path: Path) -> list[str]:
-    r = subprocess.run(["aarch64-linux-gnu-objdump", "-d", str(path)],
-                       capture_output=True, text=True, check=True)
+    r = subprocess.run(
+        ["aarch64-linux-gnu-objdump", "-d", str(path)],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
     return r.stdout.splitlines()
 
 
@@ -71,13 +80,16 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("elf", type=Path)
     ap.add_argument("targets", nargs="+", help="hex data addresses")
-    ap.add_argument("--window", type=int, default=0,
-                    help="lines of disasm around each hit")
+    ap.add_argument(
+        "--window", type=int, default=0, help="lines of disasm around each hit"
+    )
     a = ap.parse_args()
     LOG.parent.mkdir(parents=True, exist_ok=True)
-    logging.basicConfig(level=logging.INFO, format="%(message)s",
-                        handlers=[logging.FileHandler(LOG),
-                                  logging.StreamHandler(sys.stdout)])
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(message)s",
+        handlers=[logging.FileHandler(LOG), logging.StreamHandler(sys.stdout)],
+    )
 
     lines = disasm(a.elf)
     xr = build_xrefs(lines)
@@ -91,15 +103,14 @@ def main() -> int:
     for t in a.targets:
         tv = int(t, 16)
         hits = xr.get(tv, [])
-        logging.info("== 0x%x: %d xrefs %s", tv, len(hits),
-                     [hex(h) for h in hits])
+        logging.info("== 0x%x: %d xrefs %s", tv, len(hits), [hex(h) for h in hits])
         if a.window:
             for h in hits:
                 i = idx.get(h)
                 if i is None:
                     continue
                 logging.info("--- around 0x%x", h)
-                for ln in raw[max(0, i - a.window):i + a.window]:
+                for ln in raw[max(0, i - a.window) : i + a.window]:
                     logging.info("%s", ln)
     return 0
 

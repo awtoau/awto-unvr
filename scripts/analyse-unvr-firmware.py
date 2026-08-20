@@ -58,7 +58,9 @@ def parse_header(data):
     stored = struct.unpack_from(">I", data, 0x104)[0]
     calc = zlib.crc32(data[:0x104]) & 0xFFFFFFFF
     log(f"container {data[:4].decode()}  version {version}")
-    log(f"header crc {stored:#010x} {'OK' if stored == calc else f'MISMATCH (calc {calc:#010x})'}")
+    log(
+        f"header crc {stored:#010x} {'OK' if stored == calc else f'MISMATCH (calc {calc:#010x})'}"
+    )
     return version
 
 
@@ -66,56 +68,88 @@ def walk(data):
     """Yield section dicts by following the length chain."""
     off = HDR_SIZE
     while off < len(data):
-        magic = data[off:off + 4]
+        magic = data[off : off + 4]
         if magic in TERMINATORS:
             size = TERMINATORS[magic]
             if magic == b"END.":
                 stored = struct.unpack_from(">I", data, off + 4)[0]
                 calc = zlib.crc32(data[:off]) & 0xFFFFFFFF
-                log(f"@{off:#010x} END.  image crc {stored:#010x} "
-                    f"{'OK' if stored == calc else f'MISMATCH (calc {calc:#010x})'}")
+                log(
+                    f"@{off:#010x} END.  image crc {stored:#010x} "
+                    f"{'OK' if stored == calc else f'MISMATCH (calc {calc:#010x})'}"
+                )
             else:
                 log(f"@{off:#010x} ENDS  256-byte RSA signature, no crc")
-            yield {"offset": off, "magic": magic.decode(), "name": "", "terminator": True}
+            yield {
+                "offset": off,
+                "magic": magic.decode(),
+                "name": "",
+                "terminator": True,
+            }
             return
         if len(magic) < 4 or not magic.isalnum() and magic not in (b"END.",):
             log(f"@{off:#010x} unexpected magic {magic!r} - stopping")
             return
-        name = data[off + 4:off + 0x14].split(b"\x00", 1)[0].decode("ascii", "replace")
-        memaddr, index, baseaddr, entryaddr, dsize, psize = struct.unpack_from(">6I", data, off + 0x20)
+        name = (
+            data[off + 4 : off + 0x14].split(b"\x00", 1)[0].decode("ascii", "replace")
+        )
+        memaddr, index, baseaddr, entryaddr, dsize, psize = struct.unpack_from(
+            ">6I", data, off + 0x20
+        )
         end = off + REC_SIZE + dsize
         if end + TRAILER > len(data):
-            log(f"@{off:#010x} {magic!r} '{name}' data_size {dsize} overruns file - stopping")
+            log(
+                f"@{off:#010x} {magic!r} '{name}' data_size {dsize} overruns file - stopping"
+            )
             return
         stored = struct.unpack_from(">I", data, end)[0]
         calc = zlib.crc32(data[off:end]) & 0xFFFFFFFF
         ok = stored == calc
-        log(f"@{off:#010x} {magic.decode():4s} {name:12s} idx={index} "
+        log(
+            f"@{off:#010x} {magic.decode():4s} {name:12s} idx={index} "
             f"data={dsize} ({dsize / 1048576:.2f} MB) part={psize} "
             f"mem={memaddr:#010x} base={baseaddr:#010x} entry={entryaddr:#010x} "
-            f"crc {'OK' if ok else f'MISMATCH {stored:#010x}/{calc:#010x}'}")
+            f"crc {'OK' if ok else f'MISMATCH {stored:#010x}/{calc:#010x}'}"
+        )
         yield {
-            "offset": off, "magic": magic.decode(), "name": name, "index": index,
-            "memaddr": memaddr, "baseaddr": baseaddr, "entryaddr": entryaddr,
-            "data_size": dsize, "part_size": psize, "payload": (off + REC_SIZE, dsize),
-            "crc_ok": ok, "terminator": False,
+            "offset": off,
+            "magic": magic.decode(),
+            "name": name,
+            "index": index,
+            "memaddr": memaddr,
+            "baseaddr": baseaddr,
+            "entryaddr": entryaddr,
+            "data_size": dsize,
+            "part_size": psize,
+            "payload": (off + REC_SIZE, dsize),
+            "crc_ok": ok,
+            "terminator": False,
         }
         off = end + TRAILER
 
 
 def unpack_uimage(blob):
     """Strip the 64-byte legacy uImage header, return (info, payload)."""
-    magic, hcrc, tstamp, size, load, ep, dcrc, os_, arch, typ, comp = struct.unpack_from(">7I4B", blob, 0)
+    magic, hcrc, tstamp, size, load, ep, dcrc, os_, arch, typ, comp = (
+        struct.unpack_from(">7I4B", blob, 0)
+    )
     if magic != UIMAGE_MAGIC:
         return None, blob
     name = blob[32:64].split(b"\x00", 1)[0].decode("ascii", "replace")
     info = {
-        "size": size, "load": load, "entry": ep, "comp": comp, "arch": arch,
-        "name": name, "created": datetime.fromtimestamp(tstamp, timezone.utc).isoformat(),
+        "size": size,
+        "load": load,
+        "entry": ep,
+        "comp": comp,
+        "arch": arch,
+        "name": name,
+        "created": datetime.fromtimestamp(tstamp, timezone.utc).isoformat(),
     }
-    log(f"uImage '{name}' size={size} load={load:#010x} entry={ep:#010x} "
-        f"comp={comp} arch={arch} created={info['created']}")
-    return info, blob[64:64 + size]
+    log(
+        f"uImage '{name}' size={size} load={load:#010x} entry={ep:#010x} "
+        f"comp={comp} arch={arch} created={info['created']}"
+    )
+    return info, blob[64 : 64 + size]
 
 
 def find_initramfs(image):
@@ -159,12 +193,25 @@ def find_ikconfig(image):
 
 
 if __name__ == "__main__":
-    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--extract", action="store_true", help="write section payloads to tmp/sections/")
-    ap.add_argument("bin", nargs="?", type=Path, default=DEFAULT_BIN,
-                    help="firmware .bin (default: sources/UNVR-5.1.25.bin)")
-    ap.add_argument("--sections-dir", type=Path, default=SECTIONS,
-                    help="where --extract writes (default: tmp/sections/)")
+    ap = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+    ap.add_argument(
+        "--extract", action="store_true", help="write section payloads to tmp/sections/"
+    )
+    ap.add_argument(
+        "bin",
+        nargs="?",
+        type=Path,
+        default=DEFAULT_BIN,
+        help="firmware .bin (default: sources/UNVR-5.1.25.bin)",
+    )
+    ap.add_argument(
+        "--sections-dir",
+        type=Path,
+        default=SECTIONS,
+        help="where --extract writes (default: tmp/sections/)",
+    )
     args = ap.parse_args()
 
     BIN = args.bin
@@ -184,7 +231,7 @@ if __name__ == "__main__":
         SECTIONS.mkdir(parents=True, exist_ok=True)
         for s in real:
             start, size = s["payload"]
-            blob = data[start:start + size]
+            blob = data[start : start + size]
             out = SECTIONS / f"{s['index']:02d}-{s['name']}.bin"
             out.write_bytes(blob)
             log(f"wrote {out} ({len(blob)} bytes)")
@@ -203,7 +250,9 @@ if __name__ == "__main__":
                         img = SECTIONS / "kernel-Image"
                         img.write_bytes(image)
                         arm64 = image[0x38:0x3C] == b"ARM\x64"
-                        log(f"wrote {img} ({len(image)} bytes), arm64 magic {'OK' if arm64 else 'ABSENT'}")
+                        log(
+                            f"wrote {img} ({len(image)} bytes), arm64 magic {'OK' if arm64 else 'ABSENT'}"
+                        )
                         cfg = find_ikconfig(image)
                         if cfg:
                             c = SECTIONS / "kernel.config"
@@ -219,7 +268,18 @@ if __name__ == "__main__":
                             d = SECTIONS / f"initramfs-{n}"
                             d.mkdir(exist_ok=True)
                             r = subprocess.run(
-                                ["cpio", "-idmu", "--no-absolute-filenames", "-F", str(cpio)],
-                                cwd=d, capture_output=True, text=True)
-                            log(f"cpio extract -> {d}: {r.stderr.strip().splitlines()[-1] if r.stderr else 'ok'}")
+                                [
+                                    "cpio",
+                                    "-idmu",
+                                    "--no-absolute-filenames",
+                                    "-F",
+                                    str(cpio),
+                                ],
+                                cwd=d,
+                                capture_output=True,
+                                text=True,
+                            )
+                            log(
+                                f"cpio extract -> {d}: {r.stderr.strip().splitlines()[-1] if r.stderr else 'ok'}"
+                            )
     log("done")

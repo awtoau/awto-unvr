@@ -11,25 +11,26 @@ check fails the build on any drift from the canonical values below.
 Standalone:  python3 scripts/check-dts-shared.py
 Wired into:  build-linux-71-fedora.py, uboot-build.py (run before compile).
 """
+
 import os
 import re
 import sys
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-NODE = "i2c@fd880000"                     # the shared pld bus, both trees
+NODE = "i2c@fd880000"  # the shared pld bus, both trees
 EXPECT = {
-    "clock-frequency":      100000,       # Standard-mode: stock's speed, needed so the
-                                          # s35390a RTC on ch0 does not wedge (rtc-s35390a-fault.md)
-    "i2c-sda-hold-time-ns": 300,          # stock value; dropping it wedges the RTC
+    "clock-frequency": 100000,  # Standard-mode: stock's speed, needed so the
+    # s35390a RTC on ch0 does not wedge (rtc-s35390a-fault.md)
+    "i2c-sda-hold-time-ns": 300,  # stock value; dropping it wedges the RTC
     # Stock's proven raw SCL counts (live.dts:249-254). Honored by our patched
     # U-Boot DW i2c driver so the s35390a doesn't wedge; must not drift.
-    "i2c-ss-scl-hcnt-raw":  0x855,
-    "i2c-ss-scl-lcnt-raw":  0xb0b,
-    "i2c-fs-scl-hcnt-raw":  0x19d,
-    "i2c-fs-scl-lcnt-raw":  0x320,
-    "i2c-hs-scl-hcnt-raw":  0xf3,
-    "i2c-hs-scl-lcnt-raw":  0x198,
+    "i2c-ss-scl-hcnt-raw": 0x855,
+    "i2c-ss-scl-lcnt-raw": 0xB0B,
+    "i2c-fs-scl-hcnt-raw": 0x19D,
+    "i2c-fs-scl-lcnt-raw": 0x320,
+    "i2c-hs-scl-hcnt-raw": 0xF3,
+    "i2c-hs-scl-lcnt-raw": 0x198,
 }
 FILES = [
     "dts/alpine-v2-ubnt-unvr-ea16.dts",
@@ -46,7 +47,7 @@ def node_block(text, node):
     while i < len(text) and depth:
         depth += (text[i] == "{") - (text[i] == "}")
         i += 1
-    return text[m.end():i]
+    return text[m.end() : i]
 
 
 def prop_val(block, prop):
@@ -78,13 +79,14 @@ def main():
         print("DTS shared-fact check FAILED:", file=sys.stderr)
         for e in errs:
             print("  -", e, file=sys.stderr)
-        print("Fix both trees to the canonical values, or update EXPECT in "
-              "scripts/check-dts-shared.py if the intended value changed.",
-              file=sys.stderr)
+        print(
+            "Fix both trees to the canonical values, or update EXPECT in "
+            "scripts/check-dts-shared.py if the intended value changed.",
+            file=sys.stderr,
+        )
         return 1
     facts = ", ".join(f"{k}={v}" for k, v in EXPECT.items())
-    print(f"DTS shared-fact check OK: {NODE} [{facts}] match across "
-          f"{len(FILES)} trees")
+    print(f"DTS shared-fact check OK: {NODE} [{facts}] match across {len(FILES)} trees")
     return 0
 
 

@@ -63,7 +63,9 @@ def verify(strict=True):
     if not DEST.exists():
         sys.exit(f"absent: {DEST}")
     size = DEST.stat().st_size
-    log(f"size {size} (expect {EXPECT_SIZE}) {'OK' if size == EXPECT_SIZE else 'MISMATCH'}")
+    log(
+        f"size {size} (expect {EXPECT_SIZE}) {'OK' if size == EXPECT_SIZE else 'MISMATCH'}"
+    )
     sha = digest(DEST, "sha256")
     md5 = digest(DEST, "md5")
     log(f"sha256 {sha}")
@@ -72,7 +74,9 @@ def verify(strict=True):
     log("VERIFIED" if ok else "VERIFICATION FAILED")
     if not ok and strict:
         DEST.unlink()
-        sys.exit("deleted the bad copy - a file that fails verification is worse than none")
+        sys.exit(
+            "deleted the bad copy - a file that fails verification is worse than none"
+        )
     return ok
 
 
@@ -89,7 +93,7 @@ Downloaded artifacts. Binaries are gitignored; this manifest is the tracked part
 | Version | `{VERSION}` |
 | ubnt_version | `{UBNT_VERSION}` |
 | Released | 2026-07-27 |
-| Retrieved | {datetime.now(timezone.utc).astimezone().isoformat(timespec='seconds')} |
+| Retrieved | {datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds")} |
 | Size | {EXPECT_SIZE} bytes |
 | sha256 | `{EXPECT_SHA256}` |
 | md5 | `{EXPECT_MD5}` |
@@ -114,16 +118,27 @@ The stock checksum is what makes that safe; do not skip verification.
 def fetch():
     SOURCES.mkdir(parents=True, exist_ok=True)
     if DEST.exists() and DEST.stat().st_size == EXPECT_SIZE:
-        log(f"{DEST.name} already present at expected size - verifying instead of refetching")
+        log(
+            f"{DEST.name} already present at expected size - verifying instead of refetching"
+        )
         verify()
         manifest()
         return
     log(f"GET {URL}")
     cmd = [
-        "curl", "-L", "--fail", "--progress-bar",
-        "--speed-limit", str(SPEED_FLOOR), "--speed-time", str(SPEED_WINDOW),
-        "--max-time", str(MAX_TIME),
-        "-o", str(DEST), URL,
+        "curl",
+        "-L",
+        "--fail",
+        "--progress-bar",
+        "--speed-limit",
+        str(SPEED_FLOOR),
+        "--speed-time",
+        str(SPEED_WINDOW),
+        "--max-time",
+        str(MAX_TIME),
+        "-o",
+        str(DEST),
+        URL,
     ]
     proc = subprocess.run(cmd)
     if proc.returncode != 0:
@@ -137,7 +152,9 @@ def fetch():
 
 
 if __name__ == "__main__":
-    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     ap.add_argument("action", nargs="?", default="fetch", choices=["fetch", "verify"])
     a = ap.parse_args()
     log(f"--- {a.action} ---")

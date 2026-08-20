@@ -34,7 +34,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from _repo import IMAGES, LOGS, rel  # noqa: E402
+from _repo import IMAGES, LOGS, rel
 
 SOCK = Path(os.environ.get("XDG_RUNTIME_DIR", "/tmp")) / "tio-unvr.sock"
 
@@ -59,14 +59,33 @@ TFTP_ROOT = IMAGES / "tftp"
 
 # Order: identity and boot first, bulk last. An interrupted run must still have
 # left us the things that cannot be re-obtained.
-PRIORITY = ["Factory", "EEPROM", "u-boot", "u-boot env", "u-boot env redundant",
-            "cksum", "device_tree", "al_boot", "config", "chike",
-            "recovery kernel", "linux_kernel", "rootfs"]
+PRIORITY = [
+    "Factory",
+    "EEPROM",
+    "u-boot",
+    "u-boot env",
+    "u-boot env redundant",
+    "cksum",
+    "device_tree",
+    "al_boot",
+    "config",
+    "chike",
+    "recovery kernel",
+    "linux_kernel",
+    "rootfs",
+]
 
 # Ships in the firmware .bin, so re-extractable and not worth committing.
 # Everything else is unique to this unit and IS committed - see .gitignore.
-REOBTAINABLE = {"al_boot", "device_tree", "linux_kernel", "chike", "u-boot",
-                "recovery kernel", "rootfs"}
+REOBTAINABLE = {
+    "al_boot",
+    "device_tree",
+    "linux_kernel",
+    "chike",
+    "u-boot",
+    "recovery kernel",
+    "rootfs",
+}
 
 # Presets for re-backing-up between firmware upgrades.
 #
@@ -85,9 +104,17 @@ REOBTAINABLE = {"al_boot", "device_tree", "linux_kernel", "chike", "u-boot",
 # mtd8. Index presets silently dumped the wrong partitions after the 2.3.14 hop.
 PRESETS = {
     "identity": {"u-boot env", "u-boot env redundant", "Factory", "EEPROM", "cksum"},
-    "state": {"linux_kernel", "u-boot", "u-boot env", "u-boot env redundant",
-              "Factory", "EEPROM", "config", "cksum"},
-    "all": None,                          # whatever this firmware exposes
+    "state": {
+        "linux_kernel",
+        "u-boot",
+        "u-boot env",
+        "u-boot env redundant",
+        "Factory",
+        "EEPROM",
+        "config",
+        "cksum",
+    },
+    "all": None,  # whatever this firmware exposes
 }
 
 # Console read window. The shell echoes and replies in milliseconds; 2 s is ~1000x
@@ -125,7 +152,7 @@ def console(cmd: str, wait: float = CONSOLE_WAIT) -> str:
             if not chunk:
                 break
             got += chunk
-    except socket.timeout:
+    except TimeoutError:
         pass
     finally:
         s.close()
@@ -140,13 +167,17 @@ def host_ip() -> str:
     # taking it makes the device TFTP to itself and every transfer times out at
     # 0 bytes. Skip link-local too.
     out = console("ip -4 addr show", wait=2.0)
-    cands = [ip for ip in re.findall(r"inet (\d+\.\d+\.\d+\.\d+)/", out)
-             if not ip.startswith(("127.", "169.254."))]
+    cands = [
+        ip
+        for ip in re.findall(r"inet (\d+\.\d+\.\d+\.\d+)/", out)
+        if not ip.startswith(("127.", "169.254."))
+    ]
     if not cands:
         sys.exit(f"no routable IPv4 on the device. Console said:\n{out}")
     dev_ip = cands[0]
-    p = subprocess.run(["ip", "-o", "route", "get", dev_ip],
-                       capture_output=True, text=True)
+    p = subprocess.run(
+        ["ip", "-o", "route", "get", dev_ip], capture_output=True, text=True
+    )
     m = re.search(r"\bsrc (\d+\.\d+\.\d+\.\d+)", p.stdout)
     if not m:
         sys.exit(f"no route to the device at {dev_ip}")
@@ -173,9 +204,15 @@ def read_proc_mtd() -> list[dict]:
     for line in out.splitlines():
         m = re.match(r"^(mtd\d+):\s+([0-9a-f]+)\s+([0-9a-f]+)\s+\"(.*)\"", line.strip())
         if m:
-            parts.append({"dev": m.group(1), "num": int(m.group(1)[3:]),
-                          "size": int(m.group(2), 16),
-                          "erase": int(m.group(3), 16), "name": m.group(4)})
+            parts.append(
+                {
+                    "dev": m.group(1),
+                    "num": int(m.group(1)[3:]),
+                    "size": int(m.group(2), 16),
+                    "erase": int(m.group(3), 16),
+                    "name": m.group(4),
+                }
+            )
     if not parts:
         sys.exit(f"no MTD partitions parsed. Console said:\n{out}")
     return parts
@@ -196,7 +233,7 @@ def console_capture(cmd: str, sentinel: str, max_wait: float) -> str:
         while time.monotonic() < end:
             try:
                 chunk = s.recv(1 << 16)
-            except socket.timeout:
+            except TimeoutError:
                 continue
             if not chunk:
                 break
@@ -226,8 +263,9 @@ def dump_serial(part: dict) -> bytes | None:
     budget = max(30.0, (size * 3.06 / 11500) * 4)
     marker = f"OD-END-{part['num']}"
     log(f"  reading over serial as hex (budget {budget:.0f}s)")
-    out = console_capture(f"od -An -v -tx1 /dev/{part['dev']}; echo {marker}",
-                          marker, budget)
+    out = console_capture(
+        f"od -An -v -tx1 /dev/{part['dev']}; echo {marker}", marker, budget
+    )
     if marker not in out:
         log(f"  FAILED: sentinel {marker} not seen within {budget:.0f}s", "ERROR")
         return None
@@ -263,10 +301,14 @@ def dump(part: dict, ip_host: str) -> bool:
     # Fully self-describing: model, unit serial, sysid, partition number and
     # name, exact byte size, and the run stamp. Zero-padded mtd number so a
     # directory listing sorts correctly past mtd9.
-    out = OUT / (f"{model}-{serial}-{sysid}-mtd{part['num']:02d}-{safe}"
-                 f"-{part['size']}B-{RUN_ID}.img")
+    out = OUT / (
+        f"{model}-{serial}-{sysid}-mtd{part['num']:02d}-{safe}"
+        f"-{part['size']}B-{RUN_ID}.img"
+    )
     wait = max(MIN_WAIT, int(part["size"] / MIN_RATE))
-    log(f"{part['dev']:6s} \"{part['name']}\" {part['size']} B -> {rel(out)} (limit {wait}s)")
+    log(
+        f'{part["dev"]:6s} "{part["name"]}" {part["size"]} B -> {rel(out)} (limit {wait}s)'
+    )
 
     # TFTP, NOT netcat. BusyBox nc on this box cannot move bulk data: piping
     # /dev/mtdN into it yields 0 bytes, and even a staged regular file truncates
@@ -279,9 +321,12 @@ def dump(part: dict, ip_host: str) -> bool:
     stage = f"/tmp/.mtddump-{part['num']}"
     remote = out.name
     t0 = time.monotonic()
-    console(f"dd if=/dev/{part['dev']} of={stage} bs=64k && "
-            f"tftp -b {TFTP_BLKSIZE} -p -l {stage} -r {remote} {ip_host} {TFTP_PORT}; "
-            f"rm -f {stage}", wait=0.3)
+    console(
+        f"dd if=/dev/{part['dev']} of={stage} bs=64k && "
+        f"tftp -b {TFTP_BLKSIZE} -p -l {stage} -r {remote} {ip_host} {TFTP_PORT}; "
+        f"rm -f {stage}",
+        wait=0.3,
+    )
 
     # Poll for the file to reach full size in the tftpd root, then move it into
     # the run directory. Polling the size is how we learn the transfer finished
@@ -302,14 +347,18 @@ def dump(part: dict, ip_host: str) -> bool:
     got = out.stat().st_size
     ok = got == part["size"]
     rate = got / dt / (1 << 20)
-    log(f"  {got} B in {dt:.1f}s ({rate:.1f} MB/s) "
+    log(
+        f"  {got} B in {dt:.1f}s ({rate:.1f} MB/s) "
         + ("OK" if ok else f"SIZE MISMATCH, expected {part['size']}"),
-        "INFO" if ok else "ERROR")
+        "INFO" if ok else "ERROR",
+    )
     if not ok:
         return False
 
     local = sha256(out)
-    remote = console(f"md5sum /dev/{part['dev']}", wait=max(10.0, part["size"] / (8 << 20)))
+    remote = console(
+        f"md5sum /dev/{part['dev']}", wait=max(10.0, part["size"] / (8 << 20))
+    )
     m = re.search(r"\b([0-9a-f]{32})\b", remote)
     md5_local = hashlib.md5(out.read_bytes()).hexdigest()
     if m and m.group(1) == md5_local:
@@ -325,46 +374,66 @@ def dump(part: dict, ip_host: str) -> bool:
 
 
 def manifest(parts: list[dict]) -> None:
-    lines = [f"# UNVR MTD dumps — {RUN_ID}\n",
-             f"Taken {RUN_ISO} over the serial console + netcat "
-             "(no SSH; the device has no open ports).\n",
-             "## Unit\n",
-             "| Field | Value |", "|---|---|"]
+    lines = [
+        f"# UNVR MTD dumps — {RUN_ID}\n",
+        f"Taken {RUN_ISO} over the serial console + netcat "
+        "(no SSH; the device has no open ports).\n",
+        "## Unit\n",
+        "| Field | Value |",
+        "|---|---|",
+    ]
     for k in ("shortname", "name", "sysid", "serialno", "hwrev", "bom", "uuid", "qrid"):
         if k in BOARD:
             lines.append(f"| `board.{k}` | `{BOARD[k]}` |")
-    lines += [f"| kernel | `{BOARD.get('_uname', 'unknown')}` |",
-              "\n## Partitions\n",
-              "Partitions unique to this unit (Factory, EEPROM, u-boot env, config,",
-              "cksum) are **committed** - they exist nowhere else. Partitions that ship",
-              "in the firmware `.bin` and can be re-extracted (al_boot, device_tree,",
-              "linux_kernel, chike, u-boot, recovery kernel, rootfs) are gitignored;",
-              "rootfs alone is 1004 MB, 10x GitHub's per-file limit.\n",
-              "| Device | Name | Bytes | Erase | Tracked | sha256 | File |",
-              "|---|---|---|---|---|---|---|"]
+    lines += [
+        f"| kernel | `{BOARD.get('_uname', 'unknown')}` |",
+        "\n## Partitions\n",
+        "Partitions unique to this unit (Factory, EEPROM, u-boot env, config,",
+        "cksum) are **committed** - they exist nowhere else. Partitions that ship",
+        "in the firmware `.bin` and can be re-extracted (al_boot, device_tree,",
+        "linux_kernel, chike, u-boot, recovery kernel, rootfs) are gitignored;",
+        "rootfs alone is 1004 MB, 10x GitHub's per-file limit.\n",
+        "| Device | Name | Bytes | Erase | Tracked | sha256 | File |",
+        "|---|---|---|---|---|---|---|",
+    ]
     for p in sorted(parts, key=lambda x: x["num"]):
         tracked = "no" if p["name"] in REOBTAINABLE else "**yes**"
         if "sha256" not in p:
-            lines.append(f"| `{p['dev']}` | {p['name']} | {p['size']} | {p['erase']} | "
-                         f"{tracked} | **NOT CAPTURED** | — |")
+            lines.append(
+                f"| `{p['dev']}` | {p['name']} | {p['size']} | {p['erase']} | "
+                f"{tracked} | **NOT CAPTURED** | — |"
+            )
         else:
-            lines.append(f"| `{p['dev']}` | {p['name']} | {p['size']} | {p['erase']} | "
-                         f"{tracked} | `{p['sha256'][:16]}…` | `{p['file']}` |")
-    lines += ["\n## Restoring\n",
-              "`flashcp` erases first; `dd` to a char MTD does not and leaves a corrupt",
-              "partition.\n", "```", "flashcp -v <file>.img /dev/mtdN", "```\n"]
+            lines.append(
+                f"| `{p['dev']}` | {p['name']} | {p['size']} | {p['erase']} | "
+                f"{tracked} | `{p['sha256'][:16]}…` | `{p['file']}` |"
+            )
+    lines += [
+        "\n## Restoring\n",
+        "`flashcp` erases first; `dd` to a char MTD does not and leaves a corrupt",
+        "partition.\n",
+        "```",
+        "flashcp -v <file>.img /dev/mtdN",
+        "```\n",
+    ]
     (OUT / "README.md").write_text("\n".join(lines) + "\n")
     log(f"wrote {rel(OUT / 'README.md')}")
 
 
 if __name__ == "__main__":
-    ap = argparse.ArgumentParser(description=__doc__,
-                                 formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     ap.add_argument("--list", action="store_true", help="read /proc/mtd and stop")
     ap.add_argument("--only", help="comma-separated mtd numbers, e.g. 8,9")
-    ap.add_argument("--preset", choices=sorted(PRESETS),
-                    help="identity (264 KB) | state (33 MB, per-upgrade default) | all (1.1 GB)")
-    ap.add_argument("--tag", default="", help="label folded into the dump dir name, e.g. pre-1.4.9")
+    ap.add_argument(
+        "--preset",
+        choices=sorted(PRESETS),
+        help="identity (264 KB) | state (33 MB, per-upgrade default) | all (1.1 GB)",
+    )
+    ap.add_argument(
+        "--tag", default="", help="label folded into the dump dir name, e.g. pre-1.4.9"
+    )
     a = ap.parse_args()
 
     # Single-instance lock. Two dumps sharing one console + TFTP interleave their
@@ -373,6 +442,7 @@ if __name__ == "__main__":
     # (a good env md5 came back as the pre-saveenv value). flock releases on exit,
     # including SIGKILL, so a crashed run never wedges the next one.
     import fcntl
+
     LOGS.mkdir(parents=True, exist_ok=True)
     _lock = (LOGS / ".dump-unvr-mtd.lock").open("w")
     try:
@@ -382,8 +452,11 @@ if __name__ == "__main__":
 
     log("--- dump-unvr-mtd (console + TFTP) ---")
     BOARD.update(read_board())
-    BOARD["_uname"] = console("uname -r", wait=2.0).splitlines()[-2].strip() \
-        if len(console("uname -r", wait=2.0).splitlines()) > 1 else "unknown"
+    BOARD["_uname"] = (
+        console("uname -r", wait=2.0).splitlines()[-2].strip()
+        if len(console("uname -r", wait=2.0).splitlines()) > 1
+        else "unknown"
+    )
     model = BOARD.get("shortname", "UNVR")
     serial = BOARD.get("serialno", "unknown")
     sysid = BOARD.get("sysid", "unknown").replace("0x", "")
@@ -396,7 +469,7 @@ if __name__ == "__main__":
 
     parts = read_proc_mtd()
     for p in parts:
-        log(f"  {p['dev']:6s} {p['size']:>10} B  erase {p['erase']:>7}  \"{p['name']}\"")
+        log(f'  {p["dev"]:6s} {p["size"]:>10} B  erase {p["erase"]:>7}  "{p["name"]}"')
     if a.list:
         sys.exit(0)
 
@@ -412,7 +485,10 @@ if __name__ == "__main__":
             # means the preset no longer covers what its name claims.
             missing = names - {p["name"] for p in parts}
             if missing:
-                log(f"preset {a.preset}: not on this firmware: {sorted(missing)}", "WARN")
+                log(
+                    f"preset {a.preset}: not on this firmware: {sorted(missing)}",
+                    "WARN",
+                )
             parts = [p for p in parts if p["name"] in names]
             log(f"preset {a.preset}: {[p['dev'] for p in parts]}")
 
@@ -425,7 +501,9 @@ if __name__ == "__main__":
         if not dump(p, ip):
             failed.append(p["dev"])
     manifest(parts)
-    log(f"done. {len(parts) - len(failed)}/{len(parts)} captured"
+    log(
+        f"done. {len(parts) - len(failed)}/{len(parts)} captured"
         + (f", FAILED: {', '.join(failed)}" if failed else ""),
-        "ERROR" if failed else "INFO")
+        "ERROR" if failed else "INFO",
+    )
     sys.exit(1 if failed else 0)

@@ -14,13 +14,19 @@ Tarballs -> sources/gpl/ (gitignored). Unpacked -> /mnt/2tb/unvr-port-refs/gpl/.
 Space-aware: /mnt/2tb is tight, so only `unpack=True` items are extracted, and
 their tarball is removed after a successful unpack to reclaim space.
 """
+
 from __future__ import annotations
-import hashlib, os, subprocess, sys, tarfile
+
+import hashlib
+import os
+import subprocess
+import sys
+import tarfile
 from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from _repo import REPO, LOGS  # noqa: E402
+from _repo import LOGS, REPO
 
 BASE = "https://archive.org/download/unifi-udr-gpl-archives"
 TARBALLS = REPO / "sources" / "gpl"
@@ -31,8 +37,20 @@ UNPACK_ROOT = Path("/mnt/2tb/unvr-port-refs/gpl")
 # hash below is None; md5 fallbacks are from the archive.org metadata API.
 FILES = [
     # UDM-Pro = Alpine V2 / AL-324 = our SoC -> unpack
-    ("UDMP", "UDMPRO-2.4.27-GPL.tar.gz", None, "13c768fd2db9137f2dccd22c17ee6794", True),
-    ("UDMP", "linux-udmp-2.4.27.tar.gz", None, "9ebc1851b77f9cf1108b0c77fc90e5ba", True),
+    (
+        "UDMP",
+        "UDMPRO-2.4.27-GPL.tar.gz",
+        None,
+        "13c768fd2db9137f2dccd22c17ee6794",
+        True,
+    ),
+    (
+        "UDMP",
+        "linux-udmp-2.4.27.tar.gz",
+        None,
+        "9ebc1851b77f9cf1108b0c77fc90e5ba",
+        True,
+    ),
     # UDM-SE = (probably) same AL-324, newer fw. Unpack the kernel (DTS/drivers
     # cross-check); keep the big full-GPL as a tarball to save space.
     ("UDMSE", "UDMSE-3.0.13-GPL.tar.gz", None, None, False),
@@ -49,7 +67,9 @@ FILES = [
 
 
 def log(m: str) -> None:
-    line = f"{datetime.now(timezone.utc).astimezone().isoformat(timespec='seconds')}  {m}"
+    line = (
+        f"{datetime.now(timezone.utc).astimezone().isoformat(timespec='seconds')}  {m}"
+    )
     print(line, flush=True)
     LOGS.mkdir(parents=True, exist_ok=True)
     with (LOGS / "fetch-gpl-sources.log").open("a") as fh:
@@ -114,9 +134,11 @@ def main() -> int:
         log(f"=== {d}/{fn} (unpack={unpack}) ===")
         if not curl(f"{BASE}/{d}/{fn}", tar):
             log(f"  DOWNLOAD FAILED {fn}")
-            bad.append(fn); continue
+            bad.append(fn)
+            continue
         if not verify(tar, d, fn, sha, md5):
-            bad.append(fn); continue
+            bad.append(fn)
+            continue
         ok.append(fn)
         if unpack:
             dest = UNPACK_ROOT / d
@@ -129,7 +151,9 @@ def main() -> int:
                 t.extractall(dest, filter="data")
             tar.unlink()  # reclaim space; re-downloadable + verified
             log(f"  unpacked, tarball removed. free: {free_gb():.1f} GB")
-    log(f"DONE. verified={len(ok)} failed={len(bad)} {('BAD:'+','.join(bad)) if bad else ''}")
+    log(
+        f"DONE. verified={len(ok)} failed={len(bad)} {('BAD:' + ','.join(bad)) if bad else ''}"
+    )
     log(f"tarballs: {TARBALLS} ; unpacked: {UNPACK_ROOT}")
     return 1 if bad else 0
 

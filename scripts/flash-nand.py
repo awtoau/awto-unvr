@@ -11,13 +11,18 @@ Layout (NAND offsets):
   kernel  @ 0x1300000  (start of the unused rootfs partition), read span 0x1200000
   dtb     @ 0x2800000
 """
+
 from __future__ import annotations
-import os, socket, sys, time
+
+import os
+import socket
+import sys
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from _repo import LOGS  # noqa: E402
+from _repo import LOGS
 
 SOCK = Path(os.environ.get("XDG_RUNTIME_DIR", "/tmp")) / "tio-unvr.sock"
 PROMPT = b"ALPINE_UBNT_NAS_ALL>"
@@ -25,15 +30,19 @@ PROMPT = b"ALPINE_UBNT_NAS_ALL>"
 IPADDR, SERVERIP = "192.168.25.140", "192.168.25.145"
 KIMG = "uImage-unvr-ea16-7.1-fedora-gz"
 DIMG = "alpine-v2-ubnt-unvr-ea16-7.1-fedora.dtb"
-K_NAND, K_SPAN = "0x1300000", "0x1200000"   # 18.9 MiB span (kernel ~18.5)
+K_NAND, K_SPAN = "0x1300000", "0x1200000"  # 18.9 MiB span (kernel ~18.5)
 D_NAND, D_ERASE, D_READ = "0x2800000", "0x40000", "0x20000"
 K_RAM, D_RAM = "0x02000000", "0x04078000"
-BOOTCMD = (f"nand read {K_RAM} {K_NAND} {K_SPAN}; "
-           f"nand read {D_RAM} {D_NAND} {D_READ}; bootm {K_RAM} - {D_RAM}")
+BOOTCMD = (
+    f"nand read {K_RAM} {K_NAND} {K_SPAN}; "
+    f"nand read {D_RAM} {D_NAND} {D_READ}; bootm {K_RAM} - {D_RAM}"
+)
 
 
 def log(m):
-    line = f"{datetime.now(timezone.utc).astimezone().isoformat(timespec='seconds')}  {m}"
+    line = (
+        f"{datetime.now(timezone.utc).astimezone().isoformat(timespec='seconds')}  {m}"
+    )
     print(line, flush=True)
     LOGS.mkdir(parents=True, exist_ok=True)
     (LOGS / "flash-nand.log").open("a").write(line + "\n")
@@ -46,7 +55,7 @@ def step(s, cmd, needle, limit, label):
     while time.monotonic() < end:
         try:
             c = s.recv(4096)
-        except socket.timeout:
+        except TimeoutError:
             continue
         if not c:
             break
@@ -54,7 +63,9 @@ def step(s, cmd, needle, limit, label):
         if needle.encode() in buf:
             log(f"  OK: {label}")
             return buf
-    log(f"  FAIL: {label} — did not see {needle!r} in {limit}s\n{buf.decode(errors='replace')[-400:]}")
+    log(
+        f"  FAIL: {label} — did not see {needle!r} in {limit}s\n{buf.decode(errors='replace')[-400:]}"
+    )
     raise SystemExit(3)
 
 

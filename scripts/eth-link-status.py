@@ -6,6 +6,7 @@ interface to capture the link-manage/SFP-read trace (see #98), then turns
 dynamic debug back off. Read-only otherwise. Run it yourself to watch live:
   ./scripts/eth-link-status.py
 """
+
 from __future__ import annotations
 
 import argparse
@@ -49,14 +50,18 @@ echo module al_eth -p > /sys/kernel/debug/dynamic_debug/control 2>/dev/null || t
 def locate_woomera() -> str:
     out = subprocess.run(
         [sys.executable, "scripts/ssh-woomera.py", "--print"],
-        capture_output=True, text=True, check=True,
+        capture_output=True,
+        text=True,
+        check=True,
     )
     return out.stdout.strip()
 
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--host", help="woomera's address (default: auto-locate by MAC OUI)")
+    ap.add_argument(
+        "--host", help="woomera's address (default: auto-locate by MAC OUI)"
+    )
     ap.add_argument("--password", default=DEFAULT_ROOT_PASSWORD)
     args = ap.parse_args()
 
@@ -64,11 +69,24 @@ def main() -> int:
     print(f"# woomera at {host}", file=sys.stderr)
 
     result = subprocess.run(
-        ["sshpass", "-p", args.password, "ssh",
-         "-o", "ConnectTimeout=8", "-o", "StrictHostKeyChecking=accept-new",
-         "-o", "PreferredAuthentications=password", "-o", "PubkeyAuthentication=no",
-         f"root@{host}", REMOTE_SCRIPT],
-        capture_output=True, text=True,
+        [
+            "sshpass",
+            "-p",
+            args.password,
+            "ssh",
+            "-o",
+            "ConnectTimeout=8",
+            "-o",
+            "StrictHostKeyChecking=accept-new",
+            "-o",
+            "PreferredAuthentications=password",
+            "-o",
+            "PubkeyAuthentication=no",
+            f"root@{host}",
+            REMOTE_SCRIPT,
+        ],
+        capture_output=True,
+        text=True,
     )
     output = result.stdout + result.stderr
 

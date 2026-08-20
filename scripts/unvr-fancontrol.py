@@ -14,16 +14,17 @@ chip's crit (100 C) is the hard backstop.
 
   Tmin=30 C -> pwm floor 90 (~35%) ; Tmax=55 C -> pwm 255 (full)
 """
+
 import glob
 import subprocess
 import sys
 import time
 from pathlib import Path
 
-TMIN_MC = 30000     # below this, fans hold the floor (never off)
-TMAX_MC = 55000     # at/above this, fans full
-FLOOR_PWM = 90      # ~35% duty floor
-TEMP_CH = 4         # bitmask: bit2 = temp3 drives the fan
+TMIN_MC = 30000  # below this, fans hold the floor (never off)
+TMAX_MC = 55000  # at/above this, fans full
+FLOOR_PWM = 90  # ~35% duty floor
+TEMP_CH = 4  # bitmask: bit2 = temp3 drives the fan
 
 
 def find_adt7475(retries=20):
@@ -56,9 +57,11 @@ def main() -> int:
     for p in (1, 2, 3):
         w(h / f"pwm{p}_auto_point1_pwm", FLOOR_PWM)
         w(h / f"pwm{p}_auto_channels_temp", TEMP_CH)
-        w(h / f"pwm{p}_enable", 2)          # 2 = hardware automatic
-    print(f"adt7475 ({h.name}): auto mode, temp3 curve {TMIN_MC//1000}-{TMAX_MC//1000}C, "
-          f"floor pwm {FLOOR_PWM}")
+        w(h / f"pwm{p}_enable", 2)  # 2 = hardware automatic
+    print(
+        f"adt7475 ({h.name}): auto mode, temp3 curve {TMIN_MC // 1000}-{TMAX_MC // 1000}C, "
+        f"floor pwm {FLOOR_PWM}"
+    )
     return 0
 
 

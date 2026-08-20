@@ -22,12 +22,12 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from _repo import LOGS  # noqa: E402
+from _repo import LOGS
 
 SOCK = Path(os.environ.get("XDG_RUNTIME_DIR", "/tmp")) / "tio-unvr.sock"
 
 # The device prints this during the countdown; seeing it means we are in.
-PROMPT_HINTS = (b"ALPINE_UBNT_NAS", b"=>", b"Autobooting", b"press \"<Esc><Esc>\"")
+PROMPT_HINTS = (b"ALPINE_UBNT_NAS", b"=>", b"Autobooting", b'press "<Esc><Esc>"')
 # Confirmation that autoboot was actually stopped rather than merely announced.
 STOPPED_HINTS = (b"ALPINE_UBNT_NAS_ALL>", b"ALPINE_UBNT_NAS>")
 
@@ -45,8 +45,9 @@ def log(msg):
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description=__doc__,
-                                 formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     # Ceiling only - the loop exits the moment the prompt appears. Long enough
     # for a human to walk to the unit and pull power.
     ap.add_argument("--seconds", type=float, default=240.0)
@@ -76,7 +77,7 @@ def main() -> int:
                 last = now
             try:
                 chunk = s.recv(4096)
-            except socket.timeout:
+            except TimeoutError:
                 continue
             if not chunk:
                 break

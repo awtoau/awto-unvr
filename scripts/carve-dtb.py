@@ -4,6 +4,7 @@
 Scans for the 0xd00dfeed magic, validates the header, writes each blob to
 outdir, decompiles with dtc and extracts board-cfg + nand partition table.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -32,9 +33,17 @@ def find_fdts(blob: bytes) -> list[tuple[int, int]]:
         off = m.start()
         if off + 40 > len(blob):
             continue
-        (totalsize, off_struct, off_strings, off_rsvmap, version,
-         last_comp, _boot_cpu, size_strings, size_struct) = struct.unpack(
-            ">9I", blob[off + 4:off + 40])
+        (
+            totalsize,
+            off_struct,
+            off_strings,
+            off_rsvmap,
+            version,
+            last_comp,
+            _boot_cpu,
+            size_strings,
+            size_struct,
+        ) = struct.unpack(">9I", blob[off + 4 : off + 40])
         if not (0x100 <= totalsize <= 0x100000) or off + totalsize > len(blob):
             continue
         if version < 16 or version > 17 or last_comp > version:
@@ -48,15 +57,18 @@ def find_fdts(blob: bytes) -> list[tuple[int, int]]:
 
 
 def dts_of(path: Path) -> str:
-    r = subprocess.run(["dtc", "-I", "dtb", "-O", "dts", "-q", str(path)],
-                       capture_output=True, text=True)
+    r = subprocess.run(
+        ["dtc", "-I", "dtb", "-O", "dts", "-q", str(path)],
+        capture_output=True,
+        text=True,
+    )
     return r.stdout
 
 
 def summarise(dts: str) -> tuple[str, str, list[tuple[str, int, int]]]:
     model = ""
     boardcfg = ""
-    m = re.search(r'^\s*model\s*=\s*"([^"]*)"', dts, re.M)
+    m = re.search(r'^\s*model\s*=\s*"([^"]*)"', dts, re.MULTILINE)
     if m:
         model = m.group(1)
     m = re.search(r'board-cfg\s*=\s*"([^"]*)"', dts)
@@ -80,7 +92,8 @@ def summarise(dts: str) -> tuple[str, str, list[tuple[str, int, int]]]:
             i += 1
         body = dts[start:i]
         for pm in re.finditer(
-                r"partition@([0-9a-fA-F]+)\s*\{(.*?)\n(\s*)\};", body, re.S):
+            r"partition@([0-9a-fA-F]+)\s*\{(.*?)\n(\s*)\};", body, re.DOTALL
+        ):
             sub = pm.group(2)
             lab = re.search(r'label\s*=\s*"([^"]*)"', sub)
             reg = re.search(r"reg\s*=\s*<([^>]*)>", sub)
@@ -110,7 +123,7 @@ def main() -> int:
 
     for n, (off, size) in enumerate(hits):
         out = a.outdir / f"dtb{n:02d}-0x{off:06x}-{size}B.dtb"
-        out.write_bytes(blob[off:off + size])
+        out.write_bytes(blob[off : off + size])
         dts = dts_of(out)
         (out.with_suffix(".dts")).write_text(dts)
         model, cfg, parts = summarise(dts)
@@ -120,8 +133,9 @@ def main() -> int:
         logging.info("    board-cfg  = %s", cfg)
         logging.info("    nand parts = %d", len(parts))
         for lab, o, s in parts:
-            logging.info("      %-14s off 0x%08x  size 0x%08x (%8.2f MB)",
-                         lab, o, s, s / 1048576)
+            logging.info(
+                "      %-14s off 0x%08x  size 0x%08x (%8.2f MB)", lab, o, s, s / 1048576
+            )
     return 0
 
 

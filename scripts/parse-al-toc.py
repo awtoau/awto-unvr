@@ -4,6 +4,7 @@
 Prints each object's name, type, offset and size, plus the per-image header
 (magic 0x000b9ec7) fields that follow at the object offset.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -24,15 +25,22 @@ def main() -> int:
     ap.add_argument("--toc", type=lambda s: int(s, 0), default=0x80000)
     a = ap.parse_args()
     LOG.parent.mkdir(parents=True, exist_ok=True)
-    logging.basicConfig(level=logging.INFO, format="%(message)s",
-                        handlers=[logging.FileHandler(LOG),
-                                  logging.StreamHandler(sys.stdout)])
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(message)s",
+        handlers=[logging.FileHandler(LOG), logging.StreamHandler(sys.stdout)],
+    )
 
     b = a.image.read_bytes()
     magic = struct.unpack_from("<I", b, a.toc)[0]
-    logging.info("== %s (%d B) TOC@0x%x magic 0x%08x %s",
-                 a.image, len(b), a.toc, magic,
-                 "OK" if magic == TOC_MAGIC else "MISMATCH")
+    logging.info(
+        "== %s (%d B) TOC@0x%x magic 0x%08x %s",
+        a.image,
+        len(b),
+        a.toc,
+        magic,
+        "OK" if magic == TOC_MAGIC else "MISMATCH",
+    )
     if magic != TOC_MAGIC:
         return 1
 
@@ -43,7 +51,7 @@ def main() -> int:
     for n in range(count):
         e = a.toc + 16 + n * 0x20
         oid, otype = struct.unpack_from("<2I", b, e)
-        name = b[e + 8:e + 20].split(b"\0")[0].decode("latin1")
+        name = b[e + 8 : e + 20].split(b"\0")[0].decode("latin1")
         ooff, osize = struct.unpack_from("<2I", b, e + 20)
         hdr = ""
         if ooff + 0x40 <= len(b) and struct.unpack_from("<I", b, ooff)[0] == IMG_MAGIC:
@@ -51,8 +59,16 @@ def main() -> int:
             ld, en = struct.unpack_from("<2Q", b, ooff + 0x30)
             hdr = f"  payload 0x{sz:x} load 0x{ld:x} entry 0x{en:x}"
         present = "" if ooff + osize <= len(b) else "  [outside this file]"
-        logging.info("  [%d] %-10s type 0x%08x off 0x%06x size 0x%06x%s%s",
-                     n, name, otype, ooff, osize, hdr, present)
+        logging.info(
+            "  [%d] %-10s type 0x%08x off 0x%06x size 0x%06x%s%s",
+            n,
+            name,
+            otype,
+            ooff,
+            osize,
+            hdr,
+            present,
+        )
     return 0
 
 

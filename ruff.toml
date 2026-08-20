@@ -1,0 +1,5 @@
+extend-exclude = [
+    "tmp",
+    "debris",
+    ".claude/worktrees",
+]

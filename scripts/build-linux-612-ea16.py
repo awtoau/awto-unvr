@@ -21,17 +21,30 @@ is linked so they ride inside the embedded initramfs (/init auto-loads them).
 Produces in build-out/: uImage-unvr-ea16, Image, alpine-v2-ubnt-unvr-ea16.dtb,
 initramfs-ea16.cpio.gz (now with modules), modules/*/al_*.ko, unvr-ea16.config.
 """
-import os, sys, struct, zlib, subprocess, shutil, pathlib, time
 
-SRC   = "/mnt/2tb/unvr-port-refs/linux-6.12"
-PORT  = "/mnt/2tb/unvr-port-refs/linux-alpine-v2"
-REPO  = "/mnt/2tb/git/awto-unvr"   # al_* module source-of-truth (modules/)
-OUT   = "/mnt/2tb/unvr-port-refs/build-out"
+import os
+import pathlib
+import shutil
+import struct
+import subprocess
+import sys
+import time
+import zlib
+
+SRC = "/mnt/2tb/unvr-port-refs/linux-6.12"
+PORT = "/mnt/2tb/unvr-port-refs/linux-alpine-v2"
+REPO = "/mnt/2tb/git/awto-unvr"  # al_* module source-of-truth (modules/)
+OUT = "/mnt/2tb/unvr-port-refs/build-out"
 DTS_NAME = "alpine-v2-ubnt-unvr-ea16"
 IMAGE_TAG = "alpine-v2-builder"
 
-IH_MAGIC, IH_OS_LINUX, IH_ARCH_ARM64, IH_TYPE_KERNEL, IH_COMP_NONE = \
-    0x27051956, 5, 22, 2, 0
+IH_MAGIC, IH_OS_LINUX, IH_ARCH_ARM64, IH_TYPE_KERNEL, IH_COMP_NONE = (
+    0x27051956,
+    5,
+    22,
+    2,
+    0,
+)
 LOAD_ADDR = ENTRY_ADDR = 0x08000000
 
 KCONFIG_SNIPPET = """
@@ -55,25 +68,34 @@ def run(cmd, **kw):
 
 def prep_tree():
     amazon = os.path.join(SRC, "arch/arm64/boot/dts/amazon")
-    shutil.copy(os.path.join(PORT, "configs/unvr_defconfig"),
-                os.path.join(SRC, "arch/arm64/configs/unvr_defconfig"))
-    for f in ("dts/alpine-v2-ubnt-unvr-ea16.dts", "dts/alpine-v2-ubnt-unvr.dts",
-              "dts/alpine-v2-ubnt-udmpro.dts"):
+    shutil.copy(
+        os.path.join(PORT, "configs/unvr_defconfig"),
+        os.path.join(SRC, "arch/arm64/configs/unvr_defconfig"),
+    )
+    for f in (
+        "dts/alpine-v2-ubnt-unvr-ea16.dts",
+        "dts/alpine-v2-ubnt-unvr.dts",
+        "dts/alpine-v2-ubnt-udmpro.dts",
+    ):
         s = os.path.join(PORT, f)
         if os.path.exists(s):
             shutil.copy(s, amazon)
     mk = os.path.join(amazon, "Makefile")
     txt = pathlib.Path(mk).read_text()
     if DTS_NAME not in txt:
-        pathlib.Path(mk).write_text(txt + f"dtb-$(CONFIG_ARCH_ALPINE)\t+= {DTS_NAME}.dtb\n")
+        pathlib.Path(mk).write_text(
+            txt + f"dtb-$(CONFIG_ARCH_ALPINE)\t+= {DTS_NAME}.dtb\n"
+        )
     print("prepped tree: defconfig + dts installed", flush=True)
 
 
 def integrate_patches():
     ctl = os.path.join(SRC, "drivers/pci/controller")
     # 1. internal PCIe driver (new file)
-    shutil.copy(os.path.join(PORT, "patches/pcie-al-internal.c"),
-                os.path.join(ctl, "pcie-al-internal.c"))
+    shutil.copy(
+        os.path.join(PORT, "patches/pcie-al-internal.c"),
+        os.path.join(ctl, "pcie-al-internal.c"),
+    )
     # Kconfig: add PCIE_AL_INTERNAL just before the closing endmenu
     kc = os.path.join(ctl, "Kconfig")
     txt = pathlib.Path(kc).read_text()
@@ -87,10 +109,14 @@ def integrate_patches():
     if "pcie-al-internal.o" not in mtxt:
         pathlib.Path(mkf).write_text(mtxt.rstrip("\n") + "\n" + MAKEFILE_LINE)
     # 2. external PCIe DBI fix (overwrite mainline pcie-al.c)
-    shutil.copy(os.path.join(PORT, "patches/pcie-al-dbi-fix.c"),
-                os.path.join(SRC, "drivers/pci/controller/dwc/pcie-al.c"))
-    print("integrated patches: pcie-al-internal (+Kconfig/Makefile) + pcie-al DBI fix",
-          flush=True)
+    shutil.copy(
+        os.path.join(PORT, "patches/pcie-al-dbi-fix.c"),
+        os.path.join(SRC, "drivers/pci/controller/dwc/pcie-al.c"),
+    )
+    print(
+        "integrated patches: pcie-al-internal (+Kconfig/Makefile) + pcie-al DBI fix",
+        flush=True,
+    )
 
 
 def prep_modules():
@@ -105,8 +131,17 @@ def prep_modules():
 
 
 def docker_build():
-    run(["docker", "build", "-t", IMAGE_TAG, "-f",
-         os.path.join(PORT, "configs/Dockerfile"), PORT])
+    run(
+        [
+            "docker",
+            "build",
+            "-t",
+            IMAGE_TAG,
+            "-f",
+            os.path.join(PORT, "configs/Dockerfile"),
+            PORT,
+        ]
+    )
 
 
 CONTAINER_SCRIPT = r"""
@@ -147,25 +182,55 @@ echo "=== container build complete (KVER=$KVER) ==="
 
 
 def docker_run():
-    run(["docker", "run", "--rm",
-         "-v", f"{SRC}:/src",
-         "-v", f"{OUT}/modules:/modules",
-         "-v", f"{OUT}/initramfs-root:/initramfs-root",
-         "-v", f"{OUT}/initramfs-devnodes:/initramfs-devnodes:ro",
-         IMAGE_TAG, "bash", "-c", CONTAINER_SCRIPT])
+    run(
+        [
+            "docker",
+            "run",
+            "--rm",
+            "-v",
+            f"{SRC}:/src",
+            "-v",
+            f"{OUT}/modules:/modules",
+            "-v",
+            f"{OUT}/initramfs-root:/initramfs-root",
+            "-v",
+            f"{OUT}/initramfs-devnodes:/initramfs-devnodes:ro",
+            IMAGE_TAG,
+            "bash",
+            "-c",
+            CONTAINER_SCRIPT,
+        ]
+    )
 
 
 def mkuimage(image_path, out_path, name="unvr-ea16-6.12"):
     data = pathlib.Path(image_path).read_bytes()
-    dcrc = zlib.crc32(data) & 0xffffffff
+    dcrc = zlib.crc32(data) & 0xFFFFFFFF
     nm = name.encode()[:31].ljust(32, b"\0")
+
     def hdr(hc):
-        return struct.pack(">IIIIIIIBBBB32s", IH_MAGIC, hc, int(time.time()),
-                           len(data), LOAD_ADDR, ENTRY_ADDR, dcrc,
-                           IH_OS_LINUX, IH_ARCH_ARM64, IH_TYPE_KERNEL, IH_COMP_NONE, nm)
-    h = hdr(zlib.crc32(hdr(0)) & 0xffffffff)
+        return struct.pack(
+            ">IIIIIIIBBBB32s",
+            IH_MAGIC,
+            hc,
+            int(time.time()),
+            len(data),
+            LOAD_ADDR,
+            ENTRY_ADDR,
+            dcrc,
+            IH_OS_LINUX,
+            IH_ARCH_ARM64,
+            IH_TYPE_KERNEL,
+            IH_COMP_NONE,
+            nm,
+        )
+
+    h = hdr(zlib.crc32(hdr(0)) & 0xFFFFFFFF)
     pathlib.Path(out_path).write_bytes(h + data)
-    print(f"uImage: {out_path} ({len(h)+len(data)} bytes, load/entry=0x{LOAD_ADDR:08x}, dcrc=0x{dcrc:08x})", flush=True)
+    print(
+        f"uImage: {out_path} ({len(h) + len(data)} bytes, load/entry=0x{LOAD_ADDR:08x}, dcrc=0x{dcrc:08x})",
+        flush=True,
+    )
 
 
 def regen_initramfs_cpio():
@@ -173,14 +238,22 @@ def regen_initramfs_cpio():
     work = os.path.join(OUT, "initramfs-root")
     cpio_gz = os.path.join(OUT, "initramfs-ea16.cpio.gz")
     find = subprocess.Popen(["find", "."], cwd=work, stdout=subprocess.PIPE)
-    cpio = subprocess.Popen(["cpio", "-o", "-H", "newc", "--quiet"],
-                            cwd=work, stdin=find.stdout, stdout=subprocess.PIPE)
+    cpio = subprocess.Popen(
+        ["cpio", "-o", "-H", "newc", "--quiet"],
+        cwd=work,
+        stdin=find.stdout,
+        stdout=subprocess.PIPE,
+    )
     with open(cpio_gz, "wb") as f:
         gz = subprocess.Popen(["gzip", "-9"], stdin=cpio.stdout, stdout=f)
         gz.communicate()
-    find.wait(); cpio.wait()
-    print(f"standalone initramfs (with modules): {cpio_gz} "
-          f"({os.path.getsize(cpio_gz)//1024} KiB)", flush=True)
+    find.wait()
+    cpio.wait()
+    print(
+        f"standalone initramfs (with modules): {cpio_gz} "
+        f"({os.path.getsize(cpio_gz) // 1024} KiB)",
+        flush=True,
+    )
 
 
 def collect():
@@ -195,7 +268,10 @@ def collect():
         for f in files:
             if f.endswith(".ko"):
                 p = os.path.join(root, f)
-                print(f"  module {os.path.basename(p)}  ({os.path.getsize(p)} bytes)", flush=True)
+                print(
+                    f"  module {os.path.basename(p)}  ({os.path.getsize(p)} bytes)",
+                    flush=True,
+                )
 
 
 def main():
@@ -206,7 +282,7 @@ def main():
     docker_build()
     docker_run()
     collect()
-    print(f"DONE in {int(time.time()-t0)}s", flush=True)
+    print(f"DONE in {int(time.time() - t0)}s", flush=True)
 
 
 if __name__ == "__main__":

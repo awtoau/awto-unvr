@@ -24,6 +24,7 @@ single rm reclaims it; --clean also runs distclean and removes staged sources.
 Timeout: build wall-clock cap = 900 s (~1.25x an observed worst-case full arm64
 U-Boot build of ~12 min on this host); on expiry the make is killed and logged.
 """
+
 import os
 import shutil
 import subprocess
@@ -40,28 +41,28 @@ BUILD_TIMEOUT_S = 900  # see module docstring
 
 # scaffold rel-path -> tree rel-path (individual files)
 FILES = {
-    "board/annapurna/alpine/Kconfig":      "board/annapurna/alpine/Kconfig",
-    "board/annapurna/alpine/Makefile":     "board/annapurna/alpine/Makefile",
-    "board/annapurna/alpine/MAINTAINERS":  "board/annapurna/alpine/MAINTAINERS",
-    "board/annapurna/alpine/alpine.c":     "board/annapurna/alpine/alpine.c",
-    "board/annapurna/alpine/pl061.c":      "board/annapurna/alpine/pl061.c",
-    "include/configs/alpine.h":            "include/configs/alpine.h",
-    "configs/alpine_v2_unvr_defconfig":    "configs/alpine_v2_unvr_defconfig",
+    "board/annapurna/alpine/Kconfig": "board/annapurna/alpine/Kconfig",
+    "board/annapurna/alpine/Makefile": "board/annapurna/alpine/Makefile",
+    "board/annapurna/alpine/MAINTAINERS": "board/annapurna/alpine/MAINTAINERS",
+    "board/annapurna/alpine/alpine.c": "board/annapurna/alpine/alpine.c",
+    "board/annapurna/alpine/pl061.c": "board/annapurna/alpine/pl061.c",
+    "include/configs/alpine.h": "include/configs/alpine.h",
+    "configs/alpine_v2_unvr_defconfig": "configs/alpine_v2_unvr_defconfig",
     "arch/dts/awto-alpine-v2-unvr-uboot.dts": "arch/arm/dts/awto-alpine-v2-unvr-uboot.dts",
     # DW i2c: patched to honor explicit raw SCL hcnt/lcnt from DT so we can pin
     # stock's proven s35390a-safe pld-bus timing (docs/rtc-s35390a-fault.md).
-    "drivers/i2c/designware_i2c.c":        "drivers/i2c/designware_i2c.c",
-    "drivers/i2c/designware_i2c.h":        "drivers/i2c/designware_i2c.h",
+    "drivers/i2c/designware_i2c.c": "drivers/i2c/designware_i2c.c",
+    "drivers/i2c/designware_i2c.h": "drivers/i2c/designware_i2c.h",
 }
 
 # Whole subtrees copied verbatim: scaffold rel-dir -> tree rel-dir.
 # al_hal_shim is include-only (no Makefile) — it is not descended into by kbuild;
 # each driver's ccflags -I resolves the shared plat shim + common HAL headers.
 DIRS = {
-    "drivers/net/al_hal_shim":       "drivers/net/al_hal_shim",
+    "drivers/net/al_hal_shim": "drivers/net/al_hal_shim",
     "board/annapurna/alpine/al_ddr": "board/annapurna/alpine/al_ddr",
-    "drivers/net/al_eth":            "drivers/net/al_eth",
-    "drivers/phy/al_serdes":         "drivers/phy/al_serdes",
+    "drivers/net/al_eth": "drivers/net/al_eth",
+    "drivers/phy/al_serdes": "drivers/phy/al_serdes",
 }
 
 KCONFIG = os.path.join(TREE, "arch/arm/Kconfig")
@@ -119,7 +120,9 @@ def stage():
     txt = open(KCONFIG).read()
     changed = False
     if "TARGET_ALPINE_V2_UNVR" not in txt:
-        txt = txt.replace(TARGET_ANCHOR, TARGET_BLOCK.lstrip("\n") + "\n" + TARGET_ANCHOR, 1)
+        txt = txt.replace(
+            TARGET_ANCHOR, TARGET_BLOCK.lstrip("\n") + "\n" + TARGET_ANCHOR, 1
+        )
         changed = True
     if SRC_LINE not in txt:
         txt = txt.replace(SRC_ANCHOR, SRC_ANCHOR + SRC_LINE, 1)
@@ -147,8 +150,11 @@ def stage():
     pk = open(PHY_KCONFIG).read()
     if PHY_KCONFIG_LINE not in pk:
         idx = pk.rfind("endmenu")
-        pk = (pk + "\n" + PHY_KCONFIG_LINE) if idx < 0 \
+        pk = (
+            (pk + "\n" + PHY_KCONFIG_LINE)
+            if idx < 0
             else pk[:idx] + PHY_KCONFIG_LINE + "\n" + pk[idx:]
+        )
         open(PHY_KCONFIG, "w").write(pk)
         log("patched drivers/phy/Kconfig (source al_serdes/Kconfig)")
 
@@ -171,7 +177,10 @@ def unstage():
         log("reverted drivers/net/Kconfig")
 
     # revert al_serdes wiring
-    for f, line in ((DRIVERS_MAKEFILE, DRIVERS_MAKE_LINE), (PHY_KCONFIG, PHY_KCONFIG_LINE)):
+    for f, line in (
+        (DRIVERS_MAKEFILE, DRIVERS_MAKE_LINE),
+        (PHY_KCONFIG, PHY_KCONFIG_LINE),
+    ):
         if os.path.exists(f):
             open(f, "w").write(open(f).read().replace(line, ""))
 
@@ -183,8 +192,11 @@ def unstage():
     board = os.path.join(TREE, "board/annapurna")
     if os.path.isdir(board):
         shutil.rmtree(board)
-    for dst in ("include/configs/alpine.h", "configs/alpine_v2_unvr_defconfig",
-                "arch/arm/dts/awto-alpine-v2-unvr-uboot.dts"):
+    for dst in (
+        "include/configs/alpine.h",
+        "configs/alpine_v2_unvr_defconfig",
+        "arch/arm/dts/awto-alpine-v2-unvr-uboot.dts",
+    ):
         p = os.path.join(TREE, dst)
         if os.path.exists(p):
             os.remove(p)
@@ -197,12 +209,18 @@ def run(cmd):
     with open(LOG, "a") as f:
         t0 = time.time()
         try:
-            p = subprocess.run(cmd, cwd=TREE, env=env, stdout=f,
-                               stderr=subprocess.STDOUT, timeout=BUILD_TIMEOUT_S)
+            p = subprocess.run(
+                cmd,
+                cwd=TREE,
+                env=env,
+                stdout=f,
+                stderr=subprocess.STDOUT,
+                timeout=BUILD_TIMEOUT_S,
+            )
         except subprocess.TimeoutExpired:
             log(f"TIMEOUT after {BUILD_TIMEOUT_S}s: {' '.join(cmd)}")
             return 124
-    log(f"exit {p.returncode} ({time.time()-t0:.0f}s)")
+    log(f"exit {p.returncode} ({time.time() - t0:.0f}s)")
     return p.returncode
 
 
@@ -210,7 +228,8 @@ def build():
     os.makedirs(BUILDDIR, exist_ok=True)
     o = f"O={BUILDDIR}"
     if run(["make", o, "alpine_v2_unvr_defconfig"]) != 0:
-        log("defconfig FAILED"); return 1
+        log("defconfig FAILED")
+        return 1
     nproc = str(os.cpu_count() or 4)
     rc = run(["make", o, "-j" + nproc])
     binp = os.path.join(BUILDDIR, "u-boot.bin")
@@ -232,7 +251,9 @@ def clean():
 def check_dts_shared():
     """Fail the build if the shared i2c timing facts drift between the two DTS
     trees (docs/rtc-s35390a-fault.md). Guard until they are unified (#75)."""
-    chk = os.path.join(os.path.dirname(os.path.abspath(__file__)), "check-dts-shared.py")
+    chk = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "check-dts-shared.py"
+    )
     if subprocess.run([sys.executable, chk]).returncode:
         log("ABORT: DTS shared-fact check failed")
         sys.exit(1)

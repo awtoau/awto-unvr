@@ -15,25 +15,41 @@ Out: build-out-71-fedora/  (uImage-unvr-ea16-7.1-fedora, dtb, config, modroot/).
 Deploy modroot/lib/modules/<kv> -> the Fedora rootfs /lib/modules; boot the uImage.
 """
 
-import os, sys, struct, zlib, subprocess, shutil, pathlib, time, multiprocessing
+import multiprocessing
+import os
+import pathlib
+import shutil
+import struct
+import subprocess
+import sys
+import time
+import zlib
 
-SRC   = "/mnt/2tb/unvr-port-refs/linux-v7.1.8"
-PORT  = "/mnt/2tb/unvr-port-refs/linux-alpine-v2"
-REPO  = "/mnt/2tb/git/awto-unvr"   # OOT al_* module sources imported here (modules/)
-OUT   = "/mnt/2tb/unvr-port-refs/build-out-71-fedora"
+SRC = "/mnt/2tb/unvr-port-refs/linux-v7.1.8"
+PORT = "/mnt/2tb/unvr-port-refs/linux-alpine-v2"
+REPO = "/mnt/2tb/git/awto-unvr"  # OOT al_* module sources imported here (modules/)
+OUT = "/mnt/2tb/unvr-port-refs/build-out-71-fedora"
 FEDORA_CONFIG = "/mnt/2tb/git/awto-unvr/tmp/fedora-kernel/fedora-aarch64.config"
 DTS_NAME = "alpine-v2-ubnt-unvr-ea16"
 VER = "7.1"
 CROSS = "aarch64-linux-gnu-"
 NPROC = str(multiprocessing.cpu_count())
 
-IH_MAGIC, IH_OS_LINUX, IH_ARCH_ARM64, IH_TYPE_KERNEL, IH_COMP_NONE = \
-    0x27051956, 5, 22, 2, 0
+IH_MAGIC, IH_OS_LINUX, IH_ARCH_ARM64, IH_TYPE_KERNEL, IH_COMP_NONE = (
+    0x27051956,
+    5,
+    22,
+    2,
+    0,
+)
 LOAD_ADDR = ENTRY_ADDR = 0x08000000
 ENV = dict(os.environ, ARCH="arm64", CROSS_COMPILE=CROSS)
 
 
-def log(m): print(m, flush=True)
+def log(m):
+    print(m, flush=True)
+
+
 def run(cmd, **kw):
     log("+ " + (cmd if isinstance(cmd, str) else " ".join(cmd)))
     subprocess.run(cmd, check=True, env=ENV, **kw)
@@ -42,32 +58,68 @@ def run(cmd, **kw):
 def configure():
     shutil.copy(FEDORA_CONFIG, os.path.join(SRC, ".config"))
     cfg = os.path.join(SRC, "scripts/config")
-    run([cfg, "--file", os.path.join(SRC, ".config"),
-         # our platform + drivers (off in stock Fedora)
-         "--enable", "ARCH_ALPINE",
-         "--enable", "PCIE_AL", "--enable", "PCIE_AL_INTERNAL",
-         "--enable", "EXPERT", "--enable", "GPIO_SYSFS",
-         # no embedded initramfs -> kernel runs systemd from root=PARTUUID
-         "--set-str", "INITRAMFS_SOURCE", "",
-         # drop build-complexity we don't need: BTF (needs matching pahole),
-         # module signing (our OOT al_* are unsigned), Fedora key/cert requirements,
-         # and full debuginfo (huge/slow). None affect booting Fedora.
-         "--disable", "DEBUG_INFO_BTF", "--disable", "DEBUG_INFO_BTF_MODULES",
-         "--disable", "MODULE_SIG", "--disable", "MODULE_SIG_ALL",
-         "--disable", "MODULE_SIG_FORCE", "--disable", "SYSTEM_REVOCATION_KEYS",
-         "--disable", "SECURITY_LOCKDOWN_LSM",
-         # unrestricted /dev/mem: read/write SoC MMIO from userspace (DDR
-         # controller/PHY regs, live hardware RE). Our own box, owner directive.
-         "--enable", "DEVMEM",
-         "--disable", "STRICT_DEVMEM", "--disable", "IO_STRICT_DEVMEM",
-         # 4K-sector erase: the stock NOR config/cksum partitions are 4K-aligned
-         # (not 64K), so with 64K-only erase the kernel force-read-onlys them.
-         "--enable", "MTD_SPI_NOR_USE_4K_SECTORS",
-         "--enable", "DEBUG_INFO_NONE",
-         "--disable", "WERROR"])
+    run(
+        [
+            cfg,
+            "--file",
+            os.path.join(SRC, ".config"),
+            # our platform + drivers (off in stock Fedora)
+            "--enable",
+            "ARCH_ALPINE",
+            "--enable",
+            "PCIE_AL",
+            "--enable",
+            "PCIE_AL_INTERNAL",
+            "--enable",
+            "EXPERT",
+            "--enable",
+            "GPIO_SYSFS",
+            # no embedded initramfs -> kernel runs systemd from root=PARTUUID
+            "--set-str",
+            "INITRAMFS_SOURCE",
+            "",
+            # drop build-complexity we don't need: BTF (needs matching pahole),
+            # module signing (our OOT al_* are unsigned), Fedora key/cert requirements,
+            # and full debuginfo (huge/slow). None affect booting Fedora.
+            "--disable",
+            "DEBUG_INFO_BTF",
+            "--disable",
+            "DEBUG_INFO_BTF_MODULES",
+            "--disable",
+            "MODULE_SIG",
+            "--disable",
+            "MODULE_SIG_ALL",
+            "--disable",
+            "MODULE_SIG_FORCE",
+            "--disable",
+            "SYSTEM_REVOCATION_KEYS",
+            "--disable",
+            "SECURITY_LOCKDOWN_LSM",
+            # unrestricted /dev/mem: read/write SoC MMIO from userspace (DDR
+            # controller/PHY regs, live hardware RE). Our own box, owner directive.
+            "--enable",
+            "DEVMEM",
+            "--disable",
+            "STRICT_DEVMEM",
+            "--disable",
+            "IO_STRICT_DEVMEM",
+            # 4K-sector erase: the stock NOR config/cksum partitions are 4K-aligned
+            # (not 64K), so with 64K-only erase the kernel force-read-onlys them.
+            "--enable",
+            "MTD_SPI_NOR_USE_4K_SECTORS",
+            "--enable",
+            "DEBUG_INFO_NONE",
+            "--disable",
+            "WERROR",
+        ]
+    )
     run(["make", "-C", SRC, "olddefconfig"])
     dotcfg = pathlib.Path(os.path.join(SRC, ".config")).read_text()
-    for sym in ("CONFIG_ARCH_ALPINE=y", "CONFIG_PCIE_AL_INTERNAL=y", "CONFIG_PCIE_AL=y"):
+    for sym in (
+        "CONFIG_ARCH_ALPINE=y",
+        "CONFIG_PCIE_AL_INTERNAL=y",
+        "CONFIG_PCIE_AL=y",
+    ):
         if sym not in dotcfg:
             log(f"FATAL: {sym} not set after olddefconfig")
             sys.exit(1)
@@ -75,8 +127,11 @@ def configure():
 
 
 def kver():
-    return subprocess.check_output(["make", "-s", "-C", SRC, "kernelrelease"],
-                                   env=ENV).decode().strip()
+    return (
+        subprocess.check_output(["make", "-s", "-C", SRC, "kernelrelease"], env=ENV)
+        .decode()
+        .strip()
+    )
 
 
 def adapt_sgpo(mpath):
@@ -85,10 +140,12 @@ def adapt_sgpo(mpath):
     t = pathlib.Path(f).read_text()
     t = t.replace(
         "static void al_sgpo_set(struct gpio_chip *gc, unsigned int offset, int value)\n{",
-        "static int al_sgpo_set(struct gpio_chip *gc, unsigned int offset, int value)\n{")
+        "static int al_sgpo_set(struct gpio_chip *gc, unsigned int offset, int value)\n{",
+    )
     t = t.replace(
         "\tif (group >= sgpo->num_groups)\n\t\treturn;\n\n\tspin_lock_irqsave(&sgpo->lock, flags);\n\n\twritel(value ? (1 << bit) : 0,\n\t       al_sgpo_group_reg(sgpo, group, GRP_VEC(1 << bit)));\n\n\tspin_unlock_irqrestore(&sgpo->lock, flags);\n}",
-        "\tif (group >= sgpo->num_groups)\n\t\treturn -EINVAL;\n\n\tspin_lock_irqsave(&sgpo->lock, flags);\n\n\twritel(value ? (1 << bit) : 0,\n\t       al_sgpo_group_reg(sgpo, group, GRP_VEC(1 << bit)));\n\n\tspin_unlock_irqrestore(&sgpo->lock, flags);\n\n\treturn 0;\n}")
+        "\tif (group >= sgpo->num_groups)\n\t\treturn -EINVAL;\n\n\tspin_lock_irqsave(&sgpo->lock, flags);\n\n\twritel(value ? (1 << bit) : 0,\n\t       al_sgpo_group_reg(sgpo, group, GRP_VEC(1 << bit)));\n\n\tspin_unlock_irqrestore(&sgpo->lock, flags);\n\n\treturn 0;\n}",
+    )
     pathlib.Path(f).write_text(t)
 
 
@@ -115,7 +172,9 @@ def stage_dts():
 def check_dts_shared():
     """Fail the build if the shared i2c timing facts drift between the two DTS
     trees (docs/rtc-s35390a-fault.md). Guard until they are unified (#75)."""
-    chk = os.path.join(os.path.dirname(os.path.abspath(__file__)), "check-dts-shared.py")
+    chk = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "check-dts-shared.py"
+    )
     if subprocess.run([sys.executable, chk]).returncode:
         log("ABORT: DTS shared-fact check failed")
         sys.exit(1)
@@ -135,8 +194,16 @@ def build():
     if os.path.exists(modroot):
         shutil.rmtree(modroot)
     os.makedirs(modroot)
-    run(["make", "-C", SRC, f"INSTALL_MOD_PATH={modroot}",
-         "INSTALL_MOD_STRIP=1", "modules_install"])
+    run(
+        [
+            "make",
+            "-C",
+            SRC,
+            f"INSTALL_MOD_PATH={modroot}",
+            "INSTALL_MOD_STRIP=1",
+            "modules_install",
+        ]
+    )
 
     # out-of-tree al_* modules into the same tree
     extra = os.path.join(modroot, f"lib/modules/{kv}/extra")
@@ -150,7 +217,17 @@ def build():
         if m == "al_sgpo":
             adapt_sgpo(mpath)
         try:
-            run(["make", "-C", SRC, f"KDIR={SRC}", f"M={mpath}", f"-j{NPROC}", "modules"])
+            run(
+                [
+                    "make",
+                    "-C",
+                    SRC,
+                    f"KDIR={SRC}",
+                    f"M={mpath}",
+                    f"-j{NPROC}",
+                    "modules",
+                ]
+            )
             shutil.copy(os.path.join(mpath, f"{m}.ko"), extra)
             log(f"OOT {m}: ok")
         except subprocess.CalledProcessError as e:
@@ -162,26 +239,44 @@ def build():
     dtb = os.path.join(SRC, f"arch/arm64/boot/dts/amazon/{DTS_NAME}.dtb")
     shutil.copy(image, os.path.join(OUT, "Image"))
     shutil.copy(dtb, os.path.join(OUT, f"{DTS_NAME}-{VER}.dtb"))
-    shutil.copy(os.path.join(SRC, ".config"), os.path.join(OUT, f"unvr-ea16-{VER}-fedora.config"))
+    shutil.copy(
+        os.path.join(SRC, ".config"),
+        os.path.join(OUT, f"unvr-ea16-{VER}-fedora.config"),
+    )
     mkuimage(image, os.path.join(OUT, f"uImage-unvr-ea16-{VER}-fedora"), kv)
     log(f"DONE. modroot: {modroot} ; uImage: {OUT}/uImage-unvr-ea16-{VER}-fedora")
 
 
 def mkuimage(image_path, out_path, kv):
     data = pathlib.Path(image_path).read_bytes()
-    dcrc = zlib.crc32(data) & 0xffffffff
+    dcrc = zlib.crc32(data) & 0xFFFFFFFF
     nm = f"unvr-ea16-{VER}-fedora".encode()[:31].ljust(32, b"\0")
+
     def hdr(hc):
-        return struct.pack(">IIIIIIIBBBB32s", IH_MAGIC, hc, int(time.time()),
-                           len(data), LOAD_ADDR, ENTRY_ADDR, dcrc,
-                           IH_OS_LINUX, IH_ARCH_ARM64, IH_TYPE_KERNEL,
-                           IH_COMP_NONE, nm)
-    h = hdr(zlib.crc32(hdr(0)) & 0xffffffff)
+        return struct.pack(
+            ">IIIIIIIBBBB32s",
+            IH_MAGIC,
+            hc,
+            int(time.time()),
+            len(data),
+            LOAD_ADDR,
+            ENTRY_ADDR,
+            dcrc,
+            IH_OS_LINUX,
+            IH_ARCH_ARM64,
+            IH_TYPE_KERNEL,
+            IH_COMP_NONE,
+            nm,
+        )
+
+    h = hdr(zlib.crc32(hdr(0)) & 0xFFFFFFFF)
     pathlib.Path(out_path).write_bytes(h + data)
-    log(f"uImage: {out_path} ({len(h)+len(data)} bytes, load/entry=0x{LOAD_ADDR:08x})")
+    log(
+        f"uImage: {out_path} ({len(h) + len(data)} bytes, load/entry=0x{LOAD_ADDR:08x})"
+    )
 
 
 if __name__ == "__main__":
     t0 = time.time()
     build()
-    log(f"TOTAL {int(time.time()-t0)}s")
+    log(f"TOTAL {int(time.time() - t0)}s")

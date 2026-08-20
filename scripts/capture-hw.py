@@ -8,6 +8,7 @@ come back base64-encoded on the same channel, so there is no TFTP dependency.
 
 Output: docs/hw-reference/<RUN_ID>/  (one file per probe) + capture.log
 """
+
 from __future__ import annotations
 
 import base64
@@ -20,7 +21,7 @@ from datetime import datetime
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from _repo import REPO  # noqa: E402
+from _repo import REPO
 
 SOCK = Path("/run/user/1000/tio-unvr.sock")
 LOGS = REPO / "tmp" / "logs"
@@ -29,10 +30,10 @@ RUN_ID = datetime.now().astimezone().strftime("%Y%m%d-%H%M%S")
 OUT = REPO / "docs" / "hw-reference" / RUN_ID
 
 LOGIN_USER = "root"
-LOGIN_PASSWORDS = ["ui", "ubnt"]           # al324 = ui, older = ubnt
+LOGIN_PASSWORDS = ["ui", "ubnt"]  # al324 = ui, older = ubnt
 
 _SEQ = [0]
-_CONN: list[socket.socket] = []          # one persistent console connection
+_CONN: list[socket.socket] = []  # one persistent console connection
 
 
 def log(msg: str, level: str = "INFO") -> None:
@@ -64,7 +65,7 @@ def _drain(s: socket.socket, quiet: float = 0.3) -> None:
         try:
             if not s.recv(65536):
                 break
-        except socket.timeout:
+        except TimeoutError:
             break
 
 
@@ -83,7 +84,7 @@ def run(cmd: str, wait: float = 8.0) -> str:
     while time.monotonic() < end:
         try:
             chunk = s.recv(65536)
-        except socket.timeout:
+        except TimeoutError:
             continue
         if not chunk:
             break
@@ -96,11 +97,13 @@ def run(cmd: str, wait: float = 8.0) -> str:
     # real output begins after the SECOND occurrence.
     m_end = re.search(rf"{b}\d", got)
     if not m_end:
-        return ""                        # timed out without the end marker
-    head = got[:m_end.start()]
+        return ""  # timed out without the end marker
+    head = got[: m_end.start()]
     parts = head.split(a)
-    body = parts[-1] if len(parts) >= 2 else head   # after last START occurrence
-    return "\n".join(body.splitlines()[1:]).strip("\r\n") if "\n" in body else body.strip()
+    body = parts[-1] if len(parts) >= 2 else head  # after last START occurrence
+    return (
+        "\n".join(body.splitlines()[1:]).strip("\r\n") if "\n" in body else body.strip()
+    )
 
 
 def login() -> None:
@@ -134,7 +137,7 @@ def capture_bin(name: str, devpath: str, wait: float = 30.0) -> None:
     b64 = re.sub(r"[^A-Za-z0-9+/=]", "", out)
     try:
         blob = base64.b64decode(b64, validate=False)
-    except Exception as e:                                   # noqa: BLE001
+    except Exception as e:  # noqa: BLE001
         log(f"  {name}: base64 decode failed ({e})", "WARN")
         return
     (OUT / name).write_bytes(blob)
@@ -143,43 +146,83 @@ def capture_bin(name: str, devpath: str, wait: float = 30.0) -> None:
 
 # name -> (command, wait). Text probes.
 PROBES: list[tuple[str, str, float]] = [
-    ("uname.txt",            "uname -a", 5),
-    ("version.txt",          "cat /usr/lib/version 2>/dev/null; cat /etc/version 2>/dev/null", 5),
-    ("cmdline.txt",          "cat /proc/cmdline", 5),
-    ("cpuinfo.txt",          "cat /proc/cpuinfo", 5),
-    ("meminfo.txt",          "cat /proc/meminfo", 5),
-    ("iomem.txt",            "cat /proc/iomem", 6),
-    ("interrupts.txt",       "cat /proc/interrupts", 6),
-    ("mtd.txt",              "cat /proc/mtd", 5),
-    ("mdstat.txt",           "cat /proc/mdstat", 5),
-    ("modules.txt",          "lsmod", 6),
-    ("partitions.txt",       "cat /proc/partitions", 5),
-    ("mounts.txt",           "cat /proc/mounts", 5),
+    ("uname.txt", "uname -a", 5),
+    (
+        "version.txt",
+        "cat /usr/lib/version 2>/dev/null; cat /etc/version 2>/dev/null",
+        5,
+    ),
+    ("cmdline.txt", "cat /proc/cmdline", 5),
+    ("cpuinfo.txt", "cat /proc/cpuinfo", 5),
+    ("meminfo.txt", "cat /proc/meminfo", 5),
+    ("iomem.txt", "cat /proc/iomem", 6),
+    ("interrupts.txt", "cat /proc/interrupts", 6),
+    ("mtd.txt", "cat /proc/mtd", 5),
+    ("mdstat.txt", "cat /proc/mdstat", 5),
+    ("modules.txt", "lsmod", 6),
+    ("partitions.txt", "cat /proc/partitions", 5),
+    ("mounts.txt", "cat /proc/mounts", 5),
     # PCI: prefer lspci, fall back to raw sysfs id list.
-    ("lspci.txt",            "lspci -vnn 2>/dev/null || for d in /sys/bus/pci/devices/*; do echo $d $(cat $d/vendor) $(cat $d/device) class=$(cat $d/class); done", 10),
-    ("lsusb.txt",            "lsusb 2>/dev/null || for d in /sys/bus/usb/devices/*/idVendor; do echo $(dirname $d) $(cat $d):$(cat $(dirname $d)/idProduct); done", 8),
-    ("ip-link.txt",          "ip -d link show", 6),
-    ("ip-addr.txt",          "ip -4 addr show", 5),
-    ("net-ifaces.txt",       "ls -l /sys/class/net", 5),
-    ("ubnthal.txt",          "cat /proc/ubnthal/system.info 2>/dev/null", 6),
-    ("i2c-devices.txt",      "i2cdetect -l 2>/dev/null; echo ---; for n in /sys/bus/i2c/devices/*/name; do echo $n=$(cat $n); done", 8),
-    ("hwmon.txt",            "for h in /sys/class/hwmon/hwmon*; do echo == $h $(cat $h/name 2>/dev/null); for f in $h/temp*_input $h/in*_input $h/fan*_input; do [ -e $f ] && echo $f=$(cat $f); done; done 2>/dev/null", 8),
-    ("gpio.txt",             "cat /sys/kernel/debug/gpio 2>/dev/null || (mount -t debugfs none /sys/kernel/debug 2>/dev/null; cat /sys/kernel/debug/gpio 2>/dev/null)", 8),
-    ("thermal.txt",          "for t in /sys/class/thermal/thermal_zone*; do echo $t type=$(cat $t/type 2>/dev/null) temp=$(cat $t/temp 2>/dev/null); done", 6),
-    ("blockdev.txt",         "lsblk -o NAME,SIZE,TYPE,FSTYPE,MODEL,SERIAL 2>/dev/null || ls -l /sys/block", 8),
-    ("dt-nodes.txt",         "find /proc/device-tree -maxdepth 2 -type d | sort", 8),
-    ("dmesg.txt",            "dmesg", 20),
+    (
+        "lspci.txt",
+        "lspci -vnn 2>/dev/null || for d in /sys/bus/pci/devices/*; do echo $d $(cat $d/vendor) $(cat $d/device) class=$(cat $d/class); done",
+        10,
+    ),
+    (
+        "lsusb.txt",
+        "lsusb 2>/dev/null || for d in /sys/bus/usb/devices/*/idVendor; do echo $(dirname $d) $(cat $d):$(cat $(dirname $d)/idProduct); done",
+        8,
+    ),
+    ("ip-link.txt", "ip -d link show", 6),
+    ("ip-addr.txt", "ip -4 addr show", 5),
+    ("net-ifaces.txt", "ls -l /sys/class/net", 5),
+    ("ubnthal.txt", "cat /proc/ubnthal/system.info 2>/dev/null", 6),
+    (
+        "i2c-devices.txt",
+        "i2cdetect -l 2>/dev/null; echo ---; for n in /sys/bus/i2c/devices/*/name; do echo $n=$(cat $n); done",
+        8,
+    ),
+    (
+        "hwmon.txt",
+        "for h in /sys/class/hwmon/hwmon*; do echo == $h $(cat $h/name 2>/dev/null); for f in $h/temp*_input $h/in*_input $h/fan*_input; do [ -e $f ] && echo $f=$(cat $f); done; done 2>/dev/null",
+        8,
+    ),
+    (
+        "gpio.txt",
+        "cat /sys/kernel/debug/gpio 2>/dev/null || (mount -t debugfs none /sys/kernel/debug 2>/dev/null; cat /sys/kernel/debug/gpio 2>/dev/null)",
+        8,
+    ),
+    (
+        "thermal.txt",
+        "for t in /sys/class/thermal/thermal_zone*; do echo $t type=$(cat $t/type 2>/dev/null) temp=$(cat $t/temp 2>/dev/null); done",
+        6,
+    ),
+    (
+        "blockdev.txt",
+        "lsblk -o NAME,SIZE,TYPE,FSTYPE,MODEL,SERIAL 2>/dev/null || ls -l /sys/block",
+        8,
+    ),
+    ("dt-nodes.txt", "find /proc/device-tree -maxdepth 2 -type d | sort", 8),
+    ("dmesg.txt", "dmesg", 20),
 ]
 
 # SFP: decoded EEPROM per port that has a module. eth ports are al_eth; try both.
 SFP_PROBES = [
-    ("ethtool-eth0.txt",     "ethtool eth0 2>/dev/null; echo ---MODULE---; ethtool -m eth0 2>/dev/null", 10),
-    ("ethtool-eth1.txt",     "ethtool eth1 2>/dev/null; echo ---MODULE---; ethtool -m eth1 2>/dev/null", 10),
+    (
+        "ethtool-eth0.txt",
+        "ethtool eth0 2>/dev/null; echo ---MODULE---; ethtool -m eth0 2>/dev/null",
+        10,
+    ),
+    (
+        "ethtool-eth1.txt",
+        "ethtool eth1 2>/dev/null; echo ---MODULE---; ethtool -m eth1 2>/dev/null",
+        10,
+    ),
 ]
 
 # Binaries pulled base64 over the console.
 BINARIES = [
-    ("live.dtb",             "/sys/firmware/fdt"),
+    ("live.dtb", "/sys/firmware/fdt"),
 ]
 
 
@@ -198,13 +241,13 @@ if __name__ == "__main__":
     for name, cmd, wait in PROBES + SFP_PROBES:
         try:
             capture(name, cmd, wait=wait)
-        except Exception as e:                              # noqa: BLE001
+        except Exception as e:  # noqa: BLE001
             log(f"  {name}: FAILED ({e})", "WARN")
 
     for name, dev in BINARIES:
         try:
             capture_bin(name, dev)
-        except Exception as e:                              # noqa: BLE001
+        except Exception as e:  # noqa: BLE001
             log(f"  {name}: FAILED ({e})", "WARN")
 
     log(f"done. {len(list(OUT.iterdir()))} files in {OUT.relative_to(REPO)}")

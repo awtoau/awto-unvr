@@ -16,6 +16,7 @@ Why ${MNT_RWFS}/firmware and not ${MNT_RWFS}/upgrade:
 Applying one afterwards is then:
     cp /mnt/.rwfs/firmware/UNVR-<ver>.bin /mnt/.rwfs/upgrade/fw-image.bin && reboot
 """
+
 import argparse
 import hashlib
 import re
@@ -26,7 +27,7 @@ import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from _repo import REPO  # noqa: E402
+from _repo import REPO
 
 LOGS = REPO / "tmp" / "logs"
 LOG = LOGS / "stage-firmware.log"
@@ -35,9 +36,11 @@ TFTP_ROOT = REPO / "images" / "tftp"
 SOCK = Path("/run/user/1000/tio-unvr.sock")
 TFTP_PORT = 69
 
-API = ("https://fw-update.ubnt.com/api/firmware"
-       "?filter=eq~~platform~~UNVR&filter=eq~~channel~~release"
-       "&sort=created&limit=200")
+API = (
+    "https://fw-update.ubnt.com/api/firmware"
+    "?filter=eq~~platform~~UNVR&filter=eq~~channel~~release"
+    "&sort=created&limit=200"
+)
 
 LADDER = ["1.4.9", "2.3.14", "3.1.16", "4.1.22", "5.1.25"]
 
@@ -74,7 +77,7 @@ def console(cmd: str, wait: float = 5.0) -> str:
         while time.monotonic() < end:
             try:
                 chunk = s.recv(65536)
-            except socket.timeout:
+            except TimeoutError:
                 continue
             if not chunk:
                 break
@@ -97,6 +100,7 @@ def sha256(p: Path) -> str:
 def api_rows() -> list[dict]:
     import json
     import urllib.request
+
     with urllib.request.urlopen(API, timeout=60) as r:
         return json.load(r)["_embedded"]["firmware"]
 
@@ -131,12 +135,17 @@ def fetch(row: dict, ver: str) -> Path:
 
 def host_ip() -> tuple[str, str]:
     out = console("ip -4 addr show", wait=5.0)
-    cands = [ip for ip in re.findall(r"inet (\d+\.\d+\.\d+\.\d+)/", out)
-             if not ip.startswith(("127.", "169.254."))]
+    cands = [
+        ip
+        for ip in re.findall(r"inet (\d+\.\d+\.\d+\.\d+)/", out)
+        if not ip.startswith(("127.", "169.254."))
+    ]
     if not cands:
         sys.exit(f"no routable IPv4 on the device:\n{out}")
     dev = cands[0]
-    p = subprocess.run(["ip", "-o", "route", "get", dev], capture_output=True, text=True)
+    p = subprocess.run(
+        ["ip", "-o", "route", "get", dev], capture_output=True, text=True
+    )
     m = re.search(r"\bsrc (\d+\.\d+\.\d+\.\d+)", p.stdout)
     if not m:
         sys.exit(f"no route to {dev}")
@@ -144,19 +153,31 @@ def host_ip() -> tuple[str, str]:
 
 
 def ensure_tftpd():
-    r = subprocess.run(["ss", "-lun", "sport = :%d" % TFTP_PORT],
-                       capture_output=True, text=True)
+    r = subprocess.run(
+        ["ss", "-lun", "sport = :%d" % TFTP_PORT], capture_output=True, text=True
+    )
     if "UNCONN" in r.stdout:
         return
     log("  starting tftpd")
     TFTP_ROOT.mkdir(parents=True, exist_ok=True)
-    subprocess.Popen([sys.executable, str(REPO / "scripts" / "tftpd.py"),
-                      "--root", "images/tftp", "--port", str(TFTP_PORT)],
-                     cwd=REPO, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-                     start_new_session=True)
+    subprocess.Popen(
+        [
+            sys.executable,
+            str(REPO / "scripts" / "tftpd.py"),
+            "--root",
+            "images/tftp",
+            "--port",
+            str(TFTP_PORT),
+        ],
+        cwd=REPO,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        start_new_session=True,
+    )
     for _ in range(40):
-        r = subprocess.run(["ss", "-lun", "sport = :%d" % TFTP_PORT],
-                           capture_output=True, text=True)
+        r = subprocess.run(
+            ["ss", "-lun", "sport = :%d" % TFTP_PORT], capture_output=True, text=True
+        )
         if "UNCONN" in r.stdout:
             return
         time.sleep(0.05)
@@ -177,8 +198,10 @@ def push(src: Path, ver: str, host: str) -> bool:
 
     log(f"  {ver}: pushing {src.stat().st_size} B (limit {PUSH_LIMIT:.0f}s)")
     console(f"mkdir -p {STAGE_DIR}", wait=15.0)
-    console(f"cd {STAGE_DIR} && tftp -g -r {name} -l {STAGE_DIR}/{name} {host}",
-            wait=PUSH_LIMIT)
+    console(
+        f"cd {STAGE_DIR} && tftp -g -r {name} -l {STAGE_DIR}/{name} {host}",
+        wait=PUSH_LIMIT,
+    )
     out = console(f"md5sum {STAGE_DIR}/{name}", wait=180.0)
     if want_md5 not in out:
         log(f"  {ver}: MD5 MISMATCH after push", "ERROR")
@@ -188,10 +211,14 @@ def push(src: Path, ver: str, host: str) -> bool:
 
 
 if __name__ == "__main__":
-    ap = argparse.ArgumentParser(description=__doc__,
-                                 formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--download-only", action="store_true",
-                    help="fetch to sources/ but do not touch the device")
+    ap = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+    ap.add_argument(
+        "--download-only",
+        action="store_true",
+        help="fetch to sources/ but do not touch the device",
+    )
     ap.add_argument("--only", help="comma list of versions, default the whole ladder")
     a = ap.parse_args()
 
@@ -214,7 +241,7 @@ if __name__ == "__main__":
     host, dev = host_ip()
     log(f"device {dev}, host {host}")
 
-    free = console(f"df -h /mnt/.rwfs | tail -1", wait=15.0)
+    free = console("df -h /mnt/.rwfs | tail -1", wait=15.0)
     log(f"  userdev: {' '.join(free.split()[-6:-1])}")
 
     ok = True
@@ -222,6 +249,7 @@ if __name__ == "__main__":
         if not push(p, ver, host):
             ok = False
     log(f"staged into {STAGE_DIR} on the USERDEV")
-    log("apply one with: cp {0}/UNVR-<ver>.bin /mnt/.rwfs/upgrade/fw-image.bin; reboot"
-        .format(STAGE_DIR))
+    log(
+        f"apply one with: cp {STAGE_DIR}/UNVR-<ver>.bin /mnt/.rwfs/upgrade/fw-image.bin; reboot"
+    )
     sys.exit(0 if ok else 1)

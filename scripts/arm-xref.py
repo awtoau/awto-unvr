@@ -5,6 +5,7 @@ objdump -b binary does not annotate `ldr rX,[pc,#imm]` pools. This finds each
 pool word equal to a target VA, then the `ldr` that loads it, and prints a
 disasm window. Base VA and target list on the command line.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -15,7 +16,8 @@ import sys
 from pathlib import Path
 
 LDR_PC = re.compile(
-    r"^\s*([0-9a-f]+):\s+[0-9a-f]{8}\s+ldr\s+(\w+),\s*\[pc,\s*#(-?\d+)\]")
+    r"^\s*([0-9a-f]+):\s+[0-9a-f]{8}\s+ldr\s+(\w+),\s*\[pc,\s*#(-?\d+)\]"
+)
 MOVW = re.compile(r"^\s*([0-9a-f]+):\s+[0-9a-f]{8}\s+movw\s+(\w+),\s*#(\d+)")
 MOVT = re.compile(r"^\s*([0-9a-f]+):\s+[0-9a-f]{8}\s+movt\s+(\w+),\s*#(\d+)")
 
@@ -31,9 +33,21 @@ def main() -> int:
     b = a.binary.read_bytes()
     base = a.base
     dis = subprocess.run(
-        ["arm-linux-gnu-objdump", "-D", "-b", "binary", "-m", "arm", "-EL",
-         f"--adjust-vma=0x{base:x}", str(a.binary)],
-        capture_output=True, text=True, check=True).stdout.splitlines()
+        [
+            "arm-linux-gnu-objdump",
+            "-D",
+            "-b",
+            "binary",
+            "-m",
+            "arm",
+            "-EL",
+            f"--adjust-vma=0x{base:x}",
+            str(a.binary),
+        ],
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout.splitlines()
 
     tgts = {int(t, 0) for t in a.targets}
     low = {t & 0xFFFF: t for t in tgts}
@@ -59,14 +73,13 @@ def main() -> int:
                     if mt and mt.group(2) == reg:
                         val = (int(mt.group(3)) << 16) | lo16
                         if val in tgts:
-                            _emit(dis, i, a.window,
-                                  f"movw/movt {reg}<-0x{val:08x}")
+                            _emit(dis, i, a.window, f"movw/movt {reg}<-0x{val:08x}")
                         break
 
 
 def _emit(dis, i, window, label):
     print(f"\n=== {label} ===")
-    for l in dis[max(0, i - window):i + window]:
+    for l in dis[max(0, i - window) : i + window]:
         print(l)
     return 0
 

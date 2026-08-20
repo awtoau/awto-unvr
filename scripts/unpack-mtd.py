@@ -28,7 +28,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from _repo import IMAGES, LOGS, rel  # noqa: E402
+from _repo import IMAGES, LOGS, rel
 
 MTD_ROOT = IMAGES / "mtd"
 
@@ -53,22 +53,33 @@ def unpack_ext4(img: Path, dest: Path) -> bool:
     mnt.mkdir(parents=True, exist_ok=True)
     # ro,noload: the image says "needs journal recovery" and a normal mount would
     # replay the journal, writing to the dump we are trying to preserve.
-    r = subprocess.run(["sudo", "-n", "mount", "-o", "ro,noload,loop",
-                        str(img), str(mnt)], capture_output=True, text=True)
+    r = subprocess.run(
+        ["sudo", "-n", "mount", "-o", "ro,noload,loop", str(img), str(mnt)],
+        capture_output=True,
+        text=True,
+    )
     if r.returncode != 0:
         log(f"  mount failed: {r.stderr.strip()}", "ERROR")
         mnt.rmdir()
         return False
     try:
-        r = subprocess.run(["sudo", "-n", "cp", "-a", f"{mnt}/.", str(dest)],
-                           capture_output=True, text=True)
+        r = subprocess.run(
+            ["sudo", "-n", "cp", "-a", f"{mnt}/.", str(dest)],
+            capture_output=True,
+            text=True,
+        )
         if r.returncode != 0:
             log(f"  copy failed: {r.stderr.strip()}", "ERROR")
             return False
-        subprocess.run(["sudo", "-n", "chown", "-R", f"{os_uid()}:{os_gid()}", str(dest)],
-                       capture_output=True, text=True)
+        subprocess.run(
+            ["sudo", "-n", "chown", "-R", f"{os_uid()}:{os_gid()}", str(dest)],
+            capture_output=True,
+            text=True,
+        )
     finally:
-        subprocess.run(["sudo", "-n", "umount", str(mnt)], capture_output=True, text=True)
+        subprocess.run(
+            ["sudo", "-n", "umount", str(mnt)], capture_output=True, text=True
+        )
         mnt.rmdir()
     n = sum(1 for _ in dest.rglob("*"))
     log(f"  extracted {n} entries -> {rel(dest)}")
@@ -77,19 +88,22 @@ def unpack_ext4(img: Path, dest: Path) -> bool:
 
 def os_uid() -> int:
     import os
+
     return os.getuid()
 
 
 def os_gid() -> int:
     import os
+
     return os.getgid()
 
 
 def unpack_squashfs(img: Path, dest: Path) -> bool:
     if dest.exists():
         shutil.rmtree(dest)
-    r = subprocess.run(["unsquashfs", "-d", str(dest), str(img)],
-                       capture_output=True, text=True)
+    r = subprocess.run(
+        ["unsquashfs", "-d", str(dest), str(img)], capture_output=True, text=True
+    )
     if r.returncode != 0:
         log(f"  unsquashfs failed: {r.stderr.strip()[:200]}", "ERROR")
         return False
@@ -109,15 +123,19 @@ def unpack_image(img: Path, dest: Path, kind: str) -> bool:
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description=__doc__,
-                                 formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     ap.add_argument("--set", help="dump-set directory name under images/mtd/")
     a = ap.parse_args()
 
     if not MTD_ROOT.is_dir():
         sys.exit(f"no dumps at {rel(MTD_ROOT)}")
-    sets = sorted([d for d in MTD_ROOT.iterdir() if d.is_dir()],
-                  key=lambda d: d.name, reverse=True)
+    sets = sorted(
+        [d for d in MTD_ROOT.iterdir() if d.is_dir()],
+        key=lambda d: d.name,
+        reverse=True,
+    )
     if not sets:
         sys.exit(f"no dump sets under {rel(MTD_ROOT)}")
     if a.set:
@@ -126,7 +144,7 @@ def main() -> int:
             sys.exit(f"no such set: {a.set}")
         targets = chosen
     else:
-        targets = sets      # unpack every set; they are per-run and disjoint
+        targets = sets  # unpack every set; they are per-run and disjoint
 
     for s in targets:
         imgs = sorted(s.glob("*.img"))

@@ -17,7 +17,6 @@ import argparse
 import socket
 import struct
 import subprocess
-import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -35,9 +34,17 @@ COLLECT = 3
 
 # TLV field types from Ubiquiti's discovery protocol.
 FIELDS = {
-    0x01: "mac", 0x02: "mac_ip", 0x03: "firmware", 0x0A: "uptime",
-    0x0B: "hostname", 0x0C: "platform", 0x0D: "essid", 0x0E: "wmode",
-    0x14: "model", 0x15: "model_short", 0x16: "version",
+    0x01: "mac",
+    0x02: "mac_ip",
+    0x03: "firmware",
+    0x0A: "uptime",
+    0x0B: "hostname",
+    0x0C: "platform",
+    0x0D: "essid",
+    0x0E: "wmode",
+    0x14: "model",
+    0x15: "model_short",
+    0x16: "version",
 }
 
 
@@ -54,8 +61,8 @@ def parse_tlv(payload):
     out, i = {}, 4  # skip 4-byte header
     while i + 3 <= len(payload):
         ftype = payload[i]
-        flen = struct.unpack(">H", payload[i + 1:i + 3])[0]
-        val = payload[i + 3:i + 3 + flen]
+        flen = struct.unpack(">H", payload[i + 1 : i + 3])[0]
+        val = payload[i + 3 : i + 3 + flen]
         name = FIELDS.get(ftype, f"0x{ftype:02x}")
         if name == "mac" and flen == 6:
             out["mac"] = ":".join(f"{b:02x}" for b in val)
@@ -76,8 +83,9 @@ def parse_tlv(payload):
 def broadcast_addrs():
     addrs = ["255.255.255.255"]
     try:
-        p = subprocess.run(["ip", "-4", "-brief", "addr", "show"],
-                           capture_output=True, text=True)
+        p = subprocess.run(
+            ["ip", "-4", "-brief", "addr", "show"], capture_output=True, text=True
+        )
         for line in p.stdout.splitlines():
             for tok in line.split():
                 if "/" in tok and not tok.startswith("127."):
@@ -106,12 +114,13 @@ def discover():
                 log(f"send to {bcast} failed: {e}")
     found = {}
     import time
+
     deadline = time.monotonic() + COLLECT
     while time.monotonic() < deadline:
         try:
             s.settimeout(max(0.1, deadline - time.monotonic()))
             data, addr = s.recvfrom(4096)
-        except socket.timeout:
+        except TimeoutError:
             break
         except OSError:
             break
@@ -124,21 +133,30 @@ def discover():
     if not found:
         log("no Ubiquiti devices answered")
     for ip, i in sorted(found.items()):
-        log(f"  {ip:16s} mac={i.get('mac','?')} model={i.get('model') or i.get('platform','?')} "
-            f"fw={i.get('firmware','?')} host={i.get('hostname','?')}")
+        log(
+            f"  {ip:16s} mac={i.get('mac', '?')} model={i.get('model') or i.get('platform', '?')} "
+            f"fw={i.get('firmware', '?')} host={i.get('hostname', '?')}"
+        )
     return found
 
 
 def mdns():
     log("=== mDNS (avahi-browse) ===")
     try:
-        p = subprocess.run(["avahi-browse", "-a", "-t", "-r", "-p"],
-                           capture_output=True, text=True, timeout=15)
+        p = subprocess.run(
+            ["avahi-browse", "-a", "-t", "-r", "-p"],
+            capture_output=True,
+            text=True,
+            timeout=15,
+        )
     except Exception as e:
         log(f"avahi-browse unavailable: {e}")
         return
-    hits = [l for l in p.stdout.splitlines()
-            if any(k in l.lower() for k in ("unifi", "ubnt", "ubiquiti", "unvr", "protect"))]
+    hits = [
+        l
+        for l in p.stdout.splitlines()
+        if any(k in l.lower() for k in ("unifi", "ubnt", "ubiquiti", "unvr", "protect"))
+    ]
     if not hits:
         log("no UniFi-looking mDNS records")
     for h in hits[:20]:
@@ -150,7 +168,10 @@ def sweep(subnet):
     try:
         p = subprocess.run(
             ["nmap", "-n", "-Pn", "-p", "443,22", "--open", "-oG", "-", subnet],
-            capture_output=True, text=True, timeout=600)
+            capture_output=True,
+            text=True,
+            timeout=600,
+        )
     except Exception as e:
         log(f"nmap failed: {e}")
         return
@@ -160,9 +181,13 @@ def sweep(subnet):
 
 
 if __name__ == "__main__":
-    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     ap.add_argument("--subnet", default=None, help="CIDR for the TCP sweep")
-    ap.add_argument("--sweep", action="store_true", help="also run the nmap sweep (slower)")
+    ap.add_argument(
+        "--sweep", action="store_true", help="also run the nmap sweep (slower)"
+    )
     a = ap.parse_args()
 
     log("--- find-unvr ---")
@@ -171,8 +196,9 @@ if __name__ == "__main__":
     if a.sweep or a.subnet:
         sub = a.subnet
         if not sub:
-            p = subprocess.run(["ip", "-4", "-brief", "addr", "show"],
-                               capture_output=True, text=True)
+            p = subprocess.run(
+                ["ip", "-4", "-brief", "addr", "show"], capture_output=True, text=True
+            )
             for line in p.stdout.splitlines():
                 for tok in line.split():
                     if tok.endswith("/24") and not tok.startswith("127."):

@@ -28,9 +28,22 @@ PROBE_TIMEOUT_S = 2.0
 
 # Ubiquiti Networks OUIs (subset covering current gear; extend as needed).
 UBNT_OUIS = {
-    "00:15:6d", "00:27:22", "04:18:d6", "18:e8:29", "24:5a:4c", "44:d9:e7",
-    "68:72:51", "74:83:c2", "74:ac:b9", "78:8a:20", "80:2a:a8", "b4:fb:e4",
-    "dc:9f:db", "e0:63:da", "f0:9f:c2", "fc:ec:da",
+    "00:15:6d",
+    "00:27:22",
+    "04:18:d6",
+    "18:e8:29",
+    "24:5a:4c",
+    "44:d9:e7",
+    "68:72:51",
+    "74:83:c2",
+    "74:ac:b9",
+    "78:8a:20",
+    "80:2a:a8",
+    "b4:fb:e4",
+    "dc:9f:db",
+    "e0:63:da",
+    "f0:9f:c2",
+    "fc:ec:da",
 }
 
 log = logging.getLogger("find-woomera")
@@ -38,14 +51,19 @@ log = logging.getLogger("find-woomera")
 
 def ping(ip: str) -> bool:
     """Populate the ARP cache so the MAC lookup below has something to read."""
-    return subprocess.run(
-        ["ping", "-c", "1", "-W", str(int(PROBE_TIMEOUT_S)), ip],
-        capture_output=True,
-    ).returncode == 0
+    return (
+        subprocess.run(
+            ["ping", "-c", "1", "-W", str(int(PROBE_TIMEOUT_S)), ip],
+            capture_output=True,
+        ).returncode
+        == 0
+    )
 
 
 def mac_of(ip: str) -> str | None:
-    out = subprocess.run(["ip", "neigh", "show", ip], capture_output=True, text=True).stdout
+    out = subprocess.run(
+        ["ip", "neigh", "show", ip], capture_output=True, text=True
+    ).stdout
     m = re.search(r"lladdr ([0-9a-f:]{17})", out)
     return m.group(1).lower() if m else None
 
@@ -93,8 +111,13 @@ def main() -> int:
         is_ubnt = bool(mac) and mac[:8] in UBNT_OUIS
         if is_ubnt:
             ubnt.append(ip)
-        log.info("  %-15s %-17s %-28s%s", ip, mac or "-", ban or "(no ssh)",
-                 "  <-- Ubiquiti" if is_ubnt else "")
+        log.info(
+            "  %-15s %-17s %-28s%s",
+            ip,
+            mac or "-",
+            ban or "(no ssh)",
+            "  <-- Ubiquiti" if is_ubnt else "",
+        )
 
     log.info("%d host(s) up", len(live))
     if ubnt:

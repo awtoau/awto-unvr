@@ -22,6 +22,7 @@ container[0x21000 : 0x21000+0x6a6b4] (435,892 B, VA base 0x01000000) — see
 docs/preboot-decompile.md §Targets. The durable result is the curated map in that
 doc's "Function name map" section, not this tmp log.
 """
+
 import re
 import sys
 from collections import Counter
@@ -89,12 +90,12 @@ def main() -> int:
 
     LOG.parent.mkdir(parents=True, exist_ok=True)
     with LOG.open("w") as f:
-        f.write(f"scanned {len(defs)-1} function defs in {SRC}\n")
+        f.write(f"scanned {len(defs) - 1} function defs in {SRC}\n")
         f.write(f"named {len(out)} via full __func__ strings (from {BIN})\n\n")
         for va, name, hits, names in sorted(out):
             f.write(f"FUN_{va}\t{name}\t{hits}\t{names}\n")
 
-    print(f"# named {len(out)} of {len(defs)-1} functions via full __func__")
+    print(f"# named {len(out)} of {len(defs) - 1} functions via full __func__")
     for va, name, hits, _ in sorted(out):
         print(f"0x{va}\t{name}\t{hits}")
     return 0

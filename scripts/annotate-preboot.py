@@ -19,8 +19,12 @@ raw export). Static only.
 Usage:
   annotate-preboot.py <export_dir> <payload.bin> <base_hex> [--names curated.tsv]
 """
+
 from __future__ import annotations
-import argparse, re, sys
+
+import argparse
+import re
+import sys
 from collections import Counter
 from pathlib import Path
 
@@ -37,7 +41,7 @@ def read_cstr(data: bytes, base: int, va: int, maxlen: int = 96) -> str:
     off = va - base
     if off < 0 or off >= len(data):
         return ""
-    chunk = data[off:off + maxlen]
+    chunk = data[off : off + maxlen]
     end = chunk.find(b"\x00")
     if end != -1:
         chunk = chunk[:end]
@@ -59,7 +63,7 @@ def auto_names(cpath: Path, data: bytes, base: int) -> dict[str, str]:
     out = {}
     for k in range(len(defs) - 1):
         start, va = defs[k]
-        body = "\n".join(lines[start:defs[k + 1][0]])
+        body = "\n".join(lines[start : defs[k + 1][0]])
         names = Counter()
         for shex in FUNC_STR.findall(body):
             s = read_cstr(data, base, int(shex, 16))
@@ -73,7 +77,7 @@ def auto_names(cpath: Path, data: bytes, base: int) -> dict[str, str]:
 def word_le(data: bytes, base: int, va: int):
     off = va - base
     if 0 <= off <= len(data) - 4:
-        return int.from_bytes(data[off:off + 4], "little")
+        return int.from_bytes(data[off : off + 4], "little")
     return None
 
 
@@ -83,14 +87,18 @@ def main() -> int:
     ap.add_argument("payload", type=Path)
     ap.add_argument("base", type=lambda s: int(s, 0))
     ap.add_argument("--names", type=Path, default=None, help="curated VA<TAB>name TSV")
-    ap.add_argument("--dump-sym", type=Path, default=None,
-                    help="also write the merged name map as name<TAB>0xADDR .sym")
+    ap.add_argument(
+        "--dump-sym",
+        type=Path,
+        default=None,
+        help="also write the merged name map as name<TAB>0xADDR .sym",
+    )
     a = ap.parse_args()
     data = a.payload.read_bytes()
     cpath = a.export_dir / "decompiled.c"
     apath = a.export_dir / "disassembly.asm"
 
-    names = auto_names(cpath, data, a.base)   # va(8hex)->name
+    names = auto_names(cpath, data, a.base)  # va(8hex)->name
     n_auto = len(names)
     if a.names and a.names.exists():
         for ln in a.names.read_text().splitlines():
@@ -115,8 +123,10 @@ def main() -> int:
         if m:
             va = m.group(2).zfill(8)
             nm = name_of(va)
-            out_asm.append(f"; ==== {nm or m.group(1)} @ {m.group(2)} ====" +
-                           (f"   [{m.group(1)}]" if nm else ""))
+            out_asm.append(
+                f"; ==== {nm or m.group(1)} @ {m.group(2)} ===="
+                + (f"   [{m.group(1)}]" if nm else "")
+            )
             continue
         comment = []
         cm = CALL.search(ln)
@@ -136,9 +146,11 @@ def main() -> int:
 
     # --- rewrite decompiled C: FUN_<va>( -> <name>( ---
     ctext = cpath.read_text(errors="replace")
+
     def repl(m):
         nm = name_of(m.group(1))
         return (nm + "(") if nm else m.group(0)
+
     ctext = re.sub(r"\bFUN_([0-9a-f]{6,8})\s*\(", repl, ctext)
     (a.export_dir / "decompiled_named.c").write_text(ctext)
 
@@ -148,8 +160,10 @@ def main() -> int:
             for va in sorted(names):
                 f.write(f"{names[va]}\t0x{va}\n")
 
-    print(f"named {len(names)} functions ({n_auto} auto __func__, "
-          f"{len(names)-n_auto} curated); wrote *_named.{{asm,c}} to {a.export_dir}")
+    print(
+        f"named {len(names)} functions ({n_auto} auto __func__, "
+        f"{len(names) - n_auto} curated); wrote *_named.{{asm,c}} to {a.export_dir}"
+    )
     return 0
 
 

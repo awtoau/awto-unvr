@@ -10,13 +10,18 @@ untouched). It does NOT reset — verify the standalone boot separately.
 
 SAFETY: if `scsi init` finds no disk, it aborts WITHOUT saveenv (env untouched).
 """
+
 from __future__ import annotations
-import os, socket, sys, time
+
+import os
+import socket
+import sys
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from _repo import LOGS  # noqa: E402
+from _repo import LOGS
 
 SOCK = Path(os.environ.get("XDG_RUNTIME_DIR", "/tmp")) / "tio-unvr.sock"
 PROMPT = b"ALPINE_UBNT_NAS_ALL>"
@@ -26,14 +31,20 @@ PARTUUID = "dcdc291e-9956-48cd-9d7c-48219877881a"
 KERNEL = "/boot/uImage-unvr-ea16-7.1-fedora-gz"
 DTB = "/boot/alpine-v2-ubnt-unvr-ea16-7.1-fedora.dtb"
 KADDR, DTADDR = "0x02000000", "0x04078000"
-BOOTARGS = (f"console=ttyS0,115200 root=PARTUUID={PARTUUID} rootfstype=ext4 "
-            f"rw rootwait selinux=0 panic=15 reboot=cold")
-BOOTCMD = (f"scsi init; ext4load scsi 0:2 {KADDR} {KERNEL}; "
-           f"ext4load scsi 0:2 {DTADDR} {DTB}; bootm {KADDR} - {DTADDR}")
+BOOTARGS = (
+    f"console=ttyS0,115200 root=PARTUUID={PARTUUID} rootfstype=ext4 "
+    f"rw rootwait selinux=0 panic=15 reboot=cold"
+)
+BOOTCMD = (
+    f"scsi init; ext4load scsi 0:2 {KADDR} {KERNEL}; "
+    f"ext4load scsi 0:2 {DTADDR} {DTB}; bootm {KADDR} - {DTADDR}"
+)
 
 
 def log(m):
-    line = f"{datetime.now(timezone.utc).astimezone().isoformat(timespec='seconds')}  {m}"
+    line = (
+        f"{datetime.now(timezone.utc).astimezone().isoformat(timespec='seconds')}  {m}"
+    )
     print(line, flush=True)
     LOGS.mkdir(parents=True, exist_ok=True)
     (LOGS / "persist-boot.log").open("a").write(line + "\n")
@@ -49,7 +60,7 @@ def read_until(s, needle, limit_s, capture=False):
     while time.monotonic() < end:
         try:
             chunk = s.recv(4096)
-        except socket.timeout:
+        except TimeoutError:
             continue
         if not chunk:
             break
@@ -68,27 +79,41 @@ def main():
 
     # catch U-Boot
     catch_s = float(os.environ.get("CATCH_S", "1800"))
-    log(f"streaming ESC — REBOOT/POWER-CYCLE woomera now (waiting up to {catch_s:.0f}s)")
-    buf = b""; last = 0.0; end = time.monotonic() + catch_s
+    log(
+        f"streaming ESC — REBOOT/POWER-CYCLE woomera now (waiting up to {catch_s:.0f}s)"
+    )
+    buf = b""
+    last = 0.0
+    end = time.monotonic() + catch_s
     caught = False
     while time.monotonic() < end:
         now = time.monotonic()
         if now - last >= ESC_INTERVAL:
-            try: s.sendall(b"\x1b")
-            except socket.timeout: pass   # transient; keep streaming
-            except OSError as e: log(f"ESC send failed: {e}"); return 1
+            try:
+                s.sendall(b"\x1b")
+            except TimeoutError:
+                pass  # transient; keep streaming
+            except OSError as e:
+                log(f"ESC send failed: {e}")
+                return 1
             last = now
-        try: chunk = s.recv(4096)
-        except socket.timeout: continue
-        if not chunk: break
+        try:
+            chunk = s.recv(4096)
+        except TimeoutError:
+            continue
+        if not chunk:
+            break
         buf = (buf + chunk)[-16384:]
         if PROMPT in buf:
-            caught = True; break
+            caught = True
+            break
     if not caught:
-        log("did not reach U-Boot prompt"); return 1
+        log("did not reach U-Boot prompt")
+        return 1
     log("U-Boot prompt reached")
 
-    send(s, "version"); read_until(s, PROMPT, 3)
+    send(s, "version")
+    read_until(s, PROMPT, 3)
     # record original bootcmd for recovery
     send(s, "printenv bootcmd")
     orig = read_until(s, PROMPT, 5, capture=True)
@@ -100,10 +125,12 @@ def main():
     # A real detection prints "Device N: ... (Samsung/WDC...)"; "Init SCSI" contains
     # the substring "SCSI" so do NOT match on that. Abort on an explicit 0 count or
     # no real device line.
-    if ("Found 0 device" in scsi
-            or not any(k in scsi for k in ("Device 0:", "Device 1:", "Samsung", "WDC"))):
+    if "Found 0 device" in scsi or not any(
+        k in scsi for k in ("Device 0:", "Device 1:", "Samsung", "WDC")
+    ):
         log("ABORT: scsi init found no disk (links timed out) — env left UNTOUCHED.")
-        s.close(); return 2
+        s.close()
+        return 2
 
     # set + save the standalone boot config
     send(s, f"setenv bootargs '{BOOTARGS}'")

@@ -29,8 +29,8 @@ import subprocess
 import sys
 from pathlib import Path
 
-SPIN_MODEL_HINT = "WD8"          # WD82PURZ etc.; spinning 8 TB WD Purple
-SIZE_MIN_BYTES = 6_000_000_000_000   # >6 TB => the 8 TB platters, not the SSD/USB
+SPIN_MODEL_HINT = "WD8"  # WD82PURZ etc.; spinning 8 TB WD Purple
+SIZE_MIN_BYTES = 6_000_000_000_000  # >6 TB => the 8 TB platters, not the SSD/USB
 
 
 def sh(*cmd: str) -> subprocess.CompletedProcess:
@@ -82,8 +82,10 @@ def smart_report(dev: str) -> dict:
     except (json.JSONDecodeError, ValueError):
         return {"device": dev, "error": "smartctl parse failed", "raw": r.stdout[:200]}
     passed = j.get("smart_status", {}).get("passed")
-    attrs = {a["name"]: a["raw"]["value"]
-             for a in j.get("ata_smart_attributes", {}).get("table", [])}
+    attrs = {
+        a["name"]: a["raw"]["value"]
+        for a in j.get("ata_smart_attributes", {}).get("table", [])
+    }
     temp = j.get("temperature", {}).get("current")
     return {
         "device": dev,
@@ -99,8 +101,9 @@ def smart_report(dev: str) -> dict:
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description=__doc__,
-                                 formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     g = ap.add_mutually_exclusive_group()
     g.add_argument("--check", action="store_true", help="SMART report only")
     g.add_argument("--keep-up", action="store_true", help="check, never spin down")
@@ -124,16 +127,20 @@ def main() -> int:
         if rep.get("health") == "FAILED":
             fail = True
         badge = "  <-- ATTENTION" if (rep.get("health") == "FAILED" or flags) else ""
-        print(f"  {dev}  {rep.get('model','?')}  health={rep.get('health','?')}  "
-              f"temp={rep.get('temp_c','?')}C  poh={rep.get('power_on_hours','?')}"
-              f"{('  ' + ' '.join(flags)) if flags else ''}{badge}")
+        print(
+            f"  {dev}  {rep.get('model', '?')}  health={rep.get('health', '?')}  "
+            f"temp={rep.get('temp_c', '?')}C  poh={rep.get('power_on_hours', '?')}"
+            f"{('  ' + ' '.join(flags)) if flags else ''}{badge}"
+        )
         if rep.get("error"):
             print(f"      {rep['error']}")
 
     if a.selftest:
         for dev in disks:
             r = sh("smartctl", "-t", "short", dev)
-            print(f"  self-test started on {dev}: {'ok' if r.returncode == 0 else r.stderr.strip()}")
+            print(
+                f"  self-test started on {dev}: {'ok' if r.returncode == 0 else r.stderr.strip()}"
+            )
         print("  (results in ~2 min: smartctl -l selftest <dev>)")
         return 1 if fail else 0
 
@@ -146,9 +153,12 @@ def main() -> int:
         if reason:
             print(f"  {dev}: in use ({reason}) - left spinning")
             continue
-        r = sh("hdparm", "-Y", dev)   # -Y = immediate standby (spin down)
-        print(f"  {dev}: spun down" if r.returncode == 0
-              else f"  {dev}: spindown failed: {r.stderr.strip()}")
+        r = sh("hdparm", "-Y", dev)  # -Y = immediate standby (spin down)
+        print(
+            f"  {dev}: spun down"
+            if r.returncode == 0
+            else f"  {dev}: spindown failed: {r.stderr.strip()}"
+        )
     return 1 if fail else 0
 
 

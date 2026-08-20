@@ -16,20 +16,25 @@ Durations/sizes (all have a reason — this is timing/throughput measurement):
   --stress-secs  60  : a 60 s smoke. Real stability/overclock validation wants
                        many minutes to hours — raise it then.
 """
+
 from __future__ import annotations
-import argparse, sys
+
+import argparse
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-import _console as con  # noqa: E402
-from _repo import LOGS  # noqa: E402
+import _console as con
+from _repo import LOGS
 
 LOG = LOGS / "mem-stress-woomera.log"
 
 
 def log(m):
-    line = f"{datetime.now(timezone.utc).astimezone().isoformat(timespec='seconds')}  {m}"
+    line = (
+        f"{datetime.now(timezone.utc).astimezone().isoformat(timespec='seconds')}  {m}"
+    )
     print(line, flush=True)
     LOGS.mkdir(parents=True, exist_ok=True)
     LOG.open("a").write(line + "\n")
@@ -47,13 +52,17 @@ def main():
     log("shell ready")
 
     if not a.skip_install:
-        rc, have = con.sh(s, "command -v memtester stress-ng >/dev/null && echo yes || echo no")
+        rc, have = con.sh(
+            s, "command -v memtester stress-ng >/dev/null && echo yes || echo no"
+        )
         if "yes" not in have:
             log("installing memtester + stress-ng (dnf, up to ~4 min)")
             con.sh(s, "dnf -y -q install memtester stress-ng 2>&1 | tail -3", 300)
 
     # nproc + free for context
-    _, ctx = con.sh(s, "nproc; free -m | awk '/Mem:/{print \"MemFree(MB): \"$4\"  MemAvail: \"$7}'")
+    _, ctx = con.sh(
+        s, 'nproc; free -m | awk \'/Mem:/{print "MemFree(MB): "$4"  MemAvail: "$7}\''
+    )
     log("context:\n" + ctx)
 
     # memtester: 1 pass over the region. Timeout scaled to size (~a few s/MB worst case).
@@ -66,15 +75,20 @@ def main():
     # stress-ng: cpu + vm + cache for the smoke window, with metrics.
     # --cpu 0 = one CPU stressor per online core.
     log(f"stress-ng cpu+vm+cache for {a.stress_secs}s...")
-    cmd = (f"stress-ng --cpu 0 --vm 2 --vm-bytes 256M --cache 2 "
-           f"--timeout {a.stress_secs}s --metrics-brief 2>&1 | tail -30")
+    cmd = (
+        f"stress-ng --cpu 0 --vm 2 --vm-bytes 256M --cache 2 "
+        f"--timeout {a.stress_secs}s --metrics-brief 2>&1 | tail -30"
+    )
     rc, out = con.sh(s, cmd, a.stress_secs + 120)
     sok = "successful run completed" in out.lower() or rc == 0
     log(f"stress-ng rc={rc}  verdict={'PASS' if sok else 'CHECK/FAIL'}\n{out}")
 
     # thermal after load (SoC die + adt7475), to watch for throttling headroom
-    _, temp = con.sh(s, "for h in /sys/class/hwmon/hwmon*; do n=$(cat $h/name); "
-                        "t=$(cat $h/temp1_input 2>/dev/null); echo \"$n temp1=$t\"; done")
+    _, temp = con.sh(
+        s,
+        "for h in /sys/class/hwmon/hwmon*; do n=$(cat $h/name); "
+        't=$(cat $h/temp1_input 2>/dev/null); echo "$n temp1=$t"; done',
+    )
     log("post-load temps:\n" + temp)
 
     s.close()

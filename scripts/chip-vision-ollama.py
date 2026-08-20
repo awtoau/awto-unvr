@@ -15,17 +15,25 @@ llama3.2-vision:11b / :90b (strongest, slow), gemma3:12b.
 Timeout: a 7-11B vision model on a ~4000px photo takes ~20-90 s; per-image cap
 is 300 s (~3x worst case). On expiry: log the photo + skip it (never hang).
 """
+
 from __future__ import annotations
-import argparse, base64, json, sys, time, urllib.request, urllib.error
+
+import argparse
+import base64
+import json
+import sys
+import time
+import urllib.error
+import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from _repo import LOGS, REPO  # noqa: E402
+from _repo import LOGS, REPO
 
 OLLAMA = "http://localhost:11434/api/generate"
 OUT = LOGS / "chip-vision"
-PER_IMAGE_TIMEOUT = 300          # failsafe: ~3x the ~90s worst case for an 11B model
+PER_IMAGE_TIMEOUT = 300  # failsafe: ~3x the ~90s worst case for an 11B model
 
 PROMPT = (
     "This is a close-up photo of a green PCB (a network appliance mainboard). "
@@ -44,7 +52,9 @@ PROMPT = (
 
 
 def log(m):
-    line = f"{datetime.now(timezone.utc).astimezone().isoformat(timespec='seconds')}  {m}"
+    line = (
+        f"{datetime.now(timezone.utc).astimezone().isoformat(timespec='seconds')}  {m}"
+    )
     print(line, flush=True)
     OUT.mkdir(parents=True, exist_ok=True)
     (LOGS / "chip-vision-ollama.log").open("a").write(line + "\n")
@@ -52,10 +62,18 @@ def log(m):
 
 def analyse(model: str, img: Path) -> str | None:
     b64 = base64.b64encode(img.read_bytes()).decode()
-    body = json.dumps({"model": model, "prompt": PROMPT, "images": [b64],
-                       "stream": False, "options": {"temperature": 0.0}}).encode()
-    req = urllib.request.Request(OLLAMA, data=body,
-                                 headers={"Content-Type": "application/json"})
+    body = json.dumps(
+        {
+            "model": model,
+            "prompt": PROMPT,
+            "images": [b64],
+            "stream": False,
+            "options": {"temperature": 0.0},
+        }
+    ).encode()
+    req = urllib.request.Request(
+        OLLAMA, data=body, headers={"Content-Type": "application/json"}
+    )
     t0 = time.monotonic()
     try:
         with urllib.request.urlopen(req, timeout=PER_IMAGE_TIMEOUT) as r:
@@ -64,7 +82,7 @@ def analyse(model: str, img: Path) -> str | None:
         log(f"  OK {img.name} ({dt:.0f}s)")
         return resp.get("response", "")
     except (urllib.error.URLError, TimeoutError, OSError) as e:
-        log(f"  FAIL {img.name} after {time.monotonic()-t0:.0f}s: {e}")
+        log(f"  FAIL {img.name} after {time.monotonic() - t0:.0f}s: {e}")
         return None
 
 
@@ -83,7 +101,7 @@ def main():
     OUT.mkdir(parents=True, exist_ok=True)
     log(f"=== chip-vision: {len(imgs)} photos, model={a.model} ===")
 
-    combined = OUT / f"ALL-{a.model.replace(':','_').replace('/','_')}.md"
+    combined = OUT / f"ALL-{a.model.replace(':', '_').replace('/', '_')}.md"
     with combined.open("w") as agg:
         agg.write(f"# Board chip vision pass — model {a.model}\n\n")
         for i, img in enumerate(imgs, 1):

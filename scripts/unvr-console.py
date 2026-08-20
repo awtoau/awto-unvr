@@ -69,11 +69,16 @@ def sweep(port):
     On no reply at any baud, the line is silent - a wiring or power problem, not
     a baud problem."""
     import time
-    print(f"# sweeping {port} - sending CR at each baud, scoring the reply\n", flush=True)
+
+    print(
+        f"# sweeping {port} - sending CR at each baud, scoring the reply\n", flush=True
+    )
     results = []
     for baud in SWEEP_BAUDS:
         try:
-            s = serial.Serial(port, baud, bytesize=8, parity="N", stopbits=1, timeout=0.1)
+            s = serial.Serial(
+                port, baud, bytesize=8, parity="N", stopbits=1, timeout=0.1
+            )
         except serial.SerialException as e:
             print(f"  {baud:>7}  cannot open: {e}", flush=True)
             continue
@@ -87,35 +92,61 @@ def sweep(port):
         s.close()
         r = printable_ratio(got)
         results.append((r, baud, got))
-        show = got[:60].decode("ascii", "replace").replace("\n", "\\n").replace("\r", "\\r")
+        show = (
+            got[:60]
+            .decode("ascii", "replace")
+            .replace("\n", "\\n")
+            .replace("\r", "\\r")
+        )
         print(f"  {baud:>7}  {len(got):>5} B  printable {r:5.0%}  {show!r}", flush=True)
 
     if not any(len(g) for _, _, g in results):
         print("\n# NOTHING received at any baud.", flush=True)
         print("# That is a wiring/power issue, not a baud issue:", flush=True)
-        print("#   - is the adapter's RX on the device's TX? (try swapping)", flush=True)
+        print(
+            "#   - is the adapter's RX on the device's TX? (try swapping)", flush=True
+        )
         print("#   - is GND connected?", flush=True)
         print("#   - is the device powered?", flush=True)
         return None
     best = max(results, key=lambda x: (x[0], len(x[2])))
     print(f"\n# best: {best[1]} baud, {best[0]:.0%} printable", flush=True)
     if best[0] < 0.7:
-        print("# still mostly non-printable - could be a floating RX line picking up noise,", flush=True)
+        print(
+            "# still mostly non-printable - could be a floating RX line picking up noise,",
+            flush=True,
+        )
         print("# or a level mismatch (5 V adapter on a 3.3 V UART).", flush=True)
     return best[1]
 
 
 def main():
-    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     ap.add_argument("--port", default="/dev/ttyUSB0")
     ap.add_argument("--baud", type=int, default=115200)
-    ap.add_argument("--catch", action="store_true", help="stream ESC to interrupt autoboot")
+    ap.add_argument(
+        "--catch", action="store_true", help="stream ESC to interrupt autoboot"
+    )
     ap.add_argument("--until", default=None, help="exit once this text appears")
-    ap.add_argument("--interactive", action="store_true", help="forward your keystrokes (Ctrl-] to quit)")
-    ap.add_argument("--sweep", action="store_true", help="probe common bauds and report which gives ASCII")
+    ap.add_argument(
+        "--interactive",
+        action="store_true",
+        help="forward your keystrokes (Ctrl-] to quit)",
+    )
+    ap.add_argument(
+        "--sweep",
+        action="store_true",
+        help="probe common bauds and report which gives ASCII",
+    )
     ap.add_argument("--hex", action="store_true", help="show raw hex alongside text")
-    ap.add_argument("--send", action="append", default=[],
-                    help="send this line (CR appended) after opening; repeatable")
+    ap.add_argument(
+        "--send",
+        action="append",
+        default=[],
+        help="send this line (CR appended) after opening; repeatable",
+    )
     a = ap.parse_args()
 
     if a.sweep:
@@ -126,15 +157,22 @@ def main():
     logfile = LOGS / "unvr-console.log"
 
     try:
-        ser = serial.Serial(a.port, a.baud, bytesize=8, parity="N", stopbits=1, timeout=POLL)
+        ser = serial.Serial(
+            a.port, a.baud, bytesize=8, parity="N", stopbits=1, timeout=POLL
+        )
     except serial.SerialException as e:
-        sys.exit(f"cannot open {a.port}: {e}\nIs the adapter plugged in? Are you in the dialout group?")
+        sys.exit(
+            f"cannot open {a.port}: {e}\nIs the adapter plugged in? Are you in the dialout group?"
+        )
 
     print(f"# {a.port} @ {a.baud} 8N1 - logging to {logfile}", flush=True)
     if a.catch:
         print("# --catch: streaming ESC. Power on the UNVR NOW.", flush=True)
     if a.interactive:
-        print("# --interactive: your keystrokes go to the device. Ctrl-] to quit.", flush=True)
+        print(
+            "# --interactive: your keystrokes go to the device. Ctrl-] to quit.",
+            flush=True,
+        )
     print("# Ctrl-C to stop.\n", flush=True)
 
     old = None
@@ -145,6 +183,7 @@ def main():
 
     import select
     import time
+
     buf = b""
     last_esc = 0.0
     hinted = False
@@ -172,7 +211,9 @@ def main():
                         sys.stderr.flush()
 
                     if a.until and a.until.encode() in buf:
-                        sys.stderr.write(f"\n[{stamp()}] matched {a.until!r} - exiting\n")
+                        sys.stderr.write(
+                            f"\n[{stamp()}] matched {a.until!r} - exiting\n"
+                        )
                         return 0
 
                 if a.catch and time.monotonic() - last_esc >= ESC_INTERVAL:

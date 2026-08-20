@@ -33,7 +33,9 @@ def _resolve() -> Path:
     try:
         out = subprocess.run(
             ["git", "-C", str(here), "rev-parse", "--show-toplevel"],
-            capture_output=True, text=True, timeout=5,
+            capture_output=True,
+            text=True,
+            timeout=5,
         )
         if out.returncode == 0 and out.stdout.strip():
             return Path(out.stdout.strip()).resolve()

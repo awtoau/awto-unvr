@@ -24,7 +24,9 @@ from pathlib import Path
 
 import serial
 
-DEFAULT_PORT = "/dev/serial/by-id/usb-Prolific_Technology_Inc._USB-Serial_Controller_D-if00-port0"
+DEFAULT_PORT = (
+    "/dev/serial/by-id/usb-Prolific_Technology_Inc._USB-Serial_Controller_D-if00-port0"
+)
 
 # Break must be held longer than one character frame for the receiver to call it a
 # break. At 9600 8N1 a frame is 10 bits = 1.04 ms. The USB latency timer (~10 ms)
@@ -67,8 +69,12 @@ def drive_and_read(port: serial.Serial, out: str, level: bool) -> dict[str, bool
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--port", default=DEFAULT_PORT)
-    ap.add_argument("--baud", type=int, default=9600,
-                    help="only sets frame length for break detection; 9600 = 1.04 ms/frame")
+    ap.add_argument(
+        "--baud",
+        type=int,
+        default=9600,
+        help="only sets frame length for break detection; 9600 = 1.04 ms/frame",
+    )
     args = ap.parse_args()
 
     logdir = Path("tmp/logs")
@@ -84,7 +90,9 @@ def main() -> int:
 
     log.info("port %s @ %d baud", args.port, args.baud)
     try:
-        port = serial.Serial(args.port, args.baud, timeout=BREAK_HOLD_S, write_timeout=1)
+        port = serial.Serial(
+            args.port, args.baud, timeout=BREAK_HOLD_S, write_timeout=1
+        )
     except (serial.SerialException, OSError) as exc:
         log.error("open failed: %s", exc)
         return 2
@@ -103,9 +111,13 @@ def main() -> int:
         log.info("")
         log.info("--- TX -> RX (break continuity, baud-independent) ---")
         joined = tx_to_rx(port)
-        log.info("  TX held low %.0f ms -> RX %s", BREAK_HOLD_S * 1e3,
-                 "saw BREAK (0x00): TX IS JOINED TO RX" if joined
-                 else "saw nothing: TX is NOT joined to RX")
+        log.info(
+            "  TX held low %.0f ms -> RX %s",
+            BREAK_HOLD_S * 1e3,
+            "saw BREAK (0x00): TX IS JOINED TO RX"
+            if joined
+            else "saw nothing: TX is NOT joined to RX",
+        )
 
         log.info("")
         log.info("--- TX -> inputs (does TX reach CTS/DSR/CD/RI?) ---")

@@ -44,7 +44,9 @@ LOG = LOGS / "dev.log"
 # --------------------------------------------------------------------------
 # 115200 8N1 is not a guess: U-Boot's own `loadbootargs` sets
 # console=ttyS0,115200. Confirmed by baud sweep against the live unit.
-CONSOLE_BAUD = int(os.environ.get("UNVR_CONSOLE_BAUD", "115200"))  # override for baud tests (e.g. 1000000)
+CONSOLE_BAUD = int(
+    os.environ.get("UNVR_CONSOLE_BAUD", "115200")
+)  # override for baud tests (e.g. 1000000)
 # The UNVR console is the CP2102 (Silicon Labs, 3.3 V logic — what the UNVR UART
 # wants). Match it ONLY by its stable by-id path.
 # Do NOT fall back to bare /dev/ttyUSB<N>: those numbers are assigned in USB
@@ -83,12 +85,16 @@ BOARD_MAC = "74:ac:b9:41:a8:11"
 # unconfigured and SKIP by design.
 # --------------------------------------------------------------------------
 STEPS: dict[str, tuple[str, list[str], bool]] = {
-    "build":     ("compile the project (n/a - analysis repo)", [], True),
-    "test":      ("run the test suite", [sys.executable, "-m", "pytest", "-q"], True),
-    "lint":      ("static analysis", ["ruff", "check", "."], True),
-    "fmt-check": ("formatting check (no writes)", ["ruff", "format", "--check", "."], False),
-    "fmt":       ("reformat in place", ["ruff", "format", "."], False),
-    "run":       ("build + execute (n/a)", [], True),
+    "build": ("compile the project (n/a - analysis repo)", [], True),
+    "test": ("run the test suite", [sys.executable, "-m", "pytest", "-q"], True),
+    "lint": ("static analysis", ["ruff", "check", "."], True),
+    "fmt-check": (
+        "formatting check (no writes)",
+        ["ruff", "format", "--check", "."],
+        False,
+    ),
+    "fmt": ("reformat in place", ["ruff", "format", "."], False),
+    "run": ("build + execute (n/a)", [], True),
 }
 
 GATE = ["fmt-check", "lint", "test"]
@@ -99,8 +105,12 @@ CI = ["fmt-check", "lint", "test"]
 # colour on TTY only, file copy always plain.
 # --------------------------------------------------------------------------
 _COLOR = {
-    "FATAL": "\033[1;91m", "ERROR": "\033[31m", "WARN": "\033[33m",
-    "INFO": "\033[97m", "DEBUG": "\033[94m", "ALERT": "\033[92m",
+    "FATAL": "\033[1;91m",
+    "ERROR": "\033[31m",
+    "WARN": "\033[33m",
+    "INFO": "\033[97m",
+    "DEBUG": "\033[94m",
+    "ALERT": "\033[92m",
 }
 _RESET = "\033[0m"
 _USE_COLOR = (
@@ -126,12 +136,12 @@ def log(msg: str, level: str = "INFO") -> None:
     try:
         LOGS.mkdir(parents=True, exist_ok=True)
         with LOG.open("a", encoding="utf-8") as fh:
-            fh.write(line + "\n")          # file copy is ALWAYS plain
+            fh.write(line + "\n")  # file copy is ALWAYS plain
     except OSError:
-        pass                                # never let logging kill the run
+        pass  # never let logging kill the run
 
 
-SKIPPED = 125   # distinct from any real tool's exit code
+SKIPPED = 125  # distinct from any real tool's exit code
 
 
 def run_step(name: str, extra: list[str] | None = None) -> int:
@@ -160,9 +170,13 @@ COMMANDS: dict[str, dict] = {}
 def command(summary: str, *, args: str = "", kind: str = "action"):
     def deco(fn):
         COMMANDS[fn.__name__.replace("cmd_", "").replace("_", "-")] = {
-            "summary": summary, "args": args, "kind": kind, "fn": fn,
+            "summary": summary,
+            "args": args,
+            "kind": kind,
+            "fn": fn,
         }
         return fn
+
     return deco
 
 
@@ -208,16 +222,20 @@ def _roll_console_log() -> Path | None:
         return None
     if size <= CONSOLE_ROLL_BYTES:
         return None
+
     def gen(n: int) -> Path:
         return CONSOLE_LOG.parent / f"{CONSOLE_LOG.name}.{n}"
 
-    gen(CONSOLE_ROLL_KEEP).unlink(missing_ok=True)   # past the keep window
+    gen(CONSOLE_ROLL_KEEP).unlink(missing_ok=True)  # past the keep window
     for n in range(CONSOLE_ROLL_KEEP - 1, 0, -1):
         if gen(n).exists():
             gen(n).rename(gen(n + 1))
     CONSOLE_LOG.rename(gen(1))
-    log(f"rolled {CONSOLE_LOG.relative_to(REPO)} ({size / (1024 * 1024):.1f} MB)"
-        f" -> {gen(1).relative_to(REPO)}", "WARN")
+    log(
+        f"rolled {CONSOLE_LOG.relative_to(REPO)} ({size / (1024 * 1024):.1f} MB)"
+        f" -> {gen(1).relative_to(REPO)}",
+        "WARN",
+    )
     return gen(1)
 
 
@@ -239,17 +257,25 @@ def cmd_console(_extra: list[str]) -> int:
     CONSOLE_SOCK.unlink(missing_ok=True)
     LOGS.mkdir(parents=True, exist_ok=True)
     TMP.mkdir(parents=True, exist_ok=True)
-    _roll_console_log()     # startup is the one moment no tio holds the log
-    tio_cmd = " ".join([
-        "tio", "-b", str(CONSOLE_BAUD),
-        "--socket", f"unix:{CONSOLE_SOCK}",
-        "-L", "--log-file", str(CONSOLE_LOG), "--log-append",
-        # --log-strip keeps the on-disk copy plain: ANSI in a log file ruins
-        # every later grep, which is the Tier A rule.
-        "--log-strip",
-        "-t",
-        port,
-    ])
+    _roll_console_log()  # startup is the one moment no tio holds the log
+    tio_cmd = " ".join(
+        [
+            "tio",
+            "-b",
+            str(CONSOLE_BAUD),
+            "--socket",
+            f"unix:{CONSOLE_SOCK}",
+            "-L",
+            "--log-file",
+            str(CONSOLE_LOG),
+            "--log-append",
+            # --log-strip keeps the on-disk copy plain: ANSI in a log file ruins
+            # every later grep, which is the Tier A rule.
+            "--log-strip",
+            "-t",
+            port,
+        ]
+    )
     # tio MUST have a tty on stdin. With a pipe or /dev/null it takes the
     # documented "echo cmd | tio" pipe mode instead: sends stdin to the device,
     # sees EOF, exits 0 immediately, and never creates the socket. `script`
@@ -257,8 +283,12 @@ def cmd_console(_extra: list[str]) -> int:
     cmd = ["setsid", "script", "-qec", tio_cmd, "/dev/null"]
     log("run: " + " ".join(cmd))
     proc = subprocess.Popen(
-        cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-        stdin=subprocess.DEVNULL, start_new_session=True, cwd=REPO,
+        cmd,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        stdin=subprocess.DEVNULL,
+        start_new_session=True,
+        cwd=REPO,
     )
     CONSOLE_PID.write_text(str(proc.pid))
     log(f"tio pid {proc.pid} on {port} @ {CONSOLE_BAUD}", "ALERT")
@@ -268,8 +298,10 @@ def cmd_console(_extra: list[str]) -> int:
     return 0
 
 
-@command("run tio in the FOREGROUND (you own the port); socket+log stay live for the agent",
-         kind="action")
+@command(
+    "run tio in the FOREGROUND (you own the port); socket+log stay live for the agent",
+    kind="action",
+)
 def cmd_console_own(_extra: list[str]) -> int:
     """You get a real interactive tio in your own terminal, owning the serial
     port. --socket + -L still expose the SAME socket + log the agent's tools use,
@@ -279,7 +311,10 @@ def cmd_console_own(_extra: list[str]) -> int:
         log("tio not on PATH", "ERROR")
         return 1
     if _console_pid():
-        log("a tio already owns the port - stop it first (./dev.py console-stop)", "ERROR")
+        log(
+            "a tio already owns the port - stop it first (./dev.py console-stop)",
+            "ERROR",
+        )
         return 1
     port = _console_port()
     if not port:
@@ -289,11 +324,25 @@ def cmd_console_own(_extra: list[str]) -> int:
     LOGS.mkdir(parents=True, exist_ok=True)
     TMP.mkdir(parents=True, exist_ok=True)
     _roll_console_log()
-    cmd = ["tio", "-b", str(CONSOLE_BAUD), "--socket", f"unix:{CONSOLE_SOCK}",
-           "-L", "--log-file", str(CONSOLE_LOG), "--log-append", "--log-strip", "-t", port]
-    log(f"foreground tio on {port} @ {CONSOLE_BAUD} — you drive. "
-        f"Agent reads {CONSOLE_SOCK} + the log. Ctrl-t q to quit.")
-    proc = subprocess.Popen(cmd, cwd=REPO)   # inherits your tty -> real interactive tio
+    cmd = [
+        "tio",
+        "-b",
+        str(CONSOLE_BAUD),
+        "--socket",
+        f"unix:{CONSOLE_SOCK}",
+        "-L",
+        "--log-file",
+        str(CONSOLE_LOG),
+        "--log-append",
+        "--log-strip",
+        "-t",
+        port,
+    ]
+    log(
+        f"foreground tio on {port} @ {CONSOLE_BAUD} — you drive. "
+        f"Agent reads {CONSOLE_SOCK} + the log. Ctrl-t q to quit."
+    )
+    proc = subprocess.Popen(cmd, cwd=REPO)  # inherits your tty -> real interactive tio
     CONSOLE_PID.write_text(str(proc.pid))
     try:
         return proc.wait()
@@ -307,9 +356,13 @@ def cmd_console_status(_extra: list[str]) -> int:
     port = _console_port()
     log(f"port   : {port or 'NONE FOUND'}", "INFO" if port else "WARN")
     log(f"pid    : {pid or 'not running'}", "INFO" if pid else "WARN")
-    log(f"socket : {CONSOLE_SOCK} {'(present)' if CONSOLE_SOCK.exists() else '(absent)'}")
+    log(
+        f"socket : {CONSOLE_SOCK} {'(present)' if CONSOLE_SOCK.exists() else '(absent)'}"
+    )
     if CONSOLE_LOG.exists():
-        log(f"log    : {CONSOLE_LOG.relative_to(REPO)} ({CONSOLE_LOG.stat().st_size} B)")
+        log(
+            f"log    : {CONSOLE_LOG.relative_to(REPO)} ({CONSOLE_LOG.stat().st_size} B)"
+        )
     else:
         log(f"log    : {CONSOLE_LOG.relative_to(REPO)} (absent)", "WARN")
     return 0 if pid else 1
@@ -339,21 +392,37 @@ def cmd_console_attach(_extra: list[str]) -> int:
     # 0x1d = Ctrl-] detaches, leaving the shared tio (and its socket) running so
     # the agent keeps programmatic access to the same session.
     if shutil.which("socat"):
-        log(f"attaching to {CONSOLE_SOCK} via socat - Ctrl-] to detach (tio keeps running)")
+        log(
+            f"attaching to {CONSOLE_SOCK} via socat - Ctrl-] to detach (tio keeps running)"
+        )
         return subprocess.call(
-            ["socat", "-,raw,echo=0,escape=0x1d", f"UNIX-CONNECT:{CONSOLE_SOCK}"])
+            ["socat", "-,raw,echo=0,escape=0x1d", f"UNIX-CONNECT:{CONSOLE_SOCK}"]
+        )
     if shutil.which("nc"):
-        log(f"socat missing; falling back to raw nc on {CONSOLE_SOCK} "
-            "(cooked tty - escape sequences will leak) - Ctrl-C to detach", "ALERT")
+        log(
+            f"socat missing; falling back to raw nc on {CONSOLE_SOCK} "
+            "(cooked tty - escape sequences will leak) - Ctrl-C to detach",
+            "ALERT",
+        )
         return subprocess.call(["nc", "-U", str(CONSOLE_SOCK)])
     log("neither socat nor nc on PATH", "ERROR")
     return 1
 
 
 # Keyword tokens for --raw sends (control bytes you can't type as an arg).
-_RAW_TOKENS = {"CR": b"\r", "LF": b"\n", "CRLF": b"\r\n", "ENTER": b"\r",
-               "ESC": b"\x1b", "TAB": b"\t", "SPACE": b" ", "NUL": b"\x00",
-               "CTRL-C": b"\x03", "CTRL-D": b"\x04", "CTRL-M": b"\r"}
+_RAW_TOKENS = {
+    "CR": b"\r",
+    "LF": b"\n",
+    "CRLF": b"\r\n",
+    "ENTER": b"\r",
+    "ESC": b"\x1b",
+    "TAB": b"\t",
+    "SPACE": b" ",
+    "NUL": b"\x00",
+    "CTRL-C": b"\x03",
+    "CTRL-D": b"\x04",
+    "CTRL-M": b"\r",
+}
 
 
 def _raw_bytes(tokens: list[str]) -> bytes:
@@ -368,9 +437,11 @@ def _raw_bytes(tokens: list[str]) -> bytes:
     return out
 
 
-@command("send to the console; optionally wait for a pattern before returning",
-         args="[--raw] [--expect NEEDLE [--timeout S]] <text|CR|LF|ESC ...>",
-         kind="action")
+@command(
+    "send to the console; optionally wait for a pattern before returning",
+    args="[--raw] [--expect NEEDLE [--timeout S]] <text|CR|LF|ESC ...>",
+    kind="action",
+)
 def cmd_console_send(extra: list[str]) -> int:
     """The one console write primitive - use this instead of writing a new script.
 
@@ -406,11 +477,13 @@ def cmd_console_send(extra: list[str]) -> int:
         elif a == "--expect":
             expect = next(it, None)
             if expect is None:
-                log("--expect needs a NEEDLE", "ERROR"); return 2
+                log("--expect needs a NEEDLE", "ERROR")
+                return 2
         elif a == "--timeout":
             v = next(it, None)
             if v is None or not v.replace(".", "", 1).isdigit():
-                log("--timeout needs seconds", "ERROR"); return 2
+                log("--timeout needs seconds", "ERROR")
+                return 2
             timeout = float(v)
         else:
             words.append(a)
@@ -426,18 +499,19 @@ def cmd_console_send(extra: list[str]) -> int:
     s.sendall(payload)
 
     got = b""
-    if expect is None:                       # legacy: fixed read window
+    if expect is None:  # legacy: fixed read window
         end = time.monotonic() + 1.5
         while time.monotonic() < end:
             try:
                 chunk = s.recv(4096)
-            except socket.timeout:
+            except TimeoutError:
                 continue
             if not chunk:
                 break
             got += chunk
         s.close()
-        sys.stdout.buffer.write(got); sys.stdout.buffer.flush()
+        sys.stdout.buffer.write(got)
+        sys.stdout.buffer.flush()
         return 0
 
     # `--expect` matches ANY of `|`-separated needles (one call instead of N
@@ -449,7 +523,7 @@ def cmd_console_send(extra: list[str]) -> int:
     while time.monotonic() < end:
         try:
             chunk = s.recv(4096)
-        except socket.timeout:
+        except TimeoutError:
             continue
         if not chunk:
             break
@@ -457,13 +531,18 @@ def cmd_console_send(extra: list[str]) -> int:
         hit = next((n for n in needles if n in got), None)
         if hit is not None:
             s.close()
-            sys.stdout.buffer.write(got); sys.stdout.buffer.flush()
+            sys.stdout.buffer.write(got)
+            sys.stdout.buffer.flush()
             print(f"\n<<MATCHED: {hit.decode(errors='replace')}>>")
             return 0
     s.close()
-    sys.stdout.buffer.write(got); sys.stdout.buffer.flush()
-    log(f"FAIL: none of {expect!r} seen in {time.monotonic()-t0:.1f}s "
-        f"(failsafe {timeout:.0f}s)", "ERROR")
+    sys.stdout.buffer.write(got)
+    sys.stdout.buffer.flush()
+    log(
+        f"FAIL: none of {expect!r} seen in {time.monotonic() - t0:.1f}s "
+        f"(failsafe {timeout:.0f}s)",
+        "ERROR",
+    )
     return 3
 
 
@@ -474,6 +553,7 @@ ESPJTAG_TCL = Path("/mnt/2tb/git/espjtag/scripts")
 
 def _load_minijimtcl():
     import importlib
+
     if str(ESPJTAG_TCL) not in sys.path:
         sys.path.insert(0, str(ESPJTAG_TCL))
     try:
@@ -511,7 +591,9 @@ class _ConsoleTcl:
         if not a:
             raise self.TclError("expect: needs a NEEDLE")
         needle = a[0].encode()
-        timeout = float(a[1]) if len(a) > 1 else 10.0   # failsafe; expect waits on the needle
+        timeout = (
+            float(a[1]) if len(a) > 1 else 10.0
+        )  # failsafe; expect waits on the needle
         end = time.monotonic() + timeout
         while True:
             i = self.buf.find(needle)
@@ -523,7 +605,7 @@ class _ConsoleTcl:
                 raise self.TclError(f"expect: {a[0]!r} not seen in {timeout:.0f}s")
             try:
                 chunk = self.s.recv(4096)
-            except socket.timeout:
+            except TimeoutError:
                 continue
             if not chunk:
                 raise self.TclError("expect: console socket closed")
@@ -536,8 +618,11 @@ class _ConsoleTcl:
             pass
 
 
-@command("drive the console with a Tcl script (send/expect via mini_jimtcl)",
-         args="<script.tcl> | -e '<tcl>'", kind="action")
+@command(
+    "drive the console with a Tcl script (send/expect via mini_jimtcl)",
+    args="<script.tcl> | -e '<tcl>'",
+    kind="action",
+)
 def cmd_console_tcl(extra: list[str]) -> int:
     """Reuses espjtag's mini_jimtcl - full Tcl (set/if/while/proc/catch/...) plus
     three console leaf commands:
@@ -575,15 +660,18 @@ def cmd_console_tcl(extra: list[str]) -> int:
     except ct.TclError as e:
         log(f"tcl: {e}", "ERROR")
         return 3
-    except Exception as e:                    # interpreter/runtime error
+    except Exception as e:  # interpreter/runtime error
         log(f"tcl error: {e}", "ERROR")
         return 3
     finally:
         ct.close()
 
 
-@command("write a bounded tail of the console log somewhere safe to open",
-         args="[-n LINES]", kind="action")
+@command(
+    "write a bounded tail of the console log somewhere safe to open",
+    args="[-n LINES]",
+    kind="action",
+)
 def cmd_console_peek(extra: list[str]) -> int:
     """NEVER open the live console log in an editor. tio appends to it for a
     whole session and it only rolls at 20 MB, well past where an editor that
@@ -592,13 +680,20 @@ def cmd_console_peek(extra: list[str]) -> int:
     a live view - re-run it to refresh, or `tail -f` the console log itself."""
     lines = CONSOLE_PEEK_LINES
     if extra:
-        if extra[0] not in ("-n", "--lines") or len(extra) != 2 or not extra[1].isdigit():
+        if (
+            extra[0] not in ("-n", "--lines")
+            or len(extra) != 2
+            or not extra[1].isdigit()
+        ):
             log("usage: ./dev.py console-peek [-n LINES]", "ERROR")
             return 2
         lines = int(extra[1])
     if not CONSOLE_LOG.exists():
-        log(f"no console log at {CONSOLE_LOG.relative_to(REPO)} - "
-            "start it with ./dev.py console", "ERROR")
+        log(
+            f"no console log at {CONSOLE_LOG.relative_to(REPO)} - "
+            "start it with ./dev.py console",
+            "ERROR",
+        )
         return 1
     with CONSOLE_LOG.open("r", errors="replace") as fh:
         # deque(maxlen=) streams; read_text() on a 20 MB log is the same mistake
@@ -606,10 +701,13 @@ def cmd_console_peek(extra: list[str]) -> int:
         tail = list(deque(fh, maxlen=lines))
     LOGS.mkdir(parents=True, exist_ok=True)
     CONSOLE_TAIL.write_text("".join(tail))
-    log(f"{CONSOLE_LOG.relative_to(REPO)} "
+    log(
+        f"{CONSOLE_LOG.relative_to(REPO)} "
         f"({CONSOLE_LOG.stat().st_size / (1024 * 1024):.1f} MB) -> "
         f"{CONSOLE_TAIL.relative_to(REPO)} ({len(tail)} lines, "
-        f"{CONSOLE_TAIL.stat().st_size / 1024:.0f} KB)", "ALERT")
+        f"{CONSOLE_TAIL.stat().st_size / 1024:.0f} KB)",
+        "ALERT",
+    )
     print(CONSOLE_TAIL)
     return 0
 
@@ -619,24 +717,33 @@ def cmd_console_peek(extra: list[str]) -> int:
 # --------------------------------------------------------------------------
 @command("machine-readable command list (JSON, for AI agents)", kind="meta")
 def cmd_describe(_extra: list[str]) -> int:
-    print(json.dumps({
-        "project": PROJECT,
-        "schema": 1,
-        "entrypoint": "./dev.py",
-        "log": str(LOG.relative_to(REPO)),
-        "board": {"sysid": BOARD_SYSID, "mac": BOARD_MAC},
-        "console": {
-            "baud": CONSOLE_BAUD,
-            "socket": str(CONSOLE_SOCK),
-            "log": str(CONSOLE_LOG.relative_to(REPO)),
-        },
-        "exit_codes": {"0": "success", "2": "usage error",
-                       "125": "step skipped (tool absent)", "other": "failure"},
-        "commands": {
-            name: {k: v for k, v in meta.items() if k != "fn"}
-            for name, meta in COMMANDS.items()
-        },
-    }, indent=2))
+    print(
+        json.dumps(
+            {
+                "project": PROJECT,
+                "schema": 1,
+                "entrypoint": "./dev.py",
+                "log": str(LOG.relative_to(REPO)),
+                "board": {"sysid": BOARD_SYSID, "mac": BOARD_MAC},
+                "console": {
+                    "baud": CONSOLE_BAUD,
+                    "socket": str(CONSOLE_SOCK),
+                    "log": str(CONSOLE_LOG.relative_to(REPO)),
+                },
+                "exit_codes": {
+                    "0": "success",
+                    "2": "usage error",
+                    "125": "step skipped (tool absent)",
+                    "other": "failure",
+                },
+                "commands": {
+                    name: {k: v for k, v in meta.items() if k != "fn"}
+                    for name, meta in COMMANDS.items()
+                },
+            },
+            indent=2,
+        )
+    )
     return 0
 
 
@@ -644,9 +751,12 @@ def cmd_describe(_extra: list[str]) -> int:
 def cmd_doctor(_extra: list[str]) -> int:
     log(f"project    : {PROJECT}")
     log(f"python     : {sys.version.split()[0]} ({sys.executable})")
-    log("gil        : "
+    log(
+        "gil        : "
         + ("disabled (free-threaded)" if not sys._is_gil_enabled() else "enabled")
-        if hasattr(sys, "_is_gil_enabled") else "gil        : n/a (<3.13)")
+        if hasattr(sys, "_is_gil_enabled")
+        else "gil        : n/a (<3.13)"
+    )
     missing = []
     for tool in ("tio", "nc", "ddrescue", "unsquashfs", "gh", "nmap"):
         if shutil.which(tool):
@@ -655,8 +765,10 @@ def cmd_doctor(_extra: list[str]) -> int:
             log(f"{tool:10s} : MISSING", "ERROR")
             missing.append(tool)
     port = _console_port()
-    log(f"serial     : {port}" if port else "serial     : no adapter found",
-        "INFO" if port else "WARN")
+    log(
+        f"serial     : {port}" if port else "serial     : no adapter found",
+        "INFO" if port else "WARN",
+    )
     for name, (_s, argv, _e) in STEPS.items():
         if not argv:
             log(f"{name:10s} : not configured", "WARN")
@@ -703,14 +815,20 @@ def _run_script(rel: str, extra: list[str]) -> int:
     return subprocess.call(cmd, cwd=REPO)
 
 
-@command("build our U-Boot chainload image (scripts/uboot-build.py)",
-         args="[--clean]", kind="action")
+@command(
+    "build our U-Boot chainload image (scripts/uboot-build.py)",
+    args="[--clean]",
+    kind="action",
+)
 def cmd_build_uboot(extra: list[str]) -> int:
     return _run_script("scripts/uboot-build.py", extra)
 
 
-@command("build the Fedora 7.1 kernel + DTB + al_* modules "
-         "(scripts/build-linux-71-fedora.py)", kind="action")
+@command(
+    "build the Fedora 7.1 kernel + DTB + al_* modules "
+    "(scripts/build-linux-71-fedora.py)",
+    kind="action",
+)
 def cmd_build_fedora(extra: list[str]) -> int:
     return _run_script("scripts/build-linux-71-fedora.py", extra)
 
@@ -719,18 +837,31 @@ def _ensure_tftpd(port: int = 69) -> None:
     """Start scripts/tftpd.py serving tmp/tftp if nothing is bound on `port`.
     Waits for the bind: expected <100 ms, bounded 40x50ms=2s, then warn+proceed
     (the chainload catch loop is long enough to tolerate a late bind)."""
+
     def bound() -> bool:
-        r = subprocess.run(["ss", "-lun", f"sport = :{port}"],
-                           capture_output=True, text=True)
+        r = subprocess.run(
+            ["ss", "-lun", f"sport = :{port}"], capture_output=True, text=True
+        )
         return "UNCONN" in r.stdout
+
     if bound():
         return
     TFTP_ROOT.mkdir(parents=True, exist_ok=True)
     log("starting tftpd (root tmp/tftp)")
-    subprocess.Popen([sys.executable, str(REPO / "scripts" / "tftpd.py"),
-                      "--root", "tmp/tftp", "--port", str(port)],
-                     cwd=REPO, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-                     start_new_session=True)
+    subprocess.Popen(
+        [
+            sys.executable,
+            str(REPO / "scripts" / "tftpd.py"),
+            "--root",
+            "tmp/tftp",
+            "--port",
+            str(port),
+        ],
+        cwd=REPO,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        start_new_session=True,
+    )
     for _ in range(40):
         if bound():
             return
@@ -738,13 +869,18 @@ def _ensure_tftpd(port: int = 69) -> None:
     log("tftpd not bound after 2s - continuing anyway", "WARN")
 
 
-@command("stage the built U-Boot + chainload it onto the box "
-         "(tftpd + catch stock + tftpboot + go)",
-         args="[chainload.tcl]", kind="action")
+@command(
+    "stage the built U-Boot + chainload it onto the box "
+    "(tftpd + catch stock + tftpboot + go)",
+    args="[chainload.tcl]",
+    kind="action",
+)
 def cmd_chainload(extra: list[str]) -> int:
     if not UBOOT_BIN.exists():
-        log(f"no {UBOOT_BIN.relative_to(REPO)} - run ./dev.py build-uboot first",
-            "ERROR")
+        log(
+            f"no {UBOOT_BIN.relative_to(REPO)} - run ./dev.py build-uboot first",
+            "ERROR",
+        )
         return 1
     TFTP_ROOT.mkdir(parents=True, exist_ok=True)
     shutil.copy2(UBOOT_BIN, CHAINLOAD_BIN)
@@ -755,13 +891,17 @@ def cmd_chainload(extra: list[str]) -> int:
     return cmd_console_tcl([tcl])
 
 
-@command("put the FRESH build on the box + stop at unvr# for hands-on testing: "
-         "SP805-reset -> catch stock -> tftp -> go (scripts/uboot-test.tcl)",
-         kind="action")
+@command(
+    "put the FRESH build on the box + stop at unvr# for hands-on testing: "
+    "SP805-reset -> catch stock -> tftp -> go (scripts/uboot-test.tcl)",
+    kind="action",
+)
 def cmd_uboot_test(_extra: list[str]) -> int:
     if not UBOOT_BIN.exists():
-        log(f"no {UBOOT_BIN.relative_to(REPO)} - run ./dev.py build-uboot first",
-            "ERROR")
+        log(
+            f"no {UBOOT_BIN.relative_to(REPO)} - run ./dev.py build-uboot first",
+            "ERROR",
+        )
         return 1
     TFTP_ROOT.mkdir(parents=True, exist_ok=True)
     shutil.copy2(UBOOT_BIN, CHAINLOAD_BIN)
@@ -771,20 +911,28 @@ def cmd_uboot_test(_extra: list[str]) -> int:
     return cmd_console_tcl(["scripts/uboot-test.tcl"])
 
 
-@command("flash the built kernel+DTB into NAND + set U-Boot to boot it "
-         "(scripts/flash-nand.py)", kind="action")
+@command(
+    "flash the built kernel+DTB into NAND + set U-Boot to boot it "
+    "(scripts/flash-nand.py)",
+    kind="action",
+)
 def cmd_flash(extra: list[str]) -> int:
     return _run_script("scripts/flash-nand.py", extra)
 
 
-@command("netboot: catch U-Boot, tftp kernel+DTB, bootm in one session "
-         "(scripts/netboot.py)", args="--tag <7.1|6.18> [opts]", kind="action")
+@command(
+    "netboot: catch U-Boot, tftp kernel+DTB, bootm in one session (scripts/netboot.py)",
+    args="--tag <7.1|6.18> [opts]",
+    kind="action",
+)
 def cmd_netboot(extra: list[str]) -> int:
     return _run_script("scripts/netboot.py", extra)
 
 
-@command("boot the flashed kernel + wait for Fedora login "
-         "(scripts/boot-verify.tcl)", kind="action")
+@command(
+    "boot the flashed kernel + wait for Fedora login (scripts/boot-verify.tcl)",
+    kind="action",
+)
 def cmd_boot_verify(_extra: list[str]) -> int:
     return cmd_console_tcl(["scripts/boot-verify.tcl"])
 
@@ -804,7 +952,7 @@ def cmd_gate(_extra: list[str]) -> int:
 def cmd_ci(_extra: list[str]) -> int:
     results: dict[str, int] = {}
     for name in CI:
-        results[name] = run_step(name)          # no early exit - that is the point
+        results[name] = run_step(name)  # no early exit - that is the point
     failed = {k: v for k, v in results.items() if v not in (0, SKIPPED)}
     skipped = [k for k, v in results.items() if v == SKIPPED]
     log("-" * 52)
@@ -814,7 +962,10 @@ def cmd_ci(_extra: list[str]) -> int:
     if skipped:
         log(f"{len(skipped)} step(s) skipped: {', '.join(skipped)}", "WARN")
     if failed:
-        log(f"NO-GO - {len(failed)} of {len(results)} failed: {', '.join(failed)}", "FATAL")
+        log(
+            f"NO-GO - {len(failed)} of {len(results)} failed: {', '.join(failed)}",
+            "FATAL",
+        )
         return 1
     log("GO", "ALERT")
     return 0
@@ -829,29 +980,39 @@ def cmd_selftest(_extra: list[str]) -> int:
         if not cond:
             failures.append(label)
 
-    out = subprocess.run([sys.executable, __file__, "describe"],
-                         capture_output=True, text=True, cwd=REPO)
+    out = subprocess.run(
+        [sys.executable, __file__, "describe"], capture_output=True, text=True, cwd=REPO
+    )
     check("describe exits 0", out.returncode == 0)
     try:
         doc = json.loads(out.stdout)
         check("describe emits valid JSON", True)
         check("describe has project+commands", {"project", "commands"} <= doc.keys())
-        check("every command documented", all(
-            m.get("summary") for m in doc.get("commands", {}).values()))
+        check(
+            "every command documented",
+            all(m.get("summary") for m in doc.get("commands", {}).values()),
+        )
     except json.JSONDecodeError:
         check("describe emits valid JSON", False)
 
-    h = subprocess.run([sys.executable, __file__, "--help"],
-                       capture_output=True, text=True, cwd=REPO)
+    h = subprocess.run(
+        [sys.executable, __file__, "--help"], capture_output=True, text=True, cwd=REPO
+    )
     check("--help exits 2 (usage)", h.returncode == 2)
     check("--help lists commands", all(c in h.stdout for c in COMMANDS))
 
-    u = subprocess.run([sys.executable, __file__, "no-such-command"],
-                       capture_output=True, text=True, cwd=REPO)
+    u = subprocess.run(
+        [sys.executable, __file__, "no-such-command"],
+        capture_output=True,
+        text=True,
+        cwd=REPO,
+    )
     check("unknown command exits 2", u.returncode == 2)
 
-    check("registry has no duplicate handlers",
-          len({m["fn"] for m in COMMANDS.values()}) == len(COMMANDS))
+    check(
+        "registry has no duplicate handlers",
+        len({m["fn"] for m in COMMANDS.values()}) == len(COMMANDS),
+    )
 
     if failures:
         log(f"selftest FAILED: {', '.join(failures)}", "FATAL")
@@ -880,8 +1041,10 @@ def usage() -> int:
     print(__doc__.split("Console model:")[0].rstrip())
     print("\nUsage: ./dev.py <command> [args]\n")
     order = ["aggregate", "step", "action", "meta"]
-    kinds = sorted({m["kind"] for m in COMMANDS.values()},
-                   key=lambda k: (order.index(k) if k in order else len(order), k))
+    kinds = sorted(
+        {m["kind"] for m in COMMANDS.values()},
+        key=lambda k: (order.index(k) if k in order else len(order), k),
+    )
     for kind in kinds:
         group = {n: m for n, m in COMMANDS.items() if m["kind"] == kind}
         if not group:

@@ -11,6 +11,7 @@ Usage:
   scripts/ghidra-decompile.py <blob> --base 0x1000000 --name alboot [--out DIR]
 Exports <out>/decompiled.c, disassembly.asm via ExportAll.java.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -39,18 +40,29 @@ def main() -> int:
     LOG.parent.mkdir(parents=True, exist_ok=True)
     a.out.mkdir(parents=True, exist_ok=True)
     a.proj.mkdir(parents=True, exist_ok=True)
-    logging.basicConfig(level=logging.INFO, format="%(message)s",
-                        handlers=[logging.FileHandler(LOG),
-                                  logging.StreamHandler(sys.stdout)])
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(message)s",
+        handlers=[logging.FileHandler(LOG), logging.StreamHandler(sys.stdout)],
+    )
 
     cmd = [
-        str(HEADLESS), str(a.proj), a.name + "_proj",
-        "-import", str(a.blob),
-        "-processor", a.proc,
-        "-loader", "BinaryLoader",
-        "-loader-baseAddr", hex(a.base),
-        "-scriptPath", str(SCRIPTPATH),
-        "-postScript", "ExportAll.java", str(a.out),
+        str(HEADLESS),
+        str(a.proj),
+        a.name + "_proj",
+        "-import",
+        str(a.blob),
+        "-processor",
+        a.proc,
+        "-loader",
+        "BinaryLoader",
+        "-loader-baseAddr",
+        hex(a.base),
+        "-scriptPath",
+        str(SCRIPTPATH),
+        "-postScript",
+        "ExportAll.java",
+        str(a.out),
         "-deleteProject",
     ]
     logging.info("RUN: %s", " ".join(cmd))

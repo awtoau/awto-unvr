@@ -14,15 +14,20 @@ ADT7475 is driven in MANUAL mode with bang-bang hysteresis on SoC temp:
 Defaults: HIGH=80 C, LOW=50 C, OFF=0 (silent). i.e. fans are OFF until the CPU
 die hits 80 C, then full-blast until it drops back to 50 C. Tune via constants.
 """
-import glob, mmap, struct, sys, time
+
+import glob
+import mmap
+import struct
+import sys
+import time
 from pathlib import Path
 
 HIGH_C, LOW_C = 80, 50
-OFF_PWM, MAX_PWM = 0, 255      # fans OFF below 80 C; full-blast at/above 80 C
+OFF_PWM, MAX_PWM = 0, 255  # fans OFF below 80 C; full-blast at/above 80 C
 POLL_S = 15
 
 # SoC die sensor (Alpine V2 thermal unit) via /dev/mem
-SOC_BASE, SOC_STATUS_OFF = 0xfd860000, 0x0a0c
+SOC_BASE, SOC_STATUS_OFF = 0xFD860000, 0x0A0C
 SOC_OFFSET, SOC_MULT = 1090, 3520
 
 
@@ -38,8 +43,8 @@ def soc_temp():
     try:
         with open("/dev/mem", "rb", 0) as f:
             m = mmap.mmap(f.fileno(), 4096, offset=SOC_BASE, prot=mmap.PROT_READ)
-            s = struct.unpack("<I", m[SOC_STATUS_OFF:SOC_STATUS_OFF + 4])[0]
-        raw = s & 0xfff
+            s = struct.unpack("<I", m[SOC_STATUS_OFF : SOC_STATUS_OFF + 4])[0]
+        raw = s & 0xFFF
         return ((raw * SOC_MULT) // 4096 - SOC_OFFSET) // 10
     except OSError:
         return None
@@ -58,7 +63,7 @@ def adt7475():
 def set_pwm(h, val):
     for p in (1, 2, 3):
         try:
-            (h / f"pwm{p}_enable").write_text("1")   # manual
+            (h / f"pwm{p}_enable").write_text("1")  # manual
             (h / f"pwm{p}").write_text(str(val))
         except OSError as e:
             print(f"pwm{p} write failed: {e}", file=sys.stderr)
@@ -69,14 +74,12 @@ def main():
     if h is None:
         print("adt7475 not found", file=sys.stderr)
         return 1
-    state = "OFF"          # start silent; first loop escalates if already >=80 C
+    state = "OFF"  # start silent; first loop escalates if already >=80 C
     set_pwm(h, OFF_PWM)
     while True:
         soc = soc_temp()
         # If the SoC read ever fails, fail SAFE to MAX rather than risk no cooling.
-        if soc is None:
-            state = "MAX"
-        elif soc >= HIGH_C:
+        if soc is None or soc >= HIGH_C:
             state = "MAX"
         elif soc <= LOW_C:
             state = "OFF"

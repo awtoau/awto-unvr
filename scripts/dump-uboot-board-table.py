@@ -23,6 +23,7 @@ Mechanics:
   is in 0xea00..0xeaff and whose name(+0x08)/bootfrom(+0x30) pointers resolve to
   printable strings. --start/--count/--stride/--swap override the scan.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -35,7 +36,7 @@ REPO = Path(__file__).resolve().parent.parent
 LOG = REPO / "tmp" / "logs" / "dump-uboot-board-table.log"
 TOC_MAGIC = 0x070C070C
 IMG_MAGIC = 0x000B9EC7
-PAYLOAD_HDR_SKIP = 0x48       # payload begins header+0x48, proven empirically
+PAYLOAD_HDR_SKIP = 0x48  # payload begins header+0x48, proven empirically
 STRIDE = 0x70
 
 
@@ -46,7 +47,7 @@ def find_uboot_payload(b: bytes, toc: int) -> tuple[int, int]:
     count = struct.unpack_from("<I", b, toc + 8)[0]
     for n in range(count):
         e = toc + 16 + n * 0x20
-        name = b[e + 8:e + 20].split(b"\0")[0].decode("latin1")
+        name = b[e + 8 : e + 20].split(b"\0")[0].decode("latin1")
         ooff = struct.unpack_from("<I", b, e + 20)[0]
         if name == "uboot":
             if struct.unpack_from("<I", b, ooff)[0] != IMG_MAGIC:
@@ -71,6 +72,7 @@ def make_resolver(b: bytes, pstart: int, load_va: int):
         except UnicodeDecodeError:
             return None
         return t if t.isprintable() else None
+
     return s
 
 
@@ -115,19 +117,27 @@ def scan_table(b, pstart, load_va, s, stride, swap):
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("image", type=Path, help="AL SPI boot image (01-uboot.bin or mtdXX u-boot)")
+    ap.add_argument(
+        "image", type=Path, help="AL SPI boot image (01-uboot.bin or mtdXX u-boot)"
+    )
     ap.add_argument("--toc", type=lambda x: int(x, 0), default=0x80000)
-    ap.add_argument("--start", type=lambda x: int(x, 0), default=None,
-                    help="file offset of first entry (default: auto-scan)")
+    ap.add_argument(
+        "--start",
+        type=lambda x: int(x, 0),
+        default=None,
+        help="file offset of first entry (default: auto-scan)",
+    )
     ap.add_argument("--count", type=int, default=None)
     ap.add_argument("--stride", type=lambda x: int(x, 0), default=None)
     ap.add_argument("--swap", action="store_true", help="sysid stored byte-swapped")
     a = ap.parse_args()
 
     LOG.parent.mkdir(parents=True, exist_ok=True)
-    logging.basicConfig(level=logging.INFO, format="%(message)s",
-                        handlers=[logging.FileHandler(LOG),
-                                  logging.StreamHandler(sys.stdout)])
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(message)s",
+        handlers=[logging.FileHandler(LOG), logging.StreamHandler(sys.stdout)],
+    )
 
     b = a.image.read_bytes()
     pstart, load_va = find_uboot_payload(b, a.toc)
@@ -154,17 +164,39 @@ def main() -> int:
     else:
         stride = stride or STRIDE
 
-    dt_note = ("  (OLD: DTB multi-DT idx from a separate code switch @file 0xa318c: "
-               "ea16->0 ea20->1 ea21->2 ea1a->3 ea2c->5)") if stride == 0x38 else ""
-    logging.info("   table @file 0x%x (VA 0x%x) stride 0x%x swap=%s%s",
-                 start, load_va + (start - pstart), stride, swap, dt_note)
+    dt_note = (
+        (
+            "  (OLD: DTB multi-DT idx from a separate code switch @file 0xa318c: "
+            "ea16->0 ea20->1 ea21->2 ea1a->3 ea2c->5)"
+        )
+        if stride == 0x38
+        else ""
+    )
+    logging.info(
+        "   table @file 0x%x (VA 0x%x) stride 0x%x swap=%s%s",
+        start,
+        load_va + (start - pstart),
+        stride,
+        swap,
+        dt_note,
+    )
     fan_off = 0x29 if stride == 0x38 else 0x2A
     wide = stride >= 0x70
-    logging.info("%-3s %-7s %-12s %-10s %-4s %-9s %-9s %s", "idx", "sysid",
-                 "name", "bootfrom", "fan", "model", "ethprime", "dobootm")
+    logging.info(
+        "%-3s %-7s %-12s %-10s %-4s %-9s %-9s %s",
+        "idx",
+        "sysid",
+        "name",
+        "bootfrom",
+        "fan",
+        "model",
+        "ethprime",
+        "dobootm",
+    )
     off, i = start, 0
-    while (a.count is None and looks_like_entry(b, off, s, stride, swap)) or \
-          (a.count is not None and i < a.count):
+    while (a.count is None and looks_like_entry(b, off, s, stride, swap)) or (
+        a.count is not None and i < a.count
+    ):
         sysid = read_sysid(b, off, swap)
         name = s(struct.unpack_from("<Q", b, off + 0x08)[0]) or "-"
         boot = s(struct.unpack_from("<Q", b, off + 0x30)[0]) or "-"
@@ -174,8 +206,17 @@ def main() -> int:
             model = s(struct.unpack_from("<Q", b, off + 0x40)[0]) or "-"
             eth = s(struct.unpack_from("<Q", b, off + 0x58)[0]) or "-"
             dob = "bootsign" if b[off + 0x38] else "bootunsign"
-        logging.info("%-3d 0x%04x  %-12s %-10s 0x%02x %-9s %-9s %s",
-                     i, sysid, name, boot, fan, model, eth, dob)
+        logging.info(
+            "%-3d 0x%04x  %-12s %-10s 0x%02x %-9s %-9s %s",
+            i,
+            sysid,
+            name,
+            boot,
+            fan,
+            model,
+            eth,
+            dob,
+        )
         off += stride
         i += 1
     logging.info("   %d entries", i)

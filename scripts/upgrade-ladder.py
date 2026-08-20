@@ -30,7 +30,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from _repo import LOGS, REPO, SOURCES, rel  # noqa: E402
+from _repo import LOGS, REPO, SOURCES, rel
 
 SOCK = Path(os.environ.get("XDG_RUNTIME_DIR", "/tmp")) / "tio-unvr.sock"
 TFTP_PORT = 6969
@@ -60,8 +60,10 @@ LOGIN_PASSWORDS = ["ui", "ubnt"]
 #   5.1.25 - current
 LADDER = ["1.4.9", "2.3.14", "3.1.16", "4.1.22", "5.1.25"]
 
-API = ("https://fw-update.ubnt.com/api/firmware"
-       "?filter=eq~~platform~~UNVR&filter=eq~~channel~~release&sort=created&limit=200")
+API = (
+    "https://fw-update.ubnt.com/api/firmware"
+    "?filter=eq~~platform~~UNVR&filter=eq~~channel~~release&sort=created&limit=200"
+)
 
 # --- timeouts, all derived ------------------------------------------------
 # Console command echo: the shell replies in milliseconds; 3 s is ~1000x that.
@@ -105,7 +107,7 @@ def console(cmd: str, wait: float = CONSOLE_WAIT) -> str:
     line = f"{cmd}; echo {tag}$?" if cmd else f"echo {tag}$?"
 
     s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-    s.settimeout(1.0)                     # poll interval, not the deadline
+    s.settimeout(1.0)  # poll interval, not the deadline
     s.connect(str(SOCK))
     s.sendall(line.encode() + b"\r")
     got = ""
@@ -114,7 +116,7 @@ def console(cmd: str, wait: float = CONSOLE_WAIT) -> str:
         while time.monotonic() < end:
             try:
                 chunk = s.recv(65536)
-            except socket.timeout:
+            except TimeoutError:
                 continue
             if not chunk:
                 break
@@ -149,7 +151,7 @@ def console_raw(text: str, wait: float = 2.0, until: str | None = None) -> str:
         while time.monotonic() < end:
             try:
                 chunk = s.recv(65536)
-            except socket.timeout:
+            except TimeoutError:
                 continue
             if not chunk:
                 break
@@ -212,8 +214,9 @@ def api_rows() -> list[dict]:
     if cache.exists():
         return json.loads(cache.read_text())["_embedded"]["firmware"]
     SOURCES.mkdir(parents=True, exist_ok=True)
-    p = subprocess.run(["curl", "-fsSL", "--max-time", "60", API],
-                       capture_output=True, text=True)
+    p = subprocess.run(
+        ["curl", "-fsSL", "--max-time", "60", API], capture_output=True, text=True
+    )
     if p.returncode != 0:
         sys.exit(f"could not fetch the release list: {p.stderr.strip()}")
     cache.write_text(p.stdout)
@@ -247,8 +250,22 @@ def fetch(row: dict) -> Path:
         dest.unlink()
     url = row["_links"]["data"]["href"]
     log(f"  GET {url}")
-    p = subprocess.run(["curl", "-fL", "--progress-bar", "--speed-limit", "10240",
-                        "--speed-time", "30", "--max-time", "3600", "-o", str(dest), url])
+    p = subprocess.run(
+        [
+            "curl",
+            "-fL",
+            "--progress-bar",
+            "--speed-limit",
+            "10240",
+            "--speed-time",
+            "30",
+            "--max-time",
+            "3600",
+            "-o",
+            str(dest),
+            url,
+        ]
+    )
     if p.returncode != 0:
         dest.unlink(missing_ok=True)
         sys.exit(f"download failed for {ver}")
@@ -261,32 +278,55 @@ def fetch(row: dict) -> Path:
 
 
 def device_version() -> str | None:
-    out = console("cat /usr/lib/version 2>/dev/null || cat /etc/version 2>/dev/null", wait=3.0)
+    out = console(
+        "cat /usr/lib/version 2>/dev/null || cat /etc/version 2>/dev/null", wait=3.0
+    )
     m = re.search(r"UNVR4\.\w+\.v(\d+\.\d+\.\d+)", out)
     return m.group(1) if m else None
 
 
 def backup(tag: str) -> bool:
     log(f"  backup: --preset state --tag {tag}")
-    p = subprocess.run([sys.executable, str(REPO / "scripts" / "dump-unvr-mtd.py"),
-                        "--preset", "state", "--tag", tag], cwd=REPO)
+    p = subprocess.run(
+        [
+            sys.executable,
+            str(REPO / "scripts" / "dump-unvr-mtd.py"),
+            "--preset",
+            "state",
+            "--tag",
+            tag,
+        ],
+        cwd=REPO,
+    )
     return p.returncode == 0
 
 
 def ensure_tftpd() -> subprocess.Popen | None:
-    r = subprocess.run(["ss", "-lun", "sport = :%d" % TFTP_PORT],
-                       capture_output=True, text=True)
+    r = subprocess.run(
+        ["ss", "-lun", "sport = :%d" % TFTP_PORT], capture_output=True, text=True
+    )
     if "UNCONN" in r.stdout:
-        return None                      # already listening
+        return None  # already listening
     log("  starting tftpd")
     TFTP_ROOT.mkdir(parents=True, exist_ok=True)
-    proc = subprocess.Popen([sys.executable, str(REPO / "scripts" / "tftpd.py"),
-                             "--root", "images/tftp", "--port", str(TFTP_PORT)],
-                            cwd=REPO, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-                            start_new_session=True)
+    proc = subprocess.Popen(
+        [
+            sys.executable,
+            str(REPO / "scripts" / "tftpd.py"),
+            "--root",
+            "images/tftp",
+            "--port",
+            str(TFTP_PORT),
+        ],
+        cwd=REPO,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        start_new_session=True,
+    )
     for _ in range(40):
-        r = subprocess.run(["ss", "-lun", "sport = :%d" % TFTP_PORT],
-                           capture_output=True, text=True)
+        r = subprocess.run(
+            ["ss", "-lun", "sport = :%d" % TFTP_PORT], capture_output=True, text=True
+        )
         if "UNCONN" in r.stdout:
             return proc
         time.sleep(0.05)
@@ -295,12 +335,17 @@ def ensure_tftpd() -> subprocess.Popen | None:
 
 def host_ip() -> str:
     out = console("ip -4 addr show", wait=3.0)
-    cands = [ip for ip in re.findall(r"inet (\d+\.\d+\.\d+\.\d+)/", out)
-             if not ip.startswith(("127.", "169.254."))]
+    cands = [
+        ip
+        for ip in re.findall(r"inet (\d+\.\d+\.\d+\.\d+)/", out)
+        if not ip.startswith(("127.", "169.254."))
+    ]
     if not cands:
         sys.exit(f"no routable IPv4 on the device:\n{out}")
     dev = cands[0]
-    p = subprocess.run(["ip", "-o", "route", "get", dev], capture_output=True, text=True)
+    p = subprocess.run(
+        ["ip", "-o", "route", "get", dev], capture_output=True, text=True
+    )
     m = re.search(r"\bsrc (\d+\.\d+\.\d+\.\d+)", p.stdout)
     if not m:
         sys.exit(f"no route to {dev}")
@@ -355,7 +400,9 @@ def volume_ok() -> bool:
     if "/volume1" not in out:
         log("  /volume1 NOT MOUNTED", "ERROR")
         return False
-    log(f"  /volume1: {out.strip().splitlines()[-2] if len(out.splitlines()) > 1 else out.strip()}")
+    log(
+        f"  /volume1: {out.strip().splitlines()[-2] if len(out.splitlines()) > 1 else out.strip()}"
+    )
     return True
 
 
@@ -372,19 +419,28 @@ def hop(row: dict, ver: str) -> bool:
 
     served = TFTP_ROOT / img.name
     if not served.exists():
-        served.hardlink_to(img) if hasattr(served, "hardlink_to") else os.link(img, served)
+        served.hardlink_to(img) if hasattr(served, "hardlink_to") else os.link(
+            img, served
+        )
 
     console(f"mkdir -p {STAGE_DIR} && rm -f {STAGE_DIR}/fw-image.bin", wait=3.0)
     log(f"  pushing {img.name} ({img.stat().st_size} B) - limit {PUSH_WAIT}s")
-    console(f"cd {STAGE_DIR} && tftp -b {TFTP_BLKSIZE} -g -l fw-image.bin "
-            f"-r {img.name} {hostip} {TFTP_PORT}", wait=1.0)
+    console(
+        f"cd {STAGE_DIR} && tftp -b {TFTP_BLKSIZE} -g -l fw-image.bin "
+        f"-r {img.name} {hostip} {TFTP_PORT}",
+        wait=1.0,
+    )
 
     end = time.monotonic() + PUSH_WAIT
     want = img.stat().st_size
     while time.monotonic() < end:
         time.sleep(POLL)
         out = console(f"stat -c %s {STAGE_DIR}/fw-image.bin 2>/dev/null", wait=3.0)
-        m = re.search(r"^(\d+)$", out.strip().splitlines()[-2] if len(out.strip().splitlines()) > 1 else "", re.M)
+        m = re.search(
+            r"^(\d+)$",
+            out.strip().splitlines()[-2] if len(out.strip().splitlines()) > 1 else "",
+            re.MULTILINE,
+        )
         sizes = [int(x) for x in re.findall(r"\b(\d{6,})\b", out)]
         if sizes and max(sizes) >= want:
             log(f"  pushed {max(sizes)} B")
@@ -428,8 +484,11 @@ def hop(row: dict, ver: str) -> bool:
     # its own key before writing a single block.
     if "K=0" in console(f"test -f {PUB_KEY}; echo K=$?", wait=30.0):
         log(f"  pre-verifying with fwsplit against {PUB_KEY}")
-        out = console(f"rm -f /tmp/.fwchk.*; fwsplit -s {PUB_KEY} -o /tmp/.fwchk "
-                      f"{STAGE_DIR}/fw-image.bin 2>&1; echo CHK=$?", wait=300.0)
+        out = console(
+            f"rm -f /tmp/.fwchk.*; fwsplit -s {PUB_KEY} -o /tmp/.fwchk "
+            f"{STAGE_DIR}/fw-image.bin 2>&1; echo CHK=$?",
+            wait=300.0,
+        )
         for line in out.splitlines():
             if line.strip() and not line.startswith("__UL"):
                 log(f"    | {line.rstrip()}")
@@ -439,8 +498,10 @@ def hop(row: dict, ver: str) -> bool:
         console("rm -f /tmp/.fwchk.*", wait=30.0)
         log("  signature verified")
     else:
-        log(f"  no {PUB_KEY} in rootfs - al324 keeps it in the initramfs, "
-            "which verifies before writing")
+        log(
+            f"  no {PUB_KEY} in rootfs - al324 keeps it in the initramfs, "
+            "which verifies before writing"
+        )
 
     # Hand the flash to the stock own path rather than driving nandwrite
     # ourselves. `mount_premount` finds ${MNT_RWFS}/upgrade/fw-image.bin before
@@ -457,7 +518,10 @@ def hop(row: dict, ver: str) -> bool:
         # Say WHICH kernel is running. A timeout means either the flash did not
         # apply or the version read failed, and those need opposite responses -
         # guessing wrong cost a whole hop on 1.4.9, which had upgraded fine.
-        log(f"  last kernel banner seen: {last_kernel_banner() or 'none in log'}", "ERROR")
+        log(
+            f"  last kernel banner seen: {last_kernel_banner() or 'none in log'}",
+            "ERROR",
+        )
         return False
     # Advisory only. overlay_cleanup runs on every upgrade boot, and a missing
     # /volume1 is not a reason to abandon a ladder that is otherwise healthy.
@@ -470,8 +534,9 @@ def hop(row: dict, ver: str) -> bool:
 
 
 if __name__ == "__main__":
-    ap = argparse.ArgumentParser(description=__doc__,
-                                 formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     ap.add_argument("--go", action="store_true", help="actually do it")
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--only", help="single version, e.g. 1.4.9")
@@ -501,8 +566,10 @@ if __name__ == "__main__":
 
     # A downgrade via --only is almost never intended; make it deliberate.
     if a.go and cur and any(ver_key(v) < ver_key(cur) for v in plan):
-        sys.exit(f"refusing to downgrade from {cur} to {plan}. "
-                 "Downgrading past the al324 boundary boot-loops on this unit.")
+        sys.exit(
+            f"refusing to downgrade from {cur} to {plan}. "
+            "Downgrading past the al324 boundary boot-loops on this unit."
+        )
 
     if not plan:
         log(f"already at or past the ladder top ({cur}); nothing to do")

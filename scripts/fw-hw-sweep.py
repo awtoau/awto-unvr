@@ -8,6 +8,7 @@ ethtool ioctls, raw /dev nodes) and prints matches per file.
 Usage: fw-hw-sweep.py <rootfs-dir>
 Output: stdout (redirect to tmp/logs/fw-hw-sweep.raw).
 """
+
 import os
 import re
 import subprocess
@@ -53,14 +54,19 @@ def scan(path):
     try:
         out = subprocess.run(
             ["strings", "-n", "4", path],
-            capture_output=True, text=True, timeout=30,
+            capture_output=True,
+            text=True,
+            timeout=30,
         ).stdout
     except Exception:
         return {}
     hits = {}
     for label, pat in PATTERNS.items():
-        found = sorted(set(re.findall(pat, out)) if "(" in pat else
-                       set(m.group(0) for m in re.finditer(pat, out)))
+        found = sorted(
+            set(re.findall(pat, out))
+            if "(" in pat
+            else set(m.group(0) for m in re.finditer(pat, out))
+        )
         # collect full matching lines for context
         lines = [ln for ln in out.splitlines() if re.search(pat, ln)]
         if lines:

@@ -21,6 +21,7 @@ Usage:
   scripts/ghidra-analyse.py alboot.bin --name alboot --arch arm32 --base 0x1000000 \
       --preboot --sym-dir tmp/ghidra-in
 """
+
 from __future__ import annotations
 
 import argparse
@@ -33,7 +34,7 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parent.parent
 GHIDRA = Path("/home/dan/tools/ghidra_12.2_DEV")
 HEADLESS = GHIDRA / "support" / "analyzeHeadless"
-SCRIPTPATH = REPO / "scripts" / "ghidra"      # committed, reusable
+SCRIPTPATH = REPO / "scripts" / "ghidra"  # committed, reusable
 LOG = REPO / "tmp" / "logs" / "ghidra-analyse.log"
 
 # Ghidra language IDs. v8A covers the AL-324 Cortex-A57 cluster; the 32-bit preboot
@@ -46,18 +47,40 @@ def main() -> int:
     ap.add_argument("blob", type=Path)
     ap.add_argument("--name", required=True, help="ghidra program name")
     ap.add_argument("--arch", choices=LANG, required=True)
-    ap.add_argument("--base", type=lambda s: int(s, 0), required=True,
-                    help="load VA (derive from AL TOC via parse-al-toc.py; never guess)")
-    ap.add_argument("--preboot", action="store_true",
-                    help="also map SoC-fabric regions (0xf00xxxxx, 0xfbffxxxx, S2 SRAM)")
-    ap.add_argument("--entry", type=lambda s: int(s, 0), default=None,
-                    help="seed a reset entry VA so auto-analysis follows it (SeedEntry.java)")
-    ap.add_argument("--entry-thumb", action="store_true",
-                    help="the --entry point is Thumb (T32); default A32")
-    ap.add_argument("--disasm-gaps", type=Path, default=None,
-                    help="file of hex VAs (verified code) to disassemble pre-analysis (DisasmGaps.java)")
-    ap.add_argument("--sym-dir", type=Path, default=None,
-                    help="dir of *.sym / *.equ.tsv from gen-al-reg-symbols.py")
+    ap.add_argument(
+        "--base",
+        type=lambda s: int(s, 0),
+        required=True,
+        help="load VA (derive from AL TOC via parse-al-toc.py; never guess)",
+    )
+    ap.add_argument(
+        "--preboot",
+        action="store_true",
+        help="also map SoC-fabric regions (0xf00xxxxx, 0xfbffxxxx, S2 SRAM)",
+    )
+    ap.add_argument(
+        "--entry",
+        type=lambda s: int(s, 0),
+        default=None,
+        help="seed a reset entry VA so auto-analysis follows it (SeedEntry.java)",
+    )
+    ap.add_argument(
+        "--entry-thumb",
+        action="store_true",
+        help="the --entry point is Thumb (T32); default A32",
+    )
+    ap.add_argument(
+        "--disasm-gaps",
+        type=Path,
+        default=None,
+        help="file of hex VAs (verified code) to disassemble pre-analysis (DisasmGaps.java)",
+    )
+    ap.add_argument(
+        "--sym-dir",
+        type=Path,
+        default=None,
+        help="dir of *.sym / *.equ.tsv from gen-al-reg-symbols.py",
+    )
     ap.add_argument("--out", type=Path, default=REPO / "tmp" / "ghidra-out")
     ap.add_argument("--proj", type=Path, default=REPO / "tmp" / "ghidra-proj")
     # 1.25x the observed worst case: 435 KB ARM32 auto-analysis + decompile-all was
@@ -69,27 +92,45 @@ def main() -> int:
     LOG.parent.mkdir(parents=True, exist_ok=True)
     a.out.mkdir(parents=True, exist_ok=True)
     a.proj.mkdir(parents=True, exist_ok=True)
-    logging.basicConfig(level=logging.INFO, format="%(message)s",
-                        handlers=[logging.FileHandler(LOG),
-                                  logging.StreamHandler(sys.stdout)])
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(message)s",
+        handlers=[logging.FileHandler(LOG), logging.StreamHandler(sys.stdout)],
+    )
 
     cmd = [
-        str(HEADLESS), str(a.proj), a.name + "_proj",
-        "-import", str(a.blob),
-        "-processor", LANG[a.arch],
-        "-loader", "BinaryLoader",
-        "-loader-baseAddr", hex(a.base),
-        "-scriptPath", str(SCRIPTPATH),
-        "-preScript", "SetupAlpineMemory.java",
+        str(HEADLESS),
+        str(a.proj),
+        a.name + "_proj",
+        "-import",
+        str(a.blob),
+        "-processor",
+        LANG[a.arch],
+        "-loader",
+        "BinaryLoader",
+        "-loader-baseAddr",
+        hex(a.base),
+        "-scriptPath",
+        str(SCRIPTPATH),
+        "-preScript",
+        "SetupAlpineMemory.java",
     ]
     if a.preboot:
         cmd += ["preboot"]
     if a.entry is not None:
-        cmd += ["-preScript", "SeedEntry.java", hex(a.entry),
-                "thumb" if a.entry_thumb else "arm"]
+        cmd += [
+            "-preScript",
+            "SeedEntry.java",
+            hex(a.entry),
+            "thumb" if a.entry_thumb else "arm",
+        ]
     if a.disasm_gaps is not None:
-        cmd += ["-preScript", "DisasmGaps.java", str(a.disasm_gaps),
-                "thumb" if a.entry_thumb else "arm"]
+        cmd += [
+            "-preScript",
+            "DisasmGaps.java",
+            str(a.disasm_gaps),
+            "thumb" if a.entry_thumb else "arm",
+        ]
     if a.sym_dir:
         syms = sorted(glob.glob(str(a.sym_dir / "*.sym")))
         syms += sorted(glob.glob(str(a.sym_dir / "*.equ.tsv")))

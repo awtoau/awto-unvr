@@ -16,7 +16,9 @@ from pathlib import Path
 
 import serial
 
-DEFAULT_PORT = "/dev/serial/by-id/usb-Prolific_Technology_Inc._USB-Serial_Controller_D-if00-port0"
+DEFAULT_PORT = (
+    "/dev/serial/by-id/usb-Prolific_Technology_Inc._USB-Serial_Controller_D-if00-port0"
+)
 BAUDS = (9600, 115200, 921600)
 CONSOLE_BAUDS = (115200, 9600, 57600, 38400, 19200, 230400)
 
@@ -29,7 +31,7 @@ TIMEOUT_MARGIN = 1.25
 
 PATTERNS = {
     "counting": bytes(range(256)),
-    "alternating": b"\x55\xAA" * 32,
+    "alternating": b"\x55\xaa" * 32,
     "ascii": b"The quick brown fox jumps over the lazy dog 0123456789\r\n",
 }
 
@@ -55,14 +57,20 @@ def run_pattern(port: serial.Serial, name: str, payload: bytes) -> bool:
     if got == payload:
         log.info(
             "  %-12s %3d B OK   in %6.1f ms (limit %.1f ms)",
-            name, len(payload), elapsed * 1e3, limit * 1e3,
+            name,
+            len(payload),
+            elapsed * 1e3,
+            limit * 1e3,
         )
         return True
 
     if not got:
         log.error(
             "  %-12s %3d B TIMEOUT after %.1f ms (limit %.1f ms) - 0 bytes back",
-            name, len(payload), elapsed * 1e3, limit * 1e3,
+            name,
+            len(payload),
+            elapsed * 1e3,
+            limit * 1e3,
         )
     else:
         first_bad = next(
@@ -71,8 +79,12 @@ def run_pattern(port: serial.Serial, name: str, payload: bytes) -> bool:
         log.error(
             "  %-12s %3d B MISMATCH: got %d B, first diff at byte %d "
             "(sent %r, got %r), %.1f ms",
-            name, len(payload), len(got), first_bad,
-            payload[first_bad:first_bad + 4], got[first_bad:first_bad + 4],
+            name,
+            len(payload),
+            len(got),
+            first_bad,
+            payload[first_bad : first_bad + 4],
+            got[first_bad : first_bad + 4],
             elapsed * 1e3,
         )
     return False
@@ -99,7 +111,8 @@ def check_modem_lines(port: serial.Serial) -> None:
                     break
             log.info(
                 "  %s -> %s: %s",
-                out_name.upper(), in_name.upper(),
+                out_name.upper(),
+                in_name.upper(),
                 "follows (looped)" if follows else "does not follow (not connected)",
             )
     port.rts = False
@@ -114,9 +127,14 @@ def repeat_loop(port_path: str, baud: int, interval: float, rounds_max: int = 0)
     Reopens the port each round if it vanishes (unplug/replug).
     """
     payload = PATTERNS["ascii"]
-    log.info("repeat mode: %s @ %d baud, %d B every %.1f s, %s",
-             port_path, baud, len(payload), interval,
-             f"{rounds_max} rounds" if rounds_max else "Ctrl-C to stop")
+    log.info(
+        "repeat mode: %s @ %d baud, %d B every %.1f s, %s",
+        port_path,
+        baud,
+        len(payload),
+        interval,
+        f"{rounds_max} rounds" if rounds_max else "Ctrl-C to stop",
+    )
 
     port: serial.Serial | None = None
     prev: bool | None = None
@@ -151,9 +169,16 @@ def repeat_loop(port_path: str, baud: int, interval: float, rounds_max: int = 0)
         if port is not None:
             port.close()
 
-    log.info("RESULT: %d/%d rounds echoed - %s", passes, rounds,
-             "loopback PRESENT" if passes == rounds else
-             "NO loopback" if passes == 0 else "INTERMITTENT")
+    log.info(
+        "RESULT: %d/%d rounds echoed - %s",
+        passes,
+        rounds,
+        "loopback PRESENT"
+        if passes == rounds
+        else "NO loopback"
+        if passes == 0
+        else "INTERMITTENT",
+    )
     return 0 if passes == rounds else 1
 
 
@@ -182,16 +207,23 @@ def listen(port_path: str, baud: int, window: float) -> int:
     return 0
 
 
-def send_probe(port_path: str, baud: int, payload: bytes, window: float,
-               repeats: int) -> int:
+def send_probe(
+    port_path: str, baud: int, payload: bytes, window: float, repeats: int
+) -> int:
     """Send bytes to a real device and report whatever it answers.
 
     Not a loopback test - anything back here came from the far end.
     Window default 1.0 s = 1.25 x a generous 800 ms for an embedded device to
     emit a prompt/banner. On expiry with nothing: the device is silent to this.
     """
-    log.info("probe %s @ %d baud: send %r, listen %.1f s, %d time(s)",
-             port_path, baud, payload, window, repeats)
+    log.info(
+        "probe %s @ %d baud: send %r, listen %.1f s, %d time(s)",
+        port_path,
+        baud,
+        payload,
+        window,
+        repeats,
+    )
     try:
         with serial.Serial(port_path, baud, timeout=window, write_timeout=1) as port:
             port.reset_input_buffer()
@@ -205,7 +237,9 @@ def send_probe(port_path: str, baud: int, payload: bytes, window: float,
                 elapsed = time.monotonic() - t0
                 if got:
                     answered += 1
-                    log.info("  try %d: %d bytes in %.0f ms", i, len(got), elapsed * 1e3)
+                    log.info(
+                        "  try %d: %d bytes in %.0f ms", i, len(got), elapsed * 1e3
+                    )
                     log.info("    hex : %s", got[:96].hex(" "))
                     log.info("    text: %r", got[:96])
                 else:
@@ -221,16 +255,43 @@ def send_probe(port_path: str, baud: int, payload: bytes, window: float,
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--port", default=DEFAULT_PORT)
-    ap.add_argument("--baud", type=int, action="append", help="repeatable; default 9600/115200/921600")
-    ap.add_argument("--lines", action="store_true", help="also check RTS/DTR handshake loopback")
-    ap.add_argument("--repeat", action="store_true", help="probe continuously until Ctrl-C")
-    ap.add_argument("--interval", type=float, default=1.0, help="seconds between repeat rounds")
-    ap.add_argument("--rounds", type=int, default=0, help="stop after N repeat rounds (0 = until Ctrl-C)")
-    ap.add_argument("--listen", type=float, metavar="SECONDS",
-                    help="passive receive only: report anything arriving on RX")
-    ap.add_argument("--send", nargs="?", const="\r\n", metavar="TEXT",
-                    help="send TEXT (default CR LF) to a real device, report its reply")
-    ap.add_argument("--window", type=float, default=1.0, help="seconds to wait for a reply")
+    ap.add_argument(
+        "--baud",
+        type=int,
+        action="append",
+        help="repeatable; default 9600/115200/921600",
+    )
+    ap.add_argument(
+        "--lines", action="store_true", help="also check RTS/DTR handshake loopback"
+    )
+    ap.add_argument(
+        "--repeat", action="store_true", help="probe continuously until Ctrl-C"
+    )
+    ap.add_argument(
+        "--interval", type=float, default=1.0, help="seconds between repeat rounds"
+    )
+    ap.add_argument(
+        "--rounds",
+        type=int,
+        default=0,
+        help="stop after N repeat rounds (0 = until Ctrl-C)",
+    )
+    ap.add_argument(
+        "--listen",
+        type=float,
+        metavar="SECONDS",
+        help="passive receive only: report anything arriving on RX",
+    )
+    ap.add_argument(
+        "--send",
+        nargs="?",
+        const="\r\n",
+        metavar="TEXT",
+        help="send TEXT (default CR LF) to a real device, report its reply",
+    )
+    ap.add_argument(
+        "--window", type=float, default=1.0, help="seconds to wait for a reply"
+    )
     ap.add_argument("--tries", type=int, default=3, help="how many times to send")
     args = ap.parse_args()
 
@@ -253,8 +314,11 @@ def main() -> int:
     if args.send is not None:
         payload = args.send.encode().decode("unicode_escape").encode("latin-1")
         probe_bauds = args.baud or list(CONSOLE_BAUDS)
-        answered = [b for b in probe_bauds
-                    if send_probe(args.port, b, payload, args.window, args.tries) == 0]
+        answered = [
+            b
+            for b in probe_bauds
+            if send_probe(args.port, b, payload, args.window, args.tries) == 0
+        ]
         log.info("SWEEP RESULT: answered at %s", answered or "no baud rate")
         return 0 if answered else 1
 
@@ -262,8 +326,9 @@ def main() -> int:
         return listen(args.port, probe_baud, args.listen)
 
     if args.repeat:
-        return repeat_loop(args.port, bauds[0] if args.baud else 115200,
-                           args.interval, args.rounds)
+        return repeat_loop(
+            args.port, bauds[0] if args.baud else 115200, args.interval, args.rounds
+        )
 
     results: dict[int, bool] = {}
     for baud in bauds:
@@ -271,8 +336,10 @@ def main() -> int:
         try:
             with serial.Serial(args.port, baud, timeout=1, write_timeout=1) as port:
                 results[baud] = all(
-                    [run_pattern(port, name, payload)
-                     for name, payload in PATTERNS.items()]
+                    [
+                        run_pattern(port, name, payload)
+                        for name, payload in PATTERNS.items()
+                    ]
                 )
                 if args.lines and baud == bauds[0]:
                     check_modem_lines(port)

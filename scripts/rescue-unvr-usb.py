@@ -12,7 +12,6 @@ Run: sudo ./scripts/rescue-unvr-usb.py [rescue|status|manifest]
 import argparse
 import hashlib
 import os
-import pwd
 import shutil
 import subprocess
 import sys
@@ -53,7 +52,9 @@ def run(cmd, check=True):
     """Run a command, teeing combined output to console and log."""
     log(f"$ {' '.join(str(c) for c in cmd)}")
     with LOGFILE.open("a") as fh:
-        proc = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+        proc = subprocess.run(
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True
+        )
         if proc.stdout:
             sys.stdout.write(proc.stdout)
             sys.stdout.flush()
@@ -66,11 +67,15 @@ def run(cmd, check=True):
 def resolve_device():
     """Return the real device path, or exit if identity does not match."""
     if not BY_ID.exists():
-        sys.exit(f"FATAL: {BY_ID} absent - UNVR USB not plugged in (or enumerated elsewhere)")
+        sys.exit(
+            f"FATAL: {BY_ID} absent - UNVR USB not plugged in (or enumerated elsewhere)"
+        )
     dev = BY_ID.resolve()
     size = int((Path("/sys/class/block") / dev.name / "size").read_text().strip())
     if size != EXPECT_SECTORS:
-        sys.exit(f"FATAL: {dev} is {size} sectors, expected {EXPECT_SECTORS}. Refusing.")
+        sys.exit(
+            f"FATAL: {dev} is {size} sectors, expected {EXPECT_SECTORS}. Refusing."
+        )
     mounts = Path("/proc/mounts").read_text()
     if str(dev) in mounts:
         sys.exit(f"FATAL: {dev} is mounted. Unmount before imaging.")
@@ -93,13 +98,19 @@ def rescue(dev):
     # data off a dying device before further stress kills more of it.
     log("=== pass 1: fast skip-on-error (-n) ===")
     t0 = time.time()
-    run(common + ["-n", f"--timeout={TIMEOUT_SKIP}", str(dev), str(IMG), str(MAP)], check=False)
+    run(
+        common + ["-n", f"--timeout={TIMEOUT_SKIP}", str(dev), str(IMG), str(MAP)],
+        check=False,
+    )
     log(f"pass 1 done in {time.time() - t0:.0f}s")
 
     # Pass 2: scrape + retry the areas pass 1 skipped.
     log("=== pass 2: scrape and retry (-r3) ===")
     t0 = time.time()
-    run(common + ["-r3", f"--timeout={TIMEOUT_SCRAPE}", str(dev), str(IMG), str(MAP)], check=False)
+    run(
+        common + ["-r3", f"--timeout={TIMEOUT_SCRAPE}", str(dev), str(IMG), str(MAP)],
+        check=False,
+    )
     log(f"pass 2 done in {time.time() - t0:.0f}s")
 
     give_back(IMG)
@@ -126,7 +137,9 @@ def manifest():
     log("hashing image (this reads 7.4 GiB from local NVMe, not the USB)")
     digest = sha256(IMG)
     stat = IMG.stat()
-    rescued = subprocess.run(["ddrescuelog", "-t", str(MAP)], capture_output=True, text=True).stdout
+    rescued = subprocess.run(
+        ["ddrescuelog", "-t", str(MAP)], capture_output=True, text=True
+    ).stdout
 
     doc = f"""# UNVR boot USB image
 
@@ -158,7 +171,7 @@ against the original; work from the image.
 
 | | |
 |---|---|
-| Captured | {datetime.now(timezone.utc).astimezone().isoformat(timespec='seconds')} |
+| Captured | {datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds")} |
 | Apparent size | {stat.st_size} bytes |
 | On-disk (sparse) | {stat.st_blocks * 512} bytes |
 | sha256 | `{digest}` |
@@ -189,8 +202,12 @@ would replay it and mutate the image.
 
 
 if __name__ == "__main__":
-    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("action", nargs="?", default="rescue", choices=["rescue", "status", "manifest"])
+    ap = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+    ap.add_argument(
+        "action", nargs="?", default="rescue", choices=["rescue", "status", "manifest"]
+    )
     args = ap.parse_args()
 
     IMAGES.mkdir(parents=True, exist_ok=True)

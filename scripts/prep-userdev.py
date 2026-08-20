@@ -59,19 +59,28 @@ def log(msg, level="INFO"):
 def block_devices():
     p = subprocess.run(
         ["lsblk", "-J", "-b", "-d", "-o", "NAME,SIZE,TRAN,MODEL,SERIAL,TYPE"],
-        capture_output=True, text=True)
+        capture_output=True,
+        text=True,
+    )
     if p.returncode != 0:
         sys.exit(f"lsblk failed: {p.stderr}")
     return json.loads(p.stdout)["blockdevices"]
 
 
 def main():
-    ap = argparse.ArgumentParser(description=__doc__,
-                                 formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--list", action="store_true", help="list USB block devices and exit")
+    ap = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+    ap.add_argument(
+        "--list", action="store_true", help="list USB block devices and exit"
+    )
     ap.add_argument("--serial", help="USB serial of the target stick")
-    ap.add_argument("--label", default="", help="filesystem label (default: none, matching stock)")
-    ap.add_argument("--yes", action="store_true", help="actually do it (otherwise dry run)")
+    ap.add_argument(
+        "--label", default="", help="filesystem label (default: none, matching stock)"
+    )
+    ap.add_argument(
+        "--yes", action="store_true", help="actually do it (otherwise dry run)"
+    )
     a = ap.parse_args()
 
     devs = block_devices()
@@ -82,15 +91,19 @@ def main():
             if d.get("tran") != "usb":
                 continue
             deny = " [DENYLISTED]" if d.get("serial") in DENY_SERIALS else ""
-            log(f"  /dev/{d['name']:6s} {d['size']:>14} B  {d.get('model','?'):22s} "
-                f"serial={d.get('serial','?')}{deny}")
+            log(
+                f"  /dev/{d['name']:6s} {d['size']:>14} B  {d.get('model', '?'):22s} "
+                f"serial={d.get('serial', '?')}{deny}"
+            )
         if not a.serial:
             log("give --serial to select a target", "WARN")
             return 2
         return 0
 
     if a.serial in DENY_SERIALS:
-        sys.exit(f"REFUSING: serial {a.serial} is denylisted (it is the original UNVR stick)")
+        sys.exit(
+            f"REFUSING: serial {a.serial} is denylisted (it is the original UNVR stick)"
+        )
 
     match = [d for d in devs if d.get("serial") == a.serial]
     if not match:
@@ -112,16 +125,20 @@ def main():
     if dev in mounts:
         sys.exit(f"REFUSING: {dev} or a partition of it is mounted. Unmount first.")
 
-    log(f"target : {dev}  ({d.get('model','?')}, serial {a.serial}, {size} B)")
-    log("plan   : wipefs -a, then mkfs.ext4 across the WHOLE device (no partition table)")
+    log(f"target : {dev}  ({d.get('model', '?')}, serial {a.serial}, {size} B)")
+    log(
+        "plan   : wipefs -a, then mkfs.ext4 across the WHOLE device (no partition table)"
+    )
 
     if not a.yes:
         log("dry run - pass --yes to proceed", "WARN")
         return 0
 
     mkfs = ["mkfs.ext4", "-F", "-O", "^" + ",^".join(DISABLE_FEATURES)]
-    for cmd in (["wipefs", "-a", dev],
-                mkfs + (["-L", a.label] if a.label else []) + [dev]):
+    for cmd in (
+        ["wipefs", "-a", dev],
+        mkfs + (["-L", a.label] if a.label else []) + [dev],
+    ):
         log("run: " + " ".join(cmd))
         p = subprocess.run(["sudo", "-n"] + cmd, capture_output=True, text=True)
         if p.stdout.strip():
@@ -130,8 +147,9 @@ def main():
             log(p.stderr.strip(), "ERROR")
             sys.exit(f"failed: {' '.join(cmd)}")
 
-    p = subprocess.run(["lsblk", "-o", "NAME,SIZE,FSTYPE,LABEL", dev],
-                       capture_output=True, text=True)
+    p = subprocess.run(
+        ["lsblk", "-o", "NAME,SIZE,FSTYPE,LABEL", dev], capture_output=True, text=True
+    )
     log("result:\n" + p.stdout.strip())
     log("done - fit this stick in the UNVR and power on", "INFO")
     return 0

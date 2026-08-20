@@ -23,9 +23,22 @@ from pathlib import Path
 
 # Ubiquiti Networks OUIs (subset covering current gear; extend as needed).
 UBNT_OUIS = {
-    "00:15:6d", "00:27:22", "04:18:d6", "18:e8:29", "24:5a:4c", "44:d9:e7",
-    "68:72:51", "74:83:c2", "74:ac:b9", "78:8a:20", "80:2a:a8", "b4:fb:e4",
-    "dc:9f:db", "e0:63:da", "f0:9f:c2", "fc:ec:da",
+    "00:15:6d",
+    "00:27:22",
+    "04:18:d6",
+    "18:e8:29",
+    "24:5a:4c",
+    "44:d9:e7",
+    "68:72:51",
+    "74:83:c2",
+    "74:ac:b9",
+    "78:8a:20",
+    "80:2a:a8",
+    "b4:fb:e4",
+    "dc:9f:db",
+    "e0:63:da",
+    "f0:9f:c2",
+    "fc:ec:da",
 }
 
 # ICMP on a LAN answers in well under a millisecond; 1 s is ~3 orders of magnitude
@@ -36,8 +49,12 @@ CACHE = Path("tmp/woomera-addr")  # regenerable: last address that answered
 
 
 def mac_of(ip: str) -> str | None:
-    subprocess.run(["ping", "-c", "1", "-W", str(PING_TIMEOUT_S), ip], capture_output=True)
-    out = subprocess.run(["ip", "neigh", "show", ip], capture_output=True, text=True).stdout
+    subprocess.run(
+        ["ping", "-c", "1", "-W", str(PING_TIMEOUT_S), ip], capture_output=True
+    )
+    out = subprocess.run(
+        ["ip", "neigh", "show", ip], capture_output=True, text=True
+    ).stdout
     m = re.search(r"lladdr ([0-9a-f:]{17})", out)
     return m.group(1).lower() if m else None
 
@@ -79,8 +96,10 @@ def main() -> int:
 
     ip = locate(args.subnet)
     if not ip:
-        print(f"woomera not found on {args.subnet} - box off, or on another subnet",
-              file=sys.stderr)
+        print(
+            f"woomera not found on {args.subnet} - box off, or on another subnet",
+            file=sys.stderr,
+        )
         return 1
 
     if args.print_only:
@@ -88,8 +107,16 @@ def main() -> int:
         return 0
 
     print(f"# woomera at {ip}", file=sys.stderr)
-    os.execvp("ssh", ["ssh", "-o", "StrictHostKeyChecking=accept-new",
-                      f"{args.user}@{ip}", *args.cmd])
+    os.execvp(
+        "ssh",
+        [
+            "ssh",
+            "-o",
+            "StrictHostKeyChecking=accept-new",
+            f"{args.user}@{ip}",
+            *args.cmd,
+        ],
+    )
 
 
 if __name__ == "__main__":

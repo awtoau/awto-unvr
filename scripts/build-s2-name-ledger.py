@@ -18,8 +18,11 @@ Emits:
 and reports DDR-init subgraph naming coverage.
 Static only.
 """
+
 from __future__ import annotations
-import re, sys
+
+import re
+import sys
 from collections import defaultdict
 from pathlib import Path
 
@@ -29,7 +32,7 @@ ASM = REPO / "tmp/ghidra-out/s2-final/disassembly.asm"
 CURATED = REPO / "docs/nor-reference/s2-names.tsv"
 SYM_OUT = REPO / "docs/nor-reference/preboot-s2-names.sym"
 MD_OUT = REPO / "docs/nor-reference/preboot-s2-names.md"
-BASE = 0xf2200000
+BASE = 0xF2200000
 HDR = re.compile(r"^; ==== FUN_[0-9a-f]+ @ ([0-9a-f]+) ====")
 CALL = re.compile(r"\b(?:bl|blx)\s+0x([0-9a-f]{6,8})\b")
 POOL = re.compile(r"\[0x([0-9a-f]{6,8})\]")
@@ -69,24 +72,33 @@ SPEC = {
 
 def cstr(b, va, mx=80):
     o = va - BASE
-    if o < 0 or o >= len(b): return ""
-    c = b[o:o+mx]; e = c.find(b"\0")
-    if e != -1: c = c[:e]
-    try: s = c.decode("ascii")
-    except Exception: return ""
+    if o < 0 or o >= len(b):
+        return ""
+    c = b[o : o + mx]
+    e = c.find(b"\0")
+    if e != -1:
+        c = c[:e]
+    try:
+        s = c.decode("ascii")
+    except Exception:
+        return ""
     return s if s and all(32 <= ord(x) < 127 for x in s) else ""
 
 
 def main() -> int:
     b = BLOB.read_bytes()
     cur = None
-    body = defaultdict(list); calls = defaultdict(set)
+    body = defaultdict(list)
+    calls = defaultdict(set)
     for ln in ASM.read_text(errors="replace").splitlines():
         m = HDR.match(ln)
-        if m: cur = m.group(1); continue
+        if m:
+            cur = m.group(1)
+            continue
         if cur:
             body[cur].append(ln)
-            for t in CALL.findall(ln): calls[cur].add(t.zfill(8))
+            for t in CALL.findall(ln):
+                calls[cur].add(t.zfill(8))
     funcs = sorted(body)
 
     curated = {}
@@ -101,11 +113,15 @@ def main() -> int:
         # string-confirmed
         found = None
         for ph in POOL.findall("\n".join(body[f])):
-            w = int.from_bytes(b[int(ph, 16)-BASE:int(ph, 16)-BASE+4], "little") \
-                if 0 <= int(ph, 16)-BASE <= len(b)-4 else 0
+            w = (
+                int.from_bytes(b[int(ph, 16) - BASE : int(ph, 16) - BASE + 4], "little")
+                if 0 <= int(ph, 16) - BASE <= len(b) - 4
+                else 0
+            )
             s = cstr(b, w)
             if s and IDENT.match(s):
-                found = s; break
+                found = s
+                break
         if f in curated:
             ledger[f] = (curated[f], "confirmed", "curated (ddr call graph / hand-RE)")
         elif found:
@@ -114,35 +130,47 @@ def main() -> int:
             nm, why = SPEC[f]
             ledger[f] = (nm, "speculative", why)
     # DDR subgraph coverage
-    seen = set(); stack = ["f2201a90", "f22003d8"]
+    seen = set()
+    stack = ["f2201a90", "f22003d8"]
     while stack:
         x = stack.pop().zfill(8)
-        if x in seen: continue
+        if x in seen:
+            continue
         seen.add(x)
         stack += list(calls.get(x, ()))
     sub_named = sum(1 for f in seen if f in ledger)
     sub_conf = sum(1 for f in seen if f in ledger and ledger[f][1] == "confirmed")
 
     with SYM_OUT.open("w") as f:
-        f.write("# S2 stage2_loader function names -> ApplyAlRegs .sym (name<TAB>0xADDR)\n")
+        f.write(
+            "# S2 stage2_loader function names -> ApplyAlRegs .sym (name<TAB>0xADDR)\n"
+        )
         for va in sorted(ledger):
             f.write(f"{ledger[va][0]}\t0x{va}\n")
     with MD_OUT.open("w") as f:
         f.write("# S2 stage2_loader — function-name ledger\n\n")
-        f.write("Machine form: `preboot-s2-names.sym` (applied via ApplyAlRegs / annotate-preboot.py).\n")
-        f.write(f"Auto-built by `scripts/build-s2-name-ledger.py`. {len(ledger)} names "
-                f"({sum(1 for v in ledger.values() if v[1]=='confirmed')} confirmed, "
-                f"{sum(1 for v in ledger.values() if v[1]=='speculative')} speculative).\n\n")
-        f.write(f"DDR-init subgraph (from al_ddr_init + orchestrator): {len(seen)} functions, "
-                f"{sub_named} named ({sub_conf} confirmed, {sub_named-sub_conf} speculative), "
-                f"{len(seen)-sub_named} bare.\n\n")
+        f.write(
+            "Machine form: `preboot-s2-names.sym` (applied via ApplyAlRegs / annotate-preboot.py).\n"
+        )
+        f.write(
+            f"Auto-built by `scripts/build-s2-name-ledger.py`. {len(ledger)} names "
+            f"({sum(1 for v in ledger.values() if v[1] == 'confirmed')} confirmed, "
+            f"{sum(1 for v in ledger.values() if v[1] == 'speculative')} speculative).\n\n"
+        )
+        f.write(
+            f"DDR-init subgraph (from al_ddr_init + orchestrator): {len(seen)} functions, "
+            f"{sub_named} named ({sub_conf} confirmed, {sub_named - sub_conf} speculative), "
+            f"{len(seen) - sub_named} bare.\n\n"
+        )
         f.write("| addr | name | confidence | rationale |\n|---|---|---|---|\n")
         for va in sorted(ledger):
             nm, conf, why = ledger[va]
             f.write(f"| 0x{va} | `{nm}` | {conf} | {why} |\n")
     print(f"ledger: {len(ledger)} names -> {SYM_OUT.name}, {MD_OUT.name}")
-    print(f"DDR-init subgraph: {len(seen)} fns, {sub_named} named "
-          f"({sub_conf} confirmed, {sub_named-sub_conf} speculative), {len(seen)-sub_named} bare")
+    print(
+        f"DDR-init subgraph: {len(seen)} fns, {sub_named} named "
+        f"({sub_conf} confirmed, {sub_named - sub_conf} speculative), {len(seen) - sub_named} bare"
+    )
     return 0
 
 

@@ -9,12 +9,15 @@ SATA/link timeouts, deferred-probe retries, udev stalls, fsck, etc.
 
 Usage: boot-delay-analyze.py [THRESH_SECONDS]   (default 0.2)
 """
+
 from __future__ import annotations
-import re, sys
+
+import re
+import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from _repo import LOGS  # noqa: E402
+from _repo import LOGS
 
 LOG = LOGS / "unvr-console.log"
 THRESH = float(sys.argv[1]) if len(sys.argv) > 1 else 0.2
@@ -36,7 +39,7 @@ def main():
     for i, ln in enumerate(raw):
         if "Booting Linux on physical CPU" in ln:
             start = i
-    print(f"analysing boot starting at log line {start+1}, threshold {THRESH}s\n")
+    print(f"analysing boot starting at log line {start + 1}, threshold {THRESH}s\n")
 
     # collect (ktime, text) in boot order
     events = []
@@ -44,7 +47,7 @@ def main():
         c = clean(ln)
         m = KTS.search(c)
         if m:
-            events.append((float(m.group(1)), c[m.end(1):].lstrip(" ]")))
+            events.append((float(m.group(1)), c[m.end(1) :].lstrip(" ]")))
         if "login:" in c:
             break
 
@@ -59,8 +62,10 @@ def main():
             gaps.append((d, t0, txt0, t1, txt1))
 
     gaps.sort(reverse=True)
-    print(f"boot window {events[0][0]:.2f}s .. {events[-1][0]:.2f}s "
-          f"({total:.1f}s of dmesg), {len(gaps)} gap(s) >= {THRESH}s:\n")
+    print(
+        f"boot window {events[0][0]:.2f}s .. {events[-1][0]:.2f}s "
+        f"({total:.1f}s of dmesg), {len(gaps)} gap(s) >= {THRESH}s:\n"
+    )
     for d, t0, txt0, t1, txt1 in gaps:
         print(f"  ┌ +{d:6.3f}s gap  (from {t0:.3f}s to {t1:.3f}s)")
         print(f"  │  after : {txt0[:110]}")

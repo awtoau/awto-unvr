@@ -10,7 +10,13 @@ tftp is fast and the standard DTB address (0x04078000) is clear again.
   mkuimage.py initramfs.img out.uimg --ramdisk   # wrap an initrd (this U-Boot has
                                                  # no raw addr:size support)
 """
-import argparse, gzip, struct, sys, time, zlib
+
+import argparse
+import gzip
+import struct
+import sys
+import time
+import zlib
 from pathlib import Path
 
 IH_MAGIC = 0x27051956
@@ -20,13 +26,17 @@ LOAD = ENTRY = 0x08000000
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description=__doc__,
-                                 formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     ap.add_argument("image")
     ap.add_argument("out")
     ap.add_argument("--gzip", action="store_true")
-    ap.add_argument("--ramdisk", action="store_true",
-                    help="wrap as an initrd (type=RAMDISK, load/entry=0, comp=NONE)")
+    ap.add_argument(
+        "--ramdisk",
+        action="store_true",
+        help="wrap as an initrd (type=RAMDISK, load/entry=0, comp=NONE)",
+    )
     ap.add_argument("--name", default="linux")
     ap.add_argument("--load", type=lambda x: int(x, 0), default=None)
     ap.add_argument("--entry", type=lambda x: int(x, 0), default=None)
@@ -40,19 +50,34 @@ def main() -> int:
     raw = Path(a.image).read_bytes()
     data = gzip.compress(raw, 9) if a.gzip else raw
     comp = IH_COMP_GZIP if a.gzip else IH_COMP_NONE
-    dcrc = zlib.crc32(data) & 0xffffffff
+    dcrc = zlib.crc32(data) & 0xFFFFFFFF
     nm = a.name.encode()[:31].ljust(32, b"\0")
 
     def hdr(hc):
-        return struct.pack(">IIIIIIIBBBB32s", IH_MAGIC, hc, int(time.time()),
-                           len(data), load, entry, dcrc,
-                           IH_OS_LINUX, IH_ARCH_ARM64, ih_type, comp, nm)
-    h = hdr(zlib.crc32(hdr(0)) & 0xffffffff)
+        return struct.pack(
+            ">IIIIIIIBBBB32s",
+            IH_MAGIC,
+            hc,
+            int(time.time()),
+            len(data),
+            load,
+            entry,
+            dcrc,
+            IH_OS_LINUX,
+            IH_ARCH_ARM64,
+            ih_type,
+            comp,
+            nm,
+        )
+
+    h = hdr(zlib.crc32(hdr(0)) & 0xFFFFFFFF)
     Path(a.out).write_bytes(h + data)
-    print(f"{a.out}: {len(h)+len(data)} bytes "
-          f"({'ramdisk' if a.ramdisk else 'kernel'}, "
-          f"{'gzip' if a.gzip else 'none'}, raw {len(raw)} -> {len(data)}), "
-          f"load/entry=0x{load:08x}")
+    print(
+        f"{a.out}: {len(h) + len(data)} bytes "
+        f"({'ramdisk' if a.ramdisk else 'kernel'}, "
+        f"{'gzip' if a.gzip else 'none'}, raw {len(raw)} -> {len(data)}), "
+        f"load/entry=0x{load:08x}"
+    )
     return 0
 
 

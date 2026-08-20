@@ -27,7 +27,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from _repo import LOGS, TMP  # noqa: E402
+from _repo import LOGS, TMP
 
 REL = "44"
 IMAGE = f"registry.fedoraproject.org/fedora:{REL}"
@@ -40,8 +40,17 @@ CTR = "unvr-fedora-build"
 # No kernel/GRUB/dracut - we boot it ourselves (our U-Boot + 7.1.8 kernel).
 CORE_GROUP = "core"
 EXTRAS = [
-    "openssh-server", "e2fsprogs", "dosfstools", "python3",
-    "rsync", "htop", "smartmontools", "mdadm", "hdparm", "libgpiod-utils", "lm_sensors",
+    "openssh-server",
+    "e2fsprogs",
+    "dosfstools",
+    "python3",
+    "rsync",
+    "htop",
+    "smartmontools",
+    "mdadm",
+    "hdparm",
+    "libgpiod-utils",
+    "lm_sensors",
 ]
 
 # Config applied inside the container (aarch64, via qemu) before export.
@@ -92,8 +101,9 @@ def run(*cmd: str, **kw) -> subprocess.CompletedProcess:
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description=__doc__,
-                                 formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     ap.add_argument("--keep", action="store_true", help="don't rm the build container")
     a = ap.parse_args()
 
@@ -101,10 +111,22 @@ def main() -> int:
     out = TMP / "fedora-rootfs-ea16.tar"
 
     # Fresh container, aarch64 platform (qemu binfmt does the emulation).
-    subprocess.run(["podman", "rm", "-f", CTR], stdout=subprocess.DEVNULL,
-                   stderr=subprocess.DEVNULL)
-    run("podman", "create", "--platform", "linux/arm64", "--name", CTR,
-        IMAGE, "sleep", "infinity")
+    subprocess.run(
+        ["podman", "rm", "-f", CTR],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    run(
+        "podman",
+        "create",
+        "--platform",
+        "linux/arm64",
+        "--name",
+        CTR,
+        IMAGE,
+        "sleep",
+        "infinity",
+    )
     run("podman", "start", CTR)
     try:
         # Stock Fedora base: @core group WITH weak deps (the default), then extras.
@@ -120,15 +142,20 @@ def main() -> int:
             subprocess.run(["podman", "export", CTR], check=True, stdout=fh)
     finally:
         if not a.keep:
-            subprocess.run(["podman", "rm", "-f", CTR], stdout=subprocess.DEVNULL,
-                           stderr=subprocess.DEVNULL)
+            subprocess.run(
+                ["podman", "rm", "-f", CTR],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
 
     sha = run("sha256sum", str(out), capture_output=True, text=True).stdout.split()[0]
     (out.with_suffix(".tar.sha256")).write_text(f"{sha}  {out.name}\n")
     size_mb = out.stat().st_size / 1e6
     log(f"DONE: {out} ({size_mb:.0f} MB) sha256={sha[:16]}...")
-    log("Next: enhanced initramfs -> format sdaN ext4 (label unvr-root) -> "
-        "rsync this tar's contents -> add 7.1.8 modules -> U-Boot env -> saveenv")
+    log(
+        "Next: enhanced initramfs -> format sdaN ext4 (label unvr-root) -> "
+        "rsync this tar's contents -> add 7.1.8 modules -> U-Boot env -> saveenv"
+    )
     return 0
 
 

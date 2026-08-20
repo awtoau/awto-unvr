@@ -6,8 +6,13 @@ Talks to the `tio` unix-domain socket that bridges the serial console, logs in
 and runs shell commands with a return-code fence. Used by read-ddr-spd.py,
 hwverify-woomera.py, etc. so the console contract lives in ONE place.
 """
+
 from __future__ import annotations
-import os, re, socket, time
+
+import os
+import re
+import socket
+import time
 from pathlib import Path
 
 SOCK = Path(os.environ.get("XDG_RUNTIME_DIR", "/tmp")) / "tio-unvr.sock"
@@ -32,7 +37,7 @@ def _ru(s, needle, limit, extra=()):
     while time.monotonic() < end:
         try:
             c = s.recv(4096)
-        except socket.timeout:
+        except TimeoutError:
             continue
         if not c:
             break
@@ -50,15 +55,19 @@ def login(s):
     s.sendall(b"\r")
     _, hit = _ru(s, "]#", 6, extra=("login:", PROMPT))
     if hit == "login:":
-        s.sendall(USER.encode() + b"\r"); _ru(s, "Password:", 6)
-        s.sendall(PASSWD.encode() + b"\r"); _ru(s, "]#", 12, extra=("incorrect",))
+        s.sendall(USER.encode() + b"\r")
+        _ru(s, "Password:", 6)
+        s.sendall(PASSWD.encode() + b"\r")
+        _ru(s, "]#", 12, extra=("incorrect",))
     # Quiet the shell so output parses cleanly: systemd 256+ sets PROMPT_COMMAND
     # to emit OSC-3008 "context" markers (machineid/cwd/... ) that interleave with
     # command output. Unset it, force TERM=dumb so nothing re-enables terminal
     # integration, then a bare marker prompt.
     s.sendall(b"unalias -a 2>/dev/null; unset PROMPT_COMMAND; export TERM=dumb; true\r")
     _ru(s, "]#", 4, extra=(PROMPT,))
-    s.sendall(f"export PS1='{PROMPT}'\r".encode()); _ru(s, PROMPT, 6); _ru(s, PROMPT, 3)
+    s.sendall(f"export PS1='{PROMPT}'\r".encode())
+    _ru(s, PROMPT, 6)
+    _ru(s, PROMPT, 3)
 
 
 def sh(s, cmd, timeout=30):
@@ -70,18 +79,21 @@ def sh(s, cmd, timeout=30):
     while time.monotonic() < end:
         try:
             c = s.recv(4096)
-        except socket.timeout:
+        except TimeoutError:
             continue
         if not c:
             break
         buf += c
         m = re.search(rb"@@RC=(\d+)@@", buf)
         if m:
-            rc = int(m.group(1)); break
+            rc = int(m.group(1))
+            break
     _ru(s, PROMPT, 4)
     txt = buf.decode(errors="replace")
-    txt = re.sub(r"\x1b\[[0-9;?]*[a-zA-Z]", "", txt)              # CSI
-    txt = re.sub(r"\x1b\][^\x07\x1b]*(?:\x07|\x1b\\)?", "", txt)  # OSC (complete or truncated)
-    txt = re.sub(r"\]3008;[^\r\n]*", "", txt)                     # leaked OSC-3008 body remnant
+    txt = re.sub(r"\x1b\[[0-9;?]*[a-zA-Z]", "", txt)  # CSI
+    txt = re.sub(
+        r"\x1b\][^\x07\x1b]*(?:\x07|\x1b\\)?", "", txt
+    )  # OSC (complete or truncated)
+    txt = re.sub(r"\]3008;[^\r\n]*", "", txt)  # leaked OSC-3008 body remnant
     lines = [l for l in txt.splitlines() if "@@RC=" not in l and "; echo @@RC" not in l]
     return rc, "\n".join(lines).strip()

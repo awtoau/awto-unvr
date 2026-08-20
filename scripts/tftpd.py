@@ -30,7 +30,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from _repo import LOGS, REPO, rel  # noqa: E402
+from _repo import LOGS, REPO, rel
 
 RRQ, WRQ, DATA, ACK, ERROR, OACK = 1, 2, 3, 4, 5, 6
 
@@ -61,7 +61,9 @@ def parse_request(data: bytes) -> tuple[int, str, str, dict[str, str]]:
     opts: dict[str, str] = {}
     rest = [p for p in parts[2:] if p]
     for i in range(0, len(rest) - 1, 2):
-        opts[rest[i].decode("ascii", "replace").lower()] = rest[i + 1].decode("ascii", "replace")
+        opts[rest[i].decode("ascii", "replace").lower()] = rest[i + 1].decode(
+            "ascii", "replace"
+        )
     return opcode, filename, mode, opts
 
 
@@ -112,7 +114,7 @@ def handle_wrq(root: Path, addr, filename: str, opts: dict) -> bool:
                 try:
                     data, peer = sock.recvfrom(blksize + 4)
                     break
-                except socket.timeout:
+                except TimeoutError:
                     if attempt == MAX_RETRIES - 1:
                         log(f"  timeout waiting for block {expect}", "ERROR")
                         sock.close()
@@ -159,8 +161,8 @@ def handle_rrq(root: Path, addr, filename: str, opts: dict) -> bool:
             pkt += k.encode() + b"\x00" + v.encode() + b"\x00"
         sock.sendto(pkt, addr)
         try:
-            sock.recvfrom(1024)          # ACK 0 for the OACK
-        except socket.timeout:
+            sock.recvfrom(1024)  # ACK 0 for the OACK
+        except TimeoutError:
             log("  no ACK for OACK", "ERROR")
             sock.close()
             return False
@@ -177,7 +179,7 @@ def handle_rrq(root: Path, addr, filename: str, opts: dict) -> bool:
                     op, ablk = struct.unpack(">HH", data[:4])
                     if op == ACK and ablk == blk:
                         break
-                except socket.timeout:
+                except TimeoutError:
                     if attempt == MAX_RETRIES - 1:
                         log(f"  no ACK for block {blk}", "ERROR")
                         sock.close()
@@ -192,9 +194,12 @@ def handle_rrq(root: Path, addr, filename: str, opts: dict) -> bool:
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description=__doc__,
-                                 formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--root", default="images/tftp", help="directory to serve/accept into")
+    ap = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+    ap.add_argument(
+        "--root", default="images/tftp", help="directory to serve/accept into"
+    )
     ap.add_argument("--port", type=int, default=DEFAULT_PORT)
     ap.add_argument("--once", action="store_true", help="exit after one transfer")
     a = ap.parse_args()

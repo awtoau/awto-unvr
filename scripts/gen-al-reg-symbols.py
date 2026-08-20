@@ -27,6 +27,7 @@ Usage:
       --prefix i2c0 --out tmp/ghidra-in
   scripts/gen-al-reg-symbols.py HEADER --defines --prefix AL_I2C --out tmp/ghidra-in
 """
+
 from __future__ import annotations
 
 import argparse
@@ -39,16 +40,32 @@ REPO = Path(__file__).resolve().parent.parent
 LOG = REPO / "tmp" / "logs" / "gen-al-reg-symbols.log"
 
 # C scalar sizes seen in the AL HAL register structs.
-SIZES = {"uint8_t": 1, "u8": 1, "int8_t": 1, "char": 1,
-         "uint16_t": 2, "u16": 2, "int16_t": 2,
-         "uint32_t": 4, "u32": 4, "int32_t": 4, "unsigned": 4, "int": 4,
-         "uint64_t": 8, "u64": 8, "int64_t": 8}
+SIZES = {
+    "uint8_t": 1,
+    "u8": 1,
+    "int8_t": 1,
+    "char": 1,
+    "uint16_t": 2,
+    "u16": 2,
+    "int16_t": 2,
+    "uint32_t": 4,
+    "u32": 4,
+    "int32_t": 4,
+    "unsigned": 4,
+    "int": 4,
+    "uint64_t": 8,
+    "u64": 8,
+    "int64_t": 8,
+}
 
 FIELD = re.compile(
     r"^\s*(?P<type>[A-Za-z_]\w*)\s+(?P<name>\w+)"
-    r"(?:\s*\[\s*(?P<arr>0x[0-9a-fA-F]+|\d+)\s*\])?\s*;")
+    r"(?:\s*\[\s*(?P<arr>0x[0-9a-fA-F]+|\d+)\s*\])?\s*;"
+)
 ANCHOR = re.compile(r"/\*\s*0x([0-9a-fA-F]+)\s*\*/")
-DEFINE = re.compile(r"^\s*#define\s+(?P<name>\w+)\s+(?P<val>0x[0-9a-fA-F]+|\d+)\s*(?:/\*.*)?$")
+DEFINE = re.compile(
+    r"^\s*#define\s+(?P<name>\w+)\s+(?P<val>0x[0-9a-fA-F]+|\d+)\s*(?:/\*.*)?$"
+)
 
 
 def parse_struct(text: str, struct: str) -> list[tuple[str, int, int]]:
@@ -61,7 +78,7 @@ def parse_struct(text: str, struct: str) -> list[tuple[str, int, int]]:
     if not m:
         logging.error("struct %s not found", struct)
         return []
-    body = text[m.end():]
+    body = text[m.end() :]
     depth = 1
     off = 0
     out: list[tuple[str, int, int]] = []
@@ -74,8 +91,12 @@ def parse_struct(text: str, struct: str) -> list[tuple[str, int, int]]:
         if a:
             want = int(a.group(1), 16)
             if want != off:
-                logging.warning("anchor mismatch: comment 0x%x but computed 0x%x "
-                                "(check field sizes above)", want, off)
+                logging.warning(
+                    "anchor mismatch: comment 0x%x but computed 0x%x "
+                    "(check field sizes above)",
+                    want,
+                    off,
+                )
                 off = want  # resync to the header's own anchor
         fm = FIELD.match(line)
         if not fm:
@@ -102,16 +123,21 @@ def main() -> int:
     ap.add_argument("--struct", help="struct name, e.g. al_i2c_regs")
     ap.add_argument("--base", type=lambda s: int(s, 0), help="peripheral base VA")
     ap.add_argument("--prefix", required=True, help="label/equate prefix, e.g. i2c0")
-    ap.add_argument("--defines", action="store_true",
-                    help="emit numeric #define equates instead of register labels")
+    ap.add_argument(
+        "--defines",
+        action="store_true",
+        help="emit numeric #define equates instead of register labels",
+    )
     ap.add_argument("--out", type=Path, default=REPO / "tmp" / "ghidra-in")
     a = ap.parse_args()
 
     LOG.parent.mkdir(parents=True, exist_ok=True)
     a.out.mkdir(parents=True, exist_ok=True)
-    logging.basicConfig(level=logging.INFO, format="%(message)s",
-                        handlers=[logging.FileHandler(LOG),
-                                  logging.StreamHandler(sys.stdout)])
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(message)s",
+        handlers=[logging.FileHandler(LOG), logging.StreamHandler(sys.stdout)],
+    )
     text = a.header.read_text(errors="replace")
 
     if a.defines:
@@ -144,16 +170,21 @@ def main() -> int:
         for name, off, size in fields:
             if off > cur:
                 f.write(f"  unsigned char _pad_{cur:x}[0x{off - cur:x}];\n")
-            ctype = {1: "unsigned char", 2: "unsigned short",
-                     4: "unsigned int", 8: "unsigned long long"}.get(size, None)
+            ctype = {
+                1: "unsigned char",
+                2: "unsigned short",
+                4: "unsigned int",
+                8: "unsigned long long",
+            }.get(size, None)
             if ctype and size in (1, 2, 4, 8):
                 f.write(f"  volatile {ctype} {name}; /* 0x{off:x} */\n")
             else:
-                f.write(f"  volatile unsigned char {name}[0x{size:x}]; /* 0x{off:x} */\n")
+                f.write(
+                    f"  volatile unsigned char {name}[0x{size:x}]; /* 0x{off:x} */\n"
+                )
             cur = off + size
         f.write("};\n")
-    logging.info("wrote %d register labels -> %s  (+ struct %s)",
-                 len(fields), sym, hdr)
+    logging.info("wrote %d register labels -> %s  (+ struct %s)", len(fields), sym, hdr)
     return 0
 
 

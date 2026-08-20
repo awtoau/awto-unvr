@@ -17,7 +17,9 @@ from pathlib import Path
 
 import serial
 
-DEFAULT_PORT = "/dev/serial/by-id/usb-Prolific_Technology_Inc._USB-Serial_Controller_D-if00-port0"
+DEFAULT_PORT = (
+    "/dev/serial/by-id/usb-Prolific_Technology_Inc._USB-Serial_Controller_D-if00-port0"
+)
 SWEEP = (1200, 2400, 4800, 9600, 19200, 38400, 57600, 115200, 230400, 460800, 921600)
 PAYLOAD = b"The quick brown fox jumps over the lazy dog 0123456789\r\n"
 
@@ -47,8 +49,12 @@ def probe(port_path: str, baud: int) -> bytes | None:
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--port", default=DEFAULT_PORT)
-    ap.add_argument("--repeat", type=int, default=3,
-                    help="probes per baud; >1 shows whether corruption is deterministic")
+    ap.add_argument(
+        "--repeat",
+        type=int,
+        default=3,
+        help="probes per baud; >1 shows whether corruption is deterministic",
+    )
     args = ap.parse_args()
 
     logdir = Path("tmp/logs")
@@ -80,24 +86,36 @@ def main() -> int:
         sample = sorted(seen, key=len)[-1]
         if sample == PAYLOAD:
             clean.append(baud)
-            log.info("%7d %5d %5s  CLEAN - exact echo%s", baud, len(sample), "1.00",
-                     "" if len(seen) == 1 else "  (INTERMITTENT: varied across probes)")
+            log.info(
+                "%7d %5d %5s  CLEAN - exact echo%s",
+                baud,
+                len(sample),
+                "1.00",
+                "" if len(seen) == 1 else "  (INTERMITTENT: varied across probes)",
+            )
         elif not sample:
             log.info("%7d %5d %5s  nothing back", baud, 0, "-")
         else:
             ratio = len(PAYLOAD) / len(sample)
             log.info(
                 "%7d %5d %5.2f  %s | %r%s",
-                baud, len(sample), ratio,
-                sample[:16].hex(" "), sample[:16],
+                baud,
+                len(sample),
+                ratio,
+                sample[:16].hex(" "),
+                sample[:16],
                 "  (deterministic)" if len(seen) == 1 else "  (varies per probe)",
             )
-        time.sleep(0.05)  # let the chip settle between reopens; 50 ms >> its ~10 ms latency timer
+        time.sleep(
+            0.05
+        )  # let the chip settle between reopens; 50 ms >> its ~10 ms latency timer
 
     if clean:
         log.info("RESULT: clean echo at %s", clean)
         if len(clean) < len(SWEEP):
-            log.info("  Not clean everywhere -> not a plain wire; real line rate is above.")
+            log.info(
+                "  Not clean everywhere -> not a plain wire; real line rate is above."
+            )
     else:
         log.info("RESULT: no baud gave a clean echo")
     return 0 if clean else 1

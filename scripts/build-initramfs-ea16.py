@@ -12,10 +12,15 @@
 The out-of-tree modules are added to initramfs-root LATER, by build-linux-612-ea16.py,
 before the kernel Image (which embeds this initramfs) is linked. Host-side only.
 """
-import os, subprocess, sys, shutil, pathlib
 
-OUT   = "/mnt/2tb/unvr-port-refs/build-out"
-WORK  = "/mnt/2tb/unvr-port-refs/build-out/initramfs-root"
+import os
+import pathlib
+import shutil
+import subprocess
+import sys
+
+OUT = "/mnt/2tb/unvr-port-refs/build-out"
+WORK = "/mnt/2tb/unvr-port-refs/build-out/initramfs-root"
 DEVNODES = "/mnt/2tb/unvr-port-refs/build-out/initramfs-devnodes"
 IMAGE = "alpine:3.21"
 
@@ -121,20 +126,43 @@ def main():
         except PermissionError:
             # A prior kernel build wrote root-owned files (lib/modules/…) that
             # this (non-root) process can't unlink — remove them as root.
-            run(["docker", "run", "--rm", "--platform=linux/arm64",
-                 "-v", f"{OUT}:/out", IMAGE, "rm", "-rf", "/out/initramfs-root"])
+            run(
+                [
+                    "docker",
+                    "run",
+                    "--rm",
+                    "--platform=linux/arm64",
+                    "-v",
+                    f"{OUT}:/out",
+                    IMAGE,
+                    "rm",
+                    "-rf",
+                    "/out/initramfs-root",
+                ]
+            )
     os.makedirs(WORK, exist_ok=True)
 
     run(["docker", "pull", "--platform=linux/arm64", IMAGE])
     # libgpiod (gpioset/gpioinfo) + i2c-tools for bay power; e2fsprogs (mkfs.ext4),
     # rsync, util-linux (blkid/lsblk) so this same initramfs installs a rootfs to
     # the SSD (format sda2, rsync Fedora on). See docs/fedora-on-ssd.md.
-    cid = subprocess.check_output(
-        ["docker", "create", "--platform=linux/arm64", IMAGE,
-         "sh", "-c", "apk add --no-cache libgpiod i2c-tools e2fsprogs rsync util-linux"
-         ]).decode().strip()
+    cid = (
+        subprocess.check_output(
+            [
+                "docker",
+                "create",
+                "--platform=linux/arm64",
+                IMAGE,
+                "sh",
+                "-c",
+                "apk add --no-cache libgpiod i2c-tools e2fsprogs rsync util-linux",
+            ]
+        )
+        .decode()
+        .strip()
+    )
     try:
-        run(["docker", "start", "-a", cid])   # runs apk add (needs network)
+        run(["docker", "start", "-a", cid])  # runs apk add (needs network)
         tar = os.path.join(OUT, "alpine-arm64.tar")
         with open(tar, "wb") as f:
             run(["docker", "export", cid], stdout=f)
@@ -150,8 +178,10 @@ def main():
         shutil.rmtree(dev)
     os.makedirs(dev)
 
-    for name, body, mode in (("init", INIT, 0o755),
-                             ("bin/hdd-power-on", HDD_POWER, 0o755)):
+    for name, body, mode in (
+        ("init", INIT, 0o755),
+        ("bin/hdd-power-on", HDD_POWER, 0o755),
+    ):
         p = os.path.join(WORK, name)
         pathlib.Path(os.path.dirname(p)).mkdir(parents=True, exist_ok=True)
         with open(p, "w") as f:
@@ -167,14 +197,22 @@ def main():
 def make_cpio():
     cpio_gz = os.path.join(OUT, "initramfs-ea16.cpio.gz")
     find = subprocess.Popen(["find", "."], cwd=WORK, stdout=subprocess.PIPE)
-    cpio = subprocess.Popen(["cpio", "-o", "-H", "newc", "--quiet"],
-                            cwd=WORK, stdin=find.stdout, stdout=subprocess.PIPE)
+    cpio = subprocess.Popen(
+        ["cpio", "-o", "-H", "newc", "--quiet"],
+        cwd=WORK,
+        stdin=find.stdout,
+        stdout=subprocess.PIPE,
+    )
     with open(cpio_gz, "wb") as f:
         gz = subprocess.Popen(["gzip", "-9"], stdin=cpio.stdout, stdout=f)
         gz.communicate()
-    find.wait(); cpio.wait()
+    find.wait()
+    cpio.wait()
     print(f"initramfs dir : {WORK}", flush=True)
-    print(f"initramfs cpio: {cpio_gz} ({os.path.getsize(cpio_gz)//1024} KiB)", flush=True)
+    print(
+        f"initramfs cpio: {cpio_gz} ({os.path.getsize(cpio_gz) // 1024} KiB)",
+        flush=True,
+    )
 
 
 if __name__ == "__main__":

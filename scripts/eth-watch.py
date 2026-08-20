@@ -10,6 +10,7 @@ while this process also prints live to stdout.
   ./scripts/eth-watch.py            # runs until Ctrl-C
   tail -f tmp/logs/eth-watch.log    # from another terminal, to just watch
 """
+
 from __future__ import annotations
 
 import argparse
@@ -43,33 +44,57 @@ done
 def locate_woomera() -> str:
     out = subprocess.run(
         [sys.executable, "scripts/ssh-woomera.py", "--print"],
-        capture_output=True, text=True, check=True,
+        capture_output=True,
+        text=True,
+        check=True,
     )
     return out.stdout.strip()
 
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--host", help="woomera's address (default: auto-locate by MAC OUI)")
+    ap.add_argument(
+        "--host", help="woomera's address (default: auto-locate by MAC OUI)"
+    )
     ap.add_argument("--password", default=DEFAULT_ROOT_PASSWORD)
     args = ap.parse_args()
 
     host = args.host or locate_woomera()
-    print(f"# woomera at {host} - polling every {POLL_INTERVAL_S}s, Ctrl-C to stop", file=sys.stderr)
+    print(
+        f"# woomera at {host} - polling every {POLL_INTERVAL_S}s, Ctrl-C to stop",
+        file=sys.stderr,
+    )
 
     LOG.parent.mkdir(parents=True, exist_ok=True)
     proc = subprocess.Popen(
-        ["sshpass", "-p", args.password, "ssh",
-         "-o", "ConnectTimeout=8", "-o", "StrictHostKeyChecking=accept-new",
-         "-o", "PreferredAuthentications=password", "-o", "PubkeyAuthentication=no",
-         f"root@{host}", REMOTE_LOOP],
-        stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1,
+        [
+            "sshpass",
+            "-p",
+            args.password,
+            "ssh",
+            "-o",
+            "ConnectTimeout=8",
+            "-o",
+            "StrictHostKeyChecking=accept-new",
+            "-o",
+            "PreferredAuthentications=password",
+            "-o",
+            "PubkeyAuthentication=no",
+            f"root@{host}",
+            REMOTE_LOOP,
+        ],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        bufsize=1,
     )
 
     try:
         with LOG.open("a") as f:
             for line in proc.stdout:
-                stamp = datetime.datetime.now().astimezone().isoformat(timespec="seconds")
+                stamp = (
+                    datetime.datetime.now().astimezone().isoformat(timespec="seconds")
+                )
                 out = f"{stamp} {line.rstrip()}"
                 print(out, flush=True)
                 f.write(out + "\n")

@@ -10,7 +10,6 @@ Run: ./scripts/research-prior-art.py
 
 import json
 import subprocess
-import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -82,12 +81,14 @@ def forks(name, parent_pushed):
     out = []
     for f in raw:
         ahead = parent_pushed and f.get("pushed_at", "") > parent_pushed
-        out.append({
-            "full_name": f.get("full_name"),
-            "pushed_at": f.get("pushed_at"),
-            "stars": f.get("stargazers_count"),
-            "ahead_of_parent": bool(ahead),
-        })
+        out.append(
+            {
+                "full_name": f.get("full_name"),
+                "pushed_at": f.get("pushed_at"),
+                "stars": f.get("stargazers_count"),
+                "ahead_of_parent": bool(ahead),
+            }
+        )
     out.sort(key=lambda x: x.get("pushed_at") or "", reverse=True)
     return out
 
@@ -153,7 +154,9 @@ if __name__ == "__main__":
         if ahead:
             lines.append(f"- **{len(ahead)} fork(s) pushed AFTER parent:**")
             for x in ahead[:10]:
-                lines.append(f"  - `{x['full_name']}` pushed {x['pushed_at']} ({x['stars']}★)")
+                lines.append(
+                    f"  - `{x['full_name']}` pushed {x['pushed_at']} ({x['stars']}★)"
+                )
         elif d["forks"]:
             lines.append(f"- {len(d['forks'])} fork(s), none newer than parent")
         if d["issues"]:
