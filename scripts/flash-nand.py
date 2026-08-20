@@ -1,5 +1,18 @@
 #!/usr/bin/env python3
-"""Flash the Fedora kernel + DTB into NAND and set U-Boot to boot it standalone.
+"""Sync the matching module tree, THEN flash the Fedora kernel + DTB into NAND.
+
+2026-08-20: flashing a kernel without syncing its matching /lib/modules tree
+(with --delete) left stale .ko files from an earlier build on the SSD. The
+next boot's module loader tried to load one built for a different kernel
+binary (same version STRING, mismatched actual code) -> a kernel Oops in
+module-loading code itself (resolve_symbol/ref_module) -> re-triggered by
+rebooting the same corrupted rootfs twice more -> RCU stall -> full soft
+lockup. Multiple physical power-cycles, all avoidable. See #104's postmortem
+comment. Module sync is now a MANDATORY first step here, not a separate
+manual command someone (agent or human) has to remember to also run - if the
+box isn't reachable to sync modules onto, this refuses to touch NAND at all,
+because flashing a kernel whose module tree might not match is exactly the
+mistake that caused this.
 
 Runs against a device ALREADY at the U-Boot prompt (ALPINE_UBNT_NAS_ALL>). tftp's
 our gzip uImage + ea16 DTB from the host and writes them into the DEAD stock
@@ -16,13 +29,14 @@ from __future__ import annotations
 
 import os
 import socket
+import subprocess
 import sys
 import time
 from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from _repo import LOGS
+from _repo import LOGS, REPO
 
 SOCK = Path(os.environ.get("XDG_RUNTIME_DIR", "/tmp")) / "tio-unvr.sock"
 PROMPT = b"ALPINE_UBNT_NAS_ALL>"
@@ -37,6 +51,78 @@ BOOTCMD = (
     f"nand read {K_RAM} {K_NAND} {K_SPAN}; "
     f"nand read {D_RAM} {D_NAND} {D_READ}; bootm {K_RAM} - {D_RAM}"
 )
+
+KVER = "7.1.8-dirty"
+MODROOT = Path("/mnt/2tb/unvr-port-refs/build-out-71-fedora/modroot/lib/modules") / KVER
+ROOT_PASSWORD = "unvr"  # documented default, see docs/fedora-on-ssd.md
+
+
+def sync_modules():
+    """Full clean (--delete) module sync onto the CURRENTLY-RUNNING box, over
+    SSH, BEFORE touching NAND. Must happen before the new kernel boots, since
+    the old kernel's rootfs is what we're syncing into - the new kernel reads
+    whatever's already on disk when it starts. Aborts the whole flash if this
+    fails; a kernel flashed without a verified-matching module tree is the
+    exact bug this function exists to prevent."""
+    if not MODROOT.is_dir():
+        sys.exit(f"ABORT: no module tree at {MODROOT} - build first")
+    host = subprocess.run(
+        [sys.executable, "scripts/ssh-woomera.py", "--print"],
+        cwd=REPO,
+        capture_output=True,
+        text=True,
+        timeout=15,
+        check=False,
+    ).stdout.strip()
+    if not host:
+        sys.exit("ABORT: woomera not reachable - can't sync modules, refusing to flash")
+    log(f"syncing module tree ({MODROOT}) -> woomera:/lib/modules/{KVER}/ (--delete)")
+    ssh_opts = (
+        "ssh -o StrictHostKeyChecking=accept-new"
+        " -o PreferredAuthentications=password"
+        " -o PubkeyAuthentication=no"
+    )
+    rc = subprocess.run(
+        [
+            "sshpass",
+            "-p",
+            ROOT_PASSWORD,
+            "rsync",
+            "-az",
+            "--delete",
+            "-e",
+            ssh_opts,
+            f"{MODROOT}/",
+            f"root@{host}:/lib/modules/{KVER}/",
+        ],
+        check=False,
+    ).returncode
+    if rc != 0:
+        sys.exit(
+            f"ABORT: module rsync failed (rc={rc}) - refusing to flash a mismatched kernel"
+        )
+    rc = subprocess.run(
+        [
+            "sshpass",
+            "-p",
+            ROOT_PASSWORD,
+            "ssh",
+            "-o",
+            "StrictHostKeyChecking=accept-new",
+            "-o",
+            "PreferredAuthentications=password",
+            "-o",
+            "PubkeyAuthentication=no",
+            f"root@{host}",
+            f"depmod -a {KVER}",
+        ],
+        check=False,
+    ).returncode
+    if rc != 0:
+        sys.exit(f"ABORT: depmod on woomera failed (rc={rc}) - refusing to flash")
+    log(
+        "module sync + depmod OK - modules on disk now match what's about to be flashed"
+    )
 
 
 def log(m):
@@ -70,6 +156,7 @@ def step(s, cmd, needle, limit, label):
 
 
 def main():
+    sync_modules()
     if not SOCK.exists():
         sys.exit(f"console socket absent: {SOCK}")
     s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
