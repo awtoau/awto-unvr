@@ -1,6 +1,7 @@
 /* al_eth.c: AnnapurnaLabs Unified 1GbE and 10GbE ethernet driver.
  *
  * Copyright (c) 2012 AnnapurnaLabs
+ * Modified (C) 2026 Awto / Daniel Tyrrell
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -837,7 +838,7 @@ al_eth_flow_ctrl_disable(struct al_eth_adapter *adapter)
 #ifdef CONFIG_PHYLIB
 static uint8_t al_eth_flow_ctrl_mutual_cap_get(struct al_eth_adapter *adapter)
 {
-	struct phy_device *phydev;
+	struct phy_device *phydev = adapter->phydev;
 
 	struct al_eth_link_config *link_config = &adapter->link_config;
 	uint8_t peer_flow_ctrl = AL_ETH_FLOW_CTRL_AUTONEG;
