@@ -167,6 +167,23 @@ def configure():
         ]
     )
     trim_to_woomera_modules()
+    # i2c-designware as a module (after the trim, not before - localmodconfig
+    # would otherwise see it wasn't loaded as a module yet, since it's
+    # currently built-in, and disable it outright). Lets the #98 i2c-timing
+    # fix iterate via rmmod/insmod instead of a full NAND reflash + reboot
+    # each attempt. The i2c client drivers it feeds (pca954x/at24/adt7475)
+    # are already modules, so this is the only piece that was built-in.
+    run(
+        [
+            cfg,
+            "--file",
+            os.path.join(SRC, ".config"),
+            "--module",
+            "I2C_DESIGNWARE_CORE",
+            "--module",
+            "I2C_DESIGNWARE_PLATFORM",
+        ]
+    )
     run(["make", "-C", SRC, "olddefconfig"])
     dotcfg = pathlib.Path(os.path.join(SRC, ".config")).read_text()
     for sym in (
