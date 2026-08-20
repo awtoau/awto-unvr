@@ -1383,7 +1383,7 @@ static int al_eth_lm_wait_for_lock_step(struct al_eth_lm_context	*lm_context,
 			lm_context->step_data.start_time;
 		retimer_data->wfl_state =
 			LM_STEP_RETIMER_WAIT_FOR_LOCK_IN_PROGRESS;
-		/* fall through*/
+		fallthrough;
 	case LM_STEP_RETIMER_WAIT_FOR_LOCK_IN_PROGRESS:
 
 		/* check lock in 10ms intervals */
@@ -1457,7 +1457,7 @@ static al_bool al_eth_lm_retimer_signal_lock_check_step(struct al_eth_lm_context
 
 		lm_context->step_data.retimer_data.slc_state =
 			LM_STEP_RETIMER_SIGNAL_LOCK_IN_PROGRESS;
-		/* fall through */
+		fallthrough;
 	case LM_STEP_RETIMER_SIGNAL_LOCK_IN_PROGRESS:
 		rc = al_eth_lm_wait_for_lock_step(lm_context, channel, &cdr_lock);
 		if (rc == -EINPROGRESS)
@@ -1574,7 +1574,7 @@ static int al_eth_lm_retimer_25g_rx_adaptation_step(struct al_eth_lm_context *lm
 
 		lm_context->step_data.retimer_data.rx_adap_state =
 				LM_STEP_RETIMER_RX_ADAPTATION_SERDES_LOCK_DELAY;
-		/* fall through */
+		fallthrough;
 	case LM_STEP_RETIMER_RX_ADAPTATION_SERDES_LOCK_DELAY:
 		current_time = lm_context->get_msec();
 
@@ -1945,7 +1945,7 @@ int al_eth_lm_link_detection_step(struct al_eth_lm_context	*lm_context,
 
 		LM_STEP_CHANGE_STATE(lm_context->step_data.detection_state,
 				     LM_STEP_DETECTION_RETIMER_RX_ADAPT_POST);
-		/* fall through */
+		fallthrough;
 	case LM_STEP_DETECTION_RETIMER_RX_ADAPT_POST:
 		if (ret) {
 			al_dbg("%s: Rx channel is not locked\n", __func__);
@@ -1978,7 +1978,7 @@ int al_eth_lm_link_detection_step(struct al_eth_lm_context	*lm_context,
 
 		LM_STEP_CHANGE_STATE(lm_context->step_data.detection_state,
 				     LM_STEP_DETECTION_FINAL);
-		/* fall through */
+		fallthrough;
 	case LM_STEP_DETECTION_FINAL:
 		if (*old_mode != *new_mode) {
 			al_info("%s: New SFP mode detected %s -> %s\n",
@@ -2157,7 +2157,7 @@ int al_eth_lm_link_establish_step(struct al_eth_lm_context	*lm_context,
 
 		LM_STEP_CHANGE_STATE(lm_context->step_data.establish_state,
 				     LM_STEP_ESTABLISH_MIDDLE);
-		/* fall through */
+		fallthrough;
 	case LM_STEP_ESTABLISH_MIDDLE:
 		signal_detected = lm_context->serdes_obj->signal_is_detected(
 			lm_context->serdes_obj,
@@ -2249,7 +2249,7 @@ int al_eth_lm_link_establish_step(struct al_eth_lm_context	*lm_context,
 					case AL_ETH_LM_AUTO_FEC_INIT_ENABLED:
 						lm_context->auto_fec_wait_to_toggle =
 							lm_context->auto_fec_toggle_timeout;
-						/* fallthrough */
+						fallthrough;
 					case AL_ETH_LM_AUTO_FEC_ENABLED:
 						lm_context->auto_fec_state =
 							AL_ETH_LM_AUTO_FEC_DISABLED;

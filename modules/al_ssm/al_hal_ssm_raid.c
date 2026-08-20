@@ -577,7 +577,7 @@ static INLINE int _al_raid_xaction_validate_buffers_size(
 	case AL_RAID_OP_P_CALC:
 		if (tx_len != rx_len)
 				return -EINVAL;
-		/* fall through */
+		fallthrough;
 	case AL_RAID_OP_P_VAL:
 		if ((tx_len == 0) || (tx_len > AL_RAID_OP_P_MAX_BLOCK_SIZE))
 			return -EINVAL;
@@ -585,7 +585,7 @@ static INLINE int _al_raid_xaction_validate_buffers_size(
 	case AL_RAID_OP_Q_CALC:
 		if (tx_len != rx_len)
 			return -EINVAL;
-		/* fall through */
+		fallthrough;
 	case AL_RAID_OP_Q_VAL:
 		if ((tx_len == 0) || (tx_len > AL_RAID_OP_Q_MAX_BLOCK_SIZE))
 			return -EINVAL;
@@ -593,7 +593,7 @@ static INLINE int _al_raid_xaction_validate_buffers_size(
 	case AL_RAID_OP_PQ_CALC:
 		if (tx_len != rx_len)
 			return -EINVAL;
-		/* fall through */
+		fallthrough;
 	case AL_RAID_OP_PQ_VAL:
 		if ((tx_len == 0) || (tx_len > AL_RAID_OP_PQ_MAX_BLOCK_SIZE))
 			return -EINVAL;
@@ -601,7 +601,7 @@ static INLINE int _al_raid_xaction_validate_buffers_size(
 	case AL_RAID_OP_EC_PQ_CALC:
 		if (tx_len != rx_len)
 			return -EINVAL;
-		/* fall through */
+		fallthrough;
 	case AL_RAID_OP_EC_PQ_VAL:
 		if ((tx_len == 0) || (tx_len > AL_RAID_OP_EC_PQ_MAX_BLOCK_SIZE))
 			return -EINVAL;
@@ -609,7 +609,7 @@ static INLINE int _al_raid_xaction_validate_buffers_size(
 	case AL_RAID_OP_EC_PQR_CALC:
 		if (tx_len != rx_len)
 			return -EINVAL;
-		/* fall through */
+		fallthrough;
 	case AL_RAID_OP_EC_PQR_VAL:
 		if ((tx_len == 0) || (tx_len > AL_RAID_OP_EC_PQR_MAX_BLOCK_SIZE))
 			return -EINVAL;
@@ -617,7 +617,7 @@ static INLINE int _al_raid_xaction_validate_buffers_size(
 	case AL_RAID_OP_EC_PQRS_CALC:
 		if (tx_len != rx_len)
 			return -EINVAL;
-		/* fall through */
+		fallthrough;
 	case AL_RAID_OP_EC_PQRS_VAL:
 		if ((tx_len == 0) || (tx_len > AL_RAID_OP_EC_PQRS_MAX_BLOCK_SIZE))
 			return -EINVAL;

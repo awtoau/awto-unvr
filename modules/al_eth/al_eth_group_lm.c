@@ -433,7 +433,7 @@ int al_eth_group_lm_link_manage(struct al_eth_group_lm_context *group_lm_context
 
 		GROUP_LM_STEP_STAGE_CHANGE_STATE(*lm_step_stage,
 						GROUP_LM_STEP_STAGE_LINK_STATE_CHECK);
-		/* fall through */
+		fallthrough;
 	case GROUP_LM_STEP_STAGE_LINK_STATE_CHECK:
 		/* This stage is helpful for the case that the current port's previous link_state
 		 * was up and its current state is also up. If another other port holds the
@@ -453,7 +453,7 @@ int al_eth_group_lm_link_manage(struct al_eth_group_lm_context *group_lm_context
 
 		GROUP_LM_STEP_STAGE_CHANGE_STATE(*lm_step_stage,
 						GROUP_LM_STEP_STAGE_TRY_LOCK_DETECTION);
-		/* fall through */
+		fallthrough;
 	case GROUP_LM_STEP_STAGE_TRY_LOCK_DETECTION:
 		/* we need to lock link_detection only in 25g serdes, since it accesses the retimer,
 		 * which is a shared resource
@@ -494,7 +494,7 @@ int al_eth_group_lm_link_manage(struct al_eth_group_lm_context *group_lm_context
 
 		GROUP_LM_STEP_STAGE_CHANGE_STATE(*lm_step_stage,
 						GROUP_LM_STEP_STAGE_DETECTION_DONE);
-		/* fall through */
+		fallthrough;
 	case GROUP_LM_STEP_STAGE_DETECTION_DONE:
 		if (fault == AL_FALSE) {
 			/* The link is still up so we can skip the rest of the flow */
@@ -531,7 +531,7 @@ int al_eth_group_lm_link_manage(struct al_eth_group_lm_context *group_lm_context
 		GROUP_LM_STEP_STAGE_CHANGE_STATE(*lm_step_stage,
 						GROUP_LM_STEP_STAGE_TRY_LOCK_SPEED_CHANGE);
 
-	/* fall through */
+	fallthrough;
 	case GROUP_LM_STEP_STAGE_TRY_LOCK_SPEED_CHANGE:
 		lock = group_lm_context->common_params.try_lock_cb(
 			serdes_grp);
@@ -555,7 +555,7 @@ int al_eth_group_lm_link_manage(struct al_eth_group_lm_context *group_lm_context
 			al_eth_group_lm_step_stage_convert_to_str(*lm_step_stage));
 
 		GROUP_LM_STEP_STAGE_CHANGE_STATE(*lm_step_stage, GROUP_LM_STEP_STAGE_PRE_ESTABLISH);
-		/* fall through */
+		fallthrough;
 	case GROUP_LM_STEP_STAGE_PRE_ESTABLISH:
 		if (group_lm_context->link_params[link_id].pre_establish_cb) {
 			rc = group_lm_context->link_params[link_id].pre_establish_cb(handle,
@@ -572,7 +572,7 @@ int al_eth_group_lm_link_manage(struct al_eth_group_lm_context *group_lm_context
 		}
 		GROUP_LM_STEP_STAGE_CHANGE_STATE(*lm_step_stage,
 						GROUP_LM_STEP_STAGE_TRY_LOCK_ESTABLISH);
-		/* fall through */
+		fallthrough;
 	case GROUP_LM_STEP_STAGE_TRY_LOCK_ESTABLISH:
 		lock = group_lm_context->common_params.try_lock_cb(
 			serdes_grp);
@@ -598,7 +598,7 @@ int al_eth_group_lm_link_manage(struct al_eth_group_lm_context *group_lm_context
 
 		GROUP_LM_STEP_STAGE_CHANGE_STATE(*lm_step_stage,
 						GROUP_LM_STEP_STAGE_ESTABLISH_DONE);
-		/* fall through */
+		fallthrough;
 	case GROUP_LM_STEP_STAGE_ESTABLISH_DONE:
 		if (rc == 0) {
 			if (link_up == AL_TRUE) {
@@ -640,7 +640,7 @@ int al_eth_group_lm_link_manage(struct al_eth_group_lm_context *group_lm_context
 		}
 
 		GROUP_LM_STEP_STAGE_CHANGE_STATE(*lm_step_stage, GROUP_LM_STEP_STAGE_GROUP_LM_FLOW);
-		/* fall through */
+		fallthrough;
 	case GROUP_LM_STEP_STAGE_GROUP_LM_FLOW:
 		al_dbg("%s: entered GROUP_LM_STEP_STAGE_GROUP_LM_FLOW. serdes group:%d\n",
 			__func__, serdes_grp);
