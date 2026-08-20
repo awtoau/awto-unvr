@@ -90,6 +90,11 @@ NET_KC_ANCHOR = "endif # NETDEVICES\n"
 # Kconfig is sourced from drivers/phy/Kconfig (always sourced from drivers/Kconfig).
 DRIVERS_MAKEFILE = os.path.join(TREE, "drivers/Makefile")
 DRIVERS_MAKE_LINE = "obj-$(CONFIG_AL_SERDES) += phy/al_serdes/\n"
+# Sanity marker: pristine drivers/Makefile always has this (pulls in the DM
+# core). Its absence means the file is truncated/corrupt, not just unpatched
+# (see #102: a prior manual edit once overwrote the whole file down to a
+# single appended line and neither stage() nor unstage() noticed).
+DRIVERS_MK_SANITY = "obj-$(CONFIG_$(PHASE_)DM) += core/\n"
 PHY_KCONFIG = os.path.join(TREE, "drivers/phy/Kconfig")
 PHY_KCONFIG_LINE = 'source "drivers/phy/al_serdes/Kconfig"\n'
 
@@ -145,16 +150,26 @@ def stage():
     # drivers/Makefile + drivers/phy/Kconfig hooks for al_serdes
     dm = open(DRIVERS_MAKEFILE).read()
     if DRIVERS_MAKE_LINE not in dm:
+        if DRIVERS_MK_SANITY not in dm:
+            log(
+                f"ABORT: {DRIVERS_MAKEFILE} missing expected content "
+                f"({len(dm)} bytes) - refusing to patch a truncated/corrupt "
+                "file (would silently cement the damage)"
+            )
+            sys.exit(1)
         open(DRIVERS_MAKEFILE, "w").write(dm.rstrip("\n") + "\n" + DRIVERS_MAKE_LINE)
         log("patched drivers/Makefile (phy/al_serdes/)")
     pk = open(PHY_KCONFIG).read()
     if PHY_KCONFIG_LINE not in pk:
         idx = pk.rfind("endmenu")
-        pk = (
-            (pk + "\n" + PHY_KCONFIG_LINE)
-            if idx < 0
-            else pk[:idx] + PHY_KCONFIG_LINE + "\n" + pk[idx:]
-        )
+        if idx < 0:
+            log(
+                f"ABORT: {PHY_KCONFIG} has no 'endmenu' ({len(pk)} bytes) - "
+                "refusing to patch a truncated/corrupt file (would silently "
+                "cement the damage)"
+            )
+            sys.exit(1)
+        pk = pk[:idx] + PHY_KCONFIG_LINE + "\n" + pk[idx:]
         open(PHY_KCONFIG, "w").write(pk)
         log("patched drivers/phy/Kconfig (source al_serdes/Kconfig)")
 
@@ -182,7 +197,10 @@ def unstage():
         (PHY_KCONFIG, PHY_KCONFIG_LINE),
     ):
         if os.path.exists(f):
-            open(f, "w").write(open(f).read().replace(line, ""))
+            content = open(f).read()
+            if line in content:
+                open(f, "w").write(content.replace(line, ""))
+                log(f"reverted {os.path.relpath(f, TREE)}")
 
     # staged directories (board/annapurna covers al_ddr)
     for dst in DIRS.values():
