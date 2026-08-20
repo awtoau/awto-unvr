@@ -49,8 +49,22 @@ Stock Linux 5.1 worked; ours wedges. Candidates, in order:
    - **Fix path (needs a small driver change, then DTS):** patch designware_i2c.c to read
      `i2c-{ss,fs,hs}-scl-{h,l}cnt-raw` + `i2c-sda-hold-time-ns` into a `dw_scl_sda_cfg` and set
      `priv->scl_sda_cfg` when present (mirror byt_config); then add stock's raw counts to `i2c_pld`
-     in both DTS. Alternative (DTS-only, indirect): tune `i2c-scl-rising-time-ns`/
-     `i2c-scl-falling-time-ns` until the computed counts match stock's. Needs a cold-cycle to test.
+     in both DTS.
+   - **Mainline Linux's i2c-designware (#98, not U-Boot's) — same gap, different fix.** Mainline's
+     `drivers/i2c/busses/i2c-designware-common.c` ignores the raw-count properties entirely (they're
+     non-standard vendor props, ACPI-only in upstream); it always computes hcnt/lcnt itself from
+     `i2c_dw_scl_hcnt()`/`i2c_dw_scl_lcnt()`, which only take the standard `i2c-sda-fall-time-ns` (feeds
+     hcnt) / `i2c-scl-falling-time-ns` (feeds lcnt) DT properties — patching the driver isn't needed,
+     tuning these is enough. Derived from the actual formulas (not guessed):
+     `hcnt = round(ic_clk_kHz × (tHIGH + sda_fall_ns) / 1e6) − 3`,
+     `lcnt = round(ic_clk_kHz × (tLOW + scl_fall_ns) / 1e6) − 1`, with `ic_clk` = 500000 (kHz, this
+     board's sbclk), `tHIGH` = 4000ns, `tLOW` = 4700ns (I2C spec minimums, hardcoded in the driver, not
+     DT-tunable). With the driver's own 300ns default for both: hcnt = 2147 (already **above** stock's
+     0x855=2133 — fine as-is, `i2c-sda-fall-time-ns` left untouched). lcnt = 2499, **short** of stock's
+     0xb0b=2827 by 328 — this was the actual gap. Setting `i2c-scl-falling-time-ns = <1000>` (up from
+     the 300ns default) computes lcnt = 2849, comfortably above stock's value. Applied to the Linux
+     DTS only (`dts/alpine-v2-ubnt-unvr-ea16.dts`) — U-Boot's patched driver keeps using its own raw
+     counts, unaffected by this property.
 2. **Mux select/deselect sequence.** How we select ch0 and whether we deselect correctly around the
    RTC access — a malformed select/transfer/deselect can leave the s35390a mid-frame.
 3. **s35390a access sequence.** The mainline driver's probe reads STATUS1 first; the chip's odd

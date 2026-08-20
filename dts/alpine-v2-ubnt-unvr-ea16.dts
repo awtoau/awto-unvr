@@ -308,6 +308,10 @@
 			i2c-fs-scl-lcnt-raw = <0x320>;
 			i2c-hs-scl-hcnt-raw = <0xf3>;
 			i2c-hs-scl-lcnt-raw = <0x198>;
+			/* mainline ignores the raw counts above (#98) - this is the
+			 * standard, mainline-honored equivalent for lcnt. Derivation:
+			 * docs/rtc-s35390a-fault.md. */
+			i2c-scl-falling-time-ns = <1000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 
