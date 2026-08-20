@@ -53,6 +53,12 @@ FILES = {
     # stock's proven s35390a-safe pld-bus timing (docs/rtc-s35390a-fault.md).
     "drivers/i2c/designware_i2c.c": "drivers/i2c/designware_i2c.c",
     "drivers/i2c/designware_i2c.h": "drivers/i2c/designware_i2c.h",
+    # AHCI: #92 raise MAX_SATA_BLOCKS_READ_WRITE 0x80->0x800 (62MB/s->faster);
+    # #94 spin-up-aware link-up wait so the first `scsi scan` finds cold HDDs.
+    "drivers/ata/ahci.c": "drivers/ata/ahci.c",
+    # DW spi: #91 bound EEPROM-read transfers to the Rx FIFO depth so a slow
+    # polled consumer can't overrun the Rx FIFO (env load fails otherwise).
+    "drivers/spi/designware_spi.c": "drivers/spi/designware_spi.c",
 }
 
 # Whole subtrees copied verbatim: scaffold rel-dir -> tree rel-dir.
