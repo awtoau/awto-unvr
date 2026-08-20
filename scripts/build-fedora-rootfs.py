@@ -67,6 +67,11 @@ systemctl disable abrtd.service abrt-ccpp.service abrt-oops.service \
 dnf -y remove 'abrt*' 2>/dev/null || true
 # --- serial console login ---
 systemctl enable serial-getty@ttyS0.service
+# --- sysrq: Fedora's own /usr/lib/sysctl.d/50-default.conf sets kernel.sysrq=16
+# (log only) at every boot via systemd-sysctl, overriding the kernel's own
+# compiled-in default (#97 - want serial BREAK+key recoverable without a
+# physical power-cycle). Higher-sorting drop-in wins. ---
+echo 'kernel.sysrq = 1' > /etc/sysctl.d/99-awto-sysrq.conf
 # --- network: NetworkManager (Fedora default, installed), auto-DHCPs all wired links ---
 systemctl enable NetworkManager.service
 # --- ssh ---
