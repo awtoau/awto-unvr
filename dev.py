@@ -912,8 +912,27 @@ def cmd_uboot_test(_extra: list[str]) -> int:
 
 
 @command(
-    "flash the built kernel+DTB into NAND + set U-Boot to boot it "
-    "(scripts/flash-nand.py)",
+    "poll the console log for boot progress (trouble markers / login prompt) "
+    "instead of one long blocking wait (scripts/wait-for-boot.py)",
+    kind="action",
+)
+def cmd_wait_for_boot(extra: list[str]) -> int:
+    return _run_script("scripts/wait-for-boot.py", extra)
+
+
+@command(
+    "phase 1/2 of a Fedora deploy: regenerate tftp uImage+DTB from build-out "
+    "+ sync module tree onto woomera. Run while Fedora is up (scripts/publish-fedora.py)",
+    kind="action",
+)
+def cmd_publish_fedora(extra: list[str]) -> int:
+    return _run_script("scripts/publish-fedora.py", extra)
+
+
+@command(
+    "phase 2/2 of a Fedora deploy: flash the published kernel+DTB into NAND + "
+    "set U-Boot to boot it. Run ./dev.py publish-fedora first, then reset to "
+    "U-Boot (scripts/flash-nand.py)",
     kind="action",
 )
 def cmd_flash(extra: list[str]) -> int:

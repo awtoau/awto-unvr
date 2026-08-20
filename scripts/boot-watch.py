@@ -27,7 +27,7 @@ CONSOLE_LOG = LOGS / "unvr-console.log"
 # Genuine trouble, not routine boot noise. Ordered roughly by severity for
 # the reader's eye, not that it affects matching.
 TROUBLE = re.compile(
-    r"Kernel panic|Internal error|Oops:|BUG:|WARNING: CPU:|hung_task|"
+    r"Kernel panic|Internal error|\bOops:|BUG:|WARNING: CPU:|hung_task|"
     r"rcu_sched self-detected|Call trace:|watchdog: BUG|"
     r"segfault|\[FAILED\]|Failed to start|Failed to mount|"
     r"NO-STOCK-UBOOT|Unable to mount root|VFS: Unable to",
