@@ -121,6 +121,92 @@ mtd4+0x0000 via `read_rom_hwaddr`. Full field map: `docs/identity-partitions.md`
 Our Fedora-on-NAND layout **differs** from stock (kernel@0x1300000, dtb@0x2800000,
 factory recovery@0x300000) — see the `nand-boot-layout-recovery` memory / flash flow.
 
+## Our running Linux (mainline 7.1.8) does NOT see the NAND — confirmed 2026-08-20
+
+`/proc/mtd` on the live box (Fedora on SSD, `uname -r 7.1.8-dirty`) lists only
+**8 partitions, all SPI-NOR** (`spi0.0`, erasesize `0x10000`/`0x1000`-family) —
+mtd0–7 above. **None of the 4 NAND partitions appear.** This is expected, not a
+fault, and does not contradict the NAND chip being real:
+
+- The DT node is present and enabled: `/proc/device-tree/soc/nand@fa100000/status`
+  = `okay`, `compatible` = `annapurna-labs,al-nand`. The platform device
+  registers (`/sys/bus/platform/devices/fa100000.nand/` exists, `uevent` shows
+  `OF_COMPATIBLE_0=annapurna-labs,al-nand`) — but **no driver binds** (no
+  `driver` symlink in that sysfs dir).
+- **No driver exists for it.** `grep -rn "annapurna-labs,al-nand"` across
+  `linux-v7.1.8/drivers/` (the mainline kernel.org tree this project builds)
+  returns zero hits — the Annapurna AL-NAND MTD controller driver was **never
+  upstreamed to mainline Linux**. It only exists in Ubiquiti's own out-of-tree
+  GPL BSP kernel (4.1.37-ubnt, the one that ships stock 1.3.35 firmware).
+- The deployed kernel config (`unvr-ea16-7.1.config`) has
+  **`CONFIG_MTD_RAW_NAND is not set`** — the raw-NAND subsystem itself is
+  disabled, so even a driver wouldn't attach without a rebuild.
+- Consequence: zero probe attempts logged anywhere — not dmesg, not the full
+  boot `journalctl -b` (59k lines) — because nothing ever tries to bind. Only
+  `spi-nor spi0.0` (the generic mainline `m25p80`/`spi-nor` driver, which the
+  chip is generic enough to match) attaches, producing exactly the 8
+  SPI-NOR-only partitions seen.
+- SPI-NOR still binding while NAND doesn't is exactly the giveaway that these
+  are two separate physical chips — the same distinction `docs/mtd.md` already
+  makes by erase size (§ "Two devices").
+
+**The NAND chip's physical existence is independently proven**, not assumed:
+`docs/hardware.md` "CPU / NAND / identity extras" records a **live JEDEC ID
+read under stock 1.3.35** (`Manufacturer ID 0x2c, Chip ID 0xa3` → Micron
+MT29F8G08ABBCAH4, 1024 MiB SLC, erase 256 KiB, page 4096, OOB 224) plus **active
+ECC correction on real kernel-partition reads** — that's the vendor's own
+NAND driver, in its own kernel, actually reading the chip. Two disjoint
+software stacks (stock 4.1.37-ubnt kernel: sees+uses NAND; our mainline
+7.1.8: NAND node present but undriven) is consistent, not contradictory —
+mainline simply never gained this vendor driver.
+
+### `scripts/flash-nand.py` operates below Linux entirely — verified safe
+
+`flash-nand.py` never goes through Linux's MTD layer. It drives **stock
+U-Boot's** own `nand read`/`erase`/`write` console commands at the
+`ALPINE_UBNT_NAS_ALL>` prompt — the same NAND driver stock U-Boot uses every
+normal boot (`bootfrom=bootnand`, `docs/nor-boot-chain.md` §4) to load the
+vendor kernel from NAND. That driver is proven live and correct: it's what
+boots the box today when doing a stock boot. (Our own custom U-Boot,
+`uboot-port/`, has **no NAND driver at all** — grep for `nand`/`al-nand`
+across it is empty; it targets SSD/SATA boot only and is not what
+`flash-nand.py` talks to.)
+
+**Address sanity vs the documented NAND map (table above, chip-relative
+offsets):**
+
+| | value | check |
+|---|---|---|
+| kernel offset | `0x1300000` | = start of `rootfs` (mtd10, dead on our layout) |
+| kernel span | `0x1200000` (18 MiB) | `0x1200000 / 0x40000` = 72 — exact multiple of NAND's 256 KiB erase block |
+| kernel end | `0x2500000` | inside `rootfs` (ends `0x40f00000`), well clear |
+| DTB offset | `0x2800000` | `/0x40000` = 160 — erase-block aligned; **3 MiB past kernel end**, no overlap |
+| DTB erase span | `0x40000` (256 KiB) | matches NAND's own erase granularity, not SPI-NOR's 4 KiB |
+
+Both addresses are 256 KiB-erase-block-aligned and land inside the ~1005 MiB
+`rootfs` NAND partition (chip-relative `0x1300000`–`0x40f00000`) — nowhere
+near the 32 MB SPI-NOR's address space. (An address like `0x2800000` = 40 MiB
+only looks impossible if wrongly compared against the 32 MB SPI-NOR; it is
+trivially inside the 1024 MiB NAND.) The geometry is self-consistent with a
+**deliberate NAND-aware choice**, not a copy-paste of the wrong chip's numbers.
+
+**Prior empirical proof, not just address arithmetic:** `docs/fedora-on-ssd.md`
+"PERSISTENT" section records `flash-nand.py` verified **end-to-end on real
+hardware, 2026-08-17** — NAND kernel → decompress → mount SSD root →
+`systemd multi-user.target`, cold boot via stock U-Boot autoboot. Issue **#40**
+(closed, the SSD-boot milestone) and issue **#54** (open, hardening follow-ups:
+FIT/hash verification, DTB placement cleanup, idempotency — not correctness)
+both corroborate this. This session's verification (device-tree/sysfs/kernel
+config /proc/mtd/journal checks above) is independent corroboration of the
+*mechanism* (why Linux's own `/proc/mtd` doesn't show NAND, and why that's
+fine); the addresses' *correctness* rests on the 2026-08-17 successful boot,
+which is the stronger evidence.
+
+**Terminology check:** searched `docs/`, `scripts/`, `dts/` for "NAND" —
+no conflation found. Every use refers to the genuine 1 GiB MT29F8G08 chip;
+SPI-NOR is consistently written "NOR"/"SPI-NOR". `docs/mtd.md`'s own
+"Two devices" table above is the disambiguation reference.
+
 ## Dumping / restoring
 
 - **Capture** (read is safe): in Linux `dd if=/dev/mtdN of=<file> bs=4096`, or over
