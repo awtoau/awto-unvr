@@ -164,7 +164,7 @@ int al_unit_adapter_handle_init(
 	unit_adapter->handle =
 		handle ?
 		handle :
-		unit_adapter_regs_base;
+		(void *)unit_adapter_regs_base;
 
 	return 0;
 }

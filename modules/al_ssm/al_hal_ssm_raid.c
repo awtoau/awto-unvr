@@ -216,11 +216,11 @@ static void _al_raid_load_table(
 
 	if (gflog) {
 		al_assert((uint32_t *)&app_regs->gflog_table[0] ==
-								&app_regs->gflog_table[0].w0_raw);
+					(uint32_t *)&app_regs->gflog_table[0].w0_raw);
 		base_reg = (uint32_t *)&app_regs->gflog_table[0];
 	} else {
 		al_assert((uint32_t *)&app_regs->gfilog_table[0] ==
-								&app_regs->gfilog_table[0].w0_r);
+					(uint32_t *)&app_regs->gfilog_table[0].w0_r);
 		base_reg = (uint32_t *)&app_regs->gfilog_table[0];
 	}
 
