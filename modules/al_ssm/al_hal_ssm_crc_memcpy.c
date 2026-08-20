@@ -729,7 +729,9 @@ void al_crc_memcpy_error_ints_unmask(uint8_t rev_id,
 				     void __iomem *crc_regs_base[AL_SSM_MAX_CRC],
 				     void __iomem *udma_regs_base)
 {
-	struct al_udma udma;
+	/* static: al_udma.udma_q[DMA_MAX_Q_MAX] is too large for the stack (#101);
+	 * not reentrant/concurrent - init-time only, one call in flight at a time. */
+	static struct al_udma udma;
 	struct al_udma_params udma_params = {
 		.udma_regs_base = udma_regs_base
 	};

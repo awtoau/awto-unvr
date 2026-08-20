@@ -959,7 +959,9 @@ static int al_serdes_25g_calc_eye_size(
 		int				*width,
 		int				*height)
 {
-	uint64_t samples[SERDES_25G_EYE_SIZE_MAX_SAMPLES];
+	/* static: 401 uint64_t (~3.1KB) is too large for the stack (#101); not
+	 * reentrant/concurrent - one eye-diagram scan runs at a time per lane. */
+	static uint64_t samples[SERDES_25G_EYE_SIZE_MAX_SAMPLES];
 	int i;
 	int _width = 0;
 	int _height = 0;

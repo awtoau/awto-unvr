@@ -812,7 +812,11 @@ void al_raid_error_ints_unmask(uint8_t rev_id,
 			       void __iomem *raid_regs_base,
 			       void __iomem *udma_regs_base)
 {
-	struct al_udma udma;
+	/* static: struct al_udma embeds udma_q[DMA_MAX_Q_MAX] by value (~2.3KB) -
+	 * too large for the stack here. Only one al_raid_error_ints_unmask call is
+	 * ever in flight at a time (init-time, not reentrant/concurrent - see #101).
+	 */
+	static struct al_udma udma;
 	struct al_udma_params udma_params = {
 		.udma_regs_base = udma_regs_base
 	};
