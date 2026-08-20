@@ -113,7 +113,9 @@ def report(b: dict[int, int]) -> str:
             0: "DATA_READY_BAR",
         }
         set_bits = [name for bit, name in bits.items() if status & (1 << bit)]
-        lines.append(f"  status:    0x{status:02x} -> {', '.join(set_bits) or '(clear)'}")
+        lines.append(
+            f"  status:    0x{status:02x} -> {', '.join(set_bits) or '(clear)'}"
+        )
     if not lines:
         lines.append("  (no recognized DDM bytes in dump - see raw output above)")
     return "\n".join(lines)
@@ -121,7 +123,9 @@ def report(b: dict[int, int]) -> str:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--host", help="woomera's address (default: auto-locate by MAC OUI)")
+    ap.add_argument(
+        "--host", help="woomera's address (default: auto-locate by MAC OUI)"
+    )
     ap.add_argument("--password", default=DEFAULT_ROOT_PASSWORD)
     args = ap.parse_args()
 
@@ -147,6 +151,7 @@ def main() -> int:
         ],
         capture_output=True,
         text=True,
+        check=False,
     )
     output = result.stdout + result.stderr
 
