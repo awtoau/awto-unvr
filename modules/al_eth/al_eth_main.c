@@ -1315,7 +1315,7 @@ void al_eth_get_intr_moderation_entry(enum al_eth_intr_moderation_level level,
 			initial_moderation_table[level].bytes_per_interval;
 }
 
-void al_eth_update_intr_moderation(struct al_eth_adapter *adapter, unsigned int qid,
+static void al_eth_update_intr_moderation(struct al_eth_adapter *adapter, unsigned int qid,
 		enum al_eth_direction direction)
 {
 	struct al_eth_ring *ring;
@@ -2368,14 +2368,14 @@ static void al_eth_tx_timeout(struct net_device *dev, unsigned int txqueue)
 	schedule_work(&adapter->reset_task);
 }
 
-int al_eth_read_pci_config(void *handle, int where, uint32_t *val)
+static int al_eth_read_pci_config(void *handle, int where, uint32_t *val)
 {
 	/* handle is a pointer to the pci_dev */
 	pci_read_config_dword((struct pci_dev *)handle, where, val);
 	return 0;
 }
 
-int al_eth_write_pci_config(void *handle, int where, uint32_t val)
+static int al_eth_write_pci_config(void *handle, int where, uint32_t val)
 {
 	/* handle is a pointer to the pci_dev */
 	pci_write_config_dword((struct pci_dev *)handle, where, val);
@@ -4777,7 +4777,7 @@ static void al_eth_get_ethtool_stats(struct net_device *netdev,
 	al_eth_ethtool_queue_stats(adapter, &data);
 }
 
-int al_eth_get_sset_count(struct net_device *netdev, int sset)
+static int al_eth_get_sset_count(struct net_device *netdev, int sset)
 {
 	struct al_eth_adapter *adapter = netdev_priv(netdev);
 

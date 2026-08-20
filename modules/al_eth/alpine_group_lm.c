@@ -23,6 +23,7 @@
 #include "alpine_serdes.h"
 
 #include "al_eth_group_lm.h"
+#include "alpine_group_lm.h"
 
 #define GROUP_LM_WORKAROUND_WATCHDOG_TIMEOUT 30000 /* [msec] */
 

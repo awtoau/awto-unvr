@@ -378,6 +378,12 @@ int al_udma_s2m_completion_set(struct al_udma *udma,
 int al_udma_m2s_sc_set(struct al_udma *udma,
 		       struct al_udma_m2s_dwrr_conf *sched);
 
+/* Configure the M2S UDMA Q scheduling mode */
+int al_udma_m2s_q_sc_set(struct al_udma_q *udma_q,
+			 struct al_udma_m2s_q_dwrr_conf *conf);
+int al_udma_m2s_q_sc_pause(struct al_udma_q *udma_q, al_bool set);
+int al_udma_m2s_q_sc_reset(struct al_udma_q *udma_q);
+
 /** M2S Rate Limitation Parameter Setting */
 void al_udma_m2s_rlimit_params_set(
 	struct al_udma				*udma,

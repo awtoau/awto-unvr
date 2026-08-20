@@ -14,6 +14,7 @@
 #include "al_hal_udma.h"
 #include "al_hal_udma_debug.h"
 #include "al_eth.h"
+#include "al_eth_sysfs.h"
 
 #define to_ext_attr(x) container_of(x, struct dev_ext_attribute, attr)
 

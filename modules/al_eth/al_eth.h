@@ -437,4 +437,12 @@ struct al_eth_adapter {
 	struct 	work_struct 		reset_task;
 };
 
+/* defined in al_eth_main.c, used by al_eth_sysfs.c */
+struct al_udma *al_eth_udma_get(struct al_eth_adapter *adapter, int tx);
+void al_eth_initial_moderation_table_restore_default(void);
+void al_eth_init_intr_moderation_entry(enum al_eth_intr_moderation_level level,
+		struct al_eth_intr_moderation_entry *entry);
+void al_eth_get_intr_moderation_entry(enum al_eth_intr_moderation_level level,
+	struct al_eth_intr_moderation_entry *entry);
+
 #endif /* !(AL_ETH_H) */
