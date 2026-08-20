@@ -1,0 +1,16 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+config AL_SSM
+	bool "Annapurna Labs al_ssm crypto/RAID UDMA mem-to-mem test (iodma)"
+	depends on AL_ETH
+	help
+	  Adds the `iodma` command: a mem-to-mem DMA self-test on the Alpine V2
+	  SSM crypto/RAID engine (PCI 1c36:0022), which drives a SEPARATE al_udma
+	  instance from al_eth's. Probes the endpoint, sets up a RAID-queue UDMA
+	  ring in low DRAM, runs an AL_RAID_OP_MEM_CPY copy and verifies it, and
+	  dumps the M2S engine state in the same format as al_eth so the two are
+	  directly comparable (does THIS UDMA's descriptor read complete where the
+	  eth's hangs, #90?).
+
+	  Depends on AL_ETH: reuses that module's compiled udma/iofic HAL objects
+	  and the al_unit_adapter_init stub. Only the SSM/RAID/m2m-udma glue is
+	  added here. Build/diagnostic feature - no traffic path.

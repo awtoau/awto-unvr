@@ -44,6 +44,7 @@ CONFIG_NET=y
 CONFIG_DM_ETH=y
 CONFIG_AL_ETH=y
 CONFIG_AL_ETH_10G=y
+CONFIG_AL_SSM=y
 # VERBOSE logging at level 7 (LOGL_DEBUG) - full DM-bind/ofnode/driver-debug
 # trace. Deliberately NOT level 8 (LOGL_DEBUG_CONTENT): level 8 is where
 # designware_spi.c does log_content("tx/rx=..") PER BYTE, which (a) floods and
