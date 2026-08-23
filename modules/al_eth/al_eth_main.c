@@ -100,6 +100,10 @@ struct mii_bus *alpine_shared_mdio_bus;
 EXPORT_SYMBOL(alpine_shared_mdio_bus);
 static struct al_eth_adapter *al_shared_mdio_adapter;
 static DEFINE_MUTEX(al_shared_mdio_lock);
+/* Count of adapters currently attached to alpine_shared_mdio_bus.
+ * Protected by al_shared_mdio_lock. Bus is unregistered only when
+ * this drops to 0 (see al_eth_mdiobus_teardown). */
+static int al_shared_mdio_refcount;
 
 static int disable_msi;
 
@@ -2039,10 +2043,23 @@ static void al_eth_mdiobus_teardown(struct al_eth_adapter *adapter)
 	if (!adapter->mdio_bus)
 		return;
 
-	/* Don't free the shared MDIO bus — it persists across port up/down.
-	 * Only disconnect our PHY from it. */
+	/* Shared bus persists across port up/down — only drop our reference.
+	 * Last adapter out actually unregisters it, so a later re-open
+	 * (this port or a fresh module load) doesn't hit a duplicate-name
+	 * sysfs collision against a still-registered bus (#115). */
 	if (adapter->mdio_bus == alpine_shared_mdio_bus) {
 		adapter->mdio_bus = NULL;
+
+		mutex_lock(&al_shared_mdio_lock);
+		if (--al_shared_mdio_refcount > 0) {
+			mutex_unlock(&al_shared_mdio_lock);
+			return;
+		}
+		mdiobus_unregister(alpine_shared_mdio_bus);
+		mdiobus_free(alpine_shared_mdio_bus);
+		alpine_shared_mdio_bus = NULL;
+		al_shared_mdio_adapter = NULL;
+		mutex_unlock(&al_shared_mdio_lock);
 		return;
 	}
 
@@ -2129,6 +2146,9 @@ static int al_eth_mdiobus_setup(struct al_eth_adapter *adapter)
 			    "PHY at addr %d already on bus: %s\n",
 			    adapter->phy_addr,
 			    phydev->drv ? phydev->drv->name : "generic");
+		mutex_lock(&al_shared_mdio_lock);
+		al_shared_mdio_refcount++;
+		mutex_unlock(&al_shared_mdio_lock);
 		return 0;
 	}
 
@@ -2171,6 +2191,10 @@ static int al_eth_mdiobus_setup(struct al_eth_adapter *adapter)
 			    adapter->phy_addr,
 			    phydev->drv->name, phydev->phy_id);
 	}
+
+	mutex_lock(&al_shared_mdio_lock);
+	al_shared_mdio_refcount++;
+	mutex_unlock(&al_shared_mdio_lock);
 
 	return 0;
 }
