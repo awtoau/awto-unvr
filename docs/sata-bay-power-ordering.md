@@ -36,8 +36,20 @@ node (`dts/alpine-v2-ubnt-unvr-ea16.dts`), not re-derived here.
 
 Landed in `dts/alpine-v2-ubnt-unvr-ea16.dts` on `console-tcl-tooling`
 (originally #104, recovered from `git stash` - see the issue for that
-history). **Not hardware-tested** - no boot-with-drives run has confirmed
-AHCI actually defers on the supply the way `fw_devlink` is expected to.
+history). **Hardware-verified** (2026-08-23, real boot with 2× 7.3T drives
+connected):
+- `/sys/bus/pci/devices/0000:00:0{8,9}.0/of_node` correctly symlink to
+  `sata@8,0`/`sata@9,0` - the PCI-to-DT-stub matching works.
+- All 4 regulators registered + `state: enabled`
+  (`/sys/class/regulator/regulator.{1,2,3,4}`, names `hdd-bay1-4-pwr`).
+- `/sys/kernel/debug/devices_deferred` empty - nothing stuck waiting.
+- Both bay drives detected correctly at their real sizes.
+
+AHCI's own probe happens very early (~2.8s) since the regulator dependency
+chain (i2c-0 -> pca9575 @0x21 -> gpio -> regulator) resolves in well under a
+second - no probe deferral was ever needed in this boot, which is the
+correct/expected outcome, not evidence the dependency isn't wired up (the
+OF-node + regulator-state checks above confirm it independently of timing).
 
 ## Limitations
 
