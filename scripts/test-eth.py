@@ -12,8 +12,24 @@ Checks, in order:
   4. Real hardware MAC-level error counters (ip -s link: CRC/FCS errors,
      drops) - NOT ethtool -S, which only exposes driver/queue counters for
      this driver (see #116's investigation for why this distinction matters)
-  5. Bounded iperf3 throughput test on enp0s2 (both directions), skippable
+  5. Bounded iperf3 throughput test AGAINST enp0s2 SPECIFICALLY (both
+     directions), skippable
   6. dmesg scan for new errors/warnings since the module last loaded
+
+The iperf3 test connects to enp0s2's own IP (queried live over SSH), not
+--host/locate_woomera()'s address - the box has two DHCP-leased IPs (one per
+NIC) and they can differ, so connecting to "the box's address" silently tests
+whichever port answered the host-discovery ping, not necessarily the 10G one
+(see #121 - every throughput number in that issue before this fix was
+actually the 1G port, mislabeled as 10G).
+
+Caveat this script CANNOT fix on its own: if the machine running this test
+has multiple NICs on the same subnet as the box, Linux route selection is
+destination-driven and may silently route enp0s2's traffic out your 1G NIC
+regardless of which NIC you intended - the script checks and reports which
+local interface `ip route get` would actually use, but forcing a specific
+egress interface needs a routing change outside this script's scope
+(temporary host route, e.g. `sudo ip route add <enp0s2 IP>/32 dev <10G nic>`).
 
 Exits 0 if every check passes, 1 otherwise. Prints a clear PASS/FAIL summary
 either way - meant to be readable standalone or dispatched to an agent.
@@ -219,7 +235,53 @@ def check_dmesg(host: str, password: str, report: Report) -> None:
     )
 
 
+def enp0s2_ip(host: str, password: str) -> str | None:
+    """enp0s2's own live IP - the box has a separate DHCP lease per NIC, so
+    this can differ from `host` (whatever locate_woomera()/--host resolved
+    to, which may be enp0s1's address - see #121)."""
+    rc, out = run_remote(host, password, "ip -4 -o addr show enp0s2")
+    m = re.search(r"inet (\d+\.\d+\.\d+\.\d+)/", out)
+    return m.group(1) if rc == 0 and m else None
+
+
+def check_local_route(target_ip: str, report: Report) -> None:
+    """Sanity-check which LOCAL interface will actually carry the iperf3
+    traffic. Binding a source IP (-B) does NOT control this - Linux route
+    selection is destination-driven, so a multi-NIC host on the box's subnet
+    can silently send "10G" traffic out a 1G NIC with no error (see #121)."""
+    result = subprocess.run(
+        ["ip", "route", "get", target_ip],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    m = re.search(r"\bdev (\S+)", result.stdout)
+    iface = m.group(1) if m else None
+    ethtool = subprocess.run(
+        ["ethtool", iface] if iface else ["true"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    speed_m = re.search(r"Speed:\s*(\S+)", ethtool.stdout)
+    speed = speed_m.group(1) if speed_m else "unknown"
+    ok = iface is not None and (speed == "10000Mb/s" or speed == "unknown")
+    report.add(
+        "local route to enp0s2",
+        ok,
+        f"traffic to {target_ip} goes out local iface={iface or '?'} speed={speed}"
+        + ("" if ok else " (NOT a 10G-capable local NIC - result below is not a real 10G test)"),
+    )
+
+
 def run_iperf(host: str, password: str, report: Report, duration: int) -> None:
+    target = enp0s2_ip(host, password)
+    if target is None:
+        report.add(
+            "iperf3 throughput", False, "couldn't determine enp0s2's IP - skipping"
+        )
+        return
+    check_local_route(target, report)
     run_remote(
         host,
         password,
@@ -243,7 +305,7 @@ def run_iperf(host: str, password: str, report: Report, duration: int) -> None:
         [
             "iperf3",
             "-c",
-            host,
+            target,
             "-p",
             "5601",
             "-t",
