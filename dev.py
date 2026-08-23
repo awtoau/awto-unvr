@@ -815,7 +815,8 @@ def _run_script(rel: str, extra: list[str]) -> int:
         return 1
     cmd = [sys.executable, str(p), *extra]
     log("run: " + " ".join(cmd))
-    return subprocess.call(cmd, cwd=REPO)
+    env = {**os.environ, "AWTO_VIA_DEVPY": "1"}
+    return subprocess.call(cmd, cwd=REPO, env=env)
 
 
 @command(

@@ -20,7 +20,30 @@ from __future__ import annotations
 
 import os
 import subprocess
+import sys
 from pathlib import Path
+
+
+def _enforce_via_devpy() -> None:
+    """Every script here imports this module, so this is the one choke
+    point that can require './dev.py <cmd>' instead of a direct
+    'python3 scripts/foo.py' call - the thing agents were told repeatedly
+    this session to stop doing and kept doing anyway (stale-build/crash
+    incidents, 2026-08-24). dev.py sets AWTO_VIA_DEVPY on every child it
+    spawns (_run_script); a real interactive human debugging session can
+    set AWTO_ALLOW_DIRECT_SCRIPT=1 to bypass deliberately."""
+    if os.environ.get("AWTO_VIA_DEVPY") or os.environ.get("AWTO_ALLOW_DIRECT_SCRIPT"):
+        return
+    prog = Path(sys.argv[0]).name if sys.argv else "this script"
+    sys.exit(
+        f"{prog}: direct script invocation is disabled - use './dev.py <command>' "
+        f"instead (see './dev.py' with no args for the list). If you're a human "
+        f"deliberately debugging this script interactively, set "
+        f"AWTO_ALLOW_DIRECT_SCRIPT=1 to bypass."
+    )
+
+
+_enforce_via_devpy()
 
 
 def _resolve() -> Path:
