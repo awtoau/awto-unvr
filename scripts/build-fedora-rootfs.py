@@ -13,7 +13,10 @@ Output: tmp/fedora-rootfs-ea16.tar (+ .sha256). Slow (dnf under emulation).
 Choices baked in (all overridable later in the tar):
 - SELinux disabled (selinux=0 also set in bootargs) - no relabel path without dracut.
 - serial getty on ttyS0 @115200 enabled.
-- systemd-networkd, DHCP on all ethernet (match eth*/en*), so eth0/eth1 come up.
+- NetworkManager (not systemd-networkd - stale claim, actual code below always
+  enabled NetworkManager), DHCP on all wired links, so eth0/eth1 come up.
+- systemd-resolved disabled (#124) - it fights NetworkManager over
+  /etc/resolv.conf otherwise, spinning forever on Permission denied.
 - root password set (default 'unvr', CHANGE IT) + sshd permitrootlogin yes.
 - our 7.1.8 kernel modules copied into /lib/modules by the deploy step, not here.
 """
@@ -74,6 +77,13 @@ systemctl enable serial-getty@ttyS0.service
 echo 'kernel.sysrq = 1' > /etc/sysctl.d/99-awto-sysrq.conf
 # --- network: NetworkManager (Fedora default, installed), auto-DHCPs all wired links ---
 systemctl enable NetworkManager.service
+# systemd-resolved's own RPM preset enables it by default, but nothing here
+# ever configures it - NetworkManager already writes /etc/resolv.conf directly
+# and works correctly on its own. Both enabled + unreconciled means resolved
+# spins forever trying to open a file NetworkManager owns at 0700, ~1 failure
+# every 0.3s for the life of every boot (#124). Disable it explicitly instead
+# of leaving an unreconciled default.
+systemctl disable --now systemd-resolved.service 2>/dev/null || true
 # --- ssh ---
 systemctl enable sshd.service
 sed -i 's/^#\?PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config
