@@ -10,14 +10,17 @@
 #define __AL_SERDES_10G_H__
 
 /*
- * Bring the AL 25G SerDes group up for the SFP+ port at a FIXED 10.3125 Gbps
+ * Bring the SFP+ port's HSSP SerDes group D lane up for a FIXED 10.3125 Gbps
  * (10GBASE-R), with KR auto-neg + link-training DISABLED (mode 10G_OPTIC / DAC,
- * link_training=false). Configures the SerDes PMA lane, applies the 10G optic
- * TX/RX equaliser params, then (if the DT exposes the "pcs" reg) the 10GBASE-R
- * PCS. Returns 0 on success, negative errno otherwise.
+ * link_training=false). Reads PMA signal-detect, then applies the 10G optic
+ * TX/RX equaliser params via the ported HSSP HAL vtable (al_hal_serdes_hssp.c,
+ * #111) - real register writes, not a stub. PCS (if the DT exposes the "pcs"
+ * reg) is deferred to the MAC driver. Returns 0 on success, negative errno
+ * otherwise.
  *
- * Compile-verified only. The lane index, optic EQ params and PCS reset ordering
- * are hardware-iteration points — see al_serdes_10g.c and README.md.
+ * Compile-verified only. The lane index, optic EQ param VALUES (vendor
+ * 10G_OPTIC defaults, unretuned) and PCS reset ordering are hardware-
+ * iteration points — see al_serdes_10g.c and README.md.
  */
 int al_serdes_10g_init(void);
 

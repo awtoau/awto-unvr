@@ -4,6 +4,7 @@
 # Co-authored with Claude (Anthropic).
 
 obj-y += al_hal_serdes_25g.o	# vendor PMA HAL (25G/10G group config)
+obj-y += al_hal_serdes_hssp.o	# vendor PMA HAL (HSSP group, real 10G-optic EQ)
 obj-y += al_serdes_10g.o	# fixed-10G init + PCS + `serdes` command
 
 # Resolve the serdes-specific HAL headers (this dir) + the shared plat_api shim

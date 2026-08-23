@@ -8,9 +8,10 @@
  * Derived from Annapurna Labs HAL (Copyright (C) Annapurna Labs Ltd, GPLv2 OR
  * BSD-3-Clause); reimplemented on U-Boot primitives.
  *
- * Scope: SerDes PMA (25G HAL) + the 10GBASE-R PCS + the fixed-10G link-mgmt
- * bits. It does NOT touch the MAC/UDMA/DM_ETH driver (a separate effort). The
- * SerDes electrical mode here is the HAL's "KR" = 10.3125G NRZ; Clause-73 AN /
+ * Scope: SerDes PMA (25G HAL for status; HSSP HAL for the group-D SFP+ lane's
+ * optic TX/RX EQ, #111) + the 10GBASE-R PCS + the fixed-10G link-mgmt bits. It
+ * does NOT touch the MAC/UDMA/DM_ETH driver (a separate effort). The SerDes
+ * electrical mode here is the HAL's "KR" = 10.3125G NRZ; Clause-73 AN /
  * Clause-72 LT are a MAC-KR-FSM feature that is deliberately NOT invoked, so
  * the lane comes up at a fixed rate (10G_OPTIC / passive-DAC use case).
  *
@@ -26,6 +27,7 @@
 #include <vsprintf.h>
 
 #include "al_hal_serdes_25g.h"		/* pulls interface + common + shim */
+#include "al_hal_serdes_hssp.h"		/* HSSP group HAL - the REAL group-D driver */
 #include "al_serdes_10g.h"
 
 /* DT: our U-Boot dts is the hardware-of-record (docs/hardware.md). Bases are
@@ -62,8 +64,10 @@
 
 /*
  * 10G optic TX/RX equaliser params — mirror al_init_eth_lm.c's 10G_OPTIC static
- * values (optic_tx_params / optic_rx_params). HW: these are the vendor optic
- * defaults; retune per the actual SFP/DAC on the box (rx_equalization sweep).
+ * values (optic_tx_params / optic_rx_params). Applied in al_serdes_10g_init()
+ * via obj.tx_advanced_params_set()/rx_advanced_params_set() (#111). HW: these
+ * are the vendor optic defaults; retune per the actual SFP/DAC on the box
+ * (rx_equalization sweep).
  */
 static struct al_serdes_adv_tx_params optic_tx_params = {
 	.override		= AL_TRUE,
@@ -148,19 +152,31 @@ static u8 al_hssp_reg_read(void __iomem *grp, unsigned page, unsigned type,
 	return (u8)readl(grp + AL_HSSP_GEN_REG_DATA);
 }
 
-/* Build a per-call HAL object bound to the SerDes PMA base. No HW side effects. */
+/*
+ * Build a per-call HAL object bound to the HSSP group-D base (complex base +
+ * 0xc00 - see al_hssp_grp_d_base()). No HW side effects.
+ *
+ * Uses al_serdes_hssp_handle_init(), NOT al_serdes_25g_handle_init(): group D
+ * is an HSSP group (see the block comment above al_hssp_grp_d_base()), and
+ * al_serdes_hssp_handle_init() takes the GROUP base directly (obj->regs_base
+ * = serdes_regs_base, no further offset applied) - matching how Linux's
+ * alpine_serdes_grp_objs_init() calls al_serdes_handle_grp_init() with
+ * alpine_serdes_resource_get(group) = complex_base + serdes_grp_offset[group]
+ * (modules/al_eth/alpine_serdes.c). The 25G handle_init is for the 25G-complex
+ * group (E on this board, powered-down/SKIP) and is the wrong model here.
+ */
 static int al_serdes_obj_get(struct al_serdes_grp_obj *obj, void __iomem **base)
 {
-	void __iomem *sbase = al_serdes_dt_base("serdes");
+	void __iomem *grp = al_hssp_grp_d_base();
 
-	if (!sbase) {
+	if (!grp) {
 		printf("serdes: no '%s' DT node / 'serdes' reg\n",
 		       AL_SERDES_DT_COMPAT);
 		return -ENODEV;
 	}
-	al_serdes_25g_handle_init(sbase, obj);
+	al_serdes_hssp_handle_init(grp, obj);
 	if (base)
-		*base = sbase;
+		*base = grp;
 	return 0;
 }
 
@@ -195,7 +211,6 @@ int al_serdes_10g_init(void)
 	u32 version;
 	u8 rxdet;
 
-	(void)obj; (void)base; (void)rc;
 	if (!grp) {
 		printf("serdes: no '%s' DT node / 'serdes' reg\n",
 		       AL_SERDES_DT_COMPAT);
@@ -221,6 +236,23 @@ int al_serdes_10g_init(void)
 				 AL_HSSP_RXRANDET_REG);
 	printf("serdes: lane %d signal_detect=%s (pma rxrandet=0x%02x)\n",
 	       AL_SFP_LANE, (rxdet & AL_HSSP_RXRANDET_STAT) ? "yes" : "no", rxdet);
+
+	/*
+	 * Apply the 10G-optic TX/RX EQ (#111). Real HSSP HAL vtable call - the
+	 * same path Linux's al_eth_serdes_static_tx/rx_params_set() uses
+	 * (al_init_eth_lm.c), now that al_hal_serdes_hssp.c is ported here.
+	 * HW: unverified - vendor 10G_OPTIC defaults, not yet confirmed to
+	 * help (or not hurt) link training on this box.
+	 */
+	rc = al_serdes_obj_get(&obj, &base);
+	if (rc) {
+		printf("serdes: HSSP obj_get failed (%d); EQ params NOT applied\n", rc);
+	} else {
+		obj.tx_advanced_params_set(&obj, AL_SFP_LANE, &optic_tx_params);
+		obj.rx_advanced_params_set(&obj, AL_SFP_LANE, &optic_rx_params);
+		printf("serdes: lane %d TX/RX optic EQ applied (HSSP group D)\n",
+		       AL_SFP_LANE);
+	}
 
 	/*
 	 * PCS is DEFERRED to the MAC driver. al_eth_dm_10g configures the 10GBASE-R

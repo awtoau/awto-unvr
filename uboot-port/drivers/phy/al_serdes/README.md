@@ -19,6 +19,10 @@ Authored (Awto, GPLv2-or-later; on U-Boot primitives):
 Vendor HAL, verbatim (Annapurna Labs, GPLv2 OR BSD-3-Clause — headers untouched):
 - `al_hal_serdes_25g.c` — 25G/10G SerDes group config + lane calibration + status.
 - `al_hal_serdes_25g.h`, `al_hal_serdes_25g_regs.h`, `al_hal_serdes_25g_internal_regs.h`
+- `al_hal_serdes_hssp.c` — HSSP group HAL (#111): the REAL driver for group D
+  (the UNVR SFP+ 10G lane). Ported byte-identical from `modules/al_eth/` (the
+  Linux driver tree) — no adaptation was needed to compile under U-Boot.
+- `al_hal_serdes_hssp.h`, `al_hal_serdes_hssp_regs.h`, `al_hal_serdes_hssp_internal_regs.h`
 - `al_hal_serdes_interface.h` — the `al_serdes_grp_obj` vtable + enums/params.
 - `al_hal_common.h`, `al_hal_types.h`, `al_hal_reg_utils.h` — HAL common layer.
 
@@ -65,8 +69,11 @@ rx-valid yes, **pcs_block_lock LOCKED**.
 
 - **Lane index** (`AL_SFP_LANE`, default `LN0`) — confirm which physical 25G
   lane the SFP+ TX/RX is wired to.
-- **Optic TX/RX EQ params** — vendor optic defaults; retune per the real SFP/DAC
-  (the HAL's `rx_equalization` sweep).
+- **Optic TX/RX EQ params** — now actually applied (#111, `al_serdes_10g_init()`
+  calls `obj.tx_advanced_params_set()`/`rx_advanced_params_set()` via the ported
+  HSSP HAL) but the VALUES are still the vendor `10G_OPTIC` defaults, unretuned
+  for the real SFP/DAC. Whether they help or hurt link training is unverified —
+  needs the box (the HAL's `rx_equalization` sweep is the retune path).
 - **PCS base + reset ordering** — the `pcs` window base (`docs/hardware.md` lists
   eth2 @ `0xfe120000`; the task brief said `0xfc200000` — resolve on the box) and
   the PCS-vs-MAC reset sequencing are owned by the MAC agent; reconcile at merge.
