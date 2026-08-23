@@ -275,7 +275,8 @@ def main():
     # carve field map (NO secrets) to docs/nor-reference/
     out = os.path.join(REPO, "docs/nor-reference/eeprom-fieldmap.json")
     os.makedirs(os.path.dirname(out), exist_ok=True)
-    json.dump({"eeprom": fm_eeprom, "config": fm_config}, open(out, "w"), indent=2)
+    with open(out, "w") as f:
+        json.dump({"eeprom": fm_eeprom, "config": fm_config}, f, indent=2)
     log(f"\nfield map -> {out}")
 
 

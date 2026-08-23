@@ -48,14 +48,12 @@ modules.order
 """
 
 LOG = os.path.join(REPO, "tmp/logs/import-oot-modules.log")
-_logf = None
 
 
 def log(m):
     print(m, flush=True)
-    if _logf:
-        _logf.write(m + "\n")
-        _logf.flush()
+    with open(LOG, "a") as f:
+        f.write(m + "\n")
 
 
 def is_source(name):
@@ -90,9 +88,7 @@ def import_one(m):
 
 
 def main():
-    global _logf
     os.makedirs(os.path.dirname(LOG), exist_ok=True)
-    _logf = open(LOG, "a")
     log("=== import-oot-modules ===")
     os.makedirs(os.path.join(REPO, "modules"), exist_ok=True)
     total = 0

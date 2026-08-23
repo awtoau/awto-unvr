@@ -16,23 +16,25 @@ Log -> tmp/logs/decode-ddr-records.log
 """
 
 import os
+from pathlib import Path
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 BIN = os.path.join(REPO, "docs/nor-reference/ddr-config-eeprom-0x57-8k.bin")
 S2 = os.path.join(REPO, "docs/nor-reference/s2-loader-stage2_v2.22.3-25044B.bin")
 LOG = os.path.join(REPO, "tmp/logs/decode-ddr-records.log")
 os.makedirs(os.path.dirname(LOG), exist_ok=True)
-_logf = open(LOG, "w")
+Path(LOG).write_text("")  # truncate; out() appends per-call below
 
 
 def out(*a):
     s = " ".join(str(x) for x in a)
     print(s)
-    _logf.write(s + "\n")
+    with open(LOG, "a") as f:
+        f.write(s + "\n")
 
 
-data = open(BIN, "rb").read()
-s2 = open(S2, "rb").read()
+data = Path(BIN).read_bytes()
+s2 = Path(S2).read_bytes()
 BASE = 0x400  # record base (DEV_INFO override absent -> default 0x400)
 
 
@@ -483,4 +485,3 @@ out(
 out("        A request for 2400 (tCK 833) fails 'DIMM too slow' -> NB PLL downshift.")
 
 out(f"\nlog -> {LOG}")
-_logf.close()

@@ -12,9 +12,10 @@ data.rel.ro vaddr - fileoff = 0x10000.
 
 import struct
 import sys
+from pathlib import Path
 
 BIN = "/mnt/2tb/git/awto-unvr/tmp/fw-rootfs/sbin/rpsd"
-data = open(BIN, "rb").read()
+data = Path(BIN).read_bytes()
 
 ROD_V, ROD_F, ROD_L = 0x1D728, 0x1D728, 0x50BE
 DRO_V, DRO_F, DRO_L = 0x36B88, 0x26B88, 0x1148

@@ -60,7 +60,8 @@ def check():
     errs = []
     for rel in FILES:
         path = os.path.join(REPO, rel)
-        block = node_block(open(path).read(), NODE)
+        with open(path) as f:
+            block = node_block(f.read(), NODE)
         if block is None:
             errs.append(f"{rel}: node {NODE} not found")
             continue

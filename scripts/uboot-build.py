@@ -30,6 +30,7 @@ import shutil
 import subprocess
 import sys
 import time
+from pathlib import Path
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SCAFFOLD = os.path.join(REPO, "uboot-port")
@@ -122,7 +123,7 @@ def stage():
         log(f"staged {dst}/ ({sum(len(f) for _, _, f in os.walk(s))} files)")
 
     # arch/arm/Kconfig — board TARGET + board Kconfig source
-    txt = open(KCONFIG).read()
+    txt = Path(KCONFIG).read_text()
     changed = False
     if "TARGET_ALPINE_V2_UNVR" not in txt:
         txt = txt.replace(
@@ -133,22 +134,23 @@ def stage():
         txt = txt.replace(SRC_ANCHOR, SRC_ANCHOR + SRC_LINE, 1)
         changed = True
     if changed:
-        open(KCONFIG, "w").write(txt)
+        Path(KCONFIG).write_text(txt)
         log("patched arch/arm/Kconfig (TARGET + board source)")
 
     # drivers/net Makefile + Kconfig hooks for al_eth
-    mk = open(NET_MAKEFILE).read()
+    mk = Path(NET_MAKEFILE).read_text()
     if NET_MK_LINE not in mk:
-        open(NET_MAKEFILE, "a").write(NET_MK_LINE)
+        with open(NET_MAKEFILE, "a") as f:
+            f.write(NET_MK_LINE)
         log("patched drivers/net/Makefile (al_eth obj)")
-    kc = open(NET_KCONFIG).read()
+    kc = Path(NET_KCONFIG).read_text()
     if NET_KC_LINE not in kc:
         kc = kc.replace(NET_KC_ANCHOR, NET_KC_LINE + "\n" + NET_KC_ANCHOR, 1)
-        open(NET_KCONFIG, "w").write(kc)
+        Path(NET_KCONFIG).write_text(kc)
         log("patched drivers/net/Kconfig (al_eth source)")
 
     # drivers/Makefile + drivers/phy/Kconfig hooks for al_serdes
-    dm = open(DRIVERS_MAKEFILE).read()
+    dm = Path(DRIVERS_MAKEFILE).read_text()
     if DRIVERS_MAKE_LINE not in dm:
         if DRIVERS_MK_SANITY not in dm:
             log(
@@ -157,9 +159,9 @@ def stage():
                 "file (would silently cement the damage)"
             )
             sys.exit(1)
-        open(DRIVERS_MAKEFILE, "w").write(dm.rstrip("\n") + "\n" + DRIVERS_MAKE_LINE)
+        Path(DRIVERS_MAKEFILE).write_text(dm.rstrip("\n") + "\n" + DRIVERS_MAKE_LINE)
         log("patched drivers/Makefile (phy/al_serdes/)")
-    pk = open(PHY_KCONFIG).read()
+    pk = Path(PHY_KCONFIG).read_text()
     if PHY_KCONFIG_LINE not in pk:
         idx = pk.rfind("endmenu")
         if idx < 0:
@@ -170,25 +172,25 @@ def stage():
             )
             sys.exit(1)
         pk = pk[:idx] + PHY_KCONFIG_LINE + "\n" + pk[idx:]
-        open(PHY_KCONFIG, "w").write(pk)
+        Path(PHY_KCONFIG).write_text(pk)
         log("patched drivers/phy/Kconfig (source al_serdes/Kconfig)")
 
 
 def unstage():
-    txt = open(KCONFIG).read()
+    txt = Path(KCONFIG).read_text()
     txt = txt.replace(TARGET_BLOCK.lstrip("\n") + "\n", "")
     txt = txt.replace(SRC_LINE, "")
-    open(KCONFIG, "w").write(txt)
+    Path(KCONFIG).write_text(txt)
     log("reverted arch/arm/Kconfig")
 
     # revert al_eth wiring
-    mk = open(NET_MAKEFILE).read()
+    mk = Path(NET_MAKEFILE).read_text()
     if NET_MK_LINE in mk:
-        open(NET_MAKEFILE, "w").write(mk.replace(NET_MK_LINE, ""))
+        Path(NET_MAKEFILE).write_text(mk.replace(NET_MK_LINE, ""))
         log("reverted drivers/net/Makefile")
-    kc = open(NET_KCONFIG).read()
+    kc = Path(NET_KCONFIG).read_text()
     if NET_KC_LINE in kc:
-        open(NET_KCONFIG, "w").write(kc.replace(NET_KC_LINE + "\n", ""))
+        Path(NET_KCONFIG).write_text(kc.replace(NET_KC_LINE + "\n", ""))
         log("reverted drivers/net/Kconfig")
 
     # revert al_serdes wiring
@@ -197,9 +199,9 @@ def unstage():
         (PHY_KCONFIG, PHY_KCONFIG_LINE),
     ):
         if os.path.exists(f):
-            content = open(f).read()
+            content = Path(f).read_text()
             if line in content:
-                open(f, "w").write(content.replace(line, ""))
+                Path(f).write_text(content.replace(line, ""))
                 log(f"reverted {os.path.relpath(f, TREE)}")
 
     # staged directories (board/annapurna covers al_ddr)
