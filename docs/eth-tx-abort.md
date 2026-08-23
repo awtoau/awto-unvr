@@ -1,7 +1,7 @@
 # al_eth 1G TX: M2S engine ABORTs on the descriptor-read from DRAM (UNRESOLVED)
 
 Port: our U-Boot v2026.07, chainloaded from stock, Alpine V2 / AL-324, eth1 (1G RGMII,
-PCI 1c36:0001, rev_id 2). `ping`/`tftp` TX never completes.
+PCI 1c36:0001, rev_id 2). `ping`/`tftp` TX never completes. Tracked as #90.
 
 ## Symptom (on-box, reproducible)
 - Every send: `TX completion timeout: 1 descs left after 100000 us`.
@@ -30,38 +30,158 @@ PCI 1c36:0001, rev_id 2). `ping`/`tftp` TX never completes.
 - **Queue reset / inherited-dirty state** — engine is clean at init (state=0), so there
   is nothing dirty to reset; `al_udma_state_set(DISABLE)` does NOT clear the ABORT
   (verified live: writing 0x2 to 0xfe000204 leaves state=0x2222).
+- **Low-address diagnostic** (2026-08-19): TX ring pinned to low DRAM
+  (`desc_block=0x02000000`, confirmed live) — still hangs identically. Not an
+  addressing/window problem; the master cannot reach DRAM **at any address**.
+- **ROB enable** (`GEN_CTL_19` read-ROB/write-ROB) — `al_eth_dm_unit_adapter_setup()`
+  resets+enables it (`uboot-port/drivers/net/al_eth/al_eth_dm.c:255-262`); still hangs.
+  **2026-08-24**: confirmed independently on the al_ssm function (PCI 00:04.0,
+  `pci display.l 0.4.0 0x240 1` -> `0x00010001`, i.e. read+write ROB already enabled by
+  **hardware reset default**, with zero driver config) — and it hangs too. ROB state was
+  never the gate.
+- **AXI error-tracking, freshly re-verified 2026-08-24**: enabled live on al_ssm
+  (`pci write.l 0.4.0 0x114 0x0`, clearing `SMCC_CONF_2` bit 8) then re-ran `iodma` —
+  `RD_ERR_ATTR` (cfg 0x1b8) and the latched fail-address (0x1c8/0x1cc) stayed all-zero
+  through the timeout. Confirms (independently of eth) the read is never even answered
+  with an error; it is dropped/never serviced by the fabric, not merely unmonitored.
 
-## The decisive fact
-**AHCI DMA to high DRAM WORKS** — `scsi scan` enumerates both 8 TB drives with full ATA
-IDENTIFY (a DMA to a high-DRAM buffer), on the SAME bus-0 internal-PCIe fabric, coherent
-(board `al_snoop_one` sets AHCI SMCC=0x3). So the fabric, CCI/CCU coherency, and
-high-DRAM reachability are all functional. The failure is **specific to the eth UDMA
-master** — it alone cannot get a response to a DRAM read.
+## 2026-08-24 — eth-specific hypothesis DISPROVEN: it is a generic al_udma M2S hang
 
-## Low-address diagnostic — RUN (2026-08-19): master NOT routed to DRAM
-Pinned the TX descriptor ring at low DRAM (desc_block = 0x10000000; confirmed live
-`drbp=0x10000000, drbp_high=0`). Result: **still aborts identically** (state=0x2222,
-dcp=0). So it is NOT address/window specific — **the eth UDMA master cannot reach DRAM at
-any address**, while AHCI (same bus-0 internal-PCIe fabric) can.
+**On-box test (`iodma` command, `uboot-port/drivers/crypto/al_ssm/al_ssm_dma.c`, never
+previously run — see #90 comment 2026-08-23): reproduces the IDENTICAL failure signature
+on a completely separate al_udma instance (al_ssm crypto/RAID engine, PCI 1c36:0022,
+00:04.0), not al_eth's.**
 
-Conclusion: the eth needs a per-function master-enable / routing that our ECAM-only PCI
-path never applies and AHCI gets elsewhere. Prime suspects:
-- **`al_unit_adapter_init` is STUBBED** (hal/.../al_eth_stubs.c) — it configures the eth
-  unit's AXI master / ROB / fabric bridge; stubbed = the UDMA master is never wired to the
-  fabric. `ap.unit_adapter=NULL` in al_eth_dm_dma_init skips it and logs "non optimal
-  adapter configuration". This is the leading candidate now.
-- The `al_hal_pcie` host-bridge bring-up our ECAM-only PCI path skips (alpine.c note) —
-  stock's full host-bridge init may establish the eth function's inbound routing.
-Next: read the REAL al_unit_adapter_init (delroth-alpine_hal) — what fabric/master regs it
-programs — and either un-stub it for the eth unit or replicate the specific master-enable.
+```
+iodma: SSM 1c36:0022 rev 2  udma=00000000fe080000 app=00000000fe0a0000
+al_ssm_dma_init_aux: non optimal adapter configuration
+iodma[post-init]: m2s.state=00000000 tx0 drhp=40000000 drtp=40000000 dcp=40000000 crhp=40000000 qpkt=00000000
+iodma[doorbell]: m2s.state=00002222 tx0 drhp=40000000 drtp=40000001 dcp=40000000 crhp=40000000 qpkt=00000000
+iodma: completion timeout after 100000 us
+```
+
+Same tell as al_eth: `drtp` (CPU-side tail, submitted by us) advances, `drhp` (engine-
+side head, the descriptor-prefetch read completing) never leaves its post-init value,
+`m2s.state` goes to `0x2222` (all-ABORT) on the first doorbell. This **directly answers
+the open question in #90/#132** ("if its drhp advances where al_eth's stays frozen, #90
+is eth-function-specific") — it does not advance. **#90 is NOT eth-specific.** It is a
+fabric/bring-up-level M2S descriptor-prefetch-read hang affecting (at least) two
+independent al_udma-consuming PCI functions under our chainloaded U-Boot.
+
+This resolves next-investigator lead (a) from the prior #90 comment (merge + actually
+run `iodma`) and reframes the rest of the investigation: stop looking at al_eth-specific
+code (MAC config, RGMII, PHY, FLR) and look at whatever is common to *any* al_udma
+bring-up in this environment.
+
+## 2026-08-24 — two more hypotheses DISPROVEN by full source comparison
+
+Per-line diff (not sampled) of every file in the M2S bring-up path, both sides fetched
+fresh and diffed with `diff -u`:
+
+| file | Linux (working ref) | uboot-port | result |
+|---|---|---|---|
+| `al_hal_udma_main.c` | `modules/al_ssm/al_hal_udma_main.c` (1240 lines) | `uboot-port/drivers/net/al_eth/hal/udma/al_hal_udma_main.c` (1241 lines) | **byte-identical** body — diff is only `"x.h"` vs `<x.h>` include-quoting + one `#ifdef AL_ETH_EX` line that's never defined either side |
+| `al_hal_udma_config.c` | `modules/al_ssm/al_hal_udma_config.c` (1516) | `uboot-port/.../hal/udma/al_hal_udma_config.c` (1516) | **byte-identical** body, same include-quoting-only diff |
+| `al_hal_udma_iofic.c` | `modules/al_ssm/al_hal_udma_iofic.c` (384) | `uboot-port/.../hal/udma/al_hal_udma_iofic.c` (384) | **0-line diff, fully identical** |
+| `al_hal_m2m_udma.c` | `modules/al_ssm/al_hal_m2m_udma.c` (197) | `uboot-port/drivers/crypto/al_ssm/al_hal_m2m_udma.c` (197) | **0-line diff, fully identical** |
+| `al_hal_ssm.c` | `modules/al_ssm/al_hal_ssm.c` (387) | `uboot-port/drivers/crypto/al_ssm/al_hal_ssm.c` (393) | identical on the RAID/UDMA path; only the crc/crypto-only helpers (`al_ssm_unit_regs_info_get` etc — pure pointer arithmetic, not called by `iodma`, not hardware-touching) are `#if 0`'d out |
+
+**Important vintage caveat**: `modules/al_eth/al_hal_udma_main.c` (the Linux al_eth
+module's own copy) is a much OLDER HAL snapshot — 604 lines, no `rev_id >= 4` branches,
+no `ostand_cfg`/addr_hi-selector logic, 1M-cycle AXI timeout not 5M. It is NOT the
+right diff target for uboot-port's UDMA core; `modules/al_ssm`'s copy is (near-identical
+line count, and both trees' `al_eth_adapter_params`/`al_hal_eth.h` structs differ in the
+same way — uboot-port carries `dev_id`/`common_mode`/`unit_adapter`/`mac_common_regs`
+fields `modules/al_eth/al_hal_eth.h:609-623` does not have at all). The two Linux copies
+of the "same" HAL have already drifted (matches #132 point 2 — one shared HAL source is
+still unfinished). Conclusion: **the M2S/UDMA bring-up HAL code itself is proven correct
+against a working reference — this is not a HAL bug.**
+
+**`al_unit_adapter_init` is also disproven as "the missing step".** Previously flagged
+here as "the leading candidate" because our port stubs it
+(`uboot-port/drivers/net/al_eth/al_eth_stubs.c:36-43`, reached only if
+`unit_adapter != NULL`; both `al_eth_dm.c:334` and `al_ssm_dma.c:253` pass
+`unit_adapter = NULL`). Checked whether Linux's WORKING reference actually calls it:
+- `modules/al_eth/al_hal_eth.h:609-623` (`struct al_eth_adapter_params`) has **no
+  `unit_adapter` field at all** — the concept doesn't exist in al_eth's current Linux
+  HAL vintage.
+- `modules/al_ssm/al_ssm_main.c:790` does `memset(&dma_params, 0, sizeof(dma_params))`
+  and never sets `.unit_adapter`, so it stays NULL.
+- `modules/al_ssm/al_hal_ssm.c:91-93`: `if (params->unit_adapter && !params->func_num &&
+  !params->skip_adapter_init) al_unit_adapter_init(...); else if (!params->unit_adapter)
+  /* non-optimal warning, skip */`.
+
+So Linux's own working al_ssm driver takes the **exact same skip-with-warning path** our
+port does. `al_unit_adapter_init` cannot be the missing piece — Linux proves DMA
+completes without it.
+
+**Queue-init vs state-set ordering, checked and found benign.** Linux
+(`al_ssm_main.c:799` then `:802`→`:692`) sets `al_ssm_dma_state_set(UDMA_NORMAL)`
+*before* `al_ssm_dma_q_init`; uboot-port's `al_ssm_dma.c:273,277` does q_init *then*
+state_set (reverse order). Traced both register writes in the (verified-identical)
+HAL: `al_udma_q_init` (`al_hal_udma_main.c:581-666`) writes only per-queue ring
+registers and unconditionally calls `al_udma_q_enable(udma_q, 1)` at the end — it does
+not read or depend on the engine-level state. `al_udma_state_set`
+(`al_hal_udma_main.c:798-834`) is a single write to the engine-level `change_state`
+register, independent of any queue register. The two operations don't interact at the
+register level, so this ordering difference is very unlikely to matter — flagged, not
+fixed (not tested live by swapping the order; hardware time ran out this session).
+
+**Kernel PCIe host-bridge quirk (`kernel-patches/0001-...patch`, git-tracked, confirmed
+wired into the build via `scripts/build-linux-71-ea16.py` — verified, unlike the
+untracked-file gap in #129) does nothing beyond SMCC snoop + APP_CONTROL.** Read in
+full (298 lines): `al_pcie_internal_notifier()` does exactly 3 register writes (SMCC
+sub-master 0, SMCC sub-masters 1-3 for slot<=5, APP_CONTROL) reverse-engineered from
+the stock 4.19 kernel's own `al_pci_internal_device_notifier()`. No ATU, no
+master-ID/stream-ID table, no window/IOMMU setup — `board_late_init()` in
+`uboot-port/board/annapurna/alpine/alpine.c:199-238` already replicates this exactly
+(minus the eth carve-out, applied separately post-adapter-init in `al_eth_dm.c`). This
+was the complete "does the host-bridge do anything extra" hypothesis; it doesn't.
+
+## The strongest lead now: **vendor stage-3 U-Boot's OWN al_eth TX works, in this same
+chainload session, moments before we take over**
+
+On 2026-08-24, catching stock at the `ALPINE_UBNT_NAS_ALL>` prompt and running its
+`tftpboot 0x1100000 u-boot-chainload.bin` (809176 bytes) to fetch our freshly-built
+image **succeeded** — confirmed indirectly (no other path could have landed us at our
+own prompt running the exact freshly-built `2026.07-dirty` image) and directly via
+stock's own boot-time banner moments earlier showing `al_eth1 [PRIME], al_eth2` probed
+and mapped. Vendor U-Boot 2015.07 has no non-DMA fallback path on this SoC (the Alpine
+eth MAC is descriptor-DMA-only) — so **vendor stage-3 U-Boot's al_eth successfully
+drives the same physical al_udma M2S engine, in the same boot session, on the same
+hardware state our code inherits seconds later via `go 0x1100000`.**
+
+This is a *stronger* reference than Linux: it doesn't require a full kernel boot
+(ruling out "needs a full OS-level reset/init"), and it runs in the literal
+predecessor state to ours. It also means the earlier "AHCI works, therefore the fabric
+routes DMA to DRAM generally" framing (previous revision of this doc) was weaker than
+stated — `uboot-port/drivers/ata/ahci.c` is the **generic U-Boot AHCI driver**, with
+zero al_udma/al_hal references (confirmed via `grep`); it drives its own AHCI PRDT/
+command-list DMA mechanism, a structurally different master from al_udma. AHCI working
+does not actually prove anything about al_udma-class master routing — it was never
+good evidence either way. The vendor-U-Boot-tftpboot fact is real, better evidence.
+
+**Concrete next step**: vendor U-Boot 2015.07 (`ALPINE_UBNT_NAS_ALL>`) is GPL
+(`UNVR-1.3.35-GPL`, already referenced in `docs/reference-sources.md` /
+`docs/nand-1.3.35.md` / `docs/uboot-port-plan.md` for other purposes) — pull its
+al_eth driver source (or, if unavailable, Ghidra-decompile the stage-3 U-Boot binary
+the same way `docs/preboot-decompile.md` already did for the preboot/S2 blobs — that
+work explicitly scoped stage-3 U-Boot as "GPL, out of scope" only because source should
+exist, not because it's undecompilable) and diff its eth-UDMA bring-up register
+sequence against ours. This is the one remaining piece of the chain never directly
+inspected.
 
 ## Notes / gotchas
-- **Never `md` 0xfe001038** (drtp_inc, write-only) — reading it data-aborts U-Boot.
+- **Never `md`/`pci display` certain config offsets on the AHCI function (00:08.0)** —
+  reading `0x110`/`0x240` there SError'd the box into a full cold reset (2026-08-24,
+  this session). `md 0xfe001038` (drtp_inc, write-only) is the same class of gotcha on
+  eth. Diagnostic register probing on this hardware is not universally safe to guess at.
 - Test loop is gated by a deadlock: a failed ping leaves the eth in ABORT, which
   survives warm reset (change_state can't clear it), so stock's auto-chainload tftp then
   fails -> every build load needs a physical cold-cycle. Stock does not map the eth
   (BAR0 base=0, mem-space disabled), so it can't be un-wedged from the stock prompt.
 - Files: `uboot-port/drivers/net/al_eth/al_eth_dm.c` (al_eth_dm_dma_init, the dump
-  helper, al_eth_dm_snoop_setup), `hal/udma/al_hal_udma_main.c` (al_udma_set_defaults,
+  helper, al_eth_dm_unit_adapter_setup), `uboot-port/drivers/crypto/al_ssm/al_ssm_dma.c`
+  (the `iodma` cross-validation test), `hal/udma/al_hal_udma_main.c` (al_udma_set_defaults,
   al_udma_m2s_axi_set), `hal/udma/al_hal_udma_config.c`.
 </content>
