@@ -233,6 +233,21 @@ def check_dmesg(host: str, password: str, report: Report) -> None:
         f"{len(lines)} matching line(s) (known-benign filtered)"
         + (f": {lines[-1]}" if lines else ""),
     )
+    # A ring-buffer overrun means kernel lines were dropped before dmesg ever
+    # saw them - the al_eth grep above could silently miss a real error that
+    # got lost in the overrun, not just "there were none" (#124).
+    _rc, overrun_out = run_remote(
+        host, password, "dmesg | grep -c 'buffer overrun' || true"
+    )
+    overrun_count = int(overrun_out.strip() or 0)
+    report.add(
+        "dmesg buffer overrun",
+        overrun_count == 0,
+        f"{overrun_count} overrun line(s) - the al_eth check above may be unreliable "
+        "if this is nonzero, since dropped lines never reach dmesg (see #124)"
+        if overrun_count
+        else "0 - dmesg ring buffer intact, al_eth check above is trustworthy",
+    )
 
 
 def enp0s2_ip(host: str, password: str) -> str | None:
