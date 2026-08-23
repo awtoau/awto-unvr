@@ -865,20 +865,34 @@ def _kill_stale_tftpd(port: int = 69) -> None:
     log(f"tftpd on port {port} still bound after 1s - proceeding anyway", "WARN")
 
 
-def _ensure_tftpd(port: int = 69) -> None:
+def _ensure_tftpd(port: int = 69, root: str = "tmp/tftp") -> None:
     """Kill any existing process on `port` (#119), then start a fresh
-    scripts/tftpd.py serving tmp/tftp. Waits for the bind: expected <100 ms,
+    scripts/tftpd.py serving `root`. Waits for the bind: expected <100 ms,
     bounded 40x50ms=2s, then warn+proceed (the chainload catch loop is long
-    enough to tolerate a late bind)."""
+    enough to tolerate a late bind).
+
+    `root` is NOT optional-by-convention: publish-fedora stages NAND-flash
+    artifacts to images/tftp (a longer-lived, semi-persistent location -
+    flash can happen a while after publish, in a separate dev.py
+    invocation), while uboot-test/chainload use tmp/tftp (throwaway,
+    started+served fresh each time). #119 root cause was exactly this
+    distinction going unmanaged: images/tftp's server was started once,
+    manually, outside any script's ownership, and nothing tracked or
+    refreshed it - it silently went stale over days until a later #119 fix
+    (correctly) killed it as a foreign stale process, which also removed
+    the NAND-flash workflow's only server out from under it. Fix: whichever
+    command STAGES a file for a root now also explicitly (re)starts that
+    root's server, so it's never implicit/manual again."""
     _kill_stale_tftpd(port)
-    TFTP_ROOT.mkdir(parents=True, exist_ok=True)
-    log("starting tftpd (root tmp/tftp)")
+    root_path = REPO / root
+    root_path.mkdir(parents=True, exist_ok=True)
+    log(f"starting tftpd (root {root})")
     subprocess.Popen(
         [
             sys.executable,
             str(REPO / "scripts" / "tftpd.py"),
             "--root",
-            "tmp/tftp",
+            root,
             "--port",
             str(port),
         ],
@@ -997,6 +1011,11 @@ def cmd_wait_for_boot(extra: list[str]) -> int:
     kind="action",
 )
 def cmd_publish_fedora(extra: list[str]) -> int:
+    # Ensure a fresh, correctly-rooted server BEFORE staging (#119): flash
+    # may happen much later in a separate invocation, so this can't be a
+    # start/stop-around-the-call pattern - it must be left running for
+    # whenever ./dev.py flash eventually runs.
+    _ensure_tftpd(root="images/tftp")
     return _run_script("scripts/publish-fedora.py", extra)
 
 
@@ -1007,6 +1026,13 @@ def cmd_publish_fedora(extra: list[str]) -> int:
     kind="action",
 )
 def cmd_flash(extra: list[str]) -> int:
+    # Safety net (#119): if the images/tftp server died or was never
+    # started (e.g. flash run without a fresh publish-fedora just before),
+    # don't let the box sit mid-tftpboot against nothing. Only starts one
+    # if genuinely absent - doesn't disturb a live, correctly-rooted server.
+    if not _tftpd_bound(69):
+        log("no tftpd bound on 69 - starting one before flash (#119)", "WARN")
+        _ensure_tftpd(root="images/tftp")
     return _run_script("scripts/flash-nand.py", extra)
 
 
