@@ -28,7 +28,7 @@ Sources: [components.md](components.md), [gpio-switches-leds.md](gpio-switches-l
 | **Reset switch** | gpio4.6 (gpio 38), active-low, PL061 | GPIO read + a `button`/test cmd | **new** (stock OS reads it only in Linux) |
 | **SW1 / SW2** | 2 tactile buttons, **GPIO unknown** (probe) | GPIO read once mapped | open |
 | **RPS present / 12 V load** | gpio 33 (`rps_prnt`), gpio 34 (`12v_lp`) | GPIO read | **new** |
-| **RPS power monitor** | INA230/ISL28022/INA237 class @ 0x40-0x49 on **`i2c_gen` @0xfd894000** (bus disabled in our DT!) | enable the 2nd DW i2c; INA/ISL driver → **V / I / power / OC** readout | **new — owner priority** |
+| **RPS power monitor** | **no i2c monitor exists** — disproven by #64: pins 30/31 aren't muxed to i2c_gen at all (muxed to ETH-LED/ulogo_blue instead), no bus there regardless of DT status | n/a — see rail-monitoring alternatives in `rps-subsystem.md` if still wanted | **closed, not viable via i2c** |
 | **Fan + board temps** | ADT7475 @ i2c-4 0x2e (behind PCA9546 @0x71 ch3) | i2c mux + adt7475 cmd (RPM read, PWM set) | stock U-Boot `slowfan` env only |
 | **SoC die temp** | thermal @0xfd860a00 | `thermal_get` equivalent | port from stock U-Boot |
 | **RTC** | S-35390A @0x30 (mux ch0) | i2c + `date` (stock U-Boot has **no** `date`) | **new** |
@@ -54,7 +54,7 @@ Sources: [components.md](components.md), [gpio-switches-leds.md](gpio-switches-l
 - `bay <n> on|off|status` · `bay scan` (presence) · `bay led <n> on|off`
 - `led list|on|off` (ulogo, SFP, bay fault/activity via SGPO)
 - `btn` — read reset switch + SW1/SW2 + RPS present/12 V-load
-- `pwr` — **RPS/ORing monitor: rail voltage, current, power, OC flags** (needs `i2c_gen`)
+- ~~`pwr` — RPS/ORing monitor via i2c_gen~~ — dropped, no i2c monitor exists there (#64)
 - `temp` — SoC die + ADT7475 temps; `fan [pwm]` — RPM read / PWM set
 - `sfp` — module ID + SFF-8472 DDM (temp/Vcc/TX/RX power)
 - `ddr test|margins|ecc` — BIST/shmoo (see uboot-ddr-port.md)
@@ -68,8 +68,6 @@ power state requires an explicit flag. Print a machine-parsable PASS/FAIL line s
 
 ## Gating work
 
-1. **`i2c_gen @0xfd894000` must be enabled** — the RPS power monitor lives there and our
-   DT disables it (also blocks the Linux-side read). Highest-value unblock.
-2. PCIe enumeration glue → unlocks SATA + USB.
-3. SGPO + AL-NAND + al_eth + serdes ports from the stock U-Boot tree.
+1. PCIe enumeration glue → unlocks SATA + USB.
+2. SGPO + AL-NAND + al_eth + serdes ports from the stock U-Boot tree.
 4. DDR HAL integration (open source, see uboot-ddr-port.md) → BIST/margins.

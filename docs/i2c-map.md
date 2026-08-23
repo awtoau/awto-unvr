@@ -36,12 +36,13 @@ board-params-derived i2c adapter number by one and broke the SFP+ EEPROM read (#
 - **adt7475** (U27, behind mux ch3) = the **PWM fan controller** — 3 temp + 2 voltage inputs
   drive 3 PWM fan outputs (stock env `slowfan` pokes 0x2e regs 0x30-0x32/0x5c-0x5e). rev 2.
   SENSORS_ADT7475. NOT the RPS current monitor.
-- **2× RPS ORing power monitors** (INA/ISL class, V·I·P per rail) on the `i2c_gen` bus
-  (fd894000): one for the **12 V** rail, one for the **54 V** rail. Watch the on-board ORing
-  FET path (`Q536/Q537/Q14/Q59/Q590`, `docs/rps-subsystem.md`), so they are **powered and
-  present whether or not an external RPS module is plugged in** — the RPS input just ORs into
-  the same rail. Physical candidate **U48** (~10-pin QFN, RPS area — `docs/photo-catalog.md`).
-  Addr + exact part still open (#64); reachable only once pins 30/31 mux to I2C_GEN.
+- **No RPS i2c monitor exists on this bus.** Originally hypothesized as 2× ORing power
+  monitors (INA/ISL class) on `i2c_gen` (fd894000), one per rail (12 V / 54 V) — disproven
+  by #64: pins 30/31 (i2c_gen's would-be SCL/SDA) are physically muxed to ETH-LED/ulogo_blue
+  on this board's live 48-ball read, not to any i2c bus, and no Ubiquiti firmware carries an
+  RPS i2c-monitor driver. **U48** is very likely a pure analog part with no digital interface.
+  ORing FET path (`Q536/Q537/Q14/Q59/Q590`) still worth a look via `docs/rps-subsystem.md` if
+  RPS monitoring is wanted, just not via i2c.
 - **s35390a** RTC (behind mux ch0), coin cell SII MS621.
 - **24C64** EEPROM @0x57 = DDR-config blob (reads 0x1c36-repeating, not plain SPD) — #67.
 - Bay-activity LEDs are **not** i2c: SGPO `fd8b4000` → external **74VHC595 (UB20)** shift

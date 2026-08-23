@@ -230,9 +230,12 @@ own `CONFIG_IKCONFIG`) unless noted.
   own uImage/uboot. (Dump first — prior RE and `sources.md` §12.)
 - **Raw I2C.** `CONFIG_I2C_CHARDEV=y` → `/dev/i2c-*` ✅. `busybox`
   `i2cget/i2cset/i2cdump/i2cdetect` present ✅. Stock daemons already use it:
-  `fw:/sbin/rpsd` (`/dev/i2c-`), `fw:/usr/sbin/sfpd` (`/dev/i2c-%d`) ✅. → reach
-  the RPS power monitor and the otherwise-disabled `i2c_gen` bus from userspace
-  (stop the daemon first to avoid contention).
+  `fw:/sbin/rpsd` (`/dev/i2c-`), `fw:/usr/sbin/sfpd` (`/dev/i2c-%d`) ✅ — though
+  per #64, `rpsd`'s i2c access is a no-op on this specific ea16 board: `i2c_gen`
+  isn't a real bus here (pins 30/31 are muxed to ETH-LED/ulogo_blue, not i2c),
+  so there's no RPS monitor to reach via i2c regardless. `sfpd` (module EEPROM
+  on the mux'd `i2c_pld` bus) is the one genuinely useful daemon-shadowed target
+  here (stop it first to avoid contention).
 - **SPI:** `CONFIG_SPI_SPIDEV=y` → `/dev/spidev*` possible ✅.
 - **GPIO:** `CONFIG_GPIO_SYSFS=y` (sysfs `/sys/class/gpio`) ✅; Python libgpiod
   `fw:/usr/lib/python3/dist-packages/gpiod*.so` present ✅.
@@ -251,7 +254,8 @@ own `CONFIG_IKCONFIG`) unless noted.
 1. **`flash_erase`+`nandwrite`/`flashcp` on `/dev/mtdN`** → reflash NAND/NOR
    (kernel/uboot/recovery) with no signature check. *The* custom-boot route.
 2. **`busybox devmem`** → set DBGEN, poke clock/pinmux/thermal regs directly.
-3. **`busybox i2cset/i2cget` on `/dev/i2c-*`** → RPS monitor + `i2c_gen` bus.
+3. **`busybox i2cset/i2cget` on `/dev/i2c-*`** → SFP EEPROM + RTC/mux (i2c_pld);
+   not `i2c_gen`/RPS monitor - no real bus there on this board (#64).
 
 **Confidence: high** (kernel config is this image's own; tools verified in rootfs).
 
