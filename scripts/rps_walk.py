@@ -57,7 +57,7 @@ def cstr(fileoff, maxlen=64):
     s = data[fileoff:end]
     try:
         return s.decode("ascii")
-    except:
+    except UnicodeDecodeError:
         return repr(s)
 
 

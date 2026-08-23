@@ -83,7 +83,7 @@ def main() -> int:
         if got is None:
             continue
 
-        sample = sorted(seen, key=len)[-1]
+        sample = max(seen, key=len)
         if sample == PAYLOAD:
             clean.append(baud)
             log.info(

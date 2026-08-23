@@ -12,6 +12,7 @@ Usage: boot-delay-analyze.py [THRESH_SECONDS]   (default 0.2)
 
 from __future__ import annotations
 
+import itertools
 import re
 import sys
 from pathlib import Path
@@ -56,7 +57,7 @@ def main():
 
     total = events[-1][0] - events[0][0]
     gaps = []
-    for (t0, txt0), (t1, txt1) in zip(events, events[1:]):
+    for (t0, txt0), (t1, txt1) in itertools.pairwise(events):
         d = t1 - t0
         if d >= THRESH:
             gaps.append((d, t0, txt0, t1, txt1))

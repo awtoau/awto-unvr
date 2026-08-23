@@ -1164,7 +1164,7 @@ def _register_steps() -> None:
             "summary": summary,
             "args": "[extra args passed through]" if takes_extra else "",
             "kind": "step",
-            "fn": (lambda n: lambda extra: run_step(n, extra))(name),
+            "fn": lambda extra, n=name: run_step(n, extra),
         }
 
 

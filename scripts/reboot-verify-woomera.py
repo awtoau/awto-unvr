@@ -64,9 +64,11 @@ def verify(s):
         ("kernel", "uname -r"),
         (
             "/dev/mem MMIO (DDR MSTR @0xf0080000)",
-            "python3 -c \"import mmap,os,struct; f=os.open('/dev/mem',os.O_RDONLY); "
-            "m=mmap.mmap(f,4096,mmap.MAP_SHARED,mmap.PROT_READ,offset=0xf0080000); "
-            "print('MSTR=0x%08x'%struct.unpack('<I',m[0:4])[0])\" 2>&1",
+            (
+                "python3 -c \"import mmap,os,struct; f=os.open('/dev/mem',os.O_RDONLY); "
+                "m=mmap.mmap(f,4096,mmap.MAP_SHARED,mmap.PROT_READ,offset=0xf0080000); "
+                "print('MSTR=0x%08x'%struct.unpack('<I',m[0:4])[0])\" 2>&1"
+            ),
         ),
         (
             "eeprom@57 auto-bound (new DTB)",
@@ -76,8 +78,10 @@ def verify(s):
         ("ttyS2", "ls /dev/ttyS2"),
         (
             "temps",
-            'for h in /sys/class/hwmon/hwmon*; do echo -n "$(cat $h/name) "; '
-            "cat $h/temp1_input 2>/dev/null; done",
+            (
+                'for h in /sys/class/hwmon/hwmon*; do echo -n "$(cat $h/name) "; '
+                "cat $h/temp1_input 2>/dev/null; done"
+            ),
         ),
     ]
     for label, cmd in checks:

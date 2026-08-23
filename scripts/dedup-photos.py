@@ -61,7 +61,7 @@ def main():
     for i, p in enumerate(jpgs):
         for q in jpgs[i + 1 :]:
             same = info[p][1] == info[q][1]
-            near = bin(info[p][2] ^ info[q][2]).count("1") <= a.thresh
+            near = (info[p][2] ^ info[q][2]).bit_count() <= a.thresh
             if same or near:
                 union(p, q)
 
@@ -82,7 +82,7 @@ def main():
             f"({info[keep][0] // 1024}K)"
         )
         for d in drop:
-            hd = bin(info[d][2] ^ info[keep][2]).count("1")
+            hd = (info[d][2] ^ info[keep][2]).bit_count()
             print(f"  drop {d.name} ({info[d][0] // 1024}K, hd={hd})")
             to_delete.append(d)
 

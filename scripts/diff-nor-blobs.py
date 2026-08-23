@@ -62,7 +62,13 @@ def parse_toc(b: bytes, toc: int) -> list[dict]:
             psize = struct.unpack_from("<I", b, ooff + 0x28)[0]
             ppayload = ooff + 0x48
         out.append(
-            dict(name=name, off=ooff, size=osize, psize=psize, ppayload=ppayload)
+            {
+                "name": name,
+                "off": ooff,
+                "size": osize,
+                "psize": psize,
+                "ppayload": ppayload,
+            }
         )
     return out
 

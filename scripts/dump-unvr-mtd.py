@@ -379,8 +379,10 @@ def dump(part: dict, ip_host: str) -> bool:
 def manifest(parts: list[dict]) -> None:
     lines = [
         f"# UNVR MTD dumps — {RUN_ID}\n",
-        f"Taken {RUN_ISO} over the serial console + netcat "
-        "(no SSH; the device has no open ports).\n",
+        (
+            f"Taken {RUN_ISO} over the serial console + netcat "
+            "(no SSH; the device has no open ports).\n"
+        ),
         "## Unit\n",
         "| Field | Value |",
         "|---|---|",
