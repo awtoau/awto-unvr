@@ -102,7 +102,7 @@ def main():
             with tarfile.open(tar) as t:
                 t.extractall(dest, filter="data")
             log("  unpacked ok")
-        except Exception as e:
+        except (tarfile.TarError, OSError) as e:
             log(f"  UNPACK FAILED: {e}")
             bad.append(fn + "(unpack)")
     log(

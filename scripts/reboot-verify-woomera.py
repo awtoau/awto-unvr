@@ -43,7 +43,7 @@ def watch_boot(s):
     while time.monotonic() < end:
         try:
             c = s.recv(4096)
-        except Exception:
+        except OSError:
             continue
         if not c:
             continue

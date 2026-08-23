@@ -80,7 +80,7 @@ def cstr(b, va, mx=80):
         c = c[:e]
     try:
         s = c.decode("ascii")
-    except Exception:
+    except UnicodeDecodeError:
         return ""
     return s if s and all(32 <= ord(x) < 127 for x in s) else ""
 

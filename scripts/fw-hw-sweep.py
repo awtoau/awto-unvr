@@ -59,7 +59,7 @@ def scan(path):
             timeout=30,
             check=False,
         ).stdout
-    except Exception:
+    except (subprocess.TimeoutExpired, OSError):
         return {}
     hits = {}
     for label, pat in PATTERNS.items():

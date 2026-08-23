@@ -74,7 +74,7 @@ def parse_tlv(payload):
         else:
             try:
                 out[name] = val.decode("utf-8", "replace").strip("\x00")
-            except Exception:
+            except UnicodeError:
                 out[name] = val.hex()
         i += 3 + flen
     return out
@@ -95,7 +95,7 @@ def broadcast_addrs():
                     ip, plen = tok.split("/")
                     if plen == "24":
                         addrs.append(".".join(ip.split(".")[:3]) + ".255")
-    except Exception:
+    except (OSError, ValueError):
         pass
     return sorted(set(addrs))
 
@@ -153,7 +153,7 @@ def mdns():
             timeout=15,
             check=False,
         )
-    except Exception as e:
+    except (subprocess.TimeoutExpired, OSError) as e:
         log(f"avahi-browse unavailable: {e}")
         return
     hits = [
@@ -177,7 +177,7 @@ def sweep(subnet):
             timeout=600,
             check=False,
         )
-    except Exception as e:
+    except (subprocess.TimeoutExpired, OSError) as e:
         log(f"nmap failed: {e}")
         return
     for line in p.stdout.splitlines():

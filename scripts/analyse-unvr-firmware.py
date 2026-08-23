@@ -166,7 +166,7 @@ def find_initramfs(image):
         try:
             d = zlib.decompressobj(zlib.MAX_WBITS | 16)
             blob = d.decompress(image[i:], 200 << 20)
-        except Exception:
+        except zlib.error:
             continue
         if blob[:6] == b"070701" and len(blob) > 4096:
             log(f"embedded initramfs: gzip @{i} -> {len(blob)} bytes of newc cpio")
@@ -182,12 +182,12 @@ def find_ikconfig(image):
     start = i + len(IKCFG_ST)
     try:
         return gzip.decompress(image[start:])
-    except Exception:
+    except (OSError, EOFError, zlib.error):
         # gzip stream ends at IKCFG_ED; decompressobj tolerates the trailing bytes
         d = zlib.decompressobj(zlib.MAX_WBITS | 16)
         try:
             return d.decompress(image[start:])
-        except Exception as exc:
+        except zlib.error as exc:
             log(f"IKCFG_ST found at {i} but inflate failed: {exc}")
             return None
 
@@ -243,7 +243,7 @@ if __name__ == "__main__":
                     log(f"wrote {SECTIONS / 'kernel-Image.gz'}")
                     try:
                         image = gzip.decompress(payload)
-                    except Exception as exc:
+                    except (OSError, EOFError, zlib.error) as exc:
                         log(f"gunzip failed: {exc}")
                         image = None
                     if image:
