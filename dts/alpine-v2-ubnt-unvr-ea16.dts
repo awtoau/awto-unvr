@@ -99,19 +99,29 @@
 			compatible = "annapurna-labs,alpine-internal-pcie";
 			dma-coherent;
 			/*
-			 * Restores upstream alpine-v2.dtsi's AHCI INTx map (#55) -
-			 * we had none at all, worse than upstream. al_eth/al_dma/
-			 * al_ssm still have no entry here (upstream doesn't either)
-			 * and still log "of_irq_parse_pci failed rc=-22" at probe -
-			 * benign, MSI-X only (msi-parent = &msix); silenced properly
-			 * via a PCI_FIXUP_HEADER quirk in pcie-al-internal.c instead,
-			 * since a DT interrupt-map can't express "this pin is wired
-			 * to nothing" for devices that never use INTx at all.
+			 * REVERTED (#55) - the AHCI interrupt-map below correlated
+			 * with a real boot-time crash: UBSAN array-index-out-of-bounds
+			 * in kernel/locking/qspinlock.h (index 8591 for a u long[4096]
+			 * array), thrown from register_netdevice()'s mutex_unlock()
+			 * during al_eth_probe(), immediately followed by an unhandled
+			 * kernel paging request. That's memory corruption, not a
+			 * benign INTx-routing quirk - consistent with this data feeding
+			 * directly into PCI IRQ/resource-allocation tables and
+			 * corrupting adjacent kernel memory. NOT root-caused further
+			 * (which specific cell/value is wrong is still unknown) -
+			 * reverted to no interrupt-map (the known-good prior state)
+			 * rather than guess at a fix blind. Attempted addition, for
+			 * reference:
+			 *   #interrupt-cells = <1>;
+			 *   interrupt-map-mask = <0xf800 0 0 7>;
+			 *   interrupt-map = <0x4000 0 0 1 &gic GIC_SPI 53 IRQ_TYPE_LEVEL_HIGH>,
+			 *                   <0x4800 0 0 1 &gic GIC_SPI 54 IRQ_TYPE_LEVEL_HIGH>;
+			 * al_eth/al_dma/al_ssm's rc=-22 is still silenced independently
+			 * via the PCI_FIXUP_HEADER quirk in pcie-al-internal.c - that's
+			 * a separate, much smaller change (one struct field write) and
+			 * not yet ruled out either, pending isolated testing with just
+			 * the interrupt-map reverted and the quirk alone in place.
 			 */
-			#interrupt-cells = <1>;
-			interrupt-map-mask = <0xf800 0 0 7>;
-			interrupt-map = <0x4000 0 0 1 &gic GIC_SPI 53 IRQ_TYPE_LEVEL_HIGH>,
-					<0x4800 0 0 1 &gic GIC_SPI 54 IRQ_TYPE_LEVEL_HIGH>;
 
 			/*
 			 * DT stubs for the two integrated AHCI EPs, matched by
