@@ -481,12 +481,12 @@ int al_udma_state_set(struct al_udma *udma, enum al_udma_state state)
 
 	if (udma->type == UDMA_TX) {
 		al_reg_write32(&udma->udma_regs->m2s.m2s.change_state, reg);
-		pr_info("UDMA TX [%s]: wrote 0x%x to change_state, readback state=0x%x\n",
+		al_dbg("UDMA TX [%s]: wrote 0x%x to change_state, readback state=0x%x\n",
 			udma->name, reg,
 			al_reg_read32(&udma->udma_regs->m2s.m2s.state));
 	} else {
 		al_reg_write32(&udma->udma_regs->s2m.s2m.change_state, reg);
-		pr_info("UDMA RX [%s]: wrote 0x%x to change_state, readback state=0x%x\n",
+		al_dbg("UDMA RX [%s]: wrote 0x%x to change_state, readback state=0x%x\n",
 			udma->name, reg,
 			al_reg_read32(&udma->udma_regs->s2m.s2m.state));
 	}
