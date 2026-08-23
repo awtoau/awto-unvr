@@ -39,7 +39,8 @@ Cortex-A57 aarch64, 4 GiB, sysid **0xea16**. Host name for the box: **woomera**.
     (stock "bus 11") is **disabled** in the ea16 DTS; unidentified 0x57 device (#62).
   - **JTAG-candidate header** lead — unpopulated 2-row PTH at the SoC top edge
     ([components.md](components.md) test-points); needs a macro.
-- **Drive power root-caused** — PCA9575 @0x21 pwren, gpio-hog auto-powers bays.
+- **Drive power root-caused** — PCA9575 @0x21 pwren; per-bay `regulator-fixed` auto-powers
+  the bays and orders AHCI probe behind them ([sata-bay-power-ordering.md](sata-bay-power-ordering.md)).
 - **Security analysis** — exposed secrets, unsigned boot, data remanence (#1,#2).
 
 ## In flight / open
