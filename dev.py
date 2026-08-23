@@ -887,15 +887,22 @@ def _ensure_tftpd(port: int = 69, root: str = "tmp/tftp") -> None:
     root_path = REPO / root
     root_path.mkdir(parents=True, exist_ok=True)
     log(f"starting tftpd (root {root})")
+    # Port 69 is <1024 - tftpd.py itself refuses to bind it without root
+    # (checked directly: exits 1, "needs root for <1024"). This was silently
+    # swallowed before (stdout/stderr -> DEVNULL) - the process just died
+    # immediately and every caller "continued anyway" against nothing.
+    cmd = [
+        sys.executable,
+        str(REPO / "scripts" / "tftpd.py"),
+        "--root",
+        root,
+        "--port",
+        str(port),
+    ]
+    if port < 1024:
+        cmd = ["sudo", "-n", *cmd]
     subprocess.Popen(
-        [
-            sys.executable,
-            str(REPO / "scripts" / "tftpd.py"),
-            "--root",
-            root,
-            "--port",
-            str(port),
-        ],
+        cmd,
         cwd=REPO,
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
@@ -905,7 +912,7 @@ def _ensure_tftpd(port: int = 69, root: str = "tmp/tftp") -> None:
         if _tftpd_bound(port):
             return
         time.sleep(0.05)
-    log("tftpd not bound after 2s - continuing anyway", "WARN")
+    log("tftpd not bound after 2s - is passwordless sudo set up for tftpd.py?", "ERROR")
 
 
 def _verify_uboot_banner(expected_bin: Path) -> bool:
