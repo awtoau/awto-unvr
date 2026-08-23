@@ -15,6 +15,8 @@ import struct
 import sys
 from pathlib import Path
 
+log = logging.getLogger(__name__)
+
 REPO = Path(__file__).resolve().parent.parent
 LOG = REPO / "tmp" / "logs" / "dump-ubnt-board-table.log"
 KEY = (0x81, 0x93, 0xE0, 0xC4)
@@ -49,8 +51,8 @@ def main() -> int:
     )
 
     b = a.elf.read_bytes()
-    logging.info("== %s", a.elf)
-    logging.info(
+    log.info("== %s", a.elf)
+    log.info(
         "%-10s %-7s %-11s %-14s %-14s %s",
         "vaddr",
         "sysid",
@@ -67,7 +69,7 @@ def main() -> int:
         sysid = struct.unpack_from("<I", b, off + 0x6C)[0]
         if not 0x1000 <= sysid <= 0xFFFF:  # past the table into the RSA blob
             break
-        logging.info(
+        log.info(
             "0x%08x 0x%04x  %-11s %-14s %-14s %s",
             off + DATA_VA_BIAS,
             sysid,

@@ -22,6 +22,8 @@ from pathlib import Path
 
 import capstone
 
+log = logging.getLogger(__name__)
+
 REPO = Path(__file__).resolve().parent.parent
 LOG = REPO / "tmp" / "logs" / "measure-preboot-coverage.log"
 CF = {"push", "pop", "bl", "blx", "bx", "stmfd", "ldmfd", "stm", "ldm", "svc"}
@@ -62,7 +64,7 @@ def main() -> int:
     for a, l in gaps:
         c, s = classify(md, b, base, a, l)
         buckets.setdefault(c, []).append((a, l, s))
-    logging.info(
+    log.info(
         "== %s (%d gaps, %d bytes undefined) ==",
         blob.name,
         len(gaps),
@@ -70,15 +72,15 @@ def main() -> int:
     )
     for c in sorted(buckets, key=lambda k: -sum(x[1] for x in buckets[k])):
         lst = buckets[c]
-        logging.info("%-16s %4d gaps  %7d B", c, len(lst), sum(x[1] for x in lst))
+        log.info("%-16s %4d gaps  %7d B", c, len(lst), sum(x[1] for x in lst))
     code = sorted(buckets.get("CODE", []))
-    logging.info(
+    log.info(
         "\nCODE gaps (%d, %d B) -- force-disassemble candidates:",
         len(code),
         sum(x[1] for x in code),
     )
     for a, l, s in code:
-        logging.info("  0x%08x len=%-5d cf=%d", a, l, s)
+        log.info("  0x%08x len=%-5d cf=%d", a, l, s)
     # emit a bare address list for a disassemble script
     (REPO / "tmp" / "code-gaps.txt").write_text(
         "\n".join(f"0x{a:08x}" for a, _, _ in code) + "\n"

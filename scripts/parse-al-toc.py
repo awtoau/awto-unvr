@@ -13,6 +13,8 @@ import struct
 import sys
 from pathlib import Path
 
+log = logging.getLogger(__name__)
+
 REPO = Path(__file__).resolve().parent.parent
 LOG = REPO / "tmp" / "logs" / "parse-al-toc.log"
 TOC_MAGIC = 0x070C070C
@@ -33,7 +35,7 @@ def main() -> int:
 
     b = a.image.read_bytes()
     magic = struct.unpack_from("<I", b, a.toc)[0]
-    logging.info(
+    log.info(
         "== %s (%d B) TOC@0x%x magic 0x%08x %s",
         a.image,
         len(b),
@@ -47,7 +49,7 @@ def main() -> int:
     # header: magic, rsvd, count, crc. entry (0x20 B): id[4] type[4] name[12]
     # off[4] size[4] rsvd[4]. type high nibble is the multi-DT index.
     count = struct.unpack_from("<I", b, a.toc + 8)[0]
-    logging.info("   %d entries", count)
+    log.info("   %d entries", count)
     for n in range(count):
         e = a.toc + 16 + n * 0x20
         oid, otype = struct.unpack_from("<2I", b, e)
@@ -59,7 +61,7 @@ def main() -> int:
             ld, en = struct.unpack_from("<2Q", b, ooff + 0x30)
             hdr = f"  payload 0x{sz:x} load 0x{ld:x} entry 0x{en:x}"
         present = "" if ooff + osize <= len(b) else "  [outside this file]"
-        logging.info(
+        log.info(
             "  [%d] %-10s type 0x%08x off 0x%06x size 0x%06x%s%s",
             n,
             name,

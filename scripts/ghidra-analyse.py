@@ -31,6 +31,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+log = logging.getLogger(__name__)
+
 REPO = Path(__file__).resolve().parent.parent
 GHIDRA = Path("/home/dan/tools/ghidra_12.2_DEV")
 HEADLESS = GHIDRA / "support" / "analyzeHeadless"
@@ -139,18 +141,18 @@ def main() -> int:
     cmd += ["-postScript", "ExportAll.java", str(a.out)]
     cmd += ["-postScript", "CoverageReport.java", str(a.out), "-deleteProject"]
 
-    logging.info("RUN: %s", " ".join(cmd))
+    log.info("RUN: %s", " ".join(cmd))
     try:
         r = subprocess.run(
             cmd, capture_output=True, text=True, timeout=a.timeout, check=False
         )
     except subprocess.TimeoutExpired:
-        logging.error("TIMEOUT after %d s analysing %s (killed)", a.timeout, a.blob)
+        log.error("TIMEOUT after %d s analysing %s (killed)", a.timeout, a.blob)
         return 2
-    logging.info(r.stdout[-8000:] if r.stdout else "(no stdout)")
+    log.info(r.stdout[-8000:] if r.stdout else "(no stdout)")
     if r.stderr:
-        logging.info("STDERR tail:\n%s", r.stderr[-4000:])
-    logging.info("exit %d -> %s", r.returncode, a.out)
+        log.info("STDERR tail:\n%s", r.stderr[-4000:])
+    log.info("exit %d -> %s", r.returncode, a.out)
     return r.returncode
 
 

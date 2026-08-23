@@ -32,6 +32,8 @@ import struct
 import sys
 from pathlib import Path
 
+log = logging.getLogger(__name__)
+
 REPO = Path(__file__).resolve().parent.parent
 LOG = REPO / "tmp" / "logs" / "dump-uboot-board-table.log"
 TOC_MAGIC = 0x070C070C
@@ -142,8 +144,8 @@ def main() -> int:
     b = a.image.read_bytes()
     pstart, load_va = find_uboot_payload(b, a.toc)
     s = make_resolver(b, pstart, load_va)
-    logging.info("== %s (%d B)", a.image, len(b))
-    logging.info("   uboot payload file 0x%x  load VA 0x%x", pstart, load_va)
+    log.info("== %s (%d B)", a.image, len(b))
+    log.info("   uboot payload file 0x%x  load VA 0x%x", pstart, load_va)
 
     # pick layout: explicit args, else best-scoring auto-scan over LAYOUTS
     start, stride, swap = a.start, a.stride, a.swap
@@ -158,7 +160,7 @@ def main() -> int:
                 if best is None or n > best[0]:
                     best = (n, off, st, sw)
         if best is None:
-            logging.info("   NO board table found")
+            log.info("   NO board table found")
             return 0
         _, start, stride, swap = best
     else:
@@ -172,7 +174,7 @@ def main() -> int:
         if stride == 0x38
         else ""
     )
-    logging.info(
+    log.info(
         "   table @file 0x%x (VA 0x%x) stride 0x%x swap=%s%s",
         start,
         load_va + (start - pstart),
@@ -182,7 +184,7 @@ def main() -> int:
     )
     fan_off = 0x29 if stride == 0x38 else 0x2A
     wide = stride >= 0x70
-    logging.info(
+    log.info(
         "%-3s %-7s %-12s %-10s %-4s %-9s %-9s %s",
         "idx",
         "sysid",
@@ -206,7 +208,7 @@ def main() -> int:
             model = s(struct.unpack_from("<Q", b, off + 0x40)[0]) or "-"
             eth = s(struct.unpack_from("<Q", b, off + 0x58)[0]) or "-"
             dob = "bootsign" if b[off + 0x38] else "bootunsign"
-        logging.info(
+        log.info(
             "%-3d 0x%04x  %-12s %-10s 0x%02x %-9s %-9s %s",
             i,
             sysid,
@@ -219,7 +221,7 @@ def main() -> int:
         )
         off += stride
         i += 1
-    logging.info("   %d entries", i)
+    log.info("   %d entries", i)
     return 0
 
 

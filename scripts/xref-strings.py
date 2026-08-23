@@ -15,6 +15,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+log = logging.getLogger(__name__)
+
 REPO = Path(__file__).resolve().parent.parent
 LOG = REPO / "tmp" / "logs" / "xref-strings.log"
 INSN = re.compile(r"^\s*([0-9a-f]+):\s+([0-9a-f]{8})\s+(\S+)\s*([^/]*)")
@@ -103,15 +105,15 @@ def main() -> int:
     for t in a.targets:
         tv = int(t, 16)
         hits = xr.get(tv, [])
-        logging.info("== 0x%x: %d xrefs %s", tv, len(hits), [hex(h) for h in hits])
+        log.info("== 0x%x: %d xrefs %s", tv, len(hits), [hex(h) for h in hits])
         if a.window:
             for h in hits:
                 i = idx.get(h)
                 if i is None:
                     continue
-                logging.info("--- around 0x%x", h)
+                log.info("--- around 0x%x", h)
                 for ln in raw[max(0, i - a.window) : i + a.window]:
-                    logging.info("%s", ln)
+                    log.info("%s", ln)
     return 0
 
 

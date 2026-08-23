@@ -36,6 +36,8 @@ import re
 import sys
 from pathlib import Path
 
+log = logging.getLogger(__name__)
+
 REPO = Path(__file__).resolve().parent.parent
 LOG = REPO / "tmp" / "logs" / "gen-al-reg-symbols.log"
 
@@ -76,7 +78,7 @@ def parse_struct(text: str, struct: str) -> list[tuple[str, int, int]]:
     """
     m = re.search(r"struct\s+" + re.escape(struct) + r"\s*\{", text)
     if not m:
-        logging.error("struct %s not found", struct)
+        log.error("struct %s not found", struct)
         return []
     body = text[m.end() :]
     depth = 1
@@ -91,7 +93,7 @@ def parse_struct(text: str, struct: str) -> list[tuple[str, int, int]]:
         if a:
             want = int(a.group(1), 16)
             if want != off:
-                logging.warning(
+                log.warning(
                     "anchor mismatch: comment 0x%x but computed 0x%x "
                     "(check field sizes above)",
                     want,
@@ -106,7 +108,7 @@ def parse_struct(text: str, struct: str) -> list[tuple[str, int, int]]:
             continue
         sz = SIZES.get(typ)
         if sz is None:
-            logging.warning("unknown type %r at off 0x%x -- skipping line", typ, off)
+            log.warning("unknown type %r at off 0x%x -- skipping line", typ, off)
             continue
         count = int(fm.group("arr"), 0) if fm.group("arr") else 1
         name = fm.group("name")
@@ -150,11 +152,11 @@ def main() -> int:
                 if dm and dm.group("name").startswith(pref):
                     f.write(f"{dm.group('name')}\t{int(dm.group('val'), 0)}\n")
                     n += 1
-        logging.info("wrote %d numeric equates -> %s", n, eq)
+        log.info("wrote %d numeric equates -> %s", n, eq)
         return 0
 
     if not a.struct or a.base is None:
-        logging.error("register mode needs --struct and --base")
+        log.error("register mode needs --struct and --base")
         return 2
     fields = parse_struct(text, a.struct)
     if not fields:
@@ -184,7 +186,7 @@ def main() -> int:
                 )
             cur = off + size
         f.write("};\n")
-    logging.info("wrote %d register labels -> %s  (+ struct %s)", len(fields), sym, hdr)
+    log.info("wrote %d register labels -> %s  (+ struct %s)", len(fields), sym, hdr)
     return 0
 
 

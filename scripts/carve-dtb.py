@@ -15,6 +15,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+log = logging.getLogger(__name__)
+
 MAGIC = b"\xd0\x0d\xfe\xed"
 REPO = Path(__file__).resolve().parent.parent
 LOG = REPO / "tmp" / "logs" / "carve-dtb.log"
@@ -120,7 +122,7 @@ def main() -> int:
     blob = a.binary.read_bytes()
     a.outdir.mkdir(parents=True, exist_ok=True)
     hits = find_fdts(blob)
-    logging.info("== %s (%d B): %d FDT candidates", a.binary, len(blob), len(hits))
+    log.info("== %s (%d B): %d FDT candidates", a.binary, len(blob), len(hits))
 
     for n, (off, size) in enumerate(hits):
         out = a.outdir / f"dtb{n:02d}-0x{off:06x}-{size}B.dtb"
@@ -128,13 +130,13 @@ def main() -> int:
         dts = dts_of(out)
         (out.with_suffix(".dts")).write_text(dts)
         model, cfg, parts = summarise(dts)
-        logging.info("")
-        logging.info("--- dtb%02d @0x%06x size %d", n, off, size)
-        logging.info("    model      = %s", model)
-        logging.info("    board-cfg  = %s", cfg)
-        logging.info("    nand parts = %d", len(parts))
+        log.info("")
+        log.info("--- dtb%02d @0x%06x size %d", n, off, size)
+        log.info("    model      = %s", model)
+        log.info("    board-cfg  = %s", cfg)
+        log.info("    nand parts = %d", len(parts))
         for lab, o, s in parts:
-            logging.info(
+            log.info(
                 "      %-14s off 0x%08x  size 0x%08x (%8.2f MB)", lab, o, s, s / 1048576
             )
     return 0

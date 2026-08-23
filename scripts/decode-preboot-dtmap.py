@@ -21,6 +21,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+log = logging.getLogger(__name__)
+
 REPO = Path(__file__).resolve().parent.parent
 LOG = REPO / "tmp" / "logs" / "decode-preboot-dtmap.log"
 DT_NAMES = {
@@ -80,19 +82,19 @@ def main() -> int:
                 disp = (base_sysid, count, ldr_va)
                 break
     if not disp:
-        logging.error("dispatch pattern not found")
+        log.error("dispatch pattern not found")
         return 1
     base_sysid, count, ldr_va = disp
     tbl = ldr_va + 8  # ARM: pc = insn+8
-    logging.info(
+    log.info(
         "dispatch @0x%08x  base sysid 0x%04x  %d slots  table 0x%08x",
         ldr_va,
         base_sysid,
         count,
         tbl,
     )
-    logging.info("boardid read from SPI-NOR EEPROM partition flash off 0x1F000C (BE)")
-    logging.info("%-8s %-8s %s", "sysid", "instance", "DTB")
+    log.info("boardid read from SPI-NOR EEPROM partition flash off 0x1F000C (BE)")
+    log.info("%-8s %-8s %s", "sysid", "instance", "DTB")
     fo = tbl - a.base
     for k in range(count):
         tgt = struct.unpack_from("<I", b, fo + k * 4)[0]
@@ -103,7 +105,7 @@ def main() -> int:
             inst = 0xFF
         else:
             continue
-        logging.info("0x%04x   %-8s %s", base_sysid + k, inst, DT_NAMES.get(inst, "?"))
+        log.info("0x%04x   %-8s %s", base_sysid + k, inst, DT_NAMES.get(inst, "?"))
     return 0
 
 
