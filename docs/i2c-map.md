@@ -23,6 +23,22 @@ board-params-derived i2c adapter number by one and broke the SFP+ EEPROM read (#
 
 `i2c-gen` (0xfd894000) is disabled - no adapter number allocated for it.
 
+```
+AL-324 SoC
+├─ DW i2c-pld @0xfd880000  ── i2c-0 (PARENT)
+│    ├─ 0x20  PCA9575   (SFP LED + straps)
+│    ├─ 0x21  PCA9575   (bay power / presence / fault LEDs)
+│    ├─ 0x57  24C64     (DDR-config EEPROM)
+│    └─ 0x71  PCA9546 4-ch MUX
+│               ├─ ch0 → i2c-1 ── 0x30 s35390a RTC ⚠ (KNOWN BUG: wedges on probe)
+│               ├─ ch1 → i2c-2 ── 0x50 SFP+ module EEPROM
+│               ├─ ch2 → i2c-3 ── (empty)
+│               └─ ch3 → i2c-4 ── 0x2e adt7475 fan controller
+└─ DW i2c-gen @0xfd894000  ── disabled, no adapter, NO REAL BUS (#64)
+     pins 30/31 (would-be SCL/SDA) are muxed to ETH-LED/ulogo_blue instead -
+     nothing to scan here regardless of enable state.
+```
+
 ## Chips (physical, photo-confirmed)
 
 - **UB1 + U10 = 2× PCA9575PW** (24-pin TSSOP) → i2c 0x20 / 0x21. **Only two.** The DT's
