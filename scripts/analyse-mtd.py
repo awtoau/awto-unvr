@@ -79,7 +79,7 @@ def decode_uboot_env(blob: bytes, name: str) -> None:
         if calc == stored:
             log(
                 f"  CRC32 {stored:#010x} OK "
-                f"({'redundant env, flags={:#04x}'.format(flags) if has_flags else 'plain env'})"
+                f"({f'redundant env, flags={flags:#04x}' if has_flags else 'plain env'})"
             )
             entries = [e for e in body.split(b"\x00") if e]
             log(f"  {len(entries)} variable(s):")
