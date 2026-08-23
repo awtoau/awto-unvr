@@ -17,14 +17,15 @@
  * al_eth_group_lm.c for the SFP+ port ONLY. eth1 (1G RGMII, PCI 1c36:0001) is
  * phy_exist=true and keeps the phylib path untouched.
  *
- * NOT covered yet (see the issues filed alongside this work):
+ * NOT covered yet:
  *   - 1G optics / SGMII: only 10GBASE-R is advertised. A 1G module is rejected
  *     by phylink with a clear message instead of silently mis-configuring the
  *     MAC. The vendor LM could do 1G; re-adding it needs mac_config to switch
  *     al_eth_mac_config()/SerDes mode live, which is untested on this board.
+ *     #127.
  *   - passive DAC: sfp.c reports 10GBASE-R for both optic and direct-attach,
  *     so the DA-specific SerDes tables + rx_equal sweep are not selectable.
- *     The fitted module is a 10GBASE-LR optic.
+ *     The fitted module is a 10GBASE-LR optic. #128.
  */
 
 #include <linux/kconfig.h>

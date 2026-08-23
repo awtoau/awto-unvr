@@ -99,12 +99,19 @@
 			compatible = "annapurna-labs,alpine-internal-pcie";
 			dma-coherent;
 			/*
-			 * The mainline dtsi's interrupt-map wires only the two
-			 * AHCI slots (INTx -> GIC 53/54). The other internal
-			 * endpoints (al_eth/al_dma/al_ssm) have no INTx entry, so
-			 * of_irq_parse_pci logs "failed rc=-22" for them at probe.
-			 * Benign: they use MSI-X (msi-parent = &msix) exclusively.
+			 * Restores upstream alpine-v2.dtsi's AHCI INTx map (#55) -
+			 * we had none at all, worse than upstream. al_eth/al_dma/
+			 * al_ssm still have no entry here (upstream doesn't either)
+			 * and still log "of_irq_parse_pci failed rc=-22" at probe -
+			 * benign, MSI-X only (msi-parent = &msix); silenced properly
+			 * via a PCI_FIXUP_HEADER quirk in pcie-al-internal.c instead,
+			 * since a DT interrupt-map can't express "this pin is wired
+			 * to nothing" for devices that never use INTx at all.
 			 */
+			#interrupt-cells = <1>;
+			interrupt-map-mask = <0xf800 0 0 7>;
+			interrupt-map = <0x4000 0 0 1 &gic GIC_SPI 53 IRQ_TYPE_LEVEL_HIGH>,
+					<0x4800 0 0 1 &gic GIC_SPI 54 IRQ_TYPE_LEVEL_HIGH>;
 
 			/*
 			 * DT stubs for the two integrated AHCI EPs, matched by

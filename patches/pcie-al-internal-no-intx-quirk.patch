@@ -1,0 +1,27 @@
+--- a/drivers/pci/controller/pcie-al-internal.c
++++ b/drivers/pci/controller/pcie-al-internal.c
+@@ -88,6 +88,24 @@
+ #define PCI_VENDOR_ID_ANNAPURNA_LABS	0x1c36
+
+ /*
++ * al_eth (x2 ports), al_dma and al_ssm all report a nonzero
++ * PCI_INTERRUPT_PIN in config space, but only the two AHCI SATA
++ * functions actually have their INTx routed (see this DTS's
++ * interrupt-map, #55) - these three always use MSI-X exclusively and
++ * never route through INTx at all. pci_assign_irq() calls map_irq()
++ * for any nonzero pin regardless, which for these three walks the
++ * DT interrupt-map, finds no match, and logs "of_irq_parse_pci failed
++ * rc=-22" at every boot. Standard fix for "config space reports a pin
++ * that will never be routed": clear dev->pin so pci_assign_irq() skips
++ * the map_irq() call for these entirely.
++ */
++static void al_internal_no_intx_quirk(struct pci_dev *dev)
++{
++	dev->pin = 0;
++}
++DECLARE_PCI_FIXUP_HEADER(PCI_VENDOR_ID_ANNAPURNA_LABS, 0x0001, al_internal_no_intx_quirk);
++DECLARE_PCI_FIXUP_HEADER(PCI_VENDOR_ID_ANNAPURNA_LABS, 0x0002, al_internal_no_intx_quirk);
++DECLARE_PCI_FIXUP_HEADER(PCI_VENDOR_ID_ANNAPURNA_LABS, 0x0022, al_internal_no_intx_quirk);
+
+ /*
+  * Bus notifier callback: configures SMCC snoop and APP_CONTROL
