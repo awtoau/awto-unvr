@@ -7,7 +7,17 @@ kernel with root=/dev/sdaN, no initramfs (kernel has AHCI+ext4 built-in), no
 bootloader of its own. So this script produces ONLY a configured userland tar;
 kernel + modules + boot config are applied separately.
 
-Runs on the x86 host via podman + qemu-aarch64 binfmt (already registered).
+Built with `dnf --installroot --forcearch=aarch64` directly against this host's
+own Fedora repos - no podman, no registry.fedoraproject.org container base
+image. A container base image comes with its own already-installed packages
+and already-applied presets (systemd-resolved enabled by default, for one -
+#124) that we never chose and didn't know we'd inherited; installroot builds
+the tree from nothing but the same @core + EXTRAS package set, so there's no
+hidden baggage left to discover later. binfmt_misc (already registered on
+this host) transparently runs aarch64 scriptlets/systemctl under both dnf's
+own package scriptlets and the chroot config step below - the same mechanism
+RPM %post macros already rely on, not something new we're introducing.
+
 Output: tmp/fedora-rootfs-ea16.tar (+ .sha256). Slow (dnf under emulation).
 
 Choices baked in (all overridable later in the tar):
@@ -24,6 +34,7 @@ Choices baked in (all overridable later in the tar):
 from __future__ import annotations
 
 import argparse
+import os
 import subprocess
 import sys
 from datetime import datetime, timezone
@@ -33,8 +44,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from _repo import LOGS, TMP
 
 REL = "44"
-IMAGE = f"registry.fedoraproject.org/fedora:{REL}"
-CTR = "unvr-fedora-build"
+ARCH = "aarch64"
 
 # Stay as close to a stock Fedora install as possible: install the standard
 # @core group (with weak deps, the Fedora default) as the base, then add only
@@ -56,7 +66,7 @@ EXTRAS = [
     "lm_sensors",
 ]
 
-# Config applied inside the container (aarch64, via qemu) before export.
+# Config applied via chroot into the installroot (aarch64, via qemu binfmt).
 CONFIG_SH = r"""
 set -eux
 # --- SELinux off (config absent in minimal container; selinux=0 in bootargs too) ---
@@ -115,55 +125,77 @@ def run(*cmd: str, **kw) -> subprocess.CompletedProcess:
     return subprocess.run(cmd, check=True, **kw)
 
 
+def sudo_run(*cmd: str, **kw) -> subprocess.CompletedProcess:
+    """-n: fail fast if credentials aren't cached, instead of hanging on a
+    password prompt this script has no TTY to answer."""
+    return run("sudo", "-n", *cmd, **kw)
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
     )
-    ap.add_argument("--keep", action="store_true", help="don't rm the build container")
+    ap.add_argument("--keep", action="store_true", help="don't rm the installroot dir")
     a = ap.parse_args()
 
     TMP.mkdir(parents=True, exist_ok=True)
     out = TMP / "fedora-rootfs-ea16.tar"
+    root = TMP / "fedora-rootfs-installroot"
 
-    # Fresh container, aarch64 platform (qemu binfmt does the emulation).
-    subprocess.run(
-        ["podman", "rm", "-f", CTR],
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-        check=False,  # ok if CTR doesn't exist yet
-    )
-    run(
-        "podman",
-        "create",
-        "--platform",
-        "linux/arm64",
-        "--name",
-        CTR,
-        IMAGE,
-        "sleep",
-        "infinity",
-    )
-    run("podman", "start", CTR)
+    # Fresh, empty installroot - nothing pre-installed, no inherited base-image
+    # config (that's the whole point, see the module docstring / #124).
+    if root.exists():
+        sudo_run("rm", "-rf", str(root))
+    root.mkdir(parents=True)
+    # --use-host-config: dnf5 --installroot otherwise ignores this host's own
+    # /etc/yum.repos.d entirely and sees zero repos.
+    dnf_args = [
+        "-y",
+        "--installroot",
+        str(root),
+        "--forcearch",
+        ARCH,
+        "--releasever",
+        REL,
+        "--use-host-config",
+        "--disablerepo=*",
+        "--enablerepo=fedora",
+        "--enablerepo=updates",
+    ]
     try:
-        # Stock Fedora base: @core group WITH weak deps (the default), then extras.
-        # This is the slow part under qemu emulation.
-        run("podman", "exec", CTR, "dnf", "-y", "group", "install", CORE_GROUP)
-        run("podman", "exec", CTR, "dnf", "-y", "install", *EXTRAS)
-        run("podman", "exec", CTR, "dnf", "-y", "clean", "all")
-        # Apply config inside the container.
-        run("podman", "exec", CTR, "bash", "-c", CONFIG_SH)
-        # Export the configured rootfs.
+        # Stock Fedora base: @core group WITH weak deps (the default), then
+        # extras, straight from this host's own fedora/updates repos. This is
+        # the slow part under qemu emulation (dnf scriptlets run aarch64 code
+        # via binfmt_misc).
+        sudo_run("dnf", *dnf_args, "group", "install", CORE_GROUP)
+        sudo_run("dnf", *dnf_args, "install", *EXTRAS)
+        sudo_run(
+            "dnf",
+            "-y",
+            "--installroot",
+            str(root),
+            "clean",
+            "all",
+        )
+        # Apply config via chroot - binfmt_misc runs the aarch64 bash/systemctl
+        # transparently, same mechanism dnf's own scriptlets just used above.
+        sudo_run("chroot", str(root), "bash", "-c", CONFIG_SH)
+        # Export the configured rootfs (preserve ownership/perms - needs sudo
+        # to read root-owned files dnf --installroot creates).
         log(f"exporting rootfs -> {out}")
-        with out.open("wb") as fh:
-            subprocess.run(["podman", "export", CTR], check=True, stdout=fh)
+        sudo_run(
+            "tar",
+            "--numeric-owner",
+            "-C",
+            str(root),
+            "-cf",
+            str(out),
+            ".",
+        )
+        sudo_run("chown", f"{os.environ['USER']}:", str(out))
     finally:
         if not a.keep:
-            subprocess.run(
-                ["podman", "rm", "-f", CTR],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-                check=False,  # best-effort cleanup
-            )
+            sudo_run("rm", "-rf", str(root))
 
     sha = run("sha256sum", str(out), capture_output=True, text=True).stdout.split()[0]
     (out.with_suffix(".tar.sha256")).write_text(f"{sha}  {out.name}\n")
