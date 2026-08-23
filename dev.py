@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import shutil
 import socket
 import subprocess
@@ -833,19 +834,43 @@ def cmd_build_fedora(extra: list[str]) -> int:
     return _run_script("scripts/build-linux-71-fedora.py", extra)
 
 
-def _ensure_tftpd(port: int = 69) -> None:
-    """Start scripts/tftpd.py serving tmp/tftp if nothing is bound on `port`.
-    Waits for the bind: expected <100 ms, bounded 40x50ms=2s, then warn+proceed
-    (the chainload catch loop is long enough to tolerate a late bind)."""
+def _tftpd_bound(port: int) -> bool:
+    r = subprocess.run(
+        ["ss", "-lun", f"sport = :{port}"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    return "UNCONN" in r.stdout
 
-    def bound() -> bool:
-        r = subprocess.run(
-            ["ss", "-lun", f"sport = :{port}"], capture_output=True, text=True
-        )
-        return "UNCONN" in r.stdout
 
-    if bound():
+def _kill_stale_tftpd(port: int = 69) -> None:
+    """Kill whatever's bound to `port`, ours or foreign. #119: a tftpd left
+    running from 3 days earlier (wrong --root, images/tftp not tmp/tftp) was
+    silently reused by the old bound()-only check, serving a 4-day-stale
+    U-Boot binary that crash-reset the box. Never reuse - always kill first,
+    so a fresh, correctly-rooted server starts every time."""
+    if not _tftpd_bound(port):
         return
+    log(f"killing stale process on port {port} (#119 - never reuse a tftpd)", "WARN")
+    subprocess.run(
+        ["sudo", "fuser", "-k", f"{port}/udp"],
+        capture_output=True,
+        check=False,
+    )
+    for _ in range(20):
+        if not _tftpd_bound(port):
+            return
+        time.sleep(0.05)
+    log(f"tftpd on port {port} still bound after 1s - proceeding anyway", "WARN")
+
+
+def _ensure_tftpd(port: int = 69) -> None:
+    """Kill any existing process on `port` (#119), then start a fresh
+    scripts/tftpd.py serving tmp/tftp. Waits for the bind: expected <100 ms,
+    bounded 40x50ms=2s, then warn+proceed (the chainload catch loop is long
+    enough to tolerate a late bind)."""
+    _kill_stale_tftpd(port)
     TFTP_ROOT.mkdir(parents=True, exist_ok=True)
     log("starting tftpd (root tmp/tftp)")
     subprocess.Popen(
@@ -863,10 +888,56 @@ def _ensure_tftpd(port: int = 69) -> None:
         start_new_session=True,
     )
     for _ in range(40):
-        if bound():
+        if _tftpd_bound(port):
             return
         time.sleep(0.05)
     log("tftpd not bound after 2s - continuing anyway", "WARN")
+
+
+def _verify_uboot_banner(expected_bin: Path) -> bool:
+    """Post-boot check (#119): confirm the console actually printed the
+    banner embedded in `expected_bin`, not a stale binary from an earlier
+    build. U-Boot's own banner ("U-Boot 2026.07-dirty (Mon DD YYYY -
+    HH:MM:SS +ZZZZ)") is a literal string baked in at build time - extract it
+    from the just-built binary and from the live console log, and compare
+    the full line: any mismatch means the box booted something else."""
+    banner_re = re.compile(
+        rb"U-Boot 20\d\d\.\d\d-\w+ \([A-Za-z]+ \d+ \d{4} - [\d:]+ [+-]\d{4}\)"
+    )
+    try:
+        blob = expected_bin.read_bytes()
+    except OSError as e:
+        log(f"banner check: can't read {expected_bin}: {e}", "WARN")
+        return False
+    m = banner_re.search(blob)
+    if not m:
+        log("banner check: no U-Boot banner string found in the built binary", "WARN")
+        return False
+    expected = m.group(0).decode()
+
+    log_path = REPO / "tmp" / "logs" / "unvr-console.log"
+    try:
+        tail = log_path.read_bytes()[-200_000:]
+    except OSError as e:
+        log(f"banner check: can't read console log: {e}", "WARN")
+        return False
+    seen = [mm.group(0).decode() for mm in banner_re.finditer(tail)]
+    if not seen:
+        log("banner check: no U-Boot banner seen on the console yet", "WARN")
+        return False
+    actual = seen[-1]
+    if actual == expected:
+        log(f"banner check OK: {actual}")
+        return True
+    log(
+        f"BANNER MISMATCH: box printed {actual!r}, built binary is {expected!r}",
+        "ERROR",
+    )
+    log(
+        "this means the box booted a DIFFERENT build than the one just staged - stop",
+        "ERROR",
+    )
+    return False
 
 
 @command(

@@ -16,8 +16,8 @@ Supports:
 
 Serves and accepts only inside --root. A filename escaping it is refused.
 
-Run: ./scripts/tftpd.py --root images/tftp
-     ./scripts/tftpd.py --root images/tftp --once     # exit after one transfer
+Run: ./scripts/tftpd.py                  # serves tmp/tftp (the one canonical root, #119)
+     ./scripts/tftpd.py --once           # exit after one transfer
 """
 
 from __future__ import annotations
@@ -30,7 +30,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from _repo import LOGS, REPO, rel
+from _repo import LOGS, REPO, TFTP_ROOT, rel
 
 RRQ, WRQ, DATA, ACK, ERROR, OACK = 1, 2, 3, 4, 5, 6
 
@@ -198,7 +198,11 @@ def main() -> int:
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
     )
     ap.add_argument(
-        "--root", default="images/tftp", help="directory to serve/accept into"
+        "--root",
+        default=str(TFTP_ROOT.relative_to(REPO)),
+        help="directory to serve/accept into (#119: the ONE canonical tftp "
+        "scratch root, from _repo.TFTP_ROOT - don't override unless you "
+        "know a specific reason to serve elsewhere)",
     )
     ap.add_argument("--port", type=int, default=DEFAULT_PORT)
     ap.add_argument("--once", action="store_true", help="exit after one transfer")

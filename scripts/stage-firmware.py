@@ -27,12 +27,11 @@ import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from _repo import REPO
+from _repo import REPO, TFTP_ROOT
 
 LOGS = REPO / "tmp" / "logs"
 LOG = LOGS / "stage-firmware.log"
 SOURCES = REPO / "sources"
-TFTP_ROOT = REPO / "images" / "tftp"
 SOCK = Path("/run/user/1000/tio-unvr.sock")
 TFTP_PORT = 69
 
@@ -152,12 +151,30 @@ def host_ip() -> tuple[str, str]:
     return m.group(1), dev
 
 
-def ensure_tftpd():
+def _tftp_port_bound() -> bool:
     r = subprocess.run(
-        ["ss", "-lun", "sport = :%d" % TFTP_PORT], capture_output=True, text=True
+        ["ss", "-lun", f"sport = :{TFTP_PORT}"],
+        capture_output=True,
+        text=True,
+        check=False,
     )
-    if "UNCONN" in r.stdout:
-        return
+    return "UNCONN" in r.stdout
+
+
+def ensure_tftpd():
+    if _tftp_port_bound():
+        # #119: never silently reuse - a process bound here from an earlier,
+        # possibly-differently-rooted invocation would serve stale content.
+        log("  killing stale process on tftp port (#119 - never reuse)")
+        subprocess.run(
+            ["sudo", "fuser", "-k", f"{TFTP_PORT}/udp"],
+            capture_output=True,
+            check=False,
+        )
+        for _ in range(20):
+            if not _tftp_port_bound():
+                break
+            time.sleep(0.05)
     log("  starting tftpd")
     TFTP_ROOT.mkdir(parents=True, exist_ok=True)
     subprocess.Popen(
@@ -165,7 +182,7 @@ def ensure_tftpd():
             sys.executable,
             str(REPO / "scripts" / "tftpd.py"),
             "--root",
-            "images/tftp",
+            str(TFTP_ROOT.relative_to(REPO)),
             "--port",
             str(TFTP_PORT),
         ],
@@ -175,10 +192,7 @@ def ensure_tftpd():
         start_new_session=True,
     )
     for _ in range(40):
-        r = subprocess.run(
-            ["ss", "-lun", "sport = :%d" % TFTP_PORT], capture_output=True, text=True
-        )
-        if "UNCONN" in r.stdout:
+        if _tftp_port_bound():
             return
         time.sleep(0.05)
     sys.exit("tftpd did not bind")

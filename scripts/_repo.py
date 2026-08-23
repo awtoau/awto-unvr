@@ -50,6 +50,10 @@ LOGS = TMP / "logs"
 SOURCES = REPO / "sources"
 IMAGES = REPO / "images"
 DOCS = REPO / "docs"
+# The ONE tftp scratch root every script must use (#119: images/tftp and
+# tmp/tftp used to be two independently-hardcoded paths; a tftpd left
+# running against the stale one silently served a 4-day-old U-Boot build).
+TFTP_ROOT = TMP / "tftp"
 
 
 def log_path(name: str) -> Path:
