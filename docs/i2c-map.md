@@ -45,9 +45,10 @@ AL-324 SoC
   third `@0x29` is the 6-bay **UDM-Pro's** second bay-expander; on 4-bay ea16 it is
   **unpopulated** ("pca953x 0-0029: failed reading register"). Photos `20260816_232614`
   (UB1), `_231415` (U10).
-- **0x21** = bay control: pwren lines 0-3 (gpio-hog output-high), presence 4-7, fault LEDs 12-15.
-  A `regulator-fixed` per-bay rework is proposed (#104, WIP on branch `prep-hdd-regulator-fix`,
-  untested) but not yet adopted - this describes the current gpio-hog state.
+- **0x21** = bay control: pwren lines 0-3, presence 4-7, fault LEDs 12-15. pwren is now
+  4× `regulator-fixed` nodes (per bay) instead of a gpio-hog, giving AHCI a real probe-order
+  dependency via `fw_devlink` (#104) - landed in the DTS but **not yet hardware-tested**
+  (no boot-with-drives verification run yet).
 - **0x20** = straps + `sfp_1g` LED, pin 2, ACTIVE_HIGH (per live stock board-cfg capture).
   Chip/pin/polarity confirmed correct; pin still produces no visible light under direct
   GPIO test (#98) - possible hardware population/wiring issue, not a software fix.
