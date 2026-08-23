@@ -1919,7 +1919,7 @@ int al_eth_mac_config(struct al_hal_eth_adapter *adapter, enum al_eth_mac_mode m
 		return -EPERM;
 	}
 	adapter->mac_mode = mode;
-	al_info("configured MAC to %s mode:\n", al_eth_mac_mode_str(mode));
+	al_info("configured MAC to %s mode\n", al_eth_mac_mode_str(mode));
 
 	return 0;
 }
