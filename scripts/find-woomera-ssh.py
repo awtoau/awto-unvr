@@ -55,6 +55,7 @@ def ping(ip: str) -> bool:
         subprocess.run(
             ["ping", "-c", "1", "-W", str(int(PROBE_TIMEOUT_S)), ip],
             capture_output=True,
+            check=False,
         ).returncode
         == 0
     )
@@ -62,7 +63,7 @@ def ping(ip: str) -> bool:
 
 def mac_of(ip: str) -> str | None:
     out = subprocess.run(
-        ["ip", "neigh", "show", ip], capture_output=True, text=True
+        ["ip", "neigh", "show", ip], capture_output=True, text=True, check=False
     ).stdout
     m = re.search(r"lladdr ([0-9a-f:]{17})", out)
     return m.group(1).lower() if m else None

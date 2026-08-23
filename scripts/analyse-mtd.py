@@ -134,6 +134,7 @@ def decode_fdt(blob: bytes, outdir: Path, stem: str) -> None:
         ["dtc", "-I", "dtb", "-O", "dts", "-o", str(dts), str(dtb)],
         capture_output=True,
         text=True,
+        check=False,
     )
     if r.returncode == 0:
         n = len(dts.read_text().splitlines())

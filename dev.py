@@ -198,7 +198,9 @@ def _console_pid() -> int | None:
     on the machine - e.g. an unrelated tio on another project's serial device -
     and would falsely report our port as owned. Filter by our socket name in the
     process cmdline."""
-    p = subprocess.run(["pgrep", "-x", "tio"], capture_output=True, text=True)
+    p = subprocess.run(
+        ["pgrep", "-x", "tio"], capture_output=True, text=True, check=False
+    )
     if p.returncode == 0 and p.stdout.strip():
         for pid in p.stdout.split():
             try:
@@ -1104,7 +1106,11 @@ def cmd_selftest(_extra: list[str]) -> int:
             failures.append(label)
 
     out = subprocess.run(
-        [sys.executable, __file__, "describe"], capture_output=True, text=True, cwd=REPO
+        [sys.executable, __file__, "describe"],
+        capture_output=True,
+        text=True,
+        cwd=REPO,
+        check=False,
     )
     check("describe exits 0", out.returncode == 0)
     try:
@@ -1119,7 +1125,11 @@ def cmd_selftest(_extra: list[str]) -> int:
         check("describe emits valid JSON", False)
 
     h = subprocess.run(
-        [sys.executable, __file__, "--help"], capture_output=True, text=True, cwd=REPO
+        [sys.executable, __file__, "--help"],
+        capture_output=True,
+        text=True,
+        cwd=REPO,
+        check=False,
     )
     check("--help exits 2 (usage)", h.returncode == 2)
     check("--help lists commands", all(c in h.stdout for c in COMMANDS))
@@ -1129,6 +1139,7 @@ def cmd_selftest(_extra: list[str]) -> int:
         capture_output=True,
         text=True,
         cwd=REPO,
+        check=False,
     )
     check("unknown command exits 2", u.returncode == 2)
 

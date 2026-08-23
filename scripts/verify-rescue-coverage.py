@@ -76,7 +76,9 @@ def subtract(
 
 def ext4_allocated(img: Path) -> tuple[list[tuple[int, int]], int, int]:
     """Return (allocated byte ranges, block_size, block_count)."""
-    p = subprocess.run(["dumpe2fs", str(img)], capture_output=True, text=True)
+    p = subprocess.run(
+        ["dumpe2fs", str(img)], capture_output=True, text=True, check=False
+    )
     if p.returncode != 0 and not p.stdout:
         sys.exit(f"dumpe2fs failed: {p.stderr.strip()}")
     text = p.stdout

@@ -48,7 +48,10 @@ def log(m):
 
 def curl(url, dest):
     return (
-        subprocess.run(["curl", "-fL", "-C", "-", "-o", str(dest), url]).returncode == 0
+        subprocess.run(
+            ["curl", "-fL", "-C", "-", "-o", str(dest), url], check=False
+        ).returncode
+        == 0
     )
 
 

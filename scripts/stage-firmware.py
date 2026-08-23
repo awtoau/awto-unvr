@@ -143,7 +143,7 @@ def host_ip() -> tuple[str, str]:
         sys.exit(f"no routable IPv4 on the device:\n{out}")
     dev = cands[0]
     p = subprocess.run(
-        ["ip", "-o", "route", "get", dev], capture_output=True, text=True
+        ["ip", "-o", "route", "get", dev], capture_output=True, text=True, check=False
     )
     m = re.search(r"\bsrc (\d+\.\d+\.\d+\.\d+)", p.stdout)
     if not m:

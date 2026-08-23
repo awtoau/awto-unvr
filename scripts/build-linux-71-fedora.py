@@ -267,7 +267,7 @@ def check_dts_shared():
     chk = os.path.join(
         os.path.dirname(os.path.abspath(__file__)), "check-dts-shared.py"
     )
-    if subprocess.run([sys.executable, chk]).returncode:
+    if subprocess.run([sys.executable, chk], check=False).returncode:
         log("ABORT: DTS shared-fact check failed")
         sys.exit(1)
 

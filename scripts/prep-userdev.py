@@ -61,6 +61,7 @@ def block_devices():
         ["lsblk", "-J", "-b", "-d", "-o", "NAME,SIZE,TRAN,MODEL,SERIAL,TYPE"],
         capture_output=True,
         text=True,
+        check=False,
     )
     if p.returncode != 0:
         sys.exit(f"lsblk failed: {p.stderr}")
@@ -140,7 +141,9 @@ def main():
         mkfs + (["-L", a.label] if a.label else []) + [dev],
     ):
         log("run: " + " ".join(cmd))
-        p = subprocess.run(["sudo", "-n"] + cmd, capture_output=True, text=True)
+        p = subprocess.run(
+            ["sudo", "-n"] + cmd, capture_output=True, text=True, check=False
+        )
         if p.stdout.strip():
             log(p.stdout.strip())
         if p.returncode != 0:
@@ -148,7 +151,10 @@ def main():
             sys.exit(f"failed: {' '.join(cmd)}")
 
     p = subprocess.run(
-        ["lsblk", "-o", "NAME,SIZE,FSTYPE,LABEL", dev], capture_output=True, text=True
+        ["lsblk", "-o", "NAME,SIZE,FSTYPE,LABEL", dev],
+        capture_output=True,
+        text=True,
+        check=False,
     )
     log("result:\n" + p.stdout.strip())
     log("done - fit this stick in the UNVR and power on", "INFO")

@@ -57,6 +57,7 @@ def scan(path):
             capture_output=True,
             text=True,
             timeout=30,
+            check=False,
         ).stdout
     except Exception:
         return {}

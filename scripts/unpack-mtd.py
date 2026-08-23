@@ -42,7 +42,9 @@ def log(msg, level="INFO"):
 
 
 def identify(p: Path) -> str:
-    r = subprocess.run(["file", "-b", str(p)], capture_output=True, text=True)
+    r = subprocess.run(
+        ["file", "-b", str(p)], capture_output=True, text=True, check=False
+    )
     return r.stdout.strip()
 
 
@@ -57,6 +59,7 @@ def unpack_ext4(img: Path, dest: Path) -> bool:
         ["sudo", "-n", "mount", "-o", "ro,noload,loop", str(img), str(mnt)],
         capture_output=True,
         text=True,
+        check=False,
     )
     if r.returncode != 0:
         log(f"  mount failed: {r.stderr.strip()}", "ERROR")
@@ -67,6 +70,7 @@ def unpack_ext4(img: Path, dest: Path) -> bool:
             ["sudo", "-n", "cp", "-a", f"{mnt}/.", str(dest)],
             capture_output=True,
             text=True,
+            check=False,
         )
         if r.returncode != 0:
             log(f"  copy failed: {r.stderr.strip()}", "ERROR")
@@ -75,10 +79,14 @@ def unpack_ext4(img: Path, dest: Path) -> bool:
             ["sudo", "-n", "chown", "-R", f"{os_uid()}:{os_gid()}", str(dest)],
             capture_output=True,
             text=True,
+            check=False,
         )
     finally:
         subprocess.run(
-            ["sudo", "-n", "umount", str(mnt)], capture_output=True, text=True
+            ["sudo", "-n", "umount", str(mnt)],
+            capture_output=True,
+            text=True,
+            check=False,
         )
         mnt.rmdir()
     n = sum(1 for _ in dest.rglob("*"))
@@ -102,7 +110,10 @@ def unpack_squashfs(img: Path, dest: Path) -> bool:
     if dest.exists():
         shutil.rmtree(dest)
     r = subprocess.run(
-        ["unsquashfs", "-d", str(dest), str(img)], capture_output=True, text=True
+        ["unsquashfs", "-d", str(dest), str(img)],
+        capture_output=True,
+        text=True,
+        check=False,
     )
     if r.returncode != 0:
         log(f"  unsquashfs failed: {r.stderr.strip()[:200]}", "ERROR")

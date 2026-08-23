@@ -53,7 +53,11 @@ def run(cmd, check=True):
     log(f"$ {' '.join(str(c) for c in cmd)}")
     with LOGFILE.open("a") as fh:
         proc = subprocess.run(
-            cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            check=False,
         )
         if proc.stdout:
             sys.stdout.write(proc.stdout)
@@ -138,7 +142,7 @@ def manifest():
     digest = sha256(IMG)
     stat = IMG.stat()
     rescued = subprocess.run(
-        ["ddrescuelog", "-t", str(MAP)], capture_output=True, text=True
+        ["ddrescuelog", "-t", str(MAP)], capture_output=True, text=True, check=False
     ).stdout
 
     doc = f"""# UNVR boot USB image

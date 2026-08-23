@@ -140,7 +140,7 @@ def fetch():
         str(DEST),
         URL,
     ]
-    proc = subprocess.run(cmd)
+    proc = subprocess.run(cmd, check=False)
     if proc.returncode != 0:
         log(f"curl exit {proc.returncode}")
         if DEST.exists():

@@ -84,7 +84,10 @@ def broadcast_addrs():
     addrs = ["255.255.255.255"]
     try:
         p = subprocess.run(
-            ["ip", "-4", "-brief", "addr", "show"], capture_output=True, text=True
+            ["ip", "-4", "-brief", "addr", "show"],
+            capture_output=True,
+            text=True,
+            check=False,
         )
         for line in p.stdout.splitlines():
             for tok in line.split():
@@ -148,6 +151,7 @@ def mdns():
             capture_output=True,
             text=True,
             timeout=15,
+            check=False,
         )
     except Exception as e:
         log(f"avahi-browse unavailable: {e}")
@@ -171,6 +175,7 @@ def sweep(subnet):
             capture_output=True,
             text=True,
             timeout=600,
+            check=False,
         )
     except Exception as e:
         log(f"nmap failed: {e}")
@@ -197,7 +202,10 @@ if __name__ == "__main__":
         sub = a.subnet
         if not sub:
             p = subprocess.run(
-                ["ip", "-4", "-brief", "addr", "show"], capture_output=True, text=True
+                ["ip", "-4", "-brief", "addr", "show"],
+                capture_output=True,
+                text=True,
+                check=False,
             )
             for line in p.stdout.splitlines():
                 for tok in line.split():

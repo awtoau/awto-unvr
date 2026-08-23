@@ -120,6 +120,7 @@ def main() -> int:
         ["podman", "rm", "-f", CTR],
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
+        check=False,  # ok if CTR doesn't exist yet
     )
     run(
         "podman",
@@ -151,6 +152,7 @@ def main() -> int:
                 ["podman", "rm", "-f", CTR],
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
+                check=False,  # best-effort cleanup
             )
 
     sha = run("sha256sum", str(out), capture_output=True, text=True).stdout.split()[0]

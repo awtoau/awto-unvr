@@ -69,7 +69,9 @@ def main() -> int:
     # Timeout: 435 KB ARM32 auto-analysis + decompile-all. Expected worst case
     # ~15 min on this box; 1.25x -> 1200 s. On expiry Ghidra is killed and we log.
     try:
-        r = subprocess.run(cmd, capture_output=True, text=True, timeout=1200)
+        r = subprocess.run(
+            cmd, capture_output=True, text=True, timeout=1200, check=False
+        )
     except subprocess.TimeoutExpired:
         logging.error("TIMEOUT after 1200 s analysing %s", a.blob)
         return 2

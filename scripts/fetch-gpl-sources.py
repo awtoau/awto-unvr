@@ -83,7 +83,7 @@ def free_gb(path="/mnt/2tb") -> float:
 
 def curl(url: str, dest: Path) -> bool:
     # -C - resumes a partial file; -f fails on HTTP error; -L follows redirects.
-    r = subprocess.run(["curl", "-fL", "-C", "-", "-o", str(dest), url])
+    r = subprocess.run(["curl", "-fL", "-C", "-", "-o", str(dest), url], check=False)
     return r.returncode == 0
 
 

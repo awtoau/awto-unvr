@@ -141,7 +141,9 @@ def main() -> int:
 
     logging.info("RUN: %s", " ".join(cmd))
     try:
-        r = subprocess.run(cmd, capture_output=True, text=True, timeout=a.timeout)
+        r = subprocess.run(
+            cmd, capture_output=True, text=True, timeout=a.timeout, check=False
+        )
     except subprocess.TimeoutExpired:
         logging.error("TIMEOUT after %d s analysing %s (killed)", a.timeout, a.blob)
         return 2

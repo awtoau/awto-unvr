@@ -61,6 +61,7 @@ def dts_of(path: Path) -> str:
         ["dtc", "-I", "dtb", "-O", "dts", "-q", str(path)],
         capture_output=True,
         text=True,
+        check=False,
     )
     return r.stdout
 

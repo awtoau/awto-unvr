@@ -36,6 +36,7 @@ def _resolve() -> Path:
             capture_output=True,
             text=True,
             timeout=5,
+            check=False,
         )
         if out.returncode == 0 and out.stdout.strip():
             return Path(out.stdout.strip()).resolve()

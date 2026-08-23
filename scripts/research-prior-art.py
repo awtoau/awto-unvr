@@ -41,7 +41,7 @@ def gh(path, jq=None, paginate=False):
         cmd.append("--paginate")
     if jq:
         cmd += ["--jq", jq]
-    p = subprocess.run(cmd, capture_output=True, text=True)
+    p = subprocess.run(cmd, capture_output=True, text=True, check=False)
     if p.returncode != 0:
         return None
     out = p.stdout.strip()

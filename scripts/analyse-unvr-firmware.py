@@ -278,6 +278,7 @@ if __name__ == "__main__":
                                 cwd=d,
                                 capture_output=True,
                                 text=True,
+                                check=False,
                             )
                             log(
                                 f"cpio extract -> {d}: {r.stderr.strip().splitlines()[-1] if r.stderr else 'ok'}"

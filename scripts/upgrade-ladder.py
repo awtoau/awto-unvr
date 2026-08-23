@@ -215,7 +215,10 @@ def api_rows() -> list[dict]:
         return json.loads(cache.read_text())["_embedded"]["firmware"]
     SOURCES.mkdir(parents=True, exist_ok=True)
     p = subprocess.run(
-        ["curl", "-fsSL", "--max-time", "60", API], capture_output=True, text=True
+        ["curl", "-fsSL", "--max-time", "60", API],
+        capture_output=True,
+        text=True,
+        check=False,
     )
     if p.returncode != 0:
         sys.exit(f"could not fetch the release list: {p.stderr.strip()}")
@@ -264,7 +267,8 @@ def fetch(row: dict) -> Path:
             "-o",
             str(dest),
             url,
-        ]
+        ],
+        check=False,
     )
     if p.returncode != 0:
         dest.unlink(missing_ok=True)
@@ -297,13 +301,17 @@ def backup(tag: str) -> bool:
             tag,
         ],
         cwd=REPO,
+        check=False,
     )
     return p.returncode == 0
 
 
 def ensure_tftpd() -> subprocess.Popen | None:
     r = subprocess.run(
-        ["ss", "-lun", f"sport = :{TFTP_PORT}"], capture_output=True, text=True
+        ["ss", "-lun", f"sport = :{TFTP_PORT}"],
+        capture_output=True,
+        text=True,
+        check=False,
     )
     if "UNCONN" in r.stdout:
         return None  # already listening
@@ -325,7 +333,10 @@ def ensure_tftpd() -> subprocess.Popen | None:
     )
     for _ in range(40):
         r = subprocess.run(
-            ["ss", "-lun", f"sport = :{TFTP_PORT}"], capture_output=True, text=True
+            ["ss", "-lun", f"sport = :{TFTP_PORT}"],
+            capture_output=True,
+            text=True,
+            check=False,
         )
         if "UNCONN" in r.stdout:
             return proc
@@ -344,7 +355,7 @@ def host_ip() -> str:
         sys.exit(f"no routable IPv4 on the device:\n{out}")
     dev = cands[0]
     p = subprocess.run(
-        ["ip", "-o", "route", "get", dev], capture_output=True, text=True
+        ["ip", "-o", "route", "get", dev], capture_output=True, text=True, check=False
     )
     m = re.search(r"\bsrc (\d+\.\d+\.\d+\.\d+)", p.stdout)
     if not m:

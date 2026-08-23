@@ -34,7 +34,7 @@ SIZE_MIN_BYTES = 6_000_000_000_000  # >6 TB => the 8 TB platters, not the SSD/US
 
 
 def sh(*cmd: str) -> subprocess.CompletedProcess:
-    return subprocess.run(cmd, capture_output=True, text=True)
+    return subprocess.run(cmd, capture_output=True, text=True, check=False)
 
 
 def read(path: str) -> str:
