@@ -90,7 +90,7 @@ def main():
     con.login(s)
     rc, base = con.sh(s, "uname -r; grep -c . /proc/uptime")
     log(f"baseline (old kernel): {base}")
-    log("sending reboot — watching console (cap %ds)..." % BOOT_CAP)
+    log(f"sending reboot — watching console (cap {BOOT_CAP}s)...")
     con.sh(s, "sync")
     s.sendall(b"reboot\r")
 

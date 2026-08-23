@@ -61,7 +61,7 @@ def cstr(fileoff, maxlen=64):
 
 
 def rd_ptrs(fileoff, count):
-    return list(struct.unpack_from("<%dQ" % count, data, fileoff))
+    return list(struct.unpack_from("<{}Q".format(count), data, fileoff))
 
 
 def annotate(v):
@@ -69,17 +69,17 @@ def annotate(v):
         return "NULL"
     f = v2f(v)
     if f is None:
-        return "0x%x" % v
+        return "0x{:x}".format(v)
     if in_rodata(v):
         s = cstr(f)
         if s is not None and all(32 <= ord(c) < 127 for c in s) and len(s) >= 1:
-            return "0x%x -> rodata str %r" % (v, s)
-        return "0x%x -> rodata(bin)" % v
+            return "0x{:x} -> rodata str {!r}".format(v, s)
+        return "0x{:x} -> rodata(bin)".format(v)
     if in_dro(v):
-        return "0x%x -> DRO(file 0x%x)" % (v, f)
+        return "0x{:x} -> DRO(file 0x{:x})".format(v, f)
     if in_data(v):
-        return "0x%x -> DATA(file 0x%x)" % (v, f)
-    return "0x%x" % v
+        return "0x{:x} -> DATA(file 0x{:x})".format(v, f)
+    return "0x{:x}".format(v)
 
 
 def main():
@@ -93,13 +93,14 @@ def main():
             v = struct.unpack_from("<Q", data, fo)[0]
             if in_rodata(v):
                 print(
-                    "DRO file 0x%05x vaddr 0x%05x : %s"
-                    % (fo, DRO_V + i * 8, annotate(v))
+                    "DRO file 0x{:05x} vaddr 0x{:05x} : {}".format(
+                        fo, DRO_V + i * 8, annotate(v)
+                    )
                 )
     elif cmd == "findref":
         # find pointer array entries (anywhere in file, 8-aligned) whose value == target vaddr
         target = int(sys.argv[2], 0)
-        print("== searching whole file for LE64 == 0x%x ==" % target)
+        print("== searching whole file for LE64 == 0x{:x} ==".format(target))
         off = 0
         while True:
             idx = data.find(struct.pack("<Q", target), off)
@@ -114,7 +115,7 @@ def main():
                     else ("data" if DAT_F <= idx else "?")
                 )
             )
-            print("  at file 0x%05x (%s)" % (idx, sect))
+            print("  at file 0x{:05x} ({})".format(idx, sect))
             off = idx + 1
     elif cmd == "struct":
         # dump a run of pointers starting at a file offset
@@ -123,8 +124,7 @@ def main():
         for i in range(cnt):
             v = struct.unpack_from("<Q", data, fo + i * 8)[0]
             print(
-                "  [%2d] file 0x%05x vaddr 0x%05x = %s"
-                % (
+                "  [{:2d}] file 0x{:05x} vaddr 0x{:05x} = {}".format(
                     i,
                     fo + i * 8,
                     (fo + i * 8)
@@ -139,7 +139,7 @@ def main():
 
         for i in range(0, cnt, 16):
             chunk = data[fo + i : fo + i + 16]
-            print("0x%05x  %s" % (fo + i, binascii.hexlify(chunk, " ").decode()))
+            print("0x{:05x}  {}".format(fo + i, binascii.hexlify(chunk, " ").decode()))
 
 
 if __name__ == "__main__":

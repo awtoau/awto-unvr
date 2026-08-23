@@ -303,7 +303,7 @@ def backup(tag: str) -> bool:
 
 def ensure_tftpd() -> subprocess.Popen | None:
     r = subprocess.run(
-        ["ss", "-lun", "sport = :%d" % TFTP_PORT], capture_output=True, text=True
+        ["ss", "-lun", f"sport = :{TFTP_PORT}"], capture_output=True, text=True
     )
     if "UNCONN" in r.stdout:
         return None  # already listening
@@ -325,7 +325,7 @@ def ensure_tftpd() -> subprocess.Popen | None:
     )
     for _ in range(40):
         r = subprocess.run(
-            ["ss", "-lun", "sport = :%d" % TFTP_PORT], capture_output=True, text=True
+            ["ss", "-lun", f"sport = :{TFTP_PORT}"], capture_output=True, text=True
         )
         if "UNCONN" in r.stdout:
             return proc

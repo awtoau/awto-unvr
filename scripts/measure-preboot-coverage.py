@@ -81,7 +81,7 @@ def main() -> int:
         logging.info("  0x%08x len=%-5d cf=%d", a, l, s)
     # emit a bare address list for a disassemble script
     (REPO / "tmp" / "code-gaps.txt").write_text(
-        "\n".join("0x%08x" % a for a, _, _ in code) + "\n"
+        "\n".join("0x{:08x}".format(a) for a, _, _ in code) + "\n"
     )
     return 0
 
