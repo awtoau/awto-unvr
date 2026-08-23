@@ -52,7 +52,7 @@ def main() -> int:
     log.info("   %d entries", count)
     for n in range(count):
         e = a.toc + 16 + n * 0x20
-        oid, otype = struct.unpack_from("<2I", b, e)
+        _oid, otype = struct.unpack_from("<2I", b, e)
         name = b[e + 8 : e + 20].split(b"\0")[0].decode("latin1")
         ooff, osize = struct.unpack_from("<2I", b, e + 20)
         hdr = ""

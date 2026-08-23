@@ -447,11 +447,6 @@ def hop(row: dict, ver: str) -> bool:
     while time.monotonic() < end:
         time.sleep(POLL)
         out = console(f"stat -c %s {STAGE_DIR}/fw-image.bin 2>/dev/null", wait=3.0)
-        m = re.search(
-            r"^(\d+)$",
-            out.strip().splitlines()[-2] if len(out.strip().splitlines()) > 1 else "",
-            re.MULTILINE,
-        )
         sizes = [int(x) for x in re.findall(r"\b(\d{6,})\b", out)]
         if sizes and max(sizes) >= want:
             log(f"  pushed {max(sizes)} B")

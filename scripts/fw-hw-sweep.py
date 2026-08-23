@@ -63,11 +63,6 @@ def scan(path):
         return {}
     hits = {}
     for label, pat in PATTERNS.items():
-        found = sorted(
-            set(re.findall(pat, out))
-            if "(" in pat
-            else set(m.group(0) for m in re.finditer(pat, out))
-        )
         # collect full matching lines for context
         lines = [ln for ln in out.splitlines() if re.search(pat, ln)]
         if lines:

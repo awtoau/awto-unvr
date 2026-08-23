@@ -70,7 +70,6 @@ def walk(data):
     while off < len(data):
         magic = data[off : off + 4]
         if magic in TERMINATORS:
-            size = TERMINATORS[magic]
             if magic == b"END.":
                 stored = struct.unpack_from(">I", data, off + 4)[0]
                 calc = zlib.crc32(data[:off]) & 0xFFFFFFFF
@@ -130,7 +129,7 @@ def walk(data):
 
 def unpack_uimage(blob):
     """Strip the 64-byte legacy uImage header, return (info, payload)."""
-    magic, hcrc, tstamp, size, load, ep, dcrc, os_, arch, typ, comp = (
+    magic, _hcrc, tstamp, size, load, ep, _dcrc, _os, arch, _typ, comp = (
         struct.unpack_from(">7I4B", blob, 0)
     )
     if magic != UIMAGE_MAGIC:

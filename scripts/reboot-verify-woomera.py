@@ -88,7 +88,7 @@ def verify(s):
 def main():
     s = con.connect()
     con.login(s)
-    rc, base = con.sh(s, "uname -r; grep -c . /proc/uptime")
+    _rc, base = con.sh(s, "uname -r; grep -c . /proc/uptime")
     log(f"baseline (old kernel): {base}")
     log(f"sending reboot — watching console (cap {BOOT_CAP}s)...")
     con.sh(s, "sync")
