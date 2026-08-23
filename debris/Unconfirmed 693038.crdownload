@@ -1,0 +1,752 @@
+s6-rc: info: service s6rc-oneshot-runner: starting
+s6-rc: info: service s6rc-oneshot-runner successfully started
+s6-rc: info: service fix-attrs: starting
+s6-rc: info: service fix-attrs successfully started
+s6-rc: info: service legacy-cont-init: starting
+s6-rc: info: service legacy-cont-init successfully started
+s6-rc: info: service legacy-services: starting
+services-up: info: copying legacy longrun home-assistant (no readiness notification)
+s6-rc: info: service legacy-services successfully started
+2026-08-19 19:26:32.571 ERROR (MainThread) [homeassistant] Error doing job: ClientConnectionResetError exception in shielded future (task: None)
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.14/site-packages/aiohttp/_websocket/writer.py", line 239, in _send_compressed_frame_async_locked
+    self._write_websocket_frame(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        (
+        ^
+    ...<8 lines>...
+        0x40,
+        ^^^^^
+    )
+    ^
+  File "/usr/local/lib/python3.14/site-packages/aiohttp/_websocket/writer.py", line 150, in _write_websocket_frame
+    raise ClientConnectionResetError("Cannot write to closing transport")
+aiohttp.client_exceptions.ClientConnectionResetError: Cannot write to closing transport
+2026-08-19 19:26:37.831 ERROR (MainThread) [homeassistant.components.automation] Automation with alias 'Office lights' failed to setup triggers and has been disabled: Unknown device '0c421dccb6fab8dea34d6f4420219129'
+2026-08-19 19:26:40.715 ERROR (MainThread) [homeassistant.components.esphome.coordinator] Error requesting ESPHome Dashboard data: Cannot connect to host 127.0.0.1:63107 ssl:default [Connect call failed ('127.0.0.1', 63107)]
+2026-08-19 19:26:40.716 ERROR (MainThread) [homeassistant.components.esphome.dashboard] Dashboard unavailable; skipping reauth: Cannot connect to host 127.0.0.1:63107 ssl:default [Connect call failed ('127.0.0.1', 63107)]
+2026-08-19 19:26:41.181 ERROR (MainThread) [homeassistant.components.mqtt.client] Failed to connect to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:26:41.185 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:26:54.907 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:27:08.955 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:27:22.705 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:27:36.456 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:27:50.205 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:28:03.955 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:28:17.705 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:28:31.205 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:28:43.746 ERROR (MainThread) [homeassistant.components.hassio.handler] Timeout on /addons/a0d7b954_zwavejs2mqtt/uninstall request
+2026-08-19 19:28:43.746 ERROR (MainThread) [homeassistant.components.hassio] Failed to to call /addons/a0d7b954_zwavejs2mqtt/uninstall - 
+2026-08-19 19:28:45.205 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:28:50.398 ERROR (MainThread) [homeassistant.components.hassio] Failed to to call /addons/a0d7b954_zwavejs2mqtt/stop - Another job is running for job group app_a0d7b954_zwavejs2mqtt
+2026-08-19 19:28:50.583 ERROR (MainThread) [homeassistant.components.hassio] Failed to to call /addons/a0d7b954_zwavejs2mqtt/uninstall - Another job is running for job group app_a0d7b954_zwavejs2mqtt
+2026-08-19 19:28:58.954 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:29:12.954 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:29:26.455 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:29:40.455 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:29:47.946 ERROR (MainThread) [homeassistant.components.hassio] Failed to to call /addons/core_samba/start - App core_samba has invalid options: Missing required option 'password' in Samba share (core_samba). Got {'username': 'homeassistant', 'password': None, 'workgroup': 'WORKGROUP', 'enabled_shares': ['local_apps', 'app_configs', 'backup', 'config', 'media', 'share', 'ssl'], 'compatibility_mode': False, 'apple_compatibility_mode': True, 'netbios': True, 'local_master': True, 'network_discovery': True, 'server_signing': 'default', 'veto_files': ['._*', '.DS_Store', 'Thumbs.db', 'icon?', '.Trashes'], 'allow_hosts': ['10.0.0.0/8', '172.16.0.0/12', '192.168.0.0/16', '169.254.0.0/16', 'fe80::/10', 'fc00...
+2026-08-19 19:29:48.168 ERROR (MainThread) [homeassistant.components.hassio] Failed to to call /addons/core_mariadb/start - App core_mariadb has invalid options: Missing required option 'password' in MariaDB (core_mariadb). Got {'databases': ['homeassistant'], 'logins': [{'password': None, 'username': 'homeassistant'}], 'rights': [{'database': 'homeassistant', 'username': 'homeassistant'}]}
+2026-08-19 19:29:53.955 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:30:07.705 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:30:21.197 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:30:35.205 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:30:48.955 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:31:02.705 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:31:16.456 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:31:30.205 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:31:44.006 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:31:57.761 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:32:11.705 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:32:25.456 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:32:39.454 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:32:52.955 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:33:06.456 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:33:20.205 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:33:34.016 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:33:47.706 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:34:01.455 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:34:15.205 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:34:28.704 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:34:42.054 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:34:55.955 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:35:09.705 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:35:23.148 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:35:37.205 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:35:50.487 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:36:04.205 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:36:17.858 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:36:31.955 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:36:45.955 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:36:59.955 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:37:13.705 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:37:27.705 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:37:41.705 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:37:55.067 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:38:08.955 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:38:22.954 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:38:36.706 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:38:50.455 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:39:04.047 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:39:17.956 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:39:31.955 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:39:45.455 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:39:59.455 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:40:13.204 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:40:27.205 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:40:41.205 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:40:54.705 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:41:08.455 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:41:22.455 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:41:35.955 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:41:49.705 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:42:03.704 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:42:17.272 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:42:31.037 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:42:44.705 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:42:58.455 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:43:11.955 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:43:25.955 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:43:39.705 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:43:53.705 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:44:07.705 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:44:21.455 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:44:35.069 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:44:48.955 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:45:02.455 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:45:16.455 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:45:30.205 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:45:44.080 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:45:57.455 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:46:11.205 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:46:25.205 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:46:38.955 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:46:52.955 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:47:06.705 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:47:20.205 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:47:33.705 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:47:47.705 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:48:01.455 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:48:15.205 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:48:28.955 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:48:42.954 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:48:56.456 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:49:10.205 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:49:24.098 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:49:37.705 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:49:51.476 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:50:05.205 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:50:18.830 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:50:32.705 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:50:46.455 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:51:00.038 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:51:13.705 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:51:27.705 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:51:41.705 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:51:55.705 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:52:09.704 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:52:23.205 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:52:36.705 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:52:50.455 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:53:04.206 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:53:17.955 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:53:31.705 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:53:45.259 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:53:58.705 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:54:12.704 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:54:26.456 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:54:40.455 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:54:54.206 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:55:07.705 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:55:21.704 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:55:35.206 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:55:48.920 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:56:02.705 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:56:16.456 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:56:30.205 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:56:43.955 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:56:57.705 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:57:11.705 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:57:25.205 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:57:38.955 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:57:52.465 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:58:06.205 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:58:19.955 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:58:33.955 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:58:47.705 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:59:01.705 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:59:15.455 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:59:29.205 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:59:43.204 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 19:59:56.706 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:00:10.404 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:00:24.082 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:00:37.705 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:00:51.705 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:01:05.307 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:01:18.955 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:01:32.601 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:01:46.455 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:02:00.256 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:02:14.165 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:02:27.706 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:02:41.313 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:02:55.191 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:03:09.205 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:03:22.926 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:03:36.455 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:03:50.205 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:04:04.177 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:04:17.955 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:04:31.705 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:04:45.455 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:04:58.954 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:05:12.454 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:05:26.455 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:05:39.955 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:05:53.705 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:06:07.705 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:06:21.705 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:06:35.205 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:06:48.705 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:07:02.705 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:07:16.455 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:07:30.205 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:07:44.006 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:07:57.705 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:08:11.451 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:08:25.205 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:08:38.955 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:08:52.955 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:09:06.408 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:09:19.955 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:09:33.705 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:09:47.538 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:10:01.205 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:10:15.205 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:10:29.205 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:10:43.204 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:10:56.954 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:11:10.491 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:11:24.205 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:11:38.205 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:11:52.205 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:12:06.204 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:12:19.955 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:12:33.955 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:12:47.637 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:13:01.204 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:13:15.204 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:13:29.204 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:13:43.204 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:13:56.956 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:14:10.580 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:14:24.227 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:14:37.955 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:14:51.704 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:15:05.455 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:15:18.986 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:15:32.955 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:15:46.706 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:16:00.434 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:16:14.205 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:16:27.955 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:16:41.705 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:16:55.263 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:17:09.205 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:17:22.921 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:17:36.527 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:17:49.955 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:18:03.955 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:18:17.955 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:18:31.955 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:18:45.706 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:18:59.454 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:19:13.454 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:19:27.455 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:19:41.455 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:19:55.266 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:20:09.205 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:20:23.205 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:20:36.706 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:20:50.455 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:21:04.267 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:21:17.956 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:21:31.705 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:21:45.455 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:21:59.205 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:22:12.704 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:22:26.706 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:22:40.455 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:22:54.181 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:23:07.955 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:23:21.705 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:23:35.455 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:23:49.205 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:24:02.853 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:24:16.205 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:24:30.205 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:24:44.204 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:24:57.955 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:25:11.764 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:25:25.455 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:25:39.205 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:25:52.955 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:26:06.706 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:26:20.455 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:26:34.205 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:26:47.744 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:27:01.705 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:27:15.455 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:27:29.204 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:27:42.989 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:27:56.706 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:28:10.455 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:28:24.305 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:28:38.206 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:28:51.955 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:29:05.705 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:29:19.012 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:29:32.705 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:29:46.455 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:29:59.955 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:30:13.955 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:30:27.455 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:30:41.232 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:30:55.023 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:31:08.955 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:31:22.455 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:31:36.455 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:31:50.455 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:32:04.205 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:32:17.731 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:32:31.204 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:32:44.955 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:32:58.820 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:33:12.704 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:33:26.455 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:33:40.455 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:33:54.340 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:34:07.752 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:34:21.455 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:34:35.205 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:34:49.111 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:35:03.205 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:35:16.705 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:35:30.455 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:35:44.158 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:35:57.705 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:36:11.455 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:36:25.287 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:36:39.205 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:36:52.955 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:37:06.455 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:37:19.830 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:37:33.704 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:37:47.705 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:38:01.705 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:38:15.455 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:38:29.205 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:38:43.204 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:38:56.708 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:39:10.455 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:39:24.372 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:39:37.955 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:39:51.955 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:40:05.705 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:40:19.454 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:40:33.033 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:40:46.706 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:41:00.454 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:41:14.384 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:41:28.206 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:41:42.205 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:41:55.955 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:42:09.524 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:42:23.145 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:42:36.705 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:42:50.705 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:43:04.455 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:43:11.747 ERROR (MainThread) [homeassistant.components.hassio.handler] Timeout on /addons/core_mosquitto/install request
+2026-08-19 20:43:11.747 ERROR (MainThread) [homeassistant.components.hassio] Failed to to call /addons/core_mosquitto/install - 
+2026-08-19 20:43:18.205 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:43:31.955 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:43:45.455 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:43:59.148 DEBUG (MainThread) [homeassistant.components.mqtt.client] Error re-connecting to MQTT server due to exception: [Errno -5] Name has no usable address
+2026-08-19 20:44:09.150 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: connection opened 22
+2026-08-19 20:44:09.150 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: Starting client misc loop
+2026-08-19 20:44:09.151 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:44:09.151 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:44:09.510 ERROR (MainThread) [homeassistant.components.mqtt.client] Unable to connect to the MQTT broker: Not authorized
+2026-08-19 20:44:09.510 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: connection closed 22
+2026-08-19 20:44:09.511 WARNING (MainThread) [homeassistant.components.mqtt.client] Error returned from MQTT server: The connection was refused.
+2026-08-19 20:44:09.511 INFO (MainThread) [homeassistant.components.mqtt.config_flow] Executing autorecovery Mosquitto Mqtt Broker add-on secrets
+2026-08-19 20:44:09.585 INFO (MainThread) [homeassistant.components.mqtt] The MQTT protocol version was successfully updated to version 5
+2026-08-19 20:44:09.590 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: connection opened 22
+2026-08-19 20:44:09.590 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: Starting client misc loop
+2026-08-19 20:44:09.590 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:44:09.591 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:44:09.592 DEBUG (MainThread) [homeassistant.components.mqtt.client] Connected to MQTT server core-mosquitto:1883 (Success)
+2026-08-19 20:44:10.093 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:44:10.093 DEBUG (MainThread) [homeassistant.components.mqtt.client] Subscribing with mid: 1 to topic tasmota/discovery/# with qos: 0 and properties: [SubscriptionIdentifier : [75]]
+2026-08-19 20:44:10.094 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:44:10.095 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:44:10.095 DEBUG (MainThread) [homeassistant.components.mqtt.client] Subscribing with mid: 2 to topic homeassistant/alarm_control_panel/+/config with qos: 0 and properties: [SubscriptionIdentifier : [2]]
+2026-08-19 20:44:10.095 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:44:10.096 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:44:10.096 DEBUG (MainThread) [homeassistant.components.mqtt.client] Subscribing with mid: 3 to topic homeassistant/binary_sensor/+/config with qos: 0 and properties: [SubscriptionIdentifier : [3]]
+2026-08-19 20:44:10.097 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:44:10.097 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:44:10.097 DEBUG (MainThread) [homeassistant.components.mqtt.client] Subscribing with mid: 4 to topic homeassistant/button/+/config with qos: 0 and properties: [SubscriptionIdentifier : [4]]
+2026-08-19 20:44:10.098 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:44:10.099 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:44:10.099 DEBUG (MainThread) [homeassistant.components.mqtt.client] Subscribing with mid: 5 to topic homeassistant/camera/+/config with qos: 0 and properties: [SubscriptionIdentifier : [5]]
+2026-08-19 20:44:10.099 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:44:10.100 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:44:10.100 DEBUG (MainThread) [homeassistant.components.mqtt.client] Subscribing with mid: 6 to topic homeassistant/climate/+/config with qos: 0 and properties: [SubscriptionIdentifier : [6]]
+2026-08-19 20:44:10.101 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:44:10.102 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:44:10.102 DEBUG (MainThread) [homeassistant.components.mqtt.client] Subscribing with mid: 7 to topic homeassistant/cover/+/config with qos: 0 and properties: [SubscriptionIdentifier : [7]]
+2026-08-19 20:44:10.102 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:44:10.103 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:44:10.103 DEBUG (MainThread) [homeassistant.components.mqtt.client] Subscribing with mid: 8 to topic homeassistant/date/+/config with qos: 0 and properties: [SubscriptionIdentifier : [8]]
+2026-08-19 20:44:10.104 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:44:10.105 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:44:10.105 DEBUG (MainThread) [homeassistant.components.mqtt.client] Subscribing with mid: 9 to topic homeassistant/datetime/+/config with qos: 0 and properties: [SubscriptionIdentifier : [9]]
+2026-08-19 20:44:10.105 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:44:10.106 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:44:10.106 DEBUG (MainThread) [homeassistant.components.mqtt.client] Subscribing with mid: 10 to topic homeassistant/device_automation/+/config with qos: 0 and properties: [SubscriptionIdentifier : [10]]
+2026-08-19 20:44:10.107 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:44:10.107 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:44:10.107 DEBUG (MainThread) [homeassistant.components.mqtt.client] Subscribing with mid: 11 to topic homeassistant/device_tracker/+/config with qos: 0 and properties: [SubscriptionIdentifier : [11]]
+2026-08-19 20:44:10.108 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:44:10.109 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:44:10.109 DEBUG (MainThread) [homeassistant.components.mqtt.client] Subscribing with mid: 12 to topic homeassistant/event/+/config with qos: 0 and properties: [SubscriptionIdentifier : [12]]
+2026-08-19 20:44:10.109 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:44:10.110 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:44:10.110 DEBUG (MainThread) [homeassistant.components.mqtt.client] Subscribing with mid: 13 to topic homeassistant/fan/+/config with qos: 0 and properties: [SubscriptionIdentifier : [13]]
+2026-08-19 20:44:10.110 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:44:10.112 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:44:10.112 DEBUG (MainThread) [homeassistant.components.mqtt.client] Subscribing with mid: 14 to topic homeassistant/humidifier/+/config with qos: 0 and properties: [SubscriptionIdentifier : [14]]
+2026-08-19 20:44:10.112 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:44:10.113 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:44:10.113 DEBUG (MainThread) [homeassistant.components.mqtt.client] Subscribing with mid: 15 to topic homeassistant/image/+/config with qos: 0 and properties: [SubscriptionIdentifier : [15]]
+2026-08-19 20:44:10.114 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:44:10.115 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:44:10.115 DEBUG (MainThread) [homeassistant.components.mqtt.client] Subscribing with mid: 16 to topic homeassistant/infrared/+/config with qos: 0 and properties: [SubscriptionIdentifier : [16]]
+2026-08-19 20:44:10.115 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:44:10.116 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:44:10.116 DEBUG (MainThread) [homeassistant.components.mqtt.client] Subscribing with mid: 17 to topic homeassistant/lawn_mower/+/config with qos: 0 and properties: [SubscriptionIdentifier : [17]]
+2026-08-19 20:44:10.117 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:44:10.118 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:44:10.118 DEBUG (MainThread) [homeassistant.components.mqtt.client] Subscribing with mid: 18 to topic homeassistant/light/+/config with qos: 0 and properties: [SubscriptionIdentifier : [18]]
+2026-08-19 20:44:10.118 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:44:10.119 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:44:10.119 DEBUG (MainThread) [homeassistant.components.mqtt.client] Subscribing with mid: 19 to topic homeassistant/lock/+/config with qos: 0 and properties: [SubscriptionIdentifier : [19]]
+2026-08-19 20:44:10.120 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:44:10.121 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:44:10.121 DEBUG (MainThread) [homeassistant.components.mqtt.client] Subscribing with mid: 20 to topic homeassistant/notify/+/config with qos: 0 and properties: [SubscriptionIdentifier : [20]]
+2026-08-19 20:44:10.121 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:44:10.122 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:44:10.122 DEBUG (MainThread) [homeassistant.components.mqtt.client] Subscribing with mid: 21 to topic homeassistant/number/+/config with qos: 0 and properties: [SubscriptionIdentifier : [21]]
+2026-08-19 20:44:10.122 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:44:10.123 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:44:10.123 DEBUG (MainThread) [homeassistant.components.mqtt.client] Subscribing with mid: 22 to topic homeassistant/scene/+/config with qos: 0 and properties: [SubscriptionIdentifier : [22]]
+2026-08-19 20:44:10.124 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:44:10.125 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:44:10.125 DEBUG (MainThread) [homeassistant.components.mqtt.client] Subscribing with mid: 23 to topic homeassistant/siren/+/config with qos: 0 and properties: [SubscriptionIdentifier : [23]]
+2026-08-19 20:44:10.125 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:44:10.126 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:44:10.126 DEBUG (MainThread) [homeassistant.components.mqtt.client] Subscribing with mid: 24 to topic homeassistant/select/+/config with qos: 0 and properties: [SubscriptionIdentifier : [24]]
+2026-08-19 20:44:10.127 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:44:10.128 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:44:10.128 DEBUG (MainThread) [homeassistant.components.mqtt.client] Subscribing with mid: 25 to topic homeassistant/sensor/+/config with qos: 0 and properties: [SubscriptionIdentifier : [25]]
+2026-08-19 20:44:10.128 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:44:10.129 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:44:10.129 DEBUG (MainThread) [homeassistant.components.mqtt.client] Subscribing with mid: 26 to topic homeassistant/switch/+/config with qos: 0 and properties: [SubscriptionIdentifier : [26]]
+2026-08-19 20:44:10.129 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:44:10.131 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:44:10.131 DEBUG (MainThread) [homeassistant.components.mqtt.client] Subscribing with mid: 27 to topic homeassistant/tag/+/config with qos: 0 and properties: [SubscriptionIdentifier : [27]]
+2026-08-19 20:44:10.131 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:44:10.132 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:44:10.132 DEBUG (MainThread) [homeassistant.components.mqtt.client] Subscribing with mid: 28 to topic homeassistant/text/+/config with qos: 0 and properties: [SubscriptionIdentifier : [28]]
+2026-08-19 20:44:10.132 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:44:10.133 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:44:10.133 DEBUG (MainThread) [homeassistant.components.mqtt.client] Subscribing with mid: 29 to topic homeassistant/time/+/config with qos: 0 and properties: [SubscriptionIdentifier : [29]]
+2026-08-19 20:44:10.134 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:44:10.135 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:44:10.135 DEBUG (MainThread) [homeassistant.components.mqtt.client] Subscribing with mid: 30 to topic homeassistant/update/+/config with qos: 0 and properties: [SubscriptionIdentifier : [30]]
+2026-08-19 20:44:10.136 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:44:10.136 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:44:10.136 DEBUG (MainThread) [homeassistant.components.mqtt.client] Subscribing with mid: 31 to topic homeassistant/vacuum/+/config with qos: 0 and properties: [SubscriptionIdentifier : [31]]
+2026-08-19 20:44:10.137 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:44:10.138 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:44:10.138 DEBUG (MainThread) [homeassistant.components.mqtt.client] Subscribing with mid: 32 to topic homeassistant/valve/+/config with qos: 0 and properties: [SubscriptionIdentifier : [32]]
+2026-08-19 20:44:10.139 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:44:10.139 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:44:10.140 DEBUG (MainThread) [homeassistant.components.mqtt.client] Subscribing with mid: 33 to topic homeassistant/water_heater/+/config with qos: 0 and properties: [SubscriptionIdentifier : [33]]
+2026-08-19 20:44:10.140 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:44:10.141 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:44:10.141 DEBUG (MainThread) [homeassistant.components.mqtt.client] Subscribing with mid: 34 to topic homeassistant/alarm_control_panel/+/+/config with qos: 0 and properties: [SubscriptionIdentifier : [34]]
+2026-08-19 20:44:10.142 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:44:10.142 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:44:10.143 DEBUG (MainThread) [homeassistant.components.mqtt.client] Subscribing with mid: 35 to topic homeassistant/binary_sensor/+/+/config with qos: 0 and properties: [SubscriptionIdentifier : [35]]
+2026-08-19 20:44:10.143 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:44:10.144 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:44:10.144 DEBUG (MainThread) [homeassistant.components.mqtt.client] Subscribing with mid: 36 to topic homeassistant/button/+/+/config with qos: 0 and properties: [SubscriptionIdentifier : [36]]
+2026-08-19 20:44:10.145 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:44:10.146 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:44:10.146 DEBUG (MainThread) [homeassistant.components.mqtt.client] Subscribing with mid: 37 to topic homeassistant/camera/+/+/config with qos: 0 and properties: [SubscriptionIdentifier : [37]]
+2026-08-19 20:44:10.146 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:44:10.147 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:44:10.147 DEBUG (MainThread) [homeassistant.components.mqtt.client] Subscribing with mid: 38 to topic homeassistant/climate/+/+/config with qos: 0 and properties: [SubscriptionIdentifier : [38]]
+2026-08-19 20:44:10.148 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:44:10.148 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:44:10.148 DEBUG (MainThread) [homeassistant.components.mqtt.client] Subscribing with mid: 39 to topic homeassistant/cover/+/+/config with qos: 0 and properties: [SubscriptionIdentifier : [39]]
+2026-08-19 20:44:10.149 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:44:10.150 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:44:10.150 DEBUG (MainThread) [homeassistant.components.mqtt.client] Subscribing with mid: 40 to topic homeassistant/date/+/+/config with qos: 0 and properties: [SubscriptionIdentifier : [40]]
+2026-08-19 20:44:10.151 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:44:10.151 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:44:10.151 DEBUG (MainThread) [homeassistant.components.mqtt.client] Subscribing with mid: 41 to topic homeassistant/datetime/+/+/config with qos: 0 and properties: [SubscriptionIdentifier : [41]]
+2026-08-19 20:44:10.152 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:44:10.153 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:44:10.153 DEBUG (MainThread) [homeassistant.components.mqtt.client] Subscribing with mid: 42 to topic homeassistant/device_automation/+/+/config with qos: 0 and properties: [SubscriptionIdentifier : [42]]
+2026-08-19 20:44:10.153 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:44:10.154 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:44:10.154 DEBUG (MainThread) [homeassistant.components.mqtt.client] Subscribing with mid: 43 to topic homeassistant/device_tracker/+/+/config with qos: 0 and properties: [SubscriptionIdentifier : [43]]
+2026-08-19 20:44:10.155 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:44:10.155 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:44:10.156 DEBUG (MainThread) [homeassistant.components.mqtt.client] Subscribing with mid: 44 to topic homeassistant/event/+/+/config with qos: 0 and properties: [SubscriptionIdentifier : [44]]
+2026-08-19 20:44:10.156 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:44:10.157 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:44:10.157 DEBUG (MainThread) [homeassistant.components.mqtt.client] Subscribing with mid: 45 to topic homeassistant/fan/+/+/config with qos: 0 and properties: [SubscriptionIdentifier : [45]]
+2026-08-19 20:44:10.157 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:44:10.158 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:44:10.158 DEBUG (MainThread) [homeassistant.components.mqtt.client] Subscribing with mid: 46 to topic homeassistant/humidifier/+/+/config with qos: 0 and properties: [SubscriptionIdentifier : [46]]
+2026-08-19 20:44:10.159 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:44:10.160 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:44:10.160 DEBUG (MainThread) [homeassistant.components.mqtt.client] Subscribing with mid: 47 to topic homeassistant/image/+/+/config with qos: 0 and properties: [SubscriptionIdentifier : [47]]
+2026-08-19 20:44:10.160 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:44:10.161 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:44:10.161 DEBUG (MainThread) [homeassistant.components.mqtt.client] Subscribing with mid: 48 to topic homeassistant/infrared/+/+/config with qos: 0 and properties: [SubscriptionIdentifier : [48]]
+2026-08-19 20:44:10.162 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:44:10.162 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:44:10.162 DEBUG (MainThread) [homeassistant.components.mqtt.client] Subscribing with mid: 49 to topic homeassistant/lawn_mower/+/+/config with qos: 0 and properties: [SubscriptionIdentifier : [49]]
+2026-08-19 20:44:10.163 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:44:10.164 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:44:10.164 DEBUG (MainThread) [homeassistant.components.mqtt.client] Subscribing with mid: 50 to topic homeassistant/light/+/+/config with qos: 0 and properties: [SubscriptionIdentifier : [50]]
+2026-08-19 20:44:10.164 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:44:10.165 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:44:10.165 DEBUG (MainThread) [homeassistant.components.mqtt.client] Subscribing with mid: 51 to topic homeassistant/lock/+/+/config with qos: 0 and properties: [SubscriptionIdentifier : [51]]
+2026-08-19 20:44:10.165 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:44:10.166 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:44:10.166 DEBUG (MainThread) [homeassistant.components.mqtt.client] Subscribing with mid: 52 to topic homeassistant/notify/+/+/config with qos: 0 and properties: [SubscriptionIdentifier : [52]]
+2026-08-19 20:44:10.167 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:44:10.168 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:44:10.168 DEBUG (MainThread) [homeassistant.components.mqtt.client] Subscribing with mid: 53 to topic homeassistant/number/+/+/config with qos: 0 and properties: [SubscriptionIdentifier : [53]]
+2026-08-19 20:44:10.168 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:44:10.169 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:44:10.169 DEBUG (MainThread) [homeassistant.components.mqtt.client] Subscribing with mid: 54 to topic homeassistant/scene/+/+/config with qos: 0 and properties: [SubscriptionIdentifier : [54]]
+2026-08-19 20:44:10.170 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:44:10.171 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:44:10.171 DEBUG (MainThread) [homeassistant.components.mqtt.client] Subscribing with mid: 55 to topic homeassistant/siren/+/+/config with qos: 0 and properties: [SubscriptionIdentifier : [55]]
+2026-08-19 20:44:10.171 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:44:10.172 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:44:10.172 DEBUG (MainThread) [homeassistant.components.mqtt.client] Subscribing with mid: 56 to topic homeassistant/select/+/+/config with qos: 0 and properties: [SubscriptionIdentifier : [56]]
+2026-08-19 20:44:10.172 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:44:10.173 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:44:10.174 DEBUG (MainThread) [homeassistant.components.mqtt.client] Subscribing with mid: 57 to topic homeassistant/sensor/+/+/config with qos: 0 and properties: [SubscriptionIdentifier : [57]]
+2026-08-19 20:44:10.174 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:44:10.175 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:44:10.175 DEBUG (MainThread) [homeassistant.components.mqtt.client] Subscribing with mid: 58 to topic homeassistant/switch/+/+/config with qos: 0 and properties: [SubscriptionIdentifier : [58]]
+2026-08-19 20:44:10.176 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:44:10.176 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:44:10.177 DEBUG (MainThread) [homeassistant.components.mqtt.client] Subscribing with mid: 59 to topic homeassistant/tag/+/+/config with qos: 0 and properties: [SubscriptionIdentifier : [59]]
+2026-08-19 20:44:10.177 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:44:10.178 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:44:10.178 DEBUG (MainThread) [homeassistant.components.mqtt.client] Subscribing with mid: 60 to topic homeassistant/text/+/+/config with qos: 0 and properties: [SubscriptionIdentifier : [60]]
+2026-08-19 20:44:10.179 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:44:10.179 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:44:10.179 DEBUG (MainThread) [homeassistant.components.mqtt.client] Subscribing with mid: 61 to topic homeassistant/time/+/+/config with qos: 0 and properties: [SubscriptionIdentifier : [61]]
+2026-08-19 20:44:10.180 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:44:10.181 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:44:10.181 DEBUG (MainThread) [homeassistant.components.mqtt.client] Subscribing with mid: 62 to topic homeassistant/update/+/+/config with qos: 0 and properties: [SubscriptionIdentifier : [62]]
+2026-08-19 20:44:10.181 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:44:10.182 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:44:10.182 DEBUG (MainThread) [homeassistant.components.mqtt.client] Subscribing with mid: 63 to topic homeassistant/vacuum/+/+/config with qos: 0 and properties: [SubscriptionIdentifier : [63]]
+2026-08-19 20:44:10.183 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:44:10.183 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:44:10.183 DEBUG (MainThread) [homeassistant.components.mqtt.client] Subscribing with mid: 64 to topic homeassistant/valve/+/+/config with qos: 0 and properties: [SubscriptionIdentifier : [64]]
+2026-08-19 20:44:10.184 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:44:10.185 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:44:10.185 DEBUG (MainThread) [homeassistant.components.mqtt.client] Subscribing with mid: 65 to topic homeassistant/water_heater/+/+/config with qos: 0 and properties: [SubscriptionIdentifier : [65]]
+2026-08-19 20:44:10.185 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:44:10.186 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:44:10.186 DEBUG (MainThread) [homeassistant.components.mqtt.client] Subscribing with mid: 66 to topic homeassistant/device/+/config with qos: 0 and properties: [SubscriptionIdentifier : [66]]
+2026-08-19 20:44:10.187 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:44:10.187 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:44:10.188 DEBUG (MainThread) [homeassistant.components.mqtt.client] Subscribing with mid: 67 to topic homeassistant/device/+/+/config with qos: 0 and properties: [SubscriptionIdentifier : [67]]
+2026-08-19 20:44:10.188 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:44:10.189 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:44:10.189 DEBUG (MainThread) [homeassistant.components.mqtt.client] Subscribing with mid: 68 to topic drop_connect/discovery/# with qos: 0 and properties: [SubscriptionIdentifier : [68]]
+2026-08-19 20:44:10.189 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:44:10.190 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:44:10.190 DEBUG (MainThread) [homeassistant.components.mqtt.client] Subscribing with mid: 69 to topic dsmr/# with qos: 0 and properties: [SubscriptionIdentifier : [69]]
+2026-08-19 20:44:10.191 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:44:10.192 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:44:10.192 DEBUG (MainThread) [homeassistant.components.mqtt.client] Subscribing with mid: 70 to topic esphome/discover/# with qos: 0 and properties: [SubscriptionIdentifier : [70]]
+2026-08-19 20:44:10.192 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:44:10.193 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:44:10.193 DEBUG (MainThread) [homeassistant.components.mqtt.client] Subscribing with mid: 71 to topic fully/deviceInfo/+ with qos: 0 and properties: [SubscriptionIdentifier : [71]]
+2026-08-19 20:44:10.193 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:44:10.194 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:44:10.194 DEBUG (MainThread) [homeassistant.components.mqtt.client] Subscribing with mid: 72 to topic inels/status/# with qos: 0 and properties: [SubscriptionIdentifier : [72]]
+2026-08-19 20:44:10.194 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:44:10.195 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:44:10.195 DEBUG (MainThread) [homeassistant.components.mqtt.client] Subscribing with mid: 73 to topic pglab/discovery/# with qos: 0 and properties: [SubscriptionIdentifier : [73]]
+2026-08-19 20:44:10.196 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:44:10.197 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:44:10.197 DEBUG (MainThread) [homeassistant.components.mqtt.client] Subscribing with mid: 74 to topic cloudapp/QBUSMQTTGW/+/state with qos: 0 and properties: [SubscriptionIdentifier : [74]]
+2026-08-19 20:44:10.198 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:44:10.198 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:44:10.199 DEBUG (MainThread) [homeassistant.components.mqtt.client] Subscribing with mid: 75 to topics with qos: [('/greencell/broadcast/device', 0), ('cloudapp/QBUSMQTTGW/config', 0), ('cloudapp/QBUSMQTTGW/state', 0)]
+2026-08-19 20:44:10.199 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:44:15.199 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:44:15.200 DEBUG (MainThread) [homeassistant.components.mqtt.client] Transmitting message on homeassistant/status: 'online', mid: 76, qos: 0, message_expiry_interval: None
+2026-08-19 20:44:15.200 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:44:15.201 INFO (MainThread) [homeassistant.components.mqtt.client] MQTT client initialized, birth message sent
+2026-08-19 20:44:27.141 ERROR (MainThread) [homeassistant.components.hassio.handler] Client error on /addons/core_mosquitto/logs request 200, message='Attempt to decode JSON with unexpected mimetype: text/plain', url='http://172.30.32.2/addons/core_mosquitto/logs'
+2026-08-19 20:44:27.141 ERROR (MainThread) [homeassistant.components.hassio] Failed to to call /addons/core_mosquitto/logs - 
+2026-08-19 20:44:49.309 DEBUG (MainThread) [homeassistant.components.mqtt.client] Received message on tasmota/discovery/807D3A31D3FA/config (qos=0) IDs=(75,): b'{"ip":"192.168.25.137","dn":"so-th-1","fn":["so-th-1",null,null,null,null,null,null,null],"hn":"so-th-1-5114","mac":"807D3A31D3FA","md":"Sonoff TH","ty":0,"if":0,"ofln":"Offline","onln":"Online","state":["OFF","ON","TOGGLE","HOLD"],"sw":"12.2.0","t":"so-th-1","ft":"%prefix%/%topic%/","tp":["cmnd","stat","tele"],"rl":[1,0,0,0,0,0,0,0],"swc":[-1,-1,-1,-1,-1,-1,-1,-1],"swn":[null,null,null,null,null,null,null,null],"btn":[0,0,0,0,0,0,0,0],"so":{"4":0,"11":0,"13":0,"17":0,"20":0,"30":0,"68":0,"73":0,"82":0,"114":0,"117":0},"lk":0,"lt_st":0,"sho":[0,0,0,0],"sht":[[0,0,48],[0,0,46],[0,0,110],[0,0,108]],"ver":1}'
+2026-08-19 20:44:49.319 DEBUG (MainThread) [homeassistant.components.mqtt.client] Received message on tasmota/discovery/807D3A31D3FA/sensors (qos=0) IDs=(75,): b'{"sn":{"Time":"2026-08-19T11:44:49","SI7021":{"Temperature":23.5,"Humidity":57.6,"DewPoint":14.6},"TempUnit":"C"},"ver":1}'
+2026-08-19 20:44:49.424 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:44:49.424 DEBUG (MainThread) [homeassistant.components.mqtt.client] Subscribing with mid: 77 to topics with qos: [('stat/so-th-1/STATUS11', 0), ('tele/so-th-1/LWT', 0), ('tele/so-th-1/STATE', 0), ('stat/so-th-1/STATUS1', 0), ('stat/so-th-1/RESULT', 0), ('tele/so-th-1/SENSOR', 0), ('stat/so-th-1/STATUS10', 0)]
+2026-08-19 20:44:49.425 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:44:49.429 DEBUG (MainThread) [homeassistant.components.mqtt.client] Received retained message on tele/so-th-1/LWT (qos=0) IDs=(1,): b'Online'
+2026-08-19 20:44:50.434 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:44:50.434 DEBUG (MainThread) [homeassistant.components.mqtt.client] Transmitting message on cmnd/so-th-1/STATE: '', mid: 78, qos: 0, message_expiry_interval: None
+2026-08-19 20:44:50.435 DEBUG (MainThread) [homeassistant.components.mqtt.client] Transmitting message on cmnd/so-th-1/STATUS: '10', mid: 79, qos: 0, message_expiry_interval: None
+2026-08-19 20:44:50.435 DEBUG (MainThread) [homeassistant.components.mqtt.client] Transmitting message on cmnd/so-th-1/STATUS: '1', mid: 80, qos: 0, message_expiry_interval: None
+2026-08-19 20:44:50.435 DEBUG (MainThread) [homeassistant.components.mqtt.client] Transmitting message on cmnd/so-th-1/STATUS: '11', mid: 81, qos: 0, message_expiry_interval: None
+2026-08-19 20:44:50.437 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:44:50.499 DEBUG (MainThread) [homeassistant.components.mqtt.client] Received message on stat/so-th-1/RESULT (qos=0) IDs=(1,): b'{"Time":"2026-08-19T11:44:50","Uptime":"0T00:06:35","UptimeSec":395,"Heap":26,"SleepMode":"Dynamic","Sleep":50,"LoadAvg":19,"MqttCount":1,"POWER":"OFF","Wifi":{"AP":2,"SSId":"mi2","BSSId":"B6:BE:76:85:F0:76","Channel":11,"Mode":"11n","RSSI":100,"Signal":-33,"LinkCount":1,"Downtime":"0T00:00:15"}}'
+2026-08-19 20:44:50.546 DEBUG (MainThread) [homeassistant.components.mqtt.client] Received message on stat/so-th-1/STATUS10 (qos=0) IDs=(1,): b'{"StatusSNS":{"Time":"2026-08-19T11:44:50","SI7021":{"Temperature":23.5,"Humidity":57.6,"DewPoint":14.6},"TempUnit":"C"}}'
+2026-08-19 20:44:50.599 DEBUG (MainThread) [homeassistant.components.mqtt.client] Received message on stat/so-th-1/STATUS1 (qos=0) IDs=(1,): b'{"StatusPRM":{"Baudrate":115200,"SerialConfig":"8N1","GroupTopic":"tasmotas","OtaUrl":"http://ota.tasmota.com/tasmota/release/tasmota.bin.gz","RestartReason":"Power On","Uptime":"0T00:06:35","StartupUTC":"2026-08-19T10:38:15","Sleep":50,"CfgHolder":4617,"BootCount":229,"BCResetTime":"2020-05-03T01:05:43","SaveCount":69621,"SaveAddress":"F5000"}}'
+2026-08-19 20:44:50.650 DEBUG (MainThread) [homeassistant.components.mqtt.client] Received message on stat/so-th-1/STATUS11 (qos=0) IDs=(1,): b'{"StatusSTS":{"Time":"2026-08-19T11:44:50","Uptime":"0T00:06:35","UptimeSec":395,"Heap":26,"SleepMode":"Dynamic","Sleep":50,"LoadAvg":19,"MqttCount":1,"POWER":"OFF","Wifi":{"AP":2,"SSId":"mi2","BSSId":"B6:BE:76:85:F0:76","Channel":11,"Mode":"11n","RSSI":100,"Signal":-35,"LinkCount":1,"Downtime":"0T00:00:15"}}}'
+2026-08-19 20:44:50.700 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:44:50.700 DEBUG (MainThread) [homeassistant.components.mqtt.client] Unsubscribing with mid: 82 to topics: ['stat/so-th-1/STATUS1']
+2026-08-19 20:44:50.701 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:45:09.644 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:45:09.644 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:46:09.699 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:46:09.699 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:47:09.756 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:47:09.757 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:48:09.810 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:48:09.811 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:49:09.864 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:49:09.865 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:49:44.325 DEBUG (MainThread) [homeassistant.components.mqtt.client] Received message on tele/so-th-1/STATE (qos=0) IDs=(1,): b'{"Time":"2026-08-19T11:49:44","Uptime":"0T00:11:29","UptimeSec":689,"Heap":26,"SleepMode":"Dynamic","Sleep":50,"LoadAvg":19,"MqttCount":1,"POWER":"OFF","Wifi":{"AP":2,"SSId":"mi2","BSSId":"B6:BE:76:85:F0:76","Channel":11,"Mode":"11n","RSSI":100,"Signal":-32,"LinkCount":1,"Downtime":"0T00:00:15"}}'
+2026-08-19 20:49:44.329 DEBUG (MainThread) [homeassistant.components.mqtt.client] Received message on tele/so-th-1/SENSOR (qos=0) IDs=(1,): b'{"Time":"2026-08-19T11:49:44","SI7021":{"Temperature":23.3,"Humidity":58.1,"DewPoint":14.6},"TempUnit":"C"}'
+2026-08-19 20:50:09.921 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:50:09.922 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:51:09.980 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:51:09.980 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:52:10.035 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:52:10.036 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:53:10.085 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:53:10.086 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:54:10.135 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:54:10.135 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:54:44.312 DEBUG (MainThread) [homeassistant.components.mqtt.client] Received message on tele/so-th-1/STATE (qos=0) IDs=(1,): b'{"Time":"2026-08-19T11:54:44","Uptime":"0T00:16:29","UptimeSec":989,"Heap":26,"SleepMode":"Dynamic","Sleep":50,"LoadAvg":19,"MqttCount":1,"POWER":"OFF","Wifi":{"AP":2,"SSId":"mi2","BSSId":"B6:BE:76:85:F0:76","Channel":11,"Mode":"11n","RSSI":100,"Signal":-33,"LinkCount":1,"Downtime":"0T00:00:15"}}'
+2026-08-19 20:54:44.312 DEBUG (MainThread) [homeassistant.components.mqtt.client] Received message on tele/so-th-1/SENSOR (qos=0) IDs=(1,): b'{"Time":"2026-08-19T11:54:44","SI7021":{"Temperature":23.2,"Humidity":58.3,"DewPoint":14.5},"TempUnit":"C"}'
+2026-08-19 20:55:10.188 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:55:10.189 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:56:10.246 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:56:10.246 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:57:10.298 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:57:10.299 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:58:10.353 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:58:10.353 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:59:10.408 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 20:59:10.408 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 20:59:44.311 DEBUG (MainThread) [homeassistant.components.mqtt.client] Received message on tele/so-th-1/STATE (qos=0) IDs=(1,): b'{"Time":"2026-08-19T11:59:44","Uptime":"0T00:21:29","UptimeSec":1289,"Heap":26,"SleepMode":"Dynamic","Sleep":50,"LoadAvg":19,"MqttCount":1,"POWER":"OFF","Wifi":{"AP":2,"SSId":"mi2","BSSId":"B6:BE:76:85:F0:76","Channel":11,"Mode":"11n","RSSI":100,"Signal":-31,"LinkCount":1,"Downtime":"0T00:00:15"}}'
+2026-08-19 20:59:44.312 DEBUG (MainThread) [homeassistant.components.mqtt.client] Received message on tele/so-th-1/SENSOR (qos=0) IDs=(1,): b'{"Time":"2026-08-19T11:59:44","SI7021":{"Temperature":23.2,"Humidity":58.5,"DewPoint":14.6},"TempUnit":"C"}'
+2026-08-19 21:00:10.464 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 21:00:10.465 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 21:01:10.517 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 21:01:10.517 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 21:02:10.572 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 21:02:10.573 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 21:02:51.123 DEBUG (MainThread) [homeassistant.components.mqtt.client] Received message on stat/so-th-1/RESULT (qos=0) IDs=(1,): b'{"Module":{"4":"Sonoff TH"}}'
+2026-08-19 21:02:51.170 DEBUG (MainThread) [homeassistant.components.mqtt.client] Received message on stat/so-th-1/RESULT (qos=0) IDs=(1,): b'{"NAME":"so_th_1","GPIO":[1,1,1,1,1,1,1,1,1,1,1,1,1,1],"FLAG":0,"BASE":18}'
+2026-08-19 21:02:51.223 DEBUG (MainThread) [homeassistant.components.mqtt.client] Received message on stat/so-th-1/RESULT (qos=0) IDs=(1,): b'{"GPIO1":{"0":"None"},"GPIO2":{"0":"None"},"GPIO3":{"0":"None"},"GPIO4":{"0":"None"},"GPIO14":{"1248":"SI7021"}}'
+2026-08-19 21:02:51.273 DEBUG (MainThread) [homeassistant.components.mqtt.client] Received message on stat/so-th-1/RESULT (qos=0) IDs=(1,): b'{"SetOption68":"OFF"}'
+2026-08-19 21:02:51.324 DEBUG (MainThread) [homeassistant.components.mqtt.client] Received message on stat/so-th-1/RESULT (qos=0) IDs=(1,): b'{"DeviceName":"so-th-1"}'
+2026-08-19 21:02:51.374 DEBUG (MainThread) [homeassistant.components.mqtt.client] Received message on stat/so-th-1/RESULT (qos=0) IDs=(1,): b'{"Command":"Unknown"}'
+2026-08-19 21:03:10.627 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 21:03:10.627 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 21:04:08.373 DEBUG (MainThread) [homeassistant.components.mqtt.client] Received message on stat/so-th-1/RESULT (qos=0) IDs=(1,): b'{"Command":"Error"}'
+2026-08-19 21:04:08.469 DEBUG (MainThread) [homeassistant.components.mqtt.client] Received message on stat/so-th-1/STATUS10 (qos=0) IDs=(1,): b'{"StatusSNS":{"Time":"2026-08-19T12:04:08","SI7021":{"Temperature":23.2,"Humidity":58.4,"DewPoint":14.6},"TempUnit":"C"}}'
+2026-08-19 21:04:08.477 DEBUG (MainThread) [homeassistant.components.mqtt.client] Received message on stat/so-th-1/STATUS11 (qos=0) IDs=(1,): b'{"StatusSTS":{"Time":"2026-08-19T12:04:08","Uptime":"0T00:25:53","UptimeSec":1553,"Heap":25,"SleepMode":"Dynamic","Sleep":50,"LoadAvg":19,"MqttCount":1,"POWER":"OFF","Wifi":{"AP":2,"SSId":"mi2","BSSId":"B6:BE:76:85:F0:76","Channel":11,"Mode":"11n","RSSI":100,"Signal":-35,"LinkCount":1,"Downtime":"0T00:00:15"}}}'
+2026-08-19 21:04:10.685 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 21:04:10.686 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 21:04:44.304 DEBUG (MainThread) [homeassistant.components.mqtt.client] Received message on tele/so-th-1/STATE (qos=0) IDs=(1,): b'{"Time":"2026-08-19T12:04:44","Uptime":"0T00:26:29","UptimeSec":1589,"Heap":26,"SleepMode":"Dynamic","Sleep":50,"LoadAvg":19,"MqttCount":1,"POWER":"OFF","Wifi":{"AP":2,"SSId":"mi2","BSSId":"B6:BE:76:85:F0:76","Channel":11,"Mode":"11n","RSSI":100,"Signal":-32,"LinkCount":1,"Downtime":"0T00:00:15"}}'
+2026-08-19 21:04:44.305 DEBUG (MainThread) [homeassistant.components.mqtt.client] Received message on tele/so-th-1/SENSOR (qos=0) IDs=(1,): b'{"Time":"2026-08-19T12:04:44","SI7021":{"Temperature":23.2,"Humidity":58.5,"DewPoint":14.6},"TempUnit":"C"}'
+2026-08-19 21:05:10.739 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 21:05:10.740 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 21:06:10.797 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 21:06:10.798 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 21:07:10.849 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 21:07:10.850 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 21:08:10.904 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 21:08:10.905 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 21:09:10.960 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 21:09:10.960 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 21:09:44.322 DEBUG (MainThread) [homeassistant.components.mqtt.client] Received message on tele/so-th-1/STATE (qos=0) IDs=(1,): b'{"Time":"2026-08-19T12:09:44","Uptime":"0T00:31:29","UptimeSec":1889,"Heap":26,"SleepMode":"Dynamic","Sleep":50,"LoadAvg":19,"MqttCount":1,"POWER":"OFF","Wifi":{"AP":2,"SSId":"mi2","BSSId":"B6:BE:76:85:F0:76","Channel":11,"Mode":"11n","RSSI":100,"Signal":-37,"LinkCount":1,"Downtime":"0T00:00:15"}}'
+2026-08-19 21:09:44.323 DEBUG (MainThread) [homeassistant.components.mqtt.client] Received message on tele/so-th-1/SENSOR (qos=0) IDs=(1,): b'{"Time":"2026-08-19T12:09:44","SI7021":{"Temperature":23.2,"Humidity":58.5,"DewPoint":14.6},"TempUnit":"C"}'
+2026-08-19 21:10:11.015 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 21:10:11.016 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 21:11:11.074 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 21:11:11.075 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 21:12:11.129 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 21:12:11.130 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 21:13:11.174 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 21:13:11.174 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 21:14:11.217 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 21:14:11.218 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 21:14:44.319 DEBUG (MainThread) [homeassistant.components.mqtt.client] Received message on tele/so-th-1/STATE (qos=0) IDs=(1,): b'{"Time":"2026-08-19T12:14:44","Uptime":"0T00:36:29","UptimeSec":2189,"Heap":26,"SleepMode":"Dynamic","Sleep":50,"LoadAvg":19,"MqttCount":1,"POWER":"OFF","Wifi":{"AP":2,"SSId":"mi2","BSSId":"B6:BE:76:85:F0:76","Channel":11,"Mode":"11n","RSSI":100,"Signal":-32,"LinkCount":1,"Downtime":"0T00:00:15"}}'
+2026-08-19 21:14:44.320 DEBUG (MainThread) [homeassistant.components.mqtt.client] Received message on tele/so-th-1/SENSOR (qos=0) IDs=(1,): b'{"Time":"2026-08-19T12:14:44","SI7021":{"Temperature":23.1,"Humidity":58.5,"DewPoint":14.5},"TempUnit":"C"}'
+2026-08-19 21:15:11.268 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 21:15:11.268 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 21:16:11.317 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 21:16:11.318 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 21:17:11.370 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 21:17:11.370 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 21:18:11.427 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: register write 22
+2026-08-19 21:18:11.427 DEBUG (MainThread) [homeassistant.components.mqtt.client] core-mosquitto: unregister write 22
+2026-08-19 21:19:06.498 ERROR (MainThread) [homeassistant.core] Error running job: <Job listen logging_changed HassJobType.Callback <bound method ESPHomeManager._async_handle_logging_changed of <homeassistant.components.esphome.manager.ESPHomeManager object at 0x3ebd2de9110>>>
+Traceback (most recent call last):
+  File "/usr/src/homeassistant/homeassistant/core.py", line 1678, in _async_dispatch
+    self._hass.async_run_hass_job(job, event)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+  File "/usr/src/homeassistant/homeassistant/core.py", line 935, in async_run_hass_job
+    hassjob.target(*args)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "/usr/src/homeassistant/homeassistant/components/esphome/manager.py", line 1090, in _async_handle_logging_changed
+    self._async_subscribe_logs(new_log_level)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "/usr/src/homeassistant/homeassistant/components/esphome/manager.py", line 576, in _async_subscribe_logs
+    self._cancel_subscribe_logs = self.cli.subscribe_logs(
+                                  ~~~~~~~~~~~~~~~~~~~~~~~^
+        self._async_on_log, self._log_level
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/usr/local/lib/python3.14/site-packages/aioesphomeapi/client.py", line 525, in subscribe_logs
+    return self._get_connection().send_message_callback_response(
+           ~~~~~~~~~~~~~~~~~~~~^^
+  File "aioesphomeapi/client_base.py", line 448, in aioesphomeapi.client_base.APIClientBase._get_connection
+  File "aioesphomeapi/client_base.py", line 451, in aioesphomeapi.client_base.APIClientBase._get_connection
+    raise APIConnectionError(msg)
+aioesphomeapi.core.APIConnectionError: Not connected to h801light @ 192.168.25.115!
