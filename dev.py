@@ -902,11 +902,16 @@ def _ensure_tftpd(port: int = 69, root: str = "tmp/tftp") -> None:
         "--port",
         str(port),
     ]
+    # sudo sanitizes the environment by default, so AWTO_VIA_DEVPY (needed
+    # past the _repo.py script-invocation guard) wouldn't survive a plain
+    # `sudo -n` prefix - route it through `env` explicitly instead of
+    # relying on env_keep being configured in sudoers.
     if port < 1024:
-        cmd = ["sudo", "-n", *cmd]
+        cmd = ["sudo", "-n", "env", "AWTO_VIA_DEVPY=1", *cmd]
     subprocess.Popen(
         cmd,
         cwd=REPO,
+        env={**os.environ, "AWTO_VIA_DEVPY": "1"},
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
         start_new_session=True,
