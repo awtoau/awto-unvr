@@ -140,7 +140,7 @@ static int al_eth_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 
 	/* The lane's electrical tuning. Honours the serdes_[tr]x_* sysfs
 	 * overrides when set, else the 10G-optic static tables. This is the
-	 * code path under investigation for the TX side (#98). */
+	 * code path under investigation for the TX side (#111). */
 	al_eth_serdes_static_tx_params_set(&adapter->lm_context);
 	al_eth_serdes_static_rx_params_set(&adapter->lm_context);
 

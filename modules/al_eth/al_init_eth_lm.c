@@ -733,7 +733,7 @@ static struct al_serdes_adv_rx_params optic_rx_params = {
 };
 
 
-static void al_eth_serdes_static_tx_params_set(struct al_eth_lm_context *lm_context)
+void al_eth_serdes_static_tx_params_set(struct al_eth_lm_context *lm_context)
 {
 	if (lm_context->tx_param_dirty == 0)
 		return;
@@ -780,7 +780,7 @@ static void al_eth_serdes_static_tx_params_set(struct al_eth_lm_context *lm_cont
 	}
 }
 
-static void al_eth_serdes_static_rx_params_set(struct al_eth_lm_context *lm_context)
+void al_eth_serdes_static_rx_params_set(struct al_eth_lm_context *lm_context)
 {
 	if (lm_context->rx_param_dirty == 0)
 		return;

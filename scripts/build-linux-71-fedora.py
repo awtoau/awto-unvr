@@ -167,6 +167,27 @@ def configure():
         ]
     )
     trim_to_woomera_modules()
+    run(
+        [
+            cfg,
+            "--file",
+            os.path.join(SRC, ".config"),
+            # 10G SFP+ port: mainline phylink + sfp.c (#113). PHYLINK has no
+            # Kconfig prompt (select-only) - PCS_XPCS selects it. localmodconfig
+            # above cannot know about any of these by construction (it only sees
+            # modules the currently-running kernel has loaded), so force them
+            # after it runs, then FATAL-check below in case a future
+            # olddefconfig silently drops one.
+            "--enable",
+            "PCS_XPCS",
+            "--enable",
+            "SFP",
+            "--enable",
+            "MDIO_I2C",
+            "--enable",
+            "I2C_MUX_PCA954x",
+        ]
+    )
     run(["make", "-C", SRC, "olddefconfig"])
     dotcfg = pathlib.Path(os.path.join(SRC, ".config")).read_text()
     for sym in (
@@ -177,7 +198,24 @@ def configure():
         if sym not in dotcfg:
             log(f"FATAL: {sym} not set after olddefconfig")
             sys.exit(1)
-    log("configured: Fedora base + ARCH_ALPINE + PCIE_AL_INTERNAL confirmed")
+    # al_eth.ko (OOT, loaded via modprobe post-boot) can depend on these as
+    # modules just as well as built-in - only "enabled at all" matters, not
+    # =y vs =m. I2C_MUX_PCA954x in particular lands as =m here because its
+    # I2C_MUX parent is already =m (the box's RTC/adt7475 mux, unrelated to
+    # SFP+) - forcing that to =y too is out of scope and unnecessary.
+    for sym in (
+        "CONFIG_PHYLINK",
+        "CONFIG_SFP",
+        "CONFIG_PCS_XPCS",
+        "CONFIG_MDIO_I2C",
+        "CONFIG_I2C_MUX_PCA954x",
+    ):
+        if f"{sym}=y" not in dotcfg and f"{sym}=m" not in dotcfg:
+            log(f"FATAL: {sym} not set (y or m) after olddefconfig")
+            sys.exit(1)
+    log(
+        "configured: Fedora base + ARCH_ALPINE + PCIE_AL_INTERNAL + phylink/sfp confirmed"
+    )
 
 
 def kver():

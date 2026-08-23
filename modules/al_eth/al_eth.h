@@ -26,6 +26,9 @@
 
 /* BIT() is provided by <linux/bits.h> included via kernel headers */
 
+struct device_node;
+struct al_eth_phylink;
+
 enum board_t {
 	ALPINE_INTEGRATED = 0,
 	ALPINE_NIC = 1,
@@ -411,7 +414,13 @@ struct al_eth_adapter {
 	struct al_eth_lm_context	lm_context;
 	bool				use_lm;
 
-	struct al_eth_group_lm_context	*group_lm_context;
+	/* 10G SFP+ port only (eth2): mainline phylink + sfp.c, set up in
+	 * al_eth_probe() when use_lm && sfp_detection_needed && max_speed ==
+	 * 10G. NULL for eth1 (RGMII, phy_exist=true, phylib) and any port
+	 * that would have gone through the now-retired vendor group-LM.
+	 * docs: debris/code/al_eth-phylink-wip/eth-10g-phylink.md */
+	struct al_eth_phylink		*plink;
+	struct device_node		*dt_node;
 
 	bool				dont_override_serdes; /**< avoid overriding serdes parameters
 								   to preset static values */
@@ -444,5 +453,8 @@ void al_eth_init_intr_moderation_entry(enum al_eth_intr_moderation_level level,
 		struct al_eth_intr_moderation_entry *entry);
 void al_eth_get_intr_moderation_entry(enum al_eth_intr_moderation_level level,
 	struct al_eth_intr_moderation_entry *entry);
+
+/* defined in al_eth_main.c, used by al_eth_phylink.c */
+void al_eth_link_leds_set(struct al_eth_adapter *adapter, int speed);
 
 #endif /* !(AL_ETH_H) */

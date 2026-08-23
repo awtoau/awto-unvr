@@ -532,4 +532,15 @@ int al_eth_lm_link_check(struct al_eth_lm_context *lm_context,
  */
 al_bool al_eth_lm_pause_check(struct al_eth_lm_context *lm_context);
 
+/**
+ * apply the lane's static/override TX and RX SerDes tuning tables.
+ * Used directly by al_eth_phylink.c's pcs_config (10G SFP+ port) now that
+ * the detect/establish step-machine that used to be their only caller is
+ * dead code. No-ops unless *_param_dirty is set.
+ *
+ * @param lm_context pointer to link management context
+ */
+void al_eth_serdes_static_tx_params_set(struct al_eth_lm_context *lm_context);
+void al_eth_serdes_static_rx_params_set(struct al_eth_lm_context *lm_context);
+
 #endif

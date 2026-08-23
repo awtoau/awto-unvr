@@ -347,6 +347,20 @@
 					};
 				};
 
+				/* Channel 1: SFP+ module EEPROM (SFF-8472, eth2). No
+				 * device node of our own here - sfp.c (drivers/net/phy/sfp.c)
+				 * owns the EEPROM read via the sfp0 node's i2c-bus phandle
+				 * (docs/i2c-map.md: i2c-2 = mux ch1). Phandle instead of a
+				 * raw adapter number is what removes the #98 failure class
+				 * permanently - the vendor path used the board-params i2c
+				 * adapter number, which shifts whenever another i2c
+				 * controller is enabled/disabled. */
+				sfp_i2c: i2c@1 {
+					reg = <1>;
+					#address-cells = <1>;
+					#size-cells = <0>;
+				};
+
 				/* Channel 3: ADT7475 hardware monitor */
 				i2c@3 {
 					reg = <3>;
@@ -478,6 +492,11 @@
 			fec = "disabled";
 			force-1000base-x = "enabled";
 			status = "okay";
+			/* phylink + sfp.c link management (#113). al_eth binds by PCI
+			 * ID and matches this node by port-id == PCI slot
+			 * (al_eth_phylink.c), not by compatible/reg. */
+			managed = "in-band-status";
+			sfp = <&sfp0>;
 		};
 
 		eth3: ethernet@fc300000 {
@@ -767,6 +786,20 @@
 	reboot: reboot {
 		compatible = "annapurna-labs,alpine-reboot";
 		wdt-parent = <&wdt0>;
+	};
+
+	/*
+	 * 10G SFP+ cage (eth2). At root like reboot/thermal-zones above: no
+	 * reg of its own, just an i2c-bus phandle to the mux channel the
+	 * module EEPROM answers on (i2c-2 = mux ch1, docs/i2c-map.md). No
+	 * mod-def0/los/tx-fault/tx-disable GPIOs - none identified on this
+	 * board (#112); sfp.c degrades cleanly without them (always-present
+	 * cage, 1s poll, laser always on with a warning).
+	 * docs: debris/code/al_eth-phylink-wip/eth-10g-phylink.md
+	 */
+	sfp0: sfp {
+		compatible = "sff,sfp";
+		i2c-bus = <&sfp_i2c>;
 	};
 
 	/* Thermal zone — critical shutdown at 105 C */

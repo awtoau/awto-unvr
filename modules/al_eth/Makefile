@@ -16,8 +16,8 @@ obj-m := al_eth.o
 
 # Object files that make up the module
 al_eth-y := al_eth_main.o \
+            al_eth_phylink.o \
             al_eth_sysfs.o \
-            al_eth_group_lm.o \
             al_hal_eth_kr.o \
             al_hal_eth_main.o \
             al_hal_iofic.o \
@@ -30,7 +30,6 @@ al_eth-y := al_eth_main.o \
             al_init_eth_kr.o \
             al_init_eth_lm.o \
             al_serdes.o \
-            alpine_group_lm.o \
             alpine_serdes.o \
             kcompat.o
 

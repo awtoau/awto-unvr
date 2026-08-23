@@ -49,15 +49,14 @@
 #include "al_hal_eth.h"
 #include "al_hal_serdes_25g.h"
 #include "al_init_eth_lm.h"
-#include "al_eth_group_lm.h"
 #ifdef CONFIG_ARCH_ALPINE
 #include "alpine_serdes.h"
-#include "alpine_group_lm.h"
 #else
 #include "al_hal_serdes_hssp.h"
 #endif
 
 #include "al_eth.h"
+#include "al_eth_phylink.h"
 #include "al_hal_udma_iofic.h"
 #include "al_hal_udma_debug.h"
 #include "al_hal_udma_config.h"
@@ -3560,87 +3559,8 @@ static int al_set_features(struct net_device *dev,
 }
 
 /************************ Link management ************************/
-#define SFP_I2C_ADDR			0x50
 
 #if defined(CONFIG_ARCH_ALPINE)
-static int al_eth_i2c_byte_read(void *context,
-				uint8_t bus_id,
-				uint8_t i2c_addr,
-				uint8_t reg_addr,
-				uint8_t *val)
-{
-	struct i2c_adapter *i2c_adapter;
-	struct al_eth_adapter *adapter = context;
-
-	struct i2c_msg msgs[] = {
-		{
-			.addr = i2c_addr,
-			.flags = 0,
-			.len = 1,
-			.buf = &reg_addr,
-		},
-		{
-			.addr = i2c_addr,
-			.flags = I2C_M_RD,
-			.len = 1,
-			.buf = val,
-		}
-	};
-
-	i2c_adapter = i2c_get_adapter(bus_id);
-
-	if (i2c_adapter == NULL) {
-		netdev_err(adapter->netdev,
-			   "Failed to get i2c adapter. "
-			   "probably caused by wrong i2c bus id in the device tree, "
-			   "wrong i2c mux implementation, or the port is configured wrongly as SFP+\n");
-		return -EINVAL;
-	}
-
-	if (i2c_transfer(i2c_adapter, msgs, 2) != 2) {
-		netdev_dbg(adapter->netdev, "Failed to read sfp+ parameters\n");
-		return -ETIMEDOUT;
-	}
-
-	return 0;
-}
-
-static int al_eth_i2c_byte_write(void *context,
-				 uint8_t bus_id,
-				 uint8_t i2c_addr,
-				 uint8_t reg_addr,
-				 uint8_t val)
-{
-	struct i2c_adapter *i2c_adapter;
-	struct al_eth_adapter *adapter = context;
-	uint8_t buf[2] = {reg_addr, val};
-	struct i2c_msg msg = {.addr = i2c_addr, .flags = 0, .len = 2, .buf = buf};
-
-	i2c_adapter = i2c_get_adapter(bus_id);
-
-	if (i2c_adapter == NULL) {
-		netdev_err(adapter->netdev,
-			   "Failed to get i2c adapter. "
-			   "probably caused by wrong i2c bus id in the device tree, "
-			   "wrong i2c mux implementation, or the port is configured wrongly as SFP+\n");
-		return -EINVAL;
-	}
-
-	if (i2c_transfer(i2c_adapter, &msg, 1) != 1) {
-		netdev_dbg(adapter->netdev, "Failed to read sfp+ parameters\n");
-		return -ETIMEDOUT;
-	}
-
-	return 0;
-}
-
-static uint8_t al_eth_get_rand_byte(void)
-{
-	uint8_t byte;
-	get_random_bytes(&byte, 1);
-	return byte;
-}
-
 static void al_eth_lm_led_config_init_single(unsigned int gpio, const char *name)
 {
 	int err;
@@ -3651,32 +3571,6 @@ static void al_eth_lm_led_config_init_single(unsigned int gpio, const char *name
 	err = gpio_request_one(gpio, GPIOF_OUT_INIT_LOW, name);
 	if (err)
 		pr_err("[%s] LED %s (%u): unable to request GPIO\n", __func__, name, gpio);
-}
-
-static void al_eth_lm_mode_apply(struct al_eth_adapter		*adapter,
-				 enum al_eth_lm_link_mode	new_mode)
-{
-
-	if (new_mode == AL_ETH_LM_MODE_DISCONNECTED)
-		return;
-
-	if (new_mode == AL_ETH_LM_MODE_1G) {
-		adapter->mac_mode = AL_ETH_MAC_MODE_SGMII;
-		adapter->link_config.active_speed = SPEED_1000;
-	} else if (new_mode == AL_ETH_LM_MODE_25G) {
-		adapter->mac_mode = AL_ETH_MAC_MODE_KR_LL_25G;
-		adapter->link_config.active_speed = SPEED_25000;
-	} else {
-		/* force 25G MAC mode when using 25G SerDes */
-		if (adapter->serdes_obj->type_get() == AL_SRDS_TYPE_25G)
-			adapter->mac_mode = AL_ETH_MAC_MODE_KR_LL_25G;
-		else
-			adapter->mac_mode = AL_ETH_MAC_MODE_10GbE_Serial;
-
-		adapter->link_config.active_speed = SPEED_10000;
-	}
-
-	adapter->link_config.active_duplex = DUPLEX_FULL;
 }
 
 static void al_eth_lm_led_config_init(struct al_eth_adapter *adapter)
@@ -3703,16 +3597,19 @@ static void al_eth_lm_led_config_single(unsigned int gpio, unsigned int val, con
 	}
 }
 
-static void al_eth_lm_led_config(void *context, struct al_eth_lm_led_config_data *data)
+/*
+ * Board speed-indicator LEDs (gpio_spd_1g_10g/gpio_spd_25g board params).
+ * Called directly from al_eth_phylink.c's mac_link_up/mac_link_down - the
+ * SFP+ port no longer runs the vendor LM, whose led_config callback this
+ * used to be wired through.
+ */
+void al_eth_link_leds_set(struct al_eth_adapter *adapter, int speed)
 {
-	struct al_eth_adapter *adapter = context;
-
-	al_eth_lm_led_config_single(
-		adapter->gpio_spd_1g_10g,
-		(data->speed == AL_ETH_LM_LED_CONFIG_1G) ||
-		(data->speed == AL_ETH_LM_LED_CONFIG_10G), "1g/10g");
-	al_eth_lm_led_config_single(
-		adapter->gpio_spd_25g, (data->speed == AL_ETH_LM_LED_CONFIG_25G), "25g");
+	al_eth_lm_led_config_single(adapter->gpio_spd_1g_10g,
+				    (speed == SPEED_1000) || (speed == SPEED_10000),
+				    "1g/10g");
+	al_eth_lm_led_config_single(adapter->gpio_spd_25g,
+				    speed == SPEED_25000, "25g");
 }
 
 static void al_eth_serdes_mode_set(struct al_eth_adapter *adapter)
@@ -3784,30 +3681,7 @@ static void al_eth_down(struct al_eth_adapter *adapter)
 	al_eth_free_all_rx_resources(adapter);
 }
 
-#if defined(CONFIG_ARCH_ALPINE)
-static void al_eth_link_status_task(struct work_struct *work)
-{
-	struct al_eth_adapter *adapter = container_of(to_delayed_work(work),
-				       struct al_eth_adapter, link_status_task);
-	int				rc;
-
-	// do {
-		rc = al_eth_group_lm_link_manage(adapter->group_lm_context,
-						 adapter->serdes_lane, (void *)adapter);
-		/* sleep so another port can run link_status, to avoid deadlocks */
-		usleep_range(1, 10);
-	// } while (rc == -EINPROGRESS);
-
-	/* setting link status delay to 0 (through sysfs) will stop the task */
-	if (adapter->link_poll_interval != 0) {
-		unsigned long delay;
-
-		delay = msecs_to_jiffies(adapter->link_poll_interval);
-
-		schedule_delayed_work(&adapter->link_status_task, delay);
-	}
-}
-#else /* defined(CONFIG_ARCH_ALPINE) */
+#if !defined(CONFIG_ARCH_ALPINE)
 static void al_eth_link_status_task_nic(struct work_struct *work)
 {
 	struct al_eth_adapter *adapter = container_of(to_delayed_work(work),
@@ -3847,82 +3721,28 @@ static unsigned int al_eth_systime_msec_get(void)
 	return (unsigned int)((ts.tv_sec * 1000) + (ts.tv_nsec / 1000000));
 }
 
-static void al_eth_lm_config(struct al_eth_adapter *adapter)
+/*
+ * Minimal al_eth_lm_context init for the 10G SFP+ phylink port: fills only
+ * what al_eth_serdes_static_tx_params_set()/_rx_params_set() (called from
+ * al_eth_phylink.c's pcs_config) read - serdes_obj/lane/mode and the static
+ * tables. No sfp_detection/i2c/retimer/led_config/gpio_present - sfp.c and
+ * phylink own SFP presence, EEPROM and carrier now.
+ * docs: debris/code/al_eth-phylink-wip/eth-10g-phylink.md
+ */
+static void al_eth_lm_static_init(struct al_eth_adapter *adapter)
 {
 	struct al_eth_lm_init_params	params = {0};
-	int err;
 
 	params.adapter = &adapter->hal_adapter;
 	params.serdes_obj = adapter->serdes_obj;
 	params.lane = adapter->serdes_lane;
-	params.sfp_detection = adapter->sfp_detection_needed;
-	if (adapter->sfp_detection_needed) {
-		params.sfp_bus_id = adapter->i2c_adapter_id;
-		params.sfp_i2c_addr = SFP_I2C_ADDR;
-	}
-
-	params.rx_equal = true;
 	params.max_speed = adapter->max_speed;
-
-	switch (adapter->max_speed) {
-	case AL_ETH_LM_MAX_SPEED_MAX:
-	case AL_ETH_LM_MAX_SPEED_25G:
-		params.default_mode = AL_ETH_LM_MODE_25G;
-		params.rx_equal = false;
-		params.sfp_detect_force_mode = true;
-		break;
-	case AL_ETH_LM_MAX_SPEED_10G:
-		if (adapter->lt_en && adapter->an_en)
-			params.default_mode = AL_ETH_LM_MODE_10G_DA;
-		else
-			params.default_mode = AL_ETH_LM_MODE_10G_OPTIC;
-		break;
-	case AL_ETH_LM_MAX_SPEED_1G:
-		params.default_mode = AL_ETH_LM_MODE_1G;
-		break;
-	default:
-		netdev_warn(adapter->netdev, "Unknown max speed, using default\n");
-		params.default_mode = AL_ETH_LM_MODE_10G_DA;
-	}
-
-	params.link_training = adapter->lt_en;
+	params.default_mode = AL_ETH_LM_MODE_10G_OPTIC;
 	params.static_values = !adapter->dont_override_serdes;
-	params.i2c_read = &al_eth_i2c_byte_read;
-	params.i2c_write = &al_eth_i2c_byte_write;
-	params.i2c_context = adapter;
-	params.get_random_byte = &al_eth_get_rand_byte;
 	params.kr_fec_enable = adapter->kr_fec_enable;
-
-	params.retimer_exist = adapter->retimer.exist;
-	params.retimer_type = adapter->retimer.type;
-	params.retimer_bus_id = adapter->retimer.bus_id;
-	params.retimer_i2c_addr = adapter->retimer.i2c_addr;
-	params.retimer_channel = adapter->retimer.channel;
-	params.retimer_tx_channel = adapter->retimer.tx_channel;
-	params.speed_detection = adapter->speed_detection;
-
-	params.auto_fec_enable = adapter->auto_fec_enable;
-	params.auto_fec_initial_timeout = AUTO_FEC_INITIAL_TIMEOUT;
-	params.auto_fec_toggle_timeout = AUTO_FEC_TOGGLE_TIMEOUT;
 	params.get_msec = al_eth_systime_msec_get;
-	params.led_config = &al_eth_lm_led_config;
-
-	if (adapter->gpio_sfp_present) {
-		err = gpio_request_one(adapter->gpio_sfp_present, GPIOF_IN, "sfp_present");
-		if (err) {
-			netdev_err(adapter->netdev,
-				"Unable to request SFP present gpio %d, falling back to i2c polling\n",
-				adapter->gpio_sfp_present);
-		} else {
-			params.gpio_present = adapter->gpio_sfp_present;
-			params.gpio_get = gpio_get_value;
-		}
-	}
-
-	al_eth_lm_led_config_init(adapter);
 
 	al_eth_lm_init(&adapter->lm_context, &params);
-
 }
 #endif /* CONFIG_ARCH_ALPINE */
 
@@ -3950,60 +3770,6 @@ static int al_eth_aq_phy_fixup(struct phy_device *phydev)
 	return 0;
 }
 
-#if defined(CONFIG_ARCH_ALPINE)
-/* This function is invoked in group_lm before changing serdes speed
- * (even if there is no need to change speed)
- */
-static int al_eth_lm_mode_change(void *handle, enum al_eth_lm_link_mode old_mode,
-				 enum al_eth_lm_link_mode new_mode)
-{
-	struct al_eth_adapter		*adapter = (struct al_eth_adapter *)handle;
-
-	if (old_mode != AL_ETH_LM_MODE_DISCONNECTED) {
-		netdev_info(adapter->netdev, "%s link down\n", __func__);
-		adapter->last_link = false;
-		al_eth_down(adapter);
-	}
-
-	al_eth_lm_mode_apply(adapter, new_mode);
-
-	return 0;
-}
-
-/* This function is invoked in group_lm after serdes speed change (even if speed wasn't changed) */
-static int al_eth_group_lm_pre_establish(void *handle, enum al_eth_lm_link_mode old_mode,
-					 enum al_eth_lm_link_mode new_mode)
-{
-	struct al_eth_adapter		*adapter = (struct al_eth_adapter *)handle;
-	int rc;
-
-	if (new_mode != AL_ETH_LM_MODE_DISCONNECTED) {
-		if (!adapter->up) {
-			/* pre_establish can be called several times until link is established
-			 * but we must call al_eth_up only once
-			 */
-			rc = al_eth_up(adapter);
-			if (rc)
-				return rc;
-		}
-	} else {
-		return -ENETDOWN;
-	}
-
-	return 0;
-}
-
-static void al_eth_group_lm_update_port_status(void *handle, int link_up)
-{
-	struct al_eth_adapter		*adapter = (struct al_eth_adapter *)handle;
-
-	if (link_up)
-		netif_carrier_on(adapter->netdev);
-	else
-		netif_carrier_off(adapter->netdev);
-}
-#endif /* defined(CONFIG_ARCH_ALPINE) */
-
 /**
  * al_eth_open - Called when a network interface is made active
  * @netdev: network interface device structure
@@ -4020,11 +3786,10 @@ static int al_eth_open(struct net_device *netdev)
 {
 	struct al_eth_adapter		*adapter = netdev_priv(netdev);
 	int				rc;
+#ifndef CONFIG_ARCH_ALPINE
 	unsigned long delay;
-#if defined(CONFIG_ARCH_ALPINE)
-	struct al_eth_group_lm_context	*group_lm_context = adapter->group_lm_context;
-	struct al_eth_group_lm_link_params group_lm_link_params;
 #endif
+
 	netdev_dbg(adapter->netdev, "%s\n", __func__);
 	netif_carrier_off(netdev);
 
@@ -4044,40 +3809,20 @@ static int al_eth_open(struct net_device *netdev)
 	adapter->last_establish_failed = false;
 
 	if (adapter->phy_exist == false) {
-		if (adapter->use_lm) {
+		/* mac_mode is fixed at probe time (board params, or forced to
+		 * 10GbE_Serial for the phylink port) - no runtime mode switch
+		 * to wait for, so datapath bring-up is synchronous here for
+		 * both the phylink port and the no-LM case. */
+		rc = al_eth_up(adapter);
+		if (rc)
+			return rc;
+
 #if defined(CONFIG_ARCH_ALPINE)
-			/** Driver is running LM */
-			al_eth_lm_config(adapter);
-
-			group_lm_link_params.lm_context = &adapter->lm_context;
-			group_lm_link_params.eth_port_num = adapter->id_number;
-			group_lm_link_params.auto_speed = adapter->auto_speed;
-			/* Since each eth port exists independently in Linux,
-			 * we want each to run the group_lm_flow
-			 */
-			group_lm_link_params.skip_group_flow = AL_FALSE;
-			group_lm_link_params.init_cb = NULL;
-			group_lm_link_params.lm_mode_change_cb = &al_eth_lm_mode_change;
-			group_lm_link_params.update_link_status_cb =
-				&al_eth_group_lm_update_port_status;
-			group_lm_link_params.pre_establish_cb = &al_eth_group_lm_pre_establish;
-
-			while (!group_lm_context->common_params.try_lock_cb(
-						group_lm_context->common_params.serdes_grp))
-				usleep_range(1, 10);
-
-			al_eth_group_lm_port_register(group_lm_context, adapter->serdes_lane,
-						      &group_lm_link_params);
-
-			group_lm_context->common_params.unlock_cb(
-				group_lm_context->common_params.serdes_grp);
-#endif
-		} else {
-			/** Someone else is running LM */
-			rc = al_eth_up(adapter);
-			if (rc)
-				return rc;
+		if (adapter->plink) {
+			al_eth_lm_led_config_init(adapter);
+			al_eth_phylink_start(adapter);
 		}
+#endif
 	} else {
 		rc = al_eth_up(adapter);
 		if (rc)
@@ -4111,16 +3856,15 @@ static int al_eth_open(struct net_device *netdev)
 	adapter->dev_stats.interface_up++;
 	u64_stats_update_end(&adapter->syncp);
 
-	delay = msecs_to_jiffies(AL_ETH_FIRST_LINK_POLL_INTERVAL);
 #ifdef CONFIG_ARCH_ALPINE
-	if ((adapter->board_type == ALPINE_INTEGRATED) && (adapter->use_lm)) {
-		INIT_DELAYED_WORK(&adapter->link_status_task,
-				al_eth_link_status_task);
-		schedule_delayed_work(&adapter->link_status_task, delay);
-	} else
+	/* phylink owns carrier + polling (1s, phylink_pcs.poll) for its
+	 * port; every other ALPINE_INTEGRATED port had no link task once
+	 * the vendor group-LM was retired, so carrier is just declared up. */
+	if (!adapter->plink)
 		netif_carrier_on(adapter->netdev);
 #else
 	if (IS_NIC(adapter->board_type)) {
+		delay = msecs_to_jiffies(AL_ETH_FIRST_LINK_POLL_INTERVAL);
 		INIT_DELAYED_WORK(&adapter->link_status_task,
 				al_eth_link_status_task_nic);
 		schedule_delayed_work(&adapter->link_status_task, delay);
@@ -4151,18 +3895,8 @@ static int al_eth_close(struct net_device *netdev)
 	cancel_work_sync(&adapter->reset_task);
 
 #if defined(CONFIG_ARCH_ALPINE)
-	if (adapter->use_lm) {
-		struct al_eth_group_lm_context *group_lm_context = adapter->group_lm_context;
-		while (!group_lm_context->common_params.try_lock_cb(
-				group_lm_context->common_params.serdes_grp))
-			usleep_range(1, 10);
-
-		al_eth_group_lm_port_unregister(group_lm_context,
-						adapter->serdes_lane);
-
-		group_lm_context->common_params.unlock_cb(
-			group_lm_context->common_params.serdes_grp);
-	}
+	if (adapter->plink)
+		al_eth_phylink_stop(adapter);
 #endif
 
 #ifdef CONFIG_PHYLIB
@@ -4182,11 +3916,8 @@ static int al_eth_close(struct net_device *netdev)
 	u64_stats_update_end(&adapter->syncp);
 
 #if defined(CONFIG_ARCH_ALPINE)
-	if (adapter->use_lm) {
+	if (adapter->plink)
 		al_eth_lm_led_config_terminate(adapter);
-		if (adapter->gpio_sfp_present)
-			gpio_free(adapter->gpio_sfp_present);
-	}
 #endif
 
 	return 0;
@@ -4199,6 +3930,11 @@ al_eth_get_link_ksettings(struct net_device *netdev,
 	struct al_eth_adapter *adapter = netdev_priv(netdev);
 	struct al_eth_board_params params;
 	int rc;
+
+#if defined(CONFIG_ARCH_ALPINE)
+	if (adapter->plink)
+		return al_eth_phylink_ksettings_get(adapter, cmd);
+#endif
 
 #ifdef CONFIG_PHYLIB
 	struct phy_device *phydev = adapter->phydev;
@@ -4235,6 +3971,10 @@ al_eth_set_link_ksettings(struct net_device *netdev,
 {
 	struct al_eth_adapter *adapter = netdev_priv(netdev);
 	int rc = 0;
+#if defined(CONFIG_ARCH_ALPINE)
+	if (adapter->plink)
+		return al_eth_phylink_ksettings_set(adapter, cmd);
+#endif
 #if defined(CONFIG_PHYLIB)
 	struct phy_device *phydev = adapter->phydev;
 
@@ -4295,14 +4035,17 @@ static int al_eth_ethtool_set_coalesce(
 
 static int al_eth_nway_reset(struct net_device *netdev)
 {
-#if defined(CONFIG_PHYLIB)
 	struct al_eth_adapter *adapter = netdev_priv(netdev);
-	struct phy_device *phydev = adapter->phydev;
 
-	if (!phydev)
+#if defined(CONFIG_ARCH_ALPINE)
+	if (adapter->plink)
+		return al_eth_phylink_nway_reset(adapter);
+#endif
+#if defined(CONFIG_PHYLIB)
+	if (!adapter->phydev)
 		return -ENODEV;
 
-	return phy_start_aneg(phydev);
+	return phy_start_aneg(adapter->phydev);
 #else
 	return -ENODEV;
 #endif
@@ -5271,6 +5014,9 @@ al_eth_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 	u16 dev_id;
 	u8 rev_id;
 	int i;
+#if defined(CONFIG_ARCH_ALPINE)
+	bool use_phylink;
+#endif
 
 	int rc;
 
@@ -5470,13 +5216,36 @@ al_eth_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 	if (rc)
 		goto err_hw_init;
 
+#if defined(CONFIG_ARCH_ALPINE)
+	/* 10G SFP+ port: mainline phylink + sfp.c own link management instead
+	 * of the (now retired) vendor group-LM. AUTO_DETECT_AUTO_SPEED media
+	 * leaves mac_mode unset - the vendor LM used to fill it in after SFP
+	 * detection; phylink's PCS only advertises 10GBASE-R, so force it
+	 * here instead. eth1 (RGMII, phy_exist=true) is untouched - phylib.
+	 * docs: debris/code/al_eth-phylink-wip/eth-10g-phylink.md */
+	use_phylink = adapter->use_lm && adapter->sfp_detection_needed &&
+		      adapter->max_speed == AL_ETH_LM_MAX_SPEED_10G;
+	if (use_phylink)
+		adapter->mac_mode = AL_ETH_MAC_MODE_10GbE_Serial;
+#endif
+
 	/** Perform HW stop to clean garbage left-overs from PXE / Uboot driver */
 	al_eth_hal_adapter_init(adapter);
 	adapter->hal_adapter.mac_mode = adapter->mac_mode;
 	al_eth_hw_stop(adapter);
 
 #if defined(CONFIG_ARCH_ALPINE)
-	adapter->group_lm_context = alpine_group_lm_get(adapter->serdes_grp);
+	if (use_phylink) {
+		rc = al_eth_serdes_init(adapter);
+		if (rc)
+			goto err_hw_init;
+
+		al_eth_lm_static_init(adapter);
+
+		rc = al_eth_phylink_setup(adapter);
+		if (rc)
+			goto err_hw_init;
+	}
 #endif
 
 	al_eth_function_reset(adapter);
@@ -5588,6 +5357,10 @@ al_eth_remove(struct pci_dev *pdev)
 	al_eth_hw_stop(adapter);
 
 	unregister_netdev(dev);
+
+#if defined(CONFIG_ARCH_ALPINE)
+	al_eth_phylink_teardown(adapter);
+#endif
 
 	al_eth_sysfs_terminate(&pdev->dev);
 #ifndef CONFIG_ARCH_ALPINE
@@ -5710,7 +5483,6 @@ static struct pci_driver al_eth_pci_driver = {
 static int __init al_eth_init(void)
 {
 	alpine_serdes_grp_objs_init();
-	alpine_group_lm_init();
 	return pci_register_driver(&al_eth_pci_driver);
 }
 
