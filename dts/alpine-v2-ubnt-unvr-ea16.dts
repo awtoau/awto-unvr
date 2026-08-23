@@ -22,6 +22,8 @@
  *   4. ramoops moved to 0x92000000 to match the stock reserved region and stay
  *      clear of the low kernel + embedded-initramfs load area used for netboot.
  *   5. model string tagged "(ea16)".
+ *   6. Bay power is per-bay regulator-fixed + PCI-stub *-supply, not a gpio-hog,
+ *      so AHCI probe waits on it (docs/sata-bay-power-ordering.md, #104).
  * Everything else (RAM, PCIe, MSI-X, eth0-3, i2c/gpio, sgpo, LEDs, thermal,
  * hdd-pwrctl, sata-leds, sbclk 500 MHz) is identical to the ea1a DTS — the two
  * boards share the same SoC and enclosure wiring.
@@ -103,6 +105,25 @@
 			 * of_irq_parse_pci logs "failed rc=-22" for them at probe.
 			 * Benign: they use MSI-X (msi-parent = &msix) exclusively.
 			 */
+
+			/*
+			 * DT stubs for the two integrated AHCI EPs, matched by
+			 * devfn (pci_set_of_node). Stock ahci.c reads nothing
+			 * here; the *-supply phandles exist so fw_devlink blocks
+			 * ahci probe until the bay rails are up (#104).
+			 * docs/sata-bay-power-ordering.md
+			 */
+			sata@8,0 {
+				reg = <0x4000 0 0 0 0>;
+				port0-target-supply = <&reg_hdd_bay3>;
+				port2-target-supply = <&reg_hdd_bay4>;
+			};
+
+			sata@9,0 {
+				reg = <0x4800 0 0 0 0>;
+				port0-target-supply = <&reg_hdd_bay2>;
+				port2-target-supply = <&reg_hdd_bay1>;
+			};
 		};
 
 		/* MSI-X controller — al,alpine-msix is the mainline compatible. */
@@ -390,19 +411,11 @@
 				#gpio-cells = <2>;
 
 				/*
-				 * Power the SATA bays at boot. There is no mainline
-				 * ui,hdd-pwrctl driver, so hog the PCA9575 power-enable
-				 * lines (bays 1-4 = lines 0-3, active-high) as
-				 * output-high. On the stock kernel these exact lines
-				 * (gpiochip base 480, offsets 0-3) power the fitted
-				 * drives on ata5/ata7. No userspace needed.
+				 * Bay power-enable lines 0-3 are owned by the
+				 * reg_hdd_bay1-4 regulator-fixed nodes below, not a
+				 * gpio-hog: AHCI needs a supplier it can defer on
+				 * (docs/sata-bay-power-ordering.md, #104).
 				 */
-				hdd-pwren-hog {
-					gpio-hog;
-					gpios = <0 0>, <1 0>, <2 0>, <3 0>;
-					output-high;
-					line-name = "hdd-pwren";
-				};
 			};
 
 			/*
@@ -856,9 +869,54 @@
 	};
 
 	/*
+	 * Drive-bay power rails — PCA9575 @0x21 lines 0-3, active-high.
+	 * Modelled as regulators so AHCI gets a real probe-order dependency on
+	 * i2c -> pca9575 -> rail; see docs/sata-bay-power-ordering.md (#104).
+	 * No voltage stated: the line is an enable for the bay's power switch,
+	 * and which rails it gates is not established from a verified source.
+	 */
+	reg_hdd_bay1: regulator-hdd-bay1 {
+		compatible = "regulator-fixed";
+		regulator-name = "hdd-bay1-pwr";
+		gpios = <&i2c_gpio1 0 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+		regulator-boot-on;
+		regulator-always-on;
+	};
+
+	reg_hdd_bay2: regulator-hdd-bay2 {
+		compatible = "regulator-fixed";
+		regulator-name = "hdd-bay2-pwr";
+		gpios = <&i2c_gpio1 1 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+		regulator-boot-on;
+		regulator-always-on;
+	};
+
+	reg_hdd_bay3: regulator-hdd-bay3 {
+		compatible = "regulator-fixed";
+		regulator-name = "hdd-bay3-pwr";
+		gpios = <&i2c_gpio1 2 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+		regulator-boot-on;
+		regulator-always-on;
+	};
+
+	reg_hdd_bay4: regulator-hdd-bay4 {
+		compatible = "regulator-fixed";
+		regulator-name = "hdd-bay4-pwr";
+		gpios = <&i2c_gpio1 3 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+		regulator-boot-on;
+		regulator-always-on;
+	};
+
+	/*
 	 * HDD bay power control — signals via PCA9575 @0x21:
 	 *   pins 0-3 power-enable, 4-7 presence (active-low), 12-15 fault LEDs.
 	 * Force-power-on workaround: GPIO5 pin 2.
+	 * No mainline ui,hdd-pwrctl driver binds this; kept as the board wiring
+	 * record. pwren is owned by reg_hdd_bay1-4 above.
 	 */
 	hdd-pwrctl {
 		compatible = "ui,hdd-pwrctl";

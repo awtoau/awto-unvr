@@ -145,7 +145,7 @@ all namespaces incl `USER_NS`, `SECCOMP_FILTER`, `FANOTIFY`, `INOTIFY_USER`,
 - Fedora `/etc/systemd/system.conf`: `RuntimeWatchdogSec=30s`, `RebootWatchdogSec=2min`. Verify `/dev/watchdog` binds to sp805.
 
 ### 5.3 Idle power — bays can't be runtime-gated; CPU idle shallow — Low/Med
-- DTB `gpio-hog` holds PCA9575 pwren lines output-high → bay power isn't runtime-controllable; `hdd-manage.py` can only `hdparm -Y` spin-down. To power-gate unused bays, drop the hog and drive the line via gpiod (tracked; risk = mis-gate a live bay). ALPM is already on (LPM policy 3).
+- Bay pwren lines are `regulator-fixed` + `regulator-always-on` ([sata-bay-power-ordering.md](sata-bay-power-ordering.md)) → bay power still isn't runtime-controllable; `hdd-manage.py` can only `hdparm -Y` spin-down. Power-gating an unused bay means dropping `regulator-always-on` on that rail and giving it a real consumer (risk = mis-gate a live bay). ALPM is already on (LPM policy 3).
 - Combine with 1.5 (`ARM_PSCI_CPUIDLE`) for lower SoC idle draw.
 
 ---
