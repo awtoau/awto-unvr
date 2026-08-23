@@ -70,6 +70,7 @@ DIRS = {
     "board/annapurna/alpine/al_ddr": "board/annapurna/alpine/al_ddr",
     "drivers/net/al_eth": "drivers/net/al_eth",
     "drivers/phy/al_serdes": "drivers/phy/al_serdes",
+    "drivers/crypto/al_ssm": "drivers/crypto/al_ssm",
 }
 
 KCONFIG = os.path.join(TREE, "arch/arm/Kconfig")
@@ -104,6 +105,15 @@ DRIVERS_MAKE_LINE = "obj-$(CONFIG_AL_SERDES) += phy/al_serdes/\n"
 DRIVERS_MK_SANITY = "obj-$(CONFIG_$(PHASE_)DM) += core/\n"
 PHY_KCONFIG = os.path.join(TREE, "drivers/phy/Kconfig")
 PHY_KCONFIG_LINE = 'source "drivers/phy/al_serdes/Kconfig"\n'
+
+# al_ssm wiring: drivers/crypto/{Makefile,Kconfig}. drivers/crypto/ is always
+# descended (drivers/Makefile: unconditional `obj-y += crypto/`), so a subdir
+# obj line + a sourced Kconfig suffice - same pattern as al_eth under net/.
+CRYPTO_MAKEFILE = os.path.join(TREE, "drivers/crypto/Makefile")
+CRYPTO_MK_LINE = "obj-$(CONFIG_AL_SSM) += al_ssm/\n"
+CRYPTO_KCONFIG = os.path.join(TREE, "drivers/crypto/Kconfig")
+CRYPTO_KC_LINE = 'source "drivers/crypto/al_ssm/Kconfig"\n'
+CRYPTO_KC_ANCHOR = "endmenu\n"
 
 
 def log(msg):
@@ -181,6 +191,24 @@ def stage():
         Path(PHY_KCONFIG).write_text(pk)
         log("patched drivers/phy/Kconfig (source al_serdes/Kconfig)")
 
+    # drivers/crypto Makefile + Kconfig hooks for al_ssm
+    cm = open(CRYPTO_MAKEFILE).read()
+    if CRYPTO_MK_LINE not in cm:
+        open(CRYPTO_MAKEFILE, "a").write(CRYPTO_MK_LINE)
+        log("patched drivers/crypto/Makefile (al_ssm obj)")
+    ck = open(CRYPTO_KCONFIG).read()
+    if CRYPTO_KC_LINE not in ck:
+        idx = ck.rfind(CRYPTO_KC_ANCHOR)
+        if idx < 0:
+            log(
+                f"ABORT: {CRYPTO_KCONFIG} has no 'endmenu' ({len(ck)} bytes) - "
+                "refusing to patch a truncated/corrupt file"
+            )
+            sys.exit(1)
+        ck = ck[:idx] + CRYPTO_KC_LINE + "\n" + ck[idx:]
+        open(CRYPTO_KCONFIG, "w").write(ck)
+        log("patched drivers/crypto/Kconfig (source al_ssm/Kconfig)")
+
 
 def unstage():
     txt = Path(KCONFIG).read_text()
@@ -199,10 +227,12 @@ def unstage():
         Path(NET_KCONFIG).write_text(kc.replace(NET_KC_LINE + "\n", ""))
         log("reverted drivers/net/Kconfig")
 
-    # revert al_serdes wiring
+    # revert al_serdes + al_ssm wiring
     for f, line in (
         (DRIVERS_MAKEFILE, DRIVERS_MAKE_LINE),
         (PHY_KCONFIG, PHY_KCONFIG_LINE),
+        (CRYPTO_MAKEFILE, CRYPTO_MK_LINE),
+        (CRYPTO_KCONFIG, CRYPTO_KC_LINE + "\n"),
     ):
         if os.path.exists(f):
             content = Path(f).read_text()
