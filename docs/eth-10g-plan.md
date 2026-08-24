@@ -135,11 +135,21 @@ Front-end deltas vs the 1G path are **bold**. Everything else is copied from
   power; no software kill-switch, full stop — this is a hardware limitation, not a
   driver/DT gap to fix.
 
-**Open question:** SFP+ front-panel LED reads off under our U-Boot even with the
-module confirmed powered+correctly-identified via EEPROM (below) — presumed a
-link-state indicator that hasn't lit because the 10G link never fully
-establishes (see #90/#132), not a power tell. Not yet confirmed which GPIO
-actually drives that specific LED or what condition lights it.
+**LED resolved — not link-state, not power, likely a dead/miswired LED or a
+timing mismatch in observation.** `led-sfp` (`i2c_gpio0` pin 2, PCA9575 `0x20`)
+is a static "board is running" LED in U-Boot (`default-state = "on"`) and is
+deliberately left off-by-default in Linux's DTS (no `default-state`, no
+`linux,default-trigger`) — neither side gates it on link/serdes/carrier state
+at all, so it was never a useful signal either way. Verified on-box under our
+U-Boot: `led list` reports `sfp` as `on`, AND a direct single-byte i2c read of
+the PCA9575's Input Port 0 (`i2c md 0x20 0 1` → `0x6b`, bit 2 = 0) confirms the
+pin is genuinely electrically driven to its active-low "on" state at the
+hardware register level — software and hardware agree. A visual "LED off"
+observation that contradicts this is most likely a dead/disconnected physical
+LED (out of scope for driver code) or a timing mismatch, not a driver bug.
+(Aside, same lesson as §5a: the naive 4-byte burst read of this same register
+silently returned one byte repeated 4x, `0x6b 0x6b 0x6b 0x6b` — always verify
+with single-byte reads on this controller.)
 
 ### 5a. Reading the SFP EEPROM by hand from the U-Boot prompt
 
