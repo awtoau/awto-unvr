@@ -837,6 +837,16 @@ def cmd_build_fedora(extra: list[str]) -> int:
     return _run_script("scripts/build-linux-71-fedora.py", extra)
 
 
+@command(
+    "build the Fedora rootfs tarball via dnf --installroot "
+    "(scripts/build-fedora-rootfs.py)",
+    args="[--keep]",
+    kind="action",
+)
+def cmd_build_fedora_rootfs(extra: list[str]) -> int:
+    return _run_script("scripts/build-fedora-rootfs.py", extra)
+
+
 def _tftpd_bound(port: int) -> bool:
     r = subprocess.run(
         ["ss", "-lun", f"sport = :{port}"],
