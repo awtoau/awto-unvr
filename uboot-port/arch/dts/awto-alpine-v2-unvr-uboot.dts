@@ -229,6 +229,29 @@
 			bus-range = <0x00 0x00>;
 		};
 
+		/* External PCIe port 0 - xHCI USB 3.0 host (ASMedia), same link
+		 * Linux's pcie_ext0 (dts/alpine-v2-ubnt-unvr-ea16.dts) uses via
+		 * the amazon,al-alpine-v2-pcie driver - no U-Boot driver exists
+		 * for that compatible, so this uses the generic ECAM driver
+		 * instead. WIP (#137/#132): gets the controller enumerating
+		 * ("USB XHCI 1.00") but device-context allocation still times
+		 * out - likely needs explicit SMCC snoop-enable register writes
+		 * for this bus too (dma-coherent alone doesn't configure the
+		 * hardware snoop bits, same class of thing the internal bus's
+		 * al_pcie_internal_notifier does). Not yet fixed.
+		 */
+		pcie_ext0: pci@fb600000 {
+			compatible = "pci-host-ecam-generic";
+			device_type = "pci";
+			dma-coherent;
+			#address-cells = <3>;
+			#size-cells = <2>;
+			#interrupt-cells = <1>;
+			reg = <0x0 0xfb600000 0x0 0x100000>;
+			ranges = <0x02000000 0x0 0xc0010000  0x0 0xc0010000  0x0 0x07ff0000>;
+			bus-range = <0x00 0xff>;
+		};
+
 		/* SoC GPIO (PL061), 6 banks × 8 = 48 lines. "arm,pl061" only (drop
 		 * primecell -> no AMBA needed). gpio-line-names = the live MUIO
 		 * pinmux map (read 2026-08-18, docs/gpio-map.md) so `gpio status`
