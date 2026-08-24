@@ -26,10 +26,21 @@ import time
 import zlib
 
 ROOT_PASSWORD = "unvr"  # documented default, see docs/fedora-on-ssd.md
-SRC = "/mnt/2tb/unvr-port-refs/linux-v7.1.8"
+SRC = os.environ.get("AWTO_KERNEL_SRC", "/mnt/2tb/unvr-port-refs/linux-v7.1.8")
 PORT = "/mnt/2tb/unvr-port-refs/linux-alpine-v2"
 REPO = "/mnt/2tb/git/awto-unvr"  # OOT al_* module sources imported here (modules/)
-OUT = "/mnt/2tb/unvr-port-refs/build-out-71-fedora"
+# KASAN and normal builds used to share this path - every build did an
+# unconditional rmtree() of the whole modroot, so a normal rebuild silently
+# wiped the KASAN environment (and vice versa) even though they're both
+# meant to coexist for on-demand diagnostic use. Give KASAN builds their own
+# OUT by default so neither clobbers the other; AWTO_KERNEL_OUT still wins
+# if explicitly set (e.g. the v7.3-fresh experiment).
+_OUT_DEFAULT = (
+    "/mnt/2tb/unvr-port-refs/build-out-71-fedora-kasan"
+    if os.environ.get("AWTO_KASAN_BUILD")
+    else "/mnt/2tb/unvr-port-refs/build-out-71-fedora"
+)
+OUT = os.environ.get("AWTO_KERNEL_OUT", _OUT_DEFAULT)
 FEDORA_CONFIG = "/mnt/2tb/git/awto-unvr/tmp/fedora-kernel/fedora-aarch64.config"
 DTS_NAME = "alpine-v2-ubnt-unvr-ea16"
 VER = "7.1"
