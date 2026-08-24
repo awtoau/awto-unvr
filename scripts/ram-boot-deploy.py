@@ -299,8 +299,15 @@ def main() -> int:
         # and it's sent as a fresh, separate round-trip after extraction had
         # time to run, so it can't fall into the same input-echo race as a
         # same-line "; echo DONE" marker would.
+        # Only the OOT al_* modules land in extra/ - in-tree modules (adt7475,
+        # at24, mtd, ...) are elsewhere under kernel/, so checking the whole
+        # archive's .ko list against `ls extra/` alone falsely flagged a
+        # complete, correct extraction as "missing" everything but the 4 OOT
+        # modules tonight.
         expected_kos = sorted(
-            os.path.basename(n) for n in tarfile.open(modules_tar).getnames() if n.endswith(".ko")
+            os.path.basename(n)
+            for n in tarfile.open(modules_tar).getnames()
+            if n.endswith(".ko") and "/extra/" in n
         )
         # No --expect here: the real completion+correctness gate is the ls
         # check right after, sent as a genuinely separate round-trip. A
