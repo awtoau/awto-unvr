@@ -180,16 +180,31 @@ def tftp_and_verify(local_path: Path, addr: str) -> int:
     dest = TFTP_ROOT / local_path.name
     dest.write_bytes(local_path.read_bytes())
     size = dest.stat().st_size
-    run_devpy(
-        "--expect",
-        f"Bytes transferred = {size} |Retry count exceeded",
-        "--timeout",
-        "90",
-        f"tftpboot {addr} {local_path.name}",
-        timeout=90,
+    # --expect matches on EITHER branch (the exact byte count = success, or
+    # "Retry count exceeded" = the known #90 TX-hang) - discarding run_devpy's
+    # return value meant a genuine transfer failure was silently treated as
+    # success (no exception raised either way), and the script only failed
+    # much later at `bootm` with a confusing "Wrong Image Format" instead of
+    # a clear, actionable failure at the actual point of failure. #90's hang
+    # is intermittent (a same-command retry often succeeds outright, seen
+    # repeatedly tonight), so retry a few times before giving up for real.
+    last_out = ""
+    for attempt in range(1, 4):
+        last_out = run_devpy(
+            "--expect",
+            f"Bytes transferred = {size} |Retry count exceeded",
+            "--timeout",
+            "90",
+            f"tftpboot {addr} {local_path.name}",
+            timeout=90,
+        )
+        if f"Bytes transferred = {size} " in last_out:
+            log(f"tftp OK: {local_path.name} ({size} bytes) -> {addr} (attempt {attempt})")
+            return size
+        log(f"tftp attempt {attempt}/3 hit #90's TX hang (Retry count exceeded), retrying: {local_path.name}", "WARN")
+    raise RuntimeError(
+        f"tftpboot of {local_path.name} failed 3/3 attempts (#90 TX hang) - output tail:\n{last_out[-500:]}"
     )
-    log(f"tftp OK: {local_path.name} ({size} bytes) -> {addr}")
-    return size
 
 
 def main() -> int:
