@@ -247,11 +247,20 @@ def configure():
 
 
 def kver():
-    return (
-        subprocess.check_output(["make", "-s", "-C", SRC, "kernelrelease"], env=ENV)
-        .decode()
-        .strip()
-    )
+    """`make kernelrelease` as a standalone invocation is not reliable here -
+    caught it live: right after an AWTO_KASAN_BUILD=1 run followed by a plain
+    run (LOCALVERSION reset only happens inside that conditional, so nothing
+    explicitly clears a stale value), `make kernelrelease` still printed the
+    PREVIOUS run's "-kasan" release even though the real build that followed
+    correctly produced a plain (non-kasan) include/config/kernel.release on
+    disk - the OOT modules got built and copied under the wrong kernel
+    version's extra/ entirely. Read the file kbuild itself writes as part of
+    the real build instead of trusting a separate, apparently-stale-prone
+    target."""
+    path = os.path.join(SRC, "include/config/kernel.release")
+    if not os.path.exists(path):
+        sys.exit(f"FATAL: {path} missing - build the kernel before calling kver()")
+    return pathlib.Path(path).read_text().strip()
 
 
 def adapt_sgpo(mpath):
@@ -305,9 +314,11 @@ def build():
     check_dts_shared()
     configure()
     stage_dts()
+    run(["make", "-C", SRC, f"-j{NPROC}", "Image", "dtbs", "modules"])
+    # kver() reads include/config/kernel.release off disk - only trustworthy
+    # AFTER this real build has actually run and written it fresh.
     kv = kver()
     log(f"KVER={kv}")
-    run(["make", "-C", SRC, f"-j{NPROC}", "Image", "dtbs", "modules"])
 
     # module tree for the Fedora rootfs
     modroot = os.path.join(OUT, "modroot")
