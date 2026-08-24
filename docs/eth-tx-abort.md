@@ -171,6 +171,115 @@ exist, not because it's undecompilable) and diff its eth-UDMA bring-up register
 sequence against ours. This is the one remaining piece of the chain never directly
 inspected.
 
+## 2026-08-24 — vendor stage-3 lead followed through: GPL source has no HAL, actual binary confirms the HAL is not the bug
+
+**GPL U-Boot source does NOT contain the UDMA/eth HAL.**
+`UNVR-1.3.35-GPL/u-boot/board/annapurna-labs/alpine_ubnt/Makefile:1` does
+`-include $(HAL_TOP)/file_list_base.mk`, and `:50-67` lists `$(HAL_TOP)/drivers/...`
+sources — `HAL_TOP` is never defined anywhere in the tarball (`file_list_base.mk`
+absent, zero `HAL_TOP :?=` assignments anywhere in the tree). The GPL drop is the
+"as-is from Ubiquiti" README says: kernel + the thin U-Boot **glue** layer
+(`drivers/net/al_eth.c`, `al_eth_pci.c`, `board/annapurna-labs/common/*.c`), not the
+proprietary `al_hal_udma_*`/`al_hal_eth_*` HAL that does the register-level bring-up.
+**The originally-planned "diff vendor source's UDMA bring-up against ours" is not
+possible from this GPL drop — there is no vendor HAL source in it.**
+
+**Read the full vendor glue layer anyway — nothing eth/UDMA-specific found:**
+- `drivers/net/al_eth.c` (`al_eth_register`, `al_eth_dev_init`, `al_eth_init`) and
+  `drivers/net/al_eth_pci.c` (`al_eth_pci_probe`): plain BAR map +
+  `PCI_COMMAND_MEMORY|PCI_COMMAND_MASTER` enable, then straight into
+  `al_eth_adapter_init`/`al_eth_queue_config`/`al_eth_queue_enable` (all HAL, missing
+  source). No SMCC, no fabric, no unit-adapter call visible at this layer.
+- `board/annapurna-labs/common/pci.c` (full file read): internal-PCI hose init
+  (`pci_init_board`) and BAR config (`al_pci_hose_config_device`) are generic —
+  no SMCC/snoop/coherency register writes anywhere in the file.
+- `arch/arm/include/asm/arch-alpine/iocc.h:21-22` declares
+  `pci_internal_snoop_enable(pci_dev_t)` ("Enable internal PCI adapter snooping") —
+  **zero implementations, zero call sites anywhere in the tree.** Dead declaration,
+  not wired to anything.
+- `board/annapurna-labs/alpine_ubnt/board.c` `board_init` (:1460) and
+  `board_late_init` (:1626): PLL/MPP/thermal/SerDes-handle/env/DT setup only, no
+  SMCC/fabric/PCI-coherency writes.
+
+**Vendor's own `iodma` command disproves the queue-init/state-set ordering
+hypothesis.** `board/annapurna-labs/common/iodma.c:152-163` (`iodma_init`) — vendor's
+own board-level RAID/UDMA test command, the direct ancestor of uboot-port's
+`al_ssm_dma.c` `iodma`:
+```c
+al_ssm_dma_init(&raid, &raid_udma0_params);              // :152
+al_ssm_dma_q_init(&raid, DMA_Q_ID, &raid_tx_params, &raid_rx_params, AL_RAID_Q); // :156
+al_ssm_dma_state_set(&raid, UDMA_NORMAL);                 // :160
+```
+q_init **then** state_set — same order uboot-port uses (`al_ssm_dma.c:273,277`), the
+opposite of Linux's `al_ssm_main.c:799`→`:802`. Vendor's own working reference uses
+uboot-port's order, not Linux's. The ordering hypothesis (flagged, not tested, in the
+previous section) is now **disproven directly**, no live test needed.
+
+**Extracted and Ghidra-decompiled the actual vendor stage-3 U-Boot binary** (not
+source — the real shipped code). It was already sitting locally, unnoticed:
+`tmp/sections/01-uboot.bin` (a prior session's carve of NOR mtd5, the TOC container,
+gitignored/regenerable). `scripts/parse-al-toc.py` on it shows object `[6] uboot`
+at container offset `0xac000`, payload size `0xa8bd0`, load/entry `0x1100000`.
+Payload starts at image-header+`0x48` (`ghidra.md`'s documented convention) =
+container `0xac048`; carved `tmp/sections/uboot-proper-payload.bin` (691,152 B,
+gitignored, reproducible from the above offsets — do not commit). Ran
+`scripts/ghidra-analyse.py … --arch aarch64 --base 0x1100000` per `docs/ghidra.md`:
+clean import, 21 s, **1683 functions**, 0 decompile failures.
+
+**Manually identified and verified the core UDMA HAL functions in the real vendor
+binary**, via embedded `AL_ASSERT`-style strings (file/line/`__func__` literals
+survive even in a stripped release build because they're passed to non-debug
+`printf`/`al_err` calls) in `tmp/ghidra-out/uboot-stage3-vendor/decompiled.c`:
+
+| HAL function | vendor binary (VA / decompiled.c line) | uboot-port reference |
+|---|---|---|
+| `al_udma_init` | `FUN_0110d908` / :9250 | `al_hal_udma_main.c:524` |
+| `al_udma_q_init` | `FUN_0110da2c` / :9316 | `al_hal_udma_main.c:582` |
+| `al_udma_q_reset` | `FUN_0110dd44` / :9458 | — |
+| `al_udma_q_handle_get` | `FUN_0110de60` / :9514 | — |
+| `al_udma_state_set` | `FUN_0110df20` / :9544 | `al_hal_udma_main.c:799` |
+| `al_udma_state_get` | `FUN_0110dfbc` / :9576 | — |
+| `al_udma_iofic_m2s_error_ints_unmask` | `FUN_0110e528` / :9829 | — |
+| `al_udma_iofic_s2m_error_ints_unmask` | `FUN_0110e5c4` / :9853 | — |
+
+Every one of these matches uboot-port **at the register-write level**: `al_udma_state_set`
+writes only the engine `change_state` field (decompiled: `*(u32*)(udma_regs+0x204) = ...`,
+NORMAL/DISABLE/ABORT enum mapping identical to `al_hal_udma_main.c:813-826`);
+`al_udma_q_init` OSCEs the same fields at the same struct offsets and unconditionally
+ORs `0x30000` into the queue `cfg` register at the end (matches
+`al_hal_udma_main.c:675` `rings.cfg` read-modify-write pattern); the iofic unmask
+functions use the identical masks (`0xfffffff`/`0x7fffef47` M2S/S2M, `0x100`/`0x200`
+group-3). **No `unit_adapter`/`non_optimal` strings exist anywhere in the vendor
+binary at all** (grep for both across the full decompile: zero hits) — vendor's
+shipped HAL predates that concept entirely, consistent with (not contradicting) the
+already-established finding that Linux's *working* al_ssm skips it too.
+
+**Conclusion: the UDMA-core HAL logic is now confirmed correct against the actual
+running vendor binary, not just Linux source.** This closes off "different/older HAL
+vintage" as an explanation for good. Combined with the byte-identical Linux-source
+diff from the previous section, every register-level UDMA bring-up path we can
+inspect (Linux source, our port, and now the real vendor machine code) agrees. The
+divergence, if it is register-level at all, is in something **not covered by any of
+the three UDMA-HAL-internal comparisons above** — i.e. genuinely outside al_eth/
+al_udma/al_ssm code: SoC/fabric-level state that predates all three call sites
+(candidates not yet eliminated: ATU/SMMU/master-ID table setup, DRAM controller
+region attributes for the heap address actually used, or something the closed
+preboot's `FUN_01002804` — preboot-decompile.md's "SoC fabric bring-up, table-driven"
+— sets up in a way that isn't visible from any U-Boot-level source, GPL or vendor).
+
+**Reproduce this decompile** (regenerate, don't rely on gitignored `tmp/`):
+1. `python3 scripts/parse-al-toc.py tmp/sections/01-uboot.bin` → confirms `uboot`
+   object offset/size/load.
+2. Carve container `[0xac048 : 0xac048+0xa8bd0]` to a new file (payload = image-header
+   `+0x48`, per `docs/ghidra.md` §2).
+3. `python3 scripts/ghidra-analyse.py <carved>.bin --name uboot-stage3-vendor --arch
+   aarch64 --base 0x1100000 --out tmp/ghidra-out/uboot-stage3-vendor --proj
+   tmp/ghidra-proj`.
+4. Function names are NOT in the symbol table (stripped) — resolve via the
+   `s_al_udma_*`/`s_al_eth_*` assert-string literals next to each `FUN_011408c0(...)`
+   call (the AL assert-log helper), same technique as
+   `scripts/name-preboot-funcs.py` used for the preboot blob.
+
 ## Notes / gotchas
 - **Never `md`/`pci display` certain config offsets on the AHCI function (00:08.0)** —
   reading `0x110`/`0x240` there SError'd the box into a full cold reset (2026-08-24,
