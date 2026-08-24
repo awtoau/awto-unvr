@@ -854,6 +854,12 @@ def cmd_build_fedora_rootfs(extra: list[str]) -> int:
     kind="action",
 )
 def cmd_ram_boot_deploy(extra: list[str]) -> int:
+    # No sudo needed: the interpreter (the real binary behind sys.executable's
+    # symlink chain) carries cap_net_bind_service, granted once via
+    # `sudo setcap 'cap_net_bind_service=+ep' <real python3 binary>` - it can
+    # bind UDP port 69 itself (embedded tftpd, in-process - see
+    # ram-boot-deploy.py) as the normal user, no privilege escalation and no
+    # XDG_RUNTIME_DIR-under-root console-socket mismatch to work around.
     return _run_script("scripts/ram-boot-deploy.py", extra)
 
 

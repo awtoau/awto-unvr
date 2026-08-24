@@ -27,14 +27,18 @@ from __future__ import annotations
 import argparse
 import hashlib
 import os
+import socket
+import struct
 import subprocess
 import sys
 import tarfile
+import threading
 import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from _repo import LOGS, REPO, TFTP_ROOT, log_path
+import tftpd as _tftpd
 
 LOG = log_path("ram-boot-deploy")
 
@@ -137,32 +141,57 @@ def power_cycle_verified() -> None:
     log("power: restored, verified ON")
 
 
-def ensure_tftpd() -> None:
-    subprocess.run(["sudo", "-n", "fuser", "-k", "69/udp"], capture_output=True)
-    subprocess.Popen(
-        [
-            "sudo",
-            "-n",
-            "env",
-            "AWTO_VIA_DEVPY=1",
-            sys.executable,
-            "scripts/tftpd.py",
-            "--root",
-            "tmp/tftp",
-            "--port",
-            "69",
-        ],
-        cwd=REPO,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-        start_new_session=True,
-    )
-    for _ in range(40):
-        r = subprocess.run(["ss", "-lun"], capture_output=True, text=True)
-        if ":69 " in r.stdout:
+# Embedded tftpd, in-process (not a separate sudo'd subprocess). Reuses
+# tftpd.py's own RRQ/WRQ handlers directly rather than reimplementing TFTP -
+# one process means one thing to go stale, not two: a standalone tftpd
+# subprocess bound to a DIFFERENT root (from an earlier, unrelated command)
+# silently serving the wrong file was a repeat, real mistake tonight (#119).
+# rrq_seen[filename] = monotonic() timestamp of the most recent RRQ for that
+# file - lets the caller detect "box never even reached us" (a real network
+# problem) within a couple of seconds, instead of only finding out after
+# U-Boot's own ~55s internal retry-count timeout expires.
+_rrq_lock = threading.Lock()
+rrq_seen: dict[str, float] = {}
+
+
+def _serve_forever(sock: socket.socket, root: Path) -> None:
+    while True:
+        try:
+            data, addr = sock.recvfrom(65536)
+        except OSError:
             return
-        time.sleep(0.05)
-    raise RuntimeError("tftpd on tmp/tftp did not bind port 69")
+        opcode, filename, _mode, opts = _tftpd.parse_request(data)
+        if opcode == _tftpd.RRQ:
+            with _rrq_lock:
+                rrq_seen[filename] = time.monotonic()
+            log(f"tftpd: RRQ {filename!r} from {addr[0]}")
+            _tftpd.handle_rrq(root, addr, filename, opts)
+        elif opcode == _tftpd.WRQ:
+            log(f"tftpd: WRQ {filename!r} from {addr[0]}")
+            _tftpd.handle_wrq(root, addr, filename, opts)
+        else:
+            log(f"tftpd: unsupported opcode {opcode} from {addr[0]}", "WARN")
+
+
+def ensure_tftpd() -> None:
+    """Bind port 69 in THIS process and serve on a daemon thread. Binding a
+    port <1024 normally needs root, but the interpreter itself carries
+    CAP_NET_BIND_SERVICE (granted once: `sudo setcap
+    'cap_net_bind_service=+ep' <real python3 binary, resolve the
+    sys.executable symlink chain first>`) - runs as the normal user, no sudo,
+    no privilege-drop dance, no root-vs-real-user XDG_RUNTIME_DIR mismatch."""
+    TFTP_ROOT.mkdir(parents=True, exist_ok=True)
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    try:
+        sock.bind(("", 69))
+    except PermissionError:
+        raise RuntimeError(
+            "cannot bind UDP port 69 - grant the interpreter CAP_NET_BIND_SERVICE: "
+            "sudo setcap 'cap_net_bind_service=+ep' $(readlink -f $(command -v python3))"
+        ) from None
+    threading.Thread(target=_serve_forever, args=(sock, TFTP_ROOT), daemon=True).start()
+    log(f"embedded tftpd on :69, root {TFTP_ROOT}")
 
 
 def tftp_and_verify(local_path: Path, addr: str) -> int:
@@ -180,17 +209,23 @@ def tftp_and_verify(local_path: Path, addr: str) -> int:
     dest = TFTP_ROOT / local_path.name
     dest.write_bytes(local_path.read_bytes())
     size = dest.stat().st_size
-    # --expect matches on EITHER branch (the exact byte count = success, or
-    # "Retry count exceeded" = the known #90 TX-hang) - discarding run_devpy's
-    # return value meant a genuine transfer failure was silently treated as
-    # success (no exception raised either way), and the script only failed
-    # much later at `bootm` with a confusing "Wrong Image Format" instead of
-    # a clear, actionable failure at the actual point of failure. #90's hang
-    # is intermittent (a same-command retry often succeeds outright, seen
-    # repeatedly tonight), so retry a few times before giving up for real.
-    last_out = ""
-    for attempt in range(1, 4):
-        last_out = run_devpy(
+    with _rrq_lock:
+        rrq_seen.pop(local_path.name, None)
+
+    # Run the blocking console-send call on a thread so this can ALSO poll
+    # the embedded server's own RRQ log in the foreground - a real network
+    # problem (box never reached us at all) is now visible within a few
+    # seconds via "no RRQ", not only after sitting out the full 90s bound
+    # or U-Boot's own ~55s internal retry-count timeout. ONE attempt only,
+    # no in-place retry: a same-command retry still pays that ~55s cost
+    # before trying again, but a full power-cycle back to a fresh U-Boot
+    # prompt takes ~15-20s - power-cycling is the FASTER recovery from
+    # #90's TX hang. The outer retry loop in main() does that; this
+    # function just reports pass/fail for one attempt.
+    result: dict[str, str] = {}
+
+    def _do_tftpboot() -> None:
+        result["out"] = run_devpy(
             "--expect",
             f"Bytes transferred = {size} |Retry count exceeded",
             "--timeout",
@@ -198,13 +233,31 @@ def tftp_and_verify(local_path: Path, addr: str) -> int:
             f"tftpboot {addr} {local_path.name}",
             timeout=90,
         )
-        if f"Bytes transferred = {size} " in last_out:
-            log(f"tftp OK: {local_path.name} ({size} bytes) -> {addr} (attempt {attempt})")
-            return size
-        log(f"tftp attempt {attempt}/3 hit #90's TX hang (Retry count exceeded), retrying: {local_path.name}", "WARN")
-    raise RuntimeError(
-        f"tftpboot of {local_path.name} failed 3/3 attempts (#90 TX hang) - output tail:\n{last_out[-500:]}"
-    )
+
+    t = threading.Thread(target=_do_tftpboot, daemon=True)
+    t.start()
+    rrq_deadline = time.monotonic() + 8.0
+    while time.monotonic() < rrq_deadline:
+        with _rrq_lock:
+            if local_path.name in rrq_seen:
+                break
+        time.sleep(0.2)
+    else:
+        log(
+            f"WARN: no RRQ for {local_path.name} within 8s of issuing tftpboot - "
+            f"box may not be reaching the server at all (network/ARP problem, "
+            f"not #90's mid-transfer hang)",
+            "WARN",
+        )
+    t.join()
+    out = result.get("out", "")
+    if f"Bytes transferred = {size} " not in out:
+        raise RuntimeError(
+            f"tftpboot of {local_path.name} hit #90's TX hang (Retry count exceeded) "
+            f"- output tail:\n{out[-500:]}"
+        )
+    log(f"tftp OK: {local_path.name} ({size} bytes) -> {addr}")
+    return size
 
 
 def main() -> int:
@@ -230,13 +283,13 @@ def main() -> int:
 
     ensure_tftpd()
 
-    if not a.skip_power_cycle:
-        # Stock currently autoboots straight to Fedora (see memory:
-        # chainload-vs-stock-boot-state) - a plain post-power-cycle poll for
-        # the prompt loses the race and types our setenv/tftpboot commands
-        # into a live Linux shell instead (confirmed: al_eth kernel log spam
-        # in place of "Bytes transferred"). catch-uboot.py must be racing
-        # ESC against the bootdelay BEFORE power is restored, not after.
+    def catch_uboot_prompt() -> None:
+        """Race catch-uboot.py against the power-cycle to land at the stock
+        U-Boot prompt. Stock currently autoboots straight to Fedora (see
+        memory: chainload-vs-stock-boot-state) - a plain post-power-cycle
+        poll for the prompt loses that race and types our setenv/tftpboot
+        commands into a live Linux shell instead (confirmed: al_eth kernel
+        log spam in place of "Bytes transferred")."""
         log("starting catch-uboot.py to win the autoboot race")
         catch = subprocess.Popen(
             [sys.executable, "scripts/catch-uboot.py", "--seconds", "60"],
@@ -247,31 +300,52 @@ def main() -> int:
             rc = catch.wait(timeout=70)
         except subprocess.TimeoutExpired:
             catch.kill()
-            log("FATAL: catch-uboot.py hung waiting for the U-Boot prompt", "ERROR")
-            return 1
+            raise RuntimeError("catch-uboot.py hung waiting for the U-Boot prompt")
         if rc != 0:
-            log("FATAL: catch-uboot.py did not reach the U-Boot prompt (autoboot won)", "ERROR")
-            return 1
+            raise RuntimeError("catch-uboot.py did not reach the U-Boot prompt (autoboot won)")
         log("U-Boot prompt reached, autoboot stopped")
 
-    run_devpy("--expect", "ALPINE_UBNT_NAS_ALL>", "--timeout", "8", f"setenv ipaddr {IPADDR}")
-    run_devpy("--expect", "ALPINE_UBNT_NAS_ALL>", "--timeout", "8", f"setenv serverip {SERVERIP}")
+    def boot_to_login() -> None:
+        run_devpy("--expect", "ALPINE_UBNT_NAS_ALL>", "--timeout", "8", f"setenv ipaddr {IPADDR}")
+        run_devpy("--expect", "ALPINE_UBNT_NAS_ALL>", "--timeout", "8", f"setenv serverip {SERVERIP}")
+        tftp_and_verify(kernel, KERNEL_ADDR)
+        tftp_and_verify(dtb, DTB_ADDR)
+        if modules_tar:
+            tftp_and_verify(modules_tar, MODULES_ADDR)
+        run_devpy(
+            "--expect",
+            "Uncompressing|Starting kernel",
+            "--timeout",
+            "20",
+            f"bootm {KERNEL_ADDR} - {DTB_ADDR}",
+        )
+        log("waiting for login...")
+        subprocess.run(["./dev.py", "wait-for-boot"], cwd=REPO, timeout=310)
 
-    tftp_and_verify(kernel, KERNEL_ADDR)
-    tftp_and_verify(dtb, DTB_ADDR)
-    if modules_tar:
-        tftp_and_verify(modules_tar, MODULES_ADDR)
-
-    run_devpy(
-        "--expect",
-        "Uncompressing|Starting kernel",
-        "--timeout",
-        "20",
-        f"bootm {KERNEL_ADDR} - {DTB_ADDR}",
-    )
-
-    log("waiting for login...")
-    subprocess.run(["./dev.py", "wait-for-boot"], cwd=REPO, timeout=310)
+    # #90's TX hang can strike any tftpboot, and a same-command in-place
+    # retry still pays U-Boot's own ~55s internal retry-count timeout before
+    # trying again - a full power-cycle back to a fresh prompt (~15-20s) is
+    # the FASTER recovery (explicit user direction: "stop, reboot, try
+    # again, it is quicker power cycling than waiting"). Retry the whole
+    # catch+boot sequence from scratch, not just the one failed file, since
+    # a mid-sequence failure leaves U-Boot's own network stack in an unknown
+    # state anyway.
+    skip_cycle_this_round = a.skip_power_cycle
+    last_exc: Exception | None = None
+    for attempt in range(1, 4):
+        try:
+            if not skip_cycle_this_round:
+                catch_uboot_prompt()
+            skip_cycle_this_round = False  # only the very first round may skip
+            boot_to_login()
+            last_exc = None
+            break
+        except (RuntimeError, subprocess.TimeoutExpired) as e:
+            last_exc = e
+            log(f"attempt {attempt}/3 failed ({e}); power-cycling and retrying", "WARN")
+    if last_exc is not None:
+        log(f"FATAL: boot-to-login failed 3/3 attempts: {last_exc}", "ERROR")
+        return 1
 
     # A bare "#" is a trap: the standing shell prompt "[root@woomera ~]# "
     # already contains "#", so --expect can match instantly off the prompt
