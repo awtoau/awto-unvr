@@ -797,12 +797,19 @@ static int al_ssm_pci_probe(struct pci_dev *pdev, const struct pci_device_id *en
 		goto err_dma_disable;
 
 	/*
-	 * Configure the XTS tweak-calculation swap register (HAL default:
-	 * pre-increment byte swap). Mandatory XTS init: without it the tweak seed
-	 * byte order is wrong, so xts(aes) yields wrong ciphertext for any non-zero
-	 * IV/sector (the all-zero self-test vector 0 masks it; vector 1 fails).
+	 * Configure the XTS tweak-calculation swap register. Passing NULL here
+	 * falls through to the HAL's own internal default
+	 * (cfg_default = { .swap_pre_inc_bytes = AL_TRUE }, al_hal_ssm_crypto.c)
+	 * - that default fails self-test on vector 1 (#70). An explicit
+	 * all-zero cfg (every swap disabled, tweak_calc_swap register left at
+	 * 0) is the one config out of all 6 individual swap bits + the HAL
+	 * default that passes cleanly - confirmed on hardware across all 7
+	 * candidates, all-zero being the only pass.
 	 */
-	al_crypto_xts_cfg_set(&dev->ssm_dma, dev->unit_info.crypto_regs_base, NULL);
+	{
+		static const struct al_crypto_xts_cfg xts_cfg_no_swap = { };
+		al_crypto_xts_cfg_set(&dev->ssm_dma, dev->unit_info.crypto_regs_base, &xts_cfg_no_swap);
+	}
 
 	dev->wq = alloc_workqueue("al_ssm_wq", WQ_HIGHPRI | WQ_UNBOUND, 0);
 	if (!dev->wq) { rc = -ENOMEM; goto err_free_channel; }
