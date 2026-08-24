@@ -26,8 +26,10 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import os
 import subprocess
 import sys
+import tarfile
 import time
 from pathlib import Path
 
@@ -271,28 +273,56 @@ def main() -> int:
         modules_md5 = hashlib.md5(modules_tar.read_bytes()).hexdigest()
         skip_bytes = int(MODULES_ADDR, 16)
         log(f"extracting modules from /dev/mem (skip={skip_bytes}, count={modules_size})")
+        # Expect the ACTUAL computed hash, not a synthetic "DONE" marker - a
+        # marker word is a trap here too: it's textually present in the
+        # command line itself, and this console's tty echoes typed input
+        # back before the command executes, so --expect can match on that
+        # echo (empty/near-instant "output") rather than genuine completion.
+        # The real md5 can't appear until dd+md5sum actually ran, so matching
+        # on it is race-proof by construction (same pattern already used
+        # manually, successfully, earlier tonight).
         out = run_devpy(
             "--expect",
-            "DD_DONE",
+            f"{modules_md5}|No such file|cannot",
             "--timeout",
             "20",
             f"dd if=/dev/mem of=/root/rbd-modules.tar.gz bs=1M skip={skip_bytes} "
             f"count={modules_size} iflag=skip_bytes,count_bytes 2>&1; "
-            f"md5sum /root/rbd-modules.tar.gz; echo DD_DONE",
+            f"md5sum /root/rbd-modules.tar.gz",
         )
         if modules_md5 not in out:
             log(f"FATAL: /dev/mem extraction checksum mismatch. Output:\n{out}", "ERROR")
             return 1
         log("checksum verified, extracting into place")
+        # Expected .ko names come from the LOCAL archive we already have, so
+        # this is a real correctness check, not just a completion marker -
+        # and it's sent as a fresh, separate round-trip after extraction had
+        # time to run, so it can't fall into the same input-echo race as a
+        # same-line "; echo DONE" marker would.
+        expected_kos = sorted(
+            os.path.basename(n) for n in tarfile.open(modules_tar).getnames() if n.endswith(".ko")
+        )
         run_devpy(
             "--expect",
-            "EXTRACT_DONE",
+            "SHELL_READY2",
             "--timeout",
             "30",
             f"rm -rf /lib/modules/{a.kver} && "
             f"tar xzf /root/rbd-modules.tar.gz -C /lib/modules 2>&1 | grep -v 'in the future'; "
-            f"echo EXTRACT_DONE",
+            f"echo SHELL_READY2",
         )
+        ls_out = run_devpy(
+            "--expect",
+            "|".join(expected_kos) + "|No such file",
+            "--timeout",
+            "10",
+            f"ls /lib/modules/{a.kver}/extra/",
+        )
+        missing = [k for k in expected_kos if k not in ls_out]
+        if missing:
+            log(f"FATAL: extraction incomplete, missing {missing}. ls output:\n{ls_out}", "ERROR")
+            return 1
+        log(f"extraction verified: {len(expected_kos)} module(s) present")
 
     log("DONE - box booted, at a shell.")
     return 0
