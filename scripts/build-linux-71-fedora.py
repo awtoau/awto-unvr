@@ -190,6 +190,14 @@ def configure():
             # normal build (matching the flashed NAND kernel/modules) stays
             # the daily-driver. Re-enable via AWTO_KASAN_BUILD=1 to continue
             # that investigation. See #131.
+            #
+            # -kasan LOCALVERSION is load-bearing, not cosmetic: without a
+            # distinct `uname -r`, this build and the normal one collide in
+            # the same /lib/modules/7.1.8-dirty/ on the box - whichever gets
+            # published last silently breaks module loading for the other
+            # kernel (root cause of a real incident this session - #131
+            # module sync kept clobbering the daily-driver's matching
+            # modules and vice versa, repeatedly, until this was fixed).
             *(
                 [
                     "--enable", "KASAN",
@@ -201,6 +209,7 @@ def configure():
                     "--enable", "FUNCTION_TRACER",
                     "--enable", "FUNCTION_GRAPH_TRACER",
                     "--enable", "DYNAMIC_FTRACE",
+                    "--set-str", "LOCALVERSION", "-kasan",
                 ]
                 if os.environ.get("AWTO_KASAN_BUILD")
                 else []
