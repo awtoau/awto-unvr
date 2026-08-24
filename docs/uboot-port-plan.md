@@ -211,7 +211,7 @@ This is the #1 functional goal.
 ## 8. Staged build/test plan
 
 1. **Stage-1 — console (DONE, builds ✅).** Chainload `go 0x1100000` the 321 KB
-   `u-boot-dtb.bin`; expect the mainline banner + `unvr#` prompt on ttyS0 (115200 8N1). ⚠ boot-test
+   `u-boot-dtb.bin`; expect the mainline banner + `awto-nas#` prompt on ttyS0 (115200 8N1). ⚠ boot-test
    on device.
 2. **Stage-1b — SPI-NOR + I2C.** Add DW-SSI+`sf` and DW-I2C DT nodes; `sf probe` should detect
    MX25U25635F; `i2c dev`/`i2c probe` the SPD @0x57, PCA9546 mux, etc. Low effort (direct mainline).

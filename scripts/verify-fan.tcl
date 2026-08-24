@@ -1,9 +1,9 @@
 send "reset"
-if {[catch {expect "unvr#" 50}]} { puts "NO-UBOOT"; exit 1 }
+if {[catch {expect "awto-nas#" 50}]} { puts "NO-UBOOT"; exit 1 }
 send "fan"
-puts "READ0:[expect {unvr#} 8]"
+puts "READ0:[expect {awto-nas#} 8]"
 send "fan 200"
-puts "SET:[expect {unvr#} 8]"
+puts "SET:[expect {awto-nas#} 8]"
 send "fan"
-puts "READBACK:[expect {unvr#} 8]"
+puts "READBACK:[expect {awto-nas#} 8]"
 puts "DONE"

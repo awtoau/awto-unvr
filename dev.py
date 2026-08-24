@@ -452,7 +452,7 @@ def cmd_console_send(extra: list[str]) -> int:
       ./dev.py console-send --raw ESC                   # send a bare ESC byte
       ./dev.py console-send --expect 'ALPINE_UBNT_NAS_ALL>' setenv x 1
       ./dev.py console-send --raw --expect Bytes CRLF   # send CRLF, wait for it
-      ./dev.py console-send --raw --expect 'unvr#|ALPINE_UBNT_NAS_ALL>' CR
+      ./dev.py console-send --raw --expect 'awto-nas#|ALPINE_UBNT_NAS_ALL>' CR
 
     --expect takes `|`-separated needles and returns on the FIRST to appear
     (one call to probe our-prompt vs stock vs login, not N). It prints
@@ -518,7 +518,7 @@ def cmd_console_send(extra: list[str]) -> int:
         return 0
 
     # `--expect` matches ANY of `|`-separated needles (one call instead of N
-    # probes for unvr#/stock/login). On match, prints "<<MATCHED: needle>>" so
+    # probes for awto-nas#/stock/login). On match, prints "<<MATCHED: needle>>" so
     # the caller knows which fired without a second round-trip.
     needles = [n.encode() for n in expect.split("|") if n]
     t0 = time.monotonic()
@@ -1012,7 +1012,7 @@ def cmd_chainload(extra: list[str]) -> int:
 
 
 @command(
-    "put the FRESH build on the box + stop at unvr# for hands-on testing: "
+    "put the FRESH build on the box + stop at awto-nas# for hands-on testing: "
     "SP805-reset -> catch stock -> tftp -> go (scripts/uboot-test.tcl)",
     kind="action",
 )
@@ -1027,7 +1027,7 @@ def cmd_uboot_test(_extra: list[str]) -> int:
     shutil.copy2(UBOOT_BIN, CHAINLOAD_BIN)
     log(f"staged {CHAINLOAD_BIN.relative_to(REPO)} ({UBOOT_BIN.stat().st_size} bytes)")
     _ensure_tftpd()
-    log("uboot-test: reset+catch+tftp+go, then STOP at unvr# (no auto-tests)")
+    log("uboot-test: reset+catch+tftp+go, then STOP at awto-nas# (no auto-tests)")
     return cmd_console_tcl(["scripts/uboot-test.tcl"])
 
 

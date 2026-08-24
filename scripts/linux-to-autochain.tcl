@@ -18,5 +18,5 @@ expect "ALPINE_UBNT_NAS_ALL>" 8
 send "saveenv"; expect "done" 15
 puts "AUTOCHAIN-SET"
 send "run bootchain"
-if {[catch {expect "unvr#" 40}]} { puts "NO-OUR-UBOOT"; exit 2 }
+if {[catch {expect "awto-nas#" 40}]} { puts "NO-OUR-UBOOT"; exit 2 }
 puts "AT-OUR-UBOOT"

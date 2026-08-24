@@ -4,12 +4,12 @@
 # has no SMBus quick-write, so probe silently skips 0x00-02 / 0x28-2f / 0x40-4f.
 # A read-probe hits every address, so an undocumented chip anywhere shows up.
 send_raw CR
-expect "unvr#" 5
+expect "awto-nas#" 5
 set found {}
 for {set a 8} {$a < 0x78} {incr a} {
     set h [format %02x $a]
     send "i2c md 0x$h 0 1"
-    set r [expect "unvr#" 3]
+    set r [expect "awto-nas#" 3]
     if {[string first "Error" $r] < 0 && [string first "timed out" $r] < 0} {
         lappend found $h
     }

@@ -4,7 +4,7 @@
 # no console desync. Then confirm a valid rate (460800) is accepted (prints the
 # switch prompt at the old baud) — we do NOT complete the switch.
 send "reset"
-if {[catch {expect "unvr#" 50}]} { puts "NO-UBOOT"; exit 1 }
+if {[catch {expect "awto-nas#" 50}]} { puts "NO-UBOOT"; exit 1 }
 send "setenv baudrate 57600"
-puts "REJECT-TEST:[expect {unvr#} 6]"
+puts "REJECT-TEST:[expect {awto-nas#} 6]"
 puts "DONE"

@@ -4,13 +4,13 @@
 #   mux_sel_0..3 contiguous 0xfd8a8138 (pins 0-31); mux_sel_4/5 0xfd8a8220 (32-47).
 #   chip_id 0xfd8a815c: dev_id field==1 => Alpine V2.
 send "\r"
-expect "unvr#"
+expect "awto-nas#"
 send "md.l 0xfd8a815c 1\r"
 expect "fd8a815c:"
-expect "unvr#"
+expect "awto-nas#"
 send "md.l 0xfd8a8138 4\r"
 expect "fd8a8138:"
-expect "unvr#"
+expect "awto-nas#"
 send "md.l 0xfd8a8220 2\r"
 expect "fd8a8220:"
-expect "unvr#"
+expect "awto-nas#"

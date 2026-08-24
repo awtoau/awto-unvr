@@ -1,12 +1,12 @@
 # `./dev.py uboot-test` drives this: put the FRESH build on the box and stop for
-# hands-on testing. From our unvr#: arm SP805 watchdog (SoC reset) -> ESC-catch
-# stock U-Boot -> tftp our U-Boot to 0x1100000 -> go -> STOP at unvr#. No
+# hands-on testing. From our awto-nas#: arm SP805 watchdog (SoC reset) -> ESC-catch
+# stock U-Boot -> tftp our U-Boot to 0x1100000 -> go -> STOP at awto-nas#. No
 # auto-tests — the live prompt is the user's to drive (i2c scan / ping / serdes /
 # ddr bist). SP805 @0xfd88c000: Lock@0xC00, Load@0x000, Control@0x008 (INTEN|RESEN).
 send_raw CR
-if {[catch {expect "unvr#" 8}]} { puts "NOT-AT-UNVR (get the box to our unvr# or stock, then re-run)"; return }
-send "mw 0xfd88cc00 0x1acce551"; expect "unvr#" 6
-send "mw 0xfd88c000 0x00002000"; expect "unvr#" 6
+if {[catch {expect "awto-nas#" 8}]} { puts "NOT-AT-UNVR (get the box to our awto-nas# or stock, then re-run)"; return }
+send "mw 0xfd88cc00 0x1acce551"; expect "awto-nas#" 6
+send "mw 0xfd88c000 0x00002000"; expect "awto-nas#" 6
 send "mw 0xfd88c008 0x00000003"
 puts "SP805-ARMED — catching stock U-Boot"
 set ok 0
@@ -17,5 +17,5 @@ send "setenv serverip 192.168.25.145"; expect "ALPINE_UBNT_NAS_ALL>" 6
 send "tftpboot 0x1100000 u-boot-chainload.bin"; catch {expect "Bytes transferred" 30}
 expect "ALPINE_UBNT_NAS_ALL>" 6
 send "go 0x1100000"
-if {[catch {expect "unvr#" 15}]} { puts "NO-UNVR (go failed — check the tftp'd image)"; return }
-puts "=== LIVE at unvr# — fresh build on hardware, box is yours to test ==="
+if {[catch {expect "awto-nas#" 15}]} { puts "NO-UNVR (go failed — check the tftp'd image)"; return }
+puts "=== LIVE at awto-nas# — fresh build on hardware, box is yours to test ==="
