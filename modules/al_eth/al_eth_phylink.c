@@ -25,7 +25,8 @@
  *     #127.
  *   - passive DAC: sfp.c reports 10GBASE-R for both optic and direct-attach,
  *     so the DA-specific SerDes tables + rx_equal sweep are not selectable.
- *     The fitted module is a 10GBASE-LR optic. #128.
+ *     The fitted module is an FS SFP-10GSR-85 (10GBASE-SR, 850nm), confirmed
+ *     via its sfp.c-reported EEPROM string. #128.
  */
 
 #include <linux/kconfig.h>
