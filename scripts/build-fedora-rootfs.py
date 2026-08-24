@@ -121,6 +121,14 @@ systemctl enable serial-getty@ttyS0.service
 echo 'kernel.sysrq = 1' > /etc/sysctl.d/99-awto-sysrq.conf
 # --- network: NetworkManager (Fedora default, installed), auto-DHCPs all wired links ---
 systemctl enable NetworkManager.service
+# Stock TimeoutStartSec=600 (NetworkManager.service) / systemd's 90s default
+# (polkit.service, no override) exist for boxes with "a huge number of
+# interfaces" - this box has 2. When al_eth fails to register (#131), boot
+# hung 10+ minutes waiting these out before reaching a login prompt at all -
+# 1.25x a real single-digit-second local startup, not minutes.
+mkdir -p /etc/systemd/system/NetworkManager.service.d /etc/systemd/system/polkit.service.d
+printf '[Service]\nTimeoutStartSec=10\n' > /etc/systemd/system/NetworkManager.service.d/override.conf
+printf '[Service]\nTimeoutStartSec=10\n' > /etc/systemd/system/polkit.service.d/override.conf
 # systemd-resolved's own RPM preset enables it by default, but nothing here
 # ever configures it - NetworkManager already writes /etc/resolv.conf directly
 # and works correctly on its own. Both enabled + unreconciled means resolved
