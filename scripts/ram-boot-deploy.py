@@ -164,26 +164,28 @@ def ensure_tftpd() -> None:
 
 
 def tftp_and_verify(local_path: Path, addr: str) -> int:
-    """Stage into tmp/tftp, tftpboot to `addr`, and verify U-Boot's own
-    'Bytes transferred = N' line matches the real local size - this is what
-    actually catches a stale-tftpd-root or interrupted-transfer mistake,
-    not just checking the command didn't error."""
+    """Stage into tmp/tftp, tftpboot to `addr`, and wait for U-Boot's own
+    'Bytes transferred = N' line to report the EXACT expected byte count -
+    this is what actually catches a stale-tftpd-root or interrupted-transfer
+    mistake, not just checking the command didn't error. Baking the expected
+    size into the --expect pattern itself (rather than checking a separately
+    captured `out` string after the fact) avoids a real race: console-send's
+    --expect returns the instant "Bytes transferred" appears, but the byte
+    count on the same U-Boot printf can land in a LATER read chunk - a
+    transfer that had genuinely already succeeded (confirmed 39908441 bytes
+    in the console log) was reported as a verification failure because of
+    this, tonight."""
     dest = TFTP_ROOT / local_path.name
     dest.write_bytes(local_path.read_bytes())
     size = dest.stat().st_size
-    out = run_devpy(
+    run_devpy(
         "--expect",
-        "Bytes transferred|Retry count exceeded",
+        f"Bytes transferred = {size} |Retry count exceeded",
         "--timeout",
         "90",
         f"tftpboot {addr} {local_path.name}",
         timeout=90,
     )
-    if f"= {size} " not in out and f"= {size}\n" not in out and str(size) not in out:
-        raise RuntimeError(
-            f"transferred size didn't match {local_path.name}: expected {size}, "
-            f"output tail: {out[-500:]}"
-        )
     log(f"tftp OK: {local_path.name} ({size} bytes) -> {addr}")
     return size
 
