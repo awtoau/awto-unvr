@@ -28,7 +28,24 @@ from _repo import IMAGES, REPO, log_path
 OUT = Path("/mnt/2tb/unvr-port-refs/build-out-71-fedora")
 DTS_NAME = "alpine-v2-ubnt-unvr-ea16"
 VER = "7.1"
-KVER = "7.1.8-dirty"
+
+
+def _detect_kver() -> str:
+    """Read the real kernelrelease from whatever build actually landed in
+    modroot, rather than hardcoding it - a hardcoded "7.1.8-dirty" here sent
+    KASAN-build modules to the wrong /lib/modules/ path on the box even after
+    the KASAN build itself got a distinct LOCALVERSION (#131 module-mismatch
+    incident, the part of that fix that was still missing). Picks the most
+    recently built dir in case a stale one from an earlier build variant is
+    still sitting alongside it."""
+    modules_dir = OUT / "modroot" / "lib" / "modules"
+    candidates = [d for d in modules_dir.iterdir() if d.is_dir()] if modules_dir.is_dir() else []
+    if not candidates:
+        sys.exit(f"FATAL: no kernel release directory under {modules_dir} - build first")
+    return max(candidates, key=lambda d: d.stat().st_mtime).name
+
+
+KVER = _detect_kver()
 
 BUILD_IMAGE = OUT / "Image"
 BUILD_DTB = OUT / f"{DTS_NAME}-{VER}.dtb"
