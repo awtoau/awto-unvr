@@ -126,6 +126,14 @@ Front-end deltas vs the 1G path are **bold**. Everything else is copied from
   `gpio_present` left NULL) — presence is purely the i2c EEPROM read (subagent §4). A
   presence GPIO on PCA9575 `0x20` (SFP straps/LED) is a possible future add; bit
   mapping is a HW-TODO.
+- **No tx_disable/mod-def0/tx-fault/los pins exist on this board — verified, not just
+  undeclared (#134).** Checked the live stock DTB pulled from the running box's own
+  firmware, the UNVR GPL U-Boot source's board-params parser (`dt_based_init_eth_params_port`,
+  field-identical struct to ours), and the PCA9575/SoC GPIO maps — none carry a laser-
+  control pin. The Alpine V2 board-params ABI itself has no field for it (same across
+  the whole family, not UNVR-specific). Module laser stays on for as long as it has
+  power; no software kill-switch, full stop — this is a hardware limitation, not a
+  driver/DT gap to fix.
 
 ## 6. Device-tree — already present, no additions required for bring-up
 
