@@ -302,18 +302,24 @@ def main() -> int:
         expected_kos = sorted(
             os.path.basename(n) for n in tarfile.open(modules_tar).getnames() if n.endswith(".ko")
         )
+        # No --expect here: the real completion+correctness gate is the ls
+        # check right after, sent as a genuinely separate round-trip. A
+        # same-line marker would just reintroduce the input-echo race for
+        # no benefit - this small archive extracts well within the plain
+        # 1.5s read window console-send uses when --expect is omitted.
         run_devpy(
-            "--expect",
-            "SHELL_READY2",
-            "--timeout",
-            "30",
             f"rm -rf /lib/modules/{a.kver} && "
-            f"tar xzf /root/rbd-modules.tar.gz -C /lib/modules 2>&1 | grep -v 'in the future'; "
-            f"echo SHELL_READY2",
+            f"tar xzf /root/rbd-modules.tar.gz -C /lib/modules 2>&1 | grep -v 'in the future'"
         )
+        # `ls` output is alphabetically sorted, so matching on ANY of the
+        # names via OR (dev.py's --expect returns on the FIRST alternative
+        # found) cut this off mid-stream at the first name tonight, before
+        # the rest of the genuinely-complete listing had even arrived.
+        # Matching on just the alphabetically-LAST expected name instead
+        # only satisfies once the whole listing has streamed through.
         ls_out = run_devpy(
             "--expect",
-            "|".join(expected_kos) + "|No such file",
+            f"{expected_kos[-1]}|No such file",
             "--timeout",
             "10",
             f"ls /lib/modules/{a.kver}/extra/",
