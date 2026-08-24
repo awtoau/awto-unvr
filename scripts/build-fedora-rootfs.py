@@ -64,6 +64,40 @@ EXTRAS = [
     "hdparm",
     "libgpiod-utils",
     "lm_sensors",
+    # @core's default weak-dep resolution on this host pulls in
+    # fedora-release-container (wrong PRETTY_NAME/VARIANT for a real install -
+    # #124 follow-up). Force the server variant instead - closest fit for a
+    # headless NAS, no desktop/container baggage.
+    "fedora-release-server",
+    # Build tools
+    "gcc",
+    "gcc-c++",
+    "make",
+    "git",
+    "kernel-devel",
+    "kernel-headers",
+    "binutils",
+    "pkgconf-pkg-config",
+    "dwarves",
+    # Diagnostics
+    "strace",
+    "ltrace",
+    "gdb",
+    "tcpdump",
+    "ethtool",
+    "lsof",
+    "iotop",
+    "sysstat",
+    "pciutils",
+    "usbutils",
+    "nvme-cli",
+    "iperf3",
+    "bind-utils",
+    "traceroute",
+    "perf",
+    "dmidecode",
+    "trace-cmd",
+    "kexec-tools",
 ]
 
 # Config applied via chroot into the installroot (aarch64, via qemu binfmt).
@@ -161,6 +195,9 @@ def main() -> int:
         "--disablerepo=*",
         "--enablerepo=fedora",
         "--enablerepo=updates",
+        # @core's weak-dep resolution defaults to fedora-release-container
+        # here - exclude it so fedora-release-server (in EXTRAS) wins instead.
+        "--exclude=fedora-release-container",
     ]
     try:
         # Stock Fedora base: @core group WITH weak deps (the default), then
