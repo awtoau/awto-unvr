@@ -256,7 +256,15 @@ def main() -> int:
     log("waiting for login...")
     subprocess.run(["./dev.py", "wait-for-boot"], cwd=REPO, timeout=310)
 
-    run_devpy("--expect", "#", "--timeout", "10", "")
+    # A bare "#" is a trap: the standing shell prompt "[root@woomera ~]# "
+    # already contains "#", so --expect can match instantly off the prompt
+    # that was sitting there BEFORE the real command even ran, not off its
+    # completion. Bit the /dev/mem extraction step below tonight - the
+    # checksum "mismatch" was really just reading a truncated echo of the
+    # command being typed, not a real extraction failure. Always echo a
+    # unique marker and expect that instead (same pattern used manually
+    # everywhere else this session).
+    run_devpy("--expect", "SHELL_READY", "--timeout", "10", "echo SHELL_READY")
 
     if modules_tar:
         modules_size = modules_tar.stat().st_size
@@ -265,12 +273,12 @@ def main() -> int:
         log(f"extracting modules from /dev/mem (skip={skip_bytes}, count={modules_size})")
         out = run_devpy(
             "--expect",
-            "#",
+            "DD_DONE",
             "--timeout",
             "20",
             f"dd if=/dev/mem of=/root/rbd-modules.tar.gz bs=1M skip={skip_bytes} "
             f"count={modules_size} iflag=skip_bytes,count_bytes 2>&1; "
-            f"md5sum /root/rbd-modules.tar.gz",
+            f"md5sum /root/rbd-modules.tar.gz; echo DD_DONE",
         )
         if modules_md5 not in out:
             log(f"FATAL: /dev/mem extraction checksum mismatch. Output:\n{out}", "ERROR")
@@ -278,7 +286,7 @@ def main() -> int:
         log("checksum verified, extracting into place")
         run_devpy(
             "--expect",
-            "#",
+            "EXTRACT_DONE",
             "--timeout",
             "30",
             f"rm -rf /lib/modules/{a.kver} && "
