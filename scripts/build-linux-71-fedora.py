@@ -336,22 +336,28 @@ def build():
         shutil.copytree(os.path.join(REPO, "modules", m), mpath)
         if m == "al_sgpo":
             adapt_sgpo(mpath)
-        try:
-            run(
-                [
-                    "make",
-                    "-C",
-                    SRC,
-                    f"KDIR={SRC}",
-                    f"M={mpath}",
-                    f"-j{NPROC}",
-                    "modules",
-                ]
-            )
-            shutil.copy(os.path.join(mpath, f"{m}.ko"), extra)
-            log(f"OOT {m}: ok")
-        except subprocess.CalledProcessError as e:
-            log(f"OOT {m}: FAILED ({e})")
+        run(
+            [
+                "make",
+                "-C",
+                SRC,
+                f"KDIR={SRC}",
+                f"M={mpath}",
+                f"-j{NPROC}",
+                "modules",
+            ]
+        )
+        shutil.copy(os.path.join(mpath, f"{m}.ko"), extra)
+        log(f"OOT {m}: ok")
+        # A prior run here silently produced a modroot with `kernel/` fully
+        # populated but `extra/` empty - "OOT al_eth: ok" printed (this log
+        # line ran) yet the .ko wasn't in the final tree. Root cause not
+        # pinned down; this check turns a repeat into a loud failure instead
+        # of a working-but-broken build discovered only after flashing.
+        copied = os.path.join(extra, f"{m}.ko")
+        if not os.path.exists(copied):
+            log(f"FATAL: {copied} missing right after copying it", "ERROR")
+            sys.exit(1)
     subprocess.run(["depmod", "-b", modroot, kv], check=False)
 
     # collect boot artifacts

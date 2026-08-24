@@ -847,6 +847,16 @@ def cmd_build_fedora_rootfs(extra: list[str]) -> int:
     return _run_script("scripts/build-fedora-rootfs.py", extra)
 
 
+@command(
+    "boot a kernel+DTB (+ optional module tree) via RAM through stock "
+    "U-Boot, no flash/SSH needed to get there (scripts/ram-boot-deploy.py)",
+    args="--kernel PATH --dtb PATH [--modules-tar PATH --kver KVER] [--skip-power-cycle]",
+    kind="action",
+)
+def cmd_ram_boot_deploy(extra: list[str]) -> int:
+    return _run_script("scripts/ram-boot-deploy.py", extra)
+
+
 def _tftpd_bound(port: int) -> bool:
     r = subprocess.run(
         ["ss", "-lun", f"sport = :{port}"],

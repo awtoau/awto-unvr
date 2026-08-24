@@ -1,0 +1,263 @@
+#!/usr/bin/env python3
+"""Boot a kernel+DTB (and optionally inject a matching module tree) via RAM,
+through stock U-Boot, entirely from this dev host - no NAND flash, no SSH
+required to get there. Built to replace the ~8-step manual ritual (reset,
+setenv, 3x tftpboot, bootm, wait, dd-extract, verify) that was hand-typed
+dozens of times during the #131 KASAN investigation, each repetition risking
+a fresh mistake (wrong byte count, stale tftpd root, stray buffered input).
+
+Why RAM and not NAND: the KASAN diagnostic kernel is ~40MB compressed,
+comfortably over the 18.9MiB NAND kernel partition span (see flash-nand.py) -
+this is the general-purpose "test an oversized or throwaway kernel" path,
+not just a #131-specific tool.
+
+Usage:
+    ./dev.py ram-boot-deploy --kernel PATH --dtb PATH \
+        [--modules-tar PATH --kver KVER]
+
+Requires:
+    - Box on the same LAN, reachable via the Sonoff TH smart outlet
+      (so-th-1.local) for remote power-cycling - see
+      docs (memory: unvr-power-cycle-via-hass) for the direct API details.
+    - ./dev.py console running (this script does NOT start it).
+"""
+
+from __future__ import annotations
+
+import argparse
+import asyncio
+import hashlib
+import subprocess
+import sys
+import time
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from _repo import LOGS, REPO, TFTP_ROOT, log_path
+
+LOG = log_path("ram-boot-deploy")
+
+# RAM addresses - chosen and verified during the #131 session to avoid two
+# real collisions hit that night: the kernel's own DECOMPRESSED span (not
+# just its compressed tftp size) can be huge (155MB+ for a KASAN build) and
+# will silently corrupt whatever else sits in that range mid-boot. Kernel
+# decompresses to 0x08000000; giving everything else a wide berth above the
+# compressed image's own load address is what actually avoids this, not
+# just avoiding the DTB's traditional low address.
+KERNEL_ADDR = "0x20000000"
+DTB_ADDR = "0x30000000"
+MODULES_ADDR = "0xa0000000"  # 2.5GB - well clear of early kernel allocations,
+# confirmed safe via /proc/iomem showing System RAM 0x0-0xBFFFFFFF as one bank
+
+IPADDR = "192.168.25.140"
+SERVERIP = "192.168.25.145"
+
+HASS_HOST = "so-th-1.local"
+
+
+def log(msg: str, level: str = "INFO") -> None:
+    line = f"{time.strftime('%Y-%m-%dT%H:%M:%S%z')}  {level:5s} {msg}"
+    print(line)
+    with LOG.open("a") as fh:
+        fh.write(line + "\n")
+
+
+def run_devpy(*args: str, timeout: float = 30.0) -> str:
+    """One ./dev.py console-send call. Raises on failsafe timeout (the
+    '<<MATCHED' marker line is how we know it actually worked, not just
+    that the subprocess exited 0)."""
+    cmd = ["./dev.py", "console-send", *args]
+    log(f"run: {' '.join(cmd)}")
+    p = subprocess.run(cmd, cwd=REPO, capture_output=True, text=True, timeout=timeout + 10)
+    out = p.stdout + p.stderr
+    if "<<MATCHED" not in out and "--expect" in " ".join(args):
+        log(f"no match, output tail:\n{out[-2000:]}", "ERROR")
+        raise RuntimeError(f"console-send did not match: {' '.join(args)}")
+    return out
+
+
+async def power_cycle_verified() -> None:
+    """Cut and restore power via the Sonoff TH outlet, VERIFYING the final
+    state - this session was bitten once by trusting the ON command without
+    checking, and the box sat dark until the user noticed."""
+    from aioesphomeapi import APIClient
+
+    async def set_state(state: bool) -> None:
+        cli = APIClient(HASS_HOST, 6053, None)
+        await cli.connect(login=True)
+        ents, _ = await cli.list_entities_services()
+        relay = next(e for e in ents if type(e).__name__ == "SwitchInfo")
+        cli.switch_command(relay.key, state)
+        await asyncio.sleep(1)
+        await cli.disconnect()
+
+    async def get_state() -> bool | None:
+        cli = APIClient(HASS_HOST, 6053, None)
+        await cli.connect(login=True)
+        ents, _ = await cli.list_entities_services()
+        relay = next(e for e in ents if type(e).__name__ == "SwitchInfo")
+        states = []
+        cli.subscribe_states(states.append)
+        await asyncio.sleep(2)
+        await cli.disconnect()
+        return next((s.state for s in states if s.key == relay.key), None)
+
+    log("power: cutting")
+    await set_state(False)
+    await asyncio.sleep(5)
+    log("power: restoring")
+    await set_state(True)
+    await asyncio.sleep(2)
+    st = await get_state()
+    if st is not True:
+        raise RuntimeError(f"power restore did not take (state={st!r})")
+    log("power: restored, verified ON")
+
+
+def ensure_tftpd() -> None:
+    subprocess.run(["sudo", "-n", "fuser", "-k", "69/udp"], capture_output=True)
+    subprocess.Popen(
+        [
+            "sudo",
+            "-n",
+            "env",
+            "AWTO_VIA_DEVPY=1",
+            sys.executable,
+            "scripts/tftpd.py",
+            "--root",
+            "tmp/tftp",
+            "--port",
+            "69",
+        ],
+        cwd=REPO,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        start_new_session=True,
+    )
+    for _ in range(40):
+        r = subprocess.run(["ss", "-lun"], capture_output=True, text=True)
+        if ":69 " in r.stdout:
+            return
+        time.sleep(0.05)
+    raise RuntimeError("tftpd on tmp/tftp did not bind port 69")
+
+
+def tftp_and_verify(local_path: Path, addr: str) -> int:
+    """Stage into tmp/tftp, tftpboot to `addr`, and verify U-Boot's own
+    'Bytes transferred = N' line matches the real local size - this is what
+    actually catches a stale-tftpd-root or interrupted-transfer mistake,
+    not just checking the command didn't error."""
+    dest = TFTP_ROOT / local_path.name
+    dest.write_bytes(local_path.read_bytes())
+    size = dest.stat().st_size
+    out = run_devpy(
+        "--expect",
+        "Bytes transferred|Retry count exceeded",
+        "--timeout",
+        "90",
+        f"tftpboot {addr} {local_path.name}",
+        timeout=90,
+    )
+    if f"= {size} " not in out and f"= {size}\n" not in out and str(size) not in out:
+        raise RuntimeError(
+            f"transferred size didn't match {local_path.name}: expected {size}, "
+            f"output tail: {out[-500:]}"
+        )
+    log(f"tftp OK: {local_path.name} ({size} bytes) -> {addr}")
+    return size
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--kernel", required=True, help="path to the gzip'd uImage")
+    ap.add_argument("--dtb", required=True, help="path to the DTB")
+    ap.add_argument("--modules-tar", help="optional: tar.gz of the kernel-version modules dir")
+    ap.add_argument("--kver", help="kernel release string, required if --modules-tar is given")
+    ap.add_argument("--skip-power-cycle", action="store_true", help="box is already at a fresh boot")
+    a = ap.parse_args()
+
+    if a.modules_tar and not a.kver:
+        log("FATAL: --modules-tar needs --kver", "ERROR")
+        return 2
+
+    kernel = Path(a.kernel).resolve()
+    dtb = Path(a.dtb).resolve()
+    modules_tar = Path(a.modules_tar).resolve() if a.modules_tar else None
+    for p in (kernel, dtb, *([modules_tar] if modules_tar else [])):
+        if not p.exists():
+            log(f"FATAL: not found: {p}", "ERROR")
+            return 1
+
+    ensure_tftpd()
+
+    if not a.skip_power_cycle:
+        asyncio.run(power_cycle_verified())
+        # wait for the box to actually reach stock's prompt post-boot
+        for _ in range(60):
+            r = subprocess.run(
+                ["./dev.py", "console-send", "--expect", "ALPINE_UBNT_NAS_ALL>", "--timeout", "3", ""],
+                cwd=REPO,
+                capture_output=True,
+                text=True,
+            )
+            if "<<MATCHED" in r.stdout + r.stderr:
+                break
+        else:
+            log("FATAL: never reached stock U-Boot prompt after power-cycle", "ERROR")
+            return 1
+
+    run_devpy("--expect", "ALPINE_UBNT_NAS_ALL>", "--timeout", "8", f"setenv ipaddr {IPADDR}")
+    run_devpy("--expect", "ALPINE_UBNT_NAS_ALL>", "--timeout", "8", f"setenv serverip {SERVERIP}")
+
+    tftp_and_verify(kernel, KERNEL_ADDR)
+    tftp_and_verify(dtb, DTB_ADDR)
+    if modules_tar:
+        tftp_and_verify(modules_tar, MODULES_ADDR)
+
+    run_devpy(
+        "--expect",
+        "Uncompressing|Starting kernel",
+        "--timeout",
+        "20",
+        f"bootm {KERNEL_ADDR} - {DTB_ADDR}",
+    )
+
+    log("waiting for login...")
+    subprocess.run(["./dev.py", "wait-for-boot"], cwd=REPO, timeout=310)
+
+    run_devpy("--expect", "#", "--timeout", "10", "")
+
+    if modules_tar:
+        modules_size = modules_tar.stat().st_size
+        modules_md5 = hashlib.md5(modules_tar.read_bytes()).hexdigest()
+        skip_bytes = int(MODULES_ADDR, 16)
+        log(f"extracting modules from /dev/mem (skip={skip_bytes}, count={modules_size})")
+        out = run_devpy(
+            "--expect",
+            "#",
+            "--timeout",
+            "20",
+            f"dd if=/dev/mem of=/root/rbd-modules.tar.gz bs=1M skip={skip_bytes} "
+            f"count={modules_size} iflag=skip_bytes,count_bytes 2>&1; "
+            f"md5sum /root/rbd-modules.tar.gz",
+        )
+        if modules_md5 not in out:
+            log(f"FATAL: /dev/mem extraction checksum mismatch. Output:\n{out}", "ERROR")
+            return 1
+        log("checksum verified, extracting into place")
+        run_devpy(
+            "--expect",
+            "#",
+            "--timeout",
+            "30",
+            f"rm -rf /lib/modules/{a.kver} && "
+            f"tar xzf /root/rbd-modules.tar.gz -C /lib/modules 2>&1 | grep -v 'in the future'; "
+            f"echo EXTRACT_DONE",
+        )
+
+    log("DONE - box booted, at a shell.")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
