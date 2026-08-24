@@ -25,7 +25,6 @@ Requires:
 from __future__ import annotations
 
 import argparse
-import asyncio
 import hashlib
 import subprocess
 import sys
@@ -76,41 +75,63 @@ def run_devpy(*args: str, timeout: float = 30.0) -> str:
     return out
 
 
-async def power_cycle_verified() -> None:
-    """Cut and restore power via the Sonoff TH outlet, VERIFYING the final
-    state - this session was bitten once by trusting the ON command without
-    checking, and the box sat dark until the user noticed."""
-    from aioesphomeapi import APIClient
+# aioesphomeapi lives in awto-terminal's own venv, not this project's - shell
+# out to that interpreter rather than pulling a cross-project dependency in
+# here. (Discovered the hard way: this function used to import it directly
+# and crashed immediately with ModuleNotFoundError on first real use.)
+AWTO_TERMINAL_PY = "/mnt/2tb/git/awto-terminal/.venv/bin/python3"
 
-    async def set_state(state: bool) -> None:
-        cli = APIClient(HASS_HOST, 6053, None)
-        await cli.connect(login=True)
-        ents, _ = await cli.list_entities_services()
-        relay = next(e for e in ents if type(e).__name__ == "SwitchInfo")
-        cli.switch_command(relay.key, state)
-        await asyncio.sleep(1)
-        await cli.disconnect()
+_POWER_CYCLE_SCRIPT = """
+import asyncio
+from aioesphomeapi import APIClient
 
-    async def get_state() -> bool | None:
-        cli = APIClient(HASS_HOST, 6053, None)
-        await cli.connect(login=True)
-        ents, _ = await cli.list_entities_services()
-        relay = next(e for e in ents if type(e).__name__ == "SwitchInfo")
-        states = []
-        cli.subscribe_states(states.append)
-        await asyncio.sleep(2)
-        await cli.disconnect()
-        return next((s.state for s in states if s.key == relay.key), None)
+async def set_state(state):
+    cli = APIClient('so-th-1.local', 6053, None)
+    await cli.connect(login=True)
+    ents, _ = await cli.list_entities_services()
+    relay = next(e for e in ents if type(e).__name__ == 'SwitchInfo')
+    cli.switch_command(relay.key, state)
+    await asyncio.sleep(1)
+    await cli.disconnect()
 
-    log("power: cutting")
+async def get_state():
+    cli = APIClient('so-th-1.local', 6053, None)
+    await cli.connect(login=True)
+    ents, _ = await cli.list_entities_services()
+    relay = next(e for e in ents if type(e).__name__ == 'SwitchInfo')
+    states = []
+    cli.subscribe_states(states.append)
+    await asyncio.sleep(2)
+    await cli.disconnect()
+    return next((s.state for s in states if s.key == relay.key), None)
+
+async def cycle():
     await set_state(False)
     await asyncio.sleep(5)
-    log("power: restoring")
     await set_state(True)
     await asyncio.sleep(2)
     st = await get_state()
-    if st is not True:
-        raise RuntimeError(f"power restore did not take (state={st!r})")
+    print('FINAL_STATE:', st)
+
+asyncio.run(cycle())
+"""
+
+
+def power_cycle_verified() -> None:
+    """Cut and restore power via the Sonoff TH outlet, VERIFYING the final
+    state - this session was bitten once by trusting the ON command without
+    checking, and the box sat dark until the user noticed."""
+    log("power: cycling via so-th-1")
+    r = subprocess.run(
+        [AWTO_TERMINAL_PY, "-c", _POWER_CYCLE_SCRIPT],
+        cwd="/mnt/2tb/git/awto-terminal",
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+    out = r.stdout + r.stderr
+    if "FINAL_STATE: True" not in out:
+        raise RuntimeError(f"power restore did not take, output:\n{out}")
     log("power: restored, verified ON")
 
 
@@ -191,20 +212,28 @@ def main() -> int:
     ensure_tftpd()
 
     if not a.skip_power_cycle:
-        asyncio.run(power_cycle_verified())
-        # wait for the box to actually reach stock's prompt post-boot
-        for _ in range(60):
-            r = subprocess.run(
-                ["./dev.py", "console-send", "--expect", "ALPINE_UBNT_NAS_ALL>", "--timeout", "3", ""],
-                cwd=REPO,
-                capture_output=True,
-                text=True,
-            )
-            if "<<MATCHED" in r.stdout + r.stderr:
-                break
-        else:
-            log("FATAL: never reached stock U-Boot prompt after power-cycle", "ERROR")
+        # Stock currently autoboots straight to Fedora (see memory:
+        # chainload-vs-stock-boot-state) - a plain post-power-cycle poll for
+        # the prompt loses the race and types our setenv/tftpboot commands
+        # into a live Linux shell instead (confirmed: al_eth kernel log spam
+        # in place of "Bytes transferred"). catch-uboot.py must be racing
+        # ESC against the bootdelay BEFORE power is restored, not after.
+        log("starting catch-uboot.py to win the autoboot race")
+        catch = subprocess.Popen(
+            [sys.executable, "scripts/catch-uboot.py", "--seconds", "60"],
+            cwd=REPO,
+        )
+        power_cycle_verified()
+        try:
+            rc = catch.wait(timeout=70)
+        except subprocess.TimeoutExpired:
+            catch.kill()
+            log("FATAL: catch-uboot.py hung waiting for the U-Boot prompt", "ERROR")
             return 1
+        if rc != 0:
+            log("FATAL: catch-uboot.py did not reach the U-Boot prompt (autoboot won)", "ERROR")
+            return 1
+        log("U-Boot prompt reached, autoboot stopped")
 
     run_devpy("--expect", "ALPINE_UBNT_NAS_ALL>", "--timeout", "8", f"setenv ipaddr {IPADDR}")
     run_devpy("--expect", "ALPINE_UBNT_NAS_ALL>", "--timeout", "8", f"setenv serverip {SERVERIP}")
