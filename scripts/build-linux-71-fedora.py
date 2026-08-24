@@ -186,6 +186,25 @@ def configure():
             "MDIO_I2C",
             "--enable",
             "I2C_MUX_PCA954x",
+            # DIAGNOSTIC KASAN build for #131 - disabled by default so the
+            # normal build (matching the flashed NAND kernel/modules) stays
+            # the daily-driver. Re-enable via AWTO_KASAN_BUILD=1 to continue
+            # that investigation. See #131.
+            *(
+                [
+                    "--enable", "KASAN",
+                    "--enable", "KASAN_GENERIC",
+                    "--enable", "PROVE_LOCKING",
+                    "--enable", "DEBUG_LOCKDEP",
+                    "--enable", "DEBUG_ATOMIC_SLEEP",
+                    "--enable", "FTRACE",
+                    "--enable", "FUNCTION_TRACER",
+                    "--enable", "FUNCTION_GRAPH_TRACER",
+                    "--enable", "DYNAMIC_FTRACE",
+                ]
+                if os.environ.get("AWTO_KASAN_BUILD")
+                else []
+            ),
         ]
     )
     run(["make", "-C", SRC, "olddefconfig"])
