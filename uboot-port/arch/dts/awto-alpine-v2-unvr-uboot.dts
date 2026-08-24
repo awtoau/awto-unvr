@@ -233,12 +233,26 @@
 		 * Linux's pcie_ext0 (dts/alpine-v2-ubnt-unvr-ea16.dts) uses via
 		 * the amazon,al-alpine-v2-pcie driver - no U-Boot driver exists
 		 * for that compatible, so this uses the generic ECAM driver
-		 * instead. WIP (#137/#132): gets the controller enumerating
-		 * ("USB XHCI 1.00") but device-context allocation still times
-		 * out - likely needs explicit SMCC snoop-enable register writes
-		 * for this bus too (dma-coherent alone doesn't configure the
-		 * hardware snoop bits, same class of thing the internal bus's
-		 * al_pcie_internal_notifier does). Not yet fixed.
+		 * instead. WIP (#137/#132/#140): the controller enumerates but
+		 * `pci`/`pci enum` showed the SAME device at every devfn on the
+		 * bus (01.00.00 through 01.1f.00, all identical).
+		 *
+		 * bus-range = <0x01 0x01> below (real assigned bus, since the
+		 * internal pci@fbc00000 node already claims bus 0) was tested as
+		 * a fix for a suspected reg-window/bus-offset mismatch -
+		 * DISPROVEN on hardware, identical aliasing either way. Kept
+		 * anyway since it's a more accurate description of the real
+		 * topology (one bus, not 256), but the actual bug is elsewhere -
+		 * most likely this controller genuinely isn't flat-ECAM (needs
+		 * real per-access config-space windowing, which
+		 * pci-host-ecam-generic doesn't provide) - see #140 for the next
+		 * steps (compare against amazon,al-alpine-v2-pcie / the vendor
+		 * decompiled binary for real windowing logic). device-context
+		 * allocation may also still time out separately once enumeration
+		 * is fixed - likely needs explicit SMCC snoop-enable register
+		 * writes for this bus too (dma-coherent alone doesn't configure
+		 * the hardware snoop bits, same class of thing the internal
+		 * bus's al_pcie_internal_notifier does). Not yet fixed.
 		 */
 		pcie_ext0: pci@fb600000 {
 			compatible = "pci-host-ecam-generic";
@@ -249,7 +263,7 @@
 			#interrupt-cells = <1>;
 			reg = <0x0 0xfb600000 0x0 0x100000>;
 			ranges = <0x02000000 0x0 0xc0010000  0x0 0xc0010000  0x0 0x07ff0000>;
-			bus-range = <0x00 0xff>;
+			bus-range = <0x01 0x01>;
 		};
 
 		/* SoC GPIO (PL061), 6 banks × 8 = 48 lines. "arm,pl061" only (drop
