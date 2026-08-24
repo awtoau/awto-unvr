@@ -135,6 +135,43 @@ Front-end deltas vs the 1G path are **bold**. Everything else is copied from
   power; no software kill-switch, full stop — this is a hardware limitation, not a
   driver/DT gap to fix.
 
+**Open question:** SFP+ front-panel LED reads off under our U-Boot even with the
+module confirmed powered+correctly-identified via EEPROM (below) — presumed a
+link-state indicator that hasn't lit because the 10G link never fully
+establishes (see #90/#132), not a power tell. Not yet confirmed which GPIO
+actually drives that specific LED or what condition lights it.
+
+### 5a. Reading the SFP EEPROM by hand from the U-Boot prompt
+
+```
+i2c dev 0                  # pld i2c bus
+i2c mw 0x71 0.0 2 1        # select PCA9546 mux ch1 (SFP EEPROM) - see gotcha below
+i2c probe                  # 0x50 (+ 0x51 if DDM page present) should now show
+i2c md 0x50 0 1            # byte 0 - identifier, expect 0x03 (SFP)
+i2c md 0x50 3 1            # byte 3 - 10G compliance codes, expect 0x10 (10GBASE-SR)
+```
+
+Two gotchas that look like "module not present/powered" but aren't:
+
+- **The PCA9546 mux has no internal register addressing — it's a single control
+  byte, not a register+value device.** `i2c mw 0x71 0 2 1` (default 1-byte
+  address width) sends TWO bytes on the wire (`0x00` then `0x02`); the mux
+  latches the `0x00` and deselects all channels, so the write silently doesn't
+  do what it looks like it does. Always use the **`.0` zero-width address**
+  form (`i2c mw 0x71 0.0 2 1` / `i2c md 0x71 0.0 1`) for the mux specifically.
+  The SFP EEPROM itself (`0x50`) is a normal 1-byte-addressed device — don't
+  use `.0` there.
+- **A failed/NAK'd read to ANY device on this bus resets the mux's channel
+  selection as a side effect** (confirmed: `i2c md 0x50 0 20` — a 20-byte burst
+  read, which fails — left the mux reading back `0x00` on the next check, even
+  after a **correct** `.0`-addressed select). Re-select the mux
+  (`i2c mw 0x71 0.0 2 1`) after every failed read before probing again, or a
+  vanished `0x50`/`0x51` will look like the module dropped off the bus when
+  it's actually just the mux. Also: **read one byte at a time** — a 20-byte
+  burst (`i2c md 0x50 0 20`) reliably fails ("Error reading the chip: 1") where
+  single-byte reads (`i2c md 0x50 0 1`) succeed; looks like a DW i2c controller
+  burst-length limit on this device, not investigated further.
+
 ## 6. Device-tree — already present, no additions required for bring-up
 
 - `serdes@fd8c0000` compatible `annapurna-labs,al-serdes-25g`, reg-names
