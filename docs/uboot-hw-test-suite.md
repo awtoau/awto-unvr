@@ -70,4 +70,4 @@ power state requires an explicit flag. Print a machine-parsable PASS/FAIL line s
 
 1. PCIe enumeration glue → unlocks SATA + USB.
 2. SGPO + AL-NAND + al_eth + serdes ports from the stock U-Boot tree.
-4. DDR HAL integration (open source, see uboot-ddr-port.md) → BIST/margins.
+3. DDR HAL integration (open source, see uboot-ddr-port.md) → BIST/margins.

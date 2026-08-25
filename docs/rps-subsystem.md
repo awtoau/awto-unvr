@@ -87,16 +87,20 @@ the ttyS2 JSON link.)
 
 - **SW1/SW2 actual GPIO** (the gpio-33/34 assignment was the RPS pins) — continuity probe.
 - **ORing power-monitor IC part** — read `U1`/`U48` markings (clearer shot / on-board).
+  Per #64, if a monitor IC exists it's very likely a pure analog part with no i2c
+  interface — no firmware, digital bus, or hwmon driver references it anywhere.
 - **`JB4` per-blade rail map** — continuity probe (54 V/12 V/GND/UART/sense).
-- Whether ea16 populates any i2c power monitor at all (config lists none; physical U1/U48
-  suggest one exists on the ORing path).
-  - **Scan result (2026-08-17, `scripts/i2c-spi-scan.py`):** the *active* i2c bus
-    (`i2c_pld` @0xfd880000) has **no monitor** in the INA/ISL range 0x40–0x49 — only
-    mux/RTC/adt7475/pca9575/SFP. The **general bus `i2c_gen` @0xfd894000** (the stock
-    "bus 11", where the INA230/ISL28022/INA237 monitors sit) is **`status="disabled"`** in
-    the ea16 DTS, so nothing probes it. → To confirm ea16 has/lacks the monitor, **enable
-    `i2c_gen` and rescan 0x40–0x49**. Unrelated: an unidentified 32-bit-register device sits
-    at **0x57** on `i2c_pld` (not an INA/ISL monitor) — see #62.
+
+**RESOLVED (#64, closed): ea16 has no i2c RPS power monitor, full stop.** `i2c_gen`
+@0xfd894000 (the vendor "bus 11" INA230/ISL28022/INA237 would live there) was briefly
+enabled to scan it — MUIO pins 30/31 (i2c_gen's would-be SCL/SDA) are physically muxed
+to **ETH-LED and ulogo_blue** instead, so there is no real i2c bus routed there at all,
+regardless of DTS status. Neither 1.3.35 nor 5.1.25 Ubiquiti firmware carries an RPS
+i2c-monitor driver or config for this board either. `i2c_gen` is back to
+`status="disabled"` (matches stock; enabling it also shifted adapter numbers and caused
+#98). The 0x40–0x49 INA/ISL addresses in this doc's table above are the **6-port
+USP-RPS product profile inside `rpsd`**, not anything ea16 executes — see
+[i2c-map.md](i2c-map.md) and [gpio-map.md](gpio-map.md) for the full trail.
 
 Scripts: `scripts/rps_walk.py` (binary pin-table walk), `scripts/crop_rps.py`.
 Full offsets/disasm/photo cites: `tmp/logs/rps-reverse.md`.
