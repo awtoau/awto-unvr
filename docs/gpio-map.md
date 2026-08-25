@@ -1,5 +1,10 @@
 # AL-324 SoC GPIO / pinmux map (UNVR ea16)
 
+Scope: the 48 direct SoC PL061 lines and their pinmux only. For switch/button/LED
+*semantics* (SW1/SW2 investigation, reset-button daemon behaviour, RPS sense), the
+I2C-attached PCA9575 GPIO expanders, and the I2C mux/fan wiring, see
+[gpio-switches-leds.md](gpio-switches-leds.md).
+
 - 48 direct SoC lines = 6× PL061 banks × 8. Global pin `P` → bank `P/8`, line `P%8`.
 - Each ball is muxed by the **MUIO pinmux** (`pbs_mux_sel`): 4 bits/ball, `0`=GPIO, `1-4`=peripheral.
 - **The per-ball map is NOT in any source** — not stock U-Boot, not stock Linux GPL, not UNVR
