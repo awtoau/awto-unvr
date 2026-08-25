@@ -190,7 +190,9 @@ matte-black QFP **U1** in the SATA area is unread.
 
 ## Open questions
 
-- Which physical chip provides the 10G PHY, and its MDIO address on this board.
+- ~~Which physical chip provides the 10G PHY, and its MDIO address~~ **RESOLVED** —
+  no external PHY; direct SerDes→SFP (serdes group 3 lane 0), MDIO addr 0. See
+  [hal-provenance-and-cross-system.md](hal-provenance-and-cross-system.md) §3.
 - ~~PCA9575 full pin map~~ **RESOLVED** — full map in [gpio-switches-leds.md](gpio-switches-leds.md)
   (@0x20 SFP-1G-LED + straps; @0x21 bay pwr/present/fault; @0x29 = Pro bays 5–8, unpopulated).
 - What the second, unpopulated EEPROM region is for.
