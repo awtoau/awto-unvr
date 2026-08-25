@@ -123,36 +123,9 @@ Manifest written to [../sources/README.md](../sources/README.md).
 ./scripts/analyse-unvr-firmware.py
 ```
 
-**Format** ✅ (Ubiquiti's own, GPL-published as `mkfwimage` `src/fw.h` in
-openwrt/firmware-utils; verified byte-for-byte, **all CRCs valid**):
-
-```
-header  268 B (0x10C): magic[4] "UBNT" + version[256] + crc32 u32 BE @0x104 + pad
-                       header crc = crc32(0, image, 0x104)
-record   56 B (0x38):  magic[4] + name[16] + pad[12] + 6x u32 BE:
-                       memaddr, index, baseaddr, entryaddr, data_size, part_size
-        payload data_size B at record+0x38
-        trailer  8 B: crc32(0, record_start, 0x38+data_size) u32 BE + pad
-        stride = 0x38 + data_size + 8
-END.    12 B  terminator, crc32 over the whole preceding image
-ENDS   264 B  terminator, 256-byte RSA signature, no crc
-```
-
-**Walk the length chain, never scan for magics** — `PART`/`FILE` occur inside
-compressed payloads, and the tag differs between revisions (UNVR 4.1.9 used
-`FILE` for rootfs, 5.1.25 uses `PART`). The tag is cosmetic; the chain is the
-structure. Known magics: `UBNT`/`OPEN`/`GEOS`, `PART`, `FILE`, `EXEC`, `GART`,
-`END.`, `ENDS`.
-
-**Sections in 5.1.25** ✅ (header crc `0xd9417360` OK, 4 sections, 0 CRC failures):
-
-| # | Off | Magic | Name | data_size | part_size | base |
-|---|---|---|---|---|---|---|
-| 1 | 0x0000010C | FILE | `uboot` | 1395740 (1.33 MB) | 2097152 | 0x00000000 |
-| 2 | 0x00154D68 | FILE | `kernel` | 13846342 (13.20 MB) | 14680064 | 0x00200000 |
-| 3 | 0x00E894EE | PART | `rootfs` | 766357504 (730.86 MB) | 1010827264 | 0x01000000 |
-| 4 | 0x2E96452E | FILE | `updater` | 4653056 (4.44 MB) | 5242880 | 0x3D400000 |
-| — | 0x2EDD456E | ENDS | — | — | — | RSA-signed |
+**Format + section table:** [porting-reference.md#firmware-container-anatomy--decoded-and-verified](porting-reference.md#firmware-container-anatomy--decoded-and-verified)
+(Ubiquiti's own, GPL-published as `mkfwimage` `src/fw.h` in openwrt/firmware-utils;
+verified byte-for-byte, header crc `0xd9417360` OK, 4 sections, 0 CRC failures).
 
 **Gotcha — the image is `ENDS`-terminated, i.e. RSA-signed.** A modified
 container cannot be re-signed, so repacking a stock `.bin` is not a route.
@@ -201,22 +174,10 @@ The SPI-NOR `recovery kernel` partition is a **separate** kernel, not this one.
 **What:** questions that would otherwise need a running device, answered offline
 from `tmp/sections/kernel.config`.
 
-| Setting | Value | Consequence |
-|---|---|---|
-| `CONFIG_MODULE_SIG` | **not set** | Module signing **not enforced** — `insmod` your own modules |
-| `CONFIG_KEXEC` | **not set** | Not built in; would need `kexec-mod`, unported to Alpine V2 → **kexec is out** |
-| lockdown | **absent entirely** | No kernel lockdown |
-| `CONFIG_IKCONFIG` / `_PROC` | `y` / `y` | Config embedded; `/proc/config.gz` also on a live box |
-| `CONFIG_NET_AL_ETH` | `y` | al_eth **built in**, not a module — no `.ko` to lift |
-| `CONFIG_AL_DMA`, `CONFIG_AL_HAL` | `y` | Built in |
-| `CONFIG_AL_THERMAL_V2`, `_V3` | `y` | Built in |
-| `CONFIG_ARCH_ALPINE` | `y` | |
-| `CONFIG_AL_ETH_ALLOC_FRAG` | `y` | frag allocator (not PAGE, not SKB) |
-| `CONFIG_AL_ETH_FORCE_SFP_1G` | not set | SFP+ not pinned to 1G |
-
-Built in per `modules.builtin`: `al_eth_drv`, `al_dma_drv`, `soc/alpine/hal`,
-`soc/alpine/al_hal_export`. Shipped as modules: `al_nand`, `marvell10g`,
-`phylink`, `ubnthal`, `ubnt_common`, `ui-hdd-pwrctl`.
+Full setting table: [porting-reference.md#stock-kernel-config--settles-the-big-questions](porting-reference.md#stock-kernel-config--settles-the-big-questions).
+Headline: `CONFIG_MODULE_SIG` and `CONFIG_KEXEC` both **not set** (no signing
+enforced, no kexec), no lockdown, `CONFIG_NET_AL_ETH=y` (al_eth built in, no
+`.ko` to lift).
 
 ## 7. Read the initramfs boot scripts
 
