@@ -31,6 +31,8 @@ import sys
 import time
 import zlib
 
+from _repo import NPROC  # -j28 host build parallelism (#146)
+
 SRC = "/mnt/2tb/unvr-port-refs/linux-6.12"
 PORT = "/mnt/2tb/unvr-port-refs/linux-alpine-v2"
 REPO = "/mnt/2tb/git/awto-unvr"  # al_* module source-of-truth (modules/)
@@ -164,7 +166,7 @@ grep -q 'CONFIG_PCIE_AL_INTERNAL=y' .config || { echo "FATAL: PCIE_AL_INTERNAL n
 KVER=$(make -s kernelrelease)
 echo "KVER=$KVER"
 # Build modules FIRST so they can be embedded in the initramfs.
-make -j"$(nproc)" modules
+make -j"$NPROC" modules
 for m in al_eth al_dma al_ssm al_sgpo; do
   echo "=== out-of-tree $m ==="
   make -C /src KDIR=/src M=/modules/$m modules
@@ -176,7 +178,7 @@ cp modules.builtin modules.order $MDIR/ 2>/dev/null || true
 cp modules.builtin.modinfo $MDIR/ 2>/dev/null || true
 depmod -b /initramfs-root $KVER || true
 # Now link the kernel (embeds initramfs-root, which now contains the modules).
-make -j"$(nproc)" Image dtbs
+make -j"$NPROC" Image dtbs
 echo "=== container build complete (KVER=$KVER) ==="
 """
 
@@ -195,6 +197,8 @@ def docker_run():
             f"{OUT}/initramfs-root:/initramfs-root",
             "-v",
             f"{OUT}/initramfs-devnodes:/initramfs-devnodes:ro",
+            "-e",
+            f"NPROC={NPROC}",
             IMAGE_TAG,
             "bash",
             "-c",

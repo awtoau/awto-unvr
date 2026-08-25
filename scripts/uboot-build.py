@@ -32,6 +32,8 @@ import sys
 import time
 from pathlib import Path
 
+from _repo import NPROC  # -j28 host build parallelism (#146)
+
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SCAFFOLD = os.path.join(REPO, "uboot-port")
 TREE = os.environ.get("UBOOT_TREE", "/mnt/2tb/unvr-port-refs/u-boot-v2026.07")
@@ -287,8 +289,7 @@ def build():
     if run(["make", o, "alpine_v2_unvr_defconfig"]) != 0:
         log("defconfig FAILED")
         return 1
-    nproc = str(os.cpu_count() or 4)
-    rc = run(["make", o, "-j" + nproc])
+    rc = run(["make", o, f"-j{NPROC}"])
     binp = os.path.join(BUILDDIR, "u-boot.bin")
     if rc == 0 and os.path.exists(binp):
         log(f"BUILD OK: u-boot.bin = {os.path.getsize(binp)} bytes")

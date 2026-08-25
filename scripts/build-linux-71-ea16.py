@@ -30,7 +30,6 @@ now-populated initramfs) -> pure-python uImage wrap.
 Out: /mnt/2tb/unvr-port-refs/build-out-71/
 """
 
-import multiprocessing
 import os
 import pathlib
 import shutil
@@ -40,6 +39,8 @@ import sys
 import time
 import zlib
 
+from _repo import NPROC  # -j28 host build parallelism (#146)
+
 SRC = os.environ.get("AWTO_KERNEL_SRC", "/mnt/2tb/unvr-port-refs/linux-v7.1.8")
 PORT = "/mnt/2tb/unvr-port-refs/linux-alpine-v2"
 REPO = "/mnt/2tb/git/awto-unvr"  # ea16 board DTS hardware-of-record lives here (dts/)
@@ -48,7 +49,6 @@ OUT612 = "/mnt/2tb/unvr-port-refs/build-out"  # source of the reusable initramfs
 DTS_NAME = "alpine-v2-ubnt-unvr-ea16"
 VER = "7.1"
 CROSS = "aarch64-linux-gnu-"
-NPROC = str(multiprocessing.cpu_count())
 MIN_FREE_GB = 15
 
 IH_MAGIC, IH_OS_LINUX, IH_ARCH_ARM64, IH_TYPE_KERNEL, IH_COMP_NONE = (

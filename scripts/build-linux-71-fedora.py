@@ -15,7 +15,6 @@ Out: build-out-71-fedora/  (uImage-unvr-ea16-7.1-fedora, dtb, config, modroot/).
 Deploy modroot/lib/modules/<kv> -> the Fedora rootfs /lib/modules; boot the uImage.
 """
 
-import multiprocessing
 import os
 import pathlib
 import shutil
@@ -24,6 +23,8 @@ import subprocess
 import sys
 import time
 import zlib
+
+from _repo import NPROC  # -j28 host build parallelism (#146)
 
 ROOT_PASSWORD = "unvr"  # documented default, see docs/fedora-on-ssd.md
 SRC = os.environ.get("AWTO_KERNEL_SRC", "/mnt/2tb/unvr-port-refs/linux-v7.1.8")
@@ -56,7 +57,6 @@ FEDORA_CONFIG = "/mnt/2tb/git/awto-unvr/tmp/fedora-kernel/fedora-aarch64.config"
 DTS_NAME = "alpine-v2-ubnt-unvr-ea16"
 VER = "7.1"
 CROSS = "aarch64-linux-gnu-"
-NPROC = str(multiprocessing.cpu_count())
 # ccache: ~free incremental-rebuild speed across variants sharing mostly-
 # identical source (KASAN vs plain differ in a handful of CONFIG_* symbols;
 # most .o files compile identically either way, and ccache is keyed on

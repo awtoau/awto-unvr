@@ -22,11 +22,15 @@ Cortex-A57 aarch64, 4 GiB, sysid **0xea16**. Host name for the box: **woomera**.
   devices, 2×8TB SATA @6G + Samsung SSD, eth0 (1G) + eth1 (10G SFP), al_ssm
   crypto, al_dma 4ch, xHCI SuperSpeed. 6.18→7.1 = **zero new API deltas**.
   [linux-71-build.md](linux-71-build.md), [porting-roadmap.md](porting-roadmap.md).
+  All build variants (which script/kernel-ver/output for what purpose,
+  including the Fedora daily-driver + its KASAN twin + on-box native +
+  awto-uboot): [build.md](build.md).
 - **Patch series published** — `kernel-patches/` (6 patches, base 6.18.44, apply
   clean to 6.12/6.18/7.1).
 - **Tooling**: `scripts/netboot.py`, `scripts/flash-nand.py` (standalone-boot flash,
   verified), `scripts/build-linux-{612,618,71}-ea16.py`,
-  `scripts/build-linux-71-fedora.py`, `scripts/build-fedora-rootfs.py`.
+  `scripts/build-linux-71-fedora.py`, `scripts/build-fedora-rootfs.py`,
+  `./dev.py ram-boot-deploy` (RAM-boot test without flashing NAND).
 - **Hardware fully catalogued** (this session):
   - **Master BOM** — [components.md](components.md): every part/connector/test-point
     reconciled from a 130-photo sweep (SoC silk = **U2**; `U1` is a separate unresolved QFP).

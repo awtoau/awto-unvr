@@ -93,3 +93,9 @@ def rel(p: Path | str) -> str:
         return str(Path(p).resolve().relative_to(REPO))
     except ValueError:
         return str(p)
+
+
+# Build parallelism for every `make -j` in this repo (#146). 28 of this host's
+# 32 cores; the 4 spare keep the box interactive during a kernel build. Env
+# override AWTO_NPROC for a different host.
+NPROC = max(1, min(os.cpu_count() or 4, int(os.environ.get("AWTO_NPROC") or 28)))

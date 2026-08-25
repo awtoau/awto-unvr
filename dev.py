@@ -10,6 +10,9 @@ Repurposing a Ubiquiti UNVR (Annapurna Labs Alpine V2, aarch64). Board sysid
 0xea16 - "UNVR without eMMC": kernel/rootfs in NAND, USERDEV on an internal USB
 stick. Boot chain in docs/boot-flow.md, prior art in docs/sources.md.
 
+Which build do I want? docs/build.md - one table for every kernel/U-Boot/
+rootfs variant (which script, which dev.py command, what it's for).
+
 Console model: ONE tio owns the serial port and exposes a unix socket + a plain
 log; whoever does NOT own it works through those. Two ways to own it:
   - `console`      - agent runs tio backgrounded (headless; agent drives).
