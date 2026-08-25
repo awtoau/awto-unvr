@@ -232,16 +232,27 @@ def configure():
             # modules and vice versa, repeatedly, until this was fixed).
             *(
                 [
-                    "--enable", "KASAN",
-                    "--enable", "KASAN_GENERIC",
-                    "--enable", "PROVE_LOCKING",
-                    "--enable", "DEBUG_LOCKDEP",
-                    "--enable", "DEBUG_ATOMIC_SLEEP",
-                    "--enable", "FTRACE",
-                    "--enable", "FUNCTION_TRACER",
-                    "--enable", "FUNCTION_GRAPH_TRACER",
-                    "--enable", "DYNAMIC_FTRACE",
-                    "--set-str", "LOCALVERSION", "-kasan",
+                    "--enable",
+                    "KASAN",
+                    "--enable",
+                    "KASAN_GENERIC",
+                    "--enable",
+                    "PROVE_LOCKING",
+                    "--enable",
+                    "DEBUG_LOCKDEP",
+                    "--enable",
+                    "DEBUG_ATOMIC_SLEEP",
+                    "--enable",
+                    "FTRACE",
+                    "--enable",
+                    "FUNCTION_TRACER",
+                    "--enable",
+                    "FUNCTION_GRAPH_TRACER",
+                    "--enable",
+                    "DYNAMIC_FTRACE",
+                    "--set-str",
+                    "LOCALVERSION",
+                    "-kasan",
                 ]
                 if os.environ.get("AWTO_KASAN_BUILD")
                 else []
@@ -346,7 +357,19 @@ def build():
     check_dts_shared()
     configure()
     stage_dts()
-    run(["make", "-C", SRC, f"O={KOUT}", *CC_ARG, f"-j{NPROC}", "Image", "dtbs", "modules"])
+    run(
+        [
+            "make",
+            "-C",
+            SRC,
+            f"O={KOUT}",
+            *CC_ARG,
+            f"-j{NPROC}",
+            "Image",
+            "dtbs",
+            "modules",
+        ]
+    )
     # kver() reads include/config/kernel.release off disk - only trustworthy
     # AFTER this real build has actually run and written it fresh.
     kv = kver()

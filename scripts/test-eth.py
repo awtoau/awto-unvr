@@ -285,7 +285,11 @@ def check_local_route(target_ip: str, report: Report) -> None:
         "local route to enp0s2",
         ok,
         f"traffic to {target_ip} goes out local iface={iface or '?'} speed={speed}"
-        + ("" if ok else " (NOT a 10G-capable local NIC - result below is not a real 10G test)"),
+        + (
+            ""
+            if ok
+            else " (NOT a 10G-capable local NIC - result below is not a real 10G test)"
+        ),
     )
 
 
