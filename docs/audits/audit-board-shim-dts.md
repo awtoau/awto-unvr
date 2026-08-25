@@ -59,7 +59,7 @@ two i2c deviations (400 kHz, sda-hold 300 ns) are deliberate and CI-guard-enforc
 | reg-names `nb/ctrl/phy` | dts:144 | consumed by al_ddr ofnode lookup | uboot-ddr-port.md:162 | **match** (non-overlapping: 70000+10000=80000, +8000=88000, +8000=90000) | — |
 | **DTS — serdes** |||||
 | serdes PMA `0xfd8c0000`/0x2400 | dts:161 | `serdes @ 0xfd8c0000` size 0x2400 | ea16.dts:145-148 / hardware.md:239 | **match** | — |
-| pcs 2nd reg `0xfe120000`/0x10000 | dts:162 | **no source** — self-flagged unverified in the node | dts:154-158 | **fabricated-no-source** (honestly flagged) | confirm PCS base on HW or drop (diag-only, cannot wedge boot) |
+| pcs 2nd reg `0xfe120000`/0x10000 | dts:162 | **no source** — self-flagged unverified in the node | dts:154-158 | **fabricated-no-source** (flagged unverified in the node itself) | confirm PCS base on HW or drop (diag-only, cannot wedge boot) |
 | **DTS — UART / GPIO / timer** |||||
 | uart0 `0xfd883000` int SPI17 | dts:104-106 | `serial@1883000` +0xfc000000, SPI17 | alpine-v2.dtsi:161-164 / hardware.md:223 | **match** | — |
 | uart2 `0xfd885000` int SPI19 | dts:120-123 | `serial@1885000`, SPI19 | alpine-v2.dtsi:181-184 / hardware.md:225 | **match** | — |
@@ -130,7 +130,7 @@ two i2c deviations (400 kHz, sda-hold 300 ns) are deliberate and CI-guard-enforc
 ## Summary
 
 - **Mismatches: 1** (snoop-fix filter looser than source — currently benign, MUST-FIX #2).
-- **Fabricated-no-source: 1** (serdes "pcs" 0xfe120000 — honestly self-flagged, diag-only).
+- **Fabricated-no-source: 1** (serdes "pcs" 0xfe120000 — self-flagged unverified in the node, diag-only).
 - **Deliberate deviations (not defects): 2** (i2c 400 kHz, sda-hold 300 ns — both CI-guard-enforced).
 - **Unverified (cited, not re-derived): 1** (A57 debug-enable offset 0xf0070008).
 - **Everything else: match**, including the entire #74 AXI-snoop path (byte-for-byte vs pcie-al-internal.c), SP805 regs, adt7475, DDR reg-names, UART/GPIO bases, PCA9575 LED map, HAL barriers/accessors.
