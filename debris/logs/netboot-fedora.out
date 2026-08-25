@@ -1,0 +1,5 @@
+2026-08-16T18:46:28+10:00  streaming ESC to catch U-Boot - POWER-CYCLE/REBOOT THE UNVR NOW (tag=7.1-fedora)
+2026-08-16T18:46:28+10:00  U-Boot prompt reached - firing netboot sequence
+2026-08-16T18:46:37+10:00  uImage-unvr-ea16-7.1-fedora-gz loaded
+2026-08-16T18:46:37+10:00  alpine-v2-ubnt-unvr-ea16-7.1-fedora.dtb loaded
+2026-08-16T18:46:37+10:00  bootm handed off to kernel - watch console log for platform bring-up

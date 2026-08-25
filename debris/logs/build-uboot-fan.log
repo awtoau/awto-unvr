@@ -1,0 +1,15 @@
+10:34:38.613185+1000  INFO  [dev.py] run: /home/dan/opt/cpython-ft/bin/python3 /mnt/2tb/git/awto-unvr/scripts/uboot-build.py
+DTS shared-fact check OK: i2c@fd880000 [clock-frequency=400000, i2c-sda-hold-time-ns=300] match across 2 trees
+[2026-08-19T10:34:38+1000] staged board/annapurna/alpine/Kconfig
+[2026-08-19T10:34:38+1000] staged board/annapurna/alpine/Makefile
+[2026-08-19T10:34:38+1000] staged board/annapurna/alpine/MAINTAINERS
+[2026-08-19T10:34:38+1000] staged board/annapurna/alpine/alpine.c
+[2026-08-19T10:34:38+1000] staged board/annapurna/alpine/pl061.c
+[2026-08-19T10:34:38+1000] staged include/configs/alpine.h
+[2026-08-19T10:34:38+1000] staged configs/alpine_v2_unvr_defconfig
+[2026-08-19T10:34:38+1000] staged arch/arm/dts/awto-alpine-v2-unvr-uboot.dts
+[2026-08-19T10:34:38+1000] run: make O=/mnt/2tb/git/awto-unvr/tmp/uboot-build alpine_v2_unvr_defconfig
+[2026-08-19T10:34:39+1000] exit 0 (0s)
+[2026-08-19T10:34:39+1000] run: make O=/mnt/2tb/git/awto-unvr/tmp/uboot-build -j32
+[2026-08-19T10:34:42+1000] exit 0 (3s)
+[2026-08-19T10:34:42+1000] BUILD OK: u-boot.bin = 491048 bytes

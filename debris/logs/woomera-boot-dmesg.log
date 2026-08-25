@@ -1,0 +1,1159 @@
+[    0.000000] Booting Linux on physical CPU 0x0000000000 [0x411fd073]
+[    0.000000] Linux version 7.1.8-dirty (dan@selwyn) (aarch64-linux-gnu-gcc (GCC) 16.1.1 20260501 (Red Hat Cross 16.1.1-1), GNU ld version 2.46-1.fc44) #3 SMP PREEMPT_DYNAMIC Sun Aug 16 18:36:14 AEST 2026
+[    0.000000] KASLR disabled due to lack of seed
+[    0.000000] Machine model: Ubiquiti UNVR (ea16)
+[    0.000000] efi: UEFI not found.
+[    0.000000] [Firmware Bug]: Kernel image misaligned at boot, please fix your bootloader!
+[    0.000000] OF: reserved mem: 0x0000000092000000..0x00000000921fffff (2048 KiB) map non-reusable ramoops@92000000
+[    0.000000] NUMA: Faking a node at [mem 0x0000000000000000-0x000000023fffffff]
+[    0.000000] NODE_DATA(0) allocated [mem 0x23f5df300-0x23f5f60ff]
+[    0.000000] cma: Reserved 64 MiB at 0x00000000bc000000
+[    0.000000] psci: probing for conduit method from DT.
+[    0.000000] psci: PSCIv0.2 detected in firmware.
+[    0.000000] psci: Using standard PSCI v0.2 function IDs
+[    0.000000] psci: MIGRATE_INFO_TYPE not supported.
+[    0.000000] Zone ranges:
+[    0.000000]   DMA      [mem 0x0000000000000000-0x00000000ffffffff]
+[    0.000000]   DMA32    empty
+[    0.000000]   Normal   [mem 0x0000000100000000-0x000000023fffffff]
+[    0.000000]   Device   empty
+[    0.000000] Movable zone start for each node
+[    0.000000] Early memory node ranges
+[    0.000000]   node   0: [mem 0x0000000000000000-0x00000000bfffffff]
+[    0.000000]   node   0: [mem 0x0000000200000000-0x000000023fffffff]
+[    0.000000] Initmem setup node 0 [mem 0x0000000000000000-0x000000023fffffff]
+[    0.000000] percpu: Embedded 58 pages/cpu s111640 r8192 d117736 u237568
+[    0.000000] pcpu-alloc: s111640 r8192 d117736 u237568 alloc=58*4096
+[    0.000000] pcpu-alloc: [0] 0 [0] 1 [0] 2 [0] 3 
+[    0.000000] Detected PIPT I-cache on CPU0
+[    0.000000] CPU features: detected: GICv3 CPU interface
+[    0.000000] CPU features: detected: Spectre-v2
+[    0.000000] CPU features: detected: Spectre-v3a
+[    0.000000] CPU features: detected: Spectre-v4
+[    0.000000] CPU features: detected: Spectre-BHB
+[    0.000000] CPU features: detected: ARM erratum 1742098
+[    0.000000] CPU features: detected: ARM errata 1165522, 1319367, or 1530923
+[    0.000000] alternatives: applying boot alternatives
+[    0.000000] Kernel command line: console=ttyS0,115200 root=PARTUUID=dcdc291e-9956-48cd-9d7c-48219877881a rootfstype=ext4 rw rootwait selinux=0 panic=15 reboot=cold
+[    0.000000] printk: log buffer data + meta data: 262144 + 1114112 = 1376256 bytes
+[    0.000000] Dentry cache hash table entries: 524288 (order: 10, 4194304 bytes, linear)
+[    0.000000] Inode-cache hash table entries: 262144 (order: 9, 2097152 bytes, linear)
+[    0.000000] software IO TLB: area num 4.
+[    0.000000] software IO TLB: mapped [mem 0x00000000b8000000-0x00000000bc000000] (64MB)
+[    0.000000] Fallback order for Node 0: 0 
+[    0.000000] Built 1 zonelists, mobility grouping on.  Total pages: 1048576
+[    0.000000] Policy zone: Normal
+[    0.000000] mem auto-init: stack:all(zero), heap alloc:on, heap free:off
+[    0.000000] SLUB: HWalign=64, Order=0-3, MinObjects=0, CPUs=4, Nodes=1
+[    0.000000] ftrace: allocating 69806 entries in 274 pages
+[    0.000000] ftrace: allocated 274 pages with 3 groups
+[    0.000000] Dynamic Preempt: lazy
+[    0.000000] rcu: Preemptible hierarchical RCU implementation.
+[    0.000000] rcu: 	RCU event tracing is enabled.
+[    0.000000] rcu: 	RCU restricting CPUs from NR_CPUS=4096 to nr_cpu_ids=4.
+[    0.000000] 	Trampoline variant of Tasks RCU enabled.
+[    0.000000] 	Rude variant of Tasks RCU enabled.
+[    0.000000] 	Tracing variant of Tasks RCU enabled.
+[    0.000000] rcu: RCU calculated value of scheduler-enlistment delay is 100 jiffies.
+[    0.000000] rcu: Adjusting geometry for rcu_fanout_leaf=16, nr_cpu_ids=4
+[    0.000000] RCU Tasks: Setting shift to 2 and lim to 1 rcu_task_cb_adjust=1 rcu_task_cpu_ids=4.
+[    0.000000] RCU Tasks Rude: Setting shift to 2 and lim to 1 rcu_task_cb_adjust=1 rcu_task_cpu_ids=4.
+[    0.000000] NR_IRQS: 64, nr_irqs: 64, preallocated irqs: 0
+[    0.000000] GICv3: GIC: Using split EOI/Deactivate mode
+[    0.000000] GICv3: 352 SPIs implemented
+[    0.000000] GICv3: 0 Extended SPIs implemented
+[    0.000000] Root IRQ handler: gic_handle_irq
+[    0.000000] GICv3: GICv3 features: 16 PPIs
+[    0.000000] GICv3: GICD_CTLR.DS=0, SCR_EL3.FIQ=1
+[    0.000000] GICv3: CPU0: found redistributor 0 region 0:0x00000000f0280000
+[    0.000000] rcu: srcu_init: Setting srcu_struct sizes based on contention.
+[    0.000000] clocksource: jiffies: mask: 0xffffffff max_cycles: 0xffffffff, max_idle_ns: 1911260446275000 ns
+[    0.000000] arch_timer: cp15 timer running at 58.33MHz (phys).
+[    0.000000] clocksource: arch_sys_counter: mask: 0x1ffffffffffffff max_cycles: 0x1ae82a6a7f, max_idle_ns: 881590413063 ns
+[    0.000000] sched_clock: 57 bits at 58MHz, resolution 17ns, wraps every 4398046511097ns
+[    0.000089] clocksource: arm,sp804: mask: 0xffffffff max_cycles: 0xffffffff, max_idle_ns: 3822520893 ns
+[    0.000095] sched_clock: 32 bits at 500MHz, resolution 2ns, wraps every 4294967295ns
+[    0.001311] kfence: initialized - using 2097152 bytes for 255 objects at 0x(____ptrval____)-0x(____ptrval____)
+[    0.001680] Console: colour dummy device 80x25
+[    0.002181] Calibrating delay loop (skipped), value calculated using timer frequency.. 116.66 BogoMIPS (lpj=58333)
+[    0.002188] pid_max: default: 32768 minimum: 301
+[    0.004592] Yama: becoming mindful.
+[    0.004894] LSM support for eBPF active
+[    0.004937] landlock: Up and running.
+[    0.005786] Mount-cache hash table entries: 8192 (order: 4, 65536 bytes, linear)
+[    0.005800] Mountpoint-cache hash table entries: 8192 (order: 4, 65536 bytes, linear)
+[    0.006576] VFS: Finished mounting rootfs on nullfs
+[    0.008941] cacheinfo: Unable to detect cache hierarchy for CPU 0
+[    0.009875] rcu: Hierarchical SRCU implementation.
+[    0.009879] rcu: 	Max phase no-delay instances is 400.
+[    0.010087] Timer migration: 1 hierarchy levels; 8 children per group; 1 crossnode level
+[    0.011051] EFI services will not be available.
+[    0.011278] smp: Bringing up secondary CPUs ...
+[    0.011695] Detected PIPT I-cache on CPU1
+[    0.011727] GICv3: CPU1: found redistributor 1 region 0:0x00000000f02a0000
+[    0.011745] CPU1: Booted secondary processor 0x0000000001 [0x411fd073]
+[    0.012201] Detected PIPT I-cache on CPU2
+[    0.012227] GICv3: CPU2: found redistributor 2 region 0:0x00000000f02c0000
+[    0.012241] CPU2: Booted secondary processor 0x0000000002 [0x411fd073]
+[    0.012693] Detected PIPT I-cache on CPU3
+[    0.012716] GICv3: CPU3: found redistributor 3 region 0:0x00000000f02e0000
+[    0.012729] CPU3: Booted secondary processor 0x0000000003 [0x411fd073]
+[    0.012796] smp: Brought up 1 node, 4 CPUs
+[    0.012802] SMP: Total of 4 processors activated.
+[    0.012804] CPU: All CPU(s) started at EL2
+[    0.012817] CPU features: detected: 32-bit EL0 Support
+[    0.012819] CPU features: detected: 32-bit EL1 Support
+[    0.012822] CPU features: detected: CRC32 instructions
+[    0.012829] CPU features: detected: PMUv3
+[    0.012858] alternatives: applying system-wide alternatives
+[    0.013436] CPU features: emulated: Privileged Access Never (PAN) using TTBR0_EL1 switching
+[    0.013733] Memory: 3900648K/4194304K available (23744K kernel code, 6314K rwdata, 12892K rodata, 14912K init, 10345K bss, 220340K reserved, 65536K cma-reserved)
+[    0.014527] devtmpfs: initialized
+[    0.018164] posixtimers hash table entries: 2048 (order: 3, 32768 bytes, linear)
+[    0.018202] futex hash table entries: 1024 (65536 bytes on 1 NUMA nodes, total 64 KiB, linear).
+[    0.018670] 15632 pages in range for non-PLT usage
+[    0.018676] 507152 pages in range for PLT usage
+[    0.021155] DMI: not present or invalid.
+[    0.023196] NET: Registered PF_NETLINK/PF_ROUTE protocol family
+[    0.023976] DMA: preallocated 512 KiB GFP_KERNEL pool for atomic allocations
+[    0.024119] DMA: preallocated 512 KiB GFP_KERNEL|GFP_DMA pool for atomic allocations
+[    0.024336] audit: initializing netlink subsys (disabled)
+[    0.024456] audit: type=2000 audit(0.023:1): state=initialized audit_enabled=0 res=1
+[    0.025134] thermal_sys: Registered thermal governor 'fair_share'
+[    0.025138] thermal_sys: Registered thermal governor 'step_wise'
+[    0.025141] thermal_sys: Registered thermal governor 'user_space'
+[    0.025182] cpuidle: using governor menu
+[    0.025290] hw-breakpoint: found 6 breakpoint and 4 watchpoint registers.
+[    0.025359] ASID allocator initialised with 65536 entries
+[    0.026188] Serial: AMBA PL011 UART driver
+[    0.027807] /soc/interrupt-controller@f0200000: Fixed dependency cycle(s) with /soc/interrupt-controller@f0200000
+[    0.035857] HugeTLB: registered 1.00 GiB page size, pre-allocated 0 pages
+[    0.035862] HugeTLB: 0 KiB vmemmap can be freed for a 1.00 GiB page
+[    0.035865] HugeTLB: registered 32.0 MiB page size, pre-allocated 0 pages
+[    0.035868] HugeTLB: 0 KiB vmemmap can be freed for a 32.0 MiB page
+[    0.035870] HugeTLB: registered 2.00 MiB page size, pre-allocated 0 pages
+[    0.035872] HugeTLB: 0 KiB vmemmap can be freed for a 2.00 MiB page
+[    0.035875] HugeTLB: registered 64.0 KiB page size, pre-allocated 0 pages
+[    0.035877] HugeTLB: 0 KiB vmemmap can be freed for a 64.0 KiB page
+[    0.043315] raid6: skipped pq benchmark and selected neonx8
+[    0.043320] raid6: using neon recovery algorithm
+[    0.043806] ACPI: Interpreter disabled.
+[    0.044538] iommu: Default domain type: Translated
+[    0.044542] iommu: DMA domain TLB invalidation policy: lazy mode
+[    0.046408] SCSI subsystem initialized
+[    0.046508] libata version 3.00 loaded.
+[    0.046612] usbcore: registered new interface driver usbfs
+[    0.046631] usbcore: registered new interface driver hub
+[    0.046662] usbcore: registered new device driver usb
+[    0.047186] pca953x 0-0020: supply vcc not found, using dummy regulator
+[    0.047259] pca953x 0-0020: using auto increment
+[    0.049314] pca953x 0-0021: supply vcc not found, using dummy regulator
+[    0.049361] pca953x 0-0021: using auto increment
+[    0.052699] pca953x 0-0029: supply vcc not found, using dummy regulator
+[    0.052744] pca953x 0-0029: using auto increment
+[    0.053126] pca953x 0-0029: failed writing register: -121
+[    0.053199] pca953x 0-0029: probe with driver pca953x failed with error -121
+[    0.053275] pps_core: LinuxPPS API ver. 1 registered
+[    0.053278] pps_core: Software ver. 5.3.6 - Copyright 2005-2007 Rodolfo Giometti <giometti@linux.it>
+[    0.053285] PTP clock support registered
+[    0.053470] EDAC MC: Ver: 3.0.0
+[    0.053648] scmi_core: SCMI protocol bus registered
+[    0.054685] NetLabel: Initializing
+[    0.054689] NetLabel:  domain hash size = 128
+[    0.054692] NetLabel:  protocols = UNLABELED CIPSOv4 CALIPSO
+[    0.054724] NetLabel:  unlabeled traffic allowed by default
+[    0.054733] mctp: management component transport protocol core
+[    0.054736] NET: Registered PF_MCTP protocol family
+[    0.054891] vgaarb: loaded
+[    0.055140] clocksource: Switched to clocksource arch_sys_counter
+[    0.057121] VFS: Disk quotas dquot_6.6.0
+[    0.057217] VFS: Dquot-cache hash table entries: 512 (order 0, 4096 bytes)
+[    0.058092] pnp: PnP ACPI: disabled
+[    0.063574] NET: Registered PF_INET protocol family
+[    0.063728] IP idents hash table entries: 65536 (order: 7, 524288 bytes, linear)
+[    0.066610] tcp_listen_portaddr_hash hash table entries: 2048 (order: 3, 32768 bytes, linear)
+[    0.066655] Table-perturb hash table entries: 65536 (order: 6, 262144 bytes, linear)
+[    0.066902] TCP established hash table entries: 32768 (order: 6, 262144 bytes, linear)
+[    0.067076] TCP bind hash table entries: 32768 (order: 8, 1048576 bytes, linear)
+[    0.067362] TCP: Hash tables configured (established 32768 bind 32768)
+[    0.067572] MPTCP token hash table entries: 4096 (order: 5, 98304 bytes, linear)
+[    0.067703] UDP hash table entries: 2048 (order: 5, 131072 bytes, linear)
+[    0.068250] NET: Registered PF_UNIX/PF_LOCAL protocol family
+[    0.068298] NET: Registered PF_XDP protocol family
+[    0.068381] PCI: CLS 0 bytes, default 64
+[    0.071733] kvm [1]: nv: 570 coarse grained trap handlers
+[    0.071857] kvm [1]: nv: 710 fine grained trap handlers
+[    0.072121] kvm [1]: IPA Size Limit: 44 bits
+[    0.074489] kvm [1]: vgic-v2@f0120000
+[    0.074504] kvm [1]: GICv3 sysreg trapping enabled ([C], reduced performance)
+[    0.074525] kvm [1]: GIC system register CPU interface enabled
+[    0.074559] kvm [1]: vgic interrupt IRQ9
+[    0.074577] kvm [1]: Hyp nVHE mode initialized successfully
+[    0.076486] Initialise system trusted keyrings
+[    0.076525] Key type blacklist registered
+[    0.076727] workingset: timestamp_bits=37 (anon: 33) max_order=20 bucket_order=0 (anon: 0)
+[    0.086790] integrity: Platform Keyring initialized
+[    0.086821] integrity: Machine keyring initialized
+[    0.087060] cryptd: max_cpu_qlen set to 1000
+[    0.114607] NET: Registered PF_ALG protocol family
+[    0.114648] Key type asymmetric registered
+[    0.114651] Asymmetric key parser 'x509' registered
+[    0.115494] Block layer SCSI generic (bsg) driver version 0.4 loaded (major 241)
+[    0.115611] io scheduler mq-deadline registered
+[    0.115616] io scheduler kyber registered
+[    0.115810] io scheduler bfq registered
+[    0.115968] xor: measuring software checksum speed
+[    0.116462]    neon            :  6675 MB/sec
+[    0.116842]    32regs          :  8747 MB/sec
+[    0.117198]    8regs           :  9271 MB/sec
+[    0.117201] xor: using function: 8regs (9271 MB/sec)
+[    0.117456] atomic64_test: passed
+[    0.120263] pl061_gpio fd887000.gpio: PL061 GPIO chip registered
+[    0.120526] pl061_gpio fd888000.gpio: PL061 GPIO chip registered
+[    0.120776] pl061_gpio fd889000.gpio: PL061 GPIO chip registered
+[    0.121011] pl061_gpio fd88a000.gpio: PL061 GPIO chip registered
+[    0.121272] pl061_gpio fd88b000.gpio: PL061 GPIO chip registered
+[    0.121504] pl061_gpio fd897000.gpio: PL061 GPIO chip registered
+[    0.121882] ledtrig-cpu: registered to indicate activity on CPUs
+[    0.123076] al-pcie fd800000.pcie: host bridge /soc/pcie@fd800000 ranges:
+[    0.123111] al-pcie fd800000.pcie:      MEM 0x00c0010000..0x00c7ffffff -> 0x00c0010000
+[    0.123135] al-pcie fd800000.pcie:       IO 0x00c0000000..0x00c000ffff -> 0x0000010000
+[    0.123239] al-pcie fd800000.pcie: iATU: unroll F, 16 ob, 24 ib, align 4K, limit 4G
+[    0.217145] al-pcie fd800000.pcie: PCIe Gen.2 x1 link up
+[    0.217283] al-pcie fd800000.pcie: PCI host bridge to bus 0001:00
+[    0.217290] pci_bus 0001:00: root bus resource [bus 00-ff]
+[    0.217295] pci_bus 0001:00: root bus resource [mem 0xc0010000-0xc7ffffff]
+[    0.217300] pci_bus 0001:00: root bus resource [io  0x0000-0xffff] (bus address [0x10000-0x1ffff])
+[    0.217331] pci 0001:00:00.0: [1c36:0031] type 01 class 0x060400 PCIe Root Port
+[    0.217343] pci 0001:00:00.0: BAR 0 [mem 0x00000000-0x000fffff]
+[    0.217347] pci 0001:00:00.0: BAR 1 [mem 0x00000000-0x0000ffff]
+[    0.217351] pci 0001:00:00.0: ROM [mem 0x00000000-0x0000ffff pref]
+[    0.217355] pci 0001:00:00.0: PCI bridge to [bus 01-ff]
+[    0.217360] pci 0001:00:00.0:   bridge window [io  0x0000-0x0fff]
+[    0.217364] pci 0001:00:00.0:   bridge window [mem 0x00000000-0x000fffff]
+[    0.217369] pci 0001:00:00.0:   bridge window [mem 0x00000000-0x000fffff pref]
+[    0.217382] pci 0001:00:00.0: [Firmware Bug]: disabling VPD access (can't determine size of non-standard VPD format)
+[    0.217404] pci 0001:00:00.0: supports D1
+[    0.217407] pci 0001:00:00.0: PME# supported from D0 D1 D3hot
+[    0.217975] pci 0001:01:00.0: [1b21:1142] type 00 class 0x0c0330 PCIe Legacy Endpoint
+[    0.218022] pci 0001:01:00.0: BAR 0 [mem 0xc0000000-0xc0007fff 64bit]
+[    0.218100] pci 0001:01:00.0: PME# supported from D3cold
+[    0.220142] pci 0001:01:00.0: ASPM: default states L0s L1
+[    0.220157] pci 0001:00:00.0: PCI bridge to [bus 01-ff]
+[    0.220165] pci 0001:00:00.0: bridge window [mem 0x00000000-0x000fffff]: can't claim; no compatible bridge window
+[    0.220170] pci 0001:00:00.0: bridge window [mem 0x00000000-0x000fffff pref]: can't claim; no compatible bridge window
+[    0.220175] pci 0001:00:00.0: BAR 0 [mem 0x00000000-0x000fffff]: can't claim; no compatible bridge window
+[    0.220178] pci 0001:00:00.0: BAR 1 [mem 0x00000000-0x0000ffff]: can't claim; no compatible bridge window
+[    0.220182] pci 0001:00:00.0: ROM [mem 0x00000000-0x0000ffff pref]: can't claim; no compatible bridge window
+[    0.220186] pci 0001:01:00.0: BAR 0 [mem 0xc0000000-0xc0007fff 64bit]: can't claim; no compatible bridge window
+[    0.220192] pci 0001:00:00.0: disabling bridge window [mem size 0x00100000 pref] to [bus 01-ff] (unused)
+[    0.220201] pci 0001:00:00.0: BAR 0 [mem 0xc0100000-0xc01fffff]: assigned
+[    0.220206] pci 0001:00:00.0: bridge window [mem 0xc0200000-0xc02fffff]: assigned
+[    0.220210] pci 0001:00:00.0: BAR 1 [mem 0xc0010000-0xc001ffff]: assigned
+[    0.220214] pci 0001:00:00.0: ROM [mem 0xc0020000-0xc002ffff pref]: assigned
+[    0.220221] pci 0001:01:00.0: BAR 0 [mem 0xc0200000-0xc0207fff 64bit]: assigned
+[    0.220232] pci 0001:00:00.0: PCI bridge to [bus 01-ff]
+[    0.220235] pci 0001:00:00.0:   bridge window [io  0x0000-0x0fff]
+[    0.220239] pci 0001:00:00.0:   bridge window [mem 0xc0200000-0xc02fffff]
+[    0.220244] pci_bus 0001:00: resource 4 [mem 0xc0010000-0xc7ffffff]
+[    0.220248] pci_bus 0001:00: resource 5 [io  0x0000-0xffff]
+[    0.220251] pci_bus 0001:01: resource 0 [io  0x0000-0x0fff]
+[    0.220254] pci_bus 0001:01: resource 1 [mem 0xc0200000-0xc02fffff]
+[    0.220258] pci_bus 0001:01: resource 2 [mem size 0x00100000 pref disabled]
+[    0.220263] pci 0001:00:00.0: Disabling MSI/MSI-X
+[    0.220603] pcieport 0001:00:00.0: PME: Signaling with IRQ 22
+[    0.220800] pcieport 0001:00:00.0: AER: enabled with IRQ 22
+[    0.220972] pci 0001:01:00.0: enabling device (0000 -> 0002)
+[    0.221272] al-internal-pcie fbc00000.pci: host bridge /soc/pci@fbc00000 ranges:
+[    0.221289] al-internal-pcie fbc00000.pci:      MEM 0x00fe000000..0x00feffffff -> 0x00fe000000
+[    0.221336] al-internal-pcie: registered SMCC snoop notifier
+[    0.221340] al-internal-pcie fbc00000.pci: ECAM at [mem 0xfbc00000-0xfbcfffff] for [bus 00]
+[    0.221414] al-internal-pcie fbc00000.pci: PCI host bridge to bus 0000:00
+[    0.221420] pci_bus 0000:00: root bus resource [bus 00]
+[    0.221424] pci_bus 0000:00: root bus resource [mem 0xfe000000-0xfeffffff]
+[    0.221477] pci 0000:00:01.0: [1c36:0001] type 00 class 0x020000 PCIe Root Complex Integrated Endpoint
+[    0.221490] pci 0000:00:01.0: BAR 0 [mem 0xfe000000-0xfe01ffff 64bit]
+[    0.221495] pci 0000:00:01.0: BAR 2 [mem 0xfe020000-0xfe020fff 64bit]
+[    0.221498] pci 0000:00:01.0: BAR 4 [mem 0xfe024000-0xfe027fff 64bit]
+[    0.221518] pci 0000:00:01.0: PME# supported from D3hot D3cold
+[    0.221634] pci 0000:00:02.0: [1c36:0002] type 00 class 0x020000 PCIe Root Complex Integrated Endpoint
+[    0.221647] pci 0000:00:02.0: BAR 0 [mem 0xfe040000-0xfe05ffff 64bit]
+[    0.221652] pci 0000:00:02.0: BAR 2 [mem 0xfe060000-0xfe060fff 64bit]
+[    0.221655] pci 0000:00:02.0: BAR 4 [mem 0xfe070000-0xfe07ffff 64bit]
+[    0.221673] pci 0000:00:02.0: PME# supported from D3hot D3cold
+[    0.221702] pci 0000:00:02.0: VF BAR 0 [mem 0x00000000-0x0001ffff 64bit]
+[    0.221706] pci 0000:00:02.0: VF BAR 0 [mem 0x00000000-0x0005ffff 64bit]: contains BAR 0 for 3 VFs
+[    0.221857] pci 0000:00:04.0: [1c36:0022] type 00 class 0x100000 PCIe Root Complex Integrated Endpoint
+[    0.221871] pci 0000:00:04.0: BAR 0 [mem 0xfe080000-0xfe09ffff 64bit]
+[    0.221876] pci 0000:00:04.0: BAR 4 [mem 0xfe0a0000-0xfe0affff 64bit]
+[    0.221894] pci 0000:00:04.0: PME# supported from D3hot D3cold
+[    0.221908] pci 0000:00:04.0: VF BAR 0 [mem 0x00000000-0x0001ffff 64bit]
+[    0.221912] pci 0000:00:04.0: VF BAR 0 [mem 0x00000000-0x0001ffff 64bit]: contains BAR 0 for 1 VFs
+[    0.222029] pci 0000:00:05.0: [1c36:0022] type 00 class 0x010400 PCIe Root Complex Integrated Endpoint
+[    0.222043] pci 0000:00:05.0: BAR 0 [mem 0xfe0c0000-0xfe0dffff 64bit]
+[    0.222047] pci 0000:00:05.0: BAR 4 [mem 0xfe0e0000-0xfe0effff 64bit]
+[    0.222066] pci 0000:00:05.0: PME# supported from D3hot D3cold
+[    0.222079] pci 0000:00:05.0: VF BAR 0 [mem 0x00000000-0x0001ffff 64bit]
+[    0.222083] pci 0000:00:05.0: VF BAR 0 [mem 0x00000000-0x0001ffff 64bit]: contains BAR 0 for 1 VFs
+[    0.222296] pci 0000:00:08.0: [1c36:0031] type 00 class 0x010601 PCIe Root Complex Integrated Endpoint
+[    0.222310] pci 0000:00:08.0: BAR 5 [mem 0xfe0f0000-0xfe0f3fff]
+[    0.222328] pci 0000:00:08.0: PME# supported from D3hot D3cold
+[    0.222422] pci 0000:00:09.0: [1c36:0031] type 00 class 0x010601 PCIe Root Complex Integrated Endpoint
+[    0.222436] pci 0000:00:09.0: BAR 5 [mem 0xfe0f4000-0xfe0f7fff]
+[    0.222453] pci 0000:00:09.0: PME# supported from D3hot D3cold
+[    0.223166] pci 0000:00:02.0: VF BAR 0 [mem 0x00000000-0x0005ffff 64bit]: can't claim; no compatible bridge window
+[    0.223172] pci 0000:00:04.0: VF BAR 0 [mem 0x00000000-0x0001ffff 64bit]: can't claim; no compatible bridge window
+[    0.223176] pci 0000:00:05.0: VF BAR 0 [mem 0x00000000-0x0001ffff 64bit]: can't claim; no compatible bridge window
+[    0.223187] pci 0000:00:02.0: VF BAR 0 [mem 0xfe100000-0xfe15ffff 64bit]: assigned
+[    0.223193] pci 0000:00:04.0: VF BAR 0 [mem 0xfe160000-0xfe17ffff 64bit]: assigned
+[    0.223198] pci 0000:00:05.0: VF BAR 0 [mem 0xfe180000-0xfe19ffff 64bit]: assigned
+[    0.223204] pci_bus 0000:00: resource 4 [mem 0xfe000000-0xfeffffff]
+[    0.227256] Serial: 8250/16550 driver, 32 ports, IRQ sharing enabled
+[    0.233360] printk: legacy console [ttyS0] disabled
+[    0.233547] fd883000.serial: ttyS0 at MMIO 0xfd883000 (irq = 23, base_baud = 31250000) is a 16550A
+[    0.233570] printk: legacy console [ttyS0] enabled
+[    2.159963] fd885000.serial: ttyS2 at MMIO 0xfd885000 (irq = 24, base_baud = 31250000) is a 16550A
+[    2.169767] msm_serial: driver initialized
+[    2.174065] SuperH (H)SCI(F) driver initialized
+[    2.180998] ahci 0000:00:08.0: al-internal-pcie: SMCC snoop configured (slot 8, SM0 only sub-masters)
+[    2.190275] ahci 0000:00:08.0: enabling device (0000 -> 0002)
+[    2.196056] ahci 0000:00:08.0: controller can't do PMP, turning off CAP_PMP
+[    2.203072] ahci 0000:00:08.0: AHCI vers 0001.0300, 32 command slots, 6 Gbps, SATA mode
+[    2.211088] ahci 0000:00:08.0: 4/4 ports implemented (port mask 0xf)
+[    2.217446] ahci 0000:00:08.0: flags: 64bit ncq sntf pm led clo only fbs pio slum part ccc apst 
+[    2.227478] scsi host0: ahci
+[    2.230854] scsi host1: ahci
+[    2.234011] scsi host2: ahci
+[    2.237167] scsi host3: ahci
+[    2.240173] ata1: SATA max UDMA/133 abar m16384@0xfe0f0000 port 0xfe0f0100 irq 25 lpm-pol 4
+[    2.248522] ata2: SATA max UDMA/133 abar m16384@0xfe0f0000 port 0xfe0f0180 irq 25 lpm-pol 4
+[    2.256869] ata3: SATA max UDMA/133 abar m16384@0xfe0f0000 port 0xfe0f0200 irq 25 lpm-pol 4
+[    2.265218] ata4: SATA max UDMA/133 abar m16384@0xfe0f0000 port 0xfe0f0280 irq 25 lpm-pol 4
+[    2.273608] ahci 0000:00:09.0: al-internal-pcie: SMCC snoop configured (slot 9, SM0 only sub-masters)
+[    2.282883] ahci 0000:00:09.0: enabling device (0000 -> 0002)
+[    2.288661] ahci 0000:00:09.0: controller can't do PMP, turning off CAP_PMP
+[    2.295668] ahci 0000:00:09.0: AHCI vers 0001.0300, 32 command slots, 6 Gbps, SATA mode
+[    2.303673] ahci 0000:00:09.0: 4/4 ports implemented (port mask 0xf)
+[    2.310026] ahci 0000:00:09.0: flags: 64bit ncq sntf pm led clo only fbs pio slum part ccc apst 
+[    2.320002] scsi host4: ahci
+[    2.323166] scsi host5: ahci
+[    2.326352] scsi host6: ahci
+[    2.329504] scsi host7: ahci
+[    2.332509] ata5: SATA max UDMA/133 abar m16384@0xfe0f4000 port 0xfe0f4100 irq 26 lpm-pol 4
+[    2.340860] ata6: SATA max UDMA/133 abar m16384@0xfe0f4000 port 0xfe0f4180 irq 26 lpm-pol 4
+[    2.349207] ata7: SATA max UDMA/133 abar m16384@0xfe0f4000 port 0xfe0f4200 irq 26 lpm-pol 4
+[    2.357555] ata8: SATA max UDMA/133 abar m16384@0xfe0f4000 port 0xfe0f4280 irq 26 lpm-pol 4
+[    2.366428] CAN device driver interface
+[    2.370588] xhci_hcd 0001:01:00.0: xHCI Host Controller
+[    2.375922] xhci_hcd 0001:01:00.0: new USB bus registered, assigned bus number 1
+[    2.443933] xhci_hcd 0001:01:00.0: hcc params 0x0200e080 hci version 0x100 quirks 0x0000000010800010
+[    2.453582] xhci_hcd 0001:01:00.0: xHCI Host Controller
+[    2.458902] xhci_hcd 0001:01:00.0: new USB bus registered, assigned bus number 2
+[    2.466305] xhci_hcd 0001:01:00.0: Host supports USB 3.0 SuperSpeed
+[    2.472725] usb usb1: New USB device found, idVendor=1d6b, idProduct=0002, bcdDevice= 7.01
+[    2.480990] usb usb1: New USB device strings: Mfr=3, Product=2, SerialNumber=1
+[    2.488211] usb usb1: Product: xHCI Host Controller
+[    2.493108] usb usb1: Manufacturer: Linux 7.1.8-dirty xhci-hcd
+[    2.498940] usb usb1: SerialNumber: 0001:01:00.0
+[    2.503840] hub 1-0:1.0: USB hub found
+[    2.507621] hub 1-0:1.0: 2 ports detected
+[    2.511970] usb usb2: We don't know the algorithms for LPM for this host, disabling LPM.
+[    2.520198] usb usb2: New USB device found, idVendor=1d6b, idProduct=0003, bcdDevice= 7.01
+[    2.528464] usb usb2: New USB device strings: Mfr=3, Product=2, SerialNumber=1
+[    2.535691] usb usb2: Product: xHCI Host Controller
+[    2.540638] usb usb2: Manufacturer: Linux 7.1.8-dirty xhci-hcd
+[    2.546473] usb usb2: SerialNumber: 0001:01:00.0
+[    2.551361] hub 2-0:1.0: USB hub found
+[    2.555158] hub 2-0:1.0: 2 ports detected
+[    2.559612] usbcore: registered new interface driver usbserial_generic
+[    2.566157] usbserial: USB Serial support registered for generic
+[    2.572268] mousedev: PS/2 mouse device common for all mice
+[    2.578627] device-mapper: core: CONFIG_IMA_DISABLE_HTABLE is disabled. Duplicate IMA measurements will not be recorded in the IMA log.
+[    2.590846] device-mapper: uevent: version 1.0.3
+[    2.594255] ata4: SATA link down (SStatus 0 SControl 300)
+[    2.595824] device-mapper: ioctl: 4.50.0-ioctl (2025-04-28) initialised: dm-devel@lists.linux.dev
+[    2.600884] ata1: SATA link down (SStatus 0 SControl 300)
+[    2.611290] hid: raw HID events driver (C) Jiri Kosina
+[    2.615155] ata2: SATA link down (SStatus 0 SControl 300)
+[    2.620395] usbcore: registered new interface driver usbhid
+[    2.631242] usbhid: USB HID core driver
+[    2.635669] armv8-pmu pmu: hw perfevents: no interrupt-affinity property, guessing.
+[    2.643580] hw perfevents: enabled with armv8_cortex_a57 PMU driver, 7 (0,8000003f) counters available
+[    2.653140] watchdog: NMI not fully supported
+[    2.653780] drop_monitor: Initializing network drop monitor service
+[    2.657501] watchdog: Hard watchdog permanently disabled
+[    2.669333] Initializing XFRM netlink socket
+[    2.672702] ata6: SATA link down (SStatus 0 SControl 300)
+[    2.674100] NET: Registered PF_INET6 protocol family
+[    2.679017] ata8: SATA link down (SStatus 0 SControl 300)
+[    2.685026] Segment Routing with IPv6
+[    2.693031] RPL Segment Routing with IPv6
+[    2.697065] In-situ OAM (IOAM) with IPv6
+[    2.701035] mip6: Mobile IPv6
+[    2.704012] NET: Registered PF_PACKET protocol family
+[    2.709070] can: controller area network core
+[    2.713632] NET: Registered PF_CAN protocol family
+[    2.725613] registered taskstats version 1
+[    2.730094] Loading compiled-in X.509 certificates
+[    2.751047] Demotion targets for Node 0: null
+[    2.755428] page_owner is disabled
+[    2.759040] Key type .fscrypt registered
+[    2.762970] Key type fscrypt-provisioning registered
+[    2.771404] Btrfs loaded, zoned=yes, fsverity=yes
+[    2.776199] Key type big_key registered
+[    2.780454] Key type encrypted registered
+[    2.784481] ima: No TPM chip found, activating TPM-bypass!
+[    2.790003] Loading compiled-in module X.509 certificates
+[    2.911268] Loaded X.509 cert 'Build time autogenerated kernel key: c5f03238bcc4d3b32d457fa380bc175bf5a08dbf'
+[    2.921426] ima: Allocated hash algorithm: sha256
+[    2.926415] ima: No architecture policies found
+[    2.930982] evm: Initialising EVM extended attributes:
+[    2.936131] evm: security.selinux
+[    2.939446] evm: security.SMACK64 (disabled)
+[    2.943715] evm: security.SMACK64EXEC (disabled)
+[    2.948330] evm: security.SMACK64TRANSMUTE (disabled)
+[    2.953378] evm: security.SMACK64MMAP (disabled)
+[    2.957993] evm: security.apparmor (disabled)
+[    2.962347] evm: security.ima
+[    2.965314] evm: security.capability
+[    2.968887] evm: HMAC attrs: 0x1
+[    2.976658] alg: No test for 842 (842-scomp)
+[    3.015278] clk: Disabling unused clocks
+[    3.019219] PM: genpd: Disabling unused power domains
+[    3.163137] random: crng init done
+[    5.271141] ata3: SATA link up 6.0 Gbps (SStatus 133 SControl 300)
+[    5.277463] ata3.00: Model 'Samsung SSD 850 EVO 1TB', rev 'EMT01B6Q', applying quirks: noncqtrim zeroaftertrim
+[    5.287493] ata3.00: supports DRM functions and may not be fully accessible
+[    5.294456] ata3.00: ATA-9: Samsung SSD 850 EVO 1TB, EMT01B6Q, max UDMA/133
+[    5.307806] ata3.00: NCQ Send/Recv Log not supported
+[    5.312775] ata3.00: 1953525168 sectors, multi 1: LBA48 NCQ (depth 32), AA
+[    5.319852] ata3.00: Features: Trust Dev-Sleep DIPM
+[    5.324886] ata3.00: supports DRM functions and may not be fully accessible
+[    5.338229] ata3.00: NCQ Send/Recv Log not supported
+[    5.343407] ata3.00: configured for UDMA/133
+[    5.358003] scsi 2:0:0:0: Direct-Access     ATA      Samsung SSD 850  1B6Q PQ: 0 ANSI: 5
+[    5.366799] sd 2:0:0:0: Attached scsi generic sg0 type 0
+[    5.367012] sd 2:0:0:0: [sda] 1953525168 512-byte logical blocks: (1.00 TB/932 GiB)
+[    5.379807] sd 2:0:0:0: [sda] Write Protect is off
+[    5.384613] sd 2:0:0:0: [sda] Mode Sense: 00 3a 00 00
+[    5.384671] sd 2:0:0:0: [sda] Write cache: enabled, read cache: enabled, doesn't support DPO or FUA
+[    5.393836] sd 2:0:0:0: [sda] Preferred minimum I/O size 512 bytes
+[    5.407569]  sda: sda1 sda2
+[    5.411029] sd 2:0:0:0: [sda] supports TCG Opal
+[    5.415582] sd 2:0:0:0: [sda] Attached SCSI disk
+[    7.684136] ata7: link is slow to respond, please be patient (ready=0)
+[    7.693137] ata5: link is slow to respond, please be patient (ready=0)
+[   13.281175] amba fd890000.timer: deferred probe pending: (reason unknown)
+[   17.735133] ata7: link is slow to respond, please be patient (ready=0)
+[   17.743136] ata5: SATA link up 6.0 Gbps (SStatus 133 SControl 300)
+[   17.749817] ata5.00: ATA-9: WDC WD82PURZ-85TEUY0, 82.00A82, max UDMA/133
+[   17.894136] ata7: SATA link up 6.0 Gbps (SStatus 133 SControl 300)
+[   17.900760] ata7.00: ATA-9: WDC WD82PURZ-85TEUY0, 82.00A82, max UDMA/133
+[   17.916640] ata5.00: 15628053168 sectors, multi 0: LBA48 NCQ (depth 32), AA
+[   17.926388] ata5.00: Features: HIPM DIPM NCQ-sndrcv NCQ-prio
+[   17.941173] ata5.00: configured for UDMA/133
+[   17.951432] scsi 4:0:0:0: Direct-Access     ATA      WDC WD82PURZ-85T 0A82 PQ: 0 ANSI: 5
+[   17.960259] sd 4:0:0:0: Attached scsi generic sg1 type 0
+[   17.960362] sd 4:0:0:0: [sdb] 15628053168 512-byte logical blocks: (8.00 TB/7.28 TiB)
+[   17.973406] sd 4:0:0:0: [sdb] 4096-byte physical blocks
+[   17.978660] sd 4:0:0:0: [sdb] Write Protect is off
+[   17.983464] sd 4:0:0:0: [sdb] Mode Sense: 00 3a 00 00
+[   17.983519] sd 4:0:0:0: [sdb] Write cache: enabled, read cache: enabled, doesn't support DPO or FUA
+[   17.992653] sd 4:0:0:0: [sdb] Preferred minimum I/O size 4096 bytes
+[   18.061810] ata7.00: 15628053168 sectors, multi 0: LBA48 NCQ (depth 32), AA
+[   18.071521] ata7.00: Features: HIPM DIPM NCQ-sndrcv NCQ-prio
+[   18.091647] sd 4:0:0:0: [sdb] Attached SCSI disk
+[   18.305485] ata7.00: configured for UDMA/133
+[   18.315650] scsi 6:0:0:0: Direct-Access     ATA      WDC WD82PURZ-85T 0A82 PQ: 0 ANSI: 5
+[   18.324469] sd 6:0:0:0: Attached scsi generic sg2 type 0
+[   18.324481] sd 6:0:0:0: [sdc] 15628053168 512-byte logical blocks: (8.00 TB/7.28 TiB)
+[   18.337620] sd 6:0:0:0: [sdc] 4096-byte physical blocks
+[   18.342879] sd 6:0:0:0: [sdc] Write Protect is off
+[   18.347678] sd 6:0:0:0: [sdc] Mode Sense: 00 3a 00 00
+[   18.347727] sd 6:0:0:0: [sdc] Write cache: enabled, read cache: enabled, doesn't support DPO or FUA
+[   18.356852] sd 6:0:0:0: [sdc] Preferred minimum I/O size 4096 bytes
+[   18.386727] sd 6:0:0:0: [sdc] Attached SCSI disk
+[   18.391391] md: Waiting for all devices to be available before autodetect
+[   18.398183] md: If you don't use raid, use raid=noautodetect
+[   18.403842] md: Autodetecting RAID arrays.
+[   18.407938] md: autorun ...
+[   18.410733] md: ... autorun DONE.
+[   18.466173] EXT4-fs (sda2): mounted filesystem 948572c9-df49-465c-840d-a312a5bbc8c0 r/w with ordered data mode. Quota mode: none.
+[   18.477886] VFS: Mounted root (ext4 filesystem) on device 8:2.
+[   18.484081] devtmpfs: mounted
+[   18.487164] VFS: Pivoted into new rootfs
+[   18.500645] Freeing unused kernel memory: 14912K
+[   18.529017] Checked W+X mappings: passed, no W+X pages found
+[   18.534707] Run /sbin/init as init process
+[   18.538808]   with arguments:
+[   18.538813]     /sbin/init
+[   18.538817]   with environment:
+[   18.538820]     HOME=/
+[   18.538824]     TERM=linux
+[   18.834568] zram: Added device: zram0
+[   19.228685] fuse: init (API version 7.45)
+[   19.264921] al_thermal: loading out-of-tree module taints kernel.
+[   19.271665] i2c_dev: i2c /dev entries driver
+[   19.279772] al_thermal_probe: Thermal Sensor Loaded at: 0x00000000f8853f72.
+[   19.298478] systemd-journald[205]: Collecting audit messages is enabled.
+[   19.637670] audit: type=1130 audit(19.634:2): pid=1 uid=0 auid=4294967295 ses=4294967295 msg='unit=systemd-modules-load comm="systemd" exe="/usr/lib/systemd/systemd" hostname=? addr=? terminal=? res=success'
+[   19.692373] EXT4-fs (sda2): re-mounted 948572c9-df49-465c-840d-a312a5bbc8c0.
+[   19.699699] audit: type=1130 audit(19.696:3): pid=1 uid=0 auid=4294967295 ses=4294967295 msg='unit=systemd-journald comm="systemd" exe="/usr/lib/systemd/systemd" hostname=? addr=? terminal=? res=success'
+[   19.732243] audit: type=1130 audit(19.729:4): pid=1 uid=0 auid=4294967295 ses=4294967295 msg='unit=systemd-network-generator comm="systemd" exe="/usr/lib/systemd/systemd" hostname=? addr=? terminal=? res=success'
+[   19.762257] audit: type=1130 audit(19.759:5): pid=1 uid=0 auid=4294967295 ses=4294967295 msg='unit=systemd-remount-fs comm="systemd" exe="/usr/lib/systemd/systemd" hostname=? addr=? terminal=? res=success'
+[   19.793308] audit: type=1130 audit(19.790:6): pid=1 uid=0 auid=4294967295 ses=4294967295 msg='unit=systemd-udev-load-credentials comm="systemd" exe="/usr/lib/systemd/systemd" hostname=? addr=? terminal=? res=success'
+[   19.823260] audit: type=1130 audit(19.820:7): pid=1 uid=0 auid=4294967295 ses=4294967295 msg='unit=systemd-vconsole-setup comm="systemd" exe="/usr/lib/systemd/systemd" hostname=? addr=? terminal=? res=success'
+[   19.888206] systemd-journald[205]: Received client request to flush runtime journal.
+[   19.917557] systemd-journald[205]: /var/log/journal/f17fe72bf4de4483a0dd32963f8c0f4c/system.journal: Realtime clock jumped backwards relative to last journal entry, rotating.
+[   19.933234] systemd-journald[205]: Rotating system journal.
+[   19.956333] audit: type=1130 audit(19.953:8): pid=1 uid=0 auid=4294967295 ses=4294967295 msg='unit=systemd-sysctl comm="systemd" exe="/usr/lib/systemd/systemd" hostname=? addr=? terminal=? res=success'
+[   19.984321] audit: type=1130 audit(19.981:9): pid=1 uid=0 auid=4294967295 ses=4294967295 msg='unit=systemd-udev-trigger comm="systemd" exe="/usr/lib/systemd/systemd" hostname=? addr=? terminal=? res=success'
+[   20.002830] audit: type=1334 audit(19.999:10): prog-id=17 op=LOAD
+[   20.009069] audit: type=1334 audit(20.005:11): prog-id=18 op=LOAD
+[   20.705721] zram0: detected capacity change from 0 to 7976960
+[   21.235999] pstore: Using crash dump compression: deflate
+[   21.244411] al_ssm 0000:00:04.0: al-internal-pcie: SMCC snoop configured (slot 4, all 4 sub-masters)
+[   21.245371] pstore: Registered ramoops as persistent store backend
+[   21.257930] al_ssm 0000:00:04.0: of_irq_parse_pci: failed with rc=-22
+[   21.260907] ramoops: using 0x200000@0x92000000, ecc: 16
+[   21.266493] al_ssm 0000:00:04.0: Alpine V2 SSM crypto engine found (vendor=1c36 dev=0022 class=100000 rev=2)
+[   21.272786] input: gpio-keys as /devices/platform/gpio-keys/input/input0
+[   21.272899] al_eth 0000:00:01.0: al-internal-pcie: SMCC snoop configured (slot 1, all 4 sub-masters)
+[   21.272920] al_eth 0000:00:01.0: of_irq_parse_pci: failed with rc=-22
+[   21.272927] al_eth 0000:00:01.0: AnnapurnaLabs unified 1GbE and 10GbE Ethernet Driver al_eth v0.2 (Mar 29, 2016)
+[   21.272935] al_eth 0000:00:01.0: driver_data is 0x0
+[   21.272997] al_eth 0000:00:01.0: Board info: phy exist Yes. phy addr 4. mdio freq 1000 Khz. SFP connected No. media 1
+[   21.273110] UDMA TX [eth tx]: wrote 0x2 to change_state, readback state=0x0
+[   21.273114] UDMA RX [eth rx]: wrote 0x2 to change_state, readback state=0x0
+[   21.277946] UDMA TX [eth tx]: wrote 0x1 to change_state, readback state=0x0
+[   21.277954] UDMA RX [eth rx]: wrote 0x1 to change_state, readback state=0x0
+[   21.279220] ------------[ cut here ]------------
+[   21.279223] UBSAN: array-index-out-of-bounds in al_hal_iofic.c:57:2
+[   21.279228] index 0 is out of range for type 'al_iofic_grp_ctrl [*]'
+[   21.279234] CPU: 3 UID: 0 PID: 256 Comm: (udev-worker) Tainted: G           O        7.1.8-dirty #3 PREEMPT(lazy) 
+[   21.279241] Tainted: [O]=OOT_MODULE
+[   21.279244] Hardware name: Ubiquiti UNVR (ea16) (DT)
+[   21.279247] Call trace:
+[   21.279249]  show_stack+0x20/0x38 (C)
+[   21.279260]  dump_stack_lvl+0x88/0xb8
+[   21.279267]  dump_stack+0x18/0x30
+[   21.279272]  ubsan_epilogue+0x10/0x48
+[   21.279279]  __ubsan_handle_out_of_bounds+0x90/0xc0
+[   21.279287]  al_iofic_config+0x40/0x80 [al_eth]
+[   21.279368]  al_eth_ec_error_ints_unmask+0x94/0x1c0 [al_eth]
+[   21.279432]  al_eth_adapter_init+0x558/0x800 [al_eth]
+[   21.279495]  al_eth_hw_init_adapter+0x98/0x340 [al_eth]
+[   21.279558]  al_eth_probe+0x6b8/0xb08 [al_eth]
+[   21.279621]  local_pci_probe+0x44/0xa0
+[   21.279628]  pci_call_probe+0x78/0x1c0
+[   21.279634]  pci_device_probe+0x98/0x1a8
+[   21.279640]  really_probe+0xc8/0x400
+[   21.279645]  __driver_probe_device+0x90/0x1a8
+[   21.279650]  driver_probe_device+0x44/0x128
+[   21.279653]  __driver_attach+0xd0/0x208
+[   21.279657]  bus_for_each_dev+0x84/0xf0
+[   21.279664]  driver_attach+0x2c/0x40
+[   21.279667]  bus_add_driver+0x164/0x2c0
+[   21.279673]  driver_register+0x70/0x138
+[   21.279677]  __pci_register_driver+0x48/0x60
+[   21.279683]  al_eth_init+0x3c/0xfb8 [al_eth]
+[   21.279745]  do_one_initcall+0x5c/0x4b8
+[   21.279752]  do_init_module+0x9c/0x2b8
+[   21.279759]  load_module+0x890/0xa78
+[   21.279765]  init_module_from_file+0xe8/0x158
+[   21.279771]  idempotent_init_module+0x1d8/0x2d0
+[   21.279777]  __arm64_sys_finit_module+0x70/0x100
+[   21.279781]  invoke_syscall.constprop.0+0xac/0x110
+[   21.279788]  el0_svc_common.constprop.0+0xc0/0xf0
+[   21.279794]  do_el0_svc+0x24/0x40
+[   21.279799]  el0_svc+0x40/0x198
+[   21.279805]  el0t_64_sync_handler+0xa0/0xf0
+[   21.279811]  el0t_64_sync+0x1b0/0x1b8
+[   21.279815] ---[ end trace ]---
+[   21.279818] ------------[ cut here ]------------
+[   21.279820] UBSAN: array-index-out-of-bounds in al_hal_iofic.c:239:2
+[   21.279824] index 0 is out of range for type 'al_iofic_grp_ctrl [*]'
+[   21.279828] CPU: 3 UID: 0 PID: 256 Comm: (udev-worker) Tainted: G           O        7.1.8-dirty #3 PREEMPT(lazy) 
+[   21.279834] Tainted: [O]=OOT_MODULE
+[   21.279836] Hardware name: Ubiquiti UNVR (ea16) (DT)
+[   21.279838] Call trace:
+[   21.279839]  show_stack+0x20/0x38 (C)
+[   21.279846]  dump_stack_lvl+0x88/0xb8
+[   21.279851]  dump_stack+0x18/0x30
+[   21.279856]  ubsan_epilogue+0x10/0x48
+[   21.279863]  __ubsan_handle_out_of_bounds+0x90/0xc0
+[   21.279869]  al_iofic_clear_cause+0x44/0x78 [al_eth]
+[   21.279933]  al_eth_ec_error_ints_unmask+0xec/0x1c0 [al_eth]
+[   21.279997]  al_eth_adapter_init+0x558/0x800 [al_eth]
+[   21.280059]  al_eth_hw_init_adapter+0x98/0x340 [al_eth]
+[   21.280121]  al_eth_probe+0x6b8/0xb08 [al_eth]
+[   21.280184]  local_pci_probe+0x44/0xa0
+[   21.280190]  pci_call_probe+0x78/0x1c0
+[   21.280196]  pci_device_probe+0x98/0x1a8
+[   21.280202]  really_probe+0xc8/0x400
+[   21.280206]  __driver_probe_device+0x90/0x1a8
+[   21.280210]  driver_probe_device+0x44/0x128
+[   21.280214]  __driver_attach+0xd0/0x208
+[   21.280217]  bus_for_each_dev+0x84/0xf0
+[   21.280223]  driver_attach+0x2c/0x40
+[   21.280227]  bus_add_driver+0x164/0x2c0
+[   21.280232]  driver_register+0x70/0x138
+[   21.280236]  __pci_register_driver+0x48/0x60
+[   21.280242]  al_eth_init+0x3c/0xfb8 [al_eth]
+[   21.280306]  do_one_initcall+0x5c/0x4b8
+[   21.280312]  do_init_module+0x9c/0x2b8
+[   21.280318]  load_module+0x890/0xa78
+[   21.280324]  init_module_from_file+0xe8/0x158
+[   21.280330]  idempotent_init_module+0x1d8/0x2d0
+[   21.280336]  __arm64_sys_finit_module+0x70/0x100
+[   21.280340]  invoke_syscall.constprop.0+0xac/0x110
+[   21.280346]  el0_svc_common.constprop.0+0xc0/0xf0
+[   21.280352]  do_el0_svc+0x24/0x40
+[   21.280357]  el0_svc+0x40/0x198
+[   21.280362]  el0t_64_sync_handler+0xa0/0xf0
+[   21.280367]  el0t_64_sync+0x1b0/0x1b8
+[   21.280381] ---[ end trace ]---
+[   21.280385] ------------[ cut here ]------------
+[   21.280387] UBSAN: array-index-out-of-bounds in al_hal_iofic.c:183:2
+[   21.280392] index 0 is out of range for type 'al_iofic_grp_ctrl [*]'
+[   21.280396] CPU: 3 UID: 0 PID: 256 Comm: (udev-worker) Tainted: G           O        7.1.8-dirty #3 PREEMPT(lazy) 
+[   21.280401] Tainted: [O]=OOT_MODULE
+[   21.280403] Hardware name: Ubiquiti UNVR (ea16) (DT)
+[   21.280405] Call trace:
+[   21.280406]  show_stack+0x20/0x38 (C)
+[   21.280413]  dump_stack_lvl+0x88/0xb8
+[   21.280419]  dump_stack+0x18/0x30
+[   21.280424]  ubsan_epilogue+0x10/0x48
+[   21.280430]  __ubsan_handle_out_of_bounds+0x90/0xc0
+[   21.280435]  al_iofic_unmask+0x48/0x80 [al_eth]
+[   21.280499]  al_eth_ec_error_ints_unmask+0x134/0x1c0 [al_eth]
+[   21.280562]  al_eth_adapter_init+0x558/0x800 [al_eth]
+[   21.280624]  al_eth_hw_init_adapter+0x98/0x340 [al_eth]
+[   21.280686]  al_eth_probe+0x6b8/0xb08 [al_eth]
+[   21.280748]  local_pci_probe+0x44/0xa0
+[   21.280754]  pci_call_probe+0x78/0x1c0
+[   21.280760]  pci_device_probe+0x98/0x1a8
+[   21.280766]  really_probe+0xc8/0x400
+[   21.280770]  __driver_probe_device+0x90/0x1a8
+[   21.280773]  driver_probe_device+0x44/0x128
+[   21.280777]  __driver_attach+0xd0/0x208
+[   21.280781]  bus_for_each_dev+0x84/0xf0
+[   21.280787]  driver_attach+0x2c/0x40
+[   21.280790]  bus_add_driver+0x164/0x2c0
+[   21.280796]  driver_register+0x70/0x138
+[   21.280800]  __pci_register_driver+0x48/0x60
+[   21.280805]  al_eth_init+0x3c/0xfb8 [al_eth]
+[   21.280868]  do_one_initcall+0x5c/0x4b8
+[   21.280873]  do_init_module+0x9c/0x2b8
+[   21.280879]  load_module+0x890/0xa78
+[   21.280885]  init_module_from_file+0xe8/0x158
+[   21.280891]  idempotent_init_module+0x1d8/0x2d0
+[   21.280897]  __arm64_sys_finit_module+0x70/0x100
+[   21.280901]  invoke_syscall.constprop.0+0xac/0x110
+[   21.280907]  el0_svc_common.constprop.0+0xc0/0xf0
+[   21.280912]  do_el0_svc+0x24/0x40
+[   21.280918]  el0_svc+0x40/0x198
+[   21.280923]  el0t_64_sync_handler+0xa0/0xf0
+[   21.280928]  el0t_64_sync+0x1b0/0x1b8
+[   21.280932] ---[ end trace ]---
+[   21.280935] ------------[ cut here ]------------
+[   21.280937] UBSAN: array-index-out-of-bounds in al_hal_iofic.c:165:20
+[   21.280941] index 2 is out of range for type 'al_iofic_grp_ctrl [*]'
+[   21.280944] CPU: 3 UID: 0 PID: 256 Comm: (udev-worker) Tainted: G           O        7.1.8-dirty #3 PREEMPT(lazy) 
+[   21.280949] Tainted: [O]=OOT_MODULE
+[   21.280951] Hardware name: Ubiquiti UNVR (ea16) (DT)
+[   21.280953] Call trace:
+[   21.280954]  show_stack+0x20/0x38 (C)
+[   21.280961]  dump_stack_lvl+0x88/0xb8
+[   21.280966]  dump_stack+0x18/0x30
+[   21.280971]  ubsan_epilogue+0x10/0x48
+[   21.280977]  __ubsan_handle_out_of_bounds+0x90/0xc0
+[   21.280982]  al_iofic_unmask_offset_get+0x40/0x70 [al_eth]
+[   21.281046]  al_udma_iofic_unmask_offset_get+0x68/0x80 [al_eth]
+[   21.281108]  al_eth_init_rings+0xac/0x230 [al_eth]
+[   21.281170]  al_eth_probe+0x6d4/0xb08 [al_eth]
+[   21.281232]  local_pci_probe+0x44/0xa0
+[   21.281238]  pci_call_probe+0x78/0x1c0
+[   21.281244]  pci_device_probe+0x98/0x1a8
+[   21.281250]  really_probe+0xc8/0x400
+[   21.281254]  __driver_probe_device+0x90/0x1a8
+[   21.281258]  driver_probe_device+0x44/0x128
+[   21.281261]  __driver_attach+0xd0/0x208
+[   21.281265]  bus_for_each_dev+0x84/0xf0
+[   21.281271]  driver_attach+0x2c/0x40
+[   21.281274]  bus_add_driver+0x164/0x2c0
+[   21.281280]  driver_register+0x70/0x138
+[   21.281284]  __pci_register_driver+0x48/0x60
+[   21.281289]  al_eth_init+0x3c/0xfb8 [al_eth]
+[   21.281353]  do_one_initcall+0x5c/0x4b8
+[   21.281359]  do_init_module+0x9c/0x2b8
+[   21.281365]  load_module+0x890/0xa78
+[   21.281371]  init_module_from_file+0xe8/0x158
+[   21.281377]  idempotent_init_module+0x1d8/0x2d0
+[   21.281383]  __arm64_sys_finit_module+0x70/0x100
+[   21.281386]  invoke_syscall.constprop.0+0xac/0x110
+[   21.281392]  el0_svc_common.constprop.0+0xc0/0xf0
+[   21.281398]  do_el0_svc+0x24/0x40
+[   21.281403]  el0_svc+0x40/0x198
+[   21.281409]  el0t_64_sync_handler+0xa0/0xf0
+[   21.281414]  el0t_64_sync+0x1b0/0x1b8
+[   21.281462] ---[ end trace ]---
+[   21.282537] al_ssm 0000:00:04.0: enabling device (0000 -> 0002)
+[   21.282570] al_ssm 0000:00:04.0: BAR0=[mem 0xfe080000-0xfe09ffff 64bit] mapped at 000000008e80374f, BAR4=[mem 0xfe0a0000-0xfe0affff 64bit] mapped at 00000000b3db7dec
+[   21.282580] al_ssm_dma_init_aux: non optimal adapter configuration
+[   21.282584] ------------[ cut here ]------------
+[   21.282586] UBSAN: array-index-out-of-bounds in al_hal_iofic.c:57:2
+[   21.282591] index 0 is out of range for type 'al_iofic_grp_ctrl [*]'
+[   21.282596] CPU: 1 UID: 0 PID: 270 Comm: (udev-worker) Tainted: G           O        7.1.8-dirty #3 PREEMPT(lazy) 
+[   21.282603] Tainted: [O]=OOT_MODULE
+[   21.282605] Hardware name: Ubiquiti UNVR (ea16) (DT)
+[   21.282608] Call trace:
+[   21.282610]  show_stack+0x20/0x38 (C)
+[   21.282620]  dump_stack_lvl+0x88/0xb8
+[   21.282626]  dump_stack+0x18/0x30
+[   21.282632]  ubsan_epilogue+0x10/0x48
+[   21.282639]  __ubsan_handle_out_of_bounds+0x90/0xc0
+[   21.282646]  al_iofic_config+0x40/0x80 [al_ssm]
+[   21.282688]  al_udma_iofic_m2s_error_ints_unmask+0x4c/0x120 [al_ssm]
+[   21.282721]  al_udma_init+0x13c/0x3e0 [al_ssm]
+[   21.282754]  al_m2m_udma_init+0x78/0x160 [al_ssm]
+[   21.282786]  al_ssm_dma_init_aux+0xac/0x260 [al_ssm]
+[   21.282817]  al_ssm_dma_init+0x30/0x88 [al_ssm]
+[   21.282848]  al_ssm_pci_probe+0x29c/0x3c0 [al_ssm]
+[   21.282879]  local_pci_probe+0x44/0xa0
+[   21.282886]  pci_call_probe+0x78/0x1c0
+[   21.282891]  pci_device_probe+0x98/0x1a8
+[   21.282898]  really_probe+0xc8/0x400
+[   21.282902]  __driver_probe_device+0x90/0x1a8
+[   21.282906]  driver_probe_device+0x44/0x128
+[   21.282910]  __driver_attach+0xd0/0x208
+[   21.282913]  bus_for_each_dev+0x84/0xf0
+[   21.282919]  driver_attach+0x2c/0x40
+[   21.282923]  bus_add_driver+0x164/0x2c0
+[   21.282929]  driver_register+0x70/0x138
+[   21.282933]  __pci_register_driver+0x48/0x60
+[   21.282938]  al_ssm_pci_driver_init+0x30/0xfd0 [al_ssm]
+[   21.282969]  do_one_initcall+0x5c/0x4b8
+[   21.282975]  do_init_module+0x9c/0x2b8
+[   21.282982]  load_module+0x890/0xa78
+[   21.282988]  init_module_from_file+0xe8/0x158
+[   21.282994]  idempotent_init_module+0x1d8/0x2d0
+[   21.283000]  __arm64_sys_finit_module+0x70/0x100
+[   21.283004]  invoke_syscall.constprop.0+0xac/0x110
+[   21.283010]  el0_svc_common.constprop.0+0xc0/0xf0
+[   21.283016]  do_el0_svc+0x24/0x40
+[   21.283021]  el0_svc+0x40/0x198
+[   21.283027]  el0t_64_sync_handler+0xa0/0xf0
+[   21.283032]  el0t_64_sync+0x1b0/0x1b8
+[   21.283037] ---[ end trace ]---
+[   21.283039] ------------[ cut here ]------------
+[   21.283041] UBSAN: array-index-out-of-bounds in al_hal_iofic.c:341:35
+[   21.283046] index 0 is out of range for type 'al_iofic_grp_ctrl [*]'
+[   21.283050] CPU: 1 UID: 0 PID: 270 Comm: (udev-worker) Tainted: G           O        7.1.8-dirty #3 PREEMPT(lazy) 
+[   21.283055] Tainted: [O]=OOT_MODULE
+[   21.283057] Hardware name: Ubiquiti UNVR (ea16) (DT)
+[   21.283059] Call trace:
+[   21.283061]  show_stack+0x20/0x38 (C)
+[   21.283068]  dump_stack_lvl+0x88/0xb8
+[   21.283073]  dump_stack+0x18/0x30
+[   21.283078]  ubsan_epilogue+0x10/0x48
+[   21.283084]  __ubsan_handle_out_of_bounds+0x90/0xc0
+[   21.283089]  al_iofic_abort_mask_clear+0x44/0x98 [al_ssm]
+[   21.283122]  al_udma_iofic_m2s_error_ints_unmask+0x78/0x120 [al_ssm]
+[   21.283154]  al_udma_init+0x13c/0x3e0 [al_ssm]
+[   21.283186]  al_m2m_udma_init+0x78/0x160 [al_ssm]
+[   21.283217]  al_ssm_dma_init_aux+0xac/0x260 [al_ssm]
+[   21.283248]  al_ssm_dma_init+0x30/0x88 [al_ssm]
+[   21.283278]  al_ssm_pci_probe+0x29c/0x3c0 [al_ssm]
+[   21.283309]  local_pci_probe+0x44/0xa0
+[   21.283315]  pci_call_probe+0x78/0x1c0
+[   21.283321]  pci_device_probe+0x98/0x1a8
+[   21.283326]  really_probe+0xc8/0x400
+[   21.283330]  __driver_probe_device+0x90/0x1a8
+[   21.283334]  driver_probe_device+0x44/0x128
+[   21.283338]  __driver_attach+0xd0/0x208
+[   21.283341]  bus_for_each_dev+0x84/0xf0
+[   21.283347]  driver_attach+0x2c/0x40
+[   21.283351]  bus_add_driver+0x164/0x2c0
+[   21.283356]  driver_register+0x70/0x138
+[   21.283360]  __pci_register_driver+0x48/0x60
+[   21.283366]  al_ssm_pci_driver_init+0x30/0xfd0 [al_ssm]
+[   21.283396]  do_one_initcall+0x5c/0x4b8
+[   21.283402]  do_init_module+0x9c/0x2b8
+[   21.283408]  load_module+0x890/0xa78
+[   21.283414]  init_module_from_file+0xe8/0x158
+[   21.283420]  idempotent_init_module+0x1d8/0x2d0
+[   21.283426]  __arm64_sys_finit_module+0x70/0x100
+[   21.283430]  invoke_syscall.constprop.0+0xac/0x110
+[   21.283435]  el0_svc_common.constprop.0+0xc0/0xf0
+[   21.283441]  do_el0_svc+0x24/0x40
+[   21.283447]  el0_svc+0x40/0x198
+[   21.283451]  el0t_64_sync_handler+0xa0/0xf0
+[   21.283457]  el0t_64_sync+0x1b0/0x1b8
+[   21.283636] ---[ end trace ]---
+[   21.283641] ------------[ cut here ]------------
+[   21.283643] UBSAN: array-index-out-of-bounds in al_hal_iofic.c:196:2
+[   21.283648] index 0 is out of range for type 'al_iofic_grp_ctrl [*]'
+[   21.283653] CPU: 1 UID: 0 PID: 270 Comm: (udev-worker) Tainted: G           O        7.1.8-dirty #3 PREEMPT(lazy) 
+[   21.283659] Tainted: [O]=OOT_MODULE
+[   21.283661] Hardware name: Ubiquiti UNVR (ea16) (DT)
+[   21.283663] Call trace:
+[   21.283665]  show_stack+0x20/0x38 (C)
+[   21.283672]  dump_stack_lvl+0x88/0xb8
+[   21.283678]  dump_stack+0x18/0x30
+[   21.283683]  ubsan_epilogue+0x10/0x48
+[   21.283689]  __ubsan_handle_out_of_bounds+0x90/0xc0
+[   21.283694]  al_iofic_unmask+0x48/0x80 [al_ssm]
+[   21.283730]  al_udma_iofic_m2s_error_ints_unmask+0x9c/0x120 [al_ssm]
+[   21.283763]  al_udma_init+0x13c/0x3e0 [al_ssm]
+[   21.283794]  al_m2m_udma_init+0x78/0x160 [al_ssm]
+[   21.283826]  al_ssm_dma_init_aux+0xac/0x260 [al_ssm]
+[   21.283856]  al_ssm_dma_init+0x30/0x88 [al_ssm]
+[   21.283887]  al_ssm_pci_probe+0x29c/0x3c0 [al_ssm]
+[   21.283917]  local_pci_probe+0x44/0xa0
+[   21.283924]  pci_call_probe+0x78/0x1c0
+[   21.283930]  pci_device_probe+0x98/0x1a8
+[   21.283935]  really_probe+0xc8/0x400
+[   21.283939]  __driver_probe_device+0x90/0x1a8
+[   21.283943]  driver_probe_device+0x44/0x128
+[   21.283947]  __driver_attach+0xd0/0x208
+[   21.283951]  bus_for_each_dev+0x84/0xf0
+[   21.283957]  driver_attach+0x2c/0x40
+[   21.283960]  bus_add_driver+0x164/0x2c0
+[   21.283966]  driver_register+0x70/0x138
+[   21.283970]  __pci_register_driver+0x48/0x60
+[   21.283975]  al_ssm_pci_driver_init+0x30/0xfd0 [al_ssm]
+[   21.284007]  do_one_initcall+0x5c/0x4b8
+[   21.284013]  do_init_module+0x9c/0x2b8
+[   21.284020]  load_module+0x890/0xa78
+[   21.284026]  init_module_from_file+0xe8/0x158
+[   21.284031]  idempotent_init_module+0x1d8/0x2d0
+[   21.284037]  __arm64_sys_finit_module+0x70/0x100
+[   21.284041]  invoke_syscall.constprop.0+0xac/0x110
+[   21.284048]  el0_svc_common.constprop.0+0xc0/0xf0
+[   21.284053]  do_el0_svc+0x24/0x40
+[   21.284059]  el0_svc+0x40/0x198
+[   21.284064]  el0t_64_sync_handler+0xa0/0xf0
+[   21.284069]  el0t_64_sync+0x1b0/0x1b8
+[   21.284073] ---[ end trace ]---
+[   21.284396] alg: skcipher: xts-aes-al-ssm encryption test failed (wrong result) on test vector 1, cfg="in-place (one sglist)"
+[   21.284409] alg: self-tests for xts(aes) using xts-aes-al-ssm failed (rc=-22)
+[   21.284413] ------------[ cut here ]------------
+[   21.284416] alg: self-tests for xts(aes) using xts-aes-al-ssm failed (rc=-22)
+[   21.284444] WARNING: crypto/testmgr.c:5798 at alg_test.part.0+0x4bc/0x728, CPU#1: cryptomgr_test/303
+[   21.284454] Modules linked in: gpio_keys(+) al_ssm(O+) al_eth(O+) ramoops(+) reed_solomon i2c_dev al_thermal(O) fuse zram lz4hc_compress lz4_compress
+[   21.284483] CPU: 1 UID: 0 PID: 303 Comm: cryptomgr_test Tainted: G           O        7.1.8-dirty #3 PREEMPT(lazy) 
+[   21.284490] Tainted: [O]=OOT_MODULE
+[   21.284492] Hardware name: Ubiquiti UNVR (ea16) (DT)
+[   21.284495] pstate: 60400005 (nZCv daif +PAN -UAO -TCO -DIT -SSBS BTYPE=--)
+[   21.284501] pc : alg_test.part.0+0x4bc/0x728
+[   21.284505] lr : alg_test.part.0+0x4bc/0x728
+[   21.284509] sp : ffff800084f6bd40
+[   21.284512] x29: ffff800084f6bdf0 x28: 00000000000001bf x27: 0000000000000000
+[   21.284521] x26: 00000000ffffffea x25: 00000000ffffffff x24: ffff8000818905c0
+[   21.284530] x23: ffff000200db9880 x22: 0000000000001085 x21: ffff000200db9800
+[   21.284538] x20: ffff80008188cfc0 x19: 00000000000000d8 x18: 00000000fffffffa
+[   21.284547] x17: 32322d3d63722820 x16: 64656c696166206d x15: 000000000000000a
+[   21.284554] x14: ffffffffffffffff x13: 0000000000000030 x12: 0101010101010101
+[   21.284562] x11: 7f7f7f7f7f7f7f7f x10: fefefefefefefeff x9 : ffff800080250f50
+[   21.284570] x8 : ffff8000833737c8 x7 : 000000000000000d x6 : 0000000000000001
+[   21.284578] x5 : ffff00023f50f1c8 x4 : 0000000000000000 x3 : 0000000000000027
+[   21.284586] x2 : 0000000000000000 x1 : 0000000000000000 x0 : ffff000202472400
+[   21.284594] Call trace:
+[   21.284597]  alg_test.part.0+0x4bc/0x728 (P)
+[   21.284602]  alg_test+0x24/0x78
+[   21.284607]  cryptomgr_test+0x2c/0x60
+[   21.284614]  kthread+0x11c/0x140
+[   21.284621]  ret_from_fork+0x10/0x20
+[   21.284629] ---[ end trace 0000000000000000 ]---
+[   21.284733] al_ssm 0000:00:04.0: Alpine V2 SSM crypto engine initialized: AES-XTS, AES-CBC (async, ring 256, max 64 in-flight, separate completion rings)
+[   21.284808] alg: skcipher: cbc-aes-al-ssm encryption test failed (wrong output IV) on test vector 0, cfg="in-place (one sglist)"
+[   21.284814] 00000000: 3d af ba 42 9d 9e b4 30 b4 22 da 80 2c 9f ac 41
+[   21.284822] alg: self-tests for cbc(aes) using cbc-aes-al-ssm failed (rc=-22)
+[   21.284826] ------------[ cut here ]------------
+[   21.284829] alg: self-tests for cbc(aes) using cbc-aes-al-ssm failed (rc=-22)
+[   21.284854] WARNING: crypto/testmgr.c:5798 at alg_test.part.0+0x4bc/0x728, CPU#0: cryptomgr_test/304
+[   21.284863] Modules linked in: gpio_keys(+) al_ssm(O+) al_eth(O+) ramoops(+) reed_solomon i2c_dev al_thermal(O) fuse zram lz4hc_compress lz4_compress
+[   21.284890] CPU: 0 UID: 0 PID: 304 Comm: cryptomgr_test Tainted: G        W  O        7.1.8-dirty #3 PREEMPT(lazy) 
+[   21.284898] Tainted: [W]=WARN, [O]=OOT_MODULE
+[   21.284901] Hardware name: Ubiquiti UNVR (ea16) (DT)
+[   21.284903] pstate: 60400005 (nZCv daif +PAN -UAO -TCO -DIT -SSBS BTYPE=--)
+[   21.284909] pc : alg_test.part.0+0x4bc/0x728
+[   21.284914] lr : alg_test.part.0+0x4bc/0x728
+[   21.284917] sp : ffff800084cdbd40
+[   21.284920] x29: ffff800084cdbdf0 x28: 0000000000000069 x27: 0000000000000000
+[   21.284930] x26: 00000000ffffffea x25: 00000000ffffffff x24: ffff80008188d980
+[   21.284939] x23: ffff000200db8480 x22: 0000000000001085 x21: ffff000200db8400
+[   21.284947] x20: ffff80008188cfc0 x19: 0000000000000027 x18: 00000000fffffffa
+[   21.284956] x17: 32322d3d63722820 x16: 64656c696166206d x15: 000000000000000a
+[   21.284964] x14: ffffffffffffffff x13: 0000000000000030 x12: 0101010101010101
+[   21.284972] x11: 7f7f7f7f7f7f7f7f x10: fefefefefefefeff x9 : ffff800080250f50
+[   21.284980] x8 : ffff8000833737c8 x7 : 000000000000000d x6 : 0000000000000001
+[   21.284987] x5 : ffff00023f4d51c8 x4 : 0000000000000000 x3 : 0000000000000027
+[   21.284995] x2 : 0000000000000000 x1 : 0000000000000000 x0 : ffff000202468000
+[   21.285003] Call trace:
+[   21.285005]  alg_test.part.0+0x4bc/0x728 (P)
+[   21.285011]  alg_test+0x24/0x78
+[   21.285015]  cryptomgr_test+0x2c/0x60
+[   21.285022]  kthread+0x11c/0x140
+[   21.285028]  ret_from_fork+0x10/0x20
+[   21.285035] ---[ end trace 0000000000000000 ]---
+[   21.371273] al_dma 0000:00:05.0: al-internal-pcie: SMCC snoop configured (slot 5, all 4 sub-masters)
+[   21.487301] sp805-wdt fd88c000.watchdog: registration successful
+[   21.490768] al_dma 0000:00:05.0: of_irq_parse_pci: failed with rc=-22
+[   21.492099] al_eth 0000:00:01.0 eth0: AnnapurnaLabs unified 1Gbe/10Gbe found at mem fe000000, mac addr 74:ac:b9:41:a8:11
+[   21.492182] al_eth 0000:00:02.0: al-internal-pcie: SMCC snoop configured (slot 2, all 4 sub-masters)
+[   21.492203] al_eth 0000:00:02.0: of_irq_parse_pci: failed with rc=-22
+[   21.492213] al_eth 0000:00:02.0: driver_data is 0x0
+[   21.492281] al_eth 0000:00:02.0: Board info: phy exist No. phy addr 0. mdio freq 2500 Khz. SFP connected Yes. media 5
+[   21.492395] UDMA TX [eth tx]: wrote 0x2 to change_state, readback state=0x0
+[   21.492398] UDMA RX [eth rx]: wrote 0x2 to change_state, readback state=0x0
+[   21.500199] UDMA TX [eth tx]: wrote 0x1 to change_state, readback state=0x0
+[   21.502148] al_dma 0000:00:05.0: Annapurna Labs DMA engine v1.0.0-k6.12
+[   21.506419] UDMA RX [eth rx]: wrote 0x1 to change_state, readback state=0x0
+[   21.510947] al_dma 0000:00:05.0: enabling device (0000 -> 0002)
+[   21.514843] al-sgpo fd8b4000.sgpo: Alpine SGPO driver probed. 32 pins (4 groups)
+[   21.518692] al_eth 0000:00:02.0 eth1: AnnapurnaLabs unified 1Gbe/10Gbe found at mem fe040000, mac addr 74:ac:b9:41:a8:12
+[   21.520494] al_dma 0000:00:05.0: PCI revision ID: 2
+[   21.560086] pca954x 0-0071: supply vdd not found, using dummy regulator
+[   21.570159] UDMA TX [tx dma]: wrote 0x1 to change_state, readback state=0x0
+[   21.578447] i2c i2c-0: Added multiplexed i2c bus 1
+[   21.578630] UDMA RX [rx dma]: wrote 0x1 to change_state, readback state=0x0
+[   21.581497] i2c i2c-0: Added multiplexed i2c bus 2
+[   21.584941] al_dma 0000:00:05.0: Registered 4 DMA channels (XOR max 31 sources, PQ max 31 sources)
+[   21.592372] i2c i2c-0: Added multiplexed i2c bus 3
+[   21.682045] al_eth 0000:00:01.0 enp0s1: renamed from eth0
+[   21.685589] i2c i2c-0: Added multiplexed i2c bus 4
+[   21.782629] spi-nor spi0.0: supply vcc not found, using dummy regulator
+[   21.787036] pca954x 0-0071: registered 4 multiplexed busses for I2C switch pca9546
+[   21.788205] al_eth 0000:00:02.0 enp0s2: renamed from eth1
+[   21.794026] rtc-s35390a 1-0030: registered as rtc0
+[   21.801848] adt7475 4-002e: ADT7475 device, revision 1
+[   21.821754] rtc-s35390a 1-0030: setting system clock to 2026-08-17T13:57:50 UTC (1786975070)
+[   21.823887] adt7475 4-002e: Optional features: fan4 pwm2
+[   21.832090] 8 fixed-partitions partitions found on MTD device spi0.0
+[   23.334159] Creating 8 MTD partitions on "spi0.0":
+[   23.338977] 0x000000000000-0x0000001c0000 : "u-boot"
+[   23.344357] 0x0000001c0000-0x0000001d0000 : "u-boot env"
+[   23.350930] 0x0000001d0000-0x0000001e0000 : "u-boot env redundant"
+[   23.358532] 0x0000001e0000-0x0000001f0000 : "Factory"
+[   23.364918] 0x0000001f0000-0x000000200000 : "EEPROM"
+[   23.371240] 0x000000200000-0x000001200000 : "recovery kernel"
+[   23.378348] 0x000001200000-0x000001fff000 : "config"
+[   23.384466] mtd: partition "config" doesn't end on an erase/write block -- force read-only
+[   23.394333] 0x000001fff000-0x000002000000 : "cksum"
+[   23.399221] mtd: partition "cksum" doesn't start on an erase/write block boundary -- force read-only
+[   24.313425] UDMA TX [eth tx]: wrote 0x1 to change_state, readback state=0x0
+[   24.320406] UDMA RX [eth rx]: wrote 0x1 to change_state, readback state=0x0
+[   24.321667] configured MAC to RGMII mode:
+[   24.333318] ------------[ cut here ]------------
+[   24.338865] UBSAN: array-index-out-of-bounds in al_hal_iofic.c:286:2
+[   24.346572] index 0 is out of range for type 'al_iofic_grp_ctrl [*]'
+[   24.354318] CPU: 3 UID: 0 PID: 357 Comm: NetworkManager Tainted: G        W  O        7.1.8-dirty #3 PREEMPT(lazy) 
+[   24.354329] Tainted: [W]=WARN, [O]=OOT_MODULE
+[   24.354331] Hardware name: Ubiquiti UNVR (ea16) (DT)
+[   24.354334] Call trace:
+[   24.354336]  show_stack+0x20/0x38 (C)
+[   24.354347]  dump_stack_lvl+0x88/0xb8
+[   24.354354]  dump_stack+0x18/0x30
+[   24.354359]  ubsan_epilogue+0x10/0x48
+[   24.354366]  __ubsan_handle_out_of_bounds+0x90/0xc0
+[   24.354373]  al_iofic_abort_mask+0x44/0x80 [al_eth]
+[   24.354435]  al_udma_iofic_config+0x90/0x120 [al_eth]
+[   24.354487]  al_eth_up_complete+0x68/0x678 [al_eth]
+[   24.354538]  al_eth_up+0x19c/0x4a8 [al_eth]
+[   24.354589]  al_eth_open+0x1f0/0x318 [al_eth]
+[   24.354639]  __dev_open+0x150/0x2c0
+[   24.354647]  __dev_change_flags+0x1a4/0x228
+[   24.354652]  netif_change_flags+0x2c/0x80
+[   24.354656]  do_setlink.isra.0+0x290/0xb68
+[   24.354661]  __rtnl_newlink+0x268/0x318
+[   24.354665]  rtnl_newlink+0x388/0x7e8
+[   24.354670]  rtnetlink_rcv_msg+0x330/0x408
+[   24.354674]  netlink_rcv_skb+0x70/0x150
+[   24.354679]  rtnetlink_rcv+0x20/0x38
+[   24.354682]  netlink_unicast+0x31c/0x390
+[   24.354686]  netlink_sendmsg+0x1ac/0x420
+[   24.354690]  __sock_sendmsg+0x64/0xc8
+[   24.354697]  ____sys_sendmsg+0x250/0x2b8
+[   24.354702]  ___sys_sendmsg+0xb0/0x110
+[   24.354708]  __sys_sendmsg+0xa4/0x120
+[   24.354712]  __arm64_sys_sendmsg+0x28/0x40
+[   24.354716]  invoke_syscall.constprop.0+0xac/0x110
+[   24.354722]  el0_svc_common.constprop.0+0x40/0xf0
+[   24.354728]  do_el0_svc+0x24/0x40
+[   24.354733]  el0_svc+0x40/0x198
+[   24.354739]  el0t_64_sync_handler+0xa0/0xf0
+[   24.354744]  el0t_64_sync+0x1b0/0x1b8
+[   24.354749] ---[ end trace ]---
+[   24.512692] al_eth 0000:00:01.0 enp0s1: using MSI-X per Queue interrupt mode
+[   24.519769] ------------[ cut here ]------------
+[   24.519773] UBSAN: array-index-out-of-bounds in al_hal_iofic.c:75:8
+[   24.519779] index 1 is out of range for type 'al_iofic_grp_ctrl [*]'
+[   24.519786] CPU: 3 UID: 0 PID: 357 Comm: NetworkManager Tainted: G        W  O        7.1.8-dirty #3 PREEMPT(lazy) 
+[   24.519793] Tainted: [W]=WARN, [O]=OOT_MODULE
+[   24.519795] Hardware name: Ubiquiti UNVR (ea16) (DT)
+[   24.519798] Call trace:
+[   24.519800]  show_stack+0x20/0x38 (C)
+[   24.519814]  dump_stack_lvl+0x88/0xb8
+[   24.519821]  dump_stack+0x18/0x30
+[   24.519826]  ubsan_epilogue+0x10/0x48
+[   24.519834]  __ubsan_handle_out_of_bounds+0x90/0xc0
+[   24.519841]  al_iofic_moder_res_config+0x4c/0xc0 [al_eth]
+[   24.519905]  al_eth_up_complete+0x274/0x678 [al_eth]
+[   24.519957]  al_eth_up+0x19c/0x4a8 [al_eth]
+[   24.520008]  al_eth_open+0x1f0/0x318 [al_eth]
+[   24.520060]  __dev_open+0x150/0x2c0
+[   24.520067]  __dev_change_flags+0x1a4/0x228
+[   24.520072]  netif_change_flags+0x2c/0x80
+[   24.520076]  do_setlink.isra.0+0x290/0xb68
+[   24.520081]  __rtnl_newlink+0x268/0x318
+[   24.520085]  rtnl_newlink+0x388/0x7e8
+[   24.520089]  rtnetlink_rcv_msg+0x330/0x408
+[   24.520093]  netlink_rcv_skb+0x70/0x150
+[   24.520098]  rtnetlink_rcv+0x20/0x38
+[   24.520102]  netlink_unicast+0x31c/0x390
+[   24.520106]  netlink_sendmsg+0x1ac/0x420
+[   24.520110]  __sock_sendmsg+0x64/0xc8
+[   24.520116]  ____sys_sendmsg+0x250/0x2b8
+[   24.520122]  ___sys_sendmsg+0xb0/0x110
+[   24.520128]  __sys_sendmsg+0xa4/0x120
+[   24.520132]  __arm64_sys_sendmsg+0x28/0x40
+[   24.520135]  invoke_syscall.constprop.0+0xac/0x110
+[   24.520142]  el0_svc_common.constprop.0+0x40/0xf0
+[   24.520148]  do_el0_svc+0x24/0x40
+[   24.520153]  el0_svc+0x40/0x198
+[   24.520159]  el0t_64_sync_handler+0xa0/0xf0
+[   24.520164]  el0t_64_sync+0x1b0/0x1b8
+[   24.520178] ---[ end trace ]---
+[   24.520181] ------------[ cut here ]------------
+[   24.520183] UBSAN: array-index-out-of-bounds in al_hal_iofic.c:80:2
+[   24.520188] index 1 is out of range for type 'al_iofic_grp_ctrl [*]'
+[   24.520193] CPU: 3 UID: 0 PID: 357 Comm: NetworkManager Tainted: G        W  O        7.1.8-dirty #3 PREEMPT(lazy) 
+[   24.520199] Tainted: [W]=WARN, [O]=OOT_MODULE
+[   24.520201] Hardware name: Ubiquiti UNVR (ea16) (DT)
+[   24.520203] Call trace:
+[   24.520204]  show_stack+0x20/0x38 (C)
+[   24.520212]  dump_stack_lvl+0x88/0xb8
+[   24.520217]  dump_stack+0x18/0x30
+[   24.520222]  ubsan_epilogue+0x10/0x48
+[   24.520229]  __ubsan_handle_out_of_bounds+0x90/0xc0
+[   24.520234]  al_iofic_moder_res_config+0x84/0xc0 [al_eth]
+[   24.520292]  al_eth_up_complete+0x274/0x678 [al_eth]
+[   24.520344]  al_eth_up+0x19c/0x4a8 [al_eth]
+[   24.520395]  al_eth_open+0x1f0/0x318 [al_eth]
+[   24.520447]  __dev_open+0x150/0x2c0
+[   24.520453]  __dev_change_flags+0x1a4/0x228
+[   24.520457]  netif_change_flags+0x2c/0x80
+[   24.520461]  do_setlink.isra.0+0x290/0xb68
+[   24.520466]  __rtnl_newlink+0x268/0x318
+[   24.520470]  rtnl_newlink+0x388/0x7e8
+[   24.520474]  rtnetlink_rcv_msg+0x330/0x408
+[   24.520478]  netlink_rcv_skb+0x70/0x150
+[   24.520483]  rtnetlink_rcv+0x20/0x38
+[   24.520486]  netlink_unicast+0x31c/0x390
+[   24.520490]  netlink_sendmsg+0x1ac/0x420
+[   24.520494]  __sock_sendmsg+0x64/0xc8
+[   24.520500]  ____sys_sendmsg+0x250/0x2b8
+[   24.520505]  ___sys_sendmsg+0xb0/0x110
+[   24.520511]  __sys_sendmsg+0xa4/0x120
+[   24.520515]  __arm64_sys_sendmsg+0x28/0x40
+[   24.520518]  invoke_syscall.constprop.0+0xac/0x110
+[   24.520525]  el0_svc_common.constprop.0+0x40/0xf0
+[   24.520530]  do_el0_svc+0x24/0x40
+[   24.520536]  el0_svc+0x40/0x198
+[   24.520541]  el0t_64_sync_handler+0xa0/0xf0
+[   24.520546]  el0t_64_sync+0x1b0/0x1b8
+[   24.520550] ---[ end trace ]---
+[   24.520553] ------------[ cut here ]------------
+[   24.520555] UBSAN: array-index-out-of-bounds in al_hal_iofic.c:120:8
+[   24.520559] index 2 is out of range for type 'al_iofic_grp_mod [*][32]'
+[   24.520563] CPU: 3 UID: 0 PID: 357 Comm: NetworkManager Tainted: G        W  O        7.1.8-dirty #3 PREEMPT(lazy) 
+[   24.520569] Tainted: [W]=WARN, [O]=OOT_MODULE
+[   24.520570] Hardware name: Ubiquiti UNVR (ea16) (DT)
+[   24.520572] Call trace:
+[   24.520574]  show_stack+0x20/0x38 (C)
+[   24.520581]  dump_stack_lvl+0x88/0xb8
+[   24.520586]  dump_stack+0x18/0x30
+[   24.520591]  ubsan_epilogue+0x10/0x48
+[   24.520598]  __ubsan_handle_out_of_bounds+0x90/0xc0
+[   24.520604]  al_iofic_msix_moder_interval_config+0x5c/0x100 [al_eth]
+[   24.520664]  al_eth_set_coalesce+0xe4/0x1c8 [al_eth]
+[   24.520717]  al_eth_up_complete+0x2a0/0x678 [al_eth]
+[   24.520769]  al_eth_up+0x19c/0x4a8 [al_eth]
+[   24.520820]  al_eth_open+0x1f0/0x318 [al_eth]
+[   24.520871]  __dev_open+0x150/0x2c0
+[   24.520877]  __dev_change_flags+0x1a4/0x228
+[   24.520882]  netif_change_flags+0x2c/0x80
+[   24.520886]  do_setlink.isra.0+0x290/0xb68
+[   24.520890]  __rtnl_newlink+0x268/0x318
+[   24.520894]  rtnl_newlink+0x388/0x7e8
+[   24.520898]  rtnetlink_rcv_msg+0x330/0x408
+[   24.520902]  netlink_rcv_skb+0x70/0x150
+[   24.520907]  rtnetlink_rcv+0x20/0x38
+[   24.520910]  netlink_unicast+0x31c/0x390
+[   24.520914]  netlink_sendmsg+0x1ac/0x420
+[   24.520918]  __sock_sendmsg+0x64/0xc8
+[   24.520924]  ____sys_sendmsg+0x250/0x2b8
+[   24.520930]  ___sys_sendmsg+0xb0/0x110
+[   24.520935]  __sys_sendmsg+0xa4/0x120
+[   24.520939]  __arm64_sys_sendmsg+0x28/0x40
+[   24.520942]  invoke_syscall.constprop.0+0xac/0x110
+[   24.520949]  el0_svc_common.constprop.0+0x40/0xf0
+[   24.520954]  do_el0_svc+0x24/0x40
+[   24.520960]  el0_svc+0x40/0x198
+[   24.520965]  el0t_64_sync_handler+0xa0/0xf0
+[   24.520970]  el0t_64_sync+0x1b0/0x1b8
+[   24.520974] ---[ end trace ]---
+[   24.520976] ------------[ cut here ]------------
+[   24.520978] UBSAN: array-index-out-of-bounds in al_hal_iofic.c:125:2
+[   24.520981] index 2 is out of range for type 'al_iofic_grp_mod [*][32]'
+[   24.520985] CPU: 3 UID: 0 PID: 357 Comm: NetworkManager Tainted: G        W  O        7.1.8-dirty #3 PREEMPT(lazy) 
+[   24.520990] Tainted: [W]=WARN, [O]=OOT_MODULE
+[   24.520992] Hardware name: Ubiquiti UNVR (ea16) (DT)
+[   24.520993] Call trace:
+[   24.520995]  show_stack+0x20/0x38 (C)
+[   24.521001]  dump_stack_lvl+0x88/0xb8
+[   24.521007]  dump_stack+0x18/0x30
+[   24.521011]  ubsan_epilogue+0x10/0x48
+[   24.521018]  __ubsan_handle_out_of_bounds+0x90/0xc0
+[   24.521023]  al_iofic_msix_moder_interval_config+0xa0/0x100 [al_eth]
+[   24.521077]  al_eth_set_coalesce+0xe4/0x1c8 [al_eth]
+[   24.521130]  al_eth_up_complete+0x2a0/0x678 [al_eth]
+[   24.521185]  al_eth_up+0x19c/0x4a8 [al_eth]
+[   24.521236]  al_eth_open+0x1f0/0x318 [al_eth]
+[   24.521287]  __dev_open+0x150/0x2c0
+[   24.521293]  __dev_change_flags+0x1a4/0x228
+[   24.521297]  netif_change_flags+0x2c/0x80
+[   24.521301]  do_setlink.isra.0+0x290/0xb68
+[   24.521306]  __rtnl_newlink+0x268/0x318
+[   24.521310]  rtnl_newlink+0x388/0x7e8
+[   24.521314]  rtnetlink_rcv_msg+0x330/0x408
+[   24.521318]  netlink_rcv_skb+0x70/0x150
+[   24.521322]  rtnetlink_rcv+0x20/0x38
+[   24.521326]  netlink_unicast+0x31c/0x390
+[   24.521330]  netlink_sendmsg+0x1ac/0x420
+[   24.521334]  __sock_sendmsg+0x64/0xc8
+[   24.521340]  ____sys_sendmsg+0x250/0x2b8
+[   24.521346]  ___sys_sendmsg+0xb0/0x110
+[   24.521351]  __sys_sendmsg+0xa4/0x120
+[   24.521355]  __arm64_sys_sendmsg+0x28/0x40
+[   24.521359]  invoke_syscall.constprop.0+0xac/0x110
+[   24.521365]  el0_svc_common.constprop.0+0x40/0xf0
+[   24.521370]  do_el0_svc+0x24/0x40
+[   24.521376]  el0_svc+0x40/0x198
+[   24.521380]  el0t_64_sync_handler+0xa0/0xf0
+[   24.521385]  el0t_64_sync+0x1b0/0x1b8
+[   24.521399] ---[ end trace ]---
+[   24.523311] al_eth 0000:00:01.0 enp0s1: registered shared MDIO bus alpine_mdio_shared_0
+[   25.225555] al_eth 0000:00:01.0 enp0s1: PHY at addr 4: Qualcomm Atheros AR8031/AR8033 (id 0x004dd074)
+[   25.287170] al_eth 0000:00:01.0 enp0s1: phy[4]: device alpine_mdio_shared_0:04, driver Qualcomm Atheros AR8031/AR8033
+[   25.553612] fbcon: Taking over console
+[   25.817140] al_eth_lm_link_detection_step: New SFP mode detected AL_ETH_LM_MODE_DISCONNECTED -> AL_ETH_LM_MODE_10G_OPTIC
+[   25.832291] UDMA TX [eth tx]: wrote 0x1 to change_state, readback state=0x0
+[   25.839254] UDMA RX [eth rx]: wrote 0x1 to change_state, readback state=0x0
+[   25.847499] configured MAC to KR mode:
+[   25.852902] al_eth 0000:00:02.0 enp0s2: using MSI-X per Queue interrupt mode
+[   26.370150] al_eth_group_lm_link_manage: eth1 - link wasn't established (remote side might have a problem)
+[   27.362857] eth [al_eth_0]: set link speed to 100Mbps. full duplex.
+[   27.369162] al_eth 0000:00:01.0 enp0s1: Link is Up - 100Mbps/Full - flow control rx/tx

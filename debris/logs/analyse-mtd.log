@@ -1,0 +1,52 @@
+2026-08-15T16:48:04+10:00  INFO  === UNVR-74acb941a811-sysidea16-20260815-164103 ===
+2026-08-15T16:48:04+10:00  INFO  --- mtd06 "u" 65536 B ---
+2026-08-15T16:48:04+10:00  INFO    0xFF ratio 0.0%; no content found
+2026-08-15T16:48:04+10:00  INFO    0 string(s), 0 interesting:
+2026-08-15T16:48:04+10:00  INFO  --- mtd07 "u" 65536 B ---
+2026-08-15T16:48:04+10:00  INFO    0xFF ratio 0.0%; no content found
+2026-08-15T16:48:04+10:00  INFO    0 string(s), 0 interesting:
+2026-08-15T16:48:04+10:00  INFO  --- mtd08 "Factory" 65536 B ---
+2026-08-15T16:48:04+10:00  INFO    0xFF ratio 100.0%; no content found
+2026-08-15T16:48:04+10:00  INFO    base MAC             @0x0000 = ff:ff:ff:ff:ff:ff
+2026-08-15T16:48:04+10:00  INFO    board ID             @0x000c = 0xffff
+2026-08-15T16:48:04+10:00  INFO    hardware revision    @0x000e = 0xffff
+2026-08-15T16:48:04+10:00  INFO    device ID            @0x0010 = 0xffffffff
+2026-08-15T16:48:04+10:00  INFO    magic @0x8000        = b'\xff\xff\xff\xff' (not UBNT)
+2026-08-15T16:48:04+10:00  INFO    0 string(s), 0 interesting:
+2026-08-15T16:48:04+10:00  INFO  --- mtd09 "EEPROM" 65536 B ---
+2026-08-15T16:48:04+10:00  INFO    0xFF ratio 23.7%; content between 0 and 58159 (58160 B)
+2026-08-15T16:48:04+10:00  INFO    base MAC             @0x0000 = 74:ac:b9:41:a8:11
+2026-08-15T16:48:04+10:00  INFO    board ID             @0x000c = 0xea16
+2026-08-15T16:48:04+10:00  INFO    hardware revision    @0x000e = 0x0777
+2026-08-15T16:48:04+10:00  INFO    device ID            @0x0010 = 0x000b101d
+2026-08-15T16:48:04+10:00  INFO    magic @0x8000        = b'UBNT' (UBNT - redundant copy present)
+2026-08-15T16:48:04+10:00  INFO    strings: UBNT*(f, >Ock, !Vz., PGYC, K/2O, k|}K5, ?mH+, 2X%C_, PkqR6, `Nvw, \(#E, wcD=, \P>n), N+*D, -IZjK, "%TtE, 4WE*, /kHz, UaV[, 0~3l
+2026-08-15T16:48:04+10:00  INFO  --- mtd12 "cksum" 4096 B ---
+2026-08-15T16:48:04+10:00  INFO    0xFF ratio 0.0%; no content found
+2026-08-15T16:48:04+10:00  INFO    0 string(s), 0 interesting:
+2026-08-15T16:48:45+10:00  INFO  === UNVR-74acb941a811-sysidea16-20260815-164103 ===
+2026-08-15T16:48:45+10:00  INFO  --- mtd06 "u-boot_env" 65536 B ---
+2026-08-15T16:48:45+10:00  INFO    0xFF 0.0%, 0x00 100.0% - partition is ZEROED (not erased flash; erased NAND/NOR reads 0xFF, so this was actively written with nulls)
+2026-08-15T16:48:45+10:00  WARN    CRC32 did not verify either way (stored 0x00000000)
+2026-08-15T16:48:45+10:00  INFO  --- mtd07 "u-boot_env_redundant" 65536 B ---
+2026-08-15T16:48:45+10:00  INFO    0xFF 0.0%, 0x00 100.0% - partition is ZEROED (not erased flash; erased NAND/NOR reads 0xFF, so this was actively written with nulls)
+2026-08-15T16:48:45+10:00  WARN    CRC32 did not verify either way (stored 0x00000000)
+2026-08-15T16:48:45+10:00  INFO  --- mtd08 "Factory" 65536 B ---
+2026-08-15T16:48:45+10:00  INFO    0xFF 100.0%, 0x00 0.0%; no content found
+2026-08-15T16:48:45+10:00  INFO    base MAC             @0x0000 = ff:ff:ff:ff:ff:ff
+2026-08-15T16:48:45+10:00  INFO    board ID             @0x000c = 0xffff
+2026-08-15T16:48:45+10:00  INFO    hardware revision    @0x000e = 0xffff
+2026-08-15T16:48:45+10:00  INFO    device ID            @0x0010 = 0xffffffff
+2026-08-15T16:48:45+10:00  INFO    magic @0x8000        = b'\xff\xff\xff\xff' (not UBNT)
+2026-08-15T16:48:45+10:00  INFO    0 string(s), 0 interesting:
+2026-08-15T16:48:45+10:00  INFO  --- mtd09 "EEPROM" 65536 B ---
+2026-08-15T16:48:45+10:00  INFO    0xFF 23.7%, 0x00 56.4%; content between 0 and 58159 (58160 B)
+2026-08-15T16:48:45+10:00  INFO    base MAC             @0x0000 = 74:ac:b9:41:a8:11
+2026-08-15T16:48:45+10:00  INFO    board ID             @0x000c = 0xea16
+2026-08-15T16:48:45+10:00  INFO    hardware revision    @0x000e = 0x0777
+2026-08-15T16:48:45+10:00  INFO    device ID            @0x0010 = 0x000b101d
+2026-08-15T16:48:45+10:00  INFO    magic @0x8000        = b'UBNT' (UBNT - redundant copy present)
+2026-08-15T16:48:45+10:00  INFO    strings: UBNT*(f, >Ock, !Vz., PGYC, K/2O, k|}K5, ?mH+, 2X%C_, PkqR6, `Nvw, \(#E, wcD=, \P>n), N+*D, -IZjK, "%TtE, 4WE*, /kHz, UaV[, 0~3l
+2026-08-15T16:48:45+10:00  INFO  --- mtd12 "cksum" 4096 B ---
+2026-08-15T16:48:45+10:00  INFO    0xFF 0.0%, 0x00 100.0% - partition is ZEROED (not erased flash; erased NAND/NOR reads 0xFF, so this was actively written with nulls)
+2026-08-15T16:48:45+10:00  INFO    0 string(s), 0 interesting:

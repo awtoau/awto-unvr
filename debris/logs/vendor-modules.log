@@ -1,0 +1,16 @@
+=== vendor-modules ===
+al_eth: vendored 60 source files -> modules/al_eth
+al_ssm: vendored 52 source files -> modules/al_ssm
+al_dma: vendored 34 source files -> modules/al_dma
+al_sgpo: vendored 2 source files -> modules/al_sgpo
+al_reboot: vendored 3 source files -> modules/al_reboot
+wrote /mnt/2tb/git/awto-unvr/modules/.gitignore
+DONE: 151 source files across 5 modules
+=== vendor-modules ===
+al_eth: vendored 59 source files -> modules/al_eth
+al_ssm: vendored 51 source files -> modules/al_ssm
+al_dma: vendored 33 source files -> modules/al_dma
+al_sgpo: vendored 2 source files -> modules/al_sgpo
+al_reboot: vendored 2 source files -> modules/al_reboot
+wrote /mnt/2tb/git/awto-unvr/modules/.gitignore
+DONE: 147 source files across 5 modules

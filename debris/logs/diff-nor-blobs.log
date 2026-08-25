@@ -1,0 +1,46 @@
+OLD images/mtd/UNVR-74acb941a811-sysidea16-20260815-212945-post-5.1.25-final/UNVR-74acb941a811-ea16-mtd00-u-boot-1835008B-20260815-212945.img (1835008 B)
+NEW tmp/sections/01-uboot.bin (1395740 B)
+
+S2         IDENTICAL  (25044 B, sha match)
+preboot    CHANGED    old=435892 new=435892 (delta +0); 262007 of 435892 common bytes differ, first@0x2c last@0x6a6b3
+
+preboot    [region] CHANGED    old=524288 new=524288 (delta +0); 241542 of 524288 common bytes differ, first@0x2102c last@0x6b6b6
+dt         off 0x081000->0x081000  CHANGED    old=26208 new=26358 (delta +150); 14584 of 26208 common bytes differ, first@0x7 last@0x665f, +150 trailing bytes only in longer
+dt_pro     off 0x088000->0x088000  CHANGED    old=26584 new=27493 (delta +909); 14494 of 26584 common bytes differ, first@0x6 last@0x67d7, +909 trailing bytes only in longer
+dt_ai      off 0x090000->0x090000  CHANGED    old=26788 new=26692 (delta -96); 13203 of 26692 common bytes differ, first@0x7 last@0x6843, +96 trailing bytes only in longer
+dt_bt      off 0x098000->0x098000  CHANGED    old=26236 new=26446 (delta +210); 14363 of 26236 common bytes differ, first@0x6 last@0x667b, +210 trailing bytes only in longer
+uboot      off 0x0a1000->0x0ac000  CHANGED    old=689728 new=691152 (delta +1424); 571694 of 689728 common bytes differ, first@0x10 last@0xa863b, +1424 trailing bytes only in longer
+uboot-en   TOC off 0x1c0000 size 0x010000 (outside carved file)
+uboot-re   TOC off 0x1d0000 size 0x230000 (outside carved file)
+dt_hd      only in NEW
+OLD images/mtd/UNVR-74acb941a811-sysidea16-20260815-180449-pre-1.4.9/UNVR-74acb941a811-ea16-mtd05-u-boot-1835008B-20260815-180449.img (1835008 B)
+NEW images/mtd/UNVR-74acb941a811-sysidea16-20260815-212945-post-5.1.25-final/UNVR-74acb941a811-ea16-mtd00-u-boot-1835008B-20260815-212945.img (1835008 B)
+
+S2         IDENTICAL  (25044 B, sha match)
+preboot    IDENTICAL  (435892 B, sha match)
+
+preboot    [region] IDENTICAL  (524288 B, sha match)
+dt         off 0x081000->0x081000  IDENTICAL  (26208 B, sha match)
+dt_pro     off 0x088000->0x088000  IDENTICAL  (26584 B, sha match)
+dt_ai      off 0x090000->0x090000  IDENTICAL  (26788 B, sha match)
+dt_bt      off 0x098000->0x098000  IDENTICAL  (26236 B, sha match)
+uboot      off 0x0a1000->0x0a1000  IDENTICAL  (689728 B, sha match)
+uboot-en   TOC off 0x1c0000 size 0x010000 (outside carved file)
+uboot-re   TOC off 0x1d0000 size 0x230000 (outside carved file)
+OLD images/mtd/UNVR-74acb941a811-sysidea16-20260815-212945-post-5.1.25-final/UNVR-74acb941a811-ea16-mtd00-u-boot-1835008B-20260815-212945.img (1835008 B)
+NEW tmp/sections/01-uboot.bin (1395740 B)
+
+S2         IDENTICAL  (25044 B, sha match)
+preboot    CHANGED    old=435892 new=435892 (delta +0); 262007 of 435892 common bytes differ, first@0x2c last@0x6a6b3
+
+preboot    [region] CHANGED    old=524288 new=524288 (delta +0); 241542 of 524288 common bytes differ, first@0x2102c last@0x6b6b6
+dt         off 0x081000->0x081000  CHANGED    old=26208 new=26358 (delta +150); 14584 of 26208 common bytes differ, first@0x7 last@0x665f, +150 trailing bytes only in longer
+dt_pro     off 0x088000->0x088000  CHANGED    old=26584 new=27493 (delta +909); 14494 of 26584 common bytes differ, first@0x6 last@0x67d7, +909 trailing bytes only in longer
+dt_ai      off 0x090000->0x090000  CHANGED    old=26788 new=26692 (delta -96); 13203 of 26692 common bytes differ, first@0x7 last@0x6843, +96 trailing bytes only in longer
+dt_bt      off 0x098000->0x098000  CHANGED    old=26236 new=26446 (delta +210); 14363 of 26236 common bytes differ, first@0x6 last@0x667b, +210 trailing bytes only in longer
+uboot      off 0x0a1000->0x0ac000  CHANGED    old=689728 new=691152 (delta +1424); 571694 of 689728 common bytes differ, first@0x10 last@0xa863b, +1424 trailing bytes only in longer
+uboot-en   TOC off 0x1c0000 size 0x010000 (outside carved file)
+uboot-re   TOC off 0x1d0000 size 0x230000 (outside carved file)
+dt_hd      only in NEW
+
+carved NEW sub-blobs -> tmp/nor-carve

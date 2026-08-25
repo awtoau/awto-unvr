@@ -1,0 +1,26 @@
+make: Entering directory '/mnt/2tb/unvr-port-refs/linux-v7.1.8'
+make[1]: Entering directory '/mnt/2tb/unvr-port-refs/linux-alpine-v2/modules/al_dma'
+  CC [M]  al_dma_drv.o
+  CC [M]  al_dma_sysfs.o
+  CC [M]  al_hal_ssm.o
+  CC [M]  al_hal_ssm_raid.o
+  CC [M]  al_hal_m2m_udma.o
+  CC [M]  al_hal_udma_main.o
+  CC [M]  al_hal_udma_config.o
+al_hal_udma_config.c:803:5: warning: no previous prototype for ‘al_udma_m2s_q_sc_set’ [-Wmissing-prototypes]
+  803 | int al_udma_m2s_q_sc_set(struct al_udma_q *udma_q,
+      |     ^~~~~~~~~~~~~~~~~~~~
+al_hal_udma_config.c:833:5: warning: no previous prototype for ‘al_udma_m2s_q_sc_pause’ [-Wmissing-prototypes]
+  833 | int al_udma_m2s_q_sc_pause(struct al_udma_q *udma_q, al_bool set)
+      |     ^~~~~~~~~~~~~~~~~~~~~~
+al_hal_udma_config.c:846:5: warning: no previous prototype for ‘al_udma_m2s_q_sc_reset’ [-Wmissing-prototypes]
+  846 | int al_udma_m2s_q_sc_reset(struct al_udma_q *udma_q)
+      |     ^~~~~~~~~~~~~~~~~~~~~~
+  CC [M]  al_hal_udma_debug.o
+  LD [M]  al_dma.o
+  MODPOST Module.symvers
+  CC [M]  al_dma.mod.o
+  CC [M]  .module-common.o
+  LD [M]  al_dma.ko
+make[1]: Leaving directory '/mnt/2tb/unvr-port-refs/linux-alpine-v2/modules/al_dma'
+make: Leaving directory '/mnt/2tb/unvr-port-refs/linux-v7.1.8'

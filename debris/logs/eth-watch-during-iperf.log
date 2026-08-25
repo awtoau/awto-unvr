@@ -1,0 +1,427 @@
+# woomera at 192.168.25.106 - polling every 2s, Ctrl-C to stop
+2026-08-20T18:54:45+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:54:45+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:54:45+10:00 sfp ddm: bias=5.81mA tx=-2.47dBm rx=-2.32dBm status=0x00
+2026-08-20T18:54:47+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:54:47+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:54:47+10:00 sfp ddm: bias=5.81mA tx=-2.47dBm rx=-2.32dBm status=0x00
+2026-08-20T18:54:49+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:54:49+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:54:49+10:00 sfp ddm: bias=5.81mA tx=-2.40dBm rx=-2.46dBm status=0x00
+2026-08-20T18:54:51+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:54:51+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:54:51+10:00 sfp ddm: bias=5.81mA tx=-2.47dBm rx=-2.66dBm status=0x00
+2026-08-20T18:54:53+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:54:53+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:54:54+10:00 sfp ddm: bias=5.81mA tx=-2.40dBm rx=-2.52dBm status=0x00
+2026-08-20T18:54:56+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:54:56+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:54:56+10:00 sfp ddm: bias=5.81mA tx=-2.47dBm rx=-2.66dBm status=0x00
+2026-08-20T18:54:58+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:54:58+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:54:58+10:00 sfp ddm: bias=5.81mA tx=-2.47dBm rx=-2.46dBm status=0x00
+2026-08-20T18:55:00+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:55:00+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:55:00+10:00 sfp ddm: bias=5.81mA tx=-2.47dBm rx=-2.46dBm status=0x00
+2026-08-20T18:55:02+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:55:02+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:55:02+10:00 sfp ddm: bias=5.76mA tx=-2.40dBm rx=-2.32dBm status=0x00
+2026-08-20T18:55:04+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:55:04+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:55:04+10:00 sfp ddm: bias=5.81mA tx=-2.40dBm rx=-2.32dBm status=0x00
+2026-08-20T18:55:06+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:55:06+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:55:06+10:00 sfp ddm: bias=5.81mA tx=-2.40dBm rx=-2.46dBm status=0x00
+2026-08-20T18:55:08+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:55:08+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:55:08+10:00 sfp ddm: bias=5.76mA tx=-2.40dBm rx=-2.66dBm status=0x00
+2026-08-20T18:55:10+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:55:10+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:55:10+10:00 sfp ddm: bias=5.76mA tx=-2.47dBm rx=-2.46dBm status=0x00
+2026-08-20T18:55:12+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:55:12+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:55:12+10:00 sfp ddm: bias=5.76mA tx=-2.40dBm rx=-2.66dBm status=0x00
+2026-08-20T18:55:14+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:55:15+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:55:15+10:00 sfp ddm: bias=5.76mA tx=-2.47dBm rx=-2.66dBm status=0x00
+2026-08-20T18:55:17+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:55:17+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:55:17+10:00 sfp ddm: bias=5.76mA tx=-2.40dBm rx=-2.52dBm status=0x00
+2026-08-20T18:55:19+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:55:19+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:55:19+10:00 sfp ddm: bias=5.81mA tx=-2.40dBm rx=-2.46dBm status=0x00
+2026-08-20T18:55:21+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:55:21+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:55:21+10:00 sfp ddm: bias=5.86mA tx=-2.47dBm rx=-2.66dBm status=0x00
+2026-08-20T18:55:23+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:55:25+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:55:25+10:00 sfp ddm: bias=5.86mA tx=-2.47dBm rx=-2.46dBm status=0x00
+2026-08-20T18:55:25+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:55:25+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:55:25+10:00 sfp ddm: bias=5.86mA tx=-2.40dBm rx=-2.46dBm status=0x00
+2026-08-20T18:55:27+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:55:27+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:55:27+10:00 sfp ddm: bias=5.86mA tx=-2.47dBm rx=-2.52dBm status=0x00
+2026-08-20T18:55:29+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:55:29+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:55:29+10:00 sfp ddm: bias=5.86mA tx=-2.47dBm rx=-2.46dBm status=0x00
+2026-08-20T18:55:31+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:55:31+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:55:31+10:00 sfp ddm: bias=5.86mA tx=-2.47dBm rx=-2.52dBm status=0x00
+2026-08-20T18:55:33+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:55:33+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:55:33+10:00 sfp ddm: bias=5.86mA tx=-2.47dBm rx=-2.66dBm status=0x00
+2026-08-20T18:55:36+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:55:36+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:55:36+10:00 sfp ddm: bias=5.86mA tx=-2.47dBm rx=-2.46dBm status=0x00
+2026-08-20T18:55:38+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:55:38+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:55:38+10:00 sfp ddm: bias=5.81mA tx=-2.47dBm rx=-2.32dBm status=0x00
+2026-08-20T18:55:40+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:55:40+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:55:40+10:00 sfp ddm: bias=5.81mA tx=-2.40dBm rx=-2.32dBm status=0x00
+2026-08-20T18:55:42+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:55:42+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:55:42+10:00 sfp ddm: bias=5.86mA tx=-2.40dBm rx=-2.52dBm status=0x00
+2026-08-20T18:55:44+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:55:44+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:55:44+10:00 sfp ddm: bias=5.86mA tx=-2.40dBm rx=-2.52dBm status=0x00
+2026-08-20T18:55:46+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:55:46+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:55:46+10:00 sfp ddm: bias=5.86mA tx=-2.40dBm rx=-2.32dBm status=0x00
+2026-08-20T18:55:48+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:55:48+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:55:48+10:00 sfp ddm: bias=5.86mA tx=-2.47dBm rx=-2.52dBm status=0x00
+2026-08-20T18:55:50+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:55:50+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:55:50+10:00 sfp ddm: bias=5.86mA tx=-2.47dBm rx=-2.46dBm status=0x00
+2026-08-20T18:55:52+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:55:52+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:55:52+10:00 sfp ddm: bias=5.81mA tx=-2.40dBm rx=-2.66dBm status=0x00
+2026-08-20T18:55:54+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:55:54+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:55:55+10:00 sfp ddm: bias=5.86mA tx=-2.35dBm rx=-2.32dBm status=0x00
+2026-08-20T18:55:57+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:55:57+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:55:57+10:00 sfp ddm: bias=5.81mA tx=-2.47dBm rx=-2.46dBm status=0x00
+2026-08-20T18:55:59+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:55:59+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:55:59+10:00 sfp ddm: bias=5.81mA tx=-2.40dBm rx=-2.32dBm status=0x00
+2026-08-20T18:56:01+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:56:01+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:56:01+10:00 sfp ddm: bias=5.81mA tx=-2.40dBm rx=-2.46dBm status=0x00
+2026-08-20T18:56:03+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:56:03+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:56:03+10:00 sfp ddm: bias=5.81mA tx=-2.47dBm rx=-2.52dBm status=0x00
+2026-08-20T18:56:05+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:56:05+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:56:05+10:00 sfp ddm: bias=5.81mA tx=-2.47dBm rx=-2.46dBm status=0x00
+2026-08-20T18:56:07+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:56:07+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:56:07+10:00 sfp ddm: bias=5.81mA tx=-2.47dBm rx=-2.52dBm status=0x00
+2026-08-20T18:56:09+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:56:09+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:56:09+10:00 sfp ddm: bias=5.81mA tx=-2.40dBm rx=-2.66dBm status=0x00
+2026-08-20T18:56:11+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:56:11+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:56:11+10:00 sfp ddm: bias=5.81mA tx=-2.47dBm rx=-2.46dBm status=0x00
+2026-08-20T18:56:13+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:56:13+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:56:13+10:00 sfp ddm: bias=5.81mA tx=-2.47dBm rx=-2.52dBm status=0x00
+2026-08-20T18:56:16+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:56:16+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:56:16+10:00 sfp ddm: bias=5.81mA tx=-2.40dBm rx=-2.46dBm status=0x00
+2026-08-20T18:56:18+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:56:18+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:56:18+10:00 sfp ddm: bias=5.86mA tx=-2.47dBm rx=-2.46dBm status=0x00
+2026-08-20T18:56:20+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:56:20+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:56:20+10:00 sfp ddm: bias=5.86mA tx=-2.47dBm rx=-2.46dBm status=0x00
+2026-08-20T18:56:22+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:56:22+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:56:22+10:00 sfp ddm: bias=5.86mA tx=-2.47dBm rx=-2.52dBm status=0x00
+2026-08-20T18:56:24+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:56:24+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:56:24+10:00 sfp ddm: bias=5.90mA tx=-2.47dBm rx=-2.46dBm status=0x00
+2026-08-20T18:56:26+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:56:26+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:56:26+10:00 sfp ddm: bias=5.86mA tx=-2.47dBm rx=-2.52dBm status=0x00
+2026-08-20T18:56:28+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:56:28+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:56:28+10:00 sfp ddm: bias=5.86mA tx=-2.47dBm rx=-2.52dBm status=0x00
+2026-08-20T18:56:30+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:56:30+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:56:30+10:00 sfp ddm: bias=5.90mA tx=-2.47dBm rx=-2.66dBm status=0x00
+2026-08-20T18:56:32+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:56:32+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:56:32+10:00 sfp ddm: bias=5.86mA tx=-2.47dBm rx=-2.32dBm status=0x00
+2026-08-20T18:56:34+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:56:34+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:56:35+10:00 sfp ddm: bias=5.86mA tx=-2.40dBm rx=-2.46dBm status=0x00
+2026-08-20T18:56:37+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:56:37+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:56:37+10:00 sfp ddm: bias=5.86mA tx=-2.47dBm rx=-2.66dBm status=0x00
+2026-08-20T18:56:39+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:56:39+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:56:39+10:00 sfp ddm: bias=5.86mA tx=-2.47dBm rx=-2.46dBm status=0x00
+2026-08-20T18:56:41+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:56:41+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:56:41+10:00 sfp ddm: bias=5.90mA tx=-2.47dBm rx=-2.46dBm status=0x00
+2026-08-20T18:56:43+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:56:43+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:56:43+10:00 sfp ddm: bias=5.86mA tx=-2.40dBm rx=-2.66dBm status=0x00
+2026-08-20T18:56:45+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:56:45+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:56:45+10:00 sfp ddm: bias=5.86mA tx=-2.40dBm rx=-2.46dBm status=0x00
+2026-08-20T18:56:47+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:56:47+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:56:47+10:00 sfp ddm: bias=5.86mA tx=-2.47dBm rx=-2.52dBm status=0x00
+2026-08-20T18:56:49+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:56:49+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:56:49+10:00 sfp ddm: bias=5.86mA tx=-2.40dBm rx=-2.66dBm status=0x00
+2026-08-20T18:56:51+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:56:51+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:56:51+10:00 sfp ddm: bias=5.86mA tx=-2.47dBm rx=-2.32dBm status=0x00
+2026-08-20T18:56:53+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:56:53+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:56:53+10:00 sfp ddm: bias=5.86mA tx=-2.40dBm rx=-2.66dBm status=0x00
+2026-08-20T18:56:55+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:56:56+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:56:56+10:00 sfp ddm: bias=5.86mA tx=-2.47dBm rx=-2.32dBm status=0x00
+2026-08-20T18:56:58+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:56:58+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:56:58+10:00 sfp ddm: bias=5.86mA tx=-2.40dBm rx=-2.46dBm status=0x00
+2026-08-20T18:57:00+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:57:00+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:57:00+10:00 sfp ddm: bias=5.86mA tx=-2.40dBm rx=-2.46dBm status=0x00
+2026-08-20T18:57:02+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:57:02+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:57:02+10:00 sfp ddm: bias=5.86mA tx=-2.40dBm rx=-2.46dBm status=0x00
+2026-08-20T18:57:04+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:57:04+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:57:04+10:00 sfp ddm: bias=5.86mA tx=-2.40dBm rx=-2.46dBm status=0x00
+2026-08-20T18:57:06+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:57:06+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:57:06+10:00 sfp ddm: bias=5.86mA tx=-2.40dBm rx=-2.66dBm status=0x00
+2026-08-20T18:57:08+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:57:08+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:57:08+10:00 sfp ddm: bias=5.86mA tx=-2.47dBm rx=-2.32dBm status=0x00
+2026-08-20T18:57:10+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:57:10+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:57:10+10:00 sfp ddm: bias=5.86mA tx=-2.47dBm rx=-2.46dBm status=0x00
+2026-08-20T18:57:12+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:57:12+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:57:12+10:00 sfp ddm: bias=5.86mA tx=-2.47dBm rx=-2.46dBm status=0x00
+2026-08-20T18:57:14+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:57:14+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:57:15+10:00 sfp ddm: bias=5.81mA tx=-2.47dBm rx=-2.52dBm status=0x00
+2026-08-20T18:57:17+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:57:17+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:57:17+10:00 sfp ddm: bias=5.86mA tx=-2.40dBm rx=-2.46dBm status=0x00
+2026-08-20T18:57:19+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:57:19+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:57:19+10:00 sfp ddm: bias=5.86mA tx=-2.47dBm rx=-2.32dBm status=0x00
+2026-08-20T18:57:21+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:57:21+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:57:21+10:00 sfp ddm: bias=5.81mA tx=-2.40dBm rx=-2.46dBm status=0x00
+2026-08-20T18:57:23+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:57:23+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:57:23+10:00 sfp ddm: bias=5.81mA tx=-2.40dBm rx=-2.46dBm status=0x00
+2026-08-20T18:57:25+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:57:25+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:57:25+10:00 sfp ddm: bias=5.81mA tx=-2.47dBm rx=-2.46dBm status=0x00
+2026-08-20T18:57:27+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:57:27+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:57:27+10:00 sfp ddm: bias=5.81mA tx=-2.40dBm rx=-2.46dBm status=0x00
+2026-08-20T18:57:29+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:57:29+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:57:29+10:00 sfp ddm: bias=5.81mA tx=-2.40dBm rx=-2.46dBm status=0x00
+2026-08-20T18:57:31+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:57:31+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:57:31+10:00 sfp ddm: bias=5.81mA tx=-2.40dBm rx=-2.46dBm status=0x00
+2026-08-20T18:57:33+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:57:33+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:57:33+10:00 sfp ddm: bias=5.81mA tx=-2.40dBm rx=-2.46dBm status=0x00
+2026-08-20T18:57:36+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:57:36+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:57:36+10:00 sfp ddm: bias=5.86mA tx=-2.40dBm rx=-2.46dBm status=0x00
+2026-08-20T18:57:38+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:57:38+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:57:38+10:00 sfp ddm: bias=5.86mA tx=-2.40dBm rx=-2.46dBm status=0x00
+2026-08-20T18:57:40+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:57:40+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:57:40+10:00 sfp ddm: bias=5.86mA tx=-2.47dBm rx=-2.46dBm status=0x00
+2026-08-20T18:57:43+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:57:43+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:57:43+10:00 sfp ddm: bias=5.90mA tx=-2.47dBm rx=-2.46dBm status=0x00
+2026-08-20T18:57:45+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:57:45+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:57:45+10:00 sfp ddm: bias=5.90mA tx=-2.40dBm rx=-2.46dBm status=0x00
+2026-08-20T18:57:48+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:57:48+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:57:48+10:00 sfp ddm: bias=5.90mA tx=-2.40dBm rx=-2.66dBm status=0x00
+2026-08-20T18:57:50+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:57:50+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:57:50+10:00 sfp ddm: bias=5.90mA tx=-2.40dBm rx=-2.46dBm status=0x00
+2026-08-20T18:57:53+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:57:53+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:57:53+10:00 sfp ddm: bias=5.90mA tx=-2.47dBm rx=-2.46dBm status=0x00
+2026-08-20T18:57:55+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:57:55+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:57:55+10:00 sfp ddm: bias=5.90mA tx=-2.47dBm rx=-2.46dBm status=0x00
+2026-08-20T18:57:58+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:57:58+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:57:58+10:00 sfp ddm: bias=5.90mA tx=-2.47dBm rx=-2.52dBm status=0x00
+2026-08-20T18:58:00+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:58:00+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:58:00+10:00 sfp ddm: bias=5.90mA tx=-2.47dBm rx=-2.32dBm status=0x00
+2026-08-20T18:58:03+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:58:03+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:58:03+10:00 sfp ddm: bias=5.90mA tx=-2.47dBm rx=-2.32dBm status=0x00
+2026-08-20T18:58:05+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:58:05+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:58:05+10:00 sfp ddm: bias=5.90mA tx=-2.40dBm rx=-2.46dBm status=0x00
+2026-08-20T18:58:07+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:58:07+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:58:08+10:00 sfp ddm: bias=5.90mA tx=-2.47dBm rx=-2.46dBm status=0x00
+2026-08-20T18:58:10+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:58:10+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:58:10+10:00 sfp ddm: bias=5.86mA tx=-2.40dBm rx=-2.46dBm status=0x00
+2026-08-20T18:58:12+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:58:13+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:58:13+10:00 sfp ddm: bias=5.90mA tx=-2.40dBm rx=-2.66dBm status=0x00
+2026-08-20T18:58:15+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:58:15+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:58:15+10:00 sfp ddm: bias=5.90mA tx=-2.47dBm rx=-2.46dBm status=0x00
+2026-08-20T18:58:17+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:58:18+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:58:18+10:00 sfp ddm: bias=5.90mA tx=-2.40dBm rx=-2.46dBm status=0x00
+2026-08-20T18:58:20+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:58:20+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:58:20+10:00 sfp ddm: bias=5.86mA tx=-2.40dBm rx=-2.32dBm status=0x00
+2026-08-20T18:58:22+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:58:23+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:58:23+10:00 sfp ddm: bias=5.86mA tx=-2.40dBm rx=-2.66dBm status=0x00
+2026-08-20T18:58:25+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:58:25+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:58:25+10:00 sfp ddm: bias=5.86mA tx=-2.40dBm rx=-2.46dBm status=0x00
+2026-08-20T18:58:27+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:58:27+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:58:28+10:00 sfp ddm: bias=5.86mA tx=-2.40dBm rx=-2.32dBm status=0x00
+2026-08-20T18:58:30+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:58:30+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:58:30+10:00 sfp ddm: bias=5.90mA tx=-2.47dBm rx=-2.46dBm status=0x00
+2026-08-20T18:58:32+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:58:32+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:58:33+10:00 sfp ddm: bias=5.86mA tx=-2.40dBm rx=-2.66dBm status=0x00
+2026-08-20T18:58:35+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:58:35+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:58:35+10:00 sfp ddm: bias=5.86mA tx=-2.40dBm rx=-2.46dBm status=0x00
+2026-08-20T18:58:37+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:58:38+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:58:38+10:00 sfp ddm: bias=5.86mA tx=-2.47dBm rx=-2.46dBm status=0x00
+2026-08-20T18:58:40+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:58:40+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:58:40+10:00 sfp ddm: bias=5.86mA tx=-2.47dBm rx=-2.46dBm status=0x00
+2026-08-20T18:58:42+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:58:43+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:58:43+10:00 sfp ddm: bias=5.90mA tx=-2.40dBm rx=-2.46dBm status=0x00
+2026-08-20T18:58:45+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:58:45+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:58:45+10:00 sfp ddm: bias=5.86mA tx=-2.47dBm rx=-2.46dBm status=0x00
+2026-08-20T18:58:47+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:58:48+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:58:48+10:00 sfp ddm: bias=5.86mA tx=-2.40dBm rx=-2.46dBm status=0x00
+2026-08-20T18:58:50+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:58:50+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:58:50+10:00 sfp ddm: bias=5.86mA tx=-2.40dBm rx=-2.46dBm status=0x00
+2026-08-20T18:58:52+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:58:52+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:58:53+10:00 sfp ddm: bias=5.86mA tx=-2.40dBm rx=-2.32dBm status=0x00
+2026-08-20T18:58:55+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:58:55+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:58:55+10:00 sfp ddm: bias=5.86mA tx=-2.47dBm rx=-2.66dBm status=0x00
+2026-08-20T18:58:57+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:58:57+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:58:57+10:00 sfp ddm: bias=5.86mA tx=-2.40dBm rx=-2.46dBm status=0x00
+2026-08-20T18:59:00+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:59:00+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:59:00+10:00 sfp ddm: bias=5.86mA tx=-2.47dBm rx=-2.46dBm status=0x00
+2026-08-20T18:59:02+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:59:02+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:59:03+10:00 sfp ddm: bias=5.86mA tx=-2.40dBm rx=-2.46dBm status=0x00
+2026-08-20T18:59:05+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:59:05+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:59:05+10:00 sfp ddm: bias=5.86mA tx=-2.40dBm rx=-2.32dBm status=0x00
+2026-08-20T18:59:07+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:59:07+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:59:07+10:00 sfp ddm: bias=5.86mA tx=-2.40dBm rx=-2.46dBm status=0x00
+2026-08-20T18:59:10+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:59:10+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:59:10+10:00 sfp ddm: bias=5.86mA tx=-2.40dBm rx=-2.46dBm status=0x00
+2026-08-20T18:59:12+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:59:12+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:59:12+10:00 sfp ddm: bias=5.86mA tx=-2.40dBm rx=-2.46dBm status=0x00
+2026-08-20T18:59:15+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:59:15+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:59:15+10:00 sfp ddm: bias=5.86mA tx=-2.40dBm rx=-2.66dBm status=0x00
+2026-08-20T18:59:17+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:59:17+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:59:17+10:00 sfp ddm: bias=5.86mA tx=-2.40dBm rx=-2.46dBm status=0x00
+2026-08-20T18:59:20+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:59:20+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:59:20+10:00 sfp ddm: bias=5.86mA tx=-2.40dBm rx=-2.46dBm status=0x00
+2026-08-20T18:59:22+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:59:22+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:59:22+10:00 sfp ddm: bias=5.86mA tx=-2.40dBm rx=-2.46dBm status=0x00
+2026-08-20T18:59:25+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:59:25+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:59:25+10:00 sfp ddm: bias=5.90mA tx=-2.40dBm rx=-2.46dBm status=0x00
+2026-08-20T18:59:27+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:59:27+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:59:27+10:00 sfp ddm: bias=5.90mA tx=-2.47dBm rx=-2.46dBm status=0x00
+2026-08-20T18:59:30+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:59:30+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:59:30+10:00 sfp ddm: bias=5.90mA tx=-2.47dBm rx=-2.66dBm status=0x00
+2026-08-20T18:59:32+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:59:32+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:59:33+10:00 sfp ddm: bias=5.90mA tx=-2.47dBm rx=-2.46dBm status=0x00
+2026-08-20T18:59:35+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:59:35+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:59:35+10:00 sfp ddm: bias=5.90mA tx=-2.47dBm rx=-2.46dBm status=0x00
+2026-08-20T18:59:37+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:59:37+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:59:38+10:00 sfp ddm: bias=5.95mA tx=-2.40dBm rx=-2.46dBm status=0x00
+2026-08-20T18:59:40+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:59:40+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:59:40+10:00 sfp ddm: bias=5.95mA tx=-2.40dBm rx=-2.46dBm status=0x00
+2026-08-20T18:59:42+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:59:42+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:59:42+10:00 sfp ddm: bias=5.95mA tx=-2.40dBm rx=-2.46dBm status=0x00
+2026-08-20T18:59:44+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:59:45+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:59:45+10:00 sfp ddm: bias=5.90mA tx=-2.47dBm rx=-2.46dBm status=0x00
+2026-08-20T18:59:47+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:59:47+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:59:47+10:00 sfp ddm: bias=5.90mA tx=-2.47dBm rx=-2.46dBm status=0x00
+2026-08-20T18:59:49+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:59:49+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:59:49+10:00 sfp ddm: bias=5.90mA tx=-2.47dBm rx=-2.46dBm status=0x00
+2026-08-20T18:59:52+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:59:52+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:59:52+10:00 sfp ddm: bias=5.95mA tx=-2.47dBm rx=-2.46dBm status=0x00
+2026-08-20T18:59:54+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:59:54+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:59:54+10:00 sfp ddm: bias=5.90mA tx=-2.47dBm rx=-2.46dBm status=0x00
+2026-08-20T18:59:56+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:59:56+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:59:57+10:00 sfp ddm: bias=5.95mA tx=-2.40dBm rx=-2.46dBm status=0x00
+2026-08-20T18:59:59+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:59:59+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T18:59:59+10:00 sfp ddm: bias=5.90mA tx=-2.47dBm rx=-2.46dBm status=0x00
+2026-08-20T19:00:01+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T19:00:01+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T19:00:01+10:00 sfp ddm: bias=5.90mA tx=-2.47dBm rx=-2.46dBm status=0x00
+2026-08-20T19:00:04+10:00 enp0s1 speed=1000Mb duplex=full carrier=1 oper=up
+2026-08-20T19:00:04+10:00 enp0s2 speed=10000Mb duplex=full carrier=1 oper=up
+2026-08-20T19:00:04+10:00 sfp ddm: bias=5.90mA tx=-2.47dBm rx=-2.46dBm status=0x00

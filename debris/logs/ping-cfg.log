@@ -1,0 +1,165 @@
+ping 192.168.25.145
+eth [al_eth_dm]: initialize controller's UDMA. id = 0
+eth [al_eth_dm]: UDMA base regs: 00000000fe000000
+eth [al_eth_dm]: EC base regs: 00000000fe024000
+eth [al_eth_dm]: MAC base regs: 00000000fe020000
+eth [al_eth_dm]: enable_rx_parser: 0
+eth [al_eth_dm]: Eth Common base regs: 0000000000000000
+al_eth_adapter_init: non optimal adapter configuration
+udma [eth tx] initialized. base 00000000fe000000
+udma [eth tx]: change state from (Disable) to (Normal)
+udma [eth rx] initialized. base 00000000fe010000
+udma [eth rx]: change state from (Disable) to (Normal)
+eth [al_eth_dm]: controller's UDMA successfully initialized
+eth [al_eth_dm]: config UDMA Tx queue 0
+udma [eth tx 0]: Tx q init. size 0x20
+  desc ring info: phys base 0xbfb57c80 virt base 00000000bfb57c80
+  cdesc ring info: phys base 0xbfb57e80 virt base 00000000bfb57e80 entry size 0x10
+eth [al_eth_dm]: config UDMA Rx
+ queue 0
+udma [eth rx 0]: Rx q init. size 0x20
+  desc ring info: phys base 0xbfb58080 virt base 00000000bfb58080
+  cdesc ring info: phys base 0xbfb58280 virt base 00000000bfb58280 entry size 0x10
+al_eth[post-init]: m2s.state=00000000 tx0 drhp=40000000 drtp=40000000 dcp=40000000 crhp=40000000 qpkt=00000000
+"Error" handler, esr 0xbf000002
+elr: 0000000001134ee0 lr : 0000000001134ed4 (reloc)
+elr: 00000000bff86ee0 lr : 00000000bff86ed4
+x0 : 000000000000006f x1 : 0000000000000000
+x2 : 0000000003030000 x3 : 00000000bad0add1
+x4 : 00000000fd883000 x5 : 0000000000000030
+x6 : 0000000000000021 x7 : 0000000000000000
+x8 : 000000000000000a x9 : 0000000000000005
+x10: 0000000000001608 x11: 000000000000160c
+x12: 00000000bfb3f478 x13: 00000000bfb3f580
+x14: 0000000000000008 x15: 00000000bfb3f03c
+x16: 00000000bff933c4 x17: 0000000000002b0c
+x18: 00000000bfb41e00 x19: 00000000fe000000
+x20: 00000000bffd5036 x21: 00000000bfb56780
+x22: 00000000bfb56780 x23: 0000000000000000
+x24: 00000000bfb57780 x25: 00000000bfb57b70
+x26: 0000000000000600 x27: 0000000000000000
+x28: 0000000000000000 x29: 00000000bfb3f0d0
+
+Code: 9400d8d6 b9502262 d5033fbf b9500263 (d5033fbf) 
+Resetting CPU ...
+
+resetting ...
+stage2_loader v2.22.3
+SPD I2C Address: 57
+Executing next!
+
+-----------------------------------------------------
+Stage 3 version: 2.22.0
+Commit ID: 6088bc3
+CVOS commit ID: bac1d52
+HAL commit ID: 61afa9c
+Build date: Sep  8 2020 11:40:22
+-----------------------------------------------------
+
+agent_wakeup v2.10
+EEPROM Revision ID = 39
+Device ID = a324
+Device Info: v2sil-39-rc1
+subsystem id: 0xea16
+hardware revision id: 0x000b101d
+instance_num =  0
+Loading DT to 01100000 (26208 bytes)...
+obj_hdr_dt_offset: 0x81000
+Board config ID: alpine_v2_ubnt one nas v5.0
+Loading application to 01100000 (689728 bytes)...
+Executing application...
+
+
+U-Boot 2015.07-alpine_db-2.21-HAL (Dec 16 2020 - 05:54:51 +0800), Build: jenkins-amaz-alpinev2-boot-master-161
+
+I2C:   ready
+DRAM:  4 GiB
+Trace early: 0000000000ff0000, 10000
+
+   _
+  /_\  _ __  _ __   __ _ _ __  _   _ _ __ _ __   __ _
+ //_\\| '_ \| '_ \ / _` | '_ \| | | | '__| '_ \ / _` |
+/  _  \ | | | | | | (_| | |_) | |_| | |  | | | | (_| |
+\_/ \_/_| |_|_| |_|\__,_| .__/ \__,_|_|  |_| |_|\__,_|
+   __       _           |_|
+  / /  __ _| |__  ___
+ / /  / _` | '_ \/ __|
+/ /__| (_| | |_) \__ \
+\____/\__,_|_.__/|___/
+               ___             _
+ /\ /\        / __\ ___   ___ | |_
+/ / \ \_____ /__\/// _ \ / _ \| __|
+\ \_/ /_____/ \/  \ (_) | (_) | |_
+ \___/      \_____/\___/ \___/ \__|
+
+temprature: 53 degrees
+eeprom_per_device_init: no valid information found!
+power_init_board: EEPROM per device information is not valid - using defaults!
+SF: Detected MX25U25635F with page size 256 Bytes, erase size 4 KiB, total 32 MiB
+U-Boot script not found in TOC!
+Board config ID: alpine_v2_ubnt one nas v5.0, 113-2832-29
+Trace disabled
+NAND:  1024 MiB
+SF: Detected MX25U25635F with page size 256 Bytes, erase size 4 KiB, total 32 MiB
+mac: [74acb941a811] + [2]
+PCI:
+  00:01.0     - 1c36:0001 - Network controller
+  00:02.0     - 1c36:0002 - Network controller
+  00:04.0     - 1c36:0022 - Cryptographic device
+  00:05.0     - 1c36:0022 - Mass storage controller
+  00:08.0     - 1c36:0031 - Mass storage controller
+  00:09.0     - 1c36:0031 - Mass storage controller
+PCIE_0: Link up. Speed 5GT/s Width x1
+PCI:
+  01:00.0     - 1b21:1142 - Serial bus controller
+In:    serial
+Out:   serial
+Err:   serial
+dtt_get_temp[0] 104
+dtt_get_temp[1] 102
+dtt_get_temp[2] 102
+Boot: warm
+Net:   , al_eth1 [PRIME], al_eth2
+Not yet support, skipping advertising packets
+gpio: pin 37 (gpio 37) value is 0
+Setting bus to 4
+Autobooting in 2 seconds, press "<Esc><Esc>" to stop
+al_eth1 Waiting for PHY auto negotiation to complete... done
+Using al_eth1 device
+TFTP from server 192.168.25.145; our IP address is 192.168.25.140
+Filename 'u-boot-chainload.bin'.
+Load address: 0x1100000
+Loading: *##############################################
+	 2.4 MiB/s
+done
+Bytes transferred = 669416 (a36e8 hex)
+## Starting application at 0x01100000 ...
+
+
+U-Boot 2026.07-dirty (Aug 19 2026 - 22:27:19 +1000)
+
+Model: Ubiquiti UNVR (Annapurna Labs Alpine V2 AL-324)
+DRAM:  3 GiB (total 4 GiB)
+
+                _                _           
+  __ ___      _| |_ ___    _ __ | |_   _ ___ 
+ / _` \ \ /\ / / __/ _ \  | '_ \| | | | / __|
+| (_| |\ V  V /| || (_) | | |_) | | |_| \__ \
+ \__,_| \_/\_/  \__\___/  | .__/|_|\__,_|___/
+                          |_|                
+
+Core:  38 devices, 15 uclasses, devicetree: separate
+MMC:   
+Loading Environment from SPIFlash... SF: Detected mx25u25635f with page size 256 Bytes, erase size 4 KiB, total 32 MiB
+OK
+In:    serial@fd883000
+Out:   serial@fd883000
+Err:   serial@fd883000
+al-snoop: 00:04.0 slot 4 done
+al-snoop: 00:05.0 slot 5 done
+al-snoop: 00:08.0 slot 8 done
+al-snoop: 00:09.0 slot 9 done
+al-snoop: configured 4 internal PCIe device(s)
+Net:   eth0: al_eth_dm, eth1: al_eth_dm_10g
+awto-nas# 
+<<MATCHED: awto-nas#>>

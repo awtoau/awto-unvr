@@ -1,0 +1,67 @@
+== tmp/sections/01-uboot.bin (1395740 B)
+   uboot payload file 0xac048  load VA 0x1100000
+   table @file 0x139340 (VA 0x118d2f8) stride 0x70
+idx sysid   name         bootfrom   model       ethprime  flags(+0x20)
+0   0xea16  UNVR         bootnand   -           -         0000ff0201020000
+1   0xea1a  UNVR         bootemmc   -           -         0000ff0201020102
+2   0xea20  UNVR-PRO     bootemmc   -           -         0000ff0201020202
+3   0xea51  UNAS-PRO     bootemmc   unaspro     al_eth1   0000ff0201020202
+4   0xea63  UNAS-PRO-8   bootnand   unaspro_8   al_eth1   00ff020100030202
+5   0xea67  UNAS-PRO-4   bootemmc   unaspro_4   al_eth1   00ff020001030202
+6   0xea2c  UDM-PRO-SE   bootemmc   udmprose    -         00ff020003030203
+7   0xea32  UDM-PRO-MAX  bootemmc   udmpromax   -         00ff020003030203
+8   0xea39  UDM-PRO-XG   bootemmc   udmproxg    -         00ff020003030203
+9   0xea2a  UDW          bootemmc   udmprose    -         00ff020003030203
+10  0xea15  UDM-PRO      bootemmc   udmpro      -         00ff020003030203
+11  0xea11  UDM-BASE     bootemmc   udm         al_eth1   000000ff01010203
+12  0xea19  UXG-PRO      bootemmc   uxgpro      -         00ff020003030203
+   13 entries
+== images/mtd/UNVR-74acb941a811-sysidea16-20260815-212945-post-5.1.25-final/UNVR-74acb941a811-ea16-mtd00-u-boot-1835008B-20260815-212945.img (1835008 B)
+   uboot payload file 0xa1048  load VA 0x1100000
+   NO board table found (OLD build: sysid decoded by a code compare-switch, e.g. ea16->dtidx0 ea20->1 ea21->2 ea1a->3 ea2c->5)
+== tmp/sections/01-uboot.bin (1395740 B)
+   uboot payload file 0xac048  load VA 0x1100000
+   table @file 0x139340 (VA 0x118d2f8) stride 0x70
+idx sysid   name         bootfrom   model       ethprime  flags(+0x20)
+0   0xea16  UNVR         bootnand   -           -         0000ff0201020000
+1   0xea1a  UNVR         bootemmc   -           -         0000ff0201020102
+2   0xea20  UNVR-PRO     bootemmc   -           -         0000ff0201020202
+3   0xea51  UNAS-PRO     bootemmc   unaspro     al_eth1   0000ff0201020202
+4   0xea63  UNAS-PRO-8   bootnand   unaspro_8   al_eth1   00ff020100030202
+5   0xea67  UNAS-PRO-4   bootemmc   unaspro_4   al_eth1   00ff020001030202
+6   0xea2c  UDM-PRO-SE   bootemmc   udmprose    -         00ff020003030203
+7   0xea32  UDM-PRO-MAX  bootemmc   udmpromax   -         00ff020003030203
+8   0xea39  UDM-PRO-XG   bootemmc   udmproxg    -         00ff020003030203
+9   0xea2a  UDW          bootemmc   udmprose    -         00ff020003030203
+10  0xea15  UDM-PRO      bootemmc   udmpro      -         00ff020003030203
+11  0xea11  UDM-BASE     bootemmc   udm         al_eth1   000000ff01010203
+12  0xea19  UXG-PRO      bootemmc   uxgpro      -         00ff020003030203
+   13 entries
+== tmp/sections/01-uboot.bin (1395740 B)
+   uboot payload file 0xac048  load VA 0x1100000
+   table @file 0x139340 (VA 0x118d2f8) stride 0x70 swap=False
+idx sysid   name         bootfrom   fan  model     ethprime  dobootm
+0   0xea16  UNVR         bootnand   0x50 -         -         bootunsign
+1   0xea1a  UNVR         bootemmc   0x50 -         -         bootunsign
+2   0xea20  UNVR-PRO     bootemmc   0x19 -         -         bootunsign
+3   0xea51  UNAS-PRO     bootemmc   0x30 unaspro   al_eth1   bootsign
+4   0xea63  UNAS-PRO-8   bootnand   0x30 unaspro_8 al_eth1   bootsign
+5   0xea67  UNAS-PRO-4   bootemmc   0x30 unaspro_4 al_eth1   bootsign
+6   0xea2c  UDM-PRO-SE   bootemmc   0x19 udmprose  -         bootsign
+7   0xea32  UDM-PRO-MAX  bootemmc   0x59 udmpromax -         bootsign
+8   0xea39  UDM-PRO-XG   bootemmc   0x59 udmproxg  -         bootsign
+9   0xea2a  UDW          bootemmc   0x19 udmprose  -         bootsign
+10  0xea15  UDM-PRO      bootemmc   0x19 udmpro    -         bootsign
+11  0xea11  UDM-BASE     bootemmc   0x19 udm       al_eth1   bootsign
+12  0xea19  UXG-PRO      bootemmc   0x19 uxgpro    -         bootsign
+   13 entries
+== images/mtd/UNVR-74acb941a811-sysidea16-20260815-212945-post-5.1.25-final/UNVR-74acb941a811-ea16-mtd00-u-boot-1835008B-20260815-212945.img (1835008 B)
+   uboot payload file 0xa1048  load VA 0x1100000
+   table @file 0x12dd98 (VA 0x118cd50) stride 0x38 swap=True  (OLD: DTB multi-DT idx from a separate code switch @file 0xa318c: ea16->0 ea20->1 ea21->2 ea1a->3 ea2c->5)
+idx sysid   name         bootfrom   fan  model     ethprime  dobootm
+0   0xea16  UNVR         bootnand   0x50 -         -         -
+1   0xea1a  UNVR         bootemmc   0x50 -         -         -
+2   0xea20  UNVR-PRO     bootemmc   0x19 -         -         -
+3   0xea21  UNVR-AI      bootemmc   0x19 -         -         -
+4   0xea2c  UDM-PRO-SE   bootdream  0x19 -         -         -
+   5 entries

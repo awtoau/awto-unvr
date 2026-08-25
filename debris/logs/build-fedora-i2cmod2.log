@@ -1,0 +1,310 @@
+12:16:56.740380+1000  INFO  [dev.py] run: /home/dan/opt/cpython-ft/bin/python3 /mnt/2tb/git/awto-unvr/scripts/build-linux-71-fedora.py
+DTS shared-fact check OK: i2c@fd880000 [clock-frequency=100000, i2c-sda-hold-time-ns=300, i2c-ss-scl-hcnt-raw=2133, i2c-ss-scl-lcnt-raw=2827, i2c-fs-scl-hcnt-raw=413, i2c-fs-scl-lcnt-raw=800, i2c-hs-scl-hcnt-raw=243, i2c-hs-scl-lcnt-raw=408] match across 2 trees
++ /mnt/2tb/unvr-port-refs/linux-v7.1.8/scripts/config --file /mnt/2tb/unvr-port-refs/linux-v7.1.8/.config --enable ARCH_ALPINE --enable PCIE_AL --enable PCIE_AL_INTERNAL --enable EXPERT --enable GPIO_SYSFS --set-str INITRAMFS_SOURCE  --disable DEBUG_INFO_BTF --disable DEBUG_INFO_BTF_MODULES --disable MODULE_SIG --disable MODULE_SIG_ALL --disable MODULE_SIG_FORCE --disable SYSTEM_REVOCATION_KEYS --disable SECURITY_LOCKDOWN_LSM --enable DEVMEM --disable STRICT_DEVMEM --disable IO_STRICT_DEVMEM --enable MTD_SPI_NOR_USE_4K_SECTORS --enable DEBUG_INFO_NONE --disable WERROR --set-val MAGIC_SYSRQ_DEFAULT_ENABLE 1 --set-val PANIC_TIMEOUT 10
++ make -C /mnt/2tb/unvr-port-refs/linux-v7.1.8 LSMOD=/mnt/2tb/unvr-port-refs/build-out-71-fedora/woomera-lsmod.txt localmodconfig
+make: Entering directory '/mnt/2tb/unvr-port-refs/linux-v7.1.8'
+using config: '.config'
+al_dma config not found!
+al_eth config not found!
+al_sgpo config not found!
+al_thermal config not found!
+System keyring enabled but keys "certs/rhel.pem" not found. Resetting keys to default value.
+.config:13235:warning: override: reassigning to symbol SYSTEM_TRUSTED_KEYS
+*
+* Restart config...
+*
+*
+* Scheduler features
+*
+Enable utilization clamping for RT/FAIR tasks (UCLAMP_TASK) [Y/n/?] y
+  Number of supported utilization clamp buckets (UCLAMP_BUCKETS_COUNT) [5] 5
+Proxy Execution (SCHED_PROXY_EXEC) [N/y/?] (NEW) 
+Error in reading or end of file.
+
+*
+* GCC plugins
+*
+GCC plugins (GCC_PLUGINS) [Y/n/?] (NEW) 
+Error in reading or end of file.
+
+  Generate some entropy during boot and runtime (GCC_PLUGIN_LATENT_ENTROPY) [N/y/?] (NEW) 
+Error in reading or end of file.
+
+*
+* GPIO Support
+*
+GPIO Support (GPIOLIB) [Y/?] y
+  Maximum number of GPIOs for fast path (GPIOLIB_FASTPATH_LIMIT) [512] 512
+  Debug GPIO calls (DEBUG_GPIO) [N/y/?] n
+  /sys/class/gpio/... (sysfs interface) (GPIO_SYSFS) [Y/n/?] y
+    Enable legacy functionalities of the sysfs interface (GPIO_SYSFS_LEGACY) [Y/n/?] (NEW) 
+Error in reading or end of file.
+
+  Character device (/dev/gpiochipN) support (GPIO_CDEV) [Y/?] y
+    Support GPIO ABI Version 1 (GPIO_CDEV_V1) [Y/n/?] y
+  *
+  * PCI GPIO expanders
+  *
+  BT8XX GPIO abuser (GPIO_BT8XX) [N/m/y/?] (NEW) 
+Error in reading or end of file.
+
+  Mellanox BlueField SoC GPIO (GPIO_MLXBF) [N/m/y/?] n
+  Mellanox BlueField 2 SoC GPIO (GPIO_MLXBF2) [N/m/y/?] n
+  Mellanox BlueField 3 SoC GPIO (GPIO_MLXBF3) [N/m/y/?] n
+  ACCES PCI-IDIO-16 GPIO support (GPIO_PCI_IDIO_16) [N/m/y/?] n
+  ACCES PCIe-IDIO-24 GPIO support (GPIO_PCIE_IDIO_24) [N/m/y/?] n
+  RDC R-321x GPIO support (GPIO_RDC321X) [N/m/y/?] n
+*
+* EDAC (Error Detection And Correction) reporting
+*
+EDAC (Error Detection And Correction) reporting (EDAC) [Y/n/m/?] y
+  Debugging (EDAC_DEBUG) [N/y/?] n
+  Output ACPI APEI/GHES BIOS detected errors via EDAC (EDAC_GHES) [Y/n/m/?] y
+  EDAC scrub feature (EDAC_SCRUB) [Y/n/?] y
+  EDAC ECS (Error Check Scrub) feature (EDAC_ECS) [Y/n/?] y
+  EDAC memory repair feature (EDAC_MEM_REPAIR) [Y/n/?] y
+  Amazon's Annapurna Lab Memory Controller (EDAC_AL_MC) [N/m/y/?] (NEW) 
+Error in reading or end of file.
+
+  Freescale Layerscape DDR (EDAC_LAYERSCAPE) [N/m/y/?] n
+  Cavium ThunderX EDAC (EDAC_THUNDERX) [N/m/y/?] n
+  Synopsys DDR Memory Controller (EDAC_SYNOPSYS) [N/m/y/?] n
+  APM X-Gene SoC (EDAC_XGENE) [N/m/y/?] n
+  Mellanox BlueField Memory ECC (EDAC_BLUEFIELD) [N/m/y/?] n
+  ARM DMC-520 ECC (EDAC_DMC520) [N/m/y/?] n
+  Xilinx ZynqMP OCM Controller (EDAC_ZYNQMP) [N/m/y/?] n
+  Xilinx Versal DDR Memory Controller (EDAC_VERSAL) [N/m/y/?] n
+  ARM Cortex A72 (EDAC_CORTEX_A72) [N/m/y/?] n
+*
+* Memory initialization
+*
+Initialize kernel stack variables at function entry
+  1. no automatic stack variable initialization (weakest) (INIT_STACK_NONE)
+  2. pattern-init everything (strongest) (INIT_STACK_ALL_PATTERN)
+> 3. zero-init everything (strongest and safest) (INIT_STACK_ALL_ZERO)
+choice[1-3?]: 3
+Poison kernel stack before returning from syscalls (KSTACK_ERASE) [N/y/?] (NEW) 
+Error in reading or end of file.
+
+Enable heap memory zeroing on allocation by default (INIT_ON_ALLOC_DEFAULT_ON) [Y/n/?] y
+Enable heap memory zeroing on free by default (INIT_ON_FREE_DEFAULT_ON) [N/y/?] n
+Enable register zeroing on function exit (ZERO_CALL_USED_REGS) [N/y/?] n
+*
+* Kernel hardening options
+*
+Randomize layout of sensitive kernel structures
+> 1. Disable structure layout randomization (RANDSTRUCT_NONE)
+  2. Fully randomize structure layout (RANDSTRUCT_FULL) (NEW)
+  3. Limit randomization of structure layout to cache-lines (RANDSTRUCT_PERFORMANCE) (NEW)
+choice[1-3?]: 
+Error in reading or end of file.
+#
+# configuration written to .config
+#
+make: Leaving directory '/mnt/2tb/unvr-port-refs/linux-v7.1.8'
+trimmed to woomera's lsmod (30 modules)
++ /mnt/2tb/unvr-port-refs/linux-v7.1.8/scripts/config --file /mnt/2tb/unvr-port-refs/linux-v7.1.8/.config --module I2C_DESIGNWARE_CORE --module I2C_DESIGNWARE_PLATFORM --set-str SYSTEM_TRUSTED_KEYS 
++ make -C /mnt/2tb/unvr-port-refs/linux-v7.1.8 olddefconfig
+make: Entering directory '/mnt/2tb/unvr-port-refs/linux-v7.1.8'
+#
+# No change to .config
+#
+make: Leaving directory '/mnt/2tb/unvr-port-refs/linux-v7.1.8'
+configured: Fedora base + ARCH_ALPINE + PCIE_AL_INTERNAL confirmed
+staged DTS/DTSI from repo dts/: alpine-v2-ubnt-unvr-ea16.dts, alpine-v2.dtsi
+KVER=7.1.8-dirty
++ make -C /mnt/2tb/unvr-port-refs/linux-v7.1.8 -j32 Image dtbs modules
+make: Entering directory '/mnt/2tb/unvr-port-refs/linux-v7.1.8'
+  SYNC    include/config/auto.conf
+  DTC     arch/arm64/boot/dts/amazon/alpine-v2-evp.dtb
+  DTC     arch/arm64/boot/dts/amazon/alpine-v2-ubnt-unvr-ea16.dtb
+make: Leaving directory '/mnt/2tb/unvr-port-refs/linux-v7.1.8'
++ make -C /mnt/2tb/unvr-port-refs/linux-v7.1.8 INSTALL_MOD_PATH=/mnt/2tb/unvr-port-refs/build-out-71-fedora/modroot INSTALL_MOD_STRIP=1 modules_install
+make: Entering directory '/mnt/2tb/unvr-port-refs/linux-v7.1.8'
+  SYMLINK /mnt/2tb/unvr-port-refs/build-out-71-fedora/modroot/lib/modules/7.1.8-dirty/build
+  INSTALL /mnt/2tb/unvr-port-refs/build-out-71-fedora/modroot/lib/modules/7.1.8-dirty/modules.order
+  INSTALL /mnt/2tb/unvr-port-refs/build-out-71-fedora/modroot/lib/modules/7.1.8-dirty/modules.builtin
+  INSTALL /mnt/2tb/unvr-port-refs/build-out-71-fedora/modroot/lib/modules/7.1.8-dirty/modules.builtin.modinfo
+  INSTALL /mnt/2tb/unvr-port-refs/build-out-71-fedora/modroot/lib/modules/7.1.8-dirty/kernel/arch/arm64/crypto/ghash-ce.ko
+  STRIP   /mnt/2tb/unvr-port-refs/build-out-71-fedora/modroot/lib/modules/7.1.8-dirty/kernel/arch/arm64/crypto/ghash-ce.ko
+  INSTALL /mnt/2tb/unvr-port-refs/build-out-71-fedora/modroot/lib/modules/7.1.8-dirty/kernel/kernel/configs.ko
+  STRIP   /mnt/2tb/unvr-port-refs/build-out-71-fedora/modroot/lib/modules/7.1.8-dirty/kernel/kernel/configs.ko
+  INSTALL /mnt/2tb/unvr-port-refs/build-out-71-fedora/modroot/lib/modules/7.1.8-dirty/kernel/fs/pstore/ramoops.ko
+  STRIP   /mnt/2tb/unvr-port-refs/build-out-71-fedora/modroot/lib/modules/7.1.8-dirty/kernel/fs/pstore/ramoops.ko
+  INSTALL /mnt/2tb/unvr-port-refs/build-out-71-fedora/modroot/lib/modules/7.1.8-dirty/kernel/fs/fuse/fuse.ko
+  STRIP   /mnt/2tb/unvr-port-refs/build-out-71-fedora/modroot/lib/modules/7.1.8-dirty/kernel/fs/fuse/fuse.ko
+  INSTALL /mnt/2tb/unvr-port-refs/build-out-71-fedora/modroot/lib/modules/7.1.8-dirty/kernel/lib/crypto/gf128mul.ko
+  STRIP   /mnt/2tb/unvr-port-refs/build-out-71-fedora/modroot/lib/modules/7.1.8-dirty/kernel/lib/crypto/gf128mul.ko
+  INSTALL /mnt/2tb/unvr-port-refs/build-out-71-fedora/modroot/lib/modules/7.1.8-dirty/kernel/lib/lz4/lz4_compress.ko
+  STRIP   /mnt/2tb/unvr-port-refs/build-out-71-fedora/modroot/lib/modules/7.1.8-dirty/kernel/lib/lz4/lz4_compress.ko
+  INSTALL /mnt/2tb/unvr-port-refs/build-out-71-fedora/modroot/lib/modules/7.1.8-dirty/kernel/lib/lz4/lz4hc_compress.ko
+  STRIP   /mnt/2tb/unvr-port-refs/build-out-71-fedora/modroot/lib/modules/7.1.8-dirty/kernel/lib/lz4/lz4hc_compress.ko
+  INSTALL /mnt/2tb/unvr-port-refs/build-out-71-fedora/modroot/lib/modules/7.1.8-dirty/kernel/lib/reed_solomon/reed_solomon.ko
+  STRIP   /mnt/2tb/unvr-port-refs/build-out-71-fedora/modroot/lib/modules/7.1.8-dirty/kernel/lib/reed_solomon/reed_solomon.ko
+  INSTALL /mnt/2tb/unvr-port-refs/build-out-71-fedora/modroot/lib/modules/7.1.8-dirty/kernel/drivers/leds/trigger/ledtrig-default-on.ko
+  STRIP   /mnt/2tb/unvr-port-refs/build-out-71-fedora/modroot/lib/modules/7.1.8-dirty/kernel/drivers/leds/trigger/ledtrig-default-on.ko
+  INSTALL /mnt/2tb/unvr-port-refs/build-out-71-fedora/modroot/lib/modules/7.1.8-dirty/kernel/drivers/leds/leds-gpio.ko
+  STRIP   /mnt/2tb/unvr-port-refs/build-out-71-fedora/modroot/lib/modules/7.1.8-dirty/kernel/drivers/leds/leds-gpio.ko
+  INSTALL /mnt/2tb/unvr-port-refs/build-out-71-fedora/modroot/lib/modules/7.1.8-dirty/kernel/drivers/block/zram/zram.ko
+  STRIP   /mnt/2tb/unvr-port-refs/build-out-71-fedora/modroot/lib/modules/7.1.8-dirty/kernel/drivers/block/zram/zram.ko
+  INSTALL /mnt/2tb/unvr-port-refs/build-out-71-fedora/modroot/lib/modules/7.1.8-dirty/kernel/drivers/misc/eeprom/at24.ko
+  STRIP   /mnt/2tb/unvr-port-refs/build-out-71-fedora/modroot/lib/modules/7.1.8-dirty/kernel/drivers/misc/eeprom/at24.ko
+  INSTALL /mnt/2tb/unvr-port-refs/build-out-71-fedora/modroot/lib/modules/7.1.8-dirty/kernel/drivers/spi/spi-dw.ko
+  STRIP   /mnt/2tb/unvr-port-refs/build-out-71-fedora/modroot/lib/modules/7.1.8-dirty/kernel/drivers/spi/spi-dw.ko
+  INSTALL /mnt/2tb/unvr-port-refs/build-out-71-fedora/modroot/lib/modules/7.1.8-dirty/kernel/drivers/spi/spi-dw-mmio.ko
+  STRIP   /mnt/2tb/unvr-port-refs/build-out-71-fedora/modroot/lib/modules/7.1.8-dirty/kernel/drivers/spi/spi-dw-mmio.ko
+  INSTALL /mnt/2tb/unvr-port-refs/build-out-71-fedora/modroot/lib/modules/7.1.8-dirty/kernel/drivers/net/phy/qcom/qcom-phy-lib.ko
+  STRIP   /mnt/2tb/unvr-port-refs/build-out-71-fedora/modroot/lib/modules/7.1.8-dirty/kernel/drivers/net/phy/qcom/qcom-phy-lib.ko
+  INSTALL /mnt/2tb/unvr-port-refs/build-out-71-fedora/modroot/lib/modules/7.1.8-dirty/kernel/drivers/net/phy/qcom/at803x.ko
+  STRIP   /mnt/2tb/unvr-port-refs/build-out-71-fedora/modroot/lib/modules/7.1.8-dirty/kernel/drivers/net/phy/qcom/at803x.ko
+  INSTALL /mnt/2tb/unvr-port-refs/build-out-71-fedora/modroot/lib/modules/7.1.8-dirty/kernel/drivers/input/keyboard/gpio_keys.ko
+  STRIP   /mnt/2tb/unvr-port-refs/build-out-71-fedora/modroot/lib/modules/7.1.8-dirty/kernel/drivers/input/keyboard/gpio_keys.ko
+  INSTALL /mnt/2tb/unvr-port-refs/build-out-71-fedora/modroot/lib/modules/7.1.8-dirty/kernel/drivers/i2c/busses/i2c-designware-core.ko
+  STRIP   /mnt/2tb/unvr-port-refs/build-out-71-fedora/modroot/lib/modules/7.1.8-dirty/kernel/drivers/i2c/busses/i2c-designware-core.ko
+  INSTALL /mnt/2tb/unvr-port-refs/build-out-71-fedora/modroot/lib/modules/7.1.8-dirty/kernel/drivers/i2c/busses/i2c-designware-platform.ko
+  STRIP   /mnt/2tb/unvr-port-refs/build-out-71-fedora/modroot/lib/modules/7.1.8-dirty/kernel/drivers/i2c/busses/i2c-designware-platform.ko
+  INSTALL /mnt/2tb/unvr-port-refs/build-out-71-fedora/modroot/lib/modules/7.1.8-dirty/kernel/drivers/i2c/muxes/i2c-mux-pca954x.ko
+  STRIP   /mnt/2tb/unvr-port-refs/build-out-71-fedora/modroot/lib/modules/7.1.8-dirty/kernel/drivers/i2c/muxes/i2c-mux-pca954x.ko
+  INSTALL /mnt/2tb/unvr-port-refs/build-out-71-fedora/modroot/lib/modules/7.1.8-dirty/kernel/drivers/i2c/i2c-dev.ko
+  STRIP   /mnt/2tb/unvr-port-refs/build-out-71-fedora/modroot/lib/modules/7.1.8-dirty/kernel/drivers/i2c/i2c-dev.ko
+  INSTALL /mnt/2tb/unvr-port-refs/build-out-71-fedora/modroot/lib/modules/7.1.8-dirty/kernel/drivers/i2c/i2c-mux.ko
+  STRIP   /mnt/2tb/unvr-port-refs/build-out-71-fedora/modroot/lib/modules/7.1.8-dirty/kernel/drivers/i2c/i2c-mux.ko
+  INSTALL /mnt/2tb/unvr-port-refs/build-out-71-fedora/modroot/lib/modules/7.1.8-dirty/kernel/drivers/hwmon/hwmon-vid.ko
+  STRIP   /mnt/2tb/unvr-port-refs/build-out-71-fedora/modroot/lib/modules/7.1.8-dirty/kernel/drivers/hwmon/hwmon-vid.ko
+  INSTALL /mnt/2tb/unvr-port-refs/build-out-71-fedora/modroot/lib/modules/7.1.8-dirty/kernel/drivers/hwmon/adt7475.ko
+  STRIP   /mnt/2tb/unvr-port-refs/build-out-71-fedora/modroot/lib/modules/7.1.8-dirty/kernel/drivers/hwmon/adt7475.ko
+  INSTALL /mnt/2tb/unvr-port-refs/build-out-71-fedora/modroot/lib/modules/7.1.8-dirty/kernel/drivers/watchdog/sp805_wdt.ko
+  STRIP   /mnt/2tb/unvr-port-refs/build-out-71-fedora/modroot/lib/modules/7.1.8-dirty/kernel/drivers/watchdog/sp805_wdt.ko
+  INSTALL /mnt/2tb/unvr-port-refs/build-out-71-fedora/modroot/lib/modules/7.1.8-dirty/kernel/drivers/mtd/parsers/ofpart.ko
+  STRIP   /mnt/2tb/unvr-port-refs/build-out-71-fedora/modroot/lib/modules/7.1.8-dirty/kernel/drivers/mtd/parsers/ofpart.ko
+  INSTALL /mnt/2tb/unvr-port-refs/build-out-71-fedora/modroot/lib/modules/7.1.8-dirty/kernel/drivers/mtd/chips/chipreg.ko
+  STRIP   /mnt/2tb/unvr-port-refs/build-out-71-fedora/modroot/lib/modules/7.1.8-dirty/kernel/drivers/mtd/chips/chipreg.ko
+  INSTALL /mnt/2tb/unvr-port-refs/build-out-71-fedora/modroot/lib/modules/7.1.8-dirty/kernel/drivers/mtd/nand/nandcore.ko
+  STRIP   /mnt/2tb/unvr-port-refs/build-out-71-fedora/modroot/lib/modules/7.1.8-dirty/kernel/drivers/mtd/nand/nandcore.ko
+  INSTALL /mnt/2tb/unvr-port-refs/build-out-71-fedora/modroot/lib/modules/7.1.8-dirty/kernel/drivers/mtd/mtd.ko
+  STRIP   /mnt/2tb/unvr-port-refs/build-out-71-fedora/modroot/lib/modules/7.1.8-dirty/kernel/drivers/mtd/mtd.ko
+  INSTALL /mnt/2tb/unvr-port-refs/build-out-71-fedora/modroot/lib/modules/7.1.8-dirty/kernel/drivers/mtd/spi-nor/spi-nor.ko
+  STRIP   /mnt/2tb/unvr-port-refs/build-out-71-fedora/modroot/lib/modules/7.1.8-dirty/kernel/drivers/mtd/spi-nor/spi-nor.ko
+  INSTALL /mnt/2tb/unvr-port-refs/build-out-71-fedora/modroot/lib/modules/7.1.8-dirty/kernel/net/rfkill/rfkill.ko
+  STRIP   /mnt/2tb/unvr-port-refs/build-out-71-fedora/modroot/lib/modules/7.1.8-dirty/kernel/net/rfkill/rfkill.ko
+  DEPMOD  /mnt/2tb/unvr-port-refs/build-out-71-fedora/modroot/lib/modules/7.1.8-dirty
+make: Leaving directory '/mnt/2tb/unvr-port-refs/linux-v7.1.8'
++ make -C /mnt/2tb/unvr-port-refs/linux-v7.1.8 KDIR=/mnt/2tb/unvr-port-refs/linux-v7.1.8 M=/mnt/2tb/unvr-port-refs/build-out-71-fedora/al_eth -j32 modules
+make: Entering directory '/mnt/2tb/unvr-port-refs/linux-v7.1.8'
+make[1]: Entering directory '/mnt/2tb/unvr-port-refs/build-out-71-fedora/al_eth'
+  CC [M]  al_eth_main.o
+  CC [M]  al_eth_sysfs.o
+  CC [M]  al_eth_group_lm.o
+  CC [M]  al_hal_eth_kr.o
+  CC [M]  al_hal_eth_main.o
+  CC [M]  al_hal_iofic.o
+  CC [M]  al_hal_serdes_25g.o
+  CC [M]  al_hal_serdes_hssp.o
+  CC [M]  al_hal_udma_config.o
+  CC [M]  al_hal_udma_debug.o
+  CC [M]  al_hal_udma_iofic.o
+  CC [M]  al_hal_udma_main.o
+  CC [M]  al_init_eth_kr.o
+  CC [M]  al_init_eth_lm.o
+In file included from /mnt/2tb/unvr-port-refs/linux-v7.1.8/include/asm-generic/bug.h:31,
+                 from /mnt/2tb/unvr-port-refs/linux-v7.1.8/arch/arm64/include/asm/bug.h:26,
+                 from /mnt/2tb/unvr-port-refs/linux-v7.1.8/include/linux/bug.h:5,
+                 from /mnt/2tb/unvr-port-refs/linux-v7.1.8/include/linux/instrumented.h:10,
+                 from /mnt/2tb/unvr-port-refs/linux-v7.1.8/include/linux/atomic/atomic-instrumented.h:17,
+                 from /mnt/2tb/unvr-port-refs/linux-v7.1.8/include/linux/atomic.h:82,
+                 from /mnt/2tb/unvr-port-refs/linux-v7.1.8/include/asm-generic/bitops/atomic.h:5,
+                 from /mnt/2tb/unvr-port-refs/linux-v7.1.8/arch/arm64/include/asm/bitops.h:25,
+                 from /mnt/2tb/unvr-port-refs/linux-v7.1.8/include/linux/bitops.h:67,
+                 from /mnt/2tb/unvr-port-refs/linux-v7.1.8/include/linux/kernel.h:23,
+                 from al_hal_plat_services.h:67,
+                 from al_hal_common.h:48,
+                 from al_hal_eth.h:52,
+                 from al_hal_eth_main.c:44:
+al_hal_eth_main.c: In function ‘al_eth_mdio_config’:
+/mnt/2tb/unvr-port-refs/linux-v7.1.8/include/linux/printk.h:511:44: warning: this statement may fall through [-Wimplicit-fallthrough=]
+  511 | #define printk(fmt, ...) printk_index_wrap(_printk, fmt, ##__VA_ARGS__)
+      |                                            ^
+/mnt/2tb/unvr-port-refs/linux-v7.1.8/include/linux/printk.h:483:17: note: in definition of macro ‘printk_index_wrap’
+  483 |                 _p_func(_fmt, ##__VA_ARGS__);                           \
+      |                 ^~~~~~~
+/mnt/2tb/unvr-port-refs/linux-v7.1.8/include/linux/printk.h:554:9: note: in expansion of macro ‘printk’
+  554 |         printk(KERN_ERR pr_fmt(fmt), ##__VA_ARGS__)
+      |         ^~~~~~
+al_hal_plat_services.h:118:41: note: in expansion of macro ‘pr_err’
+  118 | #define al_err(...)                     pr_err(__VA_ARGS__)
+      |                                         ^~~~~~
+al_hal_eth_main.c:2424:25: note: in expansion of macro ‘al_err’
+ 2424 |                         al_err("eth [%s]: %s: invalid reference clock frequency"
+      |                         ^~~~~~
+al_hal_eth_main.c:2428:17: note: here
+ 2428 |                 case AL_ETH_REF_FREQ_375_MHZ:
+      |                 ^~~~
+  CC [M]  al_serdes.o
+  CC [M]  alpine_group_lm.o
+  CC [M]  alpine_serdes.o
+  CC [M]  kcompat.o
+  LD [M]  al_eth.o
+  MODPOST Module.symvers
+  CC [M]  al_eth.mod.o
+  CC [M]  .module-common.o
+  LD [M]  al_eth.ko
+make[1]: Leaving directory '/mnt/2tb/unvr-port-refs/build-out-71-fedora/al_eth'
+make: Leaving directory '/mnt/2tb/unvr-port-refs/linux-v7.1.8'
+OOT al_eth: ok
++ make -C /mnt/2tb/unvr-port-refs/linux-v7.1.8 KDIR=/mnt/2tb/unvr-port-refs/linux-v7.1.8 M=/mnt/2tb/unvr-port-refs/build-out-71-fedora/al_dma -j32 modules
+make: Entering directory '/mnt/2tb/unvr-port-refs/linux-v7.1.8'
+make[1]: Entering directory '/mnt/2tb/unvr-port-refs/build-out-71-fedora/al_dma'
+  CC [M]  al_dma_drv.o
+  CC [M]  al_dma_sysfs.o
+  CC [M]  al_hal_ssm.o
+  CC [M]  al_hal_ssm_raid.o
+  CC [M]  al_hal_m2m_udma.o
+  CC [M]  al_hal_udma_main.o
+  CC [M]  al_hal_udma_config.o
+  CC [M]  al_hal_udma_debug.o
+  LD [M]  al_dma.o
+  MODPOST Module.symvers
+  CC [M]  al_dma.mod.o
+  CC [M]  .module-common.o
+  LD [M]  al_dma.ko
+make[1]: Leaving directory '/mnt/2tb/unvr-port-refs/build-out-71-fedora/al_dma'
+make: Leaving directory '/mnt/2tb/unvr-port-refs/linux-v7.1.8'
+OOT al_dma: ok
++ make -C /mnt/2tb/unvr-port-refs/linux-v7.1.8 KDIR=/mnt/2tb/unvr-port-refs/linux-v7.1.8 M=/mnt/2tb/unvr-port-refs/build-out-71-fedora/al_ssm -j32 modules
+make: Entering directory '/mnt/2tb/unvr-port-refs/linux-v7.1.8'
+make[1]: Entering directory '/mnt/2tb/unvr-port-refs/build-out-71-fedora/al_ssm'
+  CC [M]  al_ssm_main.o
+  CC [M]  al_hal_ssm.o
+  CC [M]  al_hal_ssm_crypto.o
+  CC [M]  al_hal_ssm_crypto_cfg.o
+  CC [M]  al_hal_ssm_crc_memcpy.o
+  CC [M]  al_hal_ssm_raid.o
+  CC [M]  al_hal_udma_main.o
+  CC [M]  al_hal_udma_config.o
+  CC [M]  al_hal_udma_debug.o
+  CC [M]  al_hal_udma_iofic.o
+  CC [M]  al_hal_m2m_udma.o
+  CC [M]  al_hal_iofic.o
+  CC [M]  al_hal_unit_adapter.o
+  LD [M]  al_ssm.o
+  MODPOST Module.symvers
+  CC [M]  al_ssm.mod.o
+  CC [M]  .module-common.o
+  LD [M]  al_ssm.ko
+make[1]: Leaving directory '/mnt/2tb/unvr-port-refs/build-out-71-fedora/al_ssm'
+make: Leaving directory '/mnt/2tb/unvr-port-refs/linux-v7.1.8'
+OOT al_ssm: ok
++ make -C /mnt/2tb/unvr-port-refs/linux-v7.1.8 KDIR=/mnt/2tb/unvr-port-refs/linux-v7.1.8 M=/mnt/2tb/unvr-port-refs/build-out-71-fedora/al_sgpo -j32 modules
+make: Entering directory '/mnt/2tb/unvr-port-refs/linux-v7.1.8'
+make[1]: Entering directory '/mnt/2tb/unvr-port-refs/build-out-71-fedora/al_sgpo'
+  CC [M]  al_sgpo.o
+  MODPOST Module.symvers
+  CC [M]  al_sgpo.mod.o
+  CC [M]  .module-common.o
+  LD [M]  al_sgpo.ko
+make[1]: Leaving directory '/mnt/2tb/unvr-port-refs/build-out-71-fedora/al_sgpo'
+make: Leaving directory '/mnt/2tb/unvr-port-refs/linux-v7.1.8'
+OOT al_sgpo: ok
+uImage: /mnt/2tb/unvr-port-refs/build-out-71-fedora/uImage-unvr-ea16-7.1-fedora (57854528 bytes, load/entry=0x08000000)
+DONE. modroot: /mnt/2tb/unvr-port-refs/build-out-71-fedora/modroot ; uImage: /mnt/2tb/unvr-port-refs/build-out-71-fedora/uImage-unvr-ea16-7.1-fedora
+TOTAL 9s

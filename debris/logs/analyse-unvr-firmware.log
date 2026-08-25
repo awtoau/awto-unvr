@@ -1,0 +1,118 @@
+2026-08-15T14:08:04+10:00  --- analyse UNVR-5.1.25.bin (786253430 bytes) ---
+2026-08-15T14:08:04+10:00  container UBNT, version UNVR4.al324.v5.1.25.84c48e7.260710.1602
+2026-08-15T14:08:04+10:00  PART 'rootfs' @0xe894ee, squashfs @15242534 (0xe89526)
+2026-08-15T14:08:04+10:00  === squashfs superblock ===
+2026-08-15T14:08:04+10:00  $ unsquashfs -s -o 15242534 /mnt/2tb/git/awto-unvr/sources/UNVR-5.1.25.bin
+2026-08-15T14:08:04+10:00  === full listing -> /mnt/2tb/git/awto-unvr/tmp/logs/rootfs-listing.txt ===
+2026-08-15T14:08:04+10:00  $ unsquashfs -o 15242534 -ll -d  /mnt/2tb/git/awto-unvr/sources/UNVR-5.1.25.bin
+2026-08-15T14:08:05+10:00  listing lines: 63612
+2026-08-15T14:08:05+10:00  === extracting key paths -> /mnt/2tb/git/awto-unvr/tmp/rootfs-peek ===
+2026-08-15T14:08:05+10:00  $ unsquashfs -o 15242534 -d /mnt/2tb/git/awto-unvr/tmp/rootfs-peek -n /mnt/2tb/git/awto-unvr/sources/UNVR-5.1.25.bin etc/os-release etc/debian_version etc/fstab etc/default/unifi-protect usr/lib/version etc/unifi-os
+2026-08-15T14:08:05+10:00  done
+2026-08-15T14:38:10+10:00  --- analyse UNVR-5.1.25.bin (786253430 bytes) ---
+2026-08-15T14:38:10+10:00  container UBNT  version UNVR4.al324.v5.1.25.84c48e7.260710.1602
+2026-08-15T14:38:10+10:00  header crc 0xd9417360 OK
+2026-08-15T14:38:10+10:00  @0x0000010c FILE uboot        idx=1 data=1395740 (1.33 MB) part=2097152 mem=0x00000000 base=0x00000000 entry=0x00000000 crc OK
+2026-08-15T14:38:10+10:00  @0x00154d68 FILE kernel       idx=2 data=13846342 (13.20 MB) part=14680064 mem=0x00000000 base=0x00200000 entry=0x00000000 crc OK
+2026-08-15T14:38:10+10:00  @0x00e894ee PART rootfs       idx=3 data=766357504 (730.86 MB) part=1010827264 mem=0x00000000 base=0x01000000 entry=0x00000000 crc OK
+2026-08-15T14:38:10+10:00  @0x2e96452e FILE updater      idx=4 data=4653056 (4.44 MB) part=5242880 mem=0x00000000 base=0x3d400000 entry=0x00000000 crc OK
+2026-08-15T14:38:10+10:00  @0x2edd456e ENDS  256-byte RSA signature, no crc
+2026-08-15T14:38:10+10:00  4 section(s), 0 crc failure(s)
+2026-08-15T14:38:10+10:00  wrote /mnt/2tb/git/awto-unvr/tmp/sections/01-uboot.bin (1395740 bytes)
+2026-08-15T14:38:10+10:00  wrote /mnt/2tb/git/awto-unvr/tmp/sections/02-kernel.bin (13846342 bytes)
+2026-08-15T14:38:10+10:00  uImage '4.19.152-alpine-unvr @ 20260710-' size=13846278 load=0x04080000 entry=0x04080000 comp=1 arch=22 created=2026-07-10T08:11:27+00:00
+2026-08-15T14:38:10+10:00  wrote /mnt/2tb/git/awto-unvr/tmp/sections/kernel-Image.gz
+2026-08-15T14:38:10+10:00  wrote /mnt/2tb/git/awto-unvr/tmp/sections/kernel-Image (20744704 bytes), arm64 magic OK
+2026-08-15T14:38:10+10:00  wrote /mnt/2tb/git/awto-unvr/tmp/sections/kernel.config (92970 bytes) - embedded IKCONFIG
+2026-08-15T14:38:11+10:00  wrote /mnt/2tb/git/awto-unvr/tmp/sections/03-rootfs.bin (766357504 bytes)
+2026-08-15T14:38:11+10:00  wrote /mnt/2tb/git/awto-unvr/tmp/sections/04-updater.bin (4653056 bytes)
+2026-08-15T14:38:11+10:00  done
+2026-08-15T15:18:18+10:00  --- analyse UNVR-5.1.25.bin (786253430 bytes) ---
+2026-08-15T15:18:18+10:00  container UBNT  version UNVR4.al324.v5.1.25.84c48e7.260710.1602
+2026-08-15T15:18:18+10:00  header crc 0xd9417360 OK
+2026-08-15T15:18:18+10:00  @0x0000010c FILE uboot        idx=1 data=1395740 (1.33 MB) part=2097152 mem=0x00000000 base=0x00000000 entry=0x00000000 crc OK
+2026-08-15T15:18:18+10:00  @0x00154d68 FILE kernel       idx=2 data=13846342 (13.20 MB) part=14680064 mem=0x00000000 base=0x00200000 entry=0x00000000 crc OK
+2026-08-15T15:18:18+10:00  @0x00e894ee PART rootfs       idx=3 data=766357504 (730.86 MB) part=1010827264 mem=0x00000000 base=0x01000000 entry=0x00000000 crc OK
+2026-08-15T15:18:18+10:00  @0x2e96452e FILE updater      idx=4 data=4653056 (4.44 MB) part=5242880 mem=0x00000000 base=0x3d400000 entry=0x00000000 crc OK
+2026-08-15T15:18:18+10:00  @0x2edd456e ENDS  256-byte RSA signature, no crc
+2026-08-15T15:18:18+10:00  4 section(s), 0 crc failure(s)
+2026-08-15T15:18:18+10:00  wrote /mnt/2tb/git/awto-unvr/tmp/sections/01-uboot.bin (1395740 bytes)
+2026-08-15T15:18:18+10:00  wrote /mnt/2tb/git/awto-unvr/tmp/sections/02-kernel.bin (13846342 bytes)
+2026-08-15T15:18:18+10:00  uImage '4.19.152-alpine-unvr @ 20260710-' size=13846278 load=0x04080000 entry=0x04080000 comp=1 arch=22 created=2026-07-10T08:11:27+00:00
+2026-08-15T15:18:18+10:00  wrote /mnt/2tb/git/awto-unvr/tmp/sections/kernel-Image.gz
+2026-08-15T15:18:18+10:00  wrote /mnt/2tb/git/awto-unvr/tmp/sections/kernel-Image (20744704 bytes), arm64 magic OK
+2026-08-15T15:18:18+10:00  wrote /mnt/2tb/git/awto-unvr/tmp/sections/kernel.config (92970 bytes) - embedded IKCONFIG
+2026-08-15T15:18:18+10:00  embedded initramfs: gzip @12154300 -> 17538560 bytes of newc cpio
+2026-08-15T15:18:18+10:00  wrote /mnt/2tb/git/awto-unvr/tmp/sections/initramfs-0.cpio (17538560 bytes, gzip @12154300)
+2026-08-15T15:18:18+10:00  cpio extract -> /mnt/2tb/git/awto-unvr/tmp/sections/initramfs-0: 34255 blocks
+2026-08-15T15:18:19+10:00  wrote /mnt/2tb/git/awto-unvr/tmp/sections/03-rootfs.bin (766357504 bytes)
+2026-08-15T15:18:19+10:00  wrote /mnt/2tb/git/awto-unvr/tmp/sections/04-updater.bin (4653056 bytes)
+2026-08-15T15:18:19+10:00  done
+2026-08-15T20:57:43+10:00  --- analyse UNVR-3.1.16.bin (425082351 bytes) ---
+2026-08-15T20:57:43+10:00  container UBNT  version UNVR4.al324.v3.1.16.456179c.230823.1836
+2026-08-15T20:57:43+10:00  header crc 0x2c9ca369 OK
+2026-08-15T20:57:43+10:00  @0x0000010c FILE uboot        idx=1 data=1394956 (1.33 MB) part=2097152 mem=0x00000000 base=0x00000000 entry=0x00000000 crc OK
+2026-08-15T20:57:43+10:00  @0x00154a58 FILE kernel       idx=2 data=13544849 (12.92 MB) part=13631488 mem=0x00000000 base=0x00200000 entry=0x00000000 crc OK
+2026-08-15T20:57:44+10:00  @0x00e3f829 FILE rootfs       idx=3 data=406540288 (387.71 MB) part=406847488 mem=0x00000000 base=0x00f00000 entry=0x00000000 crc OK
+2026-08-15T20:57:44+10:00  @0x191f4869 FILE updater      idx=4 data=3601470 (3.43 MB) part=4194304 mem=0x00000000 base=0x19300000 entry=0x00000000 crc OK
+2026-08-15T20:57:44+10:00  @0x19563ce7 ENDS  256-byte RSA signature, no crc
+2026-08-15T20:57:44+10:00  4 section(s), 0 crc failure(s)
+2026-08-15T20:57:44+10:00  wrote tmp/sec-3.1.16/01-uboot.bin (1394956 bytes)
+2026-08-15T20:57:44+10:00  wrote tmp/sec-3.1.16/02-kernel.bin (13544849 bytes)
+2026-08-15T20:57:44+10:00  uImage '4.19.152-alpine-unvr @ 20230823-' size=13544785 load=0x04080000 entry=0x04080000 comp=1 arch=22 created=2023-08-23T10:54:19+00:00
+2026-08-15T20:57:44+10:00  wrote tmp/sec-3.1.16/kernel-Image.gz
+2026-08-15T20:57:44+10:00  wrote tmp/sec-3.1.16/kernel-Image (20412928 bytes), arm64 magic OK
+2026-08-15T20:57:44+10:00  wrote tmp/sec-3.1.16/kernel.config (92448 bytes) - embedded IKCONFIG
+2026-08-15T20:57:44+10:00  embedded initramfs: gzip @12088692 -> 16913408 bytes of newc cpio
+2026-08-15T20:57:44+10:00  wrote tmp/sec-3.1.16/initramfs-0.cpio (16913408 bytes, gzip @12088692)
+2026-08-15T20:57:44+10:00  cpio extract -> tmp/sec-3.1.16/initramfs-0: cpio: Cannot open tmp/sec-3.1.16/initramfs-0.cpio: No such file or directory
+2026-08-15T20:57:45+10:00  wrote tmp/sec-3.1.16/03-rootfs.bin (406540288 bytes)
+2026-08-15T20:57:45+10:00  wrote tmp/sec-3.1.16/04-updater.bin (3601470 bytes)
+2026-08-15T20:57:45+10:00  done
+2026-08-17T18:05:28+10:00  --- analyse UNVR-5.1.25.bin (786253430 bytes) ---
+2026-08-17T18:05:28+10:00  container UBNT  version UNVR4.al324.v5.1.25.84c48e7.260710.1602
+2026-08-17T18:05:28+10:00  header crc 0xd9417360 OK
+2026-08-17T18:05:28+10:00  @0x0000010c FILE uboot        idx=1 data=1395740 (1.33 MB) part=2097152 mem=0x00000000 base=0x00000000 entry=0x00000000 crc OK
+2026-08-17T18:05:28+10:00  @0x00154d68 FILE kernel       idx=2 data=13846342 (13.20 MB) part=14680064 mem=0x00000000 base=0x00200000 entry=0x00000000 crc OK
+2026-08-17T18:06:01+10:00  --- analyse UNVR-5.1.25.bin (786253430 bytes) ---
+2026-08-17T18:06:01+10:00  container UBNT  version UNVR4.al324.v5.1.25.84c48e7.260710.1602
+2026-08-17T18:06:01+10:00  header crc 0xd9417360 OK
+2026-08-17T18:06:01+10:00  @0x0000010c FILE uboot        idx=1 data=1395740 (1.33 MB) part=2097152 mem=0x00000000 base=0x00000000 entry=0x00000000 crc OK
+2026-08-17T18:06:01+10:00  @0x00154d68 FILE kernel       idx=2 data=13846342 (13.20 MB) part=14680064 mem=0x00000000 base=0x00200000 entry=0x00000000 crc OK
+2026-08-17T18:06:01+10:00  @0x00e894ee PART rootfs       idx=3 data=766357504 (730.86 MB) part=1010827264 mem=0x00000000 base=0x01000000 entry=0x00000000 crc OK
+2026-08-17T18:06:01+10:00  @0x2e96452e FILE updater      idx=4 data=4653056 (4.44 MB) part=5242880 mem=0x00000000 base=0x3d400000 entry=0x00000000 crc OK
+2026-08-17T18:06:01+10:00  @0x2edd456e ENDS  256-byte RSA signature, no crc
+2026-08-17T18:06:01+10:00  4 section(s), 0 crc failure(s)
+2026-08-17T18:06:01+10:00  wrote /mnt/2tb/git/awto-unvr/tmp/sections/01-uboot.bin (1395740 bytes)
+2026-08-17T18:06:01+10:00  wrote /mnt/2tb/git/awto-unvr/tmp/sections/02-kernel.bin (13846342 bytes)
+2026-08-17T18:06:01+10:00  uImage '4.19.152-alpine-unvr @ 20260710-' size=13846278 load=0x04080000 entry=0x04080000 comp=1 arch=22 created=2026-07-10T08:11:27+00:00
+2026-08-17T18:06:01+10:00  wrote /mnt/2tb/git/awto-unvr/tmp/sections/kernel-Image.gz
+2026-08-17T18:06:01+10:00  wrote /mnt/2tb/git/awto-unvr/tmp/sections/kernel-Image (20744704 bytes), arm64 magic OK
+2026-08-17T18:06:01+10:00  wrote /mnt/2tb/git/awto-unvr/tmp/sections/kernel.config (92970 bytes) - embedded IKCONFIG
+2026-08-17T18:06:01+10:00  embedded initramfs: gzip @12154300 -> 17538560 bytes of newc cpio
+2026-08-17T18:06:01+10:00  wrote /mnt/2tb/git/awto-unvr/tmp/sections/initramfs-0.cpio (17538560 bytes, gzip @12154300)
+2026-08-17T18:06:01+10:00  cpio extract -> /mnt/2tb/git/awto-unvr/tmp/sections/initramfs-0: 34255 blocks
+2026-08-17T18:06:02+10:00  wrote /mnt/2tb/git/awto-unvr/tmp/sections/03-rootfs.bin (766357504 bytes)
+2026-08-17T18:06:02+10:00  wrote /mnt/2tb/git/awto-unvr/tmp/sections/04-updater.bin (4653056 bytes)
+2026-08-17T18:06:02+10:00  done
+2026-08-19T14:29:54+10:00  --- analyse UNVR-5.1.25.bin (786253430 bytes) ---
+2026-08-19T14:29:54+10:00  container UBNT  version UNVR4.al324.v5.1.25.84c48e7.260710.1602
+2026-08-19T14:29:54+10:00  header crc 0xd9417360 OK
+2026-08-19T14:29:54+10:00  @0x0000010c FILE uboot        idx=1 data=1395740 (1.33 MB) part=2097152 mem=0x00000000 base=0x00000000 entry=0x00000000 crc OK
+2026-08-19T14:29:54+10:00  @0x00154d68 FILE kernel       idx=2 data=13846342 (13.20 MB) part=14680064 mem=0x00000000 base=0x00200000 entry=0x00000000 crc OK
+2026-08-19T14:29:54+10:00  @0x00e894ee PART rootfs       idx=3 data=766357504 (730.86 MB) part=1010827264 mem=0x00000000 base=0x01000000 entry=0x00000000 crc OK
+2026-08-19T14:29:54+10:00  @0x2e96452e FILE updater      idx=4 data=4653056 (4.44 MB) part=5242880 mem=0x00000000 base=0x3d400000 entry=0x00000000 crc OK
+2026-08-19T14:29:54+10:00  @0x2edd456e ENDS  256-byte RSA signature, no crc
+2026-08-19T14:29:54+10:00  4 section(s), 0 crc failure(s)
+2026-08-19T14:29:54+10:00  wrote /mnt/2tb/git/awto-unvr/tmp/sections/01-uboot.bin (1395740 bytes)
+2026-08-19T14:29:54+10:00  wrote /mnt/2tb/git/awto-unvr/tmp/sections/02-kernel.bin (13846342 bytes)
+2026-08-19T14:29:54+10:00  uImage '4.19.152-alpine-unvr @ 20260710-' size=13846278 load=0x04080000 entry=0x04080000 comp=1 arch=22 created=2026-07-10T08:11:27+00:00
+2026-08-19T14:29:54+10:00  wrote /mnt/2tb/git/awto-unvr/tmp/sections/kernel-Image.gz
+2026-08-19T14:29:54+10:00  wrote /mnt/2tb/git/awto-unvr/tmp/sections/kernel-Image (20744704 bytes), arm64 magic OK
+2026-08-19T14:29:54+10:00  wrote /mnt/2tb/git/awto-unvr/tmp/sections/kernel.config (92970 bytes) - embedded IKCONFIG
+2026-08-19T14:29:54+10:00  embedded initramfs: gzip @12154300 -> 17538560 bytes of newc cpio
+2026-08-19T14:29:54+10:00  wrote /mnt/2tb/git/awto-unvr/tmp/sections/initramfs-0.cpio (17538560 bytes, gzip @12154300)
+2026-08-19T14:29:54+10:00  cpio extract -> /mnt/2tb/git/awto-unvr/tmp/sections/initramfs-0: 34255 blocks
+2026-08-19T14:29:55+10:00  wrote /mnt/2tb/git/awto-unvr/tmp/sections/03-rootfs.bin (766357504 bytes)
+2026-08-19T14:29:55+10:00  wrote /mnt/2tb/git/awto-unvr/tmp/sections/04-updater.bin (4653056 bytes)
+2026-08-19T14:29:55+10:00  done

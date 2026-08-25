@@ -1,0 +1,26 @@
+=== at our U-Boot; s35390a RESET-write test on ch0 ===
+>> i2c dev 0
+ i2c dev 0
+Setting bus to 0
+unvr#
+>> i2c mw 0x71 0 1 1
+ i2c mw 0x71 0 1 1
+unvr#
+>> i2c mw 0x30 0.0 c0 1
+ i2c mw 0x30 0.0 c0 1
+Timed out waiting for bus
+Error writing the chip: -121
+unvr#
+>> i2c md 0x30 0.0 1
+ i2c md 0x30 0.0 1
+Error reading the chip: -121
+unvr#
+>> i2c mw 0x71 0 0 1
+ i2c mw 0x71 0 0 1
+Error writing the chip: -121
+unvr#
+>> i2c md 0x21 0 1
+ i2c md 0x21 0 1
+Error reading the chip: -121
+unvr#
+=== DONE ===

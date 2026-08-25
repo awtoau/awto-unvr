@@ -1,0 +1,39 @@
+p  gpio input 1
+gpio: pin 1 (gpio 1) value is 1
+ALPINE_UBNT_NAS_ALL>
+p  
+ALPINE_UBNT_NAS_ALL>
+p  gpio input 2
+gpio: pin 2 (gpio 2) value is 1
+ALPINE_UBNT_NAS_ALL>
+p  
+ALPINE_UBNT_NAS_ALL>
+p  gpio input 4
+gpio: pin 4 (gpio 4) value is 1
+ALPINE_UBNT_NAS_ALL>
+p  
+ALPINE_UBNT_NAS_ALL>
+p  gpio input 5
+gpio: pin 5 (gpio 5) value is 1
+ALPINE_UBNT_NAS_ALL>
+p  
+ALPINE_UBNT_NAS_ALL>
+p  gpio input 20
+gpio: pin 20 (gpio 20) value is 1
+ALPINE_UBNT_NAS_ALL>
+p  
+ALPINE_UBNT_NAS_ALL>
+p  gpio input 28
+gpio: pin 28 (gpio 28) value is 1
+ALPINE_UBNT_NAS_ALL>
+p  
+ALPINE_UBNT_NAS_ALL>
+p  gpio input 29
+gpio: pin 29 (gpio 29) value is 1
+ALPINE_UBNT_NAS_ALL>
+p  
+ALPINE_UBNT_NAS_ALL>
+p  gpio input 32
+gpio: pin 32 (gpio 32) value is 1
+ALPINE_UBNT_NAS_ALL>
+=== STOCK-READ-DONE ===

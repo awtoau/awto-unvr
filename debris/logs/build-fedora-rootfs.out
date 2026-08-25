@@ -1,0 +1,1226 @@
+2026-08-16T18:07:58+10:00  + podman create --platform linux/arm64 --name unvr-fedora-build registry.fedoraproject.org/fedora:44 sleep infinity
+47d4ce2b66f5a1e4d6f68bd874ff97e8f457f1bafd291ef46c827aea25be6390
+2026-08-16T18:08:00+10:00  + podman start unvr-fedora-build
+unvr-fedora-build
+2026-08-16T18:08:00+10:00  + podman exec unvr-fedora-build dnf -y group install core
+Updating and loading repositories:
+ Fedora 44 openh264 (From Cisco) - aarc 100% |   1.4 KiB/s |   5.3 KiB |  00m04s
+ Fedora 44 - aarch64 - Updates          100% |   1.3 MiB/s |  10.3 MiB |  00m08s
+ Fedora 44 - aarch64                    100% |   3.1 MiB/s |  35.3 MiB |  00m11s
+Repositories loaded.
+Package "bash-5.3.9-3.fc44.aarch64" is already installed.
+Package "coreutils-9.10-5.fc44.aarch64" is already installed.
+Package "curl-8.18.0-8.fc44.aarch64" is already installed.
+Package "dnf5-5.4.2.1-1.fc44.aarch64" is already installed.
+Package "filesystem-3.18-52.fc44.aarch64" is already installed.
+Package "glibc-2.43-8.fc44.aarch64" is already installed.
+Package "rootfiles-9.0-6.fc44.noarch" is already installed.
+Package "rpm-6.0.2-1.fc44.aarch64" is already installed.
+Package "setup-2.15.0-28.fc44.noarch" is already installed.
+Package "shadow-utils-2:4.19.0-7.fc44.aarch64" is already installed.
+Package "sudo-1.9.17-8.p2.fc44.aarch64" is already installed.
+Package "vim-minimal-2:9.2.920-1.fc44.aarch64" is already installed.
+Package "dnf5-plugins-5.4.2.1-1.fc44.aarch64" is already installed.
+
+Package                         Arch    Version                   Repository      Size
+Installing group/module packages:
+ NetworkManager                 aarch64 1:1.56.1-2.fc44           updates      6.1 MiB
+ audit                          aarch64 0:4.2.1-1.fc44            updates    756.5 KiB
+ dracut-config-rescue           aarch64 0:108-7.fc44              updates      4.5 KiB
+ e2fsprogs                      aarch64 0:1.47.3-4.fc44           fedora       5.3 MiB
+ firewalld                      noarch  0:2.4.4-1.fc44            updates      2.1 MiB
+ fwupd                          aarch64 0:2.1.7-1.fc44            updates     11.4 MiB
+ hostname                       aarch64 0:3.25-4.fc44             fedora      89.3 KiB
+ iproute                        aarch64 0:6.17.0-2.fc44           fedora       2.5 MiB
+ iputils                        aarch64 0:20250605-2.fc44         fedora       1.0 MiB
+ kbd                            aarch64 0:2.9.0-3.fc44            fedora       2.4 MiB
+ less                           aarch64 0:704-2.fc44              updates    607.5 KiB
+ man-db                         aarch64 0:2.13.1-3.fc44           fedora       3.3 MiB
+ ncurses                        aarch64 0:6.6-1.fc44              fedora     895.4 KiB
+ openssh-clients                aarch64 0:10.2p1-13.fc44          updates      2.7 MiB
+ openssh-server                 aarch64 0:10.2p1-13.fc44          updates      2.0 MiB
+ parted                         aarch64 0:3.6-14.fc44             fedora       2.7 MiB
+ plymouth                       aarch64 0:24.004.60-24.fc44       fedora     601.9 KiB
+ policycoreutils                aarch64 0:3.11-2.fc44             updates      1.5 MiB
+ prefixdevname                  aarch64 0:0.2.0-8.fc44            fedora       1.8 MiB
+ procps-ng                      aarch64 0:4.0.6-1.fc44            fedora       1.8 MiB
+ selinux-policy-targeted        noarch  0:44.6-1.fc44             updates     18.6 MiB
+ sssd-common                    aarch64 0:2.13.1-2.fc44           updates      6.3 MiB
+ sssd-kcm                       aarch64 0:2.13.1-2.fc44           updates    287.0 KiB
+ systemd                        aarch64 0:259.8-1.fc44            updates     15.5 MiB
+ systemd-resolved               aarch64 0:259.8-1.fc44            updates    649.0 KiB
+ util-linux                     aarch64 0:2.41.5-1.fc44           updates      6.8 MiB
+ zram-generator-defaults        noarch  0:1.2.1-5.fc44            fedora     321.0   B
+Installing dependencies:
+ ModemManager-glib              aarch64 0:1.24.2-3.fc44           fedora       1.6 MiB
+ NetworkManager-libnm           aarch64 1:1.56.1-2.fc44           updates     10.3 MiB
+ audit-rules                    aarch64 0:4.2.1-1.fc44            updates    133.5 KiB
+ avahi-libs                     aarch64 0:0.9~rc2-8.fc44          fedora     229.9 KiB
+ c-ares                         aarch64 0:1.34.8-1.fc44           updates    345.3 KiB
+ cpio                           aarch64 0:2.15-9.fc44             fedora       1.1 MiB
+ cryptsetup-libs                aarch64 0:2.8.7-1.fc44            updates      2.8 MiB
+ cyrus-sasl-gssapi              aarch64 0:2.1.28-35.fc44          fedora      68.0 KiB
+ dbus                           aarch64 1:1.16.2-1.fc44           fedora       0.0   B
+ dbus-broker                    aarch64 0:37-8.fc44               fedora     421.8 KiB
+ dbus-common                    noarch  1:1.16.2-1.fc44           fedora      11.2 KiB
+ dbus-libs                      aarch64 1:1.16.2-1.fc44           fedora     397.5 KiB
+ device-mapper                  aarch64 0:1.02.212-2.fc44         fedora     438.9 KiB
+ device-mapper-libs             aarch64 0:1.02.212-2.fc44         fedora     446.2 KiB
+ diffutils                      aarch64 0:3.12-5.fc44             fedora       1.6 MiB
+ dracut                         aarch64 0:108-7.fc44              updates      1.8 MiB
+ duktape                        aarch64 0:2.7.0-11.fc44           fedora     671.6 KiB
+ e2fsprogs-libs                 aarch64 0:1.47.3-4.fc44           fedora     634.8 KiB
+ expat                          aarch64 0:2.8.1-1.fc44            updates    371.5 KiB
+ firewalld-filesystem           noarch  0:2.4.4-1.fc44            updates    239.0   B
+ fonts-filesystem               noarch  1:5.0.0-2.fc44            fedora       0.0   B
+ fuse3-libs                     aarch64 0:3.18.2-1.fc44           fedora     353.8 KiB
+ glib-networking                aarch64 0:2.80.1-4.fc44           fedora     886.8 KiB
+ gpgme                          aarch64 0:2.0.1-5.fc44            updates    761.4 KiB
+ groff-base                     aarch64 0:1.23.0-12.fc44          fedora       4.2 MiB
+ gsettings-desktop-schemas      aarch64 0:50.1-1.fc44             updates      6.1 MiB
+ hwdata                         noarch  0:0.410-1.fc44            updates     10.0 MiB
+ inih                           aarch64 0:62-2.fc44               fedora      78.3 KiB
+ ipset-libs                     aarch64 0:7.24-3.fc44             fedora     267.4 KiB
+ iptables-libs                  aarch64 0:1.8.11-13.fc44          fedora       6.7 MiB
+ jansson                        aarch64 0:2.14-4.fc44             fedora      93.0 KiB
+ kbd-legacy                     noarch  0:2.9.0-3.fc44            fedora     559.6 KiB
+ kbd-misc                       noarch  0:2.9.0-3.fc44            fedora       2.4 MiB
+ kmod                           aarch64 0:34.2-4.fc44             fedora     270.9 KiB
+ kmod-libs                      aarch64 0:34.2-4.fc44             fedora     158.9 KiB
+ libatasmart                    aarch64 0:0.19-32.fc44            fedora     229.8 KiB
+ libbasicobjects                aarch64 0:0.1.1-61.fc44           fedora     109.0 KiB
+ libblockdev                    aarch64 0:3.5.0-1.fc44            updates    473.4 KiB
+ libblockdev-crypto             aarch64 0:3.5.0-1.fc44            updates    131.6 KiB
+ libblockdev-fs                 aarch64 0:3.5.0-1.fc44            updates    197.5 KiB
+ libblockdev-loop               aarch64 0:3.5.0-1.fc44            updates     67.5 KiB
+ libblockdev-mdraid             aarch64 0:3.5.0-1.fc44            updates     67.9 KiB
+ libblockdev-nvme               aarch64 0:3.5.0-1.fc44            updates     67.9 KiB
+ libblockdev-part               aarch64 0:3.5.0-1.fc44            updates     67.8 KiB
+ libblockdev-smart              aarch64 0:3.5.0-1.fc44            updates    131.7 KiB
+ libblockdev-swap               aarch64 0:3.5.0-1.fc44            updates     67.7 KiB
+ libblockdev-utils              aarch64 0:3.5.0-1.fc44            updates     67.7 KiB
+ libbpf                         aarch64 2:1.6.3-2.fc44            updates    458.8 KiB
+ libbytesize                    aarch64 0:2.12-2.fc44             fedora     127.2 KiB
+ libcollection                  aarch64 0:0.7.0-61.fc44           fedora     110.4 KiB
+ libdaemon                      aarch64 0:0.14-33.fc44            fedora     100.2 KiB
+ libdhash                       aarch64 0:0.5.0-61.fc44           fedora     109.2 KiB
+ libdrm                         aarch64 0:2.4.134-1.fc44          updates    765.3 KiB
+ libedit                        aarch64 0:3.1-59.20260512cvs.fc44 updates    280.3 KiB
+ libevdev                       aarch64 0:1.13.6-2.fc44           fedora     133.9 KiB
+ libfdisk                       aarch64 0:2.41.5-1.fc44           updates    418.8 KiB
+ libgudev                       aarch64 0:238-9.fc44              fedora     103.6 KiB
+ libicu                         aarch64 0:77.1-3.fc44             updates     36.5 MiB
+ libini_config                  aarch64 0:1.3.1-61.fc44           fedora     175.4 KiB
+ libkcapi                       aarch64 0:1.5.0-7.fc44            fedora      98.8 KiB
+ libkcapi-hasher                aarch64 0:1.5.0-7.fc44            fedora      69.4 KiB
+ libkcapi-hmaccalc              aarch64 0:1.5.0-7.fc44            fedora     175.0   B
+ liblastlog2                    aarch64 0:2.41.5-1.fc44           updates    137.8 KiB
+ libldb                         aarch64 2:4.24.5-1.fc44           updates    467.4 KiB
+ libmbim                        aarch64 0:1.32.0-3.fc44           fedora       1.1 MiB
+ libmnl                         aarch64 0:1.0.5-9.fc44            fedora      95.0 KiB
+ libndp                         aarch64 0:1.9-5.fc44              fedora     161.8 KiB
+ libnetfilter_conntrack         aarch64 0:1.1.1-1.fc44            fedora     151.6 KiB
+ libnfnetlink                   aarch64 0:1.0.1-32.fc44           fedora      85.8 KiB
+ libnftnl                       aarch64 0:1.3.1-2.fc44            fedora     288.2 KiB
+ libnl3                         aarch64 0:3.12.0-3.fc44           fedora       1.3 MiB
+ libnvme                        aarch64 0:1.16.2-1.fc44           updates    365.5 KiB
+ libpath_utils                  aarch64 0:0.2.1-61.fc44           fedora     109.3 KiB
+ libpciaccess                   aarch64 0:0.16-17.fc44            fedora      72.4 KiB
+ libpipeline                    aarch64 0:1.5.8-4.fc44            fedora     144.9 KiB
+ libpkgconf                     aarch64 0:2.5.1-1.fc44            fedora     134.1 KiB
+ libproxy                       aarch64 0:0.5.12-2.fc44           fedora     166.0 KiB
+ libqmi                         aarch64 0:1.36.0-3.fc44           fedora       5.2 MiB
+ libqrtr-glib                   aarch64 0:1.2.2-9.fc44            fedora     101.0 KiB
+ libref_array                   aarch64 0:0.1.5-61.fc44           fedora     109.1 KiB
+ libreport-filesystem           noarch  0:2.17.15-10.fc44         fedora       0.0   B
+ libseccomp                     aarch64 0:2.6.1-2.fc44            updates    246.3 KiB
+ libselinux-utils               aarch64 0:3.11-1.fc44             updates      1.3 MiB
+ libsoup3                       aarch64 0:3.6.6-9.fc44            updates      1.2 MiB
+ libss                          aarch64 0:1.47.3-4.fc44           fedora     111.1 KiB
+ libsss_certmap                 aarch64 0:2.13.1-2.fc44           updates    144.0 KiB
+ libsss_idmap                   aarch64 0:2.13.1-2.fc44           updates    109.8 KiB
+ libsss_nss_idmap               aarch64 0:2.13.1-2.fc44           updates    110.2 KiB
+ libsss_sudo                    aarch64 0:2.13.1-2.fc44           updates    101.7 KiB
+ libtalloc                      aarch64 0:2.4.4-1.fc44            fedora      75.7 KiB
+ libtdb                         aarch64 0:1.4.15-1.fc44           fedora     140.4 KiB
+ libtevent                      aarch64 0:0.17.1-4.fc44           fedora     141.3 KiB
+ libudisks2                     aarch64 0:2.11.2-1.fc44           updates      1.1 MiB
+ libxkbcommon                   aarch64 0:1.13.1-2.fc44           fedora     471.5 KiB
+ libxmlb                        aarch64 0:0.3.29-1.fc44           updates    323.8 KiB
+ lmdb-libs                      aarch64 0:0.9.34-2.fc44           fedora     145.8 KiB
+ lzo                            aarch64 0:2.10-16.fc44            fedora     162.8 KiB
+ mdadm                          aarch64 0:4.3-11.fc44             fedora       1.0 MiB
+ mpdecimal                      aarch64 0:4.0.1-3.fc44            fedora     281.1 KiB
+ nftables                       aarch64 1:1.1.6-2.fc44            fedora       1.1 MiB
+ nftables-services              noarch  1:1.1.6-2.fc44            fedora      32.1 KiB
+ nspr                           aarch64 0:4.39.0-3.fc44           updates    419.4 KiB
+ nss                            aarch64 0:3.126.0-1.fc44          updates      2.0 MiB
+ nss-softokn                    aarch64 0:3.126.0-1.fc44          updates      2.3 MiB
+ nss-softokn-freebl             aarch64 0:3.126.0-1.fc44          updates    934.3 KiB
+ nss-sysinit                    aarch64 0:3.126.0-1.fc44          updates     70.0 KiB
+ nss-util                       aarch64 0:3.126.0-1.fc44          updates    216.8 KiB
+ ntfs-3g-libs                   aarch64 2:2026.2.25-1.fc44        updates    408.9 KiB
+ oniguruma                      aarch64 0:6.9.10-4.fc44           fedora     766.7 KiB
+ openssh                        aarch64 0:10.2p1-13.fc44          updates      1.4 MiB
+ passim-libs                    aarch64 0:0.1.12-1.fc44           updates     94.0 KiB
+ pkgconf                        aarch64 0:2.5.1-1.fc44            fedora     116.8 KiB
+ pkgconf-m4                     noarch  0:2.5.1-1.fc44            fedora      14.3 KiB
+ pkgconf-pkg-config             aarch64 0:2.5.1-1.fc44            fedora     990.0   B
+ plymouth-core-libs             aarch64 0:24.004.60-24.fc44       fedora     396.5 KiB
+ plymouth-scripts               aarch64 0:24.004.60-24.fc44       fedora      30.5 KiB
+ polkit                         aarch64 0:127-2.fc44.2            fedora     722.4 KiB
+ polkit-libs                    aarch64 0:127-2.fc44.2            fedora     288.6 KiB
+ psmisc                         aarch64 0:23.7-7.fc44             fedora       1.1 MiB
+ python-pip-wheel               noarch  0:26.0.1-2.fc44           fedora       1.2 MiB
+ python3                        aarch64 0:3.14.6-1.fc44           updates     84.8 KiB
+ python3-dbus                   aarch64 0:1.4.0-9.fc44            fedora     632.4 KiB
+ python3-firewall               noarch  0:2.4.4-1.fc44            updates      2.9 MiB
+ python3-gobject-base           aarch64 0:3.56.3-1.fc44           updates      1.6 MiB
+ python3-libs                   aarch64 0:3.14.6-1.fc44           updates     45.5 MiB
+ python3-nftables               noarch  1:1.1.6-2.fc44            fedora      43.7 KiB
+ rpm-plugin-selinux             aarch64 0:6.0.2-1.fc44            updates     67.9 KiB
+ samba-common                   noarch  2:4.24.5-1.fc44           updates    218.1 KiB
+ samba-core-libs                aarch64 2:4.24.5-1.fc44           updates      1.7 MiB
+ samba-ndr-libs                 aarch64 2:4.24.5-1.fc44           updates      4.5 MiB
+ selinux-policy                 noarch  0:44.6-1.fc44             updates     32.1 KiB
+ shared-mime-info               aarch64 0:2.4-3.fc44              fedora       5.3 MiB
+ sssd-client                    aarch64 0:2.13.1-2.fc44           updates    632.6 KiB
+ sssd-krb5-common               aarch64 0:2.13.1-2.fc44           updates    235.5 KiB
+ systemd-shared                 aarch64 0:259.8-1.fc44            updates      5.2 MiB
+ systemd-udev                   aarch64 0:259.8-1.fc44            updates     15.0 MiB
+ tpm2-tss-fapi                  aarch64 0:4.1.3-9.fc44            fedora     909.7 KiB
+ userspace-rcu                  aarch64 0:0.15.6-1.fc44           fedora     546.0 KiB
+ volume_key-libs                aarch64 0:0.3.12-29.fc44          fedora     730.8 KiB
+ xkeyboard-config               noarch  0:2.47-1.fc44             fedora       6.4 MiB
+ zram-generator                 aarch64 0:1.2.1-5.fc44            fedora     813.8 KiB
+Installing weak dependencies:
+ 7zip                           aarch64 0:26.02-1.fc44            updates      3.2 MiB
+ adwaita-mono-fonts             noarch  0:50.0-1.fc44             fedora       5.6 MiB
+ adwaita-sans-fonts             noarch  0:50.0-1.fc44             fedora       1.7 MiB
+ avahi                          aarch64 0:0.9~rc2-8.fc44          fedora       1.6 MiB
+ bluez                          aarch64 0:5.87-3.fc44             updates      4.3 MiB
+ btrfs-progs                    aarch64 0:7.0-1.fc44              updates      6.5 MiB
+ dosfstools                     aarch64 0:4.2-18.fc44             fedora     328.2 KiB
+ exfatprogs                     aarch64 0:1.4.3-1.fc44            updates    660.7 KiB
+ f2fs-tools                     aarch64 0:1.16.0-10.fc44          fedora     854.2 KiB
+ fwupd-efi                      aarch64 0:1.8-1.fc44              fedora     170.6 KiB
+ fwupd-plugin-modem-manager     aarch64 0:2.1.7-1.fc44            updates    133.0 KiB
+ fwupd-plugin-uefi-capsule-data aarch64 0:2.1.7-1.fc44            updates      7.1 MiB
+ initscripts-service            noarch  0:10.27-2.fc44            fedora      23.4 KiB
+ ipset                          aarch64 0:7.24-3.fc44             fedora     128.5 KiB
+ iptables-nft                   aarch64 0:1.8.11-13.fc44          fedora       1.4 MiB
+ jq                             aarch64 0:1.8.1-3.fc44            updates    484.8 KiB
+ kpartx                         aarch64 0:0.13.1-1.fc44           fedora     107.5 KiB
+ libcap-ng-python3              aarch64 0:0.9.3-1.fc44            updates    103.8 KiB
+ logrotate                      aarch64 0:3.22.0-5.fc44           fedora     188.8 KiB
+ memstrack                      aarch64 0:0.2.5-8.fc44            fedora     127.7 KiB
+ nilfs-utils                    aarch64 0:2.2.11-8.fc44           fedora       1.1 MiB
+ ntfs-3g                        aarch64 2:2026.2.25-1.fc44        updates    431.8 KiB
+ ntfs-3g-system-compression     aarch64 0:1.1-2.fc44              fedora      87.8 KiB
+ ntfsprogs                      aarch64 2:2026.2.25-1.fc44        updates      1.7 MiB
+ passim                         aarch64 0:0.1.12-1.fc44           updates    297.7 KiB
+ polkit-pkla-compat             aarch64 0:0.1-32.fc44             fedora     169.2 KiB
+ python-unversioned-command     noarch  0:3.14.6-1.fc44           updates     23.0   B
+ python3-html2text              noarch  0:2025.4.15-6.fc44        fedora     289.4 KiB
+ qrencode-libs                  aarch64 0:4.1.1-12.fc44           fedora     172.7 KiB
+ systemd-networkd               aarch64 0:259.8-1.fc44            updates      2.3 MiB
+ systemd-pam                    aarch64 0:259.8-1.fc44            updates      1.2 MiB
+ tpm2-tools                     aarch64 0:5.7-5.fc44              fedora       1.6 MiB
+ udftools                       aarch64 0:2.3-13.fc44             fedora     619.0 KiB
+ udisks2                        aarch64 0:2.11.2-1.fc44           updates      3.1 MiB
+ unzip                          aarch64 0:6.0-69.fc44             fedora     533.8 KiB
+ xfsprogs                       aarch64 0:7.1.1-1.fc44            updates      4.8 MiB
+Installing groups:
+ Core                                                                                 
+
+Transaction Summary:
+ Installing:       204 packages
+
+Total size of inbound packages is 100 MiB. Need to download 100 MiB.
+After this operation, 371 MiB extra will be used (install 371 MiB, remove 0 B).
+[  1/204] hostname-0:3.25-4.fc44.aarch6 100% | 155.1 KiB/s |  27.6 KiB |  00m00s
+[  2/204] e2fsprogs-0:1.47.3-4.fc44.aar 100% |   3.2 MiB/s |   1.1 MiB |  00m00s
+[  3/204] iputils-0:20250605-2.fc44.aar 100% |   1.3 MiB/s | 210.2 KiB |  00m00s
+[  4/204] kbd-0:2.9.0-3.fc44.aarch64    100% |   3.2 MiB/s | 378.9 KiB |  00m00s
+[  5/204] iproute-0:6.17.0-2.fc44.aarch 100% |   1.5 MiB/s | 837.5 KiB |  00m01s
+[  6/204] man-db-0:2.13.1-3.fc44.aarch6 100% |   4.9 MiB/s |   1.4 MiB |  00m00s
+[  7/204] ncurses-0:6.6-1.fc44.aarch64  100% |   2.3 MiB/s | 426.4 KiB |  00m00s
+[  8/204] plymouth-0:24.004.60-24.fc44. 100% |   1.7 MiB/s | 123.9 KiB |  00m00s
+[  9/204] procps-ng-0:4.0.6-1.fc44.aarc 100% |   3.6 MiB/s | 392.1 KiB |  00m00s
+[ 10/204] zram-generator-defaults-0:1.2 100% | 237.6 KiB/s |   7.4 KiB |  00m00s
+[ 11/204] parted-0:3.6-14.fc44.aarch64  100% |   2.2 MiB/s | 591.5 KiB |  00m00s
+[ 12/204] prefixdevname-0:0.2.0-8.fc44. 100% |   5.2 MiB/s | 628.8 KiB |  00m00s
+[ 13/204] e2fsprogs-libs-0:1.47.3-4.fc4 100% |   3.3 MiB/s | 231.4 KiB |  00m00s
+[ 14/204] fuse3-libs-0:3.18.2-1.fc44.aa 100% |   2.5 MiB/s |  96.4 KiB |  00m00s
+[ 15/204] libss-0:1.47.3-4.fc44.aarch64 100% |   1.0 MiB/s |  32.1 KiB |  00m00s
+[ 16/204] libmnl-0:1.0.5-9.fc44.aarch64 100% | 798.6 KiB/s |  28.0 KiB |  00m00s
+[ 17/204] psmisc-0:23.7-7.fc44.aarch64  100% |   2.7 MiB/s | 319.9 KiB |  00m00s
+[ 18/204] kbd-legacy-0:2.9.0-3.fc44.noa 100% |   4.8 MiB/s | 581.2 KiB |  00m00s
+[ 19/204] libpipeline-0:1.5.8-4.fc44.aa 100% |   1.6 MiB/s |  58.9 KiB |  00m00s
+[ 20/204] device-mapper-libs-0:1.02.212 100% |   1.6 MiB/s | 175.0 KiB |  00m00s
+[ 21/204] groff-base-0:1.23.0-12.fc44.a 100% |   5.4 MiB/s |   1.1 MiB |  00m00s
+[ 22/204] plymouth-core-libs-0:24.004.6 100% |   2.1 MiB/s | 115.2 KiB |  00m00s
+[ 23/204] plymouth-scripts-0:24.004.60- 100% | 602.0 KiB/s |  18.1 KiB |  00m00s
+[ 24/204] zram-generator-0:1.2.1-5.fc44 100% |   2.2 MiB/s | 373.1 KiB |  00m00s
+[ 25/204] xkeyboard-config-0:2.47-1.fc4 100% |   4.8 MiB/s |   1.0 MiB |  00m00s
+[ 26/204] libevdev-0:1.13.6-2.fc44.aarc 100% |   1.2 MiB/s |  38.1 KiB |  00m00s
+[ 27/204] device-mapper-0:1.02.212-2.fc 100% |   2.2 MiB/s | 137.5 KiB |  00m00s
+[ 28/204] cpio-0:2.15-9.fc44.aarch64    100% |   3.4 MiB/s | 289.7 KiB |  00m00s
+[ 29/204] libxkbcommon-0:1.13.1-2.fc44. 100% |   1.6 MiB/s | 177.5 KiB |  00m00s
+[ 30/204] kbd-misc-0:2.9.0-3.fc44.noarc 100% |   2.3 MiB/s |   1.7 MiB |  00m01s
+[ 31/204] audit-rules-0:4.2.1-1.fc44.aa 100% | 483.5 KiB/s |  69.6 KiB |  00m00s
+[ 32/204] audit-0:4.2.1-1.fc44.aarch64  100% |   1.1 MiB/s | 217.8 KiB |  00m00s
+[ 33/204] less-0:704-2.fc44.aarch64     100% |   1.5 MiB/s | 221.6 KiB |  00m00s
+[ 34/204] openssh-clients-0:10.2p1-13.f 100% |   4.9 MiB/s | 745.8 KiB |  00m00s
+[ 35/204] openssh-0:10.2p1-13.fc44.aarc 100% |   1.9 MiB/s | 345.8 KiB |  00m00s
+[ 36/204] openssh-server-0:10.2p1-13.fc 100% |   3.4 MiB/s | 609.6 KiB |  00m00s
+[ 37/204] policycoreutils-0:3.11-2.fc44 100% |   2.5 MiB/s | 260.6 KiB |  00m00s
+[ 38/204] libselinux-utils-0:3.11-1.fc4 100% |   2.6 MiB/s | 123.5 KiB |  00m00s
+[ 39/204] diffutils-0:3.12-5.fc44.aarch 100% | 903.0 KiB/s | 391.9 KiB |  00m00s
+[ 40/204] selinux-policy-0:44.6-1.fc44. 100% |  48.3 KiB/s |  24.7 KiB |  00m01s
+[ 41/204] selinux-policy-targeted-0:44. 100% |   8.9 MiB/s |   6.8 MiB |  00m01s
+[ 42/204] sssd-common-0:2.13.1-2.fc44.a 100% |   3.8 MiB/s |   1.6 MiB |  00m00s
+[ 43/204] libsss_certmap-0:2.13.1-2.fc4 100% | 252.8 KiB/s |  84.5 KiB |  00m00s
+[ 44/204] libsss_idmap-0:2.13.1-2.fc44. 100% | 365.2 KiB/s |  38.0 KiB |  00m00s
+[ 45/204] sssd-client-0:2.13.1-2.fc44.a 100% |   3.5 MiB/s | 165.5 KiB |  00m00s
+[ 46/204] jansson-0:2.14-4.fc44.aarch64 100% |   1.0 MiB/s |  46.5 KiB |  00m00s
+[ 47/204] libcollection-0:0.7.0-61.fc44 100% |   1.7 MiB/s |  44.3 KiB |  00m00s
+[ 48/204] libbasicobjects-0:0.1.1-61.fc 100% | 562.7 KiB/s |  25.9 KiB |  00m00s
+[ 49/204] dbus-libs-1:1.16.2-1.fc44.aar 100% |   1.3 MiB/s | 145.8 KiB |  00m00s
+[ 50/204] libdhash-0:0.5.0-61.fc44.aarc 100% | 966.5 KiB/s |  29.0 KiB |  00m00s
+[ 51/204] libini_config-0:1.3.1-61.fc44 100% |   1.5 MiB/s |  67.0 KiB |  00m00s
+[ 52/204] libref_array-0:0.1.5-61.fc44. 100% | 945.6 KiB/s |  27.4 KiB |  00m00s
+[ 53/204] libtalloc-0:2.4.4-1.fc44.aarc 100% | 870.0 KiB/s |  33.9 KiB |  00m00s
+[ 54/204] libtdb-0:1.4.15-1.fc44.aarch6 100% |   1.5 MiB/s |  56.4 KiB |  00m00s
+[ 55/204] libnl3-0:3.12.0-3.fc44.aarch6 100% |   4.0 MiB/s | 357.2 KiB |  00m00s
+[ 56/204] libsss_nss_idmap-0:2.13.1-2.f 100% |   1.3 MiB/s |  40.9 KiB |  00m00s
+[ 57/204] libtevent-0:0.17.1-4.fc44.aar 100% |   1.1 MiB/s |  50.8 KiB |  00m00s
+[ 58/204] libpath_utils-0:0.2.1-61.fc44 100% | 965.9 KiB/s |  29.0 KiB |  00m00s
+[ 59/204] sssd-kcm-0:2.13.1-2.fc44.aarc 100% |   2.5 MiB/s | 107.0 KiB |  00m00s
+[ 60/204] cyrus-sasl-gssapi-0:2.1.28-35 100% | 709.4 KiB/s |  25.5 KiB |  00m00s
+[ 61/204] sssd-krb5-common-0:2.13.1-2.f 100% |   1.7 MiB/s |  90.0 KiB |  00m00s
+[ 62/204] libsss_sudo-0:2.13.1-2.fc44.a 100% | 915.2 KiB/s |  30.2 KiB |  00m00s
+[ 63/204] systemd-shared-0:259.8-1.fc44 100% |   4.0 MiB/s |   1.8 MiB |  00m00s
+[ 64/204] systemd-resolved-0:259.8-1.fc 100% | 491.0 KiB/s | 261.2 KiB |  00m01s
+[ 65/204] systemd-0:259.8-1.fc44.aarch6 100% |   5.9 MiB/s |   4.0 MiB |  00m01s
+[ 66/204] util-linux-0:2.41.5-1.fc44.aa 100% |   4.7 MiB/s |   1.2 MiB |  00m00s
+[ 67/204] libfdisk-0:2.41.5-1.fc44.aarc 100% | 962.6 KiB/s | 155.0 KiB |  00m00s
+[ 68/204] liblastlog2-0:2.41.5-1.fc44.a 100% | 653.5 KiB/s |  24.2 KiB |  00m00s
+[ 69/204] NetworkManager-1:1.56.1-2.fc4 100% |   7.7 MiB/s |   2.1 MiB |  00m00s
+[ 70/204] dbus-1:1.16.2-1.fc44.aarch64  100% | 206.6 KiB/s |   7.4 KiB |  00m00s
+[ 71/204] libndp-0:1.9-5.fc44.aarch64   100% |   1.0 MiB/s |  37.4 KiB |  00m00s
+[ 72/204] NetworkManager-libnm-1:1.56.1 100% |   3.0 MiB/s |   1.9 MiB |  00m01s
+[ 73/204] systemd-udev-0:259.8-1.fc44.a 100% |   3.8 MiB/s |   2.6 MiB |  00m01s
+[ 74/204] kmod-libs-0:34.2-4.fc44.aarch 100% |   1.4 MiB/s |  66.9 KiB |  00m00s
+[ 75/204] pkgconf-pkg-config-0:2.5.1-1. 100% | 363.1 KiB/s |   9.4 KiB |  00m00s
+[ 76/204] dbus-broker-0:37-8.fc44.aarch 100% |   3.8 MiB/s | 167.2 KiB |  00m00s
+[ 77/204] dbus-common-1:1.16.2-1.fc44.n 100% | 457.3 KiB/s |  14.2 KiB |  00m00s
+[ 78/204] pkgconf-0:2.5.1-1.fc44.aarch6 100% |   1.7 MiB/s |  48.2 KiB |  00m00s
+[ 79/204] kmod-0:34.2-4.fc44.aarch64    100% | 317.8 KiB/s | 131.3 KiB |  00m00s
+[ 80/204] pkgconf-m4-0:2.5.1-1.fc44.noa 100% | 550.1 KiB/s |  13.8 KiB |  00m00s
+[ 81/204] libpkgconf-0:2.5.1-1.fc44.aar 100% |   1.2 MiB/s |  40.7 KiB |  00m00s
+[ 82/204] dracut-config-rescue-0:108-7. 100% | 342.1 KiB/s |  11.3 KiB |  00m00s
+[ 83/204] libkcapi-hmaccalc-0:1.5.0-7.f 100% | 306.0 KiB/s |   8.9 KiB |  00m00s
+[ 84/204] libkcapi-hasher-0:1.5.0-7.fc4 100% | 815.1 KiB/s |  25.3 KiB |  00m00s
+[ 85/204] libkcapi-0:1.5.0-7.fc44.aarch 100% |   1.3 MiB/s |  46.0 KiB |  00m00s
+[ 86/204] dracut-0:108-7.fc44.aarch64   100% |   3.3 MiB/s | 621.5 KiB |  00m00s
+[ 87/204] firewalld-0:2.4.4-1.fc44.noar 100% |   3.5 MiB/s | 541.8 KiB |  00m00s
+[ 88/204] firewalld-filesystem-0:2.4.4- 100% |  75.0 KiB/s |   9.7 KiB |  00m00s
+[ 89/204] python3-nftables-1:1.1.6-2.fc 100% | 745.9 KiB/s |  21.6 KiB |  00m00s
+[ 90/204] python3-dbus-0:1.4.0-9.fc44.a 100% |   1.9 MiB/s | 160.5 KiB |  00m00s
+[ 91/204] python3-firewall-0:2.4.4-1.fc 100% |   4.2 MiB/s | 516.1 KiB |  00m00s
+[ 92/204] nftables-1:1.1.6-2.fc44.aarch 100% |   5.4 MiB/s | 426.6 KiB |  00m00s
+[ 93/204] nftables-services-1:1.1.6-2.f 100% | 772.7 KiB/s |  21.6 KiB |  00m00s
+[ 94/204] libnftnl-0:1.3.1-2.fc44.aarch 100% |   1.4 MiB/s |  85.3 KiB |  00m00s
+[ 95/204] libnetfilter_conntrack-0:1.1. 100% |   1.9 MiB/s |  59.5 KiB |  00m00s
+[ 96/204] libnfnetlink-0:1.0.1-32.fc44. 100% | 776.3 KiB/s |  28.7 KiB |  00m00s
+[ 97/204] iptables-libs-0:1.8.11-13.fc4 100% |   2.8 MiB/s | 418.8 KiB |  00m00s
+[ 98/204] shared-mime-info-0:2.4-3.fc44 100% |   2.1 MiB/s | 394.6 KiB |  00m00s
+[ 99/204] fwupd-0:2.1.7-1.fc44.aarch64  100% |   7.9 MiB/s |   2.8 MiB |  00m00s
+[100/204] python3-0:3.14.6-1.fc44.aarch 100% | 227.0 KiB/s |  29.1 KiB |  00m00s
+[101/204] polkit-libs-0:127-2.fc44.2.aa 100% | 192.3 KiB/s |  70.4 KiB |  00m00s
+[102/204] mpdecimal-0:4.0.1-3.fc44.aarc 100% | 739.7 KiB/s |  95.4 KiB |  00m00s
+[103/204] expat-0:2.8.1-1.fc44.aarch64  100% | 197.7 KiB/s | 125.3 KiB |  00m01s
+[104/204] python-pip-wheel-0:26.0.1-2.f 100% |   1.5 MiB/s |   1.1 MiB |  00m01s
+[105/204] python3-libs-0:3.14.6-1.fc44. 100% |   8.7 MiB/s |   9.9 MiB |  00m01s
+[106/204] libedit-0:3.1-59.20260512cvs. 100% | 213.5 KiB/s | 106.3 KiB |  00m00s
+[107/204] libbpf-2:1.6.3-2.fc44.aarch64 100% | 786.6 KiB/s | 188.0 KiB |  00m00s
+[108/204] cryptsetup-libs-0:2.8.7-1.fc4 100% |   6.7 MiB/s | 585.7 KiB |  00m00s
+[109/204] libseccomp-0:2.6.1-2.fc44.aar 100% | 878.6 KiB/s |  75.6 KiB |  00m00s
+[110/204] libldb-2:4.24.5-1.fc44.aarch6 100% |   2.2 MiB/s | 193.7 KiB |  00m00s
+[111/204] c-ares-0:1.34.8-1.fc44.aarch6 100% |   2.6 MiB/s | 119.2 KiB |  00m00s
+[112/204] lmdb-libs-0:0.9.34-2.fc44.aar 100% | 957.0 KiB/s |  61.3 KiB |  00m00s
+[113/204] samba-ndr-libs-2:4.24.5-1.fc4 100% |   7.2 MiB/s |   1.2 MiB |  00m00s
+[114/204] samba-common-2:4.24.5-1.fc44. 100% |   1.3 MiB/s | 185.9 KiB |  00m00s
+[115/204] samba-core-libs-2:4.24.5-1.fc 100% |   2.6 MiB/s | 542.8 KiB |  00m00s
+[116/204] libdrm-0:2.4.134-1.fc44.aarch 100% | 428.9 KiB/s | 192.1 KiB |  00m00s
+[117/204] python3-gobject-base-0:3.56.3 100% | 713.8 KiB/s | 397.6 KiB |  00m01s
+[118/204] libpciaccess-0:0.16-17.fc44.a 100% | 483.9 KiB/s |  26.6 KiB |  00m00s
+[119/204] passim-libs-0:0.1.12-1.fc44.a 100% |  78.9 KiB/s |  31.6 KiB |  00m00s
+[120/204] libxmlb-0:0.3.29-1.fc44.aarch 100% | 255.4 KiB/s | 111.6 KiB |  00m00s
+[121/204] libicu-0:77.1-3.fc44.aarch64  100% |   9.0 MiB/s |  10.6 MiB |  00m01s
+[122/204] initscripts-service-0:10.27-2 100% | 297.1 KiB/s |  20.2 KiB |  00m00s
+[123/204] hwdata-0:0.410-1.fc44.noarch  100% |   5.7 MiB/s |   1.7 MiB |  00m00s
+[124/204] rpm-plugin-selinux-0:6.0.2-1. 100% |  58.5 KiB/s |  17.1 KiB |  00m00s
+[125/204] unzip-0:6.0-69.fc44.aarch64   100% | 989.7 KiB/s | 200.9 KiB |  00m00s
+[126/204] 7zip-0:26.02-1.fc44.aarch64   100% |   7.0 MiB/s |   1.2 MiB |  00m00s
+[127/204] qrencode-libs-0:4.1.1-12.fc44 100% | 823.9 KiB/s |  62.6 KiB |  00m00s
+[128/204] python3-html2text-0:2025.4.15 100% | 353.6 KiB/s |  81.7 KiB |  00m00s
+[129/204] systemd-networkd-0:259.8-1.fc 100% |   6.9 MiB/s | 729.4 KiB |  00m00s
+[130/204] kpartx-0:0.13.1-1.fc44.aarch6 100% | 725.1 KiB/s |  47.1 KiB |  00m00s
+[131/204] systemd-pam-0:259.8-1.fc44.aa 100% |   4.9 MiB/s | 408.0 KiB |  00m00s
+[132/204] memstrack-0:0.2.5-8.fc44.aarc 100% |   1.1 MiB/s |  49.6 KiB |  00m00s
+[133/204] tpm2-tss-fapi-0:4.1.3-9.fc44. 100% |   4.1 MiB/s | 319.7 KiB |  00m00s
+[134/204] libcap-ng-python3-0:0.9.3-1.f 100% |   1.0 MiB/s |  35.6 KiB |  00m00s
+[135/204] ipset-0:7.24-3.fc44.aarch64   100% |   1.3 MiB/s |  43.7 KiB |  00m00s
+[136/204] iptables-nft-0:1.8.11-13.fc44 100% |   1.0 MiB/s | 182.4 KiB |  00m00s
+[137/204] ipset-libs-0:7.24-3.fc44.aarc 100% |   1.9 MiB/s |  66.9 KiB |  00m00s
+[138/204] jq-0:1.8.1-3.fc44.aarch64     100% |   2.3 MiB/s | 204.7 KiB |  00m00s
+[139/204] oniguruma-0:6.9.10-4.fc44.aar 100% |   2.4 MiB/s | 213.0 KiB |  00m00s
+[140/204] udisks2-0:2.11.2-1.fc44.aarch 100% |   5.9 MiB/s | 551.3 KiB |  00m00s
+[141/204] libudisks2-0:2.11.2-1.fc44.aa 100% |   2.1 MiB/s | 217.0 KiB |  00m00s
+[142/204] libgudev-0:238-9.fc44.aarch64 100% |   1.1 MiB/s |  33.9 KiB |  00m00s
+[143/204] duktape-0:2.7.0-11.fc44.aarch 100% |   2.1 MiB/s | 170.0 KiB |  00m00s
+[144/204] tpm2-tools-0:5.7-5.fc44.aarch 100% |   1.3 MiB/s | 810.3 KiB |  00m01s
+[145/204] polkit-0:127-2.fc44.2.aarch64 100% | 756.6 KiB/s | 168.7 KiB |  00m00s
+[146/204] bluez-0:5.87-3.fc44.aarch64   100% |   7.6 MiB/s |   1.3 MiB |  00m00s
+[147/204] passim-0:0.1.12-1.fc44.aarch6 100% |   1.3 MiB/s |  98.1 KiB |  00m00s
+[148/204] fwupd-plugin-modem-manager-0: 100% | 809.2 KiB/s |  51.0 KiB |  00m00s
+[149/204] libmbim-0:1.32.0-3.fc44.aarch 100% |   4.0 MiB/s | 273.0 KiB |  00m00s
+[150/204] libqrtr-glib-0:1.2.2-9.fc44.a 100% |   1.1 MiB/s |  35.1 KiB |  00m00s
+[151/204] ModemManager-glib-0:1.24.2-3. 100% |   1.2 MiB/s | 329.3 KiB |  00m00s
+[152/204] libqmi-0:1.36.0-3.fc44.aarch6 100% |   3.0 MiB/s |   1.0 MiB |  00m00s
+[153/204] fwupd-efi-0:1.8-1.fc44.aarch6 100% | 518.9 KiB/s |  45.7 KiB |  00m00s
+[154/204] logrotate-0:3.22.0-5.fc44.aar 100% | 713.4 KiB/s |  74.2 KiB |  00m00s
+[155/204] python-unversioned-command-0: 100% |  31.7 KiB/s |  11.0 KiB |  00m00s
+[156/204] fwupd-plugin-uefi-capsule-dat 100% |   8.5 MiB/s |   6.0 MiB |  00m01s
+[157/204] libblockdev-0:3.5.0-1.fc44.aa 100% | 316.2 KiB/s | 114.1 KiB |  00m00s
+[158/204] libblockdev-utils-0:3.5.0-1.f 100% | 226.8 KiB/s |  31.5 KiB |  00m00s
+[159/204] libblockdev-swap-0:3.5.0-1.fc 100% | 844.4 KiB/s |  26.2 KiB |  00m00s
+[160/204] libblockdev-smart-0:3.5.0-1.f 100% | 560.2 KiB/s |  28.6 KiB |  00m00s
+[161/204] libblockdev-part-0:3.5.0-1.fc 100% | 637.4 KiB/s |  33.1 KiB |  00m00s
+[162/204] libblockdev-nvme-0:3.5.0-1.fc 100% | 893.4 KiB/s |  34.8 KiB |  00m00s
+[163/204] libblockdev-mdraid-0:3.5.0-1. 100% |   1.0 MiB/s |  31.0 KiB |  00m00s
+[164/204] libblockdev-loop-0:3.5.0-1.fc 100% | 612.5 KiB/s |  23.9 KiB |  00m00s
+[165/204] libblockdev-fs-0:3.5.0-1.fc44 100% |   1.1 MiB/s |  54.1 KiB |  00m00s
+[166/204] libblockdev-crypto-0:3.5.0-1. 100% |   1.1 MiB/s |  39.8 KiB |  00m00s
+[167/204] libbytesize-0:2.12-2.fc44.aar 100% |   1.3 MiB/s |  45.7 KiB |  00m00s
+[168/204] libatasmart-0:0.19-32.fc44.aa 100% | 962.2 KiB/s |  47.1 KiB |  00m00s
+[169/204] libreport-filesystem-0:2.17.1 100% | 370.0 KiB/s |   9.6 KiB |  00m00s
+[170/204] mdadm-0:4.3-11.fc44.aarch64   100% |   2.9 MiB/s | 432.6 KiB |  00m00s
+[171/204] volume_key-libs-0:0.3.12-29.f 100% |   1.2 MiB/s | 149.6 KiB |  00m00s
+[172/204] libsoup3-0:3.6.6-9.fc44.aarch 100% |   3.8 MiB/s | 393.6 KiB |  00m00s
+[173/204] libproxy-0:0.5.12-2.fc44.aarc 100% |   1.4 MiB/s |  44.0 KiB |  00m00s
+[174/204] libnvme-0:1.16.2-1.fc44.aarch 100% |   2.5 MiB/s | 116.9 KiB |  00m00s
+[175/204] nspr-0:4.39.0-3.fc44.aarch64  100% |   2.8 MiB/s | 135.5 KiB |  00m00s
+[176/204] nss-0:3.126.0-1.fc44.aarch64  100% |   6.5 MiB/s | 702.2 KiB |  00m00s
+[177/204] glib-networking-0:2.80.1-4.fc 100% |   1.1 MiB/s | 201.1 KiB |  00m00s
+[178/204] nss-softokn-0:3.126.0-1.fc44. 100% |   3.5 MiB/s | 432.7 KiB |  00m00s
+[179/204] nss-util-0:3.126.0-1.fc44.aar 100% |   1.8 MiB/s |  86.6 KiB |  00m00s
+[180/204] nss-softokn-freebl-0:3.126.0- 100% |   4.2 MiB/s | 344.1 KiB |  00m00s
+[181/204] nss-sysinit-0:3.126.0-1.fc44. 100% | 357.7 KiB/s |  19.7 KiB |  00m00s
+[182/204] gpgme-0:2.0.1-5.fc44.aarch64  100% |   3.4 MiB/s | 222.4 KiB |  00m00s
+[183/204] lzo-0:2.10-16.fc44.aarch64    100% | 762.3 KiB/s |  64.8 KiB |  00m00s
+[184/204] gsettings-desktop-schemas-0:5 100% |   6.8 MiB/s | 864.3 KiB |  00m00s
+[185/204] inih-0:62-2.fc44.aarch64      100% | 508.7 KiB/s |  18.3 KiB |  00m00s
+[186/204] btrfs-progs-0:7.0-1.fc44.aarc 100% |   4.6 MiB/s |   1.2 MiB |  00m00s
+[187/204] userspace-rcu-0:0.15.6-1.fc44 100% | 806.0 KiB/s |  96.7 KiB |  00m00s
+[188/204] xfsprogs-0:7.1.1-1.fc44.aarch 100% |   5.0 MiB/s |   1.3 MiB |  00m00s
+[189/204] ntfs-3g-2:2026.2.25-1.fc44.aa 100% |   1.2 MiB/s | 126.4 KiB |  00m00s
+[190/204] ntfs-3g-libs-2:2026.2.25-1.fc 100% |   1.7 MiB/s | 171.3 KiB |  00m00s
+[191/204] dosfstools-0:4.2-18.fc44.aarc 100% |   1.1 MiB/s | 103.6 KiB |  00m00s
+[192/204] ntfsprogs-2:2026.2.25-1.fc44. 100% |   3.8 MiB/s | 374.6 KiB |  00m00s
+[193/204] exfatprogs-0:1.4.3-1.fc44.aar 100% |   1.4 MiB/s | 143.9 KiB |  00m00s
+[194/204] nilfs-utils-0:2.2.11-8.fc44.a 100% |   2.9 MiB/s | 165.8 KiB |  00m00s
+[195/204] udftools-0:2.3-13.fc44.aarch6 100% |   2.8 MiB/s | 162.4 KiB |  00m00s
+[196/204] polkit-pkla-compat-0:0.1-32.f 100% |   1.1 MiB/s |  43.5 KiB |  00m00s
+[197/204] f2fs-tools-0:1.16.0-10.fc44.a 100% |   1.6 MiB/s | 230.2 KiB |  00m00s
+[198/204] avahi-libs-0:0.9~rc2-8.fc44.a 100% |   1.6 MiB/s |  65.5 KiB |  00m00s
+[199/204] avahi-0:0.9~rc2-8.fc44.aarch6 100% |   4.2 MiB/s | 440.0 KiB |  00m00s
+[200/204] libdaemon-0:0.14-33.fc44.aarc 100% | 706.6 KiB/s |  31.8 KiB |  00m00s
+[201/204] fonts-filesystem-1:5.0.0-2.fc 100% | 278.0 KiB/s |   8.9 KiB |  00m00s
+[202/204] ntfs-3g-system-compression-0: 100% | 343.7 KiB/s |  28.5 KiB |  00m00s
+[203/204] adwaita-sans-fonts-0:50.0-1.f 100% |   4.0 MiB/s | 764.9 KiB |  00m00s
+[204/204] adwaita-mono-fonts-0:50.0-1.f 100% |   5.6 MiB/s |   1.4 MiB |  00m00s
+--------------------------------------------------------------------------------
+[204/204] Total                         100% |   8.9 MiB/s |  99.7 MiB |  00m11s
+Running transaction
+[  1/206] Verify package files          100% |  73.0   B/s | 204.0   B |  00m03s
+[  2/206] Prepare transaction           100% | 271.0   B/s | 204.0   B |  00m01s
+[  3/206] Installing kmod-libs-0:34.2-4 100% |   5.8 MiB/s | 160.0 KiB |  00m00s
+[  4/206] Installing libblockdev-utils- 100% |   6.1 MiB/s |  68.6 KiB |  00m00s
+[  5/206] Installing libtalloc-0:2.4.4- 100% |   6.8 MiB/s |  76.8 KiB |  00m00s
+[  6/206] Installing nspr-0:4.39.0-3.fc 100% |  25.7 MiB/s | 421.2 KiB |  00m00s
+[  7/206] Installing libmnl-0:1.0.5-9.f 100% |   8.6 MiB/s |  96.4 KiB |  00m00s
+[  8/206] Installing nss-util-0:3.126.0 100% |  17.7 MiB/s | 217.8 KiB |  00m00s
+[  9/206] Installing dbus-libs-1:1.16.2 100% |  27.8 MiB/s | 398.6 KiB |  00m00s
+[ 10/206] Installing libtevent-0:0.17.1 100% |  11.6 MiB/s | 142.5 KiB |  00m00s
+[ 11/206] Installing expat-0:2.8.1-1.fc 100% |   3.1 MiB/s | 373.6 KiB |  00m00s
+[ 12/206] Installing polkit-libs-0:127- 100% |  18.9 MiB/s | 290.4 KiB |  00m00s
+[ 13/206] Installing libfdisk-0:2.41.5- 100% |  29.3 MiB/s | 419.9 KiB |  00m00s
+[ 14/206] Installing systemd-shared-0:2 100% |  71.8 MiB/s |   5.2 MiB |  00m00s
+[ 15/206] Installing ntfs-3g-libs-2:202 100% |  25.0 MiB/s | 410.0 KiB |  00m00s
+[ 16/206] Installing libedit-0:3.1-59.2 100% |  19.7 MiB/s | 282.0 KiB |  00m00s
+[ 17/206] Installing libtdb-0:1.4.15-1. 100% |  11.5 MiB/s | 141.5 KiB |  00m00s
+[ 18/206] Installing jansson-0:2.14-4.f 100% |   6.6 MiB/s |  94.4 KiB |  00m00s
+[ 19/206] Installing xkeyboard-config-0 100% |  76.1 MiB/s |   6.5 MiB |  00m00s
+[ 20/206] Installing e2fsprogs-libs-0:1 100% |  36.6 MiB/s | 636.5 KiB |  00m00s
+[ 21/206] Installing libnftnl-0:1.3.1-2 100% |  23.5 MiB/s | 289.3 KiB |  00m00s
+[ 22/206] Installing fonts-filesystem-1 100% |  96.2 KiB/s | 788.0   B |  00m00s
+[ 23/206] Installing libmbim-0:1.32.0-3 100% |  48.1 MiB/s |   1.1 MiB |  00m00s
+[ 24/206] Installing duktape-0:2.7.0-11 100% |  41.1 MiB/s | 673.6 KiB |  00m00s
+[ 25/206] Installing passim-libs-0:0.1. 100% |   9.3 MiB/s |  95.1 KiB |  00m00s
+[ 26/206] Installing libbpf-2:1.6.3-2.f 100% |  22.4 MiB/s | 459.6 KiB |  00m00s
+[ 27/206] Installing shared-mime-info-0 100% |  12.0 MiB/s |   2.6 MiB |  00m00s
+[ 28/206] Installing libxmlb-0:0.3.29-1 100% |   2.7 MiB/s | 326.1 KiB |  00m00s
+[ 29/206] Installing libref_array-0:0.1 100% |  10.8 MiB/s | 110.4 KiB |  00m00s
+[ 30/206] Installing libdhash-0:0.5.0-6 100% |  12.0 MiB/s | 110.5 KiB |  00m00s
+[ 31/206] Installing libcollection-0:0. 100% |  10.9 MiB/s | 111.7 KiB |  00m00s
+[ 32/206] Installing libbasicobjects-0: 100% |  10.8 MiB/s | 110.3 KiB |  00m00s
+[ 33/206] Installing libsss_idmap-0:2.1 100% |   9.0 MiB/s | 111.1 KiB |  00m00s
+[ 34/206] Installing cpio-0:2.15-9.fc44 100% |   8.8 MiB/s |   1.1 MiB |  00m00s
+[ 35/206] Installing libproxy-0:0.5.12- 100% |   9.1 MiB/s | 168.2 KiB |  00m00s
+[ 36/206] Installing libblockdev-fs-0:3 100% |  11.4 MiB/s | 198.3 KiB |  00m00s
+[ 37/206] Installing libxkbcommon-0:1.1 100% |  27.2 MiB/s | 473.2 KiB |  00m00s
+[ 38/206] Installing libnvme-0:1.16.2-1 100% |  19.9 MiB/s | 367.5 KiB |  00m00s
+[ 39/206] Installing libblockdev-nvme-0 100% |   5.2 MiB/s |  68.8 KiB |  00m00s
+[ 40/206] Installing avahi-libs-0:0.9~r 100% |  13.4 MiB/s | 232.4 KiB |  00m00s
+[ 41/206] Installing nss-softokn-freebl 100% |  38.1 MiB/s | 936.5 KiB |  00m00s
+[ 42/206] Installing nss-softokn-0:3.12 100% |  60.3 MiB/s |   2.3 MiB |  00m00s
+[ 43/206] Installing nss-sysinit-0:3.12 100% | 618.6 KiB/s |  71.1 KiB |  00m00s
+[ 44/206] Installing nss-0:3.126.0-1.fc 100% |  19.9 MiB/s |   2.0 MiB |  00m00s
+[ 45/206] Installing ipset-libs-0:7.24- 100% |  20.2 MiB/s | 268.5 KiB |  00m00s
+[ 46/206] Installing libsss_certmap-0:2 100% |  13.0 MiB/s | 145.9 KiB |  00m00s
+[ 47/206] Installing libblockdev-0:3.5. 100% |  29.0 MiB/s | 475.1 KiB |  00m00s
+[ 48/206] Installing libblockdev-loop-0 100% |   7.4 MiB/s |  68.3 KiB |  00m00s
+[ 49/206] Installing libdaemon-0:0.14-3 100% |   9.9 MiB/s | 101.4 KiB |  00m00s
+[ 50/206] Installing userspace-rcu-0:0. 100% |  31.7 MiB/s | 551.2 KiB |  00m00s
+[ 51/206] Installing inih-0:62-2.fc44.a 100% |   7.1 MiB/s |  79.5 KiB |  00m00s
+[ 52/206] Installing lzo-0:2.10-16.fc44 100% |  12.4 MiB/s | 164.4 KiB |  00m00s
+[ 53/206] Installing gsettings-desktop- 100% | 157.2 MiB/s |   6.1 MiB |  00m00s
+[ 54/206] Installing glib-networking-0: 100% |  36.7 MiB/s | 901.8 KiB |  00m00s
+[ 55/206] Installing libsoup3-0:3.6.6-9 100% |  46.0 MiB/s |   1.2 MiB |  00m00s
+[ 56/206] Installing gpgme-0:2.0.1-5.fc 100% |   6.3 MiB/s | 764.4 KiB |  00m00s
+[ 57/206] Installing libreport-filesyst 100% | 146.9 KiB/s |   1.5 KiB |  00m00s
+[ 58/206] Installing mdadm-0:4.3-11.fc4 100% |   5.6 MiB/s |   1.0 MiB |  00m00s
+[ 59/206] Installing libbytesize-0:2.12 100% |   8.2 MiB/s | 134.0 KiB |  00m00s
+[ 60/206] Installing libblockdev-mdraid 100% |   6.7 MiB/s |  68.7 KiB |  00m00s
+[ 61/206] Installing libatasmart-0:0.19 100% |   2.0 MiB/s | 232.0 KiB |  00m00s
+[ 62/206] Installing libblockdev-smart- 100% |  10.0 MiB/s | 132.5 KiB |  00m00s
+[ 63/206] Installing libqrtr-glib-0:1.2 100% |   8.4 MiB/s | 102.8 KiB |  00m00s
+[ 64/206] Installing libqmi-0:1.36.0-3. 100% |  78.4 MiB/s |   5.2 MiB |  00m00s
+[ 65/206] Installing ModemManager-glib- 100% |  60.0 MiB/s |   1.6 MiB |  00m00s
+[ 66/206] Installing libgudev-0:238-9.f 100% |   9.3 MiB/s | 105.2 KiB |  00m00s
+[ 67/206] Installing libudisks2-0:2.11. 100% |  49.7 MiB/s |   1.1 MiB |  00m00s
+[ 68/206] Installing oniguruma-0:6.9.10 100% |  39.5 MiB/s | 768.8 KiB |  00m00s
+[ 69/206] Installing tpm2-tss-fapi-0:4. 100% |  44.5 MiB/s | 910.7 KiB |  00m00s
+[ 70/206] Installing hwdata-0:0.410-1.f 100% |  88.1 MiB/s |  10.0 MiB |  00m00s
+[ 71/206] Installing libpciaccess-0:0.1 100% |   6.0 MiB/s |  73.8 KiB |  00m00s
+[ 72/206] Installing libdrm-0:2.4.134-1 100% |  34.2 MiB/s | 771.0 KiB |  00m00s
+[ 73/206] Installing libicu-0:77.1-3.fc 100% |  79.4 MiB/s |  36.5 MiB |  00m00s
+[ 74/206] Installing c-ares-0:1.34.8-1. 100% |  24.2 MiB/s | 346.8 KiB |  00m00s
+[ 75/206] Installing lmdb-libs-0:0.9.34 100% |  12.0 MiB/s | 147.2 KiB |  00m00s
+[ 76/206] Installing libldb-2:4.24.5-1. 100% |  21.0 MiB/s | 473.4 KiB |  00m00s
+[ 77/206] Installing libseccomp-0:2.6.1 100% |  17.3 MiB/s | 248.1 KiB |  00m00s
+[ 78/206] Installing python-pip-wheel-0 100% |  58.2 MiB/s |   1.2 MiB |  00m00s
+[ 79/206] Installing mpdecimal-0:4.0.1- 100% |   7.7 MiB/s | 282.6 KiB |  00m00s
+[ 80/206] Installing python3-libs-0:3.1 100% |  63.5 MiB/s |  45.9 MiB |  00m01s
+[ 81/206] Installing python3-0:3.14.6-1 100% | 765.8 KiB/s |  86.5 KiB |  00m00s
+[ 82/206] Installing python3-dbus-0:1.4 100% |  21.7 MiB/s | 645.4 KiB |  00m00s
+[ 83/206] Installing python3-gobject-ba 100% |  44.8 MiB/s |   1.6 MiB |  00m00s
+[ 84/206] Installing libnfnetlink-0:1.0 100% |   7.7 MiB/s |  87.2 KiB |  00m00s
+[ 85/206] Installing libnetfilter_connt 100% |   9.3 MiB/s | 152.8 KiB |  00m00s
+[ 86/206] Installing iptables-libs-0:1. 100% |  70.6 MiB/s |   6.7 MiB |  00m00s
+[ 87/206] Installing nftables-1:1.1.6-2 100% |   8.7 MiB/s |   1.1 MiB |  00m00s
+[ 88/206] Installing nftables-services- 100% | 554.5 KiB/s |  33.3 KiB |  00m00s
+[ 89/206] Installing python3-nftables-1 100% |   3.0 MiB/s |  46.3 KiB |  00m00s
+[ 90/206] Installing python3-firewall-0 100% |  50.3 MiB/s |   2.9 MiB |  00m00s
+[ 91/206] Installing firewalld-filesyst 100% | 190.5 KiB/s |   1.7 KiB |  00m00s
+[ 92/206] Installing libpkgconf-0:2.5.1 100% |  11.0 MiB/s | 135.2 KiB |  00m00s
+[ 93/206] Installing pkgconf-0:2.5.1-1. 100% |   1.0 MiB/s | 119.3 KiB |  00m00s
+[ 94/206] Installing pkgconf-m4-0:2.5.1 100% |   1.4 MiB/s |  14.7 KiB |  00m00s
+[ 95/206] Installing pkgconf-pkg-config 100% |  16.6 KiB/s |   1.8 KiB |  00m00s
+[ 96/206] Installing kmod-0:34.2-4.fc44 100% | 851.8 KiB/s | 276.8 KiB |  00m00s
+>>> Running sysusers scriptlet: dbus-common-1:1.16.2-1.fc44.noarch
+>>> Finished sysusers scriptlet: dbus-common-1:1.16.2-1.fc44.noarch
+>>> Scriptlet output:
+>>> Failed to connect to audit log, ignoring: Invalid argument
+>>> Creating group 'dbus' with GID 81.
+>>> Creating user 'dbus' (System Message Bus) with UID 81 and GID 81.
+>>> 
+[ 97/206] Installing dbus-common-1:1.16 100% |  85.8 KiB/s |  13.6 KiB |  00m00s
+>>> Running sysusers scriptlet: dbus-broker-0:37-8.fc44.aarch64
+>>> Finished sysusers scriptlet: dbus-broker-0:37-8.fc44.aarch64
+>>> Scriptlet output:
+>>> Failed to connect to audit log, ignoring: Invalid argument
+>>> 
+[ 98/206] Installing dbus-broker-0:37-8 100% |   2.3 MiB/s | 424.5 KiB |  00m00s
+[ 99/206] Installing dbus-1:1.16.2-1.fc 100% |  13.5 KiB/s | 124.0   B |  00m00s
+[100/206] Installing libndp-0:1.9-5.fc4 100% |   1.4 MiB/s | 163.4 KiB |  00m00s
+[101/206] Installing NetworkManager-lib 100% | 158.4 MiB/s |  10.3 MiB |  00m00s
+[102/206] Installing liblastlog2-0:2.41 100% |   1.8 MiB/s | 139.8 KiB |  00m00s
+[103/206] Installing util-linux-0:2.41. 100% |  25.6 MiB/s |   6.9 MiB |  00m00s
+[104/206] Installing device-mapper-libs 100% |  20.8 MiB/s | 447.3 KiB |  00m00s
+[105/206] Installing cryptsetup-libs-0: 100% |   5.0 MiB/s |   2.8 MiB |  00m01s
+>>> Running sysusers scriptlet: systemd-0:259.8-1.fc44.aarch64
+>>> Finished sysusers scriptlet: systemd-0:259.8-1.fc44.aarch64
+>>> Scriptlet output:
+>>> Failed to connect to audit log, ignoring: Invalid argument
+>>> Creating group 'empower' with GID 999.
+>>> 
+>>> Running sysusers scriptlet: systemd-0:259.8-1.fc44.aarch64
+>>> Finished sysusers scriptlet: systemd-0:259.8-1.fc44.aarch64
+>>> Scriptlet output:
+>>> Failed to connect to audit log, ignoring: Invalid argument
+>>> Creating group 'systemd-journal' with GID 190.
+>>> 
+>>> Running sysusers scriptlet: systemd-0:259.8-1.fc44.aarch64
+>>> Finished sysusers scriptlet: systemd-0:259.8-1.fc44.aarch64
+>>> Scriptlet output:
+>>> Failed to connect to audit log, ignoring: Invalid argument
+>>> Creating group 'systemd-oom' with GID 998.
+>>> Creating user 'systemd-oom' (systemd Userspace OOM Killer) with UID 998 and GID 998.
+>>> 
+[106/206] Installing systemd-0:259.8-1. 100% |  15.0 MiB/s |  15.7 MiB |  00m01s
+>>> Running %post scriptlet: systemd-0:259.8-1.fc44.aarch64
+>>> Finished %post scriptlet: systemd-0:259.8-1.fc44.aarch64
+>>> Scriptlet output:
+>>> Failed to connect to audit log, ignoring: Invalid argument
+>>> 
+[107/206] Installing device-mapper-0:1. 100% |   3.4 MiB/s | 442.5 KiB |  00m00s
+[108/206] Installing fwupd-0:2.1.7-1.fc 100% |  19.3 MiB/s |  11.4 MiB |  00m01s
+>>> Running sysusers scriptlet: samba-common-2:4.24.5-1.fc44.noarch
+>>> Finished sysusers scriptlet: samba-common-2:4.24.5-1.fc44.noarch
+>>> Scriptlet output:
+>>> Failed to connect to audit log, ignoring: Invalid argument
+>>> Creating group 'printadmin' with GID 997.
+>>> 
+[109/206] Installing samba-common-2:4.2 100% | 756.5 KiB/s | 221.7 KiB |  00m00s
+>>> Running sysusers scriptlet: polkit-0:127-2.fc44.2.aarch64
+>>> Finished sysusers scriptlet: polkit-0:127-2.fc44.2.aarch64
+>>> Scriptlet output:
+>>> Failed to connect to audit log, ignoring: Invalid argument
+>>> Creating group 'polkitd' with GID 114.
+>>> Creating user 'polkitd' (User for polkitd) with UID 114 and GID 114.
+>>> 
+[110/206] Installing polkit-0:127-2.fc4 100% |   2.8 MiB/s | 733.5 KiB |  00m00s
+[111/206] Installing openssh-0:10.2p1-1 100% |  11.1 MiB/s |   1.4 MiB |  00m00s
+[112/206] Installing samba-core-libs-2: 100% |  47.0 MiB/s |   1.7 MiB |  00m00s
+[113/206] Installing samba-ndr-libs-2:4 100% |  59.7 MiB/s |   4.5 MiB |  00m00s
+[114/206] Installing libkcapi-0:1.5.0-7 100% |   6.2 MiB/s | 101.1 KiB |  00m00s
+[115/206] Installing libkcapi-hasher-0: 100% | 620.8 KiB/s |  72.6 KiB |  00m00s
+[116/206] Installing libkcapi-hmaccalc- 100% |   9.1 KiB/s |   1.1 KiB |  00m00s
+[117/206] Installing volume_key-libs-0: 100% |  42.4 MiB/s | 738.2 KiB |  00m00s
+[118/206] Installing libblockdev-crypto 100% |  10.0 MiB/s | 132.5 KiB |  00m00s
+[119/206] Installing libblockdev-swap-0 100% |   5.6 MiB/s |  68.5 KiB |  00m00s
+[120/206] Installing libblockdev-part-0 100% |   6.1 MiB/s |  68.6 KiB |  00m00s
+[121/206] Installing libsss_sudo-0:2.13 100% |   8.4 MiB/s | 102.7 KiB |  00m00s
+[122/206] Installing cyrus-sasl-gssapi- 100% |   6.1 MiB/s |  69.0 KiB |  00m00s
+[123/206] Installing libpath_utils-0:0. 100% |  10.8 MiB/s | 110.5 KiB |  00m00s
+[124/206] Installing libini_config-0:1. 100% |  14.4 MiB/s | 176.6 KiB |  00m00s
+[125/206] Installing libsss_nss_idmap-0 100% |   8.4 MiB/s | 111.5 KiB |  00m00s
+[126/206] Installing sssd-client-0:2.13 100% |   6.4 MiB/s | 639.7 KiB |  00m00s
+[127/206] Installing libnl3-0:3.12.0-3. 100% |   3.7 MiB/s |   1.3 MiB |  00m00s
+>>> Running sysusers scriptlet: sssd-common-0:2.13.1-2.fc44.aarch64
+>>> Finished sysusers scriptlet: sssd-common-0:2.13.1-2.fc44.aarch64
+>>> Scriptlet output:
+>>> Failed to connect to audit log, ignoring: Invalid argument
+>>> Creating group 'sssd' with GID 996.
+>>> Creating user 'sssd' (User for sssd) with UID 996 and GID 996.
+>>> 
+[128/206] Installing sssd-common-0:2.13 100% |   5.0 MiB/s |   6.4 MiB |  00m01s
+>>> Running %post scriptlet: sssd-common-0:2.13.1-2.fc44.aarch64
+>>> Finished %post scriptlet: sssd-common-0:2.13.1-2.fc44.aarch64
+>>> Scriptlet output:
+>>> Created symlink '/etc/systemd/system/multi-user.target.wants/sssd.service' → '/usr/lib/systemd/system/sssd.service'.
+>>> 
+[129/206] Installing sssd-krb5-common-0 100% |  14.5 MiB/s | 237.5 KiB |  00m00s
+[130/206] Installing diffutils-0:3.12-5 100% |  12.9 MiB/s |   1.6 MiB |  00m00s
+[131/206] Installing libselinux-utils-0 100% |  10.1 MiB/s |   1.4 MiB |  00m00s
+[132/206] Installing policycoreutils-0: 100% |   5.2 MiB/s |   1.5 MiB |  00m00s
+>>> Running %post scriptlet: policycoreutils-0:3.11-2.fc44.aarch64
+>>> Finished %post scriptlet: policycoreutils-0:3.11-2.fc44.aarch64
+>>> Scriptlet output:
+>>> Created symlink '/etc/systemd/system/sysinit.target.wants/selinux-autorelabel-mark.service' → '/usr/lib/systemd/system/selinux-autorelabel-mark.service'.
+>>> 
+[133/206] Installing selinux-policy-0:4 100% | 101.6 KiB/s |  34.5 KiB |  00m00s
+[134/206] Installing selinux-policy-tar 100% |  33.2 MiB/s |  14.9 MiB |  00m00s
+[135/206] Installing less-0:704-2.fc44. 100% |   4.8 MiB/s | 611.3 KiB |  00m00s
+[136/206] Installing audit-rules-0:4.2. 100% | 242.2 KiB/s | 140.9 KiB |  00m01s
+>>> Running %post scriptlet: audit-rules-0:4.2.1-1.fc44.aarch64
+>>> Finished %post scriptlet: audit-rules-0:4.2.1-1.fc44.aarch64
+>>> Scriptlet output:
+>>> Created symlink '/etc/systemd/system/multi-user.target.wants/audit-rules.service' → '/usr/lib/systemd/system/audit-rules.service'.
+>>> No rules detected, adding default
+>>> You must be root to run this program.
+>>> You must be root to run this program.
+>>> 
+[137/206] Installing libevdev-0:1.13.6- 100% |   9.4 MiB/s | 135.0 KiB |  00m00s
+[138/206] Installing plymouth-core-libs 100% |  24.3 MiB/s | 398.6 KiB |  00m00s
+[139/206] Installing zram-generator-0:1 100% |  29.5 MiB/s | 815.9 KiB |  00m00s
+[140/206] Installing libpipeline-0:1.5. 100% |   1.2 MiB/s | 146.4 KiB |  00m00s
+[141/206] Installing groff-base-0:1.23. 100% |  15.1 MiB/s |   4.2 MiB |  00m00s
+[142/206] Installing kbd-misc-0:2.9.0-3 100% |  21.3 MiB/s |   2.5 MiB |  00m00s
+[143/206] Installing kbd-legacy-0:2.9.0 100% |   9.5 MiB/s | 610.1 KiB |  00m00s
+[144/206] Installing kbd-0:2.9.0-3.fc44 100% |   4.1 MiB/s |   2.4 MiB |  00m01s
+>>> Running sysusers scriptlet: systemd-udev-0:259.8-1.fc44.aarch64
+>>> Finished sysusers scriptlet: systemd-udev-0:259.8-1.fc44.aarch64
+>>> Scriptlet output:
+>>> Failed to connect to audit log, ignoring: Invalid argument
+>>> Creating group 'systemd-coredump' with GID 995.
+>>> Creating user 'systemd-coredump' (systemd Core Dumper) with UID 995 and GID 995.
+>>> 
+>>> Running sysusers scriptlet: systemd-udev-0:259.8-1.fc44.aarch64
+>>> Finished sysusers scriptlet: systemd-udev-0:259.8-1.fc44.aarch64
+>>> Scriptlet output:
+>>> Failed to connect to audit log, ignoring: Invalid argument
+>>> Creating group 'systemd-timesync' with GID 994.
+>>> Creating user 'systemd-timesync' (systemd Time Synchronization) with UID 994 and GID 994.
+>>> 
+[145/206] Installing systemd-udev-0:259 100% |   2.6 MiB/s |  15.1 MiB |  00m06s
+>>> Running %post scriptlet: systemd-udev-0:259.8-1.fc44.aarch64
+>>> Finished %post scriptlet: systemd-udev-0:259.8-1.fc44.aarch64
+>>> Scriptlet output:
+>>> Failed to preset unit: Unit systemd-tmpfiles-clear.service does not exist
+>>> Created symlink '/etc/systemd/system/multi-user.target.wants/remote-cryptsetup.target' → '/usr/lib/systemd/system/remote-cryptsetup.target'.
+>>> Created symlink '/etc/systemd/system/multi-user.target.wants/remote-veritysetup.target' → '/usr/lib/systemd/system/remote-veritysetup.target'.
+>>> Created symlink '/etc/systemd/system/systemd-homed.service.wants/systemd-homed-activate.service' → '/usr/lib/systemd/system/systemd-homed-activate.service'.
+>>> Created symlink '/etc/systemd/system/dbus-org.freedesktop.home1.service' → '/usr/lib/systemd/system/systemd-homed.service'.
+>>> Created symlink '/etc/systemd/system/multi-user.target.wants/systemd-homed.service' → '/usr/lib/systemd/system/systemd-homed.service'.
+>>> Created symlink '/etc/systemd/system/sysinit.target.wants/systemd-network-generator.service' → '/usr/lib/systemd/system/systemd-network-generator.service'.
+>>> Created symlink '/etc/systemd/system/dbus-org.freedesktop.oom1.service' → '/usr/lib/systemd/system/systemd-oomd.service'.
+>>> Created symlink '/etc/systemd/system/multi-user.target.wants/systemd-oomd.service' → '/usr/lib/systemd/system/systemd-oomd.service'.
+>>> Created symlink '/etc/systemd/system/sockets.target.wants/systemd-oomd.socket' → '/usr/lib/systemd/system/systemd-oomd.socket'.
+>>> Created symlink '/etc/systemd/system/sysinit.target.wants/systemd-pstore.service' → '/usr/lib/systemd/system/systemd-pstore.service'.
+>>> 
+[146/206] Installing psmisc-0:23.7-7.fc 100% |   8.0 MiB/s |   1.1 MiB |  00m00s
+[147/206] Installing libss-0:1.47.3-4.f 100% |   9.1 MiB/s | 112.2 KiB |  00m00s
+[148/206] Installing fuse3-libs-0:3.18. 100% |  13.9 MiB/s | 354.9 KiB |  00m00s
+[149/206] Installing procps-ng-0:4.0.6- 100% |  12.4 MiB/s |   1.8 MiB |  00m00s
+[150/206] Installing dracut-0:108-7.fc4 100% |  10.0 MiB/s |   1.9 MiB |  00m00s
+[151/206] Installing plymouth-scripts-0 100% | 244.0 KiB/s |  31.2 KiB |  00m00s
+[152/206] Installing plymouth-0:24.004. 100% |   4.6 MiB/s | 620.1 KiB |  00m00s
+[153/206] Installing dracut-config-resc 100% | 450.6 KiB/s |   5.0 KiB |  00m00s
+[154/206] Installing e2fsprogs-0:1.47.3 100% |  34.4 MiB/s |   5.3 MiB |  00m00s
+[155/206] Installing iproute-0:6.17.0-2 100% |  12.0 MiB/s |   2.5 MiB |  00m00s
+[156/206] Installing NetworkManager-1:1 100% |  16.8 MiB/s |   6.1 MiB |  00m00s
+>>> Running %post scriptlet: NetworkManager-1:1.56.1-2.fc44.aarch64
+>>> Finished %post scriptlet: NetworkManager-1:1.56.1-2.fc44.aarch64
+>>> Scriptlet output:
+>>> Created symlink '/etc/systemd/system/multi-user.target.wants/NetworkManager.service' → '/usr/lib/systemd/system/NetworkManager.service'.
+>>> Created symlink '/etc/systemd/system/dbus-org.freedesktop.nm-dispatcher.service' → '/usr/lib/systemd/system/NetworkManager-dispatcher.service'.
+>>> Created symlink '/etc/systemd/system/network-online.target.wants/NetworkManager-wait-online.service' → '/usr/lib/systemd/system/NetworkManager-wait-online.service'.
+>>> 
+[157/206] Installing udisks2-0:2.11.2-1 100% |  10.0 MiB/s |   3.1 MiB |  00m00s
+>>> Running %post scriptlet: udisks2-0:2.11.2-1.fc44.aarch64
+>>> Finished %post scriptlet: udisks2-0:2.11.2-1.fc44.aarch64
+>>> Scriptlet output:
+>>> Created symlink '/etc/systemd/system/graphical.target.wants/udisks2.service' → '/usr/lib/systemd/system/udisks2.service'.
+>>> 
+[158/206] Installing udftools-0:2.3-13. 100% |   2.0 MiB/s | 624.8 KiB |  00m00s
+[159/206] Installing man-db-0:2.13.1-3. 100% |  12.5 MiB/s |   3.3 MiB |  00m00s
+[160/206] Installing zram-generator-def 100% |  48.5 KiB/s | 596.0   B |  00m00s
+[161/206] Installing audit-0:4.2.1-1.fc 100% |   2.2 MiB/s | 764.1 KiB |  00m00s
+>>> Running %post scriptlet: audit-0:4.2.1-1.fc44.aarch64
+>>> Finished %post scriptlet: audit-0:4.2.1-1.fc44.aarch64
+>>> Scriptlet output:
+>>> Created symlink '/etc/systemd/system/multi-user.target.wants/auditd.service' → '/usr/lib/systemd/system/auditd.service'.
+>>> System has not been booted with systemd as init system (PID 1). Can't operate.
+>>> Failed to connect to system scope bus via local transport: Host is down
+>>> 
+[162/206] Installing sssd-kcm-0:2.13.1- 100% |   1.6 MiB/s | 289.1 KiB |  00m00s
+>>> Running %post scriptlet: sssd-kcm-0:2.13.1-2.fc44.aarch64
+>>> Finished %post scriptlet: sssd-kcm-0:2.13.1-2.fc44.aarch64
+>>> Scriptlet output:
+>>> Created symlink '/etc/systemd/system/sockets.target.wants/sssd-kcm.socket' → '/usr/lib/systemd/system/sssd-kcm.socket'.
+>>> 
+[163/206] Installing openssh-clients-0: 100% |   4.3 MiB/s |   2.7 MiB |  00m01s
+>>> Running sysusers scriptlet: openssh-server-0:10.2p1-13.fc44.aarch64
+>>> Finished sysusers scriptlet: openssh-server-0:10.2p1-13.fc44.aarch64
+>>> Scriptlet output:
+>>> Failed to connect to audit log, ignoring: Invalid argument
+>>> Creating group 'sshd' with GID 74.
+>>> Creating user 'sshd' (Privilege-separated SSH) with UID 74 and GID 74.
+>>> 
+[164/206] Installing openssh-server-0:1 100% |   6.4 MiB/s |   2.0 MiB |  00m00s
+>>> Running %post scriptlet: openssh-server-0:10.2p1-13.fc44.aarch64
+>>> Finished %post scriptlet: openssh-server-0:10.2p1-13.fc44.aarch64
+>>> Scriptlet output:
+>>> Created symlink '/etc/systemd/system/multi-user.target.wants/sshd.service' → '/usr/lib/systemd/system/sshd.service'.
+>>> 
+[165/206] Installing polkit-pkla-compat 100% |   1.5 MiB/s | 173.8 KiB |  00m00s
+[166/206] Installing fwupd-plugin-modem 100% |   9.3 MiB/s | 133.7 KiB |  00m00s
+[167/206] Installing fwupd-plugin-uefi- 100% |  71.5 MiB/s |   7.1 MiB |  00m00s
+[168/206] Installing iputils-0:20250605 100% |   3.2 MiB/s |   1.0 MiB |  00m00s
+>>> Running sysusers scriptlet: systemd-resolved-0:259.8-1.fc44.aarch64
+>>> Finished sysusers scriptlet: systemd-resolved-0:259.8-1.fc44.aarch64
+>>> Scriptlet output:
+>>> Failed to connect to audit log, ignoring: Invalid argument
+>>> Creating group 'systemd-resolve' with GID 193.
+>>> Creating user 'systemd-resolve' (systemd Resolver) with UID 193 and GID 193.
+>>> 
+[169/206] Installing systemd-resolved-0 100% |   2.0 MiB/s | 653.5 KiB |  00m00s
+>>> Running %post scriptlet: systemd-resolved-0:259.8-1.fc44.aarch64
+>>> Finished %post scriptlet: systemd-resolved-0:259.8-1.fc44.aarch64
+>>> Scriptlet output:
+>>> Created symlink '/etc/systemd/system/dbus-org.freedesktop.resolve1.service' → '/usr/lib/systemd/system/systemd-resolved.service'.
+>>> Created symlink '/etc/systemd/system/sysinit.target.wants/systemd-resolved.service' → '/usr/lib/systemd/system/systemd-resolved.service'.
+>>> Created symlink '/etc/systemd/system/sockets.target.wants/systemd-resolved-varlink.socket' → '/usr/lib/systemd/system/systemd-resolved-varlink.socket'.
+>>> Created symlink '/etc/systemd/system/sockets.target.wants/systemd-resolved-monitor.socket' → '/usr/lib/systemd/system/systemd-resolved-monitor.socket'.
+>>> 
+[170/206] Installing firewalld-0:2.4.4- 100% |   6.4 MiB/s |   2.2 MiB |  00m00s
+>>> Running %post scriptlet: firewalld-0:2.4.4-1.fc44.noarch
+>>> Finished %post scriptlet: firewalld-0:2.4.4-1.fc44.noarch
+>>> Scriptlet output:
+>>> Created symlink '/etc/systemd/system/dbus-org.fedoraproject.FirewallD1.service' → '/usr/lib/systemd/system/firewalld.service'.
+>>> Created symlink '/etc/systemd/system/multi-user.target.wants/firewalld.service' → '/usr/lib/systemd/system/firewalld.service'.
+>>> 
+[171/206] Installing initscripts-servic 100% |  78.8 KiB/s |  24.3 KiB |  00m00s
+>>> Running sysusers scriptlet: systemd-networkd-0:259.8-1.fc44.aarch64
+>>> Finished sysusers scriptlet: systemd-networkd-0:259.8-1.fc44.aarch64
+>>> Scriptlet output:
+>>> Failed to connect to audit log, ignoring: Invalid argument
+>>> Creating group 'systemd-network' with GID 192.
+>>> Creating user 'systemd-network' (systemd Network Management) with UID 192 and GID 192.
+>>> 
+[172/206] Installing systemd-networkd-0 100% |   6.9 MiB/s |   2.3 MiB |  00m00s
+[173/206] Installing systemd-pam-0:259. 100% |  42.6 MiB/s |   1.2 MiB |  00m00s
+[174/206] Installing bluez-0:5.87-3.fc4 100% |  10.9 MiB/s |   4.3 MiB |  00m00s
+>>> Running %post scriptlet: bluez-0:5.87-3.fc44.aarch64
+>>> Finished %post scriptlet: bluez-0:5.87-3.fc44.aarch64
+>>> Scriptlet output:
+>>> Created symlink '/etc/systemd/system/dbus-org.bluez.service' → '/usr/lib/systemd/system/bluetooth.service'.
+>>> Created symlink '/etc/systemd/system/bluetooth.target.wants/bluetooth.service' → '/usr/lib/systemd/system/bluetooth.service'.
+>>> 
+[175/206] Installing logrotate-0:3.22.0 100% | 674.2 KiB/s | 191.5 KiB |  00m00s
+>>> Running %post scriptlet: logrotate-0:3.22.0-5.fc44.aarch64
+>>> Finished %post scriptlet: logrotate-0:3.22.0-5.fc44.aarch64
+>>> Scriptlet output:
+>>> Created symlink '/etc/systemd/system/timers.target.wants/logrotate.timer' → '/usr/lib/systemd/system/logrotate.timer'.
+>>> 
+[176/206] Installing parted-0:3.6-14.fc 100% |  20.5 MiB/s |   2.7 MiB |  00m00s
+[177/206] Installing kpartx-0:0.13.1-1. 100% | 350.7 KiB/s | 109.4 KiB |  00m00s
+>>> Running sysusers scriptlet: avahi-0:0.9~rc2-8.fc44.aarch64
+>>> Finished sysusers scriptlet: avahi-0:0.9~rc2-8.fc44.aarch64
+>>> Scriptlet output:
+>>> Failed to connect to audit log, ignoring: Invalid argument
+>>> Creating group 'avahi' with GID 70.
+>>> Creating user 'avahi' (Avahi mDNS/DNS-SD Stack) with UID 70 and GID 70.
+>>> 
+[178/206] Installing avahi-0:0.9~rc2-8. 100% |   5.3 MiB/s |   1.6 MiB |  00m00s
+>>> Running %post scriptlet: avahi-0:0.9~rc2-8.fc44.aarch64
+>>> Finished %post scriptlet: avahi-0:0.9~rc2-8.fc44.aarch64
+>>> Scriptlet output:
+>>> Created symlink '/etc/systemd/system/sockets.target.wants/avahi-daemon.socket' → '/usr/lib/systemd/system/avahi-daemon.socket'.
+>>> Created symlink '/etc/systemd/system/dbus-org.freedesktop.Avahi.service' → '/usr/lib/systemd/system/avahi-daemon.service'.
+>>> Created symlink '/etc/systemd/system/multi-user.target.wants/avahi-daemon.service' → '/usr/lib/systemd/system/avahi-daemon.service'.
+>>> 
+[179/206] Installing fwupd-efi-0:1.8-1. 100% |   8.0 MiB/s | 172.0 KiB |  00m00s
+[180/206] Installing iptables-nft-0:1.8 100% |   2.7 MiB/s |   1.4 MiB |  00m01s
+[181/206] Installing python3-html2text- 100% |   2.4 MiB/s | 297.9 KiB |  00m00s
+[182/206] Installing libcap-ng-python3- 100% |   7.9 MiB/s | 105.4 KiB |  00m00s
+[183/206] Installing python-unversioned 100% |   3.7 KiB/s | 424.0   B |  00m00s
+[184/206] Installing tpm2-tools-0:5.7-5 100% |  10.8 MiB/s |   1.7 MiB |  00m00s
+[185/206] Installing jq-0:1.8.1-3.fc44. 100% |   1.5 MiB/s | 487.1 KiB |  00m00s
+>>> Running sysusers scriptlet: passim-0:0.1.12-1.fc44.aarch64
+>>> Finished sysusers scriptlet: passim-0:0.1.12-1.fc44.aarch64
+>>> Scriptlet output:
+>>> Failed to connect to audit log, ignoring: Invalid argument
+>>> Creating group 'passim' with GID 993.
+>>> Creating user 'passim' (Local Caching Server) with UID 993 and GID 993.
+>>> 
+[186/206] Installing passim-0:0.1.12-1. 100% |   1.0 MiB/s | 303.1 KiB |  00m00s
+[187/206] Installing btrfs-progs-0:7.0- 100% |  35.2 MiB/s |   6.5 MiB |  00m00s
+[188/206] Installing xfsprogs-0:7.1.1-1 100% |  26.0 MiB/s |   4.8 MiB |  00m00s
+[189/206] Installing ipset-0:7.24-3.fc4 100% |   1.1 MiB/s | 130.1 KiB |  00m00s
+[190/206] Installing adwaita-mono-fonts 100% |  74.6 MiB/s |   5.6 MiB |  00m00s
+[191/206] Installing adwaita-sans-fonts 100% |  50.6 MiB/s |   1.7 MiB |  00m00s
+[192/206] Installing ntfs-3g-2:2026.2.2 100% |   3.4 MiB/s | 435.8 KiB |  00m00s
+[193/206] Installing ntfsprogs-2:2026.2 100% |  11.7 MiB/s |   1.7 MiB |  00m00s
+[194/206] Installing ntfs-3g-system-com 100% |   6.7 MiB/s |  89.3 KiB |  00m00s
+[195/206] Installing nilfs-utils-0:2.2. 100% |   8.9 MiB/s |   1.2 MiB |  00m00s
+[196/206] Installing f2fs-tools-0:1.16. 100% |   6.1 MiB/s | 860.9 KiB |  00m00s
+[197/206] Installing exfatprogs-0:1.4.3 100% |   5.0 MiB/s | 666.8 KiB |  00m00s
+[198/206] Installing dosfstools-0:4.2-1 100% |   2.5 MiB/s | 332.8 KiB |  00m00s
+[199/206] Installing memstrack-0:0.2.5- 100% |   1.1 MiB/s | 129.0 KiB |  00m00s
+[200/206] Installing qrencode-libs-0:4. 100% |  14.2 MiB/s | 174.6 KiB |  00m00s
+[201/206] Installing 7zip-0:26.02-1.fc4 100% |  18.0 MiB/s |   3.2 MiB |  00m00s
+[202/206] Installing unzip-0:6.0-69.fc4 100% |   4.4 MiB/s | 537.3 KiB |  00m00s
+[203/206] Installing rpm-plugin-selinux 100% |   5.6 MiB/s |  68.9 KiB |  00m00s
+[204/206] Installing prefixdevname-0:0. 100% |  53.3 MiB/s |   1.8 MiB |  00m00s
+[205/206] Installing ncurses-0:6.6-1.fc 100% |   7.2 MiB/s | 902.0 KiB |  00m00s
+[206/206] Installing hostname-0:3.25-4. 100% |   2.5 KiB/s |  92.2 KiB |  00m37s
+>>> Running %triggerin scriptlet: systemd-0:259.8-1.fc44.aarch64
+>>> Finished %triggerin scriptlet: systemd-0:259.8-1.fc44.aarch64
+>>> Scriptlet output:
+>>> Failed to connect to audit log, ignoring: Invalid argument
+>>> 
+Complete!
+2026-08-16T18:10:20+10:00  + podman exec unvr-fedora-build dnf -y install openssh-server e2fsprogs dosfstools python3 rsync htop smartmontools mdadm hdparm libgpiod-utils lm_sensors
+Updating and loading repositories:
+Repositories loaded.
+Package "openssh-server-10.2p1-13.fc44.aarch64" is already installed.
+Package "e2fsprogs-1.47.3-4.fc44.aarch64" is already installed.
+Package "dosfstools-4.2-18.fc44.aarch64" is already installed.
+Package "python3-3.14.6-1.fc44.aarch64" is already installed.
+Package "mdadm-4.3-11.fc44.aarch64" is already installed.
+
+Package                       Arch    Version             Repository      Size
+Installing:
+ hdparm                       aarch64 0:9.65-10.fc44      fedora     184.3 KiB
+ htop                         aarch64 0:3.4.1-3.fc44      fedora     488.3 KiB
+ libgpiod-utils               aarch64 0:2.2.5-1.fc44      updates    411.4 KiB
+ lm_sensors                   aarch64 0:3.6.0-24.fc44     fedora     454.1 KiB
+ rsync                        aarch64 0:3.4.4-1.fc44      updates    819.6 KiB
+ smartmontools                aarch64 1:7.5-6.fc44        fedora       2.4 MiB
+Installing dependencies:
+ checkpolicy                  aarch64 0:3.11-1.fc44       updates      1.7 MiB
+ hwloc-libs                   aarch64 0:2.14.0-1.fc44     updates      2.9 MiB
+ libgpiod                     aarch64 0:2.2.5-1.fc44      updates    201.8 KiB
+ lm_sensors-libs              aarch64 0:3.6.0-24.fc44     fedora      93.7 KiB
+ perl-AutoLoader              noarch  0:5.74-525.fc44     updates     20.6 KiB
+ perl-B                       aarch64 0:1.89-525.fc44     updates    545.3 KiB
+ perl-Carp                    noarch  0:1.54-521.fc44     fedora      46.6 KiB
+ perl-Class-Struct            noarch  0:0.68-525.fc44     updates     25.4 KiB
+ perl-Data-Dumper             aarch64 0:2.192-523.fc44    updates    135.6 KiB
+ perl-Digest                  noarch  0:1.20-521.fc44     fedora      35.3 KiB
+ perl-Digest-MD5              aarch64 0:2.59-521.fc44     fedora     103.6 KiB
+ perl-DynaLoader              aarch64 0:1.57-525.fc44     updates     32.1 KiB
+ perl-Encode                  aarch64 4:3.21-521.fc44     fedora       4.8 MiB
+ perl-Errno                   aarch64 0:1.38-525.fc44     updates      8.4 KiB
+ perl-Exporter                noarch  0:5.79-521.fc44     fedora      54.3 KiB
+ perl-Fcntl                   aarch64 0:1.20-525.fc44     updates     92.7 KiB
+ perl-File-Basename           noarch  0:2.86-525.fc44     updates     14.0 KiB
+ perl-File-Path               noarch  0:2.18-522.fc44     fedora      63.5 KiB
+ perl-File-Temp               noarch  1:0.231.200-2.fc44  fedora     163.7 KiB
+ perl-File-stat               noarch  0:1.14-525.fc44     updates     12.5 KiB
+ perl-FileHandle              noarch  0:2.05-525.fc44     updates      9.4 KiB
+ perl-Getopt-Long             noarch  1:2.58-521.fc44     fedora     144.5 KiB
+ perl-Getopt-Std              noarch  0:1.14-525.fc44     updates     11.2 KiB
+ perl-HTTP-Tiny               noarch  0:0.096-1.fc44      updates    162.4 KiB
+ perl-IO                      aarch64 0:1.55-525.fc44     updates    191.3 KiB
+ perl-IO-Socket-IP            noarch  0:0.43-522.fc44     fedora     100.3 KiB
+ perl-IO-Socket-SSL           noarch  0:2.098-2.fc44      fedora     723.5 KiB
+ perl-IPC-Open3               noarch  0:1.24-525.fc44     updates     27.7 KiB
+ perl-MIME-Base32             noarch  0:1.303-25.fc44     fedora      30.7 KiB
+ perl-MIME-Base64             aarch64 0:3.16-521.fc44     fedora      93.9 KiB
+ perl-Net-SSLeay              aarch64 0:1.94-12.fc44      fedora       1.4 MiB
+ perl-POSIX                   aarch64 0:2.23-525.fc44     updates    261.5 KiB
+ perl-PathTools               aarch64 0:3.94-521.fc44     fedora     223.9 KiB
+ perl-Pod-Escapes             noarch  1:1.07-521.fc44     fedora      24.9 KiB
+ perl-Pod-Perldoc             noarch  0:3.28.01-522.fc44  fedora     163.7 KiB
+ perl-Pod-Simple              noarch  1:3.47-4.fc44       fedora     565.3 KiB
+ perl-Pod-Usage               noarch  4:2.05-521.fc44     fedora      86.3 KiB
+ perl-Scalar-List-Utils       aarch64 5:1.70-2.fc44       fedora     152.8 KiB
+ perl-SelectSaver             noarch  0:1.02-525.fc44     updates      2.2 KiB
+ perl-Socket                  aarch64 4:2.041-1.fc44      updates    144.7 KiB
+ perl-Storable                aarch64 1:3.37-522.fc44     fedora     243.1 KiB
+ perl-Symbol                  noarch  0:1.09-525.fc44     updates      6.8 KiB
+ perl-Term-ANSIColor          noarch  0:5.01-522.fc44     fedora      97.5 KiB
+ perl-Term-Cap                noarch  0:1.18-521.fc44     fedora      29.3 KiB
+ perl-Text-ParseWords         noarch  0:3.31-521.fc44     fedora      13.6 KiB
+ perl-Text-Tabs+Wrap          noarch  0:2024.001-521.fc44 fedora      22.6 KiB
+ perl-Time-HiRes              aarch64 4:1.9778-521.fc44   fedora     151.6 KiB
+ perl-Time-Local              noarch  2:1.350-521.fc44    fedora      69.0 KiB
+ perl-URI                     noarch  0:5.35-1.fc44       updates    268.2 KiB
+ perl-base                    noarch  0:2.27-525.fc44     updates     12.6 KiB
+ perl-constant                noarch  0:1.33-522.fc44     fedora      26.2 KiB
+ perl-if                      noarch  0:0.61.000-525.fc44 updates      5.8 KiB
+ perl-interpreter             aarch64 4:5.42.3-525.fc44   updates    174.9 KiB
+ perl-libnet                  noarch  0:3.15-522.fc44     fedora     289.4 KiB
+ perl-libs                    aarch64 4:5.42.3-525.fc44   updates     11.6 MiB
+ perl-locale                  noarch  0:1.13-525.fc44     updates      6.1 KiB
+ perl-mro                     aarch64 0:1.29-525.fc44     updates     81.5 KiB
+ perl-overload                noarch  0:1.40-525.fc44     updates     71.6 KiB
+ perl-overloading             noarch  0:0.02-525.fc44     updates      4.9 KiB
+ perl-parent                  noarch  1:0.244-521.fc44    fedora      10.3 KiB
+ perl-podlators               noarch  1:6.0.2-521.fc44    fedora     317.5 KiB
+ perl-vars                    noarch  0:1.05-525.fc44     updates      3.9 KiB
+ policycoreutils-python-utils noarch  0:3.11-2.fc44       updates     94.5 KiB
+ python3-audit                aarch64 0:4.2.1-1.fc44      updates    311.3 KiB
+ python3-distro               noarch  0:1.9.0-11.fc44     fedora     210.2 KiB
+ python3-libselinux           aarch64 0:3.11-1.fc44       updates    644.9 KiB
+ python3-libsemanage          aarch64 0:3.11-1.fc44       updates    446.0 KiB
+ python3-policycoreutils      noarch  0:3.11-2.fc44       updates      5.8 MiB
+ python3-setools              aarch64 0:4.6.0-6.fc44      updates      2.7 MiB
+ smartmontools-selinux        noarch  1:7.5-6.fc44        fedora      33.4 KiB
+ xxhash-libs                  aarch64 0:0.8.3-4.fc44      fedora      85.8 KiB
+Installing weak dependencies:
+ perl-NDBM_File               aarch64 0:1.18-525.fc44     updates     72.4 KiB
+
+Transaction Summary:
+ Installing:        78 packages
+
+Total size of inbound packages is 14 MiB. Need to download 14 MiB.
+After this operation, 44 MiB extra will be used (install 44 MiB, remove 0 B).
+[ 1/78] htop-0:3.4.1-3.fc44.aarch64     100% | 864.3 KiB/s | 197.9 KiB |  00m00s
+[ 2/78] lm_sensors-0:3.6.0-24.fc44.aarc 100% |   1.5 MiB/s | 128.4 KiB |  00m00s
+[ 3/78] smartmontools-1:7.5-6.fc44.aarc 100% |   1.9 MiB/s | 671.1 KiB |  00m00s
+[ 4/78] lm_sensors-libs-0:3.6.0-24.fc44 100% |   1.2 MiB/s |  40.9 KiB |  00m00s
+[ 5/78] perl-constant-0:1.33-522.fc44.n 100% | 654.3 KiB/s |  22.9 KiB |  00m00s
+[ 6/78] perl-Carp-0:1.54-521.fc44.noarc 100% | 564.4 KiB/s |  28.8 KiB |  00m00s
+[ 7/78] perl-Exporter-0:5.79-521.fc44.n 100% | 963.0 KiB/s |  30.8 KiB |  00m00s
+[ 8/78] rsync-0:3.4.4-1.fc44.aarch64    100% |   2.2 MiB/s | 420.6 KiB |  00m00s
+[ 9/78] xxhash-libs-0:0.8.3-4.fc44.aarc 100% | 188.3 KiB/s |  34.5 KiB |  00m00s
+[10/78] libgpiod-utils-0:2.2.5-1.fc44.a 100% | 955.5 KiB/s |  56.4 KiB |  00m00s
+[11/78] libgpiod-0:2.2.5-1.fc44.aarch64 100% | 779.1 KiB/s |  49.9 KiB |  00m00s
+[12/78] hdparm-0:9.65-10.fc44.aarch64   100% | 123.2 KiB/s |  92.9 KiB |  00m01s
+[13/78] perl-libs-4:5.42.3-525.fc44.aar 100% |   8.3 MiB/s |   2.5 MiB |  00m00s
+[14/78] perl-Encode-4:3.21-521.fc44.aar 100% |   2.8 MiB/s |   1.0 MiB |  00m00s
+[15/78] perl-PathTools-0:3.94-521.fc44. 100% | 304.0 KiB/s |  87.2 KiB |  00m00s
+[16/78] perl-Getopt-Long-1:2.58-521.fc4 100% | 467.7 KiB/s |  63.6 KiB |  00m00s
+[17/78] perl-MIME-Base64-0:3.16-521.fc4 100% | 482.4 KiB/s |  29.9 KiB |  00m00s
+[18/78] perl-Storable-1:3.37-522.fc44.a 100% |   1.2 MiB/s |  95.7 KiB |  00m00s
+[19/78] perl-parent-1:0.244-521.fc44.no 100% | 480.0 KiB/s |  14.9 KiB |  00m00s
+[20/78] perl-Scalar-List-Utils-5:1.70-2 100% |   1.2 MiB/s |  73.1 KiB |  00m00s
+[21/78] perl-interpreter-4:5.42.3-525.f 100% |   1.4 MiB/s |  71.8 KiB |  00m00s
+[22/78] perl-Errno-0:1.38-525.fc44.aarc 100% | 290.1 KiB/s |  14.2 KiB |  00m00s
+[23/78] perl-Pod-Usage-4:2.05-521.fc44. 100% |   1.2 MiB/s |  40.7 KiB |  00m00s
+[24/78] perl-Pod-Perldoc-0:3.28.01-522. 100% |   2.0 MiB/s |  86.1 KiB |  00m00s
+[25/78] perl-Text-ParseWords-0:3.31-521 100% | 299.5 KiB/s |  16.5 KiB |  00m00s
+[26/78] perl-podlators-1:6.0.2-521.fc44 100% |   2.3 MiB/s | 128.5 KiB |  00m00s
+[27/78] perl-File-Temp-1:0.231.200-2.fc 100% |   1.7 MiB/s |  59.6 KiB |  00m00s
+[28/78] perl-Pod-Simple-1:3.47-4.fc44.n 100% |   3.2 MiB/s | 220.0 KiB |  00m00s
+[29/78] perl-Term-ANSIColor-0:5.01-522. 100% | 851.4 KiB/s |  47.7 KiB |  00m00s
+[30/78] perl-Term-Cap-0:1.18-521.fc44.n 100% | 423.0 KiB/s |  22.0 KiB |  00m00s
+[31/78] perl-File-Path-0:2.18-522.fc44. 100% |   1.0 MiB/s |  35.3 KiB |  00m00s
+[32/78] perl-Pod-Escapes-1:1.07-521.fc4 100% | 421.1 KiB/s |  19.8 KiB |  00m00s
+[33/78] perl-Text-Tabs+Wrap-0:2024.001- 100% | 462.8 KiB/s |  21.8 KiB |  00m00s
+[34/78] perl-vars-0:1.05-525.fc44.noarc 100% | 384.1 KiB/s |  12.3 KiB |  00m00s
+[35/78] perl-Fcntl-0:1.20-525.fc44.aarc 100% | 908.6 KiB/s |  29.1 KiB |  00m00s
+[36/78] perl-IO-0:1.55-525.fc44.aarch64 100% |   1.5 MiB/s |  81.5 KiB |  00m00s
+[37/78] perl-File-Basename-0:2.86-525.f 100% | 299.7 KiB/s |  16.5 KiB |  00m00s
+[38/78] perl-Symbol-0:1.09-525.fc44.noa 100% | 337.8 KiB/s |  13.5 KiB |  00m00s
+[39/78] perl-if-0:0.61.000-525.fc44.noa 100% | 458.8 KiB/s |  13.3 KiB |  00m00s
+[40/78] perl-overload-0:1.40-525.fc44.n 100% | 975.3 KiB/s |  44.9 KiB |  00m00s
+[41/78] perl-HTTP-Tiny-0:0.096-1.fc44.n 100% |   1.1 MiB/s |  57.8 KiB |  00m00s
+[42/78] perl-IO-Socket-SSL-0:2.098-2.fc 100% |   4.0 MiB/s | 234.7 KiB |  00m00s
+[43/78] perl-Net-SSLeay-0:1.94-12.fc44. 100% |   4.2 MiB/s | 374.5 KiB |  00m00s
+[44/78] perl-Time-Local-2:1.350-521.fc4 100% | 539.2 KiB/s |  34.5 KiB |  00m00s
+[45/78] perl-Time-HiRes-4:1.9778-521.fc 100% | 610.7 KiB/s |  57.4 KiB |  00m00s
+[46/78] perl-IO-Socket-IP-0:0.43-522.fc 100% |   1.2 MiB/s |  42.2 KiB |  00m00s
+[47/78] perl-IPC-Open3-0:1.24-525.fc44. 100% | 494.2 KiB/s |  23.2 KiB |  00m00s
+[48/78] perl-AutoLoader-0:5.74-525.fc44 100% | 437.2 KiB/s |  20.5 KiB |  00m00s
+[49/78] perl-Socket-4:2.041-1.fc44.aarc 100% |   1.6 MiB/s |  54.5 KiB |  00m00s
+[50/78] perl-URI-0:5.35-1.fc44.noarch   100% |   3.4 MiB/s | 148.9 KiB |  00m00s
+[51/78] perl-MIME-Base32-0:1.303-25.fc4 100% | 436.6 KiB/s |  20.5 KiB |  00m00s
+[52/78] perl-libnet-0:3.15-522.fc44.noa 100% |   2.4 MiB/s | 128.4 KiB |  00m00s
+[53/78] perl-Digest-MD5-0:2.59-521.fc44 100% | 938.3 KiB/s |  35.7 KiB |  00m00s
+[54/78] perl-POSIX-0:2.23-525.fc44.aarc 100% |   2.1 MiB/s |  96.0 KiB |  00m00s
+[55/78] perl-Digest-0:1.20-521.fc44.noa 100% | 394.6 KiB/s |  24.9 KiB |  00m00s
+[56/78] perl-base-0:2.27-525.fc44.noarc 100% | 388.2 KiB/s |  15.5 KiB |  00m00s
+[57/78] perl-Getopt-Std-0:1.14-525.fc44 100% | 500.0 KiB/s |  15.0 KiB |  00m00s
+[58/78] perl-mro-0:1.29-525.fc44.aarch6 100% | 732.2 KiB/s |  28.6 KiB |  00m00s
+[59/78] hwloc-libs-0:2.14.0-1.fc44.aarc 100% |   8.5 MiB/s |   2.1 MiB |  00m00s
+[60/78] perl-overloading-0:0.02-525.fc4 100% |  51.7 KiB/s |  12.2 KiB |  00m00s
+[61/78] perl-DynaLoader-0:1.57-525.fc44 100% | 114.9 KiB/s |  25.3 KiB |  00m00s
+[62/78] perl-Data-Dumper-0:2.192-523.fc 100% |   1.2 MiB/s |  55.0 KiB |  00m00s
+[63/78] perl-locale-0:1.13-525.fc44.noa 100% | 284.6 KiB/s |  12.8 KiB |  00m00s
+[64/78] perl-File-stat-0:1.14-525.fc44. 100% | 320.8 KiB/s |  16.4 KiB |  00m00s
+[65/78] perl-SelectSaver-0:1.02-525.fc4 100% | 334.3 KiB/s |  11.0 KiB |  00m00s
+[66/78] perl-FileHandle-0:2.05-525.fc44 100% | 187.4 KiB/s |  14.8 KiB |  00m00s
+[67/78] perl-Class-Struct-0:0.68-525.fc 100% | 196.2 KiB/s |  21.4 KiB |  00m00s
+[68/78] perl-B-0:1.89-525.fc44.aarch64  100% |   1.5 MiB/s | 177.1 KiB |  00m00s
+[69/78] smartmontools-selinux-1:7.5-6.f 100% |   1.0 MiB/s |  33.0 KiB |  00m00s
+[70/78] policycoreutils-python-utils-0: 100% |   1.0 MiB/s |  50.4 KiB |  00m00s
+[71/78] python3-policycoreutils-0:3.11- 100% |   8.7 MiB/s |   2.2 MiB |  00m00s
+[72/78] python3-audit-0:4.2.1-1.fc44.aa 100% | 290.2 KiB/s |  71.1 KiB |  00m00s
+[73/78] python3-distro-0:1.9.0-11.fc44. 100% | 206.2 KiB/s |  47.2 KiB |  00m00s
+[74/78] python3-libselinux-0:3.11-1.fc4 100% |   4.1 MiB/s | 195.0 KiB |  00m00s
+[75/78] python3-libsemanage-0:3.11-1.fc 100% |   1.4 MiB/s |  83.3 KiB |  00m00s
+[76/78] checkpolicy-0:3.11-1.fc44.aarch 100% |   2.9 MiB/s | 356.2 KiB |  00m00s
+[77/78] python3-setools-0:4.6.0-6.fc44. 100% |   5.0 MiB/s | 663.1 KiB |  00m00s
+[78/78] perl-NDBM_File-0:1.18-525.fc44. 100% | 192.5 KiB/s |  21.6 KiB |  00m00s
+--------------------------------------------------------------------------------
+[78/78] Total                           100% |   3.9 MiB/s |  14.1 MiB |  00m04s
+Running transaction
+[ 1/80] Verify package files            100% | 188.0   B/s |  78.0   B |  00m00s
+[ 2/80] Prepare transaction             100% | 165.0   B/s |  78.0   B |  00m00s
+[ 3/80] Installing perl-Digest-0:1.20-5 100% |   1.2 MiB/s |  37.1 KiB |  00m00s
+[ 4/80] Installing perl-FileHandle-0:2. 100% | 979.7 KiB/s |   9.8 KiB |  00m00s
+[ 5/80] Installing perl-B-0:1.89-525.fc 100% |  28.2 MiB/s | 548.6 KiB |  00m00s
+[ 6/80] Installing perl-Digest-MD5-0:2. 100% |   7.4 MiB/s | 105.5 KiB |  00m00s
+[ 7/80] Installing perl-libnet-0:3.15-5 100% |  16.9 MiB/s | 294.7 KiB |  00m00s
+[ 8/80] Installing perl-Data-Dumper-0:2 100% |  11.2 MiB/s | 137.5 KiB |  00m00s
+[ 9/80] Installing perl-MIME-Base32-0:1 100% |   2.9 MiB/s |  32.2 KiB |  00m00s
+[10/80] Installing perl-URI-0:5.35-1.fc 100% |  12.0 MiB/s | 282.0 KiB |  00m00s
+[11/80] Installing perl-IO-Socket-IP-0: 100% |   9.1 MiB/s | 102.2 KiB |  00m00s
+[12/80] Installing perl-AutoLoader-0:5. 100% |   2.1 MiB/s |  21.0 KiB |  00m00s
+[13/80] Installing perl-IO-Socket-SSL-0 100% |  35.5 MiB/s | 727.6 KiB |  00m00s
+[14/80] Installing perl-locale-0:1.13-5 100% | 594.8 KiB/s |   6.5 KiB |  00m00s
+[15/80] Installing perl-Net-SSLeay-0:1. 100% |  44.8 MiB/s |   1.4 MiB |  00m00s
+[16/80] Installing perl-Time-Local-2:1. 100% |   6.3 MiB/s |  70.6 KiB |  00m00s
+[17/80] Installing perl-Time-HiRes-4:1. 100% |  11.5 MiB/s | 153.7 KiB |  00m00s
+[18/80] Installing perl-if-0:0.61.000-5 100% | 693.6 KiB/s |   6.2 KiB |  00m00s
+[19/80] Installing perl-File-Path-0:2.1 100% |   6.3 MiB/s |  64.5 KiB |  00m00s
+[20/80] Installing perl-Pod-Escapes-1:1 100% |   2.5 MiB/s |  25.9 KiB |  00m00s
+[21/80] Installing perl-Text-Tabs+Wrap- 100% |   2.3 MiB/s |  23.9 KiB |  00m00s
+[22/80] Installing perl-HTTP-Tiny-0:0.0 100% |  12.4 MiB/s | 164.5 KiB |  00m00s
+[23/80] Installing perl-Pod-Simple-1:3. 100% |  28.1 MiB/s | 574.9 KiB |  00m00s
+[24/80] Installing perl-Class-Struct-0: 100% |   2.8 MiB/s |  25.9 KiB |  00m00s
+[25/80] Installing perl-POSIX-0:2.23-52 100% |  18.3 MiB/s | 262.8 KiB |  00m00s
+[26/80] Installing perl-IPC-Open3-0:1.2 100% |   2.8 MiB/s |  28.5 KiB |  00m00s
+[27/80] Installing perl-File-Temp-1:0.2 100% |  13.5 MiB/s | 165.5 KiB |  00m00s
+[28/80] Installing perl-Term-Cap-0:1.18 100% |   3.0 MiB/s |  30.6 KiB |  00m00s
+[29/80] Installing perl-Term-ANSIColor- 100% |   8.8 MiB/s |  99.2 KiB |  00m00s
+[30/80] Installing perl-File-stat-0:1.1 100% |   1.3 MiB/s |  13.1 KiB |  00m00s
+[31/80] Installing perl-Pod-Perldoc-0:3 100% |   1.3 MiB/s | 169.2 KiB |  00m00s
+[32/80] Installing perl-podlators-1:6.0 100% |   2.6 MiB/s | 321.4 KiB |  00m00s
+[33/80] Installing perl-SelectSaver-0:1 100% | 261.3 KiB/s |   2.6 KiB |  00m00s
+[34/80] Installing perl-Socket-4:2.041- 100% |  11.0 MiB/s | 146.7 KiB |  00m00s
+[35/80] Installing perl-Symbol-0:1.09-5 100% | 806.0 KiB/s |   7.3 KiB |  00m00s
+[36/80] Installing perl-IO-0:1.55-525.f 100% |  12.7 MiB/s | 195.6 KiB |  00m00s
+[37/80] Installing perl-Pod-Usage-4:2.0 100% | 791.8 KiB/s |  87.9 KiB |  00m00s
+[38/80] Installing perl-overloading-0:0 100% | 557.0 KiB/s |   5.6 KiB |  00m00s
+[39/80] Installing perl-mro-0:1.29-525. 100% |   6.7 MiB/s |  82.6 KiB |  00m00s
+[40/80] Installing perl-base-0:2.27-525 100% |   1.4 MiB/s |  13.0 KiB |  00m00s
+[41/80] Installing perl-Fcntl-0:1.20-52 100% |   8.3 MiB/s |  93.8 KiB |  00m00s
+[42/80] Installing perl-Text-ParseWords 100% |   1.6 MiB/s |  14.6 KiB |  00m00s
+[43/80] Installing perl-constant-0:1.33 100% |   3.0 MiB/s |  27.4 KiB |  00m00s
+[44/80] Installing perl-Getopt-Long-1:2 100% |  11.1 MiB/s | 147.2 KiB |  00m00s
+[45/80] Installing perl-overload-0:1.40 100% |   7.0 MiB/s |  72.0 KiB |  00m00s
+[46/80] Installing perl-Getopt-Std-0:1. 100% |   1.3 MiB/s |  11.8 KiB |  00m00s
+[47/80] Installing perl-File-Basename-0 100% |   1.6 MiB/s |  14.6 KiB |  00m00s
+[48/80] Installing perl-Storable-1:3.37 100% |  21.7 MiB/s | 244.7 KiB |  00m00s
+[49/80] Installing perl-vars-0:1.05-525 100% | 537.6 KiB/s |   4.3 KiB |  00m00s
+[50/80] Installing perl-Errno-0:1.38-52 100% | 979.2 KiB/s |   8.8 KiB |  00m00s
+[51/80] Installing perl-Scalar-List-Uti 100% |  11.8 MiB/s | 156.5 KiB |  00m00s
+[52/80] Installing perl-parent-1:0.244- 100% |   1.2 MiB/s |  11.0 KiB |  00m00s
+[53/80] Installing perl-MIME-Base64-0:3 100% |   7.8 MiB/s |  96.1 KiB |  00m00s
+[54/80] Installing perl-Encode-4:3.21-5 100% |  28.5 MiB/s |   4.8 MiB |  00m00s
+[55/80] Installing perl-DynaLoader-0:1. 100% |   2.9 MiB/s |  32.5 KiB |  00m00s
+[56/80] Installing perl-PathTools-0:3.9 100% |  15.9 MiB/s | 228.4 KiB |  00m00s
+[57/80] Installing perl-Exporter-0:5.79 100% |   5.4 MiB/s |  55.6 KiB |  00m00s
+[58/80] Installing perl-Carp-0:1.54-521 100% |   2.6 MiB/s |  47.7 KiB |  00m00s
+[59/80] Installing perl-libs-4:5.42.3-5 100% |  50.6 MiB/s |  11.7 MiB |  00m00s
+[60/80] Installing perl-interpreter-4:5 100% |   1.5 MiB/s | 176.5 KiB |  00m00s
+[61/80] Installing python3-libselinux-0 100% |  28.8 MiB/s | 648.5 KiB |  00m00s
+[62/80] Installing python3-libsemanage- 100% |  24.3 MiB/s | 447.5 KiB |  00m00s
+[63/80] Installing python3-setools-0:4. 100% |  42.0 MiB/s |   2.8 MiB |  00m00s
+[64/80] Installing checkpolicy-0:3.11-1 100% |  12.9 MiB/s |   1.7 MiB |  00m00s
+[65/80] Installing python3-distro-0:1.9 100% |   1.7 MiB/s | 214.9 KiB |  00m00s
+[66/80] Installing python3-audit-0:4.2. 100% |  15.3 MiB/s | 313.4 KiB |  00m00s
+[67/80] Installing python3-policycoreut 100% |  70.1 MiB/s |   5.9 MiB |  00m00s
+[68/80] Installing policycoreutils-pyth 100% | 527.8 KiB/s |  98.2 KiB |  00m00s
+[69/80] Installing smartmontools-selinu 100% | 758.0   B/s |  34.1 KiB |  00m46s
+>>> Running %post scriptlet: smartmontools-selinux-1:7.5-6.fc44.noarch
+>>> Finished %post scriptlet: smartmontools-selinux-1:7.5-6.fc44.noarch
+>>> Scriptlet output:
+>>> libsemanage.semanage_direct_install_info: Overriding smartmon module at lower priority 100 with module at priority 200.
+>>> 
+[70/80] Installing hwloc-libs-0:2.14.0- 100% |  13.5 MiB/s |   2.9 MiB |  00m00s
+>>> Running sysusers scriptlet: libgpiod-0:2.2.5-1.fc44.aarch64
+>>> Finished sysusers scriptlet: libgpiod-0:2.2.5-1.fc44.aarch64
+>>> Scriptlet output:
+>>> Failed to connect to audit log, ignoring: Invalid argument
+>>> Creating group 'gpio' with GID 992.
+>>> Creating group 'gpio-manager' with GID 991.
+>>> Creating user 'gpio-manager' (gpio-manager account) with UID 991 and GID 991.
+>>> 
+[71/80] Installing libgpiod-0:2.2.5-1.f 100% |   9.5 MiB/s | 204.0 KiB |  00m00s
+[72/80] Installing xxhash-libs-0:0.8.3- 100% |   6.1 MiB/s |  87.2 KiB |  00m00s
+[73/80] Installing lm_sensors-libs-0:3. 100% |   7.1 MiB/s |  94.8 KiB |  00m00s
+[74/80] Installing lm_sensors-0:3.6.0-2 100% |   1.7 MiB/s | 461.5 KiB |  00m00s
+>>> Running %post scriptlet: lm_sensors-0:3.6.0-24.fc44.aarch64
+>>> Finished %post scriptlet: lm_sensors-0:3.6.0-24.fc44.aarch64
+>>> Scriptlet output:
+>>> Created symlink '/etc/systemd/system/multi-user.target.wants/lm_sensors.service' → '/usr/lib/systemd/system/lm_sensors.service'.
+>>> 
+[75/80] Installing rsync-0:3.4.4-1.fc44 100% |   6.6 MiB/s | 825.2 KiB |  00m00s
+[76/80] Installing libgpiod-utils-0:2.2 100% |   3.5 MiB/s | 415.1 KiB |  00m00s
+[77/80] Installing htop-0:3.4.1-3.fc44. 100% |   4.1 MiB/s | 490.3 KiB |  00m00s
+[78/80] Installing smartmontools-1:7.5- 100% |   8.1 MiB/s |   2.4 MiB |  00m00s
+>>> Running %post scriptlet: smartmontools-1:7.5-6.fc44.aarch64
+>>> Finished %post scriptlet: smartmontools-1:7.5-6.fc44.aarch64
+>>> Scriptlet output:
+>>> Created symlink '/etc/systemd/system/multi-user.target.wants/smartd.service' → '/usr/lib/systemd/system/smartd.service'.
+>>> 
+[79/80] Installing perl-NDBM_File-0:1.1 100% |   5.1 MiB/s |  73.5 KiB |  00m00s
+[80/80] Installing hdparm-0:9.65-10.fc4 100% | 106.1 KiB/s | 186.1 KiB |  00m02s
+>>> Running %triggerin scriptlet: systemd-0:259.8-1.fc44.aarch64
+>>> Finished %triggerin scriptlet: systemd-0:259.8-1.fc44.aarch64
+>>> Scriptlet output:
+>>> Failed to connect to audit log, ignoring: Invalid argument
+>>> 
+Complete!
+2026-08-16T18:11:21+10:00  + podman exec unvr-fedora-build dnf -y clean all
+Removed 18 files, 11 directories (total of 95 MiB). 0 errors occurred.
+2026-08-16T18:11:21+10:00  + podman exec unvr-fedora-build bash -c 
+set -eux
+# --- SELinux off (config absent in minimal container; selinux=0 in bootargs too) ---
+[ -f /etc/selinux/config ] && sed -i 's/^SELINUX=.*/SELINUX=disabled/' /etc/selinux/config || true
+# --- firewall off (device sits on the user's trusted LAN, single-tenant NAS) ---
+systemctl disable firewalld.service 2>/dev/null || true
+dnf -y remove firewalld 2>/dev/null || true
+# --- ABRT off (no crash-report daemon; it thrashed the host earlier w/ big cores) ---
+systemctl disable abrtd.service abrt-ccpp.service abrt-oops.service \
+    abrt-journal-core.service abrt-xorg.service 2>/dev/null || true
+dnf -y remove 'abrt*' 2>/dev/null || true
+# --- serial console login ---
+systemctl enable serial-getty@ttyS0.service
+# --- network: NetworkManager (Fedora default, installed), auto-DHCPs all wired links ---
+systemctl enable NetworkManager.service
+# --- ssh ---
+systemctl enable sshd.service
+sed -i 's/^#\?PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config
+# --- root password (CHANGE THIS) ---
+echo 'root:unvr' | chpasswd
+# --- fstab: root by label, no swap; the deploy step labels sdaN 'unvr-root' ---
+cat > /etc/fstab <<'EOF'
+LABEL=unvr-root  /  ext4  defaults,noatime  0 1
+EOF
+# --- hostname (device is 'woomera'; dev work self-hosts here post-milestone) ---
+echo woomera > /etc/hostname
+# --- don't wait forever for a nonexistent initramfs/rootdev ---
+systemctl mask systemd-firstboot.service || true
+# --- machine-id will be generated first boot ---
+rm -f /etc/machine-id
+
++ '[' -f /etc/selinux/config ']'
++ sed -i 's/^SELINUX=.*/SELINUX=disabled/' /etc/selinux/config
++ systemctl disable firewalld.service
++ dnf -y remove firewalld
+Package                 Arch    Version          Repository      Size
+Removing:
+ firewalld              noarch  0:2.4.4-1.fc44   updates      2.1 MiB
+Removing unused dependencies:
+ firewalld-filesystem   noarch  0:2.4.4-1.fc44   updates    239.0   B
+ ipset                  aarch64 0:7.24-3.fc44    fedora     128.5 KiB
+ ipset-libs             aarch64 0:7.24-3.fc44    fedora     267.4 KiB
+ iptables-libs          aarch64 0:1.8.11-13.fc44 fedora       6.7 MiB
+ iptables-nft           aarch64 0:1.8.11-13.fc44 fedora       1.4 MiB
+ libcap-ng-python3      aarch64 0:0.9.3-1.fc44   updates    103.8 KiB
+ libnetfilter_conntrack aarch64 0:1.1.1-1.fc44   fedora     151.6 KiB
+ libnfnetlink           aarch64 0:1.0.1-32.fc44  fedora      85.8 KiB
+ libnftnl               aarch64 0:1.3.1-2.fc44   fedora     288.2 KiB
+ nftables               aarch64 1:1.1.6-2.fc44   fedora       1.1 MiB
+ nftables-services      noarch  1:1.1.6-2.fc44   fedora      32.1 KiB
+ python3-dbus           aarch64 0:1.4.0-9.fc44   fedora     632.4 KiB
+ python3-firewall       noarch  0:2.4.4-1.fc44   updates      2.9 MiB
+ python3-gobject-base   aarch64 0:3.56.3-1.fc44  updates      1.6 MiB
+ python3-nftables       noarch  1:1.1.6-2.fc44   fedora      43.7 KiB
+
+Transaction Summary:
+ Removing:          16 packages
+
++ true
++ systemctl disable abrtd.service abrt-ccpp.service abrt-oops.service abrt-journal-core.service abrt-xorg.service
++ true
++ dnf -y remove 'abrt*'
+Nothing to do.
++ systemctl enable serial-getty@ttyS0.service
+Created symlink '/etc/systemd/system/getty.target.wants/serial-getty@ttyS0.service' → '/usr/lib/systemd/system/serial-getty@.service'.
++ systemctl enable NetworkManager.service
++ systemctl enable sshd.service
++ sed -i 's/^#\?PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config
++ echo root:unvr
++ chpasswd
++ cat
++ echo woomera
++ systemctl mask systemd-firstboot.service
+Created symlink '/etc/systemd/system/systemd-firstboot.service' → '/dev/null'.
++ rm -f /etc/machine-id
+2026-08-16T18:11:27+10:00  exporting rootfs -> /mnt/2tb/git/awto-unvr/tmp/fedora-rootfs-ea16.tar
+2026-08-16T18:11:38+10:00  + sha256sum /mnt/2tb/git/awto-unvr/tmp/fedora-rootfs-ea16.tar
+2026-08-16T18:11:38+10:00  DONE: /mnt/2tb/git/awto-unvr/tmp/fedora-rootfs-ea16.tar (588 MB) sha256=63abba4de4c37d3d...
+2026-08-16T18:11:38+10:00  Next: enhanced initramfs -> format sdaN ext4 (label unvr-root) -> rsync this tar's contents -> add 7.1.8 modules -> U-Boot env -> saveenv

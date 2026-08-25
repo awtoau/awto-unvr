@@ -1,0 +1,23 @@
+stage2_loader v2.22.3
+SPD I2C Address: 57
+Executing next!
+Stage 3 version: 2.22.0
+agent_wakeup v2.10
+temprature: 52 degrees
+eeprom_per_device_init: no valid information found!
+power_init_board: EEPROM per device information is not valid - using defaults!
+SF: Detected MX25U25635F with page size 256 Bytes, erase size 4 KiB, total 32 MiB
+mac: [74acb941a811] + [2]
+PCIE_0: Link up. Speed 5GT/s Width x1
+dtt_get_temp[0] 103
+Boot: warm
+Net:   , al_eth1 [PRIME], al_eth2
+Autobooting in 2 seconds, press "<Esc><Esc>" to stop
+al_eth1 Waiting for PHY auto negotiation to complete... done
+Using al_eth1 device
+TFTP from server 192.168.25.145; our IP address is 192.168.25.140
+Filename 'u-boot-chainload.bin'.
+Load address: 0x1100000
+Loading: T T T T T T T T T T
+Retry count exceeded; starting again
+ALPINE_UBNT_NAS_ALL>

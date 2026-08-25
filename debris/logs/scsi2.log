@@ -1,0 +1,7 @@
+
+ARP Retry count exceeded; starting again
+[eth tx] warn: dma state didn't change to Disable
+[eth tx] warn: failed to change state, error -110
+ping failed; host 192.168.25.145 is not alive
+awto-nas# 
+<<MATCHED: awto-nas#>>

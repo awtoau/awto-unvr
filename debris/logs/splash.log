@@ -1,0 +1,35 @@
+ go 0x1100000
+## Starting application at 0x01100000 ...
+
+
+U-Boot 2026.07-dirty (Aug 19 2026 - 08:29:25 +1000)
+
+Model: Ubiquiti UNVR (Annapurna Labs Alpine V2 AL-324)
+DRAM:  3 GiB (total 4 GiB)
+
+                 _
+   __ ___      _| |_  ___
+  / _` \ \ /\ / / __|/ _ \
+ | (_| |\ V  V /| |_| (_) |
+  \__,_| \_/\_/  \__|\___/   plus
+
+Core:  33 devices, 12 uclasses, devicetree: separate
+MMC:   
+Loading Environment from nowhere... OK
+In:    serial@fd883000
+Out:   serial@fd883000
+Err:   serial@fd883000
+rtc-s35390a: sel=0 get_chip rtc=-110
+Timed out waiting for bus
+pca953x gpio@21: pca953x_write_single error
+LED 'd1' operation failed (err=-121)
+pca953x gpio@21: pca953x_write_single error
+LED 'd2' operation failed (err=-121)
+pca953x gpio@21: pca953x_write_single error
+LED 'd3' operation failed (err=-121)
+pca953x gpio@21: pca953x_write_single error
+LED 'd4' operation failed (err=-121)
+pca953x gpio@20: pca953x_write_single error
+LED 'sfp' operation failed (err=-121)
+unvr#
+=== DONE ===

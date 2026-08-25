@@ -1,0 +1,926 @@
+2026-08-15T16:26:17+10:00  INFO  --- dump-unvr-mtd (console + netcat) ---
+2026-08-15T16:26:24+10:00  INFO  unit   : UNVR serial=74acb941a811 sysid=ea16
+2026-08-15T16:26:24+10:00  INFO  dumping to images/mtd/UNVR-74acb941a811-sysidea16-20260815-162617/
+2026-08-15T16:26:27+10:00  INFO    mtd0      2097152 B  erase  262144  "al_boot"
+2026-08-15T16:26:27+10:00  INFO    mtd1      1048576 B  erase  262144  "device_tree"
+2026-08-15T16:26:27+10:00  INFO    mtd2     16777216 B  erase  262144  "linux_kernel"
+2026-08-15T16:26:27+10:00  INFO    mtd3   1052770304 B  erase  262144  "rootfs"
+2026-08-15T16:26:27+10:00  INFO    mtd4      1048576 B  erase  262144  "chike"
+2026-08-15T16:26:27+10:00  INFO    mtd5      1835008 B  erase    4096  "u-boot"
+2026-08-15T16:26:27+10:00  INFO    mtd6        65536 B  erase    4096  "u-boot env"
+2026-08-15T16:26:27+10:00  INFO    mtd7        65536 B  erase    4096  "u-boot env redundant"
+2026-08-15T16:26:27+10:00  INFO    mtd8        65536 B  erase    4096  "Factory"
+2026-08-15T16:26:27+10:00  INFO    mtd9        65536 B  erase    4096  "EEPROM"
+2026-08-15T16:26:27+10:00  INFO    mtd10    16777216 B  erase    4096  "recovery kernel"
+2026-08-15T16:26:27+10:00  INFO    mtd11    14675968 B  erase    4096  "config"
+2026-08-15T16:26:27+10:00  INFO    mtd12        4096 B  erase    4096  "cksum"
+2026-08-15T16:27:59+10:00  INFO  --- dump-unvr-mtd (console + netcat) ---
+2026-08-15T16:28:07+10:00  INFO  unit   : UNVR serial=74acb941a811 sysid=ea16
+2026-08-15T16:28:07+10:00  INFO  dumping to images/mtd/UNVR-74acb941a811-sysidea16-20260815-162759/
+2026-08-15T16:28:10+10:00  INFO    mtd0      2097152 B  erase  262144  "al_boot"
+2026-08-15T16:28:10+10:00  INFO    mtd1      1048576 B  erase  262144  "device_tree"
+2026-08-15T16:28:10+10:00  INFO    mtd2     16777216 B  erase  262144  "linux_kernel"
+2026-08-15T16:28:10+10:00  INFO    mtd3   1052770304 B  erase  262144  "rootfs"
+2026-08-15T16:28:10+10:00  INFO    mtd4      1048576 B  erase  262144  "chike"
+2026-08-15T16:28:10+10:00  INFO    mtd5      1835008 B  erase    4096  "u-boot"
+2026-08-15T16:28:10+10:00  INFO    mtd6        65536 B  erase    4096  "u-boot env"
+2026-08-15T16:28:10+10:00  INFO    mtd7        65536 B  erase    4096  "u-boot env redundant"
+2026-08-15T16:28:10+10:00  INFO    mtd8        65536 B  erase    4096  "Factory"
+2026-08-15T16:28:10+10:00  INFO    mtd9        65536 B  erase    4096  "EEPROM"
+2026-08-15T16:28:10+10:00  INFO    mtd10    16777216 B  erase    4096  "recovery kernel"
+2026-08-15T16:28:10+10:00  INFO    mtd11    14675968 B  erase    4096  "config"
+2026-08-15T16:28:10+10:00  INFO    mtd12        4096 B  erase    4096  "cksum"
+2026-08-15T16:28:12+10:00  INFO  device 192.168.25.140, this host 192.168.25.145
+2026-08-15T16:28:12+10:00  INFO  mtd8   "Factory" 65536 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-162759/UNVR-74acb941a811-ea16-mtd08-Factory-65536B-20260815-162759.img (limit 30s)
+2026-08-15T16:28:12+10:00  ERROR   0 B in 0.3s (0.0 MB/s) SIZE MISMATCH, expected 65536
+2026-08-15T16:28:12+10:00  INFO  mtd9   "EEPROM" 65536 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-162759/UNVR-74acb941a811-ea16-mtd09-EEPROM-65536B-20260815-162759.img (limit 30s)
+2026-08-15T16:28:12+10:00  ERROR   0 B in 0.3s (0.0 MB/s) SIZE MISMATCH, expected 65536
+2026-08-15T16:28:12+10:00  INFO  mtd5   "u-boot" 1835008 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-162759/UNVR-74acb941a811-ea16-mtd05-u-boot-1835008B-20260815-162759.img (limit 30s)
+2026-08-15T16:28:13+10:00  ERROR   0 B in 0.3s (0.0 MB/s) SIZE MISMATCH, expected 1835008
+2026-08-15T16:28:13+10:00  INFO  mtd6   "u-boot env" 65536 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-162759/UNVR-74acb941a811-ea16-mtd06-u-boot_env-65536B-20260815-162759.img (limit 30s)
+2026-08-15T16:28:13+10:00  ERROR   0 B in 0.3s (0.0 MB/s) SIZE MISMATCH, expected 65536
+2026-08-15T16:28:13+10:00  INFO  mtd7   "u-boot env redundant" 65536 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-162759/UNVR-74acb941a811-ea16-mtd07-u-boot_env_redundant-65536B-20260815-162759.img (limit 30s)
+2026-08-15T16:28:13+10:00  ERROR   0 B in 0.3s (0.0 MB/s) SIZE MISMATCH, expected 65536
+2026-08-15T16:28:13+10:00  INFO  mtd12  "cksum" 4096 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-162759/UNVR-74acb941a811-ea16-mtd12-cksum-4096B-20260815-162759.img (limit 30s)
+2026-08-15T16:28:14+10:00  ERROR   0 B in 0.2s (0.0 MB/s) SIZE MISMATCH, expected 4096
+2026-08-15T16:28:14+10:00  INFO  mtd1   "device_tree" 1048576 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-162759/UNVR-74acb941a811-ea16-mtd01-device_tree-1048576B-20260815-162759.img (limit 30s)
+2026-08-15T16:28:14+10:00  ERROR   0 B in 0.3s (0.0 MB/s) SIZE MISMATCH, expected 1048576
+2026-08-15T16:28:14+10:00  INFO  mtd0   "al_boot" 2097152 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-162759/UNVR-74acb941a811-ea16-mtd00-al_boot-2097152B-20260815-162759.img (limit 30s)
+2026-08-15T16:28:14+10:00  ERROR   0 B in 0.2s (0.0 MB/s) SIZE MISMATCH, expected 2097152
+2026-08-15T16:28:14+10:00  INFO  mtd11  "config" 14675968 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-162759/UNVR-74acb941a811-ea16-mtd11-config-14675968B-20260815-162759.img (limit 30s)
+2026-08-15T16:28:15+10:00  ERROR   0 B in 0.3s (0.0 MB/s) SIZE MISMATCH, expected 14675968
+2026-08-15T16:28:15+10:00  INFO  mtd4   "chike" 1048576 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-162759/UNVR-74acb941a811-ea16-mtd04-chike-1048576B-20260815-162759.img (limit 30s)
+2026-08-15T16:28:15+10:00  ERROR   0 B in 0.2s (0.0 MB/s) SIZE MISMATCH, expected 1048576
+2026-08-15T16:28:15+10:00  INFO  mtd10  "recovery kernel" 16777216 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-162759/UNVR-74acb941a811-ea16-mtd10-recovery_kernel-16777216B-20260815-162759.img (limit 30s)
+2026-08-15T16:28:15+10:00  ERROR   0 B in 0.3s (0.0 MB/s) SIZE MISMATCH, expected 16777216
+2026-08-15T16:28:15+10:00  INFO  mtd2   "linux_kernel" 16777216 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-162759/UNVR-74acb941a811-ea16-mtd02-linux_kernel-16777216B-20260815-162759.img (limit 30s)
+2026-08-15T16:28:15+10:00  ERROR   0 B in 0.2s (0.0 MB/s) SIZE MISMATCH, expected 16777216
+2026-08-15T16:28:15+10:00  INFO  mtd3   "rootfs" 1052770304 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-162759/UNVR-74acb941a811-ea16-mtd03-rootfs-1052770304B-20260815-162759.img (limit 1004s)
+2026-08-15T16:28:16+10:00  ERROR   0 B in 0.3s (0.0 MB/s) SIZE MISMATCH, expected 1052770304
+2026-08-15T16:28:16+10:00  INFO  wrote images/mtd/UNVR-74acb941a811-sysidea16-20260815-162759/README.md
+2026-08-15T16:28:16+10:00  ERROR done. 0/13 captured, FAILED: mtd8, mtd9, mtd5, mtd6, mtd7, mtd12, mtd1, mtd0, mtd11, mtd4, mtd10, mtd2, mtd3
+2026-08-15T16:28:52+10:00  INFO  --- dump-unvr-mtd (console + netcat) ---
+2026-08-15T16:28:59+10:00  INFO  unit   : UNVR serial=74acb941a811 sysid=ea16
+2026-08-15T16:28:59+10:00  INFO  dumping to images/mtd/UNVR-74acb941a811-sysidea16-20260815-162852/
+2026-08-15T16:29:02+10:00  INFO    mtd0      2097152 B  erase  262144  "al_boot"
+2026-08-15T16:29:02+10:00  INFO    mtd1      1048576 B  erase  262144  "device_tree"
+2026-08-15T16:29:02+10:00  INFO    mtd2     16777216 B  erase  262144  "linux_kernel"
+2026-08-15T16:29:02+10:00  INFO    mtd3   1052770304 B  erase  262144  "rootfs"
+2026-08-15T16:29:02+10:00  INFO    mtd4      1048576 B  erase  262144  "chike"
+2026-08-15T16:29:02+10:00  INFO    mtd5      1835008 B  erase    4096  "u-boot"
+2026-08-15T16:29:02+10:00  INFO    mtd6        65536 B  erase    4096  "u-boot env"
+2026-08-15T16:29:02+10:00  INFO    mtd7        65536 B  erase    4096  "u-boot env redundant"
+2026-08-15T16:29:02+10:00  INFO    mtd8        65536 B  erase    4096  "Factory"
+2026-08-15T16:29:02+10:00  INFO    mtd9        65536 B  erase    4096  "EEPROM"
+2026-08-15T16:29:02+10:00  INFO    mtd10    16777216 B  erase    4096  "recovery kernel"
+2026-08-15T16:29:02+10:00  INFO    mtd11    14675968 B  erase    4096  "config"
+2026-08-15T16:29:02+10:00  INFO    mtd12        4096 B  erase    4096  "cksum"
+2026-08-15T16:29:04+10:00  INFO  device 192.168.25.140, this host 192.168.25.145
+2026-08-15T16:29:04+10:00  INFO  mtd8   "Factory" 65536 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-162852/UNVR-74acb941a811-ea16-mtd08-Factory-65536B-20260815-162852.img (limit 30s)
+2026-08-15T16:29:05+10:00  ERROR   0 B in 0.3s (0.0 MB/s) SIZE MISMATCH, expected 65536
+2026-08-15T16:29:05+10:00  INFO  mtd9   "EEPROM" 65536 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-162852/UNVR-74acb941a811-ea16-mtd09-EEPROM-65536B-20260815-162852.img (limit 30s)
+2026-08-15T16:29:05+10:00  ERROR   0 B in 0.3s (0.0 MB/s) SIZE MISMATCH, expected 65536
+2026-08-15T16:29:05+10:00  INFO  mtd12  "cksum" 4096 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-162852/UNVR-74acb941a811-ea16-mtd12-cksum-4096B-20260815-162852.img (limit 30s)
+2026-08-15T16:29:05+10:00  ERROR   0 B in 0.2s (0.0 MB/s) SIZE MISMATCH, expected 4096
+2026-08-15T16:29:05+10:00  INFO  wrote images/mtd/UNVR-74acb941a811-sysidea16-20260815-162852/README.md
+2026-08-15T16:29:05+10:00  ERROR done. 0/3 captured, FAILED: mtd8, mtd9, mtd12
+2026-08-15T16:31:46+10:00  INFO  --- dump-unvr-mtd (console + netcat) ---
+2026-08-15T16:31:53+10:00  INFO  unit   : UNVR serial=74acb941a811 sysid=ea16
+2026-08-15T16:31:53+10:00  INFO  dumping to images/mtd/UNVR-74acb941a811-sysidea16-20260815-163146/
+2026-08-15T16:31:56+10:00  INFO    mtd0      2097152 B  erase  262144  "al_boot"
+2026-08-15T16:31:56+10:00  INFO    mtd1      1048576 B  erase  262144  "device_tree"
+2026-08-15T16:31:56+10:00  INFO    mtd2     16777216 B  erase  262144  "linux_kernel"
+2026-08-15T16:31:56+10:00  INFO    mtd3   1052770304 B  erase  262144  "rootfs"
+2026-08-15T16:31:56+10:00  INFO    mtd4      1048576 B  erase  262144  "chike"
+2026-08-15T16:31:56+10:00  INFO    mtd5      1835008 B  erase    4096  "u-boot"
+2026-08-15T16:31:56+10:00  INFO    mtd6        65536 B  erase    4096  "u-boot env"
+2026-08-15T16:31:56+10:00  INFO    mtd7        65536 B  erase    4096  "u-boot env redundant"
+2026-08-15T16:31:56+10:00  INFO    mtd8        65536 B  erase    4096  "Factory"
+2026-08-15T16:31:56+10:00  INFO    mtd9        65536 B  erase    4096  "EEPROM"
+2026-08-15T16:31:56+10:00  INFO    mtd10    16777216 B  erase    4096  "recovery kernel"
+2026-08-15T16:31:56+10:00  INFO    mtd11    14675968 B  erase    4096  "config"
+2026-08-15T16:31:56+10:00  INFO    mtd12        4096 B  erase    4096  "cksum"
+2026-08-15T16:31:59+10:00  INFO  device 192.168.25.140, this host 192.168.25.145
+2026-08-15T16:31:59+10:00  INFO  mtd8   "Factory" 65536 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-163146/UNVR-74acb941a811-ea16-mtd08-Factory-65536B-20260815-163146.img (limit 30s)
+2026-08-15T16:32:01+10:00  ERROR   FAILED: device-side listener never accepted a connection
+2026-08-15T16:32:01+10:00  INFO  mtd9   "EEPROM" 65536 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-163146/UNVR-74acb941a811-ea16-mtd09-EEPROM-65536B-20260815-163146.img (limit 30s)
+2026-08-15T16:32:03+10:00  ERROR   FAILED: device-side listener never accepted a connection
+2026-08-15T16:32:03+10:00  INFO  mtd12  "cksum" 4096 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-163146/UNVR-74acb941a811-ea16-mtd12-cksum-4096B-20260815-163146.img (limit 30s)
+2026-08-15T16:32:06+10:00  ERROR   FAILED: device-side listener never accepted a connection
+2026-08-15T16:32:06+10:00  INFO  wrote images/mtd/UNVR-74acb941a811-sysidea16-20260815-163146/README.md
+2026-08-15T16:32:06+10:00  ERROR done. 0/3 captured, FAILED: mtd8, mtd9, mtd12
+2026-08-15T16:37:18+10:00  INFO  --- dump-unvr-mtd (console + netcat) ---
+2026-08-15T16:37:26+10:00  INFO  unit   : UNVR serial=74acb941a811 sysid=ea16
+2026-08-15T16:37:26+10:00  INFO  dumping to images/mtd/UNVR-74acb941a811-sysidea16-20260815-163718/
+2026-08-15T16:37:29+10:00  INFO    mtd0      2097152 B  erase  262144  "al_boot"
+2026-08-15T16:37:29+10:00  INFO    mtd1      1048576 B  erase  262144  "device_tree"
+2026-08-15T16:37:29+10:00  INFO    mtd2     16777216 B  erase  262144  "linux_kernel"
+2026-08-15T16:37:29+10:00  INFO    mtd3   1052770304 B  erase  262144  "rootfs"
+2026-08-15T16:37:29+10:00  INFO    mtd4      1048576 B  erase  262144  "chike"
+2026-08-15T16:37:29+10:00  INFO    mtd5      1835008 B  erase    4096  "u-boot"
+2026-08-15T16:37:29+10:00  INFO    mtd6        65536 B  erase    4096  "u-boot env"
+2026-08-15T16:37:29+10:00  INFO    mtd7        65536 B  erase    4096  "u-boot env redundant"
+2026-08-15T16:37:29+10:00  INFO    mtd8        65536 B  erase    4096  "Factory"
+2026-08-15T16:37:29+10:00  INFO    mtd9        65536 B  erase    4096  "EEPROM"
+2026-08-15T16:37:29+10:00  INFO    mtd10    16777216 B  erase    4096  "recovery kernel"
+2026-08-15T16:37:29+10:00  INFO    mtd11    14675968 B  erase    4096  "config"
+2026-08-15T16:37:29+10:00  INFO    mtd12        4096 B  erase    4096  "cksum"
+2026-08-15T16:37:31+10:00  INFO  device 192.168.25.140, this host 192.168.25.145
+2026-08-15T16:37:31+10:00  INFO  mtd8   "Factory" 65536 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-163718/UNVR-74acb941a811-ea16-mtd08-Factory-65536B-20260815-163718.img (limit 30s)
+2026-08-15T16:37:31+10:00  ERROR   57351 B in 0.4s (0.1 MB/s) SIZE MISMATCH, expected 65536
+2026-08-15T16:37:31+10:00  INFO  mtd9   "EEPROM" 65536 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-163718/UNVR-74acb941a811-ea16-mtd09-EEPROM-65536B-20260815-163718.img (limit 30s)
+2026-08-15T16:37:32+10:00  ERROR   57351 B in 0.4s (0.1 MB/s) SIZE MISMATCH, expected 65536
+2026-08-15T16:37:32+10:00  INFO  mtd12  "cksum" 4096 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-163718/UNVR-74acb941a811-ea16-mtd12-cksum-4096B-20260815-163718.img (limit 30s)
+2026-08-15T16:37:32+10:00  INFO    4096 B in 0.4s (0.0 MB/s) OK
+2026-08-15T16:37:42+10:00  INFO    md5 620f0b67a91f7f74151bc5be745b7110 matches device
+2026-08-15T16:37:42+10:00  INFO  wrote images/mtd/UNVR-74acb941a811-sysidea16-20260815-163718/README.md
+2026-08-15T16:37:42+10:00  ERROR done. 1/3 captured, FAILED: mtd8, mtd9
+2026-08-15T16:41:03+10:00  INFO  --- dump-unvr-mtd (console + netcat) ---
+2026-08-15T16:41:11+10:00  INFO  unit   : UNVR serial=74acb941a811 sysid=ea16
+2026-08-15T16:41:11+10:00  INFO  dumping to images/mtd/UNVR-74acb941a811-sysidea16-20260815-164103/
+2026-08-15T16:41:14+10:00  INFO    mtd0      2097152 B  erase  262144  "al_boot"
+2026-08-15T16:41:14+10:00  INFO    mtd1      1048576 B  erase  262144  "device_tree"
+2026-08-15T16:41:14+10:00  INFO    mtd2     16777216 B  erase  262144  "linux_kernel"
+2026-08-15T16:41:14+10:00  INFO    mtd3   1052770304 B  erase  262144  "rootfs"
+2026-08-15T16:41:14+10:00  INFO    mtd4      1048576 B  erase  262144  "chike"
+2026-08-15T16:41:14+10:00  INFO    mtd5      1835008 B  erase    4096  "u-boot"
+2026-08-15T16:41:14+10:00  INFO    mtd6        65536 B  erase    4096  "u-boot env"
+2026-08-15T16:41:14+10:00  INFO    mtd7        65536 B  erase    4096  "u-boot env redundant"
+2026-08-15T16:41:14+10:00  INFO    mtd8        65536 B  erase    4096  "Factory"
+2026-08-15T16:41:14+10:00  INFO    mtd9        65536 B  erase    4096  "EEPROM"
+2026-08-15T16:41:14+10:00  INFO    mtd10    16777216 B  erase    4096  "recovery kernel"
+2026-08-15T16:41:14+10:00  INFO    mtd11    14675968 B  erase    4096  "config"
+2026-08-15T16:41:14+10:00  INFO    mtd12        4096 B  erase    4096  "cksum"
+2026-08-15T16:41:16+10:00  INFO  device 192.168.25.140, this host 192.168.25.145
+2026-08-15T16:41:16+10:00  INFO  mtd8   "Factory" 65536 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-164103/UNVR-74acb941a811-ea16-mtd08-Factory-65536B-20260815-164103.img (limit 30s)
+2026-08-15T16:41:16+10:00  INFO    65536 B in 0.5s (0.1 MB/s) OK
+2026-08-15T16:41:26+10:00  INFO    md5 ecb99e6ffea7be1e5419350f725da86b matches device
+2026-08-15T16:41:26+10:00  INFO  mtd9   "EEPROM" 65536 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-164103/UNVR-74acb941a811-ea16-mtd09-EEPROM-65536B-20260815-164103.img (limit 30s)
+2026-08-15T16:41:27+10:00  INFO    65536 B in 0.5s (0.1 MB/s) OK
+2026-08-15T16:41:37+10:00  INFO    md5 51167ac3b93f54c5b3fd7c4279ad6994 matches device
+2026-08-15T16:41:37+10:00  INFO  mtd6   "u-boot env" 65536 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-164103/UNVR-74acb941a811-ea16-mtd06-u-boot_env-65536B-20260815-164103.img (limit 30s)
+2026-08-15T16:41:37+10:00  INFO    65536 B in 0.4s (0.1 MB/s) OK
+2026-08-15T16:41:47+10:00  INFO    md5 fcd6bcb56c1689fcef28b57c22475bad matches device
+2026-08-15T16:41:47+10:00  INFO  mtd7   "u-boot env redundant" 65536 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-164103/UNVR-74acb941a811-ea16-mtd07-u-boot_env_redundant-65536B-20260815-164103.img (limit 30s)
+2026-08-15T16:41:48+10:00  INFO    65536 B in 0.5s (0.1 MB/s) OK
+2026-08-15T16:41:58+10:00  INFO    md5 fcd6bcb56c1689fcef28b57c22475bad matches device
+2026-08-15T16:41:58+10:00  INFO  mtd12  "cksum" 4096 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-164103/UNVR-74acb941a811-ea16-mtd12-cksum-4096B-20260815-164103.img (limit 30s)
+2026-08-15T16:41:58+10:00  INFO    4096 B in 0.4s (0.0 MB/s) OK
+2026-08-15T16:42:08+10:00  INFO    md5 620f0b67a91f7f74151bc5be745b7110 matches device
+2026-08-15T16:42:08+10:00  INFO  wrote images/mtd/UNVR-74acb941a811-sysidea16-20260815-164103/README.md
+2026-08-15T16:42:08+10:00  INFO  done. 5/5 captured
+2026-08-15T16:42:22+10:00  INFO  --- dump-unvr-mtd (console + netcat) ---
+2026-08-15T16:42:29+10:00  INFO  unit   : UNVR serial=74acb941a811 sysid=ea16
+2026-08-15T16:42:29+10:00  INFO  dumping to images/mtd/UNVR-74acb941a811-sysidea16-20260815-164222/
+2026-08-15T16:42:32+10:00  INFO    mtd0      2097152 B  erase  262144  "al_boot"
+2026-08-15T16:42:32+10:00  INFO    mtd1      1048576 B  erase  262144  "device_tree"
+2026-08-15T16:42:32+10:00  INFO    mtd2     16777216 B  erase  262144  "linux_kernel"
+2026-08-15T16:42:32+10:00  INFO    mtd3   1052770304 B  erase  262144  "rootfs"
+2026-08-15T16:42:32+10:00  INFO    mtd4      1048576 B  erase  262144  "chike"
+2026-08-15T16:42:32+10:00  INFO    mtd5      1835008 B  erase    4096  "u-boot"
+2026-08-15T16:42:32+10:00  INFO    mtd6        65536 B  erase    4096  "u-boot env"
+2026-08-15T16:42:32+10:00  INFO    mtd7        65536 B  erase    4096  "u-boot env redundant"
+2026-08-15T16:42:32+10:00  INFO    mtd8        65536 B  erase    4096  "Factory"
+2026-08-15T16:42:32+10:00  INFO    mtd9        65536 B  erase    4096  "EEPROM"
+2026-08-15T16:42:32+10:00  INFO    mtd10    16777216 B  erase    4096  "recovery kernel"
+2026-08-15T16:42:32+10:00  INFO    mtd11    14675968 B  erase    4096  "config"
+2026-08-15T16:42:32+10:00  INFO    mtd12        4096 B  erase    4096  "cksum"
+2026-08-15T16:42:34+10:00  INFO  device 192.168.25.140, this host 192.168.25.145
+2026-08-15T16:42:34+10:00  INFO  mtd5   "u-boot" 1835008 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-164222/UNVR-74acb941a811-ea16-mtd05-u-boot-1835008B-20260815-164222.img (limit 30s)
+2026-08-15T16:42:35+10:00  INFO    1835008 B in 1.2s (1.5 MB/s) OK
+2026-08-15T16:42:46+10:00  INFO    md5 68f0bed7ed80e8a0708de56c6f8589d2 matches device
+2026-08-15T16:42:46+10:00  INFO  mtd1   "device_tree" 1048576 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-164222/UNVR-74acb941a811-ea16-mtd01-device_tree-1048576B-20260815-164222.img (limit 30s)
+2026-08-15T16:42:47+10:00  INFO    1048576 B in 0.7s (1.4 MB/s) OK
+2026-08-15T16:42:57+10:00  INFO    md5 2fdd6851b32ae931637d4845c037b550 matches device
+2026-08-15T16:42:57+10:00  INFO  mtd0   "al_boot" 2097152 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-164222/UNVR-74acb941a811-ea16-mtd00-al_boot-2097152B-20260815-164222.img (limit 30s)
+2026-08-15T16:42:57+10:00  INFO    2097152 B in 0.8s (2.6 MB/s) OK
+2026-08-15T16:43:08+10:00  INFO    md5 b23b5d09162b92c0284923a7f628d2a5 matches device
+2026-08-15T16:43:08+10:00  INFO  mtd11  "config" 14675968 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-164222/UNVR-74acb941a811-ea16-mtd11-config-14675968B-20260815-164222.img (limit 30s)
+2026-08-15T16:43:16+10:00  INFO    14675968 B in 8.4s (1.7 MB/s) OK
+2026-08-15T16:43:30+10:00  INFO    md5 6fa7decd371159431a33fb54f0f9e56e matches device
+2026-08-15T16:43:30+10:00  INFO  mtd4   "chike" 1048576 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-164222/UNVR-74acb941a811-ea16-mtd04-chike-1048576B-20260815-164222.img (limit 30s)
+2026-08-15T16:43:30+10:00  INFO    1048576 B in 0.7s (1.4 MB/s) OK
+2026-08-15T16:43:40+10:00  INFO    md5 550e471fce5327a86a1196ddfd8a936f matches device
+2026-08-15T16:43:40+10:00  INFO  wrote images/mtd/UNVR-74acb941a811-sysidea16-20260815-164222/README.md
+2026-08-15T16:43:40+10:00  INFO  done. 5/5 captured
+2026-08-15T16:43:56+10:00  INFO  --- dump-unvr-mtd (console + netcat) ---
+2026-08-15T16:44:03+10:00  INFO  unit   : UNVR serial=74acb941a811 sysid=ea16
+2026-08-15T16:44:03+10:00  INFO  dumping to images/mtd/UNVR-74acb941a811-sysidea16-20260815-164356/
+2026-08-15T16:44:06+10:00  INFO    mtd0      2097152 B  erase  262144  "al_boot"
+2026-08-15T16:44:06+10:00  INFO    mtd1      1048576 B  erase  262144  "device_tree"
+2026-08-15T16:44:06+10:00  INFO    mtd2     16777216 B  erase  262144  "linux_kernel"
+2026-08-15T16:44:06+10:00  INFO    mtd3   1052770304 B  erase  262144  "rootfs"
+2026-08-15T16:44:06+10:00  INFO    mtd4      1048576 B  erase  262144  "chike"
+2026-08-15T16:44:06+10:00  INFO    mtd5      1835008 B  erase    4096  "u-boot"
+2026-08-15T16:44:06+10:00  INFO    mtd6        65536 B  erase    4096  "u-boot env"
+2026-08-15T16:44:06+10:00  INFO    mtd7        65536 B  erase    4096  "u-boot env redundant"
+2026-08-15T16:44:06+10:00  INFO    mtd8        65536 B  erase    4096  "Factory"
+2026-08-15T16:44:06+10:00  INFO    mtd9        65536 B  erase    4096  "EEPROM"
+2026-08-15T16:44:06+10:00  INFO    mtd10    16777216 B  erase    4096  "recovery kernel"
+2026-08-15T16:44:06+10:00  INFO    mtd11    14675968 B  erase    4096  "config"
+2026-08-15T16:44:06+10:00  INFO    mtd12        4096 B  erase    4096  "cksum"
+2026-08-15T16:44:08+10:00  INFO  device 192.168.25.140, this host 192.168.25.145
+2026-08-15T16:44:08+10:00  INFO  mtd10  "recovery kernel" 16777216 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-164356/UNVR-74acb941a811-ea16-mtd10-recovery_kernel-16777216B-20260815-164356.img (limit 30s)
+2026-08-15T16:44:18+10:00  INFO    16777216 B in 9.6s (1.7 MB/s) OK
+2026-08-15T16:44:32+10:00  INFO    md5 3cd65b59fec2dc0daea75ca6206db6e8 matches device
+2026-08-15T16:44:32+10:00  INFO  mtd2   "linux_kernel" 16777216 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-164356/UNVR-74acb941a811-ea16-mtd02-linux_kernel-16777216B-20260815-164356.img (limit 30s)
+2026-08-15T16:44:37+10:00  INFO    16777216 B in 5.2s (3.1 MB/s) OK
+2026-08-15T16:44:48+10:00  INFO    md5 b793ecc1541c4713176f4be8f79cd698 matches device
+2026-08-15T16:44:48+10:00  INFO  mtd3   "rootfs" 1052770304 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-164356/UNVR-74acb941a811-ea16-mtd03-rootfs-1052770304B-20260815-164356.img (limit 1004s)
+2026-08-15T16:49:59+10:00  INFO    1052770304 B in 311.0s (3.2 MB/s) OK
+2026-08-15T16:53:20+10:00  INFO    md5 12935187010ec3964012e997139fc01c matches device
+2026-08-15T16:53:20+10:00  INFO  wrote images/mtd/UNVR-74acb941a811-sysidea16-20260815-164356/README.md
+2026-08-15T16:53:20+10:00  INFO  done. 3/3 captured
+2026-08-15T17:56:13+10:00  INFO  --- dump-unvr-mtd (console + netcat) ---
+2026-08-15T17:56:20+10:00  INFO  unit   : UNVR serial=74acb941a811 sysid=ea16
+2026-08-15T17:56:20+10:00  INFO  dumping to images/mtd/UNVR-74acb941a811-sysidea16-20260815-175613-pre-1.4.9/
+2026-08-15T17:56:23+10:00  INFO    mtd0      2097152 B  erase  262144  "al_boot"
+2026-08-15T17:56:23+10:00  INFO    mtd1      1048576 B  erase  262144  "device_tree"
+2026-08-15T17:56:23+10:00  INFO    mtd2     16777216 B  erase  262144  "linux_kernel"
+2026-08-15T17:56:23+10:00  INFO    mtd3   1052770304 B  erase  262144  "rootfs"
+2026-08-15T17:56:23+10:00  INFO    mtd4      1048576 B  erase  262144  "chike"
+2026-08-15T17:56:23+10:00  INFO    mtd5      1835008 B  erase    4096  "u-boot"
+2026-08-15T17:56:23+10:00  INFO    mtd6        65536 B  erase    4096  "u-boot env"
+2026-08-15T17:56:23+10:00  INFO    mtd7        65536 B  erase    4096  "u-boot env redundant"
+2026-08-15T17:56:23+10:00  INFO    mtd8        65536 B  erase    4096  "Factory"
+2026-08-15T17:56:23+10:00  INFO    mtd9        65536 B  erase    4096  "EEPROM"
+2026-08-15T17:56:23+10:00  INFO    mtd10    16777216 B  erase    4096  "recovery kernel"
+2026-08-15T17:56:23+10:00  INFO    mtd11    14675968 B  erase    4096  "config"
+2026-08-15T17:56:23+10:00  INFO    mtd12        4096 B  erase    4096  "cksum"
+2026-08-15T17:56:23+10:00  INFO  preset identity: mtd [6, 7, 8, 9, 12]
+2026-08-15T17:56:26+10:00  INFO  device 127.0.0.1, this host 127.0.0.1
+2026-08-15T17:56:26+10:00  INFO  mtd8   "Factory" 65536 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-175613-pre-1.4.9/UNVR-74acb941a811-ea16-mtd08-Factory-65536B-20260815-175613.img (limit 30s)
+2026-08-15T17:56:56+10:00  ERROR   FAILED: 0 of 65536 B within 30s
+2026-08-15T17:56:56+10:00  INFO  mtd9   "EEPROM" 65536 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-175613-pre-1.4.9/UNVR-74acb941a811-ea16-mtd09-EEPROM-65536B-20260815-175613.img (limit 30s)
+2026-08-15T17:57:26+10:00  ERROR   FAILED: 0 of 65536 B within 30s
+2026-08-15T17:57:26+10:00  INFO  mtd6   "u-boot env" 65536 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-175613-pre-1.4.9/UNVR-74acb941a811-ea16-mtd06-u-boot_env-65536B-20260815-175613.img (limit 30s)
+2026-08-15T17:57:57+10:00  ERROR   FAILED: 0 of 65536 B within 30s
+2026-08-15T17:57:57+10:00  INFO  mtd7   "u-boot env redundant" 65536 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-175613-pre-1.4.9/UNVR-74acb941a811-ea16-mtd07-u-boot_env_redundant-65536B-20260815-175613.img (limit 30s)
+2026-08-15T17:58:27+10:00  ERROR   FAILED: 0 of 65536 B within 30s
+2026-08-15T17:58:27+10:00  INFO  mtd12  "cksum" 4096 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-175613-pre-1.4.9/UNVR-74acb941a811-ea16-mtd12-cksum-4096B-20260815-175613.img (limit 30s)
+2026-08-15T17:58:58+10:00  ERROR   FAILED: 0 of 4096 B within 30s
+2026-08-15T17:58:58+10:00  INFO  wrote images/mtd/UNVR-74acb941a811-sysidea16-20260815-175613-pre-1.4.9/README.md
+2026-08-15T17:58:58+10:00  ERROR done. 0/5 captured, FAILED: mtd8, mtd9, mtd6, mtd7, mtd12
+2026-08-15T17:59:33+10:00  INFO  --- dump-unvr-mtd (console + netcat) ---
+2026-08-15T17:59:40+10:00  INFO  unit   : UNVR serial=74acb941a811 sysid=ea16
+2026-08-15T17:59:40+10:00  INFO  dumping to images/mtd/UNVR-74acb941a811-sysidea16-20260815-175933-pre-1.4.9/
+2026-08-15T17:59:43+10:00  INFO    mtd0      2097152 B  erase  262144  "al_boot"
+2026-08-15T17:59:43+10:00  INFO    mtd1      1048576 B  erase  262144  "device_tree"
+2026-08-15T17:59:43+10:00  INFO    mtd2     16777216 B  erase  262144  "linux_kernel"
+2026-08-15T17:59:43+10:00  INFO    mtd3   1052770304 B  erase  262144  "rootfs"
+2026-08-15T17:59:43+10:00  INFO    mtd4      1048576 B  erase  262144  "chike"
+2026-08-15T17:59:43+10:00  INFO    mtd5      1835008 B  erase    4096  "u-boot"
+2026-08-15T17:59:43+10:00  INFO    mtd6        65536 B  erase    4096  "u-boot env"
+2026-08-15T17:59:43+10:00  INFO    mtd7        65536 B  erase    4096  "u-boot env redundant"
+2026-08-15T17:59:43+10:00  INFO    mtd8        65536 B  erase    4096  "Factory"
+2026-08-15T17:59:43+10:00  INFO    mtd9        65536 B  erase    4096  "EEPROM"
+2026-08-15T17:59:43+10:00  INFO    mtd10    16777216 B  erase    4096  "recovery kernel"
+2026-08-15T17:59:43+10:00  INFO    mtd11    14675968 B  erase    4096  "config"
+2026-08-15T17:59:43+10:00  INFO    mtd12        4096 B  erase    4096  "cksum"
+2026-08-15T17:59:43+10:00  INFO  preset state: mtd [2, 5, 6, 7, 8, 9, 11, 12]
+2026-08-15T17:59:45+10:00  INFO  device 192.168.25.140, this host 192.168.25.145
+2026-08-15T17:59:45+10:00  INFO  mtd8   "Factory" 65536 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-175933-pre-1.4.9/UNVR-74acb941a811-ea16-mtd08-Factory-65536B-20260815-175933.img (limit 30s)
+2026-08-15T18:00:16+10:00  ERROR   FAILED: 0 of 65536 B within 30s
+2026-08-15T18:00:16+10:00  INFO  mtd9   "EEPROM" 65536 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-175933-pre-1.4.9/UNVR-74acb941a811-ea16-mtd09-EEPROM-65536B-20260815-175933.img (limit 30s)
+2026-08-15T18:00:46+10:00  ERROR   FAILED: 0 of 65536 B within 30s
+2026-08-15T18:00:46+10:00  INFO  mtd5   "u-boot" 1835008 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-175933-pre-1.4.9/UNVR-74acb941a811-ea16-mtd05-u-boot-1835008B-20260815-175933.img (limit 30s)
+2026-08-15T18:01:17+10:00  ERROR   FAILED: 0 of 1835008 B within 30s
+2026-08-15T18:01:17+10:00  INFO  mtd6   "u-boot env" 65536 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-175933-pre-1.4.9/UNVR-74acb941a811-ea16-mtd06-u-boot_env-65536B-20260815-175933.img (limit 30s)
+2026-08-15T18:01:47+10:00  ERROR   FAILED: 0 of 65536 B within 30s
+2026-08-15T18:01:47+10:00  INFO  mtd7   "u-boot env redundant" 65536 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-175933-pre-1.4.9/UNVR-74acb941a811-ea16-mtd07-u-boot_env_redundant-65536B-20260815-175933.img (limit 30s)
+2026-08-15T18:02:17+10:00  ERROR   FAILED: 0 of 65536 B within 30s
+2026-08-15T18:02:17+10:00  INFO  mtd12  "cksum" 4096 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-175933-pre-1.4.9/UNVR-74acb941a811-ea16-mtd12-cksum-4096B-20260815-175933.img (limit 30s)
+2026-08-15T18:02:48+10:00  ERROR   FAILED: 0 of 4096 B within 30s
+2026-08-15T18:02:48+10:00  INFO  mtd11  "config" 14675968 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-175933-pre-1.4.9/UNVR-74acb941a811-ea16-mtd11-config-14675968B-20260815-175933.img (limit 30s)
+2026-08-15T18:03:18+10:00  ERROR   FAILED: 0 of 14675968 B within 30s
+2026-08-15T18:03:18+10:00  INFO  mtd2   "linux_kernel" 16777216 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-175933-pre-1.4.9/UNVR-74acb941a811-ea16-mtd02-linux_kernel-16777216B-20260815-175933.img (limit 30s)
+2026-08-15T18:03:49+10:00  ERROR   FAILED: 0 of 16777216 B within 30s
+2026-08-15T18:03:49+10:00  INFO  wrote images/mtd/UNVR-74acb941a811-sysidea16-20260815-175933-pre-1.4.9/README.md
+2026-08-15T18:03:49+10:00  ERROR done. 0/8 captured, FAILED: mtd8, mtd9, mtd5, mtd6, mtd7, mtd12, mtd11, mtd2
+2026-08-15T18:04:49+10:00  INFO  --- dump-unvr-mtd (console + netcat) ---
+2026-08-15T18:04:56+10:00  INFO  unit   : UNVR serial=74acb941a811 sysid=ea16
+2026-08-15T18:04:56+10:00  INFO  dumping to images/mtd/UNVR-74acb941a811-sysidea16-20260815-180449-pre-1.4.9/
+2026-08-15T18:04:59+10:00  INFO    mtd0      2097152 B  erase  262144  "al_boot"
+2026-08-15T18:04:59+10:00  INFO    mtd1      1048576 B  erase  262144  "device_tree"
+2026-08-15T18:04:59+10:00  INFO    mtd2     16777216 B  erase  262144  "linux_kernel"
+2026-08-15T18:04:59+10:00  INFO    mtd3   1052770304 B  erase  262144  "rootfs"
+2026-08-15T18:04:59+10:00  INFO    mtd4      1048576 B  erase  262144  "chike"
+2026-08-15T18:04:59+10:00  INFO    mtd5      1835008 B  erase    4096  "u-boot"
+2026-08-15T18:04:59+10:00  INFO    mtd6        65536 B  erase    4096  "u-boot env"
+2026-08-15T18:04:59+10:00  INFO    mtd7        65536 B  erase    4096  "u-boot env redundant"
+2026-08-15T18:04:59+10:00  INFO    mtd8        65536 B  erase    4096  "Factory"
+2026-08-15T18:04:59+10:00  INFO    mtd9        65536 B  erase    4096  "EEPROM"
+2026-08-15T18:04:59+10:00  INFO    mtd10    16777216 B  erase    4096  "recovery kernel"
+2026-08-15T18:04:59+10:00  INFO    mtd11    14675968 B  erase    4096  "config"
+2026-08-15T18:04:59+10:00  INFO    mtd12        4096 B  erase    4096  "cksum"
+2026-08-15T18:04:59+10:00  INFO  preset state: mtd [2, 5, 6, 7, 8, 9, 11, 12]
+2026-08-15T18:05:01+10:00  INFO  device 192.168.25.140, this host 192.168.25.145
+2026-08-15T18:05:01+10:00  INFO  mtd8   "Factory" 65536 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-180449-pre-1.4.9/UNVR-74acb941a811-ea16-mtd08-Factory-65536B-20260815-180449.img (limit 30s)
+2026-08-15T18:05:02+10:00  INFO    65536 B in 0.4s (0.1 MB/s) OK
+2026-08-15T18:05:12+10:00  INFO    md5 ecb99e6ffea7be1e5419350f725da86b matches device
+2026-08-15T18:05:12+10:00  INFO  mtd9   "EEPROM" 65536 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-180449-pre-1.4.9/UNVR-74acb941a811-ea16-mtd09-EEPROM-65536B-20260815-180449.img (limit 30s)
+2026-08-15T18:05:12+10:00  INFO    65536 B in 0.4s (0.1 MB/s) OK
+2026-08-15T18:05:22+10:00  INFO    md5 51167ac3b93f54c5b3fd7c4279ad6994 matches device
+2026-08-15T18:05:22+10:00  INFO  mtd5   "u-boot" 1835008 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-180449-pre-1.4.9/UNVR-74acb941a811-ea16-mtd05-u-boot-1835008B-20260815-180449.img (limit 30s)
+2026-08-15T18:05:23+10:00  INFO    1835008 B in 1.2s (1.5 MB/s) OK
+2026-08-15T18:05:34+10:00  INFO    md5 68f0bed7ed80e8a0708de56c6f8589d2 matches device
+2026-08-15T18:05:34+10:00  INFO  mtd6   "u-boot env" 65536 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-180449-pre-1.4.9/UNVR-74acb941a811-ea16-mtd06-u-boot_env-65536B-20260815-180449.img (limit 30s)
+2026-08-15T18:05:34+10:00  INFO    65536 B in 0.4s (0.1 MB/s) OK
+2026-08-15T18:05:44+10:00  INFO    md5 fcd6bcb56c1689fcef28b57c22475bad matches device
+2026-08-15T18:05:44+10:00  INFO  mtd7   "u-boot env redundant" 65536 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-180449-pre-1.4.9/UNVR-74acb941a811-ea16-mtd07-u-boot_env_redundant-65536B-20260815-180449.img (limit 30s)
+2026-08-15T18:05:45+10:00  INFO    65536 B in 0.4s (0.1 MB/s) OK
+2026-08-15T18:05:55+10:00  INFO    md5 fcd6bcb56c1689fcef28b57c22475bad matches device
+2026-08-15T18:05:55+10:00  INFO  mtd12  "cksum" 4096 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-180449-pre-1.4.9/UNVR-74acb941a811-ea16-mtd12-cksum-4096B-20260815-180449.img (limit 30s)
+2026-08-15T18:05:55+10:00  INFO    4096 B in 0.4s (0.0 MB/s) OK
+2026-08-15T18:06:05+10:00  INFO    md5 620f0b67a91f7f74151bc5be745b7110 matches device
+2026-08-15T18:06:05+10:00  INFO  mtd11  "config" 14675968 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-180449-pre-1.4.9/UNVR-74acb941a811-ea16-mtd11-config-14675968B-20260815-180449.img (limit 30s)
+2026-08-15T18:06:14+10:00  INFO    14675968 B in 8.4s (1.7 MB/s) OK
+2026-08-15T18:06:27+10:00  INFO    md5 d84aa3f14ffe663bc9499a896aeada6f matches device
+2026-08-15T18:06:27+10:00  INFO  mtd2   "linux_kernel" 16777216 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-180449-pre-1.4.9/UNVR-74acb941a811-ea16-mtd02-linux_kernel-16777216B-20260815-180449.img (limit 30s)
+2026-08-15T18:06:32+10:00  INFO    16777216 B in 5.2s (3.1 MB/s) OK
+2026-08-15T18:06:44+10:00  INFO    md5 b793ecc1541c4713176f4be8f79cd698 matches device
+2026-08-15T18:06:44+10:00  INFO  wrote images/mtd/UNVR-74acb941a811-sysidea16-20260815-180449-pre-1.4.9/README.md
+2026-08-15T18:06:44+10:00  INFO  done. 8/8 captured
+2026-08-15T18:11:04+10:00  INFO  --- dump-unvr-mtd (console + netcat) ---
+2026-08-15T18:11:12+10:00  INFO  unit   : UNVR serial=74acb941a811 sysid=ea16
+2026-08-15T18:11:12+10:00  INFO  dumping to images/mtd/UNVR-74acb941a811-sysidea16-20260815-181104-pre-1.4.9/
+2026-08-15T18:11:15+10:00  INFO    mtd0      2097152 B  erase  262144  "al_boot"
+2026-08-15T18:11:15+10:00  INFO    mtd1      1048576 B  erase  262144  "device_tree"
+2026-08-15T18:11:15+10:00  INFO    mtd2     16777216 B  erase  262144  "linux_kernel"
+2026-08-15T18:11:15+10:00  INFO    mtd3   1052770304 B  erase  262144  "rootfs"
+2026-08-15T18:11:15+10:00  INFO    mtd4      1048576 B  erase  262144  "chike"
+2026-08-15T18:11:15+10:00  INFO    mtd5      1835008 B  erase    4096  "u-boot"
+2026-08-15T18:11:15+10:00  INFO    mtd6        65536 B  erase    4096  "u-boot env"
+2026-08-15T18:11:15+10:00  INFO    mtd7        65536 B  erase    4096  "u-boot env redundant"
+2026-08-15T18:11:15+10:00  INFO    mtd8        65536 B  erase    4096  "Factory"
+2026-08-15T18:11:15+10:00  INFO    mtd9        65536 B  erase    4096  "EEPROM"
+2026-08-15T18:11:15+10:00  INFO    mtd10    16777216 B  erase    4096  "recovery kernel"
+2026-08-15T18:11:15+10:00  INFO    mtd11    14675968 B  erase    4096  "config"
+2026-08-15T18:11:15+10:00  INFO    mtd12        4096 B  erase    4096  "cksum"
+2026-08-15T18:11:15+10:00  INFO  preset state: mtd [2, 5, 6, 7, 8, 9, 11, 12]
+2026-08-15T18:11:17+10:00  INFO  device 192.168.25.140, this host 192.168.25.145
+2026-08-15T18:11:17+10:00  INFO  mtd8   "Factory" 65536 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-181104-pre-1.4.9/UNVR-74acb941a811-ea16-mtd08-Factory-65536B-20260815-181104.img (limit 30s)
+2026-08-15T18:11:17+10:00  INFO    65536 B in 0.4s (0.1 MB/s) OK
+2026-08-15T18:11:27+10:00  INFO    md5 ecb99e6ffea7be1e5419350f725da86b matches device
+2026-08-15T18:11:27+10:00  INFO  mtd9   "EEPROM" 65536 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-181104-pre-1.4.9/UNVR-74acb941a811-ea16-mtd09-EEPROM-65536B-20260815-181104.img (limit 30s)
+2026-08-15T18:11:28+10:00  INFO    65536 B in 0.4s (0.1 MB/s) OK
+2026-08-15T18:11:38+10:00  INFO    md5 51167ac3b93f54c5b3fd7c4279ad6994 matches device
+2026-08-15T18:11:38+10:00  INFO  mtd5   "u-boot" 1835008 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-181104-pre-1.4.9/UNVR-74acb941a811-ea16-mtd05-u-boot-1835008B-20260815-181104.img (limit 30s)
+2026-08-15T18:11:39+10:00  INFO    1835008 B in 1.2s (1.5 MB/s) OK
+2026-08-15T18:11:50+10:00  INFO    md5 68f0bed7ed80e8a0708de56c6f8589d2 matches device
+2026-08-15T18:11:50+10:00  INFO  mtd6   "u-boot env" 65536 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-181104-pre-1.4.9/UNVR-74acb941a811-ea16-mtd06-u-boot_env-65536B-20260815-181104.img (limit 30s)
+2026-08-15T18:11:50+10:00  INFO    65536 B in 0.4s (0.1 MB/s) OK
+2026-08-15T18:12:00+10:00  INFO    md5 fcd6bcb56c1689fcef28b57c22475bad matches device
+2026-08-15T18:12:00+10:00  INFO  mtd7   "u-boot env redundant" 65536 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-181104-pre-1.4.9/UNVR-74acb941a811-ea16-mtd07-u-boot_env_redundant-65536B-20260815-181104.img (limit 30s)
+2026-08-15T18:12:00+10:00  INFO    65536 B in 0.4s (0.1 MB/s) OK
+2026-08-15T18:12:11+10:00  INFO    md5 fcd6bcb56c1689fcef28b57c22475bad matches device
+2026-08-15T18:12:11+10:00  INFO  mtd12  "cksum" 4096 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-181104-pre-1.4.9/UNVR-74acb941a811-ea16-mtd12-cksum-4096B-20260815-181104.img (limit 30s)
+2026-08-15T18:12:11+10:00  INFO    4096 B in 0.4s (0.0 MB/s) OK
+2026-08-15T18:12:21+10:00  INFO    md5 620f0b67a91f7f74151bc5be745b7110 matches device
+2026-08-15T18:12:21+10:00  INFO  mtd11  "config" 14675968 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-181104-pre-1.4.9/UNVR-74acb941a811-ea16-mtd11-config-14675968B-20260815-181104.img (limit 30s)
+2026-08-15T18:12:29+10:00  INFO    14675968 B in 8.4s (1.7 MB/s) OK
+2026-08-15T18:12:43+10:00  INFO    md5 d84aa3f14ffe663bc9499a896aeada6f matches device
+2026-08-15T18:12:43+10:00  INFO  mtd2   "linux_kernel" 16777216 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-181104-pre-1.4.9/UNVR-74acb941a811-ea16-mtd02-linux_kernel-16777216B-20260815-181104.img (limit 30s)
+2026-08-15T18:12:48+10:00  INFO    16777216 B in 5.2s (3.1 MB/s) OK
+2026-08-15T18:12:59+10:00  INFO    md5 b793ecc1541c4713176f4be8f79cd698 matches device
+2026-08-15T18:12:59+10:00  INFO  wrote images/mtd/UNVR-74acb941a811-sysidea16-20260815-181104-pre-1.4.9/README.md
+2026-08-15T18:12:59+10:00  INFO  done. 8/8 captured
+2026-08-15T18:23:49+10:00  INFO  --- dump-unvr-mtd (console + netcat) ---
+2026-08-15T18:23:56+10:00  INFO  unit   : UNVR serial=74acb941a811 sysid=ea16
+2026-08-15T18:23:56+10:00  INFO  dumping to images/mtd/UNVR-74acb941a811-sysidea16-20260815-182349-pre-1.4.9/
+2026-08-15T18:23:59+10:00  INFO    mtd0      2097152 B  erase  262144  "al_boot"
+2026-08-15T18:23:59+10:00  INFO    mtd1      1048576 B  erase  262144  "device_tree"
+2026-08-15T18:23:59+10:00  INFO    mtd2     16777216 B  erase  262144  "linux_kernel"
+2026-08-15T18:23:59+10:00  INFO    mtd3   1052770304 B  erase  262144  "rootfs"
+2026-08-15T18:23:59+10:00  INFO    mtd4      1048576 B  erase  262144  "chike"
+2026-08-15T18:23:59+10:00  INFO    mtd5      1835008 B  erase    4096  "u-boot"
+2026-08-15T18:23:59+10:00  INFO    mtd6        65536 B  erase    4096  "u-boot env"
+2026-08-15T18:23:59+10:00  INFO    mtd7        65536 B  erase    4096  "u-boot env redundant"
+2026-08-15T18:23:59+10:00  INFO    mtd8        65536 B  erase    4096  "Factory"
+2026-08-15T18:23:59+10:00  INFO    mtd9        65536 B  erase    4096  "EEPROM"
+2026-08-15T18:23:59+10:00  INFO    mtd10    16777216 B  erase    4096  "recovery kernel"
+2026-08-15T18:23:59+10:00  INFO    mtd11    14675968 B  erase    4096  "config"
+2026-08-15T18:23:59+10:00  INFO    mtd12        4096 B  erase    4096  "cksum"
+2026-08-15T18:23:59+10:00  INFO  preset state: mtd [2, 5, 6, 7, 8, 9, 11, 12]
+2026-08-15T18:24:01+10:00  INFO  device 192.168.25.140, this host 192.168.25.145
+2026-08-15T18:24:01+10:00  INFO  mtd8   "Factory" 65536 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-182349-pre-1.4.9/UNVR-74acb941a811-ea16-mtd08-Factory-65536B-20260815-182349.img (limit 30s)
+2026-08-15T18:24:02+10:00  INFO    65536 B in 0.4s (0.1 MB/s) OK
+2026-08-15T18:24:12+10:00  INFO    md5 ecb99e6ffea7be1e5419350f725da86b matches device
+2026-08-15T18:24:12+10:00  INFO  mtd9   "EEPROM" 65536 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-182349-pre-1.4.9/UNVR-74acb941a811-ea16-mtd09-EEPROM-65536B-20260815-182349.img (limit 30s)
+2026-08-15T18:24:12+10:00  INFO    65536 B in 0.5s (0.1 MB/s) OK
+2026-08-15T18:24:22+10:00  INFO    md5 51167ac3b93f54c5b3fd7c4279ad6994 matches device
+2026-08-15T18:24:22+10:00  INFO  mtd5   "u-boot" 1835008 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-182349-pre-1.4.9/UNVR-74acb941a811-ea16-mtd05-u-boot-1835008B-20260815-182349.img (limit 30s)
+2026-08-15T18:24:23+10:00  INFO    1835008 B in 1.2s (1.5 MB/s) OK
+2026-08-15T18:24:34+10:00  INFO    md5 68f0bed7ed80e8a0708de56c6f8589d2 matches device
+2026-08-15T18:24:34+10:00  INFO  mtd6   "u-boot env" 65536 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-182349-pre-1.4.9/UNVR-74acb941a811-ea16-mtd06-u-boot_env-65536B-20260815-182349.img (limit 30s)
+2026-08-15T18:24:34+10:00  INFO    65536 B in 0.4s (0.1 MB/s) OK
+2026-08-15T18:24:44+10:00  INFO    md5 fcd6bcb56c1689fcef28b57c22475bad matches device
+2026-08-15T18:24:44+10:00  INFO  mtd7   "u-boot env redundant" 65536 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-182349-pre-1.4.9/UNVR-74acb941a811-ea16-mtd07-u-boot_env_redundant-65536B-20260815-182349.img (limit 30s)
+2026-08-15T18:24:45+10:00  INFO    65536 B in 0.4s (0.1 MB/s) OK
+2026-08-15T18:24:55+10:00  INFO    md5 fcd6bcb56c1689fcef28b57c22475bad matches device
+2026-08-15T18:24:55+10:00  INFO  mtd12  "cksum" 4096 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-182349-pre-1.4.9/UNVR-74acb941a811-ea16-mtd12-cksum-4096B-20260815-182349.img (limit 30s)
+2026-08-15T18:24:55+10:00  INFO    4096 B in 0.4s (0.0 MB/s) OK
+2026-08-15T18:25:05+10:00  INFO    md5 620f0b67a91f7f74151bc5be745b7110 matches device
+2026-08-15T18:25:05+10:00  INFO  mtd11  "config" 14675968 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-182349-pre-1.4.9/UNVR-74acb941a811-ea16-mtd11-config-14675968B-20260815-182349.img (limit 30s)
+2026-08-15T18:25:14+10:00  INFO    14675968 B in 8.4s (1.7 MB/s) OK
+2026-08-15T18:25:27+10:00  INFO    md5 d84aa3f14ffe663bc9499a896aeada6f matches device
+2026-08-15T18:25:27+10:00  INFO  mtd2   "linux_kernel" 16777216 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-182349-pre-1.4.9/UNVR-74acb941a811-ea16-mtd02-linux_kernel-16777216B-20260815-182349.img (limit 30s)
+2026-08-15T18:25:32+10:00  INFO    16777216 B in 5.2s (3.1 MB/s) OK
+2026-08-15T18:25:44+10:00  INFO    md5 b793ecc1541c4713176f4be8f79cd698 matches device
+2026-08-15T18:25:44+10:00  INFO  wrote images/mtd/UNVR-74acb941a811-sysidea16-20260815-182349-pre-1.4.9/README.md
+2026-08-15T18:25:44+10:00  INFO  done. 8/8 captured
+2026-08-15T18:31:00+10:00  INFO  --- dump-unvr-mtd (console + netcat) ---
+2026-08-15T18:31:07+10:00  INFO  unit   : UNVR serial=74acb941a811 sysid=ea16
+2026-08-15T18:31:07+10:00  INFO  dumping to images/mtd/UNVR-74acb941a811-sysidea16-20260815-183100-pre-1.4.9/
+2026-08-15T18:31:11+10:00  INFO    mtd0      2097152 B  erase  262144  "al_boot"
+2026-08-15T18:31:11+10:00  INFO    mtd1      1048576 B  erase  262144  "device_tree"
+2026-08-15T18:31:11+10:00  INFO    mtd2     16777216 B  erase  262144  "linux_kernel"
+2026-08-15T18:31:11+10:00  INFO    mtd3   1052770304 B  erase  262144  "rootfs"
+2026-08-15T18:31:11+10:00  INFO    mtd4      1048576 B  erase  262144  "chike"
+2026-08-15T18:31:11+10:00  INFO    mtd5      1835008 B  erase    4096  "u-boot"
+2026-08-15T18:31:11+10:00  INFO    mtd6        65536 B  erase    4096  "u-boot env"
+2026-08-15T18:31:11+10:00  INFO    mtd7        65536 B  erase    4096  "u-boot env redundant"
+2026-08-15T18:31:11+10:00  INFO    mtd8        65536 B  erase    4096  "Factory"
+2026-08-15T18:31:11+10:00  INFO    mtd9        65536 B  erase    4096  "EEPROM"
+2026-08-15T18:31:11+10:00  INFO    mtd10    16777216 B  erase    4096  "recovery kernel"
+2026-08-15T18:31:11+10:00  INFO    mtd11    14675968 B  erase    4096  "config"
+2026-08-15T18:31:11+10:00  INFO    mtd12        4096 B  erase    4096  "cksum"
+2026-08-15T18:31:11+10:00  INFO  preset state: mtd [2, 5, 6, 7, 8, 9, 11, 12]
+2026-08-15T18:31:13+10:00  INFO  device 192.168.25.140, this host 192.168.25.145
+2026-08-15T18:31:13+10:00  INFO  mtd8   "Factory" 65536 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-183100-pre-1.4.9/UNVR-74acb941a811-ea16-mtd08-Factory-65536B-20260815-183100.img (limit 30s)
+2026-08-15T18:31:13+10:00  INFO    65536 B in 0.4s (0.1 MB/s) OK
+2026-08-15T18:31:23+10:00  INFO    md5 ecb99e6ffea7be1e5419350f725da86b matches device
+2026-08-15T18:31:23+10:00  INFO  mtd9   "EEPROM" 65536 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-183100-pre-1.4.9/UNVR-74acb941a811-ea16-mtd09-EEPROM-65536B-20260815-183100.img (limit 30s)
+2026-08-15T18:31:24+10:00  INFO    65536 B in 0.4s (0.1 MB/s) OK
+2026-08-15T18:31:34+10:00  INFO    md5 51167ac3b93f54c5b3fd7c4279ad6994 matches device
+2026-08-15T18:31:34+10:00  INFO  mtd5   "u-boot" 1835008 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-183100-pre-1.4.9/UNVR-74acb941a811-ea16-mtd05-u-boot-1835008B-20260815-183100.img (limit 30s)
+2026-08-15T18:31:35+10:00  INFO    1835008 B in 1.2s (1.5 MB/s) OK
+2026-08-15T18:31:45+10:00  INFO    md5 68f0bed7ed80e8a0708de56c6f8589d2 matches device
+2026-08-15T18:31:45+10:00  INFO  mtd6   "u-boot env" 65536 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-183100-pre-1.4.9/UNVR-74acb941a811-ea16-mtd06-u-boot_env-65536B-20260815-183100.img (limit 30s)
+2026-08-15T18:31:46+10:00  INFO    65536 B in 0.4s (0.1 MB/s) OK
+2026-08-15T18:31:56+10:00  INFO    md5 fcd6bcb56c1689fcef28b57c22475bad matches device
+2026-08-15T18:31:56+10:00  INFO  mtd7   "u-boot env redundant" 65536 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-183100-pre-1.4.9/UNVR-74acb941a811-ea16-mtd07-u-boot_env_redundant-65536B-20260815-183100.img (limit 30s)
+2026-08-15T18:31:56+10:00  INFO    65536 B in 0.4s (0.1 MB/s) OK
+2026-08-15T18:32:06+10:00  INFO    md5 fcd6bcb56c1689fcef28b57c22475bad matches device
+2026-08-15T18:32:06+10:00  INFO  mtd12  "cksum" 4096 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-183100-pre-1.4.9/UNVR-74acb941a811-ea16-mtd12-cksum-4096B-20260815-183100.img (limit 30s)
+2026-08-15T18:32:07+10:00  INFO    4096 B in 0.4s (0.0 MB/s) OK
+2026-08-15T18:32:17+10:00  INFO    md5 620f0b67a91f7f74151bc5be745b7110 matches device
+2026-08-15T18:32:17+10:00  INFO  mtd11  "config" 14675968 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-183100-pre-1.4.9/UNVR-74acb941a811-ea16-mtd11-config-14675968B-20260815-183100.img (limit 30s)
+2026-08-15T18:32:25+10:00  INFO    14675968 B in 8.4s (1.7 MB/s) OK
+2026-08-15T18:32:39+10:00  INFO    md5 d84aa3f14ffe663bc9499a896aeada6f matches device
+2026-08-15T18:32:39+10:00  INFO  mtd2   "linux_kernel" 16777216 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-183100-pre-1.4.9/UNVR-74acb941a811-ea16-mtd02-linux_kernel-16777216B-20260815-183100.img (limit 30s)
+2026-08-15T18:32:44+10:00  INFO    16777216 B in 5.2s (3.1 MB/s) OK
+2026-08-15T18:32:55+10:00  INFO    md5 b793ecc1541c4713176f4be8f79cd698 matches device
+2026-08-15T18:32:55+10:00  INFO  wrote images/mtd/UNVR-74acb941a811-sysidea16-20260815-183100-pre-1.4.9/README.md
+2026-08-15T18:32:55+10:00  INFO  done. 8/8 captured
+2026-08-15T18:53:20+10:00  INFO  --- dump-unvr-mtd (console + netcat) ---
+2026-08-15T18:53:27+10:00  INFO  unit   : UNVR serial=74acb941a811 sysid=ea16
+2026-08-15T18:53:27+10:00  INFO  dumping to images/mtd/UNVR-74acb941a811-sysidea16-20260815-185320-pre-2.3.14/
+2026-08-15T18:53:30+10:00  INFO    mtd0      2097152 B  erase  262144  "al_boot"
+2026-08-15T18:53:30+10:00  INFO    mtd1      1048576 B  erase  262144  "device_tree"
+2026-08-15T18:53:30+10:00  INFO    mtd2     16777216 B  erase  262144  "linux_kernel"
+2026-08-15T18:53:30+10:00  INFO    mtd3   1052770304 B  erase  262144  "rootfs"
+2026-08-15T18:53:30+10:00  INFO    mtd4      1048576 B  erase  262144  "chike"
+2026-08-15T18:53:30+10:00  INFO    mtd5      1835008 B  erase    4096  "u-boot"
+2026-08-15T18:53:30+10:00  INFO    mtd6        65536 B  erase    4096  "u-boot env"
+2026-08-15T18:53:30+10:00  INFO    mtd7        65536 B  erase    4096  "u-boot env redundant"
+2026-08-15T18:53:30+10:00  INFO    mtd8        65536 B  erase    4096  "Factory"
+2026-08-15T18:53:30+10:00  INFO    mtd9        65536 B  erase    4096  "EEPROM"
+2026-08-15T18:53:30+10:00  INFO    mtd10    16777216 B  erase    4096  "recovery kernel"
+2026-08-15T18:53:30+10:00  INFO    mtd11    14675968 B  erase    4096  "config"
+2026-08-15T18:53:30+10:00  INFO    mtd12        4096 B  erase    4096  "cksum"
+2026-08-15T18:53:30+10:00  INFO  preset state: mtd [2, 5, 6, 7, 8, 9, 11, 12]
+2026-08-15T18:53:32+10:00  INFO  device 192.168.25.140, this host 192.168.25.145
+2026-08-15T18:53:32+10:00  INFO  mtd8   "Factory" 65536 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-185320-pre-2.3.14/UNVR-74acb941a811-ea16-mtd08-Factory-65536B-20260815-185320.img (limit 30s)
+2026-08-15T18:53:33+10:00  INFO    65536 B in 0.5s (0.1 MB/s) OK
+2026-08-15T18:53:43+10:00  INFO    md5 ecb99e6ffea7be1e5419350f725da86b matches device
+2026-08-15T18:53:43+10:00  INFO  mtd9   "EEPROM" 65536 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-185320-pre-2.3.14/UNVR-74acb941a811-ea16-mtd09-EEPROM-65536B-20260815-185320.img (limit 30s)
+2026-08-15T18:53:43+10:00  INFO    65536 B in 0.4s (0.1 MB/s) OK
+2026-08-15T18:53:53+10:00  INFO    md5 51167ac3b93f54c5b3fd7c4279ad6994 matches device
+2026-08-15T18:53:53+10:00  INFO  mtd5   "u-boot" 1835008 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-185320-pre-2.3.14/UNVR-74acb941a811-ea16-mtd05-u-boot-1835008B-20260815-185320.img (limit 30s)
+2026-08-15T18:53:54+10:00  INFO    1835008 B in 1.2s (1.5 MB/s) OK
+2026-08-15T18:54:05+10:00  INFO    md5 68f0bed7ed80e8a0708de56c6f8589d2 matches device
+2026-08-15T18:54:05+10:00  INFO  mtd6   "u-boot env" 65536 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-185320-pre-2.3.14/UNVR-74acb941a811-ea16-mtd06-u-boot_env-65536B-20260815-185320.img (limit 30s)
+2026-08-15T18:54:05+10:00  INFO    65536 B in 0.4s (0.1 MB/s) OK
+2026-08-15T18:54:15+10:00  INFO    md5 fcd6bcb56c1689fcef28b57c22475bad matches device
+2026-08-15T18:54:15+10:00  INFO  mtd7   "u-boot env redundant" 65536 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-185320-pre-2.3.14/UNVR-74acb941a811-ea16-mtd07-u-boot_env_redundant-65536B-20260815-185320.img (limit 30s)
+2026-08-15T18:54:16+10:00  INFO    65536 B in 0.4s (0.1 MB/s) OK
+2026-08-15T18:54:26+10:00  INFO    md5 fcd6bcb56c1689fcef28b57c22475bad matches device
+2026-08-15T18:54:26+10:00  INFO  mtd12  "cksum" 4096 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-185320-pre-2.3.14/UNVR-74acb941a811-ea16-mtd12-cksum-4096B-20260815-185320.img (limit 30s)
+2026-08-15T18:54:26+10:00  INFO    4096 B in 0.4s (0.0 MB/s) OK
+2026-08-15T18:54:37+10:00  INFO    md5 620f0b67a91f7f74151bc5be745b7110 matches device
+2026-08-15T18:54:37+10:00  INFO  mtd11  "config" 14675968 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-185320-pre-2.3.14/UNVR-74acb941a811-ea16-mtd11-config-14675968B-20260815-185320.img (limit 30s)
+2026-08-15T18:54:45+10:00  INFO    14675968 B in 8.6s (1.6 MB/s) OK
+2026-08-15T18:54:59+10:00  INFO    md5 1dd8883d3649abeb7f5efeac345a4528 matches device
+2026-08-15T18:54:59+10:00  INFO  mtd2   "linux_kernel" 16777216 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-185320-pre-2.3.14/UNVR-74acb941a811-ea16-mtd02-linux_kernel-16777216B-20260815-185320.img (limit 30s)
+2026-08-15T18:55:04+10:00  INFO    16777216 B in 5.2s (3.1 MB/s) OK
+2026-08-15T18:55:15+10:00  INFO    md5 dfb70545b64dd089cb8d8cc49c801474 matches device
+2026-08-15T18:55:15+10:00  INFO  wrote images/mtd/UNVR-74acb941a811-sysidea16-20260815-185320-pre-2.3.14/README.md
+2026-08-15T18:55:15+10:00  INFO  done. 8/8 captured
+2026-08-15T19:00:09+10:00  INFO  --- dump-unvr-mtd (console + netcat) ---
+2026-08-15T19:00:17+10:00  INFO  unit   : UNVR serial=74acb941a811 sysid=ea16
+2026-08-15T19:00:17+10:00  INFO  dumping to images/mtd/UNVR-74acb941a811-sysidea16-20260815-190009-pre-2.3.14/
+2026-08-15T19:00:20+10:00  INFO    mtd0      2097152 B  erase  262144  "al_boot"
+2026-08-15T19:00:20+10:00  INFO    mtd1      1048576 B  erase  262144  "device_tree"
+2026-08-15T19:00:20+10:00  INFO    mtd2     16777216 B  erase  262144  "linux_kernel"
+2026-08-15T19:00:20+10:00  INFO    mtd3   1052770304 B  erase  262144  "rootfs"
+2026-08-15T19:00:20+10:00  INFO    mtd4      1048576 B  erase  262144  "chike"
+2026-08-15T19:00:20+10:00  INFO    mtd5      1835008 B  erase    4096  "u-boot"
+2026-08-15T19:00:20+10:00  INFO    mtd6        65536 B  erase    4096  "u-boot env"
+2026-08-15T19:00:20+10:00  INFO    mtd7        65536 B  erase    4096  "u-boot env redundant"
+2026-08-15T19:00:20+10:00  INFO    mtd8        65536 B  erase    4096  "Factory"
+2026-08-15T19:00:20+10:00  INFO    mtd9        65536 B  erase    4096  "EEPROM"
+2026-08-15T19:00:20+10:00  INFO    mtd10    16777216 B  erase    4096  "recovery kernel"
+2026-08-15T19:00:20+10:00  INFO    mtd11    14675968 B  erase    4096  "config"
+2026-08-15T19:00:20+10:00  INFO    mtd12        4096 B  erase    4096  "cksum"
+2026-08-15T19:00:20+10:00  INFO  preset state: mtd [2, 5, 6, 7, 8, 9, 11, 12]
+2026-08-15T19:00:22+10:00  INFO  device 192.168.25.140, this host 192.168.25.145
+2026-08-15T19:00:22+10:00  INFO  mtd8   "Factory" 65536 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-190009-pre-2.3.14/UNVR-74acb941a811-ea16-mtd08-Factory-65536B-20260815-190009.img (limit 30s)
+2026-08-15T19:00:22+10:00  INFO    65536 B in 0.5s (0.1 MB/s) OK
+2026-08-15T19:00:32+10:00  INFO    md5 ecb99e6ffea7be1e5419350f725da86b matches device
+2026-08-15T19:00:32+10:00  INFO  mtd9   "EEPROM" 65536 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-190009-pre-2.3.14/UNVR-74acb941a811-ea16-mtd09-EEPROM-65536B-20260815-190009.img (limit 30s)
+2026-08-15T19:00:33+10:00  INFO    65536 B in 0.4s (0.1 MB/s) OK
+2026-08-15T19:00:43+10:00  INFO    md5 51167ac3b93f54c5b3fd7c4279ad6994 matches device
+2026-08-15T19:00:43+10:00  INFO  mtd5   "u-boot" 1835008 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-190009-pre-2.3.14/UNVR-74acb941a811-ea16-mtd05-u-boot-1835008B-20260815-190009.img (limit 30s)
+2026-08-15T19:00:44+10:00  INFO    1835008 B in 1.2s (1.5 MB/s) OK
+2026-08-15T19:00:55+10:00  INFO    md5 68f0bed7ed80e8a0708de56c6f8589d2 matches device
+2026-08-15T19:00:55+10:00  INFO  mtd6   "u-boot env" 65536 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-190009-pre-2.3.14/UNVR-74acb941a811-ea16-mtd06-u-boot_env-65536B-20260815-190009.img (limit 30s)
+2026-08-15T19:00:55+10:00  INFO    65536 B in 0.5s (0.1 MB/s) OK
+2026-08-15T19:01:05+10:00  INFO    md5 fcd6bcb56c1689fcef28b57c22475bad matches device
+2026-08-15T19:01:05+10:00  INFO  mtd7   "u-boot env redundant" 65536 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-190009-pre-2.3.14/UNVR-74acb941a811-ea16-mtd07-u-boot_env_redundant-65536B-20260815-190009.img (limit 30s)
+2026-08-15T19:01:06+10:00  INFO    65536 B in 0.5s (0.1 MB/s) OK
+2026-08-15T19:01:16+10:00  INFO    md5 fcd6bcb56c1689fcef28b57c22475bad matches device
+2026-08-15T19:01:16+10:00  INFO  mtd12  "cksum" 4096 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-190009-pre-2.3.14/UNVR-74acb941a811-ea16-mtd12-cksum-4096B-20260815-190009.img (limit 30s)
+2026-08-15T19:01:16+10:00  INFO    4096 B in 0.4s (0.0 MB/s) OK
+2026-08-15T19:01:26+10:00  INFO    md5 620f0b67a91f7f74151bc5be745b7110 matches device
+2026-08-15T19:01:26+10:00  INFO  mtd11  "config" 14675968 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-190009-pre-2.3.14/UNVR-74acb941a811-ea16-mtd11-config-14675968B-20260815-190009.img (limit 30s)
+2026-08-15T19:01:35+10:00  INFO    14675968 B in 8.6s (1.6 MB/s) OK
+2026-08-15T19:01:48+10:00  INFO    md5 1dd8883d3649abeb7f5efeac345a4528 matches device
+2026-08-15T19:01:48+10:00  INFO  mtd2   "linux_kernel" 16777216 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-190009-pre-2.3.14/UNVR-74acb941a811-ea16-mtd02-linux_kernel-16777216B-20260815-190009.img (limit 30s)
+2026-08-15T19:01:54+10:00  INFO    16777216 B in 5.4s (3.0 MB/s) OK
+2026-08-15T19:02:05+10:00  INFO    md5 dfb70545b64dd089cb8d8cc49c801474 matches device
+2026-08-15T19:02:05+10:00  INFO  wrote images/mtd/UNVR-74acb941a811-sysidea16-20260815-190009-pre-2.3.14/README.md
+2026-08-15T19:02:05+10:00  INFO  done. 8/8 captured
+2026-08-15T20:30:05+10:00  INFO  --- dump-unvr-mtd (console + netcat) ---
+2026-08-15T20:30:13+10:00  INFO  unit   : UNVR serial=74acb941a811 sysid=ea16
+2026-08-15T20:30:13+10:00  INFO  dumping to images/mtd/UNVR-74acb941a811-sysidea16-20260815-203005/
+2026-08-15T20:30:16+10:00  INFO    mtd0      1835008 B  erase    4096  "u-boot"
+2026-08-15T20:30:16+10:00  INFO    mtd1        65536 B  erase    4096  "u-boot env"
+2026-08-15T20:30:16+10:00  INFO    mtd2        65536 B  erase    4096  "u-boot env redundant"
+2026-08-15T20:30:16+10:00  INFO    mtd3        65536 B  erase    4096  "Factory"
+2026-08-15T20:30:16+10:00  INFO    mtd4        65536 B  erase    4096  "EEPROM"
+2026-08-15T20:30:16+10:00  INFO    mtd5     16777216 B  erase    4096  "recovery kernel"
+2026-08-15T20:30:16+10:00  INFO    mtd6     14675968 B  erase    4096  "config"
+2026-08-15T20:30:16+10:00  INFO    mtd7         4096 B  erase    4096  "cksum"
+2026-08-15T20:30:16+10:00  INFO    mtd8      2097152 B  erase  262144  "al_boot"
+2026-08-15T20:30:16+10:00  INFO    mtd9     16777216 B  erase  262144  "linux_kernel"
+2026-08-15T20:30:16+10:00  INFO    mtd10  1052770304 B  erase  262144  "rootfs"
+2026-08-15T20:30:16+10:00  INFO    mtd11     1048576 B  erase  262144  "chike"
+2026-08-15T20:30:30+10:00  INFO  --- dump-unvr-mtd (console + netcat) ---
+2026-08-15T20:30:37+10:00  INFO  unit   : UNVR serial=74acb941a811 sysid=ea16
+2026-08-15T20:30:37+10:00  INFO  dumping to images/mtd/UNVR-74acb941a811-sysidea16-20260815-203030-on-2.3.14-pre-uboot-env/
+2026-08-15T20:30:40+10:00  INFO    mtd0      1835008 B  erase    4096  "u-boot"
+2026-08-15T20:30:40+10:00  INFO    mtd1        65536 B  erase    4096  "u-boot env"
+2026-08-15T20:30:40+10:00  INFO    mtd2        65536 B  erase    4096  "u-boot env redundant"
+2026-08-15T20:30:40+10:00  INFO    mtd3        65536 B  erase    4096  "Factory"
+2026-08-15T20:30:40+10:00  INFO    mtd4        65536 B  erase    4096  "EEPROM"
+2026-08-15T20:30:40+10:00  INFO    mtd5     16777216 B  erase    4096  "recovery kernel"
+2026-08-15T20:30:40+10:00  INFO    mtd6     14675968 B  erase    4096  "config"
+2026-08-15T20:30:40+10:00  INFO    mtd7         4096 B  erase    4096  "cksum"
+2026-08-15T20:30:40+10:00  INFO    mtd8      2097152 B  erase  262144  "al_boot"
+2026-08-15T20:30:40+10:00  INFO    mtd9     16777216 B  erase  262144  "linux_kernel"
+2026-08-15T20:30:40+10:00  INFO    mtd10  1052770304 B  erase  262144  "rootfs"
+2026-08-15T20:30:40+10:00  INFO    mtd11     1048576 B  erase  262144  "chike"
+2026-08-15T20:30:40+10:00  INFO  preset state: ['mtd0', 'mtd1', 'mtd2', 'mtd3', 'mtd4', 'mtd6', 'mtd7', 'mtd9']
+2026-08-15T20:30:42+10:00  INFO  device 192.168.25.140, this host 192.168.25.145
+2026-08-15T20:30:42+10:00  INFO  mtd3   "Factory" 65536 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-203030-on-2.3.14-pre-uboot-env/UNVR-74acb941a811-ea16-mtd03-Factory-65536B-20260815-203030.img (limit 30s)
+2026-08-15T20:30:43+10:00  INFO    65536 B in 0.5s (0.1 MB/s) OK
+2026-08-15T20:30:53+10:00  INFO    md5 ecb99e6ffea7be1e5419350f725da86b matches device
+2026-08-15T20:30:53+10:00  INFO  mtd4   "EEPROM" 65536 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-203030-on-2.3.14-pre-uboot-env/UNVR-74acb941a811-ea16-mtd04-EEPROM-65536B-20260815-203030.img (limit 30s)
+2026-08-15T20:30:53+10:00  INFO    65536 B in 0.5s (0.1 MB/s) OK
+2026-08-15T20:31:03+10:00  INFO    md5 51167ac3b93f54c5b3fd7c4279ad6994 matches device
+2026-08-15T20:31:03+10:00  INFO  mtd0   "u-boot" 1835008 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-203030-on-2.3.14-pre-uboot-env/UNVR-74acb941a811-ea16-mtd00-u-boot-1835008B-20260815-203030.img (limit 30s)
+2026-08-15T20:31:05+10:00  INFO    1835008 B in 1.2s (1.5 MB/s) OK
+2026-08-15T20:31:15+10:00  INFO    md5 68f0bed7ed80e8a0708de56c6f8589d2 matches device
+2026-08-15T20:31:15+10:00  INFO  mtd1   "u-boot env" 65536 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-203030-on-2.3.14-pre-uboot-env/UNVR-74acb941a811-ea16-mtd01-u-boot_env-65536B-20260815-203030.img (limit 30s)
+2026-08-15T20:31:16+10:00  INFO    65536 B in 0.4s (0.1 MB/s) OK
+2026-08-15T20:31:26+10:00  INFO    md5 fcd6bcb56c1689fcef28b57c22475bad matches device
+2026-08-15T20:31:26+10:00  INFO  mtd2   "u-boot env redundant" 65536 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-203030-on-2.3.14-pre-uboot-env/UNVR-74acb941a811-ea16-mtd02-u-boot_env_redundant-65536B-20260815-203030.img (limit 30s)
+2026-08-15T20:31:26+10:00  INFO    65536 B in 0.4s (0.1 MB/s) OK
+2026-08-15T20:31:36+10:00  INFO    md5 fcd6bcb56c1689fcef28b57c22475bad matches device
+2026-08-15T20:31:36+10:00  INFO  mtd7   "cksum" 4096 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-203030-on-2.3.14-pre-uboot-env/UNVR-74acb941a811-ea16-mtd07-cksum-4096B-20260815-203030.img (limit 30s)
+2026-08-15T20:31:37+10:00  INFO    4096 B in 0.5s (0.0 MB/s) OK
+2026-08-15T20:31:47+10:00  INFO    md5 620f0b67a91f7f74151bc5be745b7110 matches device
+2026-08-15T20:31:47+10:00  INFO  mtd6   "config" 14675968 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-203030-on-2.3.14-pre-uboot-env/UNVR-74acb941a811-ea16-mtd06-config-14675968B-20260815-203030.img (limit 30s)
+2026-08-15T20:31:55+10:00  INFO    14675968 B in 8.4s (1.7 MB/s) OK
+2026-08-15T20:32:09+10:00  INFO    md5 e108c2db499b685009f4427d40f8c6f2 matches device
+2026-08-15T20:32:09+10:00  INFO  mtd9   "linux_kernel" 16777216 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-203030-on-2.3.14-pre-uboot-env/UNVR-74acb941a811-ea16-mtd09-linux_kernel-16777216B-20260815-203030.img (limit 30s)
+2026-08-15T20:32:14+10:00  INFO    16777216 B in 5.2s (3.1 MB/s) OK
+2026-08-15T20:32:25+10:00  INFO    md5 50404e1df82d3ff363743b54d651f7b5 matches device
+2026-08-15T20:32:25+10:00  INFO  wrote images/mtd/UNVR-74acb941a811-sysidea16-20260815-203030-on-2.3.14-pre-uboot-env/README.md
+2026-08-15T20:32:25+10:00  INFO  done. 8/8 captured
+2026-08-15T20:40:05+10:00  INFO  --- dump-unvr-mtd (console + netcat) ---
+2026-08-15T20:40:12+10:00  INFO  unit   : UNVR serial=74acb941a811 sysid=ea16
+2026-08-15T20:40:12+10:00  INFO  dumping to images/mtd/UNVR-74acb941a811-sysidea16-20260815-204005-pre-3.1.16/
+2026-08-15T20:40:15+10:00  INFO    mtd0      1835008 B  erase    4096  "u-boot"
+2026-08-15T20:40:15+10:00  INFO    mtd1        65536 B  erase    4096  "u-boot env"
+2026-08-15T20:40:15+10:00  INFO    mtd2        65536 B  erase    4096  "u-boot env redundant"
+2026-08-15T20:40:15+10:00  INFO    mtd3        65536 B  erase    4096  "Factory"
+2026-08-15T20:40:15+10:00  INFO    mtd4        65536 B  erase    4096  "EEPROM"
+2026-08-15T20:40:15+10:00  INFO    mtd5     16777216 B  erase    4096  "recovery kernel"
+2026-08-15T20:40:15+10:00  INFO    mtd6     14675968 B  erase    4096  "config"
+2026-08-15T20:40:15+10:00  INFO    mtd7         4096 B  erase    4096  "cksum"
+2026-08-15T20:40:15+10:00  INFO    mtd8      2097152 B  erase  262144  "al_boot"
+2026-08-15T20:40:15+10:00  INFO    mtd9     16777216 B  erase  262144  "linux_kernel"
+2026-08-15T20:40:15+10:00  INFO    mtd10  1052770304 B  erase  262144  "rootfs"
+2026-08-15T20:40:15+10:00  INFO    mtd11     1048576 B  erase  262144  "chike"
+2026-08-15T20:40:15+10:00  INFO  preset state: ['mtd0', 'mtd1', 'mtd2', 'mtd3', 'mtd4', 'mtd6', 'mtd7', 'mtd9']
+2026-08-15T20:40:17+10:00  INFO  device 192.168.25.140, this host 192.168.25.145
+2026-08-15T20:40:17+10:00  INFO  mtd3   "Factory" 65536 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-204005-pre-3.1.16/UNVR-74acb941a811-ea16-mtd03-Factory-65536B-20260815-204005.img (limit 30s)
+2026-08-15T20:40:18+10:00  INFO    65536 B in 0.5s (0.1 MB/s) OK
+2026-08-15T20:40:28+10:00  INFO    md5 ecb99e6ffea7be1e5419350f725da86b matches device
+2026-08-15T20:40:28+10:00  INFO  mtd4   "EEPROM" 65536 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-204005-pre-3.1.16/UNVR-74acb941a811-ea16-mtd04-EEPROM-65536B-20260815-204005.img (limit 30s)
+2026-08-15T20:40:28+10:00  INFO    65536 B in 0.4s (0.1 MB/s) OK
+2026-08-15T20:40:38+10:00  INFO    md5 51167ac3b93f54c5b3fd7c4279ad6994 matches device
+2026-08-15T20:40:38+10:00  INFO  mtd0   "u-boot" 1835008 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-204005-pre-3.1.16/UNVR-74acb941a811-ea16-mtd00-u-boot-1835008B-20260815-204005.img (limit 30s)
+2026-08-15T20:40:40+10:00  INFO    1835008 B in 1.2s (1.5 MB/s) OK
+2026-08-15T20:40:50+10:00  INFO    md5 68f0bed7ed80e8a0708de56c6f8589d2 matches device
+2026-08-15T20:40:50+10:00  INFO  mtd1   "u-boot env" 65536 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-204005-pre-3.1.16/UNVR-74acb941a811-ea16-mtd01-u-boot_env-65536B-20260815-204005.img (limit 30s)
+2026-08-15T20:40:51+10:00  INFO    65536 B in 0.4s (0.1 MB/s) OK
+2026-08-15T20:41:01+10:00  INFO    md5 fcd6bcb56c1689fcef28b57c22475bad matches device
+2026-08-15T20:41:01+10:00  INFO  mtd2   "u-boot env redundant" 65536 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-204005-pre-3.1.16/UNVR-74acb941a811-ea16-mtd02-u-boot_env_redundant-65536B-20260815-204005.img (limit 30s)
+2026-08-15T20:41:01+10:00  INFO    65536 B in 0.5s (0.1 MB/s) OK
+2026-08-15T20:41:11+10:00  INFO    md5 9f4cae06314f83ede8d148bf561a35bd matches device
+2026-08-15T20:41:11+10:00  INFO  mtd7   "cksum" 4096 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-204005-pre-3.1.16/UNVR-74acb941a811-ea16-mtd07-cksum-4096B-20260815-204005.img (limit 30s)
+2026-08-15T20:41:12+10:00  INFO    4096 B in 0.4s (0.0 MB/s) OK
+2026-08-15T20:41:22+10:00  INFO    md5 620f0b67a91f7f74151bc5be745b7110 matches device
+2026-08-15T20:41:22+10:00  INFO  mtd6   "config" 14675968 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-204005-pre-3.1.16/UNVR-74acb941a811-ea16-mtd06-config-14675968B-20260815-204005.img (limit 30s)
+2026-08-15T20:41:30+10:00  INFO    14675968 B in 8.4s (1.7 MB/s) OK
+2026-08-15T20:41:44+10:00  INFO    md5 ced25cb5ca66da07515710f8eaa23641 matches device
+2026-08-15T20:41:44+10:00  INFO  mtd9   "linux_kernel" 16777216 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-204005-pre-3.1.16/UNVR-74acb941a811-ea16-mtd09-linux_kernel-16777216B-20260815-204005.img (limit 30s)
+2026-08-15T20:41:49+10:00  INFO    16777216 B in 5.2s (3.1 MB/s) OK
+2026-08-15T20:42:00+10:00  INFO    md5 50404e1df82d3ff363743b54d651f7b5 matches device
+2026-08-15T20:42:00+10:00  INFO  wrote images/mtd/UNVR-74acb941a811-sysidea16-20260815-204005-pre-3.1.16/README.md
+2026-08-15T20:42:00+10:00  INFO  done. 8/8 captured
+2026-08-15T21:00:07+10:00  INFO  --- dump-unvr-mtd (console + netcat) ---
+2026-08-15T21:00:15+10:00  INFO  unit   : UNVR serial=74acb941a811 sysid=ea16
+2026-08-15T21:00:15+10:00  INFO  dumping to images/mtd/UNVR-74acb941a811-sysidea16-20260815-210007-pre-1.4.9/
+2026-08-15T21:00:18+10:00  INFO    mtd0      1835008 B  erase    4096  "u-boot"
+2026-08-15T21:00:18+10:00  INFO    mtd1        65536 B  erase    4096  "u-boot env"
+2026-08-15T21:00:18+10:00  INFO    mtd2        65536 B  erase    4096  "u-boot env redundant"
+2026-08-15T21:00:18+10:00  INFO    mtd3        65536 B  erase    4096  "Factory"
+2026-08-15T21:00:18+10:00  INFO    mtd4        65536 B  erase    4096  "EEPROM"
+2026-08-15T21:00:18+10:00  INFO    mtd5     16777216 B  erase    4096  "recovery kernel"
+2026-08-15T21:00:18+10:00  INFO    mtd6     14675968 B  erase    4096  "config"
+2026-08-15T21:00:18+10:00  INFO    mtd7         4096 B  erase    4096  "cksum"
+2026-08-15T21:00:18+10:00  INFO    mtd8      2097152 B  erase  262144  "al_boot"
+2026-08-15T21:00:18+10:00  INFO    mtd9     16777216 B  erase  262144  "linux_kernel"
+2026-08-15T21:00:18+10:00  INFO    mtd10  1052770304 B  erase  262144  "rootfs"
+2026-08-15T21:00:18+10:00  INFO    mtd11     1048576 B  erase  262144  "chike"
+2026-08-15T21:00:18+10:00  INFO  preset state: ['mtd0', 'mtd1', 'mtd2', 'mtd3', 'mtd4', 'mtd6', 'mtd7', 'mtd9']
+2026-08-15T21:00:20+10:00  INFO  device 192.168.25.140, this host 192.168.25.145
+2026-08-15T21:00:20+10:00  INFO  mtd3   "Factory" 65536 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-210007-pre-1.4.9/UNVR-74acb941a811-ea16-mtd03-Factory-65536B-20260815-210007.img (limit 30s)
+2026-08-15T21:00:20+10:00  INFO    65536 B in 0.5s (0.1 MB/s) OK
+2026-08-15T21:00:31+10:00  INFO    md5 ecb99e6ffea7be1e5419350f725da86b matches device
+2026-08-15T21:00:31+10:00  INFO  mtd4   "EEPROM" 65536 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-210007-pre-1.4.9/UNVR-74acb941a811-ea16-mtd04-EEPROM-65536B-20260815-210007.img (limit 30s)
+2026-08-15T21:00:31+10:00  INFO    65536 B in 0.4s (0.1 MB/s) OK
+2026-08-15T21:00:41+10:00  INFO    md5 51167ac3b93f54c5b3fd7c4279ad6994 matches device
+2026-08-15T21:00:41+10:00  INFO  mtd0   "u-boot" 1835008 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-210007-pre-1.4.9/UNVR-74acb941a811-ea16-mtd00-u-boot-1835008B-20260815-210007.img (limit 30s)
+2026-08-15T21:00:42+10:00  INFO    1835008 B in 1.2s (1.5 MB/s) OK
+2026-08-15T21:00:53+10:00  INFO    md5 68f0bed7ed80e8a0708de56c6f8589d2 matches device
+2026-08-15T21:00:53+10:00  INFO  mtd1   "u-boot env" 65536 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-210007-pre-1.4.9/UNVR-74acb941a811-ea16-mtd01-u-boot_env-65536B-20260815-210007.img (limit 30s)
+2026-08-15T21:00:53+10:00  INFO    65536 B in 0.4s (0.1 MB/s) OK
+2026-08-15T21:01:07+10:00  INFO  --- dump-unvr-mtd (console + netcat) ---
+2026-08-15T21:01:14+10:00  INFO  unit   : UNVR serial=74acb941a811 sysid=ea16
+2026-08-15T21:01:14+10:00  INFO  dumping to images/mtd/UNVR-74acb941a811-sysidea16-20260815-210107-pre-4.1.22/
+2026-08-15T21:01:17+10:00  INFO    mtd0      1835008 B  erase    4096  "u-boot"
+2026-08-15T21:01:17+10:00  INFO    mtd1        65536 B  erase    4096  "u-boot env"
+2026-08-15T21:01:18+10:00  INFO    mtd2        65536 B  erase    4096  "u-boot env redundant"
+2026-08-15T21:01:18+10:00  INFO    mtd3        65536 B  erase    4096  "Factory"
+2026-08-15T21:01:18+10:00  INFO    mtd4        65536 B  erase    4096  "EEPROM"
+2026-08-15T21:01:18+10:00  INFO    mtd5     16777216 B  erase    4096  "recovery kernel"
+2026-08-15T21:01:18+10:00  INFO    mtd6     14675968 B  erase    4096  "config"
+2026-08-15T21:01:18+10:00  INFO    mtd7         4096 B  erase    4096  "cksum"
+2026-08-15T21:01:18+10:00  INFO    mtd8      2097152 B  erase  262144  "al_boot"
+2026-08-15T21:01:18+10:00  INFO    mtd9     16777216 B  erase  262144  "linux_kernel"
+2026-08-15T21:01:18+10:00  INFO    mtd10  1052770304 B  erase  262144  "rootfs"
+2026-08-15T21:01:18+10:00  INFO    mtd11     1048576 B  erase  262144  "chike"
+2026-08-15T21:01:18+10:00  INFO  preset state: ['mtd0', 'mtd1', 'mtd2', 'mtd3', 'mtd4', 'mtd6', 'mtd7', 'mtd9']
+2026-08-15T21:01:20+10:00  INFO  device 192.168.25.140, this host 192.168.25.145
+2026-08-15T21:01:20+10:00  INFO  mtd3   "Factory" 65536 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-210107-pre-4.1.22/UNVR-74acb941a811-ea16-mtd03-Factory-65536B-20260815-210107.img (limit 30s)
+2026-08-15T21:01:20+10:00  INFO    65536 B in 0.6s (0.1 MB/s) OK
+2026-08-15T21:01:30+10:00  INFO    md5 ecb99e6ffea7be1e5419350f725da86b matches device
+2026-08-15T21:01:30+10:00  INFO  mtd4   "EEPROM" 65536 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-210107-pre-4.1.22/UNVR-74acb941a811-ea16-mtd04-EEPROM-65536B-20260815-210107.img (limit 30s)
+2026-08-15T21:01:30+10:00  INFO    md5 fcd6bcb56c1689fcef28b57c22475bad matches device
+2026-08-15T21:01:30+10:00  INFO  mtd2   "u-boot env redundant" 65536 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-210007-pre-1.4.9/UNVR-74acb941a811-ea16-mtd02-u-boot_env_redundant-65536B-20260815-210007.img (limit 30s)
+2026-08-15T21:01:31+10:00  INFO    65536 B in 0.5s (0.1 MB/s) OK
+2026-08-15T21:01:31+10:00  INFO    65536 B in 0.5s (0.1 MB/s) OK
+2026-08-15T21:01:41+10:00  INFO    md5 9f4cae06314f83ede8d148bf561a35bd matches device
+2026-08-15T21:01:41+10:00  ERROR   MD5 MISMATCH device=9f4cae06314f83ede8d148bf561a35bd local=51167ac3b93f54c5b3fd7c4279ad6994
+2026-08-15T21:01:41+10:00  INFO  mtd7   "cksum" 4096 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-210007-pre-1.4.9/UNVR-74acb941a811-ea16-mtd07-cksum-4096B-20260815-210007.img (limit 30s)
+2026-08-15T21:01:41+10:00  INFO  mtd0   "u-boot" 1835008 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-210107-pre-4.1.22/UNVR-74acb941a811-ea16-mtd00-u-boot-1835008B-20260815-210107.img (limit 30s)
+2026-08-15T21:01:41+10:00  INFO    4096 B in 0.5s (0.0 MB/s) OK
+2026-08-15T21:01:42+10:00  INFO    1835008 B in 1.3s (1.4 MB/s) OK
+2026-08-15T21:01:53+10:00  INFO    md5 620f0b67a91f7f74151bc5be745b7110 matches device
+2026-08-15T21:01:53+10:00  INFO  mtd6   "config" 14675968 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-210007-pre-1.4.9/UNVR-74acb941a811-ea16-mtd06-config-14675968B-20260815-210007.img (limit 30s)
+2026-08-15T21:01:53+10:00  ERROR   MD5 MISMATCH device=620f0b67a91f7f74151bc5be745b7110 local=68f0bed7ed80e8a0708de56c6f8589d2
+2026-08-15T21:01:53+10:00  INFO  mtd1   "u-boot env" 65536 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-210107-pre-4.1.22/UNVR-74acb941a811-ea16-mtd01-u-boot_env-65536B-20260815-210107.img (limit 30s)
+2026-08-15T21:02:02+10:00  INFO    14675968 B in 8.5s (1.7 MB/s) OK
+2026-08-15T21:02:02+10:00  INFO    65536 B in 8.7s (0.0 MB/s) OK
+2026-08-15T21:02:15+10:00  ERROR   MD5 MISMATCH device=dabcb2f35b3724c99bfd4ac47d90beff local=fcd6bcb56c1689fcef28b57c22475bad
+2026-08-15T21:02:15+10:00  INFO  mtd2   "u-boot env redundant" 65536 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-210107-pre-4.1.22/UNVR-74acb941a811-ea16-mtd02-u-boot_env_redundant-65536B-20260815-210107.img (limit 30s)
+2026-08-15T21:02:15+10:00  INFO    md5 dabcb2f35b3724c99bfd4ac47d90beff matches device
+2026-08-15T21:02:15+10:00  INFO  mtd9   "linux_kernel" 16777216 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-210007-pre-1.4.9/UNVR-74acb941a811-ea16-mtd09-linux_kernel-16777216B-20260815-210007.img (limit 30s)
+2026-08-15T21:02:16+10:00  INFO    65536 B in 0.5s (0.1 MB/s) OK
+2026-08-15T21:02:20+10:00  INFO    16777216 B in 5.3s (3.0 MB/s) OK
+2026-08-15T21:02:32+10:00  INFO    md5 9f4cae06314f83ede8d148bf561a35bd matches device
+2026-08-15T21:02:32+10:00  INFO  mtd7   "cksum" 4096 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-210107-pre-4.1.22/UNVR-74acb941a811-ea16-mtd07-cksum-4096B-20260815-210107.img (limit 30s)
+2026-08-15T21:02:32+10:00  INFO    md5 3719750205e078cb8117da3177628ba2 matches device
+2026-08-15T21:02:32+10:00  INFO  wrote images/mtd/UNVR-74acb941a811-sysidea16-20260815-210007-pre-1.4.9/README.md
+2026-08-15T21:02:32+10:00  INFO  done. 8/8 captured
+2026-08-15T21:02:32+10:00  INFO    4096 B in 0.4s (0.0 MB/s) OK
+2026-08-15T21:02:42+10:00  INFO    md5 620f0b67a91f7f74151bc5be745b7110 matches device
+2026-08-15T21:02:42+10:00  INFO  mtd6   "config" 14675968 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-210107-pre-4.1.22/UNVR-74acb941a811-ea16-mtd06-config-14675968B-20260815-210107.img (limit 30s)
+2026-08-15T21:02:51+10:00  INFO    14675968 B in 8.6s (1.6 MB/s) OK
+2026-08-15T21:03:04+10:00  INFO    md5 dabcb2f35b3724c99bfd4ac47d90beff matches device
+2026-08-15T21:03:04+10:00  INFO  mtd9   "linux_kernel" 16777216 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-210107-pre-4.1.22/UNVR-74acb941a811-ea16-mtd09-linux_kernel-16777216B-20260815-210107.img (limit 30s)
+2026-08-15T21:03:09+10:00  INFO    16777216 B in 5.2s (3.1 MB/s) OK
+2026-08-15T21:03:21+10:00  INFO    md5 3719750205e078cb8117da3177628ba2 matches device
+2026-08-15T21:03:21+10:00  INFO  wrote images/mtd/UNVR-74acb941a811-sysidea16-20260815-210107-pre-4.1.22/README.md
+2026-08-15T21:03:21+10:00  ERROR done. 5/8 captured, FAILED: mtd4, mtd0, mtd1
+2026-08-15T21:05:11+10:00  INFO  --- dump-unvr-mtd (console + TFTP) ---
+2026-08-15T21:05:19+10:00  INFO  unit   : UNVR serial=74acb941a811 sysid=ea16
+2026-08-15T21:05:19+10:00  INFO  dumping to images/mtd/UNVR-74acb941a811-sysidea16-20260815-210511-pre-4.1.22/
+2026-08-15T21:05:22+10:00  INFO    mtd0      1835008 B  erase    4096  "u-boot"
+2026-08-15T21:05:22+10:00  INFO    mtd1        65536 B  erase    4096  "u-boot env"
+2026-08-15T21:05:22+10:00  INFO    mtd2        65536 B  erase    4096  "u-boot env redundant"
+2026-08-15T21:05:22+10:00  INFO    mtd3        65536 B  erase    4096  "Factory"
+2026-08-15T21:05:22+10:00  INFO    mtd4        65536 B  erase    4096  "EEPROM"
+2026-08-15T21:05:22+10:00  INFO    mtd5     16777216 B  erase    4096  "recovery kernel"
+2026-08-15T21:05:22+10:00  INFO    mtd6     14675968 B  erase    4096  "config"
+2026-08-15T21:05:22+10:00  INFO    mtd7         4096 B  erase    4096  "cksum"
+2026-08-15T21:05:22+10:00  INFO    mtd8      2097152 B  erase  262144  "al_boot"
+2026-08-15T21:05:22+10:00  INFO    mtd9     16777216 B  erase  262144  "linux_kernel"
+2026-08-15T21:05:22+10:00  INFO    mtd10  1052770304 B  erase  262144  "rootfs"
+2026-08-15T21:05:22+10:00  INFO    mtd11     1048576 B  erase  262144  "chike"
+2026-08-15T21:05:22+10:00  INFO  preset state: ['mtd0', 'mtd1', 'mtd2', 'mtd3', 'mtd4', 'mtd6', 'mtd7', 'mtd9']
+2026-08-15T21:05:24+10:00  INFO  device 192.168.25.140, this host 192.168.25.145
+2026-08-15T21:05:24+10:00  INFO  mtd3   "Factory" 65536 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-210511-pre-4.1.22/UNVR-74acb941a811-ea16-mtd03-Factory-65536B-20260815-210511.img (limit 30s)
+2026-08-15T21:05:24+10:00  INFO    65536 B in 0.5s (0.1 MB/s) OK
+2026-08-15T21:05:34+10:00  INFO    md5 ecb99e6ffea7be1e5419350f725da86b matches device
+2026-08-15T21:05:34+10:00  INFO  mtd4   "EEPROM" 65536 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-210511-pre-4.1.22/UNVR-74acb941a811-ea16-mtd04-EEPROM-65536B-20260815-210511.img (limit 30s)
+2026-08-15T21:05:35+10:00  INFO    65536 B in 0.5s (0.1 MB/s) OK
+2026-08-15T21:05:45+10:00  INFO    md5 51167ac3b93f54c5b3fd7c4279ad6994 matches device
+2026-08-15T21:05:45+10:00  INFO  mtd0   "u-boot" 1835008 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-210511-pre-4.1.22/UNVR-74acb941a811-ea16-mtd00-u-boot-1835008B-20260815-210511.img (limit 30s)
+2026-08-15T21:05:46+10:00  INFO    1835008 B in 1.2s (1.5 MB/s) OK
+2026-08-15T21:05:57+10:00  INFO    md5 68f0bed7ed80e8a0708de56c6f8589d2 matches device
+2026-08-15T21:05:57+10:00  INFO  mtd1   "u-boot env" 65536 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-210511-pre-4.1.22/UNVR-74acb941a811-ea16-mtd01-u-boot_env-65536B-20260815-210511.img (limit 30s)
+2026-08-15T21:05:57+10:00  INFO    65536 B in 0.4s (0.1 MB/s) OK
+2026-08-15T21:06:07+10:00  INFO    md5 fcd6bcb56c1689fcef28b57c22475bad matches device
+2026-08-15T21:06:07+10:00  INFO  mtd2   "u-boot env redundant" 65536 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-210511-pre-4.1.22/UNVR-74acb941a811-ea16-mtd02-u-boot_env_redundant-65536B-20260815-210511.img (limit 30s)
+2026-08-15T21:06:08+10:00  INFO    65536 B in 0.4s (0.1 MB/s) OK
+2026-08-15T21:06:18+10:00  INFO    md5 9f4cae06314f83ede8d148bf561a35bd matches device
+2026-08-15T21:06:18+10:00  INFO  mtd7   "cksum" 4096 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-210511-pre-4.1.22/UNVR-74acb941a811-ea16-mtd07-cksum-4096B-20260815-210511.img (limit 30s)
+2026-08-15T21:06:18+10:00  INFO    4096 B in 0.4s (0.0 MB/s) OK
+2026-08-15T21:06:28+10:00  INFO    md5 620f0b67a91f7f74151bc5be745b7110 matches device
+2026-08-15T21:06:28+10:00  INFO  mtd6   "config" 14675968 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-210511-pre-4.1.22/UNVR-74acb941a811-ea16-mtd06-config-14675968B-20260815-210511.img (limit 30s)
+2026-08-15T21:06:36+10:00  INFO    14675968 B in 8.4s (1.7 MB/s) OK
+2026-08-15T21:06:50+10:00  INFO    md5 dabcb2f35b3724c99bfd4ac47d90beff matches device
+2026-08-15T21:06:50+10:00  INFO  mtd9   "linux_kernel" 16777216 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-210511-pre-4.1.22/UNVR-74acb941a811-ea16-mtd09-linux_kernel-16777216B-20260815-210511.img (limit 30s)
+2026-08-15T21:06:55+10:00  INFO    16777216 B in 5.2s (3.1 MB/s) OK
+2026-08-15T21:07:06+10:00  INFO    md5 3719750205e078cb8117da3177628ba2 matches device
+2026-08-15T21:07:06+10:00  INFO  wrote images/mtd/UNVR-74acb941a811-sysidea16-20260815-210511-pre-4.1.22/README.md
+2026-08-15T21:07:06+10:00  INFO  done. 8/8 captured
+2026-08-15T21:15:52+10:00  INFO  --- dump-unvr-mtd (console + TFTP) ---
+2026-08-15T21:15:59+10:00  INFO  unit   : UNVR serial=74acb941a811 sysid=ea16
+2026-08-15T21:15:59+10:00  INFO  dumping to images/mtd/UNVR-74acb941a811-sysidea16-20260815-211552-post-4.1.22/
+2026-08-15T21:16:02+10:00  INFO    mtd0      1835008 B  erase    4096  "u-boot"
+2026-08-15T21:16:02+10:00  INFO    mtd1        65536 B  erase    4096  "u-boot env"
+2026-08-15T21:16:02+10:00  INFO    mtd2        65536 B  erase    4096  "u-boot env redundant"
+2026-08-15T21:16:02+10:00  INFO    mtd3        65536 B  erase    4096  "Factory"
+2026-08-15T21:16:02+10:00  INFO    mtd4        65536 B  erase    4096  "EEPROM"
+2026-08-15T21:16:02+10:00  INFO    mtd5     16777216 B  erase    4096  "recovery kernel"
+2026-08-15T21:16:02+10:00  INFO    mtd6     14675968 B  erase    4096  "config"
+2026-08-15T21:16:02+10:00  INFO    mtd7         4096 B  erase    4096  "cksum"
+2026-08-15T21:16:02+10:00  INFO    mtd8      2097152 B  erase  262144  "al_boot"
+2026-08-15T21:16:02+10:00  INFO    mtd9     16777216 B  erase  262144  "linux_kernel"
+2026-08-15T21:16:02+10:00  INFO    mtd10  1052770304 B  erase  262144  "rootfs"
+2026-08-15T21:16:02+10:00  INFO    mtd11     1048576 B  erase  262144  "chike"
+2026-08-15T21:16:02+10:00  INFO  preset state: ['mtd0', 'mtd1', 'mtd2', 'mtd3', 'mtd4', 'mtd6', 'mtd7', 'mtd9']
+2026-08-15T21:16:04+10:00  INFO  device 192.168.25.140, this host 192.168.25.145
+2026-08-15T21:16:04+10:00  INFO  mtd3   "Factory" 65536 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-211552-post-4.1.22/UNVR-74acb941a811-ea16-mtd03-Factory-65536B-20260815-211552.img (limit 30s)
+2026-08-15T21:16:05+10:00  INFO    65536 B in 0.4s (0.1 MB/s) OK
+2026-08-15T21:16:15+10:00  INFO    md5 ecb99e6ffea7be1e5419350f725da86b matches device
+2026-08-15T21:16:15+10:00  INFO  mtd4   "EEPROM" 65536 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-211552-post-4.1.22/UNVR-74acb941a811-ea16-mtd04-EEPROM-65536B-20260815-211552.img (limit 30s)
+2026-08-15T21:16:15+10:00  INFO    65536 B in 0.4s (0.1 MB/s) OK
+2026-08-15T21:16:25+10:00  INFO    md5 51167ac3b93f54c5b3fd7c4279ad6994 matches device
+2026-08-15T21:16:25+10:00  INFO  mtd0   "u-boot" 1835008 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-211552-post-4.1.22/UNVR-74acb941a811-ea16-mtd00-u-boot-1835008B-20260815-211552.img (limit 30s)
+2026-08-15T21:16:26+10:00  INFO    1835008 B in 1.0s (1.8 MB/s) OK
+2026-08-15T21:16:37+10:00  INFO    md5 68f0bed7ed80e8a0708de56c6f8589d2 matches device
+2026-08-15T21:16:37+10:00  INFO  mtd1   "u-boot env" 65536 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-211552-post-4.1.22/UNVR-74acb941a811-ea16-mtd01-u-boot_env-65536B-20260815-211552.img (limit 30s)
+2026-08-15T21:16:37+10:00  INFO    65536 B in 0.4s (0.1 MB/s) OK
+2026-08-15T21:16:47+10:00  INFO    md5 fcd6bcb56c1689fcef28b57c22475bad matches device
+2026-08-15T21:16:47+10:00  INFO  mtd2   "u-boot env redundant" 65536 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-211552-post-4.1.22/UNVR-74acb941a811-ea16-mtd02-u-boot_env_redundant-65536B-20260815-211552.img (limit 30s)
+2026-08-15T21:16:48+10:00  INFO    65536 B in 0.4s (0.1 MB/s) OK
+2026-08-15T21:16:58+10:00  INFO    md5 9f4cae06314f83ede8d148bf561a35bd matches device
+2026-08-15T21:16:58+10:00  INFO  mtd7   "cksum" 4096 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-211552-post-4.1.22/UNVR-74acb941a811-ea16-mtd07-cksum-4096B-20260815-211552.img (limit 30s)
+2026-08-15T21:16:58+10:00  INFO    4096 B in 0.5s (0.0 MB/s) OK
+2026-08-15T21:17:08+10:00  INFO    md5 620f0b67a91f7f74151bc5be745b7110 matches device
+2026-08-15T21:17:08+10:00  INFO  mtd6   "config" 14675968 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-211552-post-4.1.22/UNVR-74acb941a811-ea16-mtd06-config-14675968B-20260815-211552.img (limit 30s)
+2026-08-15T21:17:15+10:00  INFO    14675968 B in 6.4s (2.2 MB/s) OK
+2026-08-15T21:17:28+10:00  INFO    md5 8f5aabcbff1def114eb50e8af10865cc matches device
+2026-08-15T21:17:28+10:00  INFO  mtd9   "linux_kernel" 16777216 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-211552-post-4.1.22/UNVR-74acb941a811-ea16-mtd09-linux_kernel-16777216B-20260815-211552.img (limit 30s)
+2026-08-15T21:17:31+10:00  INFO    16777216 B in 2.6s (6.2 MB/s) OK
+2026-08-15T21:17:42+10:00  INFO    md5 b70c83abb08e45abd540fb2ef4bb080c matches device
+2026-08-15T21:17:42+10:00  INFO  wrote images/mtd/UNVR-74acb941a811-sysidea16-20260815-211552-post-4.1.22/README.md
+2026-08-15T21:17:42+10:00  INFO  done. 8/8 captured
+2026-08-15T21:17:42+10:00  INFO  --- dump-unvr-mtd (console + TFTP) ---
+2026-08-15T21:17:49+10:00  INFO  unit   : UNVR serial=74acb941a811 sysid=ea16
+2026-08-15T21:17:49+10:00  INFO  dumping to images/mtd/UNVR-74acb941a811-sysidea16-20260815-211742-pre-5.1.25/
+2026-08-15T21:17:52+10:00  INFO    mtd0      1835008 B  erase    4096  "u-boot"
+2026-08-15T21:17:52+10:00  INFO    mtd1        65536 B  erase    4096  "u-boot env"
+2026-08-15T21:17:52+10:00  INFO    mtd2        65536 B  erase    4096  "u-boot env redundant"
+2026-08-15T21:17:52+10:00  INFO    mtd3        65536 B  erase    4096  "Factory"
+2026-08-15T21:17:52+10:00  INFO    mtd4        65536 B  erase    4096  "EEPROM"
+2026-08-15T21:17:52+10:00  INFO    mtd5     16777216 B  erase    4096  "recovery kernel"
+2026-08-15T21:17:52+10:00  INFO    mtd6     14675968 B  erase    4096  "config"
+2026-08-15T21:17:52+10:00  INFO    mtd7         4096 B  erase    4096  "cksum"
+2026-08-15T21:17:52+10:00  INFO    mtd8      2097152 B  erase  262144  "al_boot"
+2026-08-15T21:17:52+10:00  INFO    mtd9     16777216 B  erase  262144  "linux_kernel"
+2026-08-15T21:17:52+10:00  INFO    mtd10  1052770304 B  erase  262144  "rootfs"
+2026-08-15T21:17:52+10:00  INFO    mtd11     1048576 B  erase  262144  "chike"
+2026-08-15T21:17:52+10:00  INFO  preset state: ['mtd0', 'mtd1', 'mtd2', 'mtd3', 'mtd4', 'mtd6', 'mtd7', 'mtd9']
+2026-08-15T21:17:54+10:00  INFO  device 192.168.25.140, this host 192.168.25.145
+2026-08-15T21:17:54+10:00  INFO  mtd3   "Factory" 65536 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-211742-pre-5.1.25/UNVR-74acb941a811-ea16-mtd03-Factory-65536B-20260815-211742.img (limit 30s)
+2026-08-15T21:17:55+10:00  INFO    65536 B in 0.4s (0.1 MB/s) OK
+2026-08-15T21:18:05+10:00  INFO    md5 ecb99e6ffea7be1e5419350f725da86b matches device
+2026-08-15T21:18:05+10:00  INFO  mtd4   "EEPROM" 65536 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-211742-pre-5.1.25/UNVR-74acb941a811-ea16-mtd04-EEPROM-65536B-20260815-211742.img (limit 30s)
+2026-08-15T21:18:05+10:00  INFO    65536 B in 0.4s (0.1 MB/s) OK
+2026-08-15T21:18:16+10:00  INFO    md5 51167ac3b93f54c5b3fd7c4279ad6994 matches device
+2026-08-15T21:18:16+10:00  INFO  mtd0   "u-boot" 1835008 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-211742-pre-5.1.25/UNVR-74acb941a811-ea16-mtd00-u-boot-1835008B-20260815-211742.img (limit 30s)
+2026-08-15T21:18:16+10:00  INFO    1835008 B in 1.0s (1.8 MB/s) OK
+2026-08-15T21:18:27+10:00  INFO    md5 68f0bed7ed80e8a0708de56c6f8589d2 matches device
+2026-08-15T21:18:27+10:00  INFO  mtd1   "u-boot env" 65536 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-211742-pre-5.1.25/UNVR-74acb941a811-ea16-mtd01-u-boot_env-65536B-20260815-211742.img (limit 30s)
+2026-08-15T21:18:27+10:00  INFO    65536 B in 0.4s (0.1 MB/s) OK
+2026-08-15T21:18:38+10:00  INFO    md5 fcd6bcb56c1689fcef28b57c22475bad matches device
+2026-08-15T21:18:38+10:00  INFO  mtd2   "u-boot env redundant" 65536 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-211742-pre-5.1.25/UNVR-74acb941a811-ea16-mtd02-u-boot_env_redundant-65536B-20260815-211742.img (limit 30s)
+2026-08-15T21:18:38+10:00  INFO    65536 B in 0.4s (0.1 MB/s) OK
+2026-08-15T21:18:48+10:00  INFO    md5 9f4cae06314f83ede8d148bf561a35bd matches device
+2026-08-15T21:18:48+10:00  INFO  mtd7   "cksum" 4096 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-211742-pre-5.1.25/UNVR-74acb941a811-ea16-mtd07-cksum-4096B-20260815-211742.img (limit 30s)
+2026-08-15T21:18:49+10:00  INFO    4096 B in 0.4s (0.0 MB/s) OK
+2026-08-15T21:18:59+10:00  INFO    md5 620f0b67a91f7f74151bc5be745b7110 matches device
+2026-08-15T21:18:59+10:00  INFO  mtd6   "config" 14675968 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-211742-pre-5.1.25/UNVR-74acb941a811-ea16-mtd06-config-14675968B-20260815-211742.img (limit 30s)
+2026-08-15T21:19:05+10:00  INFO    14675968 B in 6.2s (2.3 MB/s) OK
+2026-08-15T21:19:18+10:00  INFO    md5 334dcca3f94f4d03abc9e4b70b6fc283 matches device
+2026-08-15T21:19:18+10:00  INFO  mtd9   "linux_kernel" 16777216 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-211742-pre-5.1.25/UNVR-74acb941a811-ea16-mtd09-linux_kernel-16777216B-20260815-211742.img (limit 30s)
+2026-08-15T21:19:21+10:00  INFO    16777216 B in 2.6s (6.2 MB/s) OK
+2026-08-15T21:19:32+10:00  INFO    md5 b70c83abb08e45abd540fb2ef4bb080c matches device
+2026-08-15T21:19:32+10:00  INFO  wrote images/mtd/UNVR-74acb941a811-sysidea16-20260815-211742-pre-5.1.25/README.md
+2026-08-15T21:19:32+10:00  INFO  done. 8/8 captured
+2026-08-15T21:26:16+10:00  INFO  --- dump-unvr-mtd (console + TFTP) ---
+2026-08-15T21:27:56+10:00  WARN  ubnt-tools id returned nothing - naming with 'unknown'
+2026-08-15T21:28:08+10:00  INFO  unit   : UNVR serial=unknown sysid=unknown
+2026-08-15T21:28:08+10:00  INFO  dumping to images/mtd/UNVR-unknown-sysidunknown-20260815-212616-post-5.1.25/
+2026-08-15T21:29:45+10:00  INFO  --- dump-unvr-mtd (console + TFTP) ---
+2026-08-15T21:29:53+10:00  INFO  unit   : UNVR serial=74acb941a811 sysid=ea16
+2026-08-15T21:29:53+10:00  INFO  dumping to images/mtd/UNVR-74acb941a811-sysidea16-20260815-212945-post-5.1.25-final/
+2026-08-15T21:29:56+10:00  INFO    mtd0      1835008 B  erase    4096  "u-boot"
+2026-08-15T21:29:56+10:00  INFO    mtd1        65536 B  erase    4096  "u-boot env"
+2026-08-15T21:29:56+10:00  INFO    mtd2        65536 B  erase    4096  "u-boot env redundant"
+2026-08-15T21:29:56+10:00  INFO    mtd3        65536 B  erase    4096  "Factory"
+2026-08-15T21:29:56+10:00  INFO    mtd4        65536 B  erase    4096  "EEPROM"
+2026-08-15T21:29:56+10:00  INFO    mtd5     16777216 B  erase    4096  "recovery kernel"
+2026-08-15T21:29:56+10:00  INFO    mtd6     14675968 B  erase    4096  "config"
+2026-08-15T21:29:56+10:00  INFO    mtd7         4096 B  erase    4096  "cksum"
+2026-08-15T21:29:56+10:00  INFO    mtd8      2097152 B  erase  262144  "al_boot"
+2026-08-15T21:29:56+10:00  INFO    mtd9     16777216 B  erase  262144  "linux_kernel"
+2026-08-15T21:29:56+10:00  INFO    mtd10  1052770304 B  erase  262144  "rootfs"
+2026-08-15T21:29:56+10:00  INFO    mtd11     1048576 B  erase  262144  "chike"
+2026-08-15T21:29:56+10:00  INFO  preset state: ['mtd0', 'mtd1', 'mtd2', 'mtd3', 'mtd4', 'mtd6', 'mtd7', 'mtd9']
+2026-08-15T21:29:58+10:00  INFO  device 192.168.25.140, this host 192.168.25.145
+2026-08-15T21:29:58+10:00  INFO  mtd3   "Factory" 65536 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-212945-post-5.1.25-final/UNVR-74acb941a811-ea16-mtd03-Factory-65536B-20260815-212945.img (limit 30s)
+2026-08-15T21:29:59+10:00  INFO    65536 B in 0.5s (0.1 MB/s) OK
+2026-08-15T21:30:09+10:00  INFO    md5 ecb99e6ffea7be1e5419350f725da86b matches device
+2026-08-15T21:30:09+10:00  INFO  mtd4   "EEPROM" 65536 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-212945-post-5.1.25-final/UNVR-74acb941a811-ea16-mtd04-EEPROM-65536B-20260815-212945.img (limit 30s)
+2026-08-15T21:30:09+10:00  INFO    65536 B in 0.4s (0.1 MB/s) OK
+2026-08-15T21:30:19+10:00  INFO    md5 51167ac3b93f54c5b3fd7c4279ad6994 matches device
+2026-08-15T21:30:19+10:00  INFO  mtd0   "u-boot" 1835008 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-212945-post-5.1.25-final/UNVR-74acb941a811-ea16-mtd00-u-boot-1835008B-20260815-212945.img (limit 30s)
+2026-08-15T21:30:20+10:00  INFO    1835008 B in 1.0s (1.8 MB/s) OK
+2026-08-15T21:30:31+10:00  INFO    md5 68f0bed7ed80e8a0708de56c6f8589d2 matches device
+2026-08-15T21:30:31+10:00  INFO  mtd1   "u-boot env" 65536 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-212945-post-5.1.25-final/UNVR-74acb941a811-ea16-mtd01-u-boot_env-65536B-20260815-212945.img (limit 30s)
+2026-08-15T21:30:31+10:00  INFO    65536 B in 0.5s (0.1 MB/s) OK
+2026-08-15T21:30:41+10:00  INFO    md5 fcd6bcb56c1689fcef28b57c22475bad matches device
+2026-08-15T21:30:41+10:00  INFO  mtd2   "u-boot env redundant" 65536 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-212945-post-5.1.25-final/UNVR-74acb941a811-ea16-mtd02-u-boot_env_redundant-65536B-20260815-212945.img (limit 30s)
+2026-08-15T21:30:42+10:00  INFO    65536 B in 0.4s (0.1 MB/s) OK
+2026-08-15T21:30:52+10:00  INFO    md5 9f4cae06314f83ede8d148bf561a35bd matches device
+2026-08-15T21:30:52+10:00  INFO  mtd7   "cksum" 4096 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-212945-post-5.1.25-final/UNVR-74acb941a811-ea16-mtd07-cksum-4096B-20260815-212945.img (limit 30s)
+2026-08-15T21:30:52+10:00  INFO    4096 B in 0.4s (0.0 MB/s) OK
+2026-08-15T21:31:02+10:00  INFO    md5 620f0b67a91f7f74151bc5be745b7110 matches device
+2026-08-15T21:31:02+10:00  INFO  mtd6   "config" 14675968 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-212945-post-5.1.25-final/UNVR-74acb941a811-ea16-mtd06-config-14675968B-20260815-212945.img (limit 30s)
+2026-08-15T21:31:09+10:00  INFO    14675968 B in 6.4s (2.2 MB/s) OK
+2026-08-15T21:31:22+10:00  INFO    md5 219de0badbf7331efd73b688329aeb1d matches device
+2026-08-15T21:31:22+10:00  INFO  mtd9   "linux_kernel" 16777216 B -> images/mtd/UNVR-74acb941a811-sysidea16-20260815-212945-post-5.1.25-final/UNVR-74acb941a811-ea16-mtd09-linux_kernel-16777216B-20260815-212945.img (limit 30s)
+2026-08-15T21:31:25+10:00  INFO    16777216 B in 2.8s (5.7 MB/s) OK
+2026-08-15T21:31:36+10:00  INFO    md5 85aea31c9873c55f13f57720464a1633 matches device
+2026-08-15T21:31:36+10:00  INFO  wrote images/mtd/UNVR-74acb941a811-sysidea16-20260815-212945-post-5.1.25-final/README.md
+2026-08-15T21:31:36+10:00  INFO  done. 8/8 captured

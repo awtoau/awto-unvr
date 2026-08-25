@@ -1,0 +1,18 @@
+
+write_xattr: could not write xattr security.capability for file /tmp/claude-1000/-mnt-2tb-git-awto-unvr/0edb0769-b7b5-4d90-bc3a-84dd99588559/scratchpad/rootfs/bin/ping because you're not superuser!
+
+write_xattr: to avoid this error message, either specify -xattrs-include '^user.', -no-xattrs, or run as superuser!
+
+Further error messages of this type are suppressed!
+Parallel unsquashfs: Using 32 processors
+55216 inodes (59729 blocks) to write
+
+[====/                                                     ]   9709/114945   8%[===============-                                          ]  30904/114945  26%[=====================================\                    ]  76088/114945  66%[=========================================================\] 114945/114945 100%
+
+created 53369 files
+created 8396 directories
+created 1842 symlinks
+created 0 devices
+created 0 fifos
+created 0 sockets
+created 5 hardlinks

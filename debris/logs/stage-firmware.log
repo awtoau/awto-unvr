@@ -1,0 +1,9 @@
+2026-08-15T20:51:30+1000  INFO  staging plan: ['1.4.9', '2.3.14', '3.1.16', '4.1.22', '5.1.25']
+2026-08-15T20:51:31+1000  INFO    1.4.9: already have sources/UNVR-1.4.9.bin, sha256 OK
+2026-08-15T20:51:31+1000  INFO    2.3.14: already have sources/UNVR-2.3.14.bin, sha256 OK
+2026-08-15T20:51:32+1000  INFO    3.1.16: already have sources/UNVR-3.1.16.bin, sha256 OK
+2026-08-15T20:51:32+1000  INFO    4.1.22: GET https://fw-download.ubnt.com/data/unifi-nvr/1900-UNVR-4.1.22-f128a370-2575-4505-9993-c5a326e013ae.bin
+2026-08-15T20:52:31+1000  INFO    4.1.22: 613761358 B, sha256 verified
+2026-08-15T20:52:32+1000  INFO    5.1.25: already have sources/UNVR-5.1.25.bin, sha256 OK
+2026-08-15T20:52:32+1000  INFO  downloaded 5 images, 2.41 GiB total
+2026-08-15T20:52:32+1000  INFO  --download-only: done

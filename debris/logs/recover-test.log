@@ -1,0 +1,40 @@
+=== at our U-Boot; DW IP id + wedge + hw recovery ===
+>> i2c dev 0
+ i2c dev 0
+Setting bus to 0
+unvr#
+>> md.l 0xfd8800f8 1
+ md.l 0xfd8800f8 1
+fd8800f8: 3132302a                             *021
+unvr#
+>> md.l 0xfd8800f4 1
+ md.l 0xfd8800f4 1
+fd8800f4: 001f1fee                             ....
+unvr#
+>> i2c mw 0x71 0 1 1
+ i2c mw 0x71 0 1 1
+unvr#
+>> i2c md 0x30 0.0 1
+ i2c md 0x30 0.0 1
+Error reading the chip: -121
+unvr#
+>> md.l 0xfd88006c 1
+ md.l 0xfd88006c 1
+fd88006c: 00000001                             ....
+unvr#
+>> mw.l 0xfd88006c 0x9
+ mw.l 0xfd88006c 0x9
+unvr#
+>> md.l 0xfd88009c 1
+ md.l 0xfd88009c 1
+fd88009c: 00000001                             ....
+unvr#
+>> md.l 0xfd88006c 1
+ md.l 0xfd88006c 1
+fd88006c: 00000001                             ....
+unvr#
+>> i2c md 0x21 0 1
+ i2c md 0x21 0 1
+Error reading the chip: -121
+unvr#
+=== DONE ===

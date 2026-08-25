@@ -1,0 +1,20 @@
+Cloning into '/mnt/2tb/unvr-port-refs/linux-v6.18.44'...
+warning: refs/tags/v6.18.44 46f5b36e307e21e18b408ada639c5dd32f72d56b is not a commit!
+Note: switching to '1efe5d048a391de3ead2804b2e7f86376c356cc5'.
+
+You are in 'detached HEAD' state. You can look around, make experimental
+changes and commit them, and you can discard any commits you make in this
+state without impacting any branches by switching back to a branch.
+
+If you want to create a new branch to retain commits you create, you may
+do so (now or later) by using -c with the switch command. Example:
+
+  git switch -c <new-branch-name>
+
+Or undo this operation with:
+
+  git switch -
+
+Turn off this advice by setting config variable advice.detachedHead to false
+
+Updating files:  40% (36519/91202)Updating files:  41% (37393/91202)Updating files:  42% (38305/91202)Updating files:  43% (39217/91202)Updating files:  44% (40129/91202)Updating files:  45% (41041/91202)Updating files:  46% (41953/91202)Updating files:  47% (42865/91202)Updating files:  48% (43777/91202)Updating files:  49% (44689/91202)Updating files:  50% (45601/91202)Updating files:  51% (46514/91202)Updating files:  52% (47426/91202)Updating files:  53% (48338/91202)Updating files:  54% (49250/91202)Updating files:  55% (50162/91202)Updating files:  56% (51074/91202)Updating files:  57% (51986/91202)Updating files:  58% (52898/91202)Updating files:  59% (53810/91202)Updating files:  60% (54722/91202)Updating files:  61% (55634/91202)Updating files:  62% (56546/91202)Updating files:  63% (57458/91202)Updating files:  64% (58370/91202)Updating files:  65% (59282/91202)Updating files:  66% (60194/91202)Updating files:  67% (61106/91202)Updating files:  68% (62018/91202)Updating files:  69% (62930/91202)Updating files:  70% (63842/91202)Updating files:  71% (64754/91202)Updating files:  72% (65666/91202)Updating files:  73% (66578/91202)Updating files:  74% (67490/91202)Updating files:  75% (68402/91202)Updating files:  75% (69233/91202)Updating files:  76% (69314/91202)Updating files:  77% (70226/91202)Updating files:  78% (71138/91202)Updating files:  79% (72050/91202)Updating files:  80% (72962/91202)Updating files:  81% (73874/91202)Updating files:  82% (74786/91202)Updating files:  83% (75698/91202)Updating files:  84% (76610/91202)Updating files:  85% (77522/91202)Updating files:  86% (78434/91202)Updating files:  87% (79346/91202)Updating files:  88% (80258/91202)Updating files:  89% (81170/91202)Updating files:  90% (82082/91202)Updating files:  91% (82994/91202)Updating files:  92% (83906/91202)Updating files:  93% (84818/91202)Updating files:  94% (85730/91202)Updating files:  95% (86642/91202)Updating files:  96% (87554/91202)Updating files:  97% (88466/91202)Updating files:  98% (89378/91202)Updating files:  99% (90290/91202)Updating files: 100% (91202/91202)Updating files: 100% (91202/91202), done.

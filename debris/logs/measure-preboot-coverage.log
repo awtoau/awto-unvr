@@ -1,0 +1,55 @@
+== alboot-payload.bin (632 gaps, 111737 bytes undefined) ==
+small/unaligned   559 gaps    99320 B
+zero-sled          34 gaps     6324 B
+no-controlflow     20 gaps     3280 B
+partial-decode      7 gaps     1993 B
+CODE               12 gaps      820 B
+
+CODE gaps (12, 820 B) -- force-disassemble candidates:
+  0x01000090 len=40    cf=2
+  0x0100022c len=56    cf=10
+  0x010036a4 len=84    cf=3
+  0x01015870 len=144   cf=7
+  0x0101a3dc len=188   cf=3
+  0x0101a938 len=48    cf=2
+  0x0102efac len=56    cf=7
+  0x0102f014 len=80    cf=5
+  0x0102f0d8 len=20    cf=1
+  0x0102f0f4 len=52    cf=2
+  0x0102fd24 len=32    cf=1
+  0x0102fe00 len=20    cf=3
+== alboot-payload.bin (621 gaps, 111020 bytes undefined) ==
+small/unaligned   558 gaps    99315 B
+zero-sled          34 gaps     6340 B
+no-controlflow     19 gaps     3248 B
+partial-decode      6 gaps     1545 B
+CODE                4 gaps      572 B
+
+CODE gaps (4, 572 B) -- force-disassemble candidates:
+  0x010000a0 len=24    cf=1
+  0x01000248 len=28    cf=5
+  0x010057e4 len=124   cf=5
+  0x01024e4c len=396   cf=12
+== alboot-payload.bin (621 gaps, 110442 bytes undefined) ==
+small/unaligned   562 gaps    99325 B
+zero-sled          34 gaps     6324 B
+no-controlflow     19 gaps     3248 B
+partial-decode      6 gaps     1545 B
+
+CODE gaps (0, 0 B) -- force-disassemble candidates:
+== s2-loader-stage2_v2.22.3-25044B.bin (146 gaps, 3247 bytes undefined) ==
+no-controlflow     14 gaps     1632 B
+small/unaligned   100 gaps      624 B
+zero-sled           8 gaps      492 B
+partial-decode     23 gaps      471 B
+CODE                1 gaps       28 B
+
+CODE gaps (1, 28 B) -- force-disassemble candidates:
+  0xf220005c len=28    cf=1
+== s2-loader-stage2_v2.22.3-25044B.bin (145 gaps, 3201 bytes undefined) ==
+no-controlflow     14 gaps     1632 B
+small/unaligned   101 gaps      626 B
+zero-sled           8 gaps      492 B
+partial-decode     22 gaps      451 B
+
+CODE gaps (0, 0 B) -- force-disassemble candidates:

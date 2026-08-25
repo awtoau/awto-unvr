@@ -1,0 +1,35 @@
+ping 192.168.25.145
+0
+   - 0 'al_eth_dm'
+   - found
+al_eth_adapter_init: non optimal adapter configuration
+al_eth[post-init]: m2s.state=00000000 tx0 drhp=40000000 drtp=40000000 dcp=40000000 crhp=40000000 qpkt=00000000
+al_eth[post-init]: desc_block=0000000002000000 rx_buf0=0000000002000800 tx_bounce=0000000002002000 (want low ~0x02xxxxxx)
+Configured MAC to RGMII mode
+al_eth_dm Waiting for PHY auto negotiation to complete.... done
+Using al_eth_dm device
+al_eth[doorbell]: m2s.state=00002222 tx0 drhp=40000000 drtp=40000001 dcp=40000000 crhp=40000000 qpkt=00000000
+al_eth[doorbell]: desc_block=0000000002000000 rx_buf0=0000000002000800 tx_bounce=0000000002002000 (want low ~0x02xxxxxx)
+al_eth_dm al_eth_dm: TX completion timeout: 1 descs left after 100000 us
+al_eth[timeout]: m2s.state=00002222 tx0 drhp=40000000 drtp=40000001 dcp=40000000 crhp=40000000 qpkt=00000000
+al_eth[timeout]: desc_block=0000000002000000 rx_buf0=0000000002000800 tx_bounce=0000000002002000 (want low ~0x02xxxxxx)
+al_eth[axi-rd-err]: attr=00000000 addr_to=0 comp_err=0 comp_to=0 err_blk=0 rd_parity=0 mstr_id=0 comp_stat=0 fail_addr=0000000000000000 mstr_to(rd)=0000
+al_eth[doorbell]: m2s.state=00002222 tx0 drhp=40000000 drtp=40000002 dcp=40000000 crhp=40000000 qpkt=00000000
+al_eth[doorbell]: desc_block=0000000002000000 rx_buf0=0000000002000800 tx_bounce=0000000002002000 (want low ~0x02xxxxxx)
+al_eth_dm al_eth_dm: TX completion timeout: 1 descs left after 100000 us
+al_eth[timeout]: m2s.state=00002222 tx0 drhp=40000000 drtp=40000002 dcp=40000000 crhp=40000000 qpkt=00000000
+al_eth[timeout]: desc_block=0000000002000000 rx_buf0=0000000002000800 tx_bounce=0000000002002000 (want low ~0x02xxxxxx)
+al_eth[axi-rd-err]: attr=00000000 addr_to=0 comp_err=0 comp_to=0 err_blk=0 rd_parity=0 mstr_id=0 comp_stat=0 fail_addr=0000000000000000 mstr_to(rd)=0000
+al_eth[doorbell]: m2s.state=00002222 tx0 drhp=40000000 drtp=40000003 dcp=40000000 crhp=40000000 qpkt=00000000
+al_eth[doorbell]: desc_block=0000000002000000 rx_buf0=0000000002000800 tx_bounce=0000000002002000 (want low ~0x02xxxxxx)
+al_eth_dm al_eth_dm: TX completion timeout: 1 descs left after 100000 us
+al_eth[timeout]: m2s.state=00002222 tx0 drhp=40000000 drtp=40000003 dcp=40000000 crhp=40000000 qpkt=00000000
+al_eth[timeout]: desc_block=0000000002000000 rx_buf0=0000000002000800 tx_bounce=0000000002002000 (want low ~0x02xxxxxx)
+al_eth[axi-rd-err]: attr=00000000 addr_to=0 comp_err=0 comp_to=0 err_blk=0 rd_parity=0 mstr_id=0 comp_stat=0 fail_addr=0000000000000000 mstr_to(rd)=0000
+al_eth[doorbell]: m2s.state=00002222 tx0 drhp=40000000 drtp=40000004 dcp=40000000 crhp=40000000 qpkt=00000000
+al_eth[doorbell]: desc_block=0000000002000000 rx_buf0=0000000002000800 tx_bounce=0000000002002000 (want low ~0x02xxxxxx)
+al_eth_dm al_eth_dm: TX completion timeout: 1 descs left after 100000 us
+al_eth[timeout]: m2s.state=00002222 tx0 drhp=40000000 drtp=40000004 dcp=40000000 crhp=40000000 qpkt=00000000
+al_eth[timeout]: desc_block=0000000002000000 rx_buf0=0000000002000800 tx_bounce=0000000002002000 (want low ~0x02xxxxxx)
+al_eth[axi-rd-err]: attr=00000000 addr_to=0 comp_err=0 comp_to=0 err_blk=0 rd_parity=0 mstr_id=0 comp_stat=0 fail_addr=0000000000000000 mstr_to(rd)=0000
+23:54:49.817031+1000  ERROR [dev.py] FAIL: none of 'awto-nas#' seen in 20.1s (failsafe 20s)

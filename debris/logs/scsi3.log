@@ -1,0 +1,441 @@
+scsi scan
+scanning bus for devices...
+unbind ahci_scsi
+unbind ahci_scsi
+SATA link 0 timeout.
+SATA link 1 timeout.
+Target spinup took 0 ms.
+SATA link 3 timeout.
+AHCI 0001.0300 32 slots 4 ports 6 Gbps 0xf impl SATA mode
+flags: 64bit ncq stag pm led clo only pmp fbss pio slum part ccc apst 
+Sending event 5/(unknown) to spy 'efi_disk add'
+Sending event 5/(unknown) to spy 'efi_disk add'
+Signature aa55 valid
+count = 128 * 128 = 16384
+start 0x28, size 0x64000, name EFI System Partition
+Sending event 5/(unknown) to spy 'efi_disk add'
+count = 128 * 128 = 16384
+start 0x64028, size 0x746a2d60, name 
+Sending event 5/(unknown) to spy 'efi_disk add'
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB5EE00
+Invalid partition number 3
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB5EE80
+Invalid partition number 4
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB5EF00
+Invalid partition number 5
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB5EF80
+Invalid partition number 6
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB5F000
+Invalid partition number 7
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB5F080
+Invalid partition number 8
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB5F100
+Invalid partition number 9
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB5F180
+Invalid partition number 10
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB5F200
+Invalid partition number 11
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB5F280
+Invalid partition number 12
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB5F300
+Invalid partition number 13
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB5F380
+Invalid partition number 14
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB5F400
+Invalid partition number 15
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB5F480
+Invalid partition number 16
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB5F500
+Invalid partition number 17
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB5F580
+Invalid partition number 18
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB5F600
+Invalid partition number 19
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB5F680
+Invalid partition number 20
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB5F700
+Invalid partition number 21
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB5F780
+Invalid partition number 22
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB5F800
+Invalid partition number 23
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB5F880
+Invalid partition number 24
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB5F900
+Invalid partition number 25
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB5F980
+Invalid partition number 26
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB5FA00
+Invalid partition number 27
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB5FA80
+Invalid partition number 28
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB5FB00
+Invalid partition number 29
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB5FB80
+Invalid partition number 30
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB5FC00
+Invalid partition number 31
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB5FC80
+Invalid partition number 32
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB5FD00
+Invalid partition number 33
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB5FD80
+Invalid partition number 34
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB5FE00
+Invalid partition number 35
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB5FE80
+Invalid partition number 36
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB5FF00
+Invalid partition number 37
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB5FF80
+Invalid partition number 38
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB60000
+Invalid partition number 39
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB60080
+Invalid partition number 40
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB60100
+Invalid partition number 41
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB60180
+Invalid partition number 42
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB60200
+Invalid partition number 43
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB60280
+Invalid partition number 44
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB60300
+Invalid partition number 45
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB60380
+Invalid partition number 46
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB60400
+Invalid partition number 47
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB60480
+Invalid partition number 48
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB60500
+Invalid partition number 49
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB60580
+Invalid partition number 50
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB60600
+Invalid partition number 51
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB60680
+Invalid partition number 52
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB60700
+Invalid partition number 53
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB60780
+Invalid partition number 54
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB60800
+Invalid partition number 55
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB60880
+Invalid partition number 56
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB60900
+Invalid partition number 57
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB60980
+Invalid partition number 58
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB60A00
+Invalid partition number 59
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB60A80
+Invalid partition number 60
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB60B00
+Invalid partition number 61
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB60B80
+Invalid partition number 62
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB60C00
+Invalid partition number 63
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB60C80
+Invalid partition number 64
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB60D00
+Invalid partition number 65
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB60D80
+Invalid partition number 66
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB60E00
+Invalid partition number 67
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB60E80
+Invalid partition number 68
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB60F00
+Invalid partition number 69
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB60F80
+Invalid partition number 70
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB61000
+Invalid partition number 71
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB61080
+Invalid partition number 72
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB61100
+Invalid partition number 73
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB61180
+Invalid partition number 74
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB61200
+Invalid partition number 75
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB61280
+Invalid partition number 76
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB61300
+Invalid partition number 77
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB61380
+Invalid partition number 78
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB61400
+Invalid partition number 79
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB61480
+Invalid partition number 80
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB61500
+Invalid partition number 81
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB61580
+Invalid partition number 82
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB61600
+Invalid partition number 83
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB61680
+Invalid partition number 84
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB61700
+Invalid partition number 85
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB61780
+Invalid partition number 86
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB61800
+Invalid partition number 87
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB61880
+Invalid partition number 88
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB61900
+Invalid partition number 89
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB61980
+Invalid partition number 90
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB61A00
+Invalid partition number 91
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB61A80
+Invalid partition number 92
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB61B00
+Invalid partition number 93
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB61B80
+Invalid partition number 94
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB61C00
+Invalid partition number 95
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB61C80
+Invalid partition number 96
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB61D00
+Invalid partition number 97
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB61D80
+Invalid partition number 98
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB61E00
+Invalid partition number 99
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB61E80
+Invalid partition number 100
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB61F00
+Invalid partition number 101
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB61F80
+Invalid partition number 102
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB62000
+Invalid partition number 103
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB62080
+Invalid partition number 104
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB62100
+Invalid partition number 105
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB62180
+Invalid partition number 106
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB62200
+Invalid partition number 107
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB62280
+Invalid partition number 108
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB62300
+Invalid partition number 109
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB62380
+Invalid partition number 110
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB62400
+Invalid partition number 111
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB62480
+Invalid partition number 112
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB62500
+Invalid partition number 113
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB62580
+Invalid partition number 114
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB62600
+Invalid partition number 115
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB62680
+Invalid partition number 116
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB62700
+Invalid partition number 117
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB62780
+Invalid partition number 118
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB62800
+Invalid partition number 119
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB62880
+Invalid partition number 120
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB62900
+Invalid partition number 121
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB62980
+Invalid partition number 122
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB62A00
+Invalid partition number 123
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB62A80
+Invalid partition number 124
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB62B00
+Invalid partition number 125
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB62B80
+Invalid partition number 126
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB62C00
+Invalid partition number 127
+count = 128 * 128 = 16384
+Found an unused PTE GUID at 0xBFB62C80
+Invalid partition number 128
+Sending event 5/(unknown) to spy 'efi_disk add'
+count = 128 * 128 = 16384
+start 0x28, size 0x64000, name EFI System Partition
+count = 128 * 128 = 16384
+count = 128 * 128 = 16384
+start 0x28, size 0x64000, name EFI System Partition
+ <2, 0, 1024>
+Unrecognized filesystem type
+count = 128 * 128 = 16384
+start 0x64028, size 0x746a2d60, name 
+count = 128 * 128 = 16384
+count = 128 * 128 = 16384
+start 0x64028, size 0x746a2d60, name 
+ <2, 0, 1024>
+ <8, 0, 64>
+ <9392, 256, 128>
+  Device 0: (2:0) Vendor: ATA Prod.: Samsung SSD 850 Rev: EMT0
+            Type: Hard Disk
+            Capacity: 953869.7 MB = 931.5 GB (1953525169 x 512)
+Target spinup took 0 ms.
+SATA link 1 timeout.
+Target spinup took 0 ms.
+SATA link 3 timeout.
+AHCI 0001.0300 32 slots 4 ports 6 Gbps 0xf impl SATA mode
+flags: 64bit ncq stag pm led clo only pmp fbss pio slum part ccc apst 
+Sending event 5/(unknown) to spy 'efi_disk add'
+Sending event 5/(unknown) to spy 'efi_disk add'
+Invalid signature 0
+Sending event 5/(unknown) to spy 'efi_disk add'
+ <2, 0, 1024>
+ <8, 0, 64>
+ <15912, 256, 128>
+  Device 1: (0:0) Vendor: ATA Prod.: WDC WD82PURZ-85T Rev: 82.0
+            Type: Hard Disk
+            Capacity: 7630885.3 MB = 7452.0 GB (15628053169 x 512)
+Invalid signature 0
+Sending event 5/(unknown) to spy 'efi_disk add'
+ <2, 0, 1024>
+Unrecognized filesystem type
+  Device 2: (2:0) Vendor: ATA Prod.: WDC WD82PURZ-85T Rev: 82.0
+            Type: Hard Disk
+            Capacity: 7630885.3 MB = 7452.0 GB (15628053169 x 512)
+awto-nas# 
+<<MATCHED: awto-nas#>>

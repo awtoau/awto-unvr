@@ -1,0 +1,8 @@
+ gpio status -a
+gpio - query and control gpio pins
+
+Usage:
+gpio <input|set|clear|toggle> <pin>
+    - input/set/clear/toggle the specified pin
+gpio status [-a] [<bank> | <pin>]  - show [all/claimed] GPIOs
+ALPINE_UBNT_NAS_ALL>

@@ -1,0 +1,145 @@
+scsi part 0
+
+Partition Map for scsi device 0  --   Partition Type: EFI
+
+count = 128 * 128 = 16384
+Part	Start LBA	End LBA		Name
+	Attributes
+	Type GUID
+	Partition GUID
+  1	0x00000028	0x00064027	"EFI System Partition"
+	attrs:	0x0000000000000000
+	type:	c12a7328-f81f-11d2-ba4b-00a0c93ec93b
+	guid:	79cd524f-deea-43fe-ba09-1c0dccf82a1f
+  2	0x00064028	0x74706d87	""
+	attrs:	0x0000000000000000
+	type:	7c3457ef-0000-11aa-aa11-00306543ecac
+	guid:	dcdc291e-9956-48cd-9d7c-48219877881a
+Found an unused PTE GUID at 0xBFB4A440
+Found an unused PTE GUID at 0xBFB4A4C0
+Found an unused PTE GUID at 0xBFB4A540
+Found an unused PTE GUID at 0xBFB4A5C0
+Found an unused PTE GUID at 0xBFB4A640
+Found an unused PTE GUID at 0xBFB4A6C0
+Found an unused PTE GUID at 0xBFB4A740
+Found an unused PTE GUID at 0xBFB4A7C0
+Found an unused PTE GUID at 0xBFB4A840
+Found an unused PTE GUID at 0xBFB4A8C0
+Found an unused PTE GUID at 0xBFB4A940
+Found an unused PTE GUID at 0xBFB4A9C0
+Found an unused PTE GUID at 0xBFB4AA40
+Found an unused PTE GUID at 0xBFB4AAC0
+Found an unused PTE GUID at 0xBFB4AB40
+Found an unused PTE GUID at 0xBFB4ABC0
+Found an unused PTE GUID at 0xBFB4AC40
+Found an unused PTE GUID at 0xBFB4ACC0
+Found an unused PTE GUID at 0xBFB4AD40
+Found an unused PTE GUID at 0xBFB4ADC0
+Found an unused PTE GUID at 0xBFB4AE40
+Found an unused PTE GUID at 0xBFB4AEC0
+Found an unused PTE GUID at 0xBFB4AF40
+Found an unused PTE GUID at 0xBFB4AFC0
+Found an unused PTE GUID at 0xBFB4B040
+Found an unused PTE GUID at 0xBFB4B0C0
+Found an unused PTE GUID at 0xBFB4B140
+Found an unused PTE GUID at 0xBFB4B1C0
+Found an unused PTE GUID at 0xBFB4B240
+Found an unused PTE GUID at 0xBFB4B2C0
+Found an unused PTE GUID at 0xBFB4B340
+Found an unused PTE GUID at 0xBFB4B3C0
+Found an unused PTE GUID at 0xBFB4B440
+Found an unused PTE GUID at 0xBFB4B4C0
+Found an unused PTE GUID at 0xBFB4B540
+Found an unused PTE GUID at 0xBFB4B5C0
+Found an unused PTE GUID at 0xBFB4B640
+Found an unused PTE GUID at 0xBFB4B6C0
+Found an unused PTE GUID at 0xBFB4B740
+Found an unused PTE GUID at 0xBFB4B7C0
+Found an unused PTE GUID at 0xBFB4B840
+Found an unused PTE GUID at 0xBFB4B8C0
+Found an unused PTE GUID at 0xBFB4B940
+Found an unused PTE GUID at 0xBFB4B9C0
+Found an unused PTE GUID at 0xBFB4BA40
+Found an unused PTE GUID at 0xBFB4BAC0
+Found an unused PTE GUID at 0xBFB4BB40
+Found an unused PTE GUID at 0xBFB4BBC0
+Found an unused PTE GUID at 0xBFB4BC40
+Found an unused PTE GUID at 0xBFB4BCC0
+Found an unused PTE GUID at 0xBFB4BD40
+Found an unused PTE GUID at 0xBFB4BDC0
+Found an unused PTE GUID at 0xBFB4BE40
+Found an unused PTE GUID at 0xBFB4BEC0
+Found an unused PTE GUID at 0xBFB4BF40
+Found an unused PTE GUID at 0xBFB4BFC0
+Found an unused PTE GUID at 0xBFB4C040
+Found an unused PTE GUID at 0xBFB4C0C0
+Found an unused PTE GUID at 0xBFB4C140
+Found an unused PTE GUID at 0xBFB4C1C0
+Found an unused PTE GUID at 0xBFB4C240
+Found an unused PTE GUID at 0xBFB4C2C0
+Found an unused PTE GUID at 0xBFB4C340
+Found an unused PTE GUID at 0xBFB4C3C0
+Found an unused PTE GUID at 0xBFB4C440
+Found an unused PTE GUID at 0xBFB4C4C0
+Found an unused PTE GUID at 0xBFB4C540
+Found an unused PTE GUID at 0xBFB4C5C0
+Found an unused PTE GUID at 0xBFB4C640
+Found an unused PTE GUID at 0xBFB4C6C0
+Found an unused PTE GUID at 0xBFB4C740
+Found an unused PTE GUID at 0xBFB4C7C0
+Found an unused PTE GUID at 0xBFB4C840
+Found an unused PTE GUID at 0xBFB4C8C0
+Found an unused PTE GUID at 0xBFB4C940
+Found an unused PTE GUID at 0xBFB4C9C0
+Found an unused PTE GUID at 0xBFB4CA40
+Found an unused PTE GUID at 0xBFB4CAC0
+Found an unused PTE GUID at 0xBFB4CB40
+Found an unused PTE GUID at 0xBFB4CBC0
+Found an unused PTE GUID at 0xBFB4CC40
+Found an unused PTE GUID at 0xBFB4CCC0
+Found an unused PTE GUID at 0xBFB4CD40
+Found an unused PTE GUID at 0xBFB4CDC0
+Found an unused PTE GUID at 0xBFB4CE40
+Found an unused PTE GUID at 0xBFB4CEC0
+Found an unused PTE GUID at 0xBFB4CF40
+Found an unused PTE GUID at 0xBFB4CFC0
+Found an unused PTE GUID at 0xBFB4D040
+Found an unused PTE GUID at 0xBFB4D0C0
+Found an unused PTE GUID at 0xBFB4D140
+Found an unused PTE GUID at 0xBFB4D1C0
+Found an unused PTE GUID at 0xBFB4D240
+Found an unused PTE GUID at 0xBFB4D2C0
+Found an unused PTE GUID at 0xBFB4D340
+Found an unused PTE GUID at 0xBFB4D3C0
+Found an unused PTE GUID at 0xBFB4D440
+Found an unused PTE GUID at 0xBFB4D4C0
+Found an unused PTE GUID at 0xBFB4D540
+Found an unused PTE GUID at 0xBFB4D5C0
+Found an unused PTE GUID at 0xBFB4D640
+Found an unused PTE GUID at 0xBFB4D6C0
+Found an unused PTE GUID at 0xBFB4D740
+Found an unused PTE GUID at 0xBFB4D7C0
+Found an unused PTE GUID at 0xBFB4D840
+Found an unused PTE GUID at 0xBFB4D8C0
+Found an unused PTE GUID at 0xBFB4D940
+Found an unused PTE GUID at 0xBFB4D9C0
+Found an unused PTE GUID at 0xBFB4DA40
+Found an unused PTE GUID at 0xBFB4DAC0
+Found an unused PTE GUID at 0xBFB4DB40
+Found an unused PTE GUID at 0xBFB4DBC0
+Found an unused PTE GUID at 0xBFB4DC40
+Found an unused PTE GUID at 0xBFB4DCC0
+Found an unused PTE GUID at 0xBFB4DD40
+Found an unused PTE GUID at 0xBFB4DDC0
+Found an unused PTE GUID at 0xBFB4DE40
+Found an unused PTE GUID at 0xBFB4DEC0
+Found an unused PTE GUID at 0xBFB4DF40
+Found an unused PTE GUID at 0xBFB4DFC0
+Found an unused PTE GUID at 0xBFB4E040
+Found an unused PTE GUID at 0xBFB4E0C0
+Found an unused PTE GUID at 0xBFB4E140
+Found an unused PTE GUID at 0xBFB4E1C0
+Found an unused PTE GUID at 0xBFB4E240
+Found an unused PTE GUID at 0xBFB4E2C0
+awto-nas# 
+<<MATCHED: awto-nas#>>

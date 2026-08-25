@@ -1,0 +1,32 @@
+=== DW re-init recovery test ===
+>> i2c dev 0
+ i2c dev 0
+Setting bus to 0
+unvr#
+>> i2c md 0x21 0 1
+ i2c md 0x21 0 1
+0000: 0f    .
+unvr#
+>> i2c mw 0x71 0 1 1
+ i2c mw 0x71 0 1 1
+unvr#
+>> i2c md 0x30 0.0 1
+ i2c md 0x30 0.0 1
+Error reading the chip: -121
+unvr#
+>> i2c md 0x21 0 1
+ i2c md 0x21 0 1
+Error reading the chip: -121
+unvr#
+>> mw.l 0xfd88006c 0
+ mw.l 0xfd88006c 0
+unvr#
+>> mw.l 0xfd88006c 1
+ mw.l 0xfd88006c 1
+unvr#
+>> i2c md 0x21 0 1
+ i2c md 0x21 0 1
+Timed out waiting for bus
+Error reading the chip: -121
+unvr#
+=== DONE ===

@@ -1,0 +1,32 @@
+2026-08-17T14:09:43+10:00  === chip-vision: 1 photos, model=qwen2.5vl:7b ===
+2026-08-17T14:09:43+10:00  [1/1] 20260816_231647.jpg
+2026-08-17T14:10:39+10:00    FAIL 20260816_231647.jpg after 57s: HTTP Error 500: Internal Server Error
+2026-08-17T14:10:39+10:00  DONE. Combined report: /mnt/2tb/git/awto-unvr/tmp/logs/chip-vision/ALL-qwen2.5vl_7b.md
+2026-08-17T14:10:39+10:00  === chip-vision: 1 photos, model=minicpm-v:8b ===
+2026-08-17T14:10:39+10:00  [1/1] 20260816_231647.jpg
+2026-08-17T14:11:15+10:00  === chip-vision: 1 photos, model=llama3.2-vision:90b ===
+2026-08-17T14:11:15+10:00  [1/1] 20260816_231647.jpg
+2026-08-17T14:11:21+10:00    OK 20260816_231647.jpg (42s)
+2026-08-17T14:11:21+10:00  DONE. Combined report: /mnt/2tb/git/awto-unvr/tmp/logs/chip-vision/ALL-minicpm-v_8b.md
+2026-08-17T14:11:21+10:00  === chip-vision: 1 photos, model=llama3.2-vision:11b ===
+2026-08-17T14:11:21+10:00  [1/1] 20260816_231647.jpg
+2026-08-17T14:16:15+10:00    FAIL 20260816_231647.jpg after 300s: timed out
+2026-08-17T14:16:15+10:00  DONE. Combined report: /mnt/2tb/git/awto-unvr/tmp/logs/chip-vision/ALL-llama3.2-vision_90b.md
+2026-08-17T14:16:15+10:00  === chip-vision: 1 photos, model=minicpm-v:8b ===
+2026-08-17T14:16:15+10:00  [1/1] 20260816_231647.jpg
+2026-08-17T14:16:22+10:00    FAIL 20260816_231647.jpg after 301s: timed out
+2026-08-17T14:16:22+10:00  DONE. Combined report: /mnt/2tb/git/awto-unvr/tmp/logs/chip-vision/ALL-llama3.2-vision_11b.md
+2026-08-17T14:16:22+10:00  === chip-vision: 1 photos, model=gemma3:12b ===
+2026-08-17T14:16:22+10:00  [1/1] 20260816_231647.jpg
+2026-08-17T14:16:35+10:00    OK 20260816_231647.jpg (20s)
+2026-08-17T14:16:35+10:00  DONE. Combined report: /mnt/2tb/git/awto-unvr/tmp/logs/chip-vision/ALL-minicpm-v_8b.md
+2026-08-17T14:16:36+10:00  === chip-vision: 1 photos, model=llava:13b ===
+2026-08-17T14:16:36+10:00  [1/1] 20260816_231647.jpg
+2026-08-17T14:17:16+10:00    OK 20260816_231647.jpg (54s)
+2026-08-17T14:17:16+10:00  DONE. Combined report: /mnt/2tb/git/awto-unvr/tmp/logs/chip-vision/ALL-gemma3_12b.md
+2026-08-17T14:17:31+10:00    OK 20260816_231647.jpg (55s)
+2026-08-17T14:17:31+10:00  DONE. Combined report: /mnt/2tb/git/awto-unvr/tmp/logs/chip-vision/ALL-llava_13b.md
+2026-08-17T14:17:31+10:00  === chip-vision: 1 photos, model=llava:7b ===
+2026-08-17T14:17:31+10:00  [1/1] 20260816_231647.jpg
+2026-08-17T14:22:31+10:00    FAIL 20260816_231647.jpg after 300s: timed out
+2026-08-17T14:22:31+10:00  DONE. Combined report: /mnt/2tb/git/awto-unvr/tmp/logs/chip-vision/ALL-llava_7b.md

@@ -1,0 +1,4 @@
+ping 192.168.25.145
+No ethernet found.
+ping failed; host 192.168.25.145 is not alive
+ALPINE_UBNT_NAS_ALL> 00:05:29.606380+1000  ERROR [dev.py] FAIL: none of 'stage2_loader|awto-nas#' seen in 25.1s (failsafe 25s)

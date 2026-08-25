@@ -1,0 +1,53 @@
+filed: 00-meta-mainline-port.md -> https://github.com/awtoau/awto-unvr/issues/4
+filed: 01-ethernet-ancestry-report.md -> https://github.com/awtoau/awto-unvr/issues/5
+filed: 02-phase1-linux-6.18-bringup.md -> https://github.com/awtoau/awto-unvr/issues/6
+filed: 03-phase2-patch-inventory.md -> https://github.com/awtoau/awto-unvr/issues/7
+filed: 04-phase3-ethernet-driver-decision.md -> https://github.com/awtoau/awto-unvr/issues/8
+filed: 05-phase4-pcie-designware-glue.md -> https://github.com/awtoau/awto-unvr/issues/9
+filed: 06-phase5-10gbe-pcs-serdes.md -> https://github.com/awtoau/awto-unvr/issues/10
+filed: 07-phase6-raid-dmaengine.md -> https://github.com/awtoau/awto-unvr/issues/11
+filed: 08-phase7-devicetree-cleanup.md -> https://github.com/awtoau/awto-unvr/issues/12
+filed: 09-phase8-rebase-7.1.md -> https://github.com/awtoau/awto-unvr/issues/13
+filed: 10-confirm-dw-i2c-pcie-ahci-compat.md -> https://github.com/awtoau/awto-unvr/issues/14
+filed: 11-patch-alpine-v2-dt-binding.md -> https://github.com/awtoau/awto-unvr/issues/15
+filed: 12-patch-alpine-v2-soc-dtsi.md -> https://github.com/awtoau/awto-unvr/issues/16
+filed: 13-patch-unvr-board-dts.md -> https://github.com/awtoau/awto-unvr/issues/17
+filed: 14-patch-pcie-dwc-glue.md -> https://github.com/awtoau/awto-unvr/issues/18
+filed: 15-patch-ethernet-driver.md -> https://github.com/awtoau/awto-unvr/issues/19
+filed: 16-patch-phylink-pcs-serdes.md -> https://github.com/awtoau/awto-unvr/issues/20
+filed: 17-patch-unvr-eth-sfp-dt.md -> https://github.com/awtoau/awto-unvr/issues/21
+filed: 18-patch-sgpo-led.md -> https://github.com/awtoau/awto-unvr/issues/22
+filed: 19-patch-raid-dmaengine.md -> https://github.com/awtoau/awto-unvr/issues/23
+filed: 20-patch-crypto-engine.md -> https://github.com/awtoau/awto-unvr/issues/24
+filed: 21-patch-defconfig-docs.md -> https://github.com/awtoau/awto-unvr/issues/25
+done. 22 created, 0 skipped/failed of 22
+skip (exists): 00-meta-mainline-port.md -> '[Meta] Mainline Linux port for UNVR (Annapurna Labs Alpine V2, sysid ea16)'
+skip (exists): 01-ethernet-ancestry-report.md -> '[FIRST TASK] Ethernet ancestry report — al_eth vs Altera / NXP / DesignWare'
+skip (exists): 02-phase1-linux-6.18-bringup.md -> '[Phase 1] Establish Linux 6.18 LTS on UNVR'
+skip (exists): 03-phase2-patch-inventory.md -> '[Phase 2] Inventory & classify the existing patch set'
+skip (exists): 04-phase3-ethernet-driver-decision.md -> '[Phase 3] Ethernet driver decision (extend / extract / clean front-end)'
+skip (exists): 05-phase4-pcie-designware-glue.md -> '[Phase 4] PCIe — mainline DesignWare host + small Alpine glue'
+skip (exists): 06-phase5-10gbe-pcs-serdes.md -> '[Phase 5] 10GbE, PCS, SerDes — move link management to phylink'
+skip (exists): 07-phase6-raid-dmaengine.md -> '[Phase 6] RAID acceleration via dmaengine (not a private API)'
+skip (exists): 08-phase7-devicetree-cleanup.md -> '[Phase 7] Device Tree cleanup & hierarchy'
+skip (exists): 09-phase8-rebase-7.1.md -> '[Phase 8] Rebase 6.18 → 7.1'
+skip (exists): 10-confirm-dw-i2c-pcie-ahci-compat.md -> 'Confirm DW I2C / DWC PCIe / AHCI register compatibility from the live DTB'
+skip (exists): 11-patch-alpine-v2-dt-binding.md -> '[Patch 1] ARM64 DT binding for Alpine V2'
+skip (exists): 12-patch-alpine-v2-soc-dtsi.md -> '[Patch 2] Alpine V2 SoC .dtsi (extend the existing mainline dtsi)'
+skip (exists): 13-patch-unvr-board-dts.md -> '[Patch 3] UNVR board DT (alpine-v2-ubnt-unvr.dts)'
+skip (exists): 14-patch-pcie-dwc-glue.md -> '[Patch 4-5] DWC PCIe Alpine quirks + internal PCIe controller'
+skip (exists): 15-patch-ethernet-driver.md -> '[Patch 7] Ethernet DMA core / modern al_eth'
+skip (exists): 16-patch-phylink-pcs-serdes.md -> '[Patch 8-9] MDIO/phylink integration + Alpine PCS/SerDes'
+skip (exists): 17-patch-unvr-eth-sfp-dt.md -> '[Patch 10] UNVR Ethernet & SFP+ device tree'
+skip (exists): 18-patch-sgpo-led.md -> '[Patch 11] SGPO LED controller + HDD bay LEDs'
+skip (exists): 19-patch-raid-dmaengine.md -> '[Patch 12] RAID dmaengine driver (al_dma)'
+skip (exists): 20-patch-crypto-engine.md -> '[Patch 13] Crypto-engine driver (al_ssm)'
+skip (exists): 21-patch-defconfig-docs.md -> '[Patch 14] defconfig & docs'
+filed: 31-driver-ancestry-register-db.md -> https://github.com/awtoau/awto-unvr/issues/31
+filed: 32-sw-md-raid-baseline.md -> https://github.com/awtoau/awto-unvr/issues/32
+filed: 33-nvmem-board-id.md -> https://github.com/awtoau/awto-unvr/issues/33
+filed: 34-clock-reset-pm.md -> https://github.com/awtoau/awto-unvr/issues/34
+filed: 35-6.18-validation-matrix.md -> https://github.com/awtoau/awto-unvr/issues/35
+filed: 36-licence-derivation-ledger.md -> https://github.com/awtoau/awto-unvr/issues/36
+filed: 37-branch-repo-structure.md -> https://github.com/awtoau/awto-unvr/issues/37
+done. 7 created, 22 skipped/failed of 29

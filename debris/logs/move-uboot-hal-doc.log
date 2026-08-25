@@ -1,0 +1,33 @@
+move-uboot-hal-doc — 2026-08-17
+
+SCOPE
+- Primary: docs/hw-reference/uboot-2015.07-alpine_db-2.21-HAL.md
+- Associated: docs/hw-reference/uboot-2015.07-alpine_db-2.21-HAL.txt (verbatim runtime dump, same lineage)
+- Out of scope (left in place): docs/hw-reference/20260816-104601/ (live vendor dts/dtb/dmesg capture, unrelated)
+
+MOVES (git mv, history preserved — both files were tracked)
+- docs/hw-reference/uboot-2015.07-alpine_db-2.21-HAL.md  -> docs/uboot-2015.07-hal-capture.md
+- docs/hw-reference/uboot-2015.07-alpine_db-2.21-HAL.txt -> docs/uboot-2015.07-hal-capture.txt
+
+DEDUP FINDING
+- The .txt verbatim runtime dump is substantially unique (raw evidence, not duplicated).
+- The .md summary restated facts already canonical elsewhere:
+  env/bootcmd/flash-scripts -> nor-boot-chain.md, uboot-update-path.md
+  TOC/boot-chain -> nor-boot-chain.md, bootloader.md
+  I2C map / fan / pci / DRAM banks / MACs -> hardware.md
+  cpu_set_speed downclock+VCO -> overclock-and-caps.md
+  help inventory / porting parity -> uboot-hw-test-suite.md, uboot-port-plan.md
+  LCD/uart2=RPS quirk -> dt-gaps-hardware-of-record.md, rps-subsystem.md
+  SP805 watchdog reset -> reboot-driver-handover.md
+- Rewrote the .md as a thin index: provenance (watchdog reset, read-only tcl), runtime-only
+  findings, and a cross-ref table (link, don't repeat). Removed restated fact-dumps.
+
+FOLDED UNIQUE FACT
+- Runtime-only: `dram_margins` crashed the live U-Boot with a Synchronous Abort.
+  Added as a ⚠ RUNTIME bullet in docs/uboot-ddr-port.md §5 (with backlink to the capture doc).
+
+LINK FIXES
+- Updated internal .txt link inside the moved .md to the new name.
+- Repo-wide grep: no other doc/script/tcl referenced the old hw-reference/uboot* paths. None to fix.
+
+Not committed (left for parent review). docs/issues/ untouched.

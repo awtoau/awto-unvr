@@ -1,0 +1,4 @@
+16:10:27.546381+1000  INFO  [dev.py] staged tmp/tftp/u-boot-chainload.bin (659088 bytes)
+16:10:27.548107+1000  INFO  [dev.py] uboot-test: reset+catch+tftp+go, then STOP at unvr# (no auto-tests)
+16:10:35.604911+1000  ERROR [dev.py] tcl error: 
+NOT-AT-UNVR (get the box to our unvr# or stock, then re-run)

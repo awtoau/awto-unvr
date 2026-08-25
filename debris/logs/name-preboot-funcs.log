@@ -1,0 +1,92 @@
+scanned 310 function defs in docs/nor-reference/preboot-alboot-decompiled.c
+named 89 via full __func__ strings (from tmp/alboot-payload.bin)
+
+FUN_0100057c	set_vectors	2	{'set_vectors': 2}
+FUN_01000838	enabled	1	{'enabled': 1}
+FUN_01000b34	dt_based_init	4	{'dt_based_init': 4, 'thermal_sensor_trim_init': 2}
+FUN_0100110c	stg3_early_init	16	{'stg3_early_init': 16, 'exec_via_agent': 2, 'dt_based_init_pcie': 2}
+FUN_01002460	stg3_board_init	10	{'stg3_board_init': 10}
+FUN_01002df0	power_down_secondary_cpus	2	{'power_down_secondary_cpus': 2}
+FUN_01002e90	dram_clear	1	{'dram_clear': 1}
+FUN_01002f3c	eeprom_preload_parser	2	{'eeprom_preload_parser': 2}
+FUN_01003448	i2c_read	1	{'i2c_read': 1}
+FUN_01003b24	al_pcie_int_adapter_pd	6	{'al_pcie_int_adapter_pd': 6}
+FUN_01003e74	pci_skip_dev	2	{'pci_skip_dev': 2}
+FUN_01003f7c	pll_fixup_crypto_boost	1	{'pll_fixup_crypto_boost': 1}
+FUN_010040d8	al_udma_fast_desc_flags_set	6	{'al_udma_fast_desc_flags_set': 6, 'al_udma_cdesc_get_all': 2}
+FUN_01004584	al_udma_ring_id_get	16	{'iodma_pci_init': 8, 'al_udma_desc_get': 8, 'al_udma_ring_id_get': 16, 'al_udma_desc_action_add': 6}
+FUN_01005504	read_toc_obj_hdr	1	{'read_toc_obj_hdr': 1}
+FUN_01005918	right	2	{'dt_based_init_serdes_group': 1, 'interface': 1, 'override': 1, 'dfe_3db_freq': 1, 'dfe_gain': 1, 'dfe_1st_tap_ctrl': 1, 'dfe_2nd_tap_ctrl': 1, 'dfe_3rd_tap_ctrl': 1, 'dfe_4th_tap_ctrl': 1, 'low_freq_agc_gain': 1, 'high_freq_agc_boost': 1, 'total_driver_units': 1, 'post_emph': 1, 'pre_emph': 1, 'slew_rate': 1, 'right': 2}
+FUN_010073ac	udelay	4	{'udelay': 4, 'sb_timer_init': 2}
+FUN_01007590	udelay	2	{'udelay': 2, 'time_init': 2}
+FUN_0100c2f0	al_pcie_read_config	4	{'al_pcie_read_config': 4}
+FUN_0100c718	al_pcie_master_enable	4	{'al_pcie_master_enable': 4, 'al_pcie_memory_enable': 4}
+FUN_0100c734	al_pcie_master_enable	4	{'al_pcie_master_enable': 4, 'al_pcie_write_config': 4}
+FUN_0100cb78	__wd0_board_reset	2	{'__wd0_board_reset': 2}
+FUN_0100cf4c	uart_is_input_available	1	{'uart_is_input_available': 1}
+FUN_0100d0e0	uart_write_byte	4	{'uart_write_byte': 4}
+FUN_0100d204	uart_read_byte	2	{'uart_read_byte': 2, 'al_uart_is_input_available': 2, 'al_uart_tx_fifo_level_get': 2}
+FUN_0100d328	mspace_realloc	1	{'mspace_realloc': 1, 'sys_alloc': 1}
+FUN_0100d398	abort	2	{'munmap': 1, 'abort': 2}
+FUN_0100eaec	mspace_realloc	1	{'mspace_realloc': 1}
+FUN_01012b84	al_iofic_abort_mask_clear	4	{'al_iofic_abort_mask_clear': 4}
+FUN_01012c94	al_iofic_abort_mask_clear	4	{'al_iofic_abort_mask_clear': 4}
+FUN_01012da4	al_iofic_abort_mask_clear	4	{'al_iofic_abort_mask_clear': 4, 'al_iofic_unmask': 4}
+FUN_01012eb8	al_udma_init	4	{'al_udma_init': 4}
+FUN_0101332c	al_udma_q_init	2	{'al_udma_q_init': 2}
+FUN_010133cc	al_udma_q_is_enabled	2	{'al_udma_q_is_enabled': 2}
+FUN_010134c0	al_udma_state_set	8	{'al_udma_state_set': 8}
+FUN_01013818	al_udma_q_set_pointers	4	{'al_udma_q_set_pointers': 4, 'al_udma_state_get': 2}
+FUN_01013af4	al_udma_m2s_packet_size_cfg_set	4	{'al_udma_m2s_packet_size_cfg_set': 4, 'al_udma_s2m_max_descs_set': 2}
+FUN_01013c34	al_udma_m2s_max_descs_set	4	{'al_udma_m2s_max_descs_set': 4, 'al_udma_s2m_max_descs_set': 2}
+FUN_01013d6c	al_udma_iofic_s2m_error_ints_unmask	2	{'al_udma_iofic_s2m_error_ints_unmask': 2}
+FUN_01013e50	al_udma_iofic_s2m_error_ints_unmask	2	{'al_udma_iofic_s2m_error_ints_unmask': 2, 'al_udma_iofic_m2s_error_ints_unmask': 2}
+FUN_010194d0	al_serdes_25g_reg_read	2	{'al_serdes_25g_reg_read': 2}
+FUN_01019be4	al_serdes_25g_rx_diag_info_get	2	{'al_serdes_25g_rx_diag_info_get': 2}
+FUN_01019f68	al_serdes_25g_rx_leq_fsm_op	2	{'al_serdes_25g_rx_leq_fsm_op': 2}
+FUN_0101a0b0	al_serdes_25g_single_iteration_dosc_set	2	{'al_serdes_25g_single_iteration_dosc_set': 2}
+FUN_0101a1d8	al_serdes_25g_rx_equalization	6	{'al_serdes_25g_rx_equalization': 6}
+FUN_0101af8c	al_serdes_25g_cdr_is_locked	2	{'al_serdes_25g_cdr_is_locked': 2}
+FUN_0101bc3c	al_serdes_25g_qsample_pll_lock_check	3	{'al_serdes_25g_qsample_pll_lock_check': 3}
+FUN_0101bd6c	al_serdes_25g_tx_pll_wa_find_window	20	{'al_serdes_25g_is_fw_alive': 2, 'al_serdes_25g_tx_pll_wa_find_window': 20, 'al_serdes_25g_fw_init_status_lane_check': 8, 'al_serdes_25g_tx_pll_wa': 6, 'al_serdes_25g_fw_init_status_group_common_check': 4, 'al_serdes_25g_tx_pll_wa_find_window_edge': 2}
+FUN_0101dc0c	al_serdes_hssp_group_ictl_pma_val_set	6	{'al_serdes_hssp_group_ictl_pma_val_set': 6}
+FUN_0101f4bc	al_serdes_hssp_group_cfg_eth_sgmii_2_5g_mode	2	{'al_serdes_hssp_group_cfg_eth_sgmii_2_5g_mode': 2, 'al_serdes_hssp_group_cfg_sata_mode': 2}
+FUN_01021b64	al_serdes_25g_group_ictl_pma_val_set	1	{'al_serdes_25g_group_ictl_pma_val_set': 1}
+FUN_01021f14	al_ddr_cfg_init	2	{'al_ddr_cfg_init': 2, 'al_ddr_rev_get': 2}
+FUN_010221cc	al_pbs_axi_timeout_set	4	{'al_pbs_apb_mem_config_set': 2, 'al_pbs_axi_timeout_set': 4}
+FUN_01022328	al_bootstrap_parse	8	{'al_bootstrap_parse': 8, 'al_bootstrap_cpu_exist_get': 4, 'al_bootstrap_boot_device_get': 2}
+FUN_01022864	al_i2c_perform_write	4	{'al_i2c_perform_write': 4}
+FUN_01022ce8	al_i2c_read	2	{'al_i2c_read': 2, 'al_i2c_init': 2}
+FUN_01022e6c	al_uart_is_input_available	2	{'al_uart_is_input_available': 2}
+FUN_01022f00	al_uart_handle_init	8	{'al_uart_is_input_available': 6, 'al_uart_handle_init': 8}
+FUN_010233b4	al_uart_is_input_available	2	{'al_uart_is_input_available': 2, 'al_uart_write': 2}
+FUN_0102383c	al_addr_map_dram_remap_set	2	{'al_addr_map_dram_remap_set': 2}
+FUN_01023ed4	al_pll_init	2	{'al_pll_init': 2}
+FUN_01023fd4	al_pll_freq_get	8	{'al_pll_freq_get': 8, 'al_pll_channel_freq_get': 8, 'al_pll_channel_div_set': 2}
+FUN_010244b8	al_timer_value_get	4	{'al_timer_value_get': 4}
+FUN_010245d4	al_timer_value_get	2	{'al_timer_value_get': 2, 'al_timer_init': 2}
+FUN_010246dc	al_timer_value_get	2	{'al_timer_value_get': 2, 'al_timer_config_set': 2}
+FUN_01024774	al_timer_value_get	2	{'al_timer_value_get': 2, 'al_timer_load_set': 2}
+FUN_01024824	al_timer_value_get	2	{'al_timer_value_get': 2, 'al_timer_int_enable': 2}
+FUN_010248d4	al_timer_value_get	2	{'al_timer_value_get': 2, 'al_timer_enable': 2}
+FUN_01024968	al_thermal_sensor_readout_get	8	{'al_thermal_sensor_readout_get': 8}
+FUN_01024bb8	al_thermal_sensor_readout_get	2	{'al_thermal_sensor_readout_get': 2, 'al_thermal_sensor_handle_init_ex': 2}
+FUN_01024c60	al_thermal_sensor_readout_get	2	{'al_thermal_sensor_readout_get': 2, 'al_thermal_sensor_trim_set': 2}
+FUN_01024d14	al_thermal_sensor_readout_get	2	{'al_thermal_sensor_readout_get': 2, 'al_thermal_sensor_enable_set': 2}
+FUN_01024db8	al_thermal_sensor_readout_get	2	{'al_thermal_sensor_readout_get': 2, 'al_thermal_sensor_is_ready': 2}
+FUN_01024fdc	al_otp_read_word	6	{'al_otp_read_word': 6}
+FUN_0102515c	al_otp_read_word	4	{'al_otp_read_word': 4, 'al_otp_handle_init': 4}
+FUN_01025300	al_sys_fabric_handle_init	6	{'al_sys_fabric_handle_init': 6, 'al_sys_fabric_core_aarch32_setup_get': 2}
+FUN_01025484	al_sys_fabric_cluster_handle_init	6	{'al_sys_fabric_cluster_handle_init': 6}
+FUN_010255e0	al_sys_fabric_cluster_pd_pu_timer_set	8	{'al_sys_fabric_cluster_pd_pu_timer_set': 8}
+FUN_010257a4	al_sys_fabric_core_power_on_reset	8	{'al_sys_fabric_core_power_on_reset': 8}
+FUN_0102596c	al_sys_fabric_core_reset_deassert	10	{'al_sys_fabric_core_reset_deassert': 10}
+FUN_01025bcc	al_sys_fabric_core_aarch64_setup	10	{'al_sys_fabric_core_aarch64_setup': 10}
+FUN_01025e24	al_unit_adapter_handle_init	2	{'al_unit_adapter_handle_init': 2}
+FUN_01026184	al_serdes_init	22	{'al_serdes_init_clk_route': 8, 'al_serdes_init_cores': 2, 'al_serdes_group_core_clk_freq_update': 12, 'al_serdes_group_r2l_clk_freq_update': 2, 'al_serdes_group_l2r_clk_freq_update': 2, 'al_serdes_init': 22}
+FUN_010275c0	al_flash_obj_data_load	1	{'al_flash_obj_data_load': 1}
+FUN_01027a3c	al_flash_obj_id_to_str	4	{'al_flash_obj_id_to_str': 4}
+FUN_01027c58	al_flash_toc_validate	2	{'al_flash_toc_validate': 2}
+FUN_01027e14	al_flash_toc_find_id_with_fallback	4	{'al_flash_toc_find_id_with_fallback': 4}
+FUN_01027f70	al_flash_toc_stage2_active_instance_get_with_fallback	4	{'al_flash_toc_stage2_active_instance_get_with_fallback': 4}
+FUN_010280d8	al_flash_obj_header_read_and_validate	4	{'al_flash_obj_header_read_and_validate': 4}

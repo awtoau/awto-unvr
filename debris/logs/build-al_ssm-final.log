@@ -1,0 +1,68 @@
+make: Entering directory '/mnt/2tb/unvr-port-refs/linux-v7.1.8'
+make[1]: Entering directory '/mnt/2tb/unvr-port-refs/linux-alpine-v2/modules/al_ssm'
+  CC [M]  al_ssm_main.o
+  CC [M]  al_hal_ssm.o
+  CC [M]  al_hal_ssm_crypto.o
+al_hal_ssm_crypto.c: In function ‘al_crypto_error_ints_unmask’:
+al_hal_ssm_crypto.c:1416:1: warning: the frame size of 2336 bytes is larger than 2048 bytes [-Wframe-larger-than=]
+ 1416 | }
+      | ^
+  CC [M]  al_hal_ssm_crypto_cfg.o
+  CC [M]  al_hal_ssm_crc_memcpy.o
+al_hal_ssm_crc_memcpy.c: In function ‘al_crc_memcpy_error_ints_unmask’:
+al_hal_ssm_crc_memcpy.c:783:1: warning: the frame size of 2336 bytes is larger than 2048 bytes [-Wframe-larger-than=]
+  783 | }
+      | ^
+  CC [M]  al_hal_ssm_raid.o
+al_hal_ssm_raid.c: In function ‘_al_raid_xaction_validate_buffers_size’:
+al_hal_ssm_raid.c:578:20: warning: this statement may fall through [-Wimplicit-fallthrough=]
+  578 |                 if (tx_len != rx_len)
+      |                    ^
+al_hal_ssm_raid.c:581:9: note: here
+  581 |         case AL_RAID_OP_P_VAL:
+      |         ^~~~
+al_hal_ssm_raid.c:586:20: warning: this statement may fall through [-Wimplicit-fallthrough=]
+  586 |                 if (tx_len != rx_len)
+      |                    ^
+al_hal_ssm_raid.c:589:9: note: here
+  589 |         case AL_RAID_OP_Q_VAL:
+      |         ^~~~
+al_hal_ssm_raid.c:594:20: warning: this statement may fall through [-Wimplicit-fallthrough=]
+  594 |                 if (tx_len != rx_len)
+      |                    ^
+al_hal_ssm_raid.c:597:9: note: here
+  597 |         case AL_RAID_OP_PQ_VAL:
+      |         ^~~~
+al_hal_ssm_raid.c:602:20: warning: this statement may fall through [-Wimplicit-fallthrough=]
+  602 |                 if (tx_len != rx_len)
+      |                    ^
+al_hal_ssm_raid.c:605:9: note: here
+  605 |         case AL_RAID_OP_EC_PQ_VAL:
+      |         ^~~~
+al_hal_ssm_raid.c:610:20: warning: this statement may fall through [-Wimplicit-fallthrough=]
+  610 |                 if (tx_len != rx_len)
+      |                    ^
+al_hal_ssm_raid.c:613:9: note: here
+  613 |         case AL_RAID_OP_EC_PQR_VAL:
+      |         ^~~~
+al_hal_ssm_raid.c:618:20: warning: this statement may fall through [-Wimplicit-fallthrough=]
+  618 |                 if (tx_len != rx_len)
+      |                    ^
+al_hal_ssm_raid.c:621:9: note: here
+  621 |         case AL_RAID_OP_EC_PQRS_VAL:
+      |         ^~~~
+al_hal_ssm_raid.c: In function ‘al_raid_error_ints_unmask’:
+al_hal_ssm_raid.c:857:1: warning: the frame size of 2336 bytes is larger than 2048 bytes [-Wframe-larger-than=]
+  857 | }
+      | ^
+  CC [M]  al_hal_udma_main.o
+  CC [M]  al_hal_udma_config.o
+  CC [M]  al_hal_udma_debug.o
+  CC [M]  al_hal_udma_iofic.o
+  CC [M]  al_hal_m2m_udma.o
+  CC [M]  al_hal_iofic.o
+  LD [M]  al_ssm.o
+  MODPOST Module.symvers
+  LD [M]  al_ssm.ko
+make[1]: Leaving directory '/mnt/2tb/unvr-port-refs/linux-alpine-v2/modules/al_ssm'
+make: Leaving directory '/mnt/2tb/unvr-port-refs/linux-v7.1.8'

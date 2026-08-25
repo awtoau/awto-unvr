@@ -1,0 +1,25 @@
+fix-boot-errors started 2026-08-18T00:05:39+10:00
+make: Entering directory '/mnt/2tb/unvr-port-refs/linux-v7.1.8'
+make[1]: Entering directory '/mnt/2tb/unvr-port-refs/linux-alpine-v2/modules/al_ssm'
+  CC [M]  al_ssm_main.o
+In file included from al_hal_udma.h:57,
+                 from al_hal_ssm.h:48,
+                 from al_ssm_main.c:45:
+al_hal_udma_regs.h:75:18: error: size ‘18446744073709550592’ of array ‘rsrvd2’ exceeds maximum object size ‘9223372036854775807’
+   75 |         uint32_t rsrvd2[((0x1E800 - 0x1C000) - sizeof(struct udma_gen_regs_v3)) >> 2];
+      |                  ^~~~~~
+make[3]: *** [/mnt/2tb/unvr-port-refs/linux-v7.1.8/scripts/Makefile.build:289: al_ssm_main.o] Error 1
+make[2]: *** [/mnt/2tb/unvr-port-refs/linux-v7.1.8/Makefile:2165: .] Error 2
+make[1]: *** [/mnt/2tb/unvr-port-refs/linux-v7.1.8/Makefile:248: __sub-make] Error 2
+make[1]: Leaving directory '/mnt/2tb/unvr-port-refs/linux-alpine-v2/modules/al_ssm'
+make: *** [Makefile:248: __sub-make] Error 2
+make: Leaving directory '/mnt/2tb/unvr-port-refs/linux-v7.1.8'
+
+=== COMPLETE 2026-08-18 ===
+Bug1 (iofic UBSAN): HANDED OFF to coordinator; my 6 iofic-file edits reverted.
+  Worked+layout-verified diff saved: tmp/my-iofic-fix-for-coordinator.diff
+Bug2 (al_ssm crypto): FIXED in al_ssm_main.c (CBC IV writeback + XTS tweak-swap
+  init). al_ssm.ko builds clean. Commit 6d1f89d, patch in patches/.
+Bug3 (pca953x @0x29): FIXED in dts (node removed). DTB verified. Commit 469d424.
+timer0 deferred-probe: FIXED in dts (disabled). DTB verified. Commit a671e58.
+Docs: docs/kernel-boot-fixes.md. Builds logged: build-al_ssm-final.log, build-dtb.log.

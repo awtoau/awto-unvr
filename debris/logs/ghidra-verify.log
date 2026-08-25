@@ -1,0 +1,105 @@
+=== verify START 2026-08-16T12:06:54+10:00 install=/home/dan/tools/ghidra_12.2_DEV_20260816 ===
+openjdk version "25.0.4" 2026-07-21
+OpenJDK Runtime Environment (Red_Hat-25.0.4.0.7-2) (build 25.0.4+7)
+OpenJDK 64-Bit Server VM (Red_Hat-25.0.4.0.7-2) (build 25.0.4+7, mixed mode)
+INFO  Using log config file: jar:file:/home/dan/tools/ghidra_12.2_DEV_20260816/Ghidra/Framework/Generic/lib/Generic.jar!/generic.log4j.xml (LoggingInitialization)  
+INFO  Using log file: /home/dan/.config/ghidra/ghidra_12.2_DEV/application.log (LoggingInitialization)  
+INFO  Loading user preferences: /home/dan/.config/ghidra/ghidra_12.2_DEV/preferences (Preferences)  
+INFO  Searching for classes... (ClassSearcher)  
+INFO  Class search complete (555 ms) (ClassSearcher)  
+INFO  Initializing SSL Context (DefaultSSLContextInitializer)  
+INFO  Initializing Random Number Generator... (SecureRandomFactory)  
+INFO  Random Number Generator initialization complete: NativePRNGNonBlocking (SecureRandomFactory)  
+INFO  Trust manager disabled, cacerts have not been set (DefaultTrustManagerFactory)  
+INFO  Headless startup complete (1823 ms) (AnalyzeHeadless)  
+INFO  Class searcher loaded 224 extension points (114 false positives) (ClassSearcher)  
+INFO  HEADLESS Script Paths:
+    /home/dan/tools/ghidra_12.2_DEV_20260816/Ghidra/Features/BSim/ghidra_scripts
+    /home/dan/tools/ghidra_12.2_DEV_20260816/Ghidra/Features/SystemEmulation/ghidra_scripts
+    /home/dan/tools/ghidra_12.2_DEV_20260816/Ghidra/Features/FunctionID/ghidra_scripts
+    /home/dan/tools/ghidra_12.2_DEV_20260816/Ghidra/Features/PyGhidra/ghidra_scripts
+    /home/dan/tools/ghidra_12.2_DEV_20260816/Ghidra/Features/BytePatterns/ghidra_scripts
+    /home/dan/tools/ghidra_12.2_DEV_20260816/Ghidra/Features/PDB/ghidra_scripts
+    /home/dan/tools/ghidra_12.2_DEV_20260816/Ghidra/Debug/Debugger-rmi-trace/ghidra_scripts
+    /home/dan/tools/ghidra_12.2_DEV_20260816/Ghidra/Debug/Debugger/ghidra_scripts
+    /home/dan/tools/ghidra_12.2_DEV_20260816/Ghidra/Features/VersionTracking/ghidra_scripts
+    /home/dan/tools/ghidra_12.2_DEV_20260816/Ghidra/Features/GnuDemangler/ghidra_scripts
+    /mnt/2tb/git/awto-unvr/tmp/ghidra-scripts
+    /home/dan/tools/ghidra_12.2_DEV_20260816/Ghidra/Features/Decompiler/ghidra_scripts
+    /home/dan/tools/ghidra_12.2_DEV_20260816/Ghidra/Processors/8051/ghidra_scripts
+    /home/dan/tools/ghidra_12.2_DEV_20260816/Ghidra/Processors/JVM/ghidra_scripts
+    /home/dan/tools/ghidra_12.2_DEV_20260816/Ghidra/Features/DecompilerDependent/ghidra_scripts
+    /home/dan/tools/ghidra_12.2_DEV_20260816/Ghidra/Processors/DATA/ghidra_scripts
+    /home/dan/tools/ghidra_12.2_DEV_20260816/Ghidra/Features/Base/ghidra_scripts
+    /home/dan/tools/ghidra_12.2_DEV_20260816/Ghidra/Features/MicrosoftCodeAnalyzer/ghidra_scripts
+    /home/dan/tools/ghidra_12.2_DEV_20260816/Ghidra/Features/Swift/ghidra_scripts
+    /home/dan/tools/ghidra_12.2_DEV_20260816/Ghidra/Processors/Atmel/ghidra_scripts
+    /home/dan/tools/ghidra_12.2_DEV_20260816/Ghidra/Processors/PIC/ghidra_scripts
+    /home/dan/tools/ghidra_12.2_DEV_20260816/Ghidra/Features/FileFormats/ghidra_scripts
+    /home/dan/tools/ghidra_12.2_DEV_20260816/Ghidra/Features/WildcardAssembler/ghidra_scripts (HeadlessAnalyzer)  
+INFO  HEADLESS: execution starts (HeadlessAnalyzer)  
+INFO  Creating temporary project: /mnt/2tb/git/awto-unvr/tmp/ghidra-verify-proj/verify_proj (HeadlessAnalyzer)  
+INFO  Creating project: /mnt/2tb/git/awto-unvr/tmp/ghidra-verify-proj/verify_proj (DefaultProject)  
+INFO  REPORT: Processing input files:  (HeadlessAnalyzer)  
+INFO       project: /mnt/2tb/git/awto-unvr/tmp/ghidra-verify-proj/verify_proj (HeadlessAnalyzer)  
+INFO  IMPORTING: file:///mnt/2tb/git/awto-unvr/tmp/s2-blob.bin (HeadlessAnalyzer)  
+INFO  Successfully applied "-loader-baseAddr" to "Base Address" (old: "null", new: "0x1000000") (ProgramLoader)  
+INFO  Using Loader: Raw Binary (ProgramLoader)  
+INFO  Using Language/Compiler: ARM:LE:32:v8:default (ProgramLoader)  
+INFO  Using Library Search Path: [., /bin, /lib, /lib64, /lib/x86_64-linux-gnu, /lib/aarch64-linux-gnu, /usr/bin, /usr/lib, /usr/X11R6/bin, /usr/X11R6/lib, /usr/java/packages/lib, /usr/lib64] (ProgramLoader)  
+INFO  IMPORTING: Loaded 0 additional files (HeadlessAnalyzer)  
+INFO  ANALYZING all memory and code: file:///mnt/2tb/git/awto-unvr/tmp/s2-blob.bin (HeadlessAnalyzer)  
+WARN  Decompiling 01001a90, pcode error at f2202dc6: Could not follow disassembly flow into non-existing memory at f2202dc6 (DecompileCallback)  
+WARN  Decompiling 01001a90, pcode error at f2202dc0: Could not follow disassembly flow into non-existing memory at f2202dc0 (DecompileCallback)  
+WARN  Decompiling 01001a90, pcode error at f22024b0: Could not follow disassembly flow into non-existing memory at f22024b0 (DecompileCallback)  
+WARN  Decompiling 01001a90, pcode error at f2202d64: Could not follow disassembly flow into non-existing memory at f2202d64 (DecompileCallback)  
+WARN  Decompiling 01001a90, pcode error at f2202d68: Could not follow disassembly flow into non-existing memory at f2202d68 (DecompileCallback)  
+INFO  Packed database cache: /var/tmp/dan-ghidra/packed-db-cache (PackedDatabaseCache)  
+INFO  Applied data type archive: generic_clib (ApplyDataArchiveAnalyzer)  
+INFO  -----------------------------------------------------
+    ARM Constant Reference Analyzer            0.106 secs
+    ARM Symbol                                 0.000 secs
+    ASCII Strings                              0.138 secs
+    Apply Data Archives                        0.254 secs
+    Call-Fixup Installer                       0.001 secs
+    Create Address Tables                      0.007 secs
+    Create Function                            0.027 secs
+    Data Reference                             0.000 secs
+    Decompiler Switch Analysis                 1.135 secs
+    Demangler GNU                              0.001 secs
+    Disassemble                                0.279 secs
+    Disassemble Entry Points                   0.001 secs
+    Embedded Media                             0.004 secs
+    External Entry References                  0.000 secs
+    Function ID                                0.014 secs
+    Function Start Pre Search                  0.005 secs
+    Function Start Search                      0.058 secs
+    Function Start Search After Code           0.008 secs
+    Function Start Search After Data           0.001 secs
+    Non-Returning Functions - Discovered       0.003 secs
+    Reference                                  0.005 secs
+    Shared Return Calls                        0.004 secs
+    Source Language Support                    0.000 secs
+    Stack                                      0.093 secs
+    Subroutine References                      0.008 secs
+    Subroutine References - One Time           0.000 secs
+-----------------------------------------------------
+     Total Time   2 secs
+-----------------------------------------------------
+ (AutoAnalysisManager)  
+INFO  REPORT: Analysis succeeded for file: file:///mnt/2tb/git/awto-unvr/tmp/s2-blob.bin (HeadlessAnalyzer)  
+INFO  REPORT: Execute script: ExportAll.java '/mnt/2tb/git/awto-unvr/tmp/ghidra-verify-out'  (HeadlessAnalyzer)  
+INFO  SCRIPT: /mnt/2tb/git/awto-unvr/tmp/ghidra-scripts/ExportAll.java (HeadlessAnalyzer)  
+WARN  Decompiling 01001a90, pcode error at f2202dc6: Could not follow disassembly flow into non-existing memory at f2202dc6 (DecompileCallback)  
+WARN  Decompiling 01001a90, pcode error at f2202dc0: Could not follow disassembly flow into non-existing memory at f2202dc0 (DecompileCallback)  
+WARN  Decompiling 01001a90, pcode error at f22024b0: Could not follow disassembly flow into non-existing memory at f22024b0 (DecompileCallback)  
+WARN  Decompiling 01001a90, pcode error at f2202d64: Could not follow disassembly flow into non-existing memory at f2202d64 (DecompileCallback)  
+WARN  Decompiling 01001a90, pcode error at f2202d68: Could not follow disassembly flow into non-existing memory at f2202d68 (DecompileCallback)  
+INFO  ExportAll.java> SKIP (decompile failed): FUN_01001a90 @ 01001a90 (GhidraScript)  
+INFO  ExportAll.java> Exported 69 functions to /mnt/2tb/git/awto-unvr/tmp/ghidra-verify-out (GhidraScript)  
+INFO  ANALYZING changes made by post scripts: file:///mnt/2tb/git/awto-unvr/tmp/s2-blob.bin (HeadlessAnalyzer)  
+INFO  REPORT: Post-analysis succeeded for file: file:///mnt/2tb/git/awto-unvr/tmp/s2-blob.bin (HeadlessAnalyzer)  
+INFO  /s2-blob.bin: file created (dan) (LocalFileSystem)  
+INFO  REPORT: Save succeeded for: /s2-blob.bin (verify_proj:/s2-blob.bin) (HeadlessAnalyzer)  
+INFO  REPORT: Import succeeded (HeadlessAnalyzer)  
+VERIFY_EXIT=0 2026-08-16T12:07:00+10:00

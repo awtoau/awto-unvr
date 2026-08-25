@@ -1,0 +1,20 @@
+using config: '.config'
+al_eth config not found!
+al_dma config not found!
+al_sgpo config not found!
+al_thermal config not found!
+WARNING: LZ4_COMPRESS is required, but nothing in the
+  current config selects it.
+WARNING: LZ4HC_COMPRESS is required, but nothing in the
+  current config selects it.
+WARNING: QCOM_NET_PHYLIB is required, but nothing in the
+  current config selects it.
+module at803x did not have configs CONFIG_AT803X_PHY
+module rfkill did not have configs CONFIG_RFKILL
+module qcom_phy_lib did not have configs CONFIG_QCOM_NET_PHYLIB
+module zram did not have configs CONFIG_ZRAM
+module lz4hc_compress did not have configs CONFIG_LZ4HC_COMPRESS
+module lz4_compress did not have configs CONFIG_LZ4_COMPRESS
+#
+# configuration written to .config
+#

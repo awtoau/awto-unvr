@@ -1,0 +1,24 @@
+ping 192.168.25.145
+0
+   - 0 'al_eth_dm'
+   - found
+al_eth_adapter_init: non optimal adapter configuration
+serdes: HSSP group D (SFP+ lane 0) @ 00000000fd8c0c00, gen.version=0x00000fcb
+serdes: lane 0 signal_detect=yes (pma rxrandet=0x29)
+serdes: 10G init done (HSSP group D); PCS owned by the MAC driver
+Configured MAC to KR mode
+serdes: HSSP group D @ 00000000fd8c0c00, SFP+ lane 0:
+  gen.version  : 0x00000fcb
+  signal_detect: yes (pma rxrandet=0x29)
+Using al_eth_dm_10g device
+al_eth_dm_10g al_eth_dm_10g: TX completion timeout: 1 descs left after 100000 us
+al_eth_dm_10g al_eth_dm_10g: TX completion timeout: 1 descs left after 100000 us
+al_eth_dm_10g al_eth_dm_10g: TX completion timeout: 1 descs left after 100000 us
+al_eth_dm_10g al_eth_dm_10g: TX completion timeout: 1 descs left after 100000 us
+
+ARP Retry count exceeded; starting again
+[eth tx] warn: dma state didn't change to Disable
+[eth tx] warn: failed to change state, error -110
+ping failed; host 192.168.25.145 is not alive
+awto-nas#
+<<MATCHED: awto-nas#>>

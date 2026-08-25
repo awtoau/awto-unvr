@@ -1,0 +1,20 @@
+DTS shared-fact check OK: i2c@fd880000 [clock-frequency=100000, i2c-sda-hold-time-ns=300, i2c-ss-scl-hcnt-raw=2133, i2c-ss-scl-lcnt-raw=2827, i2c-fs-scl-hcnt-raw=413, i2c-fs-scl-lcnt-raw=800, i2c-hs-scl-hcnt-raw=243, i2c-hs-scl-lcnt-raw=408] match across 2 trees
+[2026-08-20T16:13:19+1000] staged board/annapurna/alpine/Kconfig
+[2026-08-20T16:13:19+1000] staged board/annapurna/alpine/Makefile
+[2026-08-20T16:13:19+1000] staged board/annapurna/alpine/MAINTAINERS
+[2026-08-20T16:13:19+1000] staged board/annapurna/alpine/alpine.c
+[2026-08-20T16:13:19+1000] staged board/annapurna/alpine/pl061.c
+[2026-08-20T16:13:19+1000] staged include/configs/alpine.h
+[2026-08-20T16:13:19+1000] staged configs/alpine_v2_unvr_defconfig
+[2026-08-20T16:13:19+1000] staged arch/arm/dts/awto-alpine-v2-unvr-uboot.dts
+[2026-08-20T16:13:19+1000] staged drivers/i2c/designware_i2c.c
+[2026-08-20T16:13:19+1000] staged drivers/i2c/designware_i2c.h
+[2026-08-20T16:13:19+1000] staged drivers/net/al_hal_shim/ (5 files)
+[2026-08-20T16:13:19+1000] staged board/annapurna/alpine/al_ddr/ (22 files)
+[2026-08-20T16:13:19+1000] staged drivers/net/al_eth/ (62 files)
+[2026-08-20T16:13:19+1000] staged drivers/phy/al_serdes/ (10 files)
+[2026-08-20T16:13:19+1000] run: make O=/mnt/2tb/git/awto-unvr/tmp/uboot-build alpine_v2_unvr_defconfig
+[2026-08-20T16:13:19+1000] exit 0 (0s)
+[2026-08-20T16:13:19+1000] run: make O=/mnt/2tb/git/awto-unvr/tmp/uboot-build -j32
+[2026-08-20T16:13:22+1000] exit 0 (3s)
+[2026-08-20T16:13:22+1000] BUILD OK: u-boot.bin = 776672 bytes

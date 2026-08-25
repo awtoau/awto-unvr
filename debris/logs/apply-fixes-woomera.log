@@ -1,0 +1,9 @@
+2026-08-18T00:48:17+10:00  serving /mnt/2tb/unvr-port-refs/build-out-71-fedora on 192.168.25.145:8097
+2026-08-18T00:48:18+10:00  module dir: /lib/modules/7.1.8-dirty/extra
+2026-08-18T00:48:20+10:00  uImage-unvr-ea16-7.1-fedora-gz: installed (sha256 OK)
+2026-08-18T00:48:20+10:00  alpine-v2-ubnt-unvr-ea16-7.1-fedora.dtb: installed (sha256 OK)
+2026-08-18T00:48:21+10:00  al_eth.ko: installed (sha256 OK)
+2026-08-18T00:48:22+10:00  al_ssm.ko: installed (sha256 OK)
+2026-08-18T00:48:22+10:00  al_dma.ko: installed (sha256 OK)
+2026-08-18T00:48:26+10:00  all files installed + depmod. Rebooting...
+2026-08-18T00:52:26+10:00  BOOT FAILED: timeout — recover via U-Boot ext4load the .bak kernel+DTB

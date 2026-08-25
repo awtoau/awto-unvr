@@ -1,0 +1,29 @@
+=== UNVR mainline-port reference gather ===
+Start: 2026-08-16 (AEST)
+Staging: /mnt/2tb/unvr-port-refs/
+Space guard: HARD STOP if avail < 25 GB on /mnt/2tb
+Initial avail: 92543942656 bytes (~86.2 GiB)
+
+=== RESULT (2026-08-16) ===
+All 15 targeted sources cloned OK. Nothing skipped for space.
+Total on disk: 9.9 GB. Final avail: 81917894656 B (~76.3 GiB). Guard never approached.
+
+Per-source (dir | commit | size):
+  linux-v6.18                        v6.18/7d0a66e4b   2.0G
+  linux-v7.1.8                       v7.1.8/25c76bea8  2.0G
+  u-boot-v2026.07                    v2026.07/ece349ad 414M
+  urnvr-kernel-4.19.152              badfd862c         1.2G
+  UBNT-source-code                   6f738020          2.6G  (checkout completed via git reset --hard after 2m clone timeout)
+  linux-alpine-v2                    e9762bc           4.6M
+  linux-qnap-tsx32x                  6864002c7         1.9G
+  delroth-al_eth-standalone          1a66c67           2.6M
+  mornepousse-al_eth-standalone      2f0c081           2.6M
+  mornepousse-al_thermal-standalone  5a6ba59           444K
+  delroth-alpine_hal                 eb6b9f1           26M
+  urnvr                              59fa24c           252K
+  UNVR-NAS                           2cffcd5           620K
+  UNVR-diy-os                        e1fd461           19M
+  unifi-unvr-emu                     6ebec27           408K
+
+Manifest: /mnt/2tb/unvr-port-refs/MANIFEST.md
+

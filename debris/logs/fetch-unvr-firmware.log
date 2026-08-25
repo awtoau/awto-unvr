@@ -1,0 +1,8 @@
+2026-08-15T14:04:27+10:00  --- fetch ---
+2026-08-15T14:04:27+10:00  GET https://fw-download.ubnt.com/data/unifi-nvr/44dc-UNVR-5.1.25-4d75bc90-b895-4d8f-baff-382f24fd36cf.bin
+2026-08-15T14:05:37+10:00  downloaded 786253430 bytes
+2026-08-15T14:05:37+10:00  size 786253430 (expect 786253430) OK
+2026-08-15T14:05:38+10:00  sha256 74f2833356e832bd97f59bb3686eaedaf704335631b5daabedfce4d30bb222fc
+2026-08-15T14:05:38+10:00  md5    3f661a852b6fb70946e2a94712df6923
+2026-08-15T14:05:38+10:00  VERIFIED
+2026-08-15T14:05:38+10:00  wrote /mnt/2tb/git/awto-unvr/sources/README.md

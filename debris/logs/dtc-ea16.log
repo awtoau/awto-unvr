@@ -1,0 +1,23 @@
+/mnt/2tb/git/awto-unvr/tmp/ea16-decompiled.dts: Warning (unit_address_vs_reg): /soc/pcie-external1: node has a reg or ranges property, but no unit name
+/mnt/2tb/git/awto-unvr/tmp/ea16-decompiled.dts: Warning (unit_address_vs_reg): /soc/pcie-external2: node has a reg or ranges property, but no unit name
+/mnt/2tb/git/awto-unvr/tmp/ea16-decompiled.dts: Warning (unit_address_vs_reg): /soc/pcie-external3: node has a reg or ranges property, but no unit name
+/mnt/2tb/git/awto-unvr/tmp/ea16-decompiled.dts: Warning (unit_address_vs_reg): /hdd-pwrctl/hdd@0: node has a unit name, but no reg or ranges property
+/mnt/2tb/git/awto-unvr/tmp/ea16-decompiled.dts: Warning (unit_address_vs_reg): /hdd-pwrctl/hdd@1: node has a unit name, but no reg or ranges property
+/mnt/2tb/git/awto-unvr/tmp/ea16-decompiled.dts: Warning (unit_address_vs_reg): /hdd-pwrctl/hdd@2: node has a unit name, but no reg or ranges property
+/mnt/2tb/git/awto-unvr/tmp/ea16-decompiled.dts: Warning (unit_address_vs_reg): /hdd-pwrctl/hdd@3: node has a unit name, but no reg or ranges property
+/mnt/2tb/git/awto-unvr/tmp/ea16-decompiled.dts: Warning (unit_address_vs_reg): /sata-leds/led@0: node has a unit name, but no reg or ranges property
+/mnt/2tb/git/awto-unvr/tmp/ea16-decompiled.dts: Warning (unit_address_vs_reg): /sata-leds/led@1: node has a unit name, but no reg or ranges property
+/mnt/2tb/git/awto-unvr/tmp/ea16-decompiled.dts: Warning (unit_address_vs_reg): /sata-leds/led@2: node has a unit name, but no reg or ranges property
+/mnt/2tb/git/awto-unvr/tmp/ea16-decompiled.dts: Warning (unit_address_vs_reg): /sata-leds/led@3: node has a unit name, but no reg or ranges property
+/mnt/2tb/git/awto-unvr/tmp/ea16-decompiled.dts: Warning (pci_bridge): /soc/pcie-external1: node name is not "pci" or "pcie"
+/mnt/2tb/git/awto-unvr/tmp/ea16-decompiled.dts: Warning (pci_bridge): /soc/pcie-external2: node name is not "pci" or "pcie"
+/mnt/2tb/git/awto-unvr/tmp/ea16-decompiled.dts: Warning (pci_bridge): /soc/pcie-external3: node name is not "pci" or "pcie"
+/mnt/2tb/git/awto-unvr/tmp/ea16-decompiled.dts: Warning (unit_address_format): Failed prerequisite 'pci_bridge'
+/mnt/2tb/git/awto-unvr/tmp/ea16-decompiled.dts: Warning (pci_device_reg): Failed prerequisite 'pci_bridge'
+/mnt/2tb/git/awto-unvr/tmp/ea16-decompiled.dts: Warning (pci_device_bus_num): Failed prerequisite 'pci_bridge'
+/mnt/2tb/git/awto-unvr/tmp/ea16-decompiled.dts: Warning (simple_bus_reg): /soc/reboot: missing or empty reg/ranges property
+/mnt/2tb/git/awto-unvr/tmp/ea16-decompiled.dts: Warning (simple_bus_reg): /soc/pcie-external1: simple-bus unit address format error, expected "fd820000"
+/mnt/2tb/git/awto-unvr/tmp/ea16-decompiled.dts: Warning (simple_bus_reg): /soc/pcie-external2: simple-bus unit address format error, expected "fd840000"
+/mnt/2tb/git/awto-unvr/tmp/ea16-decompiled.dts: Warning (simple_bus_reg): /soc/pcie-external3: simple-bus unit address format error, expected "fd900000"
+/mnt/2tb/git/awto-unvr/tmp/ea16-decompiled.dts: Warning (unique_unit_address): /soc/pbs@fd8a8000: duplicate unit-address (also used in node /soc/pinctrl@fd8a8000)
+/mnt/2tb/git/awto-unvr/tmp/ea16-decompiled.dts: Warning (unique_unit_address): /soc/io-fabric@fc000000: duplicate unit-address (also used in node /soc/ethernet@fc000000)

@@ -1,0 +1,24 @@
+>> tftpboot 0x04078000 alpine-v2-ubnt-unvr-ea16-7.1-fedora.dtb
+ tftpboot 0x04078000 alpine-v2-ubnt-unvr-ea16-7.1-fedora.dtb
+al_eth1 Waiting for PHY auto negotiation to complete... done
+Using al_eth1 device
+TFTP from server 192.168.25.145; our IP address is 192.168.25.140
+Filename 'alpine-v2-ubnt-unvr-ea16-7.1-fedora.dtb'.
+Load address: 0x4078000
+Loading: *###
+	 381.8 KiB/s
+done
+Bytes transferred
+>> nand erase 0x2800000 0x40000
+ nand erase 0x2800000 0x40000
+
+NAND erase: device 0 offset 0x2800000, size 0x40000
+Erasing at 0x2800000 -- 100% complete.
+OK
+>> nand write 0x04078000 0x2800000 0x40000
+ nand write 0x04078000 0x2800000 0x40000
+
+NAND write: device 0 offset 0x2800000, size 0x40000
+ 262144 bytes written: OK
+=== DTB written; resetting to Fedora ===
+=== BOOTED ===

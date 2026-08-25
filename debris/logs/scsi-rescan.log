@@ -1,0 +1,15 @@
+scsi reset
+scsi - SCSI sub-system
+
+Usage:
+scsi scsi info  - show available SCSI devices
+scsi scan  - (re-)scan SCSI bus
+scsi device [dev] - show or set current device
+scsi part [dev] - print partition table of one or all SCSI devices
+scsi read addr blk# cnt - read `cnt' blocks starting at block `blk#'
+     to memory address `addr'
+scsi write addr blk# cnt - write `cnt' blocks starting at block
+     `blk#' from memory address `addr'
+scsi erase blk# cnt - erase `cnt' blocks starting at block `blk#'
+awto-nas#
+<<MATCHED: awto-nas#>>

@@ -1,0 +1,31 @@
+== tmp/sections/rootfs/sbin/ubnt-tools
+vaddr      sysid   short       uboot-dev      main-dev       name
+0x00032068 0xea11  UDM         /dev/sda1      /dev/sda2      UniFi Dream Machine
+0x00032290 0xea15  UDMPRO      /dev/sdb1      /dev/sdb2      UniFi Dream Machine Pro
+0x000324b8 0xea2a  UDW         -              -              UniFi Dream Wall
+0x000326e0 0xea2c  UDMPROSE    -              -              UniFi Dream Machine SE
+0x00032908 0xea32  UDMPROMAX   -              -              UniFi Dream Machine Pro Max
+0x00032b30 0xea39  UDMPROXG    -              -              UniFi Dream Machine Pro XG
+0x00032d58 0xea16  UNVR        -              -              UniFi Network Video Recorder
+0x00032f80 0xea1a  UNVR        -              -              UniFi Network Video Recorder
+0x000331a8 0xea20  UNVRPRO     -              -              UniFi Network Video Recorder Pro
+0x000333d0 0xea51  UNASPRO     -              -              UniFi Network Attached Storage Pro
+0x000335f8 0xea63  UNASPRO8    -              -              UniFi Network Attached Storage Pro 8
+0x00033820 0xea67  UNASPRO4    -              -              UniFi Network Attached Storage Pro 4
+0x00033a48 0xea19  UXGPRO      /dev/sda1      /dev/sda2      Gateway Pro
+0x00033c70 0xf4a7faef  Oi+o+DL5LYhYrSMYIAWTmF1Urs3x+LOAETXRL1hsWIi+niG0xXBS/5tI/S6gltLrIEgxzG5EEwt9l7W2USPPbaYkuqNnLcMOfNced0i7i650/92g9OcagRl1aAUyprm/o694jwwb4Z6u5pt4tcNzQdkJZf+/nnAZEiU8WpniL647GrJdeM99aIeS/35bMOVQukVqiYIFV397zSaVGrgqA/xj1XWNFWdkQCTah20IU+40gncZB3r99fC86YS1srayl+pMuHA4oBFpAdvHkyonS5G9gmuY9e1QwlQI96UG0WCLswtMZ+KitO4HrEJnMLv5JQIDAQAB î¥Ùðëä¦µÉÖ±´ãðõð®¾Ð÷ÛõËëïý¡ÄúµüÖã­Í¥ÔóÆáª äÞÙýàÚ® Õ¦ÌÜ¶ôø¶µèÊ©× ÙóûÀÆáµÀ¼®°Ë·ÇÄ¯ÐÐ´¥é¡ÐÔ¸ÔôæýÃ ý¸õ£ü·Ê³õòá½í¸ôÛ¡ðîÑ¦´À÷êêªÒ¦§ýæþ¸öÑöÿ±¸¥µ±Ä£òäÛ¸«­õÜÔóÖªªÌßñËÂ©ÀÂ¡ ôø¶µèÊ©× ÙóûÀÆáµÀ¼®°Ë·ÇÄ¯ÐÐ´¥é¡ÐÔ¸ÔôæýÃ ý¸õ£ü·Ê³õòá½í¸ôÛ¡ðîÑ¦´À÷êêªÒ¦§ýæþ¸öÑöÿ±¸¥µ±Ä£òäÛ¸«­õÜÔóÖªªÌßñËÂ©ÀÂ¡ MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA2zha8B4ELGhQeRnVf+hZOi+o+DL5LYhYrSMYIAWTmF1Urs3x+LOAETXRL1hsWIi+niG0xXBS/5tI/S6gltLrIEgxzG5EEwt9l7W2USPPbaYkuqNnLcMOfNced0i7i650/92g9OcagRl1aAUyprm/o694jwwb4Z6u5pt4tcNzQdkJZf+/nnAZEiU8WpniL647GrJdeM99aIeS/35bMOVQukVqiYIFV397zSaVGrgqA/xj1XWNFWdkQCTah20IU+40gncZB3r99fC86YS1srayl+pMuHA4oBFpAdvHkyonS5G9gmuY9e1QwlQI96UG0WCLswtMZ+KitO4HrEJnMLv5JQIDAQAB
+== tmp/sections/rootfs/sbin/ubnt-tools
+vaddr      sysid   short       uboot-dev      main-dev       name
+0x00032068 0xea11  UDM         /dev/sda1      /dev/sda2      UniFi Dream Machine
+0x00032290 0xea15  UDMPRO      /dev/sdb1      /dev/sdb2      UniFi Dream Machine Pro
+0x000324b8 0xea2a  UDW         -              -              UniFi Dream Wall
+0x000326e0 0xea2c  UDMPROSE    -              -              UniFi Dream Machine SE
+0x00032908 0xea32  UDMPROMAX   -              -              UniFi Dream Machine Pro Max
+0x00032b30 0xea39  UDMPROXG    -              -              UniFi Dream Machine Pro XG
+0x00032d58 0xea16  UNVR        -              -              UniFi Network Video Recorder
+0x00032f80 0xea1a  UNVR        -              -              UniFi Network Video Recorder
+0x000331a8 0xea20  UNVRPRO     -              -              UniFi Network Video Recorder Pro
+0x000333d0 0xea51  UNASPRO     -              -              UniFi Network Attached Storage Pro
+0x000335f8 0xea63  UNASPRO8    -              -              UniFi Network Attached Storage Pro 8
+0x00033820 0xea67  UNASPRO4    -              -              UniFi Network Attached Storage Pro 4
+0x00033a48 0xea19  UXGPRO      /dev/sda1      /dev/sda2      Gateway Pro

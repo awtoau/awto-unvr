@@ -1,0 +1,43 @@
+
+=== 2026-08-20T18:35:07+10:00 host=192.168.25.106 reload=False ===
+Thu Aug 20 08:35:07 UTC 2026
+      |         ^~~~~~
+al_hal_plat_services.h:118:41: note: in expansion of macro ‘pr_err’
+  118 | #define al_err(...)                     pr_err(__VA_ARGS__)
+      |                                         ^~~~~~
+al_hal_eth_main.c:2424:25: note: in expansion of macro ‘al_err’
+ 2424 |                         al_err("eth [%s]: %s: invalid reference clock frequency"
+      |                         ^~~~~~
+al_hal_eth_main.c:2428:17: note: here
+ 2428 |                 case AL_ETH_REF_FREQ_375_MHZ:
+      |                 ^~~~
+  CC [M]  al_hal_iofic.o
+  CC [M]  al_hal_serdes_25g.o
+  CC [M]  al_hal_serdes_hssp.o
+  CC [M]  al_hal_udma_config.o
+  CC [M]  al_hal_udma_debug.o
+  CC [M]  al_hal_udma_iofic.o
+  CC [M]  al_hal_udma_main.o
+  CC [M]  al_init_eth_kr.o
+  CC [M]  al_init_eth_lm.o
+  CC [M]  al_serdes.o
+  CC [M]  alpine_group_lm.o
+  CC [M]  alpine_serdes.o
+  CC [M]  kcompat.o
+  LD [M]  al_eth.o
+  MODPOST Module.symvers
+  CC [M]  al_eth.mod.o
+  CC [M]  .module-common.o
+  LD [M]  al_eth.ko
+make[1]: Leaving directory '/root/awto-unvr/modules/al_eth'
+make: Leaving directory '/root/src/linux-v7.1.8'
+--- vermagic ---
+vermagic:       7.1.8-dirty SMP preempt mod_unload aarch64
+make: Entering directory '/root/src/linux-v7.1.8'
+make[1]: Entering directory '/root/awto-unvr/modules/al_eth'
+  INSTALL /lib/modules/7.1.8-dirty/updates/al_eth.ko
+  DEPMOD  /lib/modules/7.1.8-dirty
+Warning: modules_install: missing 'System.map' file. Skipping depmod.
+make[1]: Leaving directory '/root/awto-unvr/modules/al_eth'
+make: Leaving directory '/root/src/linux-v7.1.8'
+installed to /lib/modules/7.1.8-dirty - takes effect on next modprobe/reboot

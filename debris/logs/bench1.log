@@ -1,0 +1,7 @@
+time scsi read 0x10000000 0 0x400000
+
+scsi read: device 0 block # 0, count 4194304 ... 4194304 blocks read: OK
+
+time: 32.968 seconds
+awto-nas#
+<<MATCHED: awto-nas#>>

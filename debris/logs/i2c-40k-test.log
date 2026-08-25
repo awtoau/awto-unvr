@@ -1,0 +1,37 @@
+=== fresh stock; 100k baseline then 40k ===
+>> i2c dev 0
+ i2c dev 0
+Setting bus to 0
+ALPINE_UBNT_NAS_ALL>
+>> i2c speed
+ i2c speed
+Current bus speed=100000
+ALPINE_UBNT_NAS_ALL>
+>> i2c mw 0x71 0 8 1
+ i2c mw 0x71 0 8 1
+ALPINE_UBNT_NAS_ALL>
+>> i2c md 0x2e 3d 2
+ i2c md 0x2e 3d 2
+003d: 75 a9    u.
+ALPINE_UBNT_NAS_ALL>
+>> i2c mw 0x71 0 0 1
+ i2c mw 0x71 0 0 1
+ALPINE_UBNT_NAS_ALL>
+--- now 40 kHz ---
+>> i2c speed 40000
+ i2c speed 40000
+Setting bus speed to 40000 Hz
+Invalid speed - supported speeds (100000, 400000, 750000)
+Failure changing bus speed (1)
+ALPINE_UBNT_NAS_ALL>
+>> i2c mw 0x71 0 8 1
+ i2c mw 0x71 0 8 1
+ALPINE_UBNT_NAS_ALL>
+>> i2c md 0x2e 3d 2
+ i2c md 0x2e 3d 2
+003d: 75 a9    u.
+ALPINE_UBNT_NAS_ALL>
+>> i2c mw 0x71 0 0 1
+ i2c mw 0x71 0 0 1
+ALPINE_UBNT_NAS_ALL>
+=== DONE ===

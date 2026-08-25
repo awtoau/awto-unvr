@@ -1,0 +1,200 @@
+== tmp/sections/01-uboot.bin (1395740 B): 6 FDT candidates
+
+--- dtb00 @0x081048 size 26358
+    model      = Annapurna Labs Alpine V2 UBNT
+    board-cfg  = 
+    nand parts = 4
+      al_boot        off 0x00000000  size 0x00200000 (    2.00 MB)
+      device_tree    off 0x00200000  size 0x00100000 (    1.00 MB)
+      linux_kernel   off 0x00300000  size 0x01000000 (   16.00 MB)
+      rootfs         off 0x01300000  size 0x3ed00000 ( 1005.00 MB)
+
+--- dtb01 @0x088048 size 27493
+    model      = Annapurna Labs Alpine V2 UBNT
+    board-cfg  = 
+    nand parts = 4
+      al_boot        off 0x00000000  size 0x00200000 (    2.00 MB)
+      device_tree    off 0x00200000  size 0x00100000 (    1.00 MB)
+      linux_kernel   off 0x00300000  size 0x01300000 (   19.00 MB)
+      ubifs          off 0x01300000  size 0x1e600000 (  486.00 MB)
+
+--- dtb02 @0x090048 size 26692
+    model      = Annapurna Labs Alpine V2 UBNT
+    board-cfg  = 
+    nand parts = 4
+      al_boot        off 0x00000000  size 0x00200000 (    2.00 MB)
+      device_tree    off 0x00200000  size 0x00100000 (    1.00 MB)
+      linux_kernel   off 0x00300000  size 0x01300000 (   19.00 MB)
+      ubifs          off 0x01300000  size 0x1e600000 (  486.00 MB)
+
+--- dtb03 @0x098048 size 26446
+    model      = Annapurna Labs Alpine V2 UBNT
+    board-cfg  = 
+    nand parts = 5
+      al_boot        off 0x00000000  size 0x00200000 (    2.00 MB)
+      device_tree    off 0x00200000  size 0x00100000 (    1.00 MB)
+      linux_kernel   off 0x00300000  size 0x01000000 (   16.00 MB)
+      rootfs         off 0x01300000  size 0x3ec00000 ( 1004.00 MB)
+      chike          off 0x3ff00000  size 0x00100000 (    1.00 MB)
+
+--- dtb04 @0x0a2048 size 26073
+    model      = Annapurna Labs Alpine V2 UBNT
+    board-cfg  = 
+    nand parts = 4
+      al_boot        off 0x00000000  size 0x00200000 (    2.00 MB)
+      device_tree    off 0x00200000  size 0x00100000 (    1.00 MB)
+      linux_kernel   off 0x00300000  size 0x01300000 (   19.00 MB)
+      ubifs          off 0x01300000  size 0x1e600000 (  486.00 MB)
+
+--- dtb05 @0x138af8 size 285
+    model      = Annapurna Labs Stub Platform
+    board-cfg  = 
+    nand parts = 0
+== images/mtd/UNVR-74acb941a811-sysidea16-20260815-203030-on-2.3.14-pre-uboot-env/UNVR-74acb941a811-ea16-mtd00-u-boot-1835008B-20260815-203030.img (1835008 B): 5 FDT candidates
+
+--- dtb00 @0x081048 size 26208
+    model      = Annapurna Labs Alpine V2 UBNT
+    board-cfg  = 
+    nand parts = 5
+      al_boot        off 0x00000000  size 0x00200000 (    2.00 MB)
+      device_tree    off 0x00200000  size 0x00100000 (    1.00 MB)
+      linux_kernel   off 0x00300000  size 0x01000000 (   16.00 MB)
+      rootfs         off 0x01300000  size 0x3ec00000 ( 1004.00 MB)
+      chike          off 0x3ff00000  size 0x00100000 (    1.00 MB)
+
+--- dtb01 @0x088048 size 26584
+    model      = Annapurna Labs Alpine V2 UBNT
+    board-cfg  = 
+    nand parts = 4
+      al_boot        off 0x00000000  size 0x00200000 (    2.00 MB)
+      device_tree    off 0x00200000  size 0x00100000 (    1.00 MB)
+      linux_kernel   off 0x00300000  size 0x01300000 (   19.00 MB)
+      ubifs          off 0x01300000  size 0x1e600000 (  486.00 MB)
+
+--- dtb02 @0x090048 size 26788
+    model      = Annapurna Labs Alpine V2 UBNT
+    board-cfg  = 
+    nand parts = 4
+      al_boot        off 0x00000000  size 0x00200000 (    2.00 MB)
+      device_tree    off 0x00200000  size 0x00100000 (    1.00 MB)
+      linux_kernel   off 0x00300000  size 0x01300000 (   19.00 MB)
+      ubifs          off 0x01300000  size 0x1e600000 (  486.00 MB)
+
+--- dtb03 @0x098048 size 26236
+    model      = Annapurna Labs Alpine V2 UBNT
+    board-cfg  = 
+    nand parts = 5
+      al_boot        off 0x00000000  size 0x00200000 (    2.00 MB)
+      device_tree    off 0x00200000  size 0x00100000 (    1.00 MB)
+      linux_kernel   off 0x00300000  size 0x01000000 (   16.00 MB)
+      rootfs         off 0x01300000  size 0x3ec00000 ( 1004.00 MB)
+      chike          off 0x3ff00000  size 0x00100000 (    1.00 MB)
+
+--- dtb04 @0x12dbd8 size 285
+    model      = Annapurna Labs Stub Platform
+    board-cfg  = 
+    nand parts = 0
+== tmp/sections/01-uboot.bin (1395740 B): 6 FDT candidates
+
+--- dtb00 @0x081048 size 26358
+    model      = Annapurna Labs Alpine V2 UBNT
+    board-cfg  = 
+    nand parts = 4
+      al_boot        off 0x00000000  size 0x00200000 (    2.00 MB)
+      device_tree    off 0x00200000  size 0x00100000 (    1.00 MB)
+      linux_kernel   off 0x00300000  size 0x01000000 (   16.00 MB)
+      rootfs         off 0x01300000  size 0x3ed00000 ( 1005.00 MB)
+
+--- dtb01 @0x088048 size 27493
+    model      = Annapurna Labs Alpine V2 UBNT
+    board-cfg  = 
+    nand parts = 4
+      al_boot        off 0x00000000  size 0x00200000 (    2.00 MB)
+      device_tree    off 0x00200000  size 0x00100000 (    1.00 MB)
+      linux_kernel   off 0x00300000  size 0x01300000 (   19.00 MB)
+      ubifs          off 0x01300000  size 0x1e600000 (  486.00 MB)
+
+--- dtb02 @0x090048 size 26692
+    model      = Annapurna Labs Alpine V2 UBNT
+    board-cfg  = 
+    nand parts = 4
+      al_boot        off 0x00000000  size 0x00200000 (    2.00 MB)
+      device_tree    off 0x00200000  size 0x00100000 (    1.00 MB)
+      linux_kernel   off 0x00300000  size 0x01300000 (   19.00 MB)
+      ubifs          off 0x01300000  size 0x1e600000 (  486.00 MB)
+
+--- dtb03 @0x098048 size 26446
+    model      = Annapurna Labs Alpine V2 UBNT
+    board-cfg  = 
+    nand parts = 5
+      al_boot        off 0x00000000  size 0x00200000 (    2.00 MB)
+      device_tree    off 0x00200000  size 0x00100000 (    1.00 MB)
+      linux_kernel   off 0x00300000  size 0x01000000 (   16.00 MB)
+      rootfs         off 0x01300000  size 0x3ec00000 ( 1004.00 MB)
+      chike          off 0x3ff00000  size 0x00100000 (    1.00 MB)
+
+--- dtb04 @0x0a2048 size 26073
+    model      = Annapurna Labs Alpine V2 UBNT
+    board-cfg  = 
+    nand parts = 4
+      al_boot        off 0x00000000  size 0x00200000 (    2.00 MB)
+      device_tree    off 0x00200000  size 0x00100000 (    1.00 MB)
+      linux_kernel   off 0x00300000  size 0x01300000 (   19.00 MB)
+      ubifs          off 0x01300000  size 0x1e600000 (  486.00 MB)
+
+--- dtb05 @0x138af8 size 285
+    model      = Annapurna Labs Stub Platform
+    board-cfg  = 
+    nand parts = 0
+== tmp/sections/01-uboot.bin (1395740 B): 6 FDT candidates
+
+--- dtb00 @0x081048 size 26358
+    model      = Annapurna Labs Alpine V2 UBNT
+    board-cfg  = 
+    nand parts = 4
+      al_boot        off 0x00000000  size 0x00200000 (    2.00 MB)
+      device_tree    off 0x00200000  size 0x00100000 (    1.00 MB)
+      linux_kernel   off 0x00300000  size 0x01000000 (   16.00 MB)
+      rootfs         off 0x01300000  size 0x3ed00000 ( 1005.00 MB)
+
+--- dtb01 @0x088048 size 27493
+    model      = Annapurna Labs Alpine V2 UBNT
+    board-cfg  = 
+    nand parts = 4
+      al_boot        off 0x00000000  size 0x00200000 (    2.00 MB)
+      device_tree    off 0x00200000  size 0x00100000 (    1.00 MB)
+      linux_kernel   off 0x00300000  size 0x01300000 (   19.00 MB)
+      ubifs          off 0x01300000  size 0x1e600000 (  486.00 MB)
+
+--- dtb02 @0x090048 size 26692
+    model      = Annapurna Labs Alpine V2 UBNT
+    board-cfg  = 
+    nand parts = 4
+      al_boot        off 0x00000000  size 0x00200000 (    2.00 MB)
+      device_tree    off 0x00200000  size 0x00100000 (    1.00 MB)
+      linux_kernel   off 0x00300000  size 0x01300000 (   19.00 MB)
+      ubifs          off 0x01300000  size 0x1e600000 (  486.00 MB)
+
+--- dtb03 @0x098048 size 26446
+    model      = Annapurna Labs Alpine V2 UBNT
+    board-cfg  = 
+    nand parts = 5
+      al_boot        off 0x00000000  size 0x00200000 (    2.00 MB)
+      device_tree    off 0x00200000  size 0x00100000 (    1.00 MB)
+      linux_kernel   off 0x00300000  size 0x01000000 (   16.00 MB)
+      rootfs         off 0x01300000  size 0x3ec00000 ( 1004.00 MB)
+      chike          off 0x3ff00000  size 0x00100000 (    1.00 MB)
+
+--- dtb04 @0x0a2048 size 26073
+    model      = Annapurna Labs Alpine V2 UBNT
+    board-cfg  = 
+    nand parts = 4
+      al_boot        off 0x00000000  size 0x00200000 (    2.00 MB)
+      device_tree    off 0x00200000  size 0x00100000 (    1.00 MB)
+      linux_kernel   off 0x00300000  size 0x01300000 (   19.00 MB)
+      ubifs          off 0x01300000  size 0x1e600000 (  486.00 MB)
+
+--- dtb05 @0x138af8 size 285
+    model      = Annapurna Labs Stub Platform
+    board-cfg  = 
+    nand parts = 0

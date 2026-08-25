@@ -1,0 +1,13 @@
+2026-08-17T23:54:55+10:00  local uImage-unvr-ea16-7.1-fedora-gz: 3b4c409acd9d767e794ca20b9b6530afc87428fd9d0240825c3cc71d536bdf92  (18556033 B)
+2026-08-17T23:54:55+10:00  local alpine-v2-ubnt-unvr-ea16-7.1.dtb: d3d40e42495aa295bed752777c2cbb78dc7e7cba0d0a7a42cb27397ac7acac7b  (14978 B)
+2026-08-17T23:54:55+10:00  serving /mnt/2tb/unvr-port-refs/build-out-71-fedora on 192.168.25.145:8099
+2026-08-17T23:54:55+10:00  fetch uImage-unvr-ea16-7.1-fedora-gz -> /boot/uImage-unvr-ea16-7.1-fedora-gz.new
+2026-08-17T23:54:57+10:00  uImage-unvr-ea16-7.1-fedora-gz: sha256 OK — installing
+2026-08-17T23:54:58+10:00  fetch alpine-v2-ubnt-unvr-ea16-7.1.dtb -> /boot/alpine-v2-ubnt-unvr-ea16-7.1-fedora.dtb.new
+2026-08-17T23:54:58+10:00  alpine-v2-ubnt-unvr-ea16-7.1-fedora.dtb: sha256 OK — installing
+2026-08-17T23:54:58+10:00  === /boot now ===
+-rw------- 1 root root    14978 13:55 /boot/alpine-v2-ubnt-unvr-ea16-7.1-fedora.dtb
+-rw------- 1 root root    14773 12:35 /boot/alpine-v2-ubnt-unvr-ea16-7.1-fedora.dtb.bak
+-rw------- 1 root root 18556033 13:55 /boot/uImage-unvr-ea16-7.1-fedora-gz
+-rw------- 1 root root 18557997 12:35 /boot/uImage-unvr-ea16-7.1-fedora-gz.bak
+2026-08-17T23:54:58+10:00  DEPLOY OK — files staged + verified. NOT rebooted. Verify, then reboot.

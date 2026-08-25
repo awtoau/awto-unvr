@@ -1,0 +1,32 @@
+2026-08-15T15:29:51+10:00  --- find-unvr ---
+2026-08-15T15:29:51+10:00  === Ubiquiti discovery (UDP 10001 broadcast) ===
+2026-08-15T15:29:54+10:00  no Ubiquiti devices answered
+2026-08-15T15:29:54+10:00  === mDNS (avahi-browse) ===
+2026-08-15T15:29:55+10:00  no UniFi-looking mDNS records
+2026-08-15T15:29:55+10:00  done
+2026-08-15T15:51:30+10:00  --- find-unvr ---
+2026-08-15T15:51:30+10:00  === Ubiquiti discovery (UDP 10001 broadcast) ===
+2026-08-15T15:51:33+10:00  no Ubiquiti devices answered
+2026-08-15T15:51:33+10:00  === mDNS (avahi-browse) ===
+2026-08-15T15:51:36+10:00  no UniFi-looking mDNS records
+2026-08-15T15:51:36+10:00  done
+2026-08-16T22:27:47+10:00  --- find-unvr ---
+2026-08-16T22:27:47+10:00  === Ubiquiti discovery (UDP 10001 broadcast) ===
+2026-08-16T22:27:50+10:00  no Ubiquiti devices answered
+2026-08-16T22:27:50+10:00  === mDNS (avahi-browse) ===
+2026-08-16T22:27:51+10:00  no UniFi-looking mDNS records
+2026-08-16T22:27:51+10:00  === TCP sweep 192.168.25.0/24 for 443/22 ===
+2026-08-16T22:27:58+10:00    Host: 192.168.25.100 ()	Ports: 22/open/tcp//ssh///, 443/open/tcp//https///
+2026-08-16T22:27:58+10:00    Host: 192.168.25.101 ()	Ports: 443/open/tcp//https///
+2026-08-16T22:27:58+10:00    Host: 192.168.25.104 ()	Ports: 22/open/tcp//ssh///, 443/open/tcp//https///
+2026-08-16T22:27:58+10:00    Host: 192.168.25.107 ()	Ports: 443/open/tcp//https///
+2026-08-16T22:27:58+10:00    Host: 192.168.25.110 ()	Ports: 22/open/tcp//ssh///, 443/open/tcp//https///
+2026-08-16T22:27:58+10:00    Host: 192.168.25.111 ()	Ports: 443/open/tcp//https///
+2026-08-16T22:27:58+10:00    Host: 192.168.25.145 ()	Ports: 22/open/tcp//ssh///
+2026-08-16T22:27:58+10:00    Host: 192.168.25.149 ()	Ports: 22/open/tcp//ssh///
+2026-08-16T22:27:58+10:00    Host: 192.168.25.222 ()	Ports: 443/open/tcp//https///
+2026-08-16T22:27:58+10:00    Host: 192.168.25.230 ()	Ports: 443/open/tcp//https///
+2026-08-16T22:27:58+10:00    Host: 192.168.25.234 ()	Ports: 22/open/tcp//ssh///, 443/open/tcp//https///
+2026-08-16T22:27:58+10:00    Host: 192.168.25.246 ()	Ports: 22/open/tcp//ssh///, 443/open/tcp//https///
+2026-08-16T22:27:58+10:00    Host: 192.168.25.254 ()	Ports: 22/open/tcp//ssh///, 443/open/tcp//https///
+2026-08-16T22:27:58+10:00  done

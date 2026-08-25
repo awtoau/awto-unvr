@@ -1,0 +1,717 @@
+    238 /lib/ld-linux-aarch64.so.1
+   1559 _ITM_deregisterTMCloneTable
+   1575 __gmon_start__
+   1584 _ITM_registerTMCloneTable
+   159e pam_start
+   15a8 pam_end
+   15b0 pam_authenticate
+   15c1 evutil_ascii_strcasecmp
+   15d9 evhttp_find_header
+   15ec evbuffer_drain
+   15fb event_new
+   1605 evhttp_request_get_uri
+   161c evbuffer_get_length
+   1630 bufferevent_enable
+   1643 bufferevent_get_input
+   1659 evbuffer_pullup
+   1669 event_initialized
+   167b evbuffer_add_buffer
+   168f event_del
+   1699 evhttp_set_cb
+   16a7 bufferevent_get_base
+   16bc event_base_free
+   16cc evhttp_new
+   16d7 bufferevent_free
+   16e8 event_init
+   16f3 evutil_make_socket_nonblocking
+   1712 bufferevent_setwatermark
+   172b event_base_dispatch
+   173f evhttp_send_error
+   1751 evbuffer_remove
+   1761 evhttp_set_max_headers_size
+   177d evutil_make_socket_closeonexec
+   179c evhttp_request_get_input_buffer
+   17bc evhttp_send_reply
+   17ce evhttp_set_max_body_size
+   17e7 evhttp_bind_socket
+   17fa event_set
+   1804 bufferevent_setcb
+   1816 evbuffer_new
+   1823 bufferevent_socket_new
+   183a evbuffer_free
+   1848 evbuffer_search
+   1858 evbuffer_ptr_set
+   1869 evhttp_request_get_command
+   1884 bufferevent_setfd
+   1896 evhttp_request_get_input_headers
+   18b7 event_base_new
+   18c6 evhttp_request_get_output_headers
+   18e8 event_once
+   18f3 event_add
+   18fd event_base_loopexit
+   1911 evhttp_free
+   191d evbuffer_search_range
+   1933 evbuffer_add_printf
+   1947 evutil_ascii_strncasecmp
+   1960 evhttp_set_allowed_methods
+   197b evhttp_add_header
+   198d crc32
+   1993 EVP_DigestInit
+   19a2 EVP_MD_CTX_reset
+   19b3 EVP_DecodeBlock
+   19c3 EVP_MD_CTX_new
+   19d2 EVP_sha1
+   19db EVP_VerifyFinal
+   19eb EVP_PKEY_size
+   19f9 MD5_Final
+   1a03 EVP_PKEY_free
+   1a11 EVP_DigestUpdate
+   1a22 MD5_Init
+   1a2b EVP_MD_CTX_free
+   1a3b MD5_Update
+   1a46 d2i_PUBKEY
+   1a51 __xpg_basename
+   1a60 fflush
+   1a67 __printf_chk
+   1a74 execv
+   1a7a fopen
+   1a80 gai_strerror
+   1a8d strncmp
+   1a95 inet_aton
+   1a9f optind
+   1aa6 strrchr
+   1aae __isoc99_sscanf
+   1abe connect
+   1ac6 __fdelt_chk
+   1ad2 inet_ntoa
+   1adc __read_chk
+   1ae7 signal
+   1aee strncpy
+   1afb sigprocmask
+   1b07 __stack_chk_fail
+   1b18 unlink
+   1b1f putchar
+   1b27 listen
+   1b2e select
+   1b35 realloc
+   1b3d fsync
+   1b43 abort
+   1b49 stdin
+   1b4f _exit
+   1b55 getpid
+   1b5c strdup
+   1b63 strtok
+   1b6a strtol
+   1b7b fgets
+   1b81 calloc
+   1b88 strlen
+   1b94 sigemptyset
+   1ba0 getaddrinfo
+   1bac memset
+   1bb3 strstr
+   1bba __errno_location
+   1bd0 memcmp
+   1bd7 getnameinfo
+   1be3 __syslog_chk
+   1bf0 getopt
+   1bf7 __fprintf_chk
+   1c05 sigaddset
+   1c0f stdout
+   1c16 fputc
+   1c21 lseek
+   1c27 memcpy
+   1c2e fclose
+   1c35 strtoul
+   1c3d setsockopt
+   1c48 malloc
+   1c4f strcat
+   1c56 __environ
+   1c60 __ctype_b_loc
+   1c6e recvfrom
+   1c77 optarg
+   1c7e stderr
+   1c85 ioctl
+   1c8b system
+   1c92 munmap
+   1c99 __snprintf_chk
+   1ca8 optopt
+   1caf getuid
+   1cb6 execve
+   1cbd freopen
+   1cc5 __fxstat
+   1cce fileno
+   1cd5 gethostname
+   1ce1 usleep
+   1ce8 fwrite
+   1cef fread
+   1cf5 gettimeofday
+   1d02 sigaction
+   1d0c geteuid
+   1d14 __memcpy_chk
+   1d21 setlinebuf
+   1d2c clock_gettime
+   1d3a waitpid
+   1d42 strchr
+   1d49 fprintf
+   1d51 sendto
+   1d58 vfork
+   1d5e __vfprintf_chk
+   1d6d getline
+   1d75 accept
+   1d7c __cxa_finalize
+   1d8b syscall
+   1d93 freeaddrinfo
+   1da0 setsid
+   1da7 fcntl
+   1dad __xstat
+   1db5 memmove
+   1dbd access
+   1dc4 memmem
+   1dcb strcmp
+   1dd2 recvmsg
+   1dda __libc_start_main
+   1dec snprintf
+   1df5 sysconf
+   1dfd __stack_chk_guard
+   1e0f libpam.so.0
+   1e1b libevent-2.1.so.7
+   1e2d libz.so.1
+   1e37 libcrypto.so.1.1
+   1e48 libc.so.6
+   1e52 ld-linux-aarch64.so.1
+   1e68 GLIBC_2.17
+   1e73 OPENSSL_1_1_0
+   1e81 LIBPAM_1.0
+   4ff0 `b}9@
+   5017 R`b=9
+   5b54 uB@9vF@9wJ@9xN@9yR@9|V@9
+   6f27 T`0@x
+   7027 T`p@xa0@
+   7d77 4E`@9
+   7fc8 bka8_(
+   94a7 T!h`8?(
+   ba33 J"h48!
+   ba43 T"ht8#
+   bd0c _h 8?`
+   be53 R"<G9
+   c133 ReJc8$
+   c296 @9 x`x`
+   c2d2 @9 x`x`
+   ca8c bHb8!
+   ca93 Jaj 8
+   cacb JAh 8
+   cb03 JAh 8
+   d710 !<@y!
+   d7b3 R"<@yB
+   e03f T$(Ey
+   e653 T$(Ey
+   e65f T$xIy
+   e8eb T$(Ey
+   eb67 T$(Ey
+   f1ad wB9B<
+   f409 sB9! 
+   f880 Ch!8!
+   ff97 4 c@9
+   ffbb 4`b@9
+  10222 @9@x`x
+  105d3 5Ac@9
+  10990 `B_x`
+  109a7 9cr_8C
+  1199f 9`.@9
+  119c3 9`>@9
+  119df 9`&@y
+  119e7 9`N@9
+  11a03 9`.@y
+  11a0b 9`^@9
+  12284 `"@9B
+  14454 `H`8B
+  158e6 A9!`-
+  158f8 cNB9H|
+  17350 Ubiquiti system tools
+  17366 Copyright 2006-2026, Ubiquiti, Inc. <support@ui.com>
+  1739c This program is proprietary software; you can not redistribute it and/or modify
+  173ec it without signed agreement with Ubiquiti Networks, Inc.
+  17438 ubnt-tools
+  17448 ui-tools
+  17458 ubnt-discover
+  17468 infctld
+  17470 pwcheck
+  17478 fwsplit
+  17480 fwextract
+  17490 fwupdate
+  174a0 fwinfo
+  174a8 fsync
+  174b0 hwaddr
+  174c8 uidgen
+  174d0 recoveryd
+  174e0 oopsdump
+  174f8 preloader-update
+  17510 ERROR: Cannot run without interfaces!
+  17538 ERROR: Failed initializing - cannot continue.
+  17568 d:i:p:t:jhv
+  17578 Ubiquiti device discovery tool v%s
+  1759b Copyright 2006-2026, Ubiquiti, Inc. <support@ui.com>
+  175d1 This program is proprietary software; you can not redistribute it and/or modify
+  17621 it without signed agreement with Ubiquiti Networks, Inc.
+  17660 Usage: %s [options]
+  17674 	-d <duration>	 run for duration miliseconds
+  176a1 	-j		 JSON output (default: false)
+  176c4 	-t		 target IP address (default: 255.255.255.255)
+  176f7 	-p		 target port number (default: 10001)
+  17721 	-h		 print this help
+  17738 [%s]: 
+  17740 Interfaces to run discovery on: 
+  17778 Hardware Address  IP address            Name
+  177a8 { "devices": [
+  177c0 %02x:%02x:%02x:%02x:%02x:%02x %-15s %4s '%s' 
+  177f0 { "hwaddr": "%02x:%02x:%02x:%02x:%02x:%02x",
+  17820 "ipv4": "%s",
+  17830 "hostname": "%s",
+  17848 "product": "%s",
+  17860 "uptime": %lu,
+  17870 "wmode": %d,
+  17880 "essid": "%s",
+  17890 "addresses": [
+  178a8 "fwversion": "%s" }
+  178c0 { "hwaddr": "%02x:%02x:%02x:%02x:%02x:%02x", "ipv4" : "%s" }
+  17900 Total: %zu devices.
+  17918 stopping operation on '%s'
+  17938 ERROR: (%s) Failed receiving packet: %s
+  17960 ERROR: (%s) received packet too short (%d)
+  17990 (%s) received v%u packet of %d bytes from '%s'
+  179c0 (%s) Sending v1 request to: %s : %s
+  179e8 (%s) Sending v1 request..
+  17a08 ERROR: (%s) sendto returned: %d - %s
+  17a30 (%s) will resend request in %lu.%lus
+  17a58 Interface '%s' not found: %s
+  17a78 ERROR: Could not resolve '%s':'%s' - %s (%d)
+  17aa8 ERROR: Failed creating socket (%d,%d,%d): %s
+  17ad8 WARN: Failed setting broadcast flag on a socket: %s
+  17b10 WARN: Failed binding socket to '%s': %s
+  17b40 (%s) %s 3 fd = %d
+  17b58 seeker
+  17b68 255.255.255.255
+  17b78 10001
+  17b80 seeker_start
+  17bd0 v%d is not supported
+  17bf0 Multipurpose control daemon v0.1
+  17c11 Copyright 2006-2026, Ubiquiti, Inc. <support@ui.com>
+  17c47 This program is proprietary software; you can not redistribute it and/or modify
+  17c97 it without signed agreement with Ubiquiti Networks, Inc.
+  17cd8 Usage: %s [options]
+  17cec 	-c			enable CDP; default: disabled.
+  17d11 	-n			disable system configuration reset button handling; default: enabled.
+  17d5d 	-d			disable discovery packet handling; default: enabled.
+  17d98 	-h			display this help and exit.
+  17dc8 Unknown option: %c
+  17df0 /proc/uptime
+  17e00 %d.%*s 
+  17e08 /usr/lib/version
+  17e20 %02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x
+  17e68 bind() failed: %s
+  17e80 233.89.188.1
+  17e98 %s %s
+  17ea0 %s-%s
+  17ea8 /tmp/running.cfg
+  17ec0 netmode=bridge
+  17ed0 netmode=airfiber
+  17ee8 netmode=router
+  17ef8 netmode=soho
+  17f10  --> reset2defaults [%s]
+  17f30 /dev/input/event%d
+  17f48 /sys/class/input/event%u/device/name
+  17f70 NAME="%s"
+  17f80 Failed to create uevent socket
+  17fa0 Failed to bind uevent socket
+  17fc0 RESET button press duration: %ld.%06lds [%s]
+  17ff0 RESET in progress, ignoring..
+  18010  --> reboot
+  18020 POWER button --> powering off...
+  18048 SUBSYSTEM=input
+  18060 remove
+  18069 Resetting system configuration, please wait...
+  180a1 Powering system off, please wait...
+  180c9 Hard poweroff...
+  180e1 Rebooting the system, please wait...
+  18109 Hard reboot...
+  18121 Hard reboot with '%s'...
+  18140 /sbin/ubnt-systool
+  18158 reboot
+  18160 button
+  18168 poweroff
+  18178 reset2defaults
+  18190 Ubiquiti PAM password checking tool v0.5
+  181c0 Usage: %s [options]
+  181d4 	-s <service>	 PAM service name (default: %s)
+  18202 	-h		 print this help and exit
+  18228 ubnt-tools
+  18238 ERROR: bgnd: bad command line
+  18258 ERROR: bgnd: EXEC FAILED! Executable: %s
+  18290 ERROR: select() timeout while sending ACK
+  182c8 ERROR: Unable to send() ACK! (%s)
+  18300 ERROR: Unable to send status info to client! (%s)
+  18338 ERROR: Unexpected size of received packet (%d)!
+  18370 hDs:r:e:
+  18380 Background daemon v0.1
+  18397 Copyright 2006-2026, Ubiquiti, Inc. <support@ui.com>
+  183cd This program is proprietary software; you can not redistribute it and/or modify
+  1841d it without signed agreement with Ubiquiti Networks, Inc.
+  18458 Usage: bgnd [-s name|[-r name [-e cfg] cmdline arg1 arg2]]
+  18498 ERROR: Too many arguments
+  184b8 ERROR: Parameter list too long!
+  184e0 ERROR: client socket() create failure: %s
+  18510 ERROR: send() to master failed! (nbytes=%d) (%s)
+  18548 ERROR: Timeout while waiting for ack!
+  18570 ERROR: No ack received! (nbytes = %d), %s
+  185a0 ERROR: Corrupt ack data! (nbytes = %d), %s
+  185d0 ERROR: Socket create failure: %s
+  185f8 ERROR: setsockopt() failure: %s
+  18620 ERROR: bind() failure: %s
+  18640 ERROR: listen() failure: %s
+  18660 ERROR: fcntl() failure: %s
+  18680 ERROR: Invalid response size! (%d)
+  186a8 ERROR: Corrupted status data!
+  186c8 Process <%s> is running.
+  186e8 /var/run/%.*s.sock
+  18710 /proc/cpuinfo
+  18720 /proc/cpumidr
+  18738 [board] pid=%d: caller is non-root (uid=%d, euid=%d)
+  18778 113-%05d-%02d
+  18788 %02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x
+  187d8 board.sysid=0x%04x
+  187f0 board.name=%s
+  18800 board.shortname=%s
+  18818 board.storename=%s
+  18830 board.subtype=%s
+  18848 board.reboot=%d
+  18860 board.upgrade=%d
+  18878 board.cpu.id=%02x%02x%02x%02x-%02x%02x%02x%02x
+  188a8 board.uuid=%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x
+  18900 board.bom=113-%05d-%02d
+  18920 board.hwrev=0x%04x
+  18938 board.serialno=%02x%02x%02x%02x%02x%02x
+  18968 board.qrid=%s
+  18978 %02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x
+  189c8 Processor
+  189d8 Hardware
+  189e8 AArch64 Processor
+  18a00 0x411fd073
+  18a10 0x00007622
+  18a20 0x432f0b21
+  18a30 0x433f0b20
+  18a40 0x0023d0e1
+  18a50 0x1023d0e1
+  18a60 0x001ae0e1
+  18a70 0x101540e1
+  18a80 0x412fd050
+  18a90 0x413fd0c1
+  18aa0 0x410fd490
+  18ab0 0x411fd4e0
+  18ac0 Qualcomm Technologies, Inc APQ8053
+  18ae8 Qualcomm Technologies, Inc. IPQ5018
+  18b1f 	/tmp/.board_info
+  18b38 /proc/mtd
+  18b48 ERROR: failed to open '%s' (R): %s (%d)
+  18b78 EEPROM
+  18b80 mtd%d:
+  18b88 ERROR: name '%s' not found in %s
+  18bb0 /dev/mtdblock%d
+  18bc0 ERROR: failed to mmap '%d' @0x%08x (R): %s (%d)
+  18bf8 ERROR: failed allocating memory
+  18c20 ERROR: Failed reading EEPROM data: %s (%d)
+  18c50 /dev/mtdblock0
+  18c60 UNASPRO
+  18c68 UNVR4
+  18e18 /dev/mmcblk0p4
+  18fb8 /dev/nvme0n1p4
+  18fc8 UNVRAI
+  18fd0 fsync utility v1.0
+  18fe3 Copyright 2006-2026, Ubiquiti, Inc. <support@ui.com>
+  19019 This program is proprietary software; you can not redistribute it and/or modify
+  19069 it without signed agreement with Ubiquiti Networks, Inc.
+  190a8 Usage: %s [options] <file/directory/block device>
+  190da 	-d			 - turn debug output on
+  190f8 	-h			 - this help
+  19118 DEBUG: Doing stat on '%s'
+  19138 ERROR: Failed to stat '%s': %s (%d)
+  19160 DEBUG: %s st_mode 0x%08x
+  19180 ERROR: Failed opening '%s': %s (%d)
+  191a8 ERROR: Failed fsync on '%s': %s (%d)
+  191d0 a:c:i:m:xhv
+  191e0 Ubiquiti MAC address manipulation tool v0.1
+  19210 Usage: %s [options]
+  19224 	-i <interface>	 base interface (default: %s)
+  19252 	-c <interface>	 set resulting MAC address to given interface
+  19290 	-m <mac address> base MAC address, overrides base interface option
+  192d4 	-x 		 set local administration bit
+  192f8 	-a <number>	 increase MAC address by <number>
+  19327 	-h		 print this help and exit
+  19348 ERROR: could not parse MAC address: '%s'
+  19378 ERROR: could not get MAC address from interface: '%s'
+  193b0 DEBUG: Got MAC address: %02x:%02x:%02x:%02x:%02x:%02x
+  193e8 DEBUG: MAC address is already set.
+  19410 DEBUG: Setting MAC address: %02x:%02x:%02x:%02x:%02x:%02x for '%s'
+  19458 DEBUG: retrying after error: %d
+  19480 ERROR: failed setting MAC address %02x:%02x:%02x:%02x:%02x:%02x for '%s': %d
+  194d8 n:m:hv
+  194e0 Ubiquiti unique ID generator v0.1
+  19508 Usage: %s [options]
+  1951c 	-n <length>	 length of the unique ID (default: %u)
+  19550 	-m <string>	 extra string identifier
+  19576 	-h		 print this help and exit
+  195a8 %02x:%02x:%02x:%02x:%02x:%02x
+  195c8 /etc/board.info
+  195d8 board.hwaddr=
+  195f0 /proc/net/pppoe
+  19610 /proc/net/dev
+  19620 /sys/class/net/%s/brforward
+  197a0 Failed to identify board
+  197c0 /lib/ubnt/%s.%x.preloader.bin.%s
+  197e8 No preloader found, skipping update
+  19810 Could not open '%s': %s
+  19830 Preloader '%s' is too small
+  19850 Failed mmaping file '%s': %s
+  19870 Failed to allocate memory for preloader
+  198a8 Invalid preloader
+  198c0 '%s' is not a block device
+  198e0 Preloader does not fit in '%s'
+  19900 Failed to write to '%s'
+  19920 Updated preloader to %s
+  19940 Ubiquiti firmware information utility v1.0
+  1996b Copyright 2006-2026, Ubiquiti, Inc. <support@ui.com>
+  199a1 This program is proprietary software; you can not redistribute it and/or modify
+  199f1 it without signed agreement with Ubiquiti Networks, Inc.
+  19a30 Usage: %s [options] <firmware file>
+  19a54 	-d			 - turn debug output on
+  19a72 	-s			 - RSA public Key file
+  19a8f 	-h			 - this help
+  19aa8 kdhs:
+  19ab0 DEBUG: Firmware file: '%s'
+  19ad0 Ubiquiti firmware updating utility v1.1
+  19af8 Copyright 2006-2026, Ubiquiti, Inc. <support@ui.com>
+  19b2e This program is proprietary software; you can not redistribute it and/or modify
+  19b7e it without signed agreement with Ubiquiti Networks, Inc.
+  19bc0 Usage: %s [options] <firmware file>
+  19be4 	-d			 - turn debug output on
+  19c02 	-h			 - this help
+  19c18 b:cdhr
+  19c20 Firmware file: '%s'
+  19c38 DEBUG: check_fw_flavor failed
+  19c58 DEBUG: check_fw_arch failed
+  19c78 DEBUG: check_fw_ver failed
+  19c98 uboot
+  19ca0 DEBUG: writing '%s' to '%s'...
+  19cc0 DEBUG: Could not open device: %s
+  19ce8 ERROR: failed writing part '%s' to '%s'
+  19d18 Can not allocate mem to verify.
+  19d40 DEBUG: Failed reading for compare: %s.
+  19d68 DEBUG: Block at %08zX(len: %08zX) has changes.
+  19d98 DEBUG: Block at %08zX(len: %08zX) has no changes.
+  19dd0 blk_size: %zx, to_verify: %d
+  19df0 DEBUG: 
+  19df8 Writing: 0x%08zx bytes with offset 0x%08zx
+  19e28 [%%0  ]
+  19e30 DEBUG: 
+  19e40 Error (%s) writing Block at %08zX(len: %08zX)
+  19e76 [%%%-3zd]
+  19e80 %.*s.txt
+  19e90 Creating descriptor file:
+  19eb0 ERROR: Couldn't open file '%s' for writing!
+  19ee0 %c%c%c%c	%s		0x%02X	0x%08X	0x%08X	0x%08X	0x%08X	%s.%s
+  19f18 Creating partition data files: 
+  19f40 %.*s.%.*s
+  19f50 ERROR: Failed opening file '%s' for writing: %s
+  19f88 ERROR: Failed writing to file '%s': %s
+  19fb0 Ubiquiti firmware splitting utility v1.1
+  19fd9 Copyright 2006-2026, Ubiquiti, Inc. <support@ui.com>
+  1a00f This program is proprietary software; you can not redistribute it and/or modify
+  1a05f it without signed agreement with Ubiquiti Networks, Inc.
+  1a0a0 Usage: %s [options] <firmware file> [<fw file2> ... <fw fileN>]
+  1a0e0 	-o <output file prefix>	 - output file prefix, default: firmware version
+  1a12a 	-d			 - turn debug output on
+  1a148 	-s			 - RSA public Key file
+  1a165 	-h			 - this help
+  1a180 dho:s:
+  1a188 WARN: Prefix overridden - will process only the first firmware file
+  1a1d0 WARN: Firmware file: '%s'
+  1a1f0 rootfs
+  1a200 WARN: Payload will be printed on stdout
+  1a230 WARN: Creating partition data file: %s
+  1a258 ERROR: Cannot find the part: %s
+  1a280 Ubiquiti firmware extractting utility v0.1
+  1a2ab Copyright 2006-2026, Ubiquiti, Inc. <support@ui.com>
+  1a2e1 This program is proprietary software; you can not redistribute it and/or modify
+  1a331 it without signed agreement with Ubiquiti Networks, Inc.
+  1a370 Usage: %s [options] <firmware file> [<fw file2> ... <fw fileN>]
+  1a3b0 	-o <output file path>	 - output file path, default: {firmware version}.{target partition}
+  1a40b 	-t <target partition>	 - target partition: default: rootfs
+  1a447 	-S			 - print only partition size
+  1a46a 	-d			 - turn debug output on
+  1a488 	-s			 - RSA public Key file
+  1a4a5 	-h			 - this help
+  1a4c0 dhkSo:t:s:
+  1a4d0 WARN: Output path overridden - will process only the first firmware file
+  1a520 DEBUG: Error in opening the public key file 
+  1a550 -----BEGIN PUBLIC KEY-----
+  1a570 -----END PUBLIC KEY-----
+  1a590 ERROR: lseek failed of %d to offset %ld: %m
+  1a5c0 ERROR: read failed: %m
+  1a5d8 ERROR: Can not allocate mem for reading
+  1a608 ERROR: Couldn't stat() file '%s': %s
+  1a630 ERROR: File '%s' is too short
+  1a650 ERROR: Couldn't open file '%s': %s
+  1a678 DEBUG: Invalid header: %d
+  1a698 DEBUG: Firmware version: '%s'
+  1a6b8 mt7622
+  1a6c0 ipq5018
+  1a6c8 ipq5322
+  1a6d0 ipq9574
+  1a6d8 apq8053
+  1a6e0 arm64
+  1a6e8 al324
+  1a6f0 rtd1619
+  1a6f8 cn9670
+  1a700 cn10k
+  1a708 ampere
+  1a710 qcs8550
+  1a720 %d.%d.%d
+  1a730 DEBUG: Partition: %s [%u]
+  1a750 DEBUG:   Partition size: 0x%X
+  1a770 DEBUG:   Data length: %u
+  1a790 WARN: Invalid '%s' CRC (claims: %u, but is %u)
+  1a7c0 DEBUG: Part magic: %.*s
+  1a800 DEBUG: found %s at 0x%08lx
+  1a820 ERROR: Bad FW Image Signature
+  1a840 ERROR: Bad MAGIC: %s
+  1a858 ERROR: Invalid firmware file '%s'!
+  1a880 DEBUG: VerifyUpdate failed
+  1a8a0 DEBUG: d2i_PUBKEY failed
+  1a8c0 DEBUG: VerifyInit failed
+  1a8e0 DEBUG: VerifyFinal failed
+  1a900 DEBUG: Message Digest successfully verfied.
+  1a930 127.0.0.1
+  1a940 a:p:v
+  1a948 ERROR: Failed creating event base. Aborting.
+  1a978 ERROR: Failed setting up signal handlers. Aborting.
+  1a9b0 ERROR: Failed intializing server on %s:%u
+  1a9e0 Started on %s:%u
+  1a9f8 Exiting...
+  1aa08 unknown
+  1aa18 DELETE
+  1aa28 CONNECT
+  1aa30 OPTIONS
+  1aa40 TRACE
+  1aa50 PATCH
+  1aa58 DEBUG: Received a %s request for %s
+  1aa80 DEBUG: Headers:
+  1aa98   %s: %s
+  1aaa8 {"meta":{"rc":"ok"},"data":
+  1aad0 null}
+  1aad8 application/json
+  1aaf0 Content-Type
+  1ab08 {"meta":{"rc":"error","msg":"%s"}}
+  1ab30 Unknown environment
+  1ab48 /etc/fw.version
+  1ab58 {"board":{"name":"%s","shortName":"%s","subType":"%s","hwaddr":"%02x:%02x:%02x:%02x:%02x:%02x","BOM":"113-%05d-%02d","uuid":"%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x"},"firmware":{"version":"%s"}}
+  1ac40 {"version":"%s"}
+  1ac58 fsck-all returned %d
+  1ac70 reset2defaults returned %d
+  1ac90 DEBUG: Searching for field '%s'
+  1acb8 DEBUG:  '%s' = '%s'
+  1acd0 DEBUG: Field '%s' not found.
+  1acf0 X-Mod-Upload-Ext
+  1ad08 nginx-
+  1ad10 multipart/form-data
+  1ad28 boundary=
+  1ad38 DEBUG: Will use boundary: '%s'
+  1ad68 name="
+  1ad70 DEBUG: Got name: '%s' (len: %zu)
+  1ad98 DEBUG: Value: '%s'
+  1adb0 DEBUG: Form has %zu fields
+  1add0 DEBUG: multipart returned %zu fields
+  1adf8 fwfile.path
+  1ae08 DEBUG: fwfile_field: '%s' (%zu)
+  1ae30 FW at %s
+  1ae40 fwupdate returned %d
+  1ae58 ERROR: Failed creating evhttp instance.
+  1ae88 ERROR: Failed binding to %s:%u! (rc: %d)
+  1aeb8 /api/fwupdate
+  1aec8 /api/poweroff
+  1aed8 /api/reboot
+  1aee8 /api/reset2defaults
+  1af00 /api/factoryreset
+  1af18 /api/fsck
+  1af28 /api/status
+  1af38 /api/info
+  1af48 /api/version
+  1af58 operation in progress
+  1af70 POST method required
+  1af88 mod_upload required
+  1afa0 multipart/form-data required
+  1afc0 invalid boundary
+  1afda Content-Disposition
+  1aff0 error A12
+  1b000 invalid firmware
+  1b018 invalid upload form data
+  1b038 /dev/null
+  1b048 /usr/bin/lcm-control
+  1b060 Executing reboot!
+  1b078 /sbin/reboot
+  1b088 Failed executing reboot! (rc: %d)
+  1b0b0 Executing poweroff!
+  1b0c8 /sbin/poweroff
+  1b0d8 Failed executing poweroff! (rc: %d)
+  1b100 Executing reset2defaults!
+  1b120 /sbin/reset2defaults
+  1b138 reset2defaults returned: %d
+  1b158 Executing fwupdate '%s'
+  1b178 /sbin/fwupdate
+  1b188 fwupdate returned: %d
+  1b1a0 Executing fsck-all!
+  1b1b8 /sbin/fsck-all
+  1b1c8 fsck-all returned: %d
+  1b1e0 --command
+  1b1f0 restart
+  1b1f8 --sender
+  1b210 Usage: %s <option>
+  1b228 	-c	clear oops logs
+  1b240 	-e	check oops logs
+  1b258 	-h	help
+  1b270 rm -f /sys/fs/pstore/dmesg-ramoops-*
+  1b298 ls /sys/fs/pstore/dmesg-ramoops-*
+  1b2c0 cat /sys/fs/pstore/dmesg-ramoops-*
+  20190 /dev/mmcblk0
+  20d08 /dev/mmcblk0
+  20d48 /dev/mmcblk0
+  20da0 rack-keys
+  20f30 /dev/mmcblk0
+  20f70 /dev/mmcblk0
+  20fc8 rack-keys
+  22128 /dev/sda1
+  22168 /dev/sda2
+  22350 /dev/sdb1
+  22390 /dev/sdb2
+  23b08 /dev/sda1
+  23b48 /dev/sda2
+  28f59 .shstrtab
+  28f63 .interp
+  28f6b .note.gnu.build-id
+  28f7e .note.ABI-tag
+  28f8c .gnu.hash
+  28f96 .dynsym
+  28f9e .dynstr
+  28fa6 .gnu.version
+  28fb3 .gnu.version_r
+  28fc2 .rela.dyn
+  28fcc .rela.plt
+  28fd6 .init
+  28fdc .text
+  28fe2 .fini
+  28fe8 .rodata
+  28ff0 .eh_frame_hdr
+  28ffe .eh_frame
+  29008 .init_array
+  29014 .fini_array
+  29020 .data.rel.ro
+  2902d .dynamic
+  2903b .data

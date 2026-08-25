@@ -1,0 +1,8 @@
+wrote 45 register labels -> /mnt/2tb/git/awto-unvr/tmp/ghidra-in/i2c0.sym  (+ struct /mnt/2tb/git/awto-unvr/tmp/ghidra-in/i2c0.h)
+wrote 29 register labels -> /mnt/2tb/git/awto-unvr/tmp/ghidra-in/uart0.sym  (+ struct /mnt/2tb/git/awto-unvr/tmp/ghidra-in/uart0.h)
+wrote 9 register labels -> /mnt/2tb/git/awto-unvr/tmp/ghidra-in/gpio0.sym  (+ struct /mnt/2tb/git/awto-unvr/tmp/ghidra-in/gpio0.h)
+wrote 31 numeric equates -> /mnt/2tb/git/awto-unvr/tmp/ghidra-in/AL_I2C.equ.tsv
+wrote 115 register labels -> tmp/ghidra-in/ddrc.sym  (+ struct tmp/ghidra-in/ddrc.h)
+wrote 8 register labels -> tmp/ghidra-in/ddrcmp.sym  (+ struct tmp/ghidra-in/ddrcmp.h)
+wrote 54 register labels -> tmp/ghidra-in/ddrphy.sym  (+ struct tmp/ghidra-in/ddrphy.h)
+wrote 8 register labels -> tmp/ghidra-in/nbpll.sym  (+ struct tmp/ghidra-in/nbpll.h)

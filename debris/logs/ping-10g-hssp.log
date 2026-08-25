@@ -1,0 +1,41 @@
+ping 192.168.25.145
+0
+   - 0 'al_eth_dm'
+   - found
+al_eth_adapter_init: non optimal adapter configuration
+serdes: HSSP group D (SFP+ lane 0) @ 00000000fd8c0c00, gen.version=0x00000fcb
+serdes: lane 0 signal_detect=yes (pma rxrandet=0x29)
+serdes: configuring 10GBASE-R PCS @ 00000000fe120000
+serdes: 10G init done (HSSP group D); 'serdes status' for lane lock
+Configured MAC to KR mode
+serdes: HSSP group D @ 00000000fd8c0c00, SFP+ lane 0:
+  gen.version  : 0x00000fcb
+  signal_detect: yes (pma rxrandet=0x29)
+"Error" handler, esr 0xbf000000
+elr: 0000000001149284 lr : 0000000001149270 (reloc)
+elr: 00000000bff99284 lr : 00000000bff99270
+x0 : 00000000fe120000 x1 : 0000000000000021
+x2 : 0000000000000000 x3 : 0000000000010000
+x4 : 00000000bfb3de5c x5 : 00000000fe120000
+x6 : 0000000000000000 x7 : 00000000bfb3ce9c
+x8 : 00000000bfb3d560 x9 : 00000000bfb3db08
+x10: 0000000000000000 x11: 0000000000000524
+x12: 00000000bfb3cf5c x13: 00000000bfb3d560
+x14: 0000000000000002 x15: 00000000bfb3cffc
+x16: 00000000bff94b48 x17: 0000000000002b0c
+x18: 00000000bfb3fde0 x19: 00000000bffd898a
+x20: 00000000bffd8986 x21: 0000000000000000
+x22: 00000000bfb57f50 x23: 00000000bfb58f50
+x24: 00000000bfb59360 x25: 0000000000000600
+x26: 00000000bfb5d0e0 x27: 0000000000000000
+x28: 0000000000000000 x29: 00000000bfb3d090
+
+Code: d5033fbf 52800421 b90a0001 b94a0402 (d5033fbf) 
+Resetting CPU ...
+
+resetting ...
+ofnode_read_prop: assigned-clock-rates: <not found>
+ofnode_read_prop: method: smc
+Sending event 5/(unknown) to spy 'efi_disk add'
+stage2_loader v2.22.3
+<<MATCHED: stage2_loader>>

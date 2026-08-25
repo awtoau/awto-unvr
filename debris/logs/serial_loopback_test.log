@@ -1,0 +1,1341 @@
+2026-08-15 15:30:58,601 INFO  port /dev/serial/by-id/usb-Prolific_Technology_Inc._USB-Serial_Controller_D-if00-port0
+2026-08-15 15:30:58,601 INFO  baud 9600
+2026-08-15 15:30:59,011 ERROR   counting     256 B TIMEOUT after 409.1 ms (limit 408.3 ms) - 0 bytes back
+2026-08-15 15:30:59,289 INFO  baud 115200
+2026-08-15 15:30:59,394 ERROR   counting     256 B TIMEOUT after 103.3 ms (limit 102.8 ms) - 0 bytes back
+2026-08-15 15:30:59,505 INFO  baud 921600
+2026-08-15 15:30:59,586 ERROR   counting     256 B TIMEOUT after 79.1 ms (limit 78.5 ms) - 0 bytes back
+2026-08-15 15:30:59,697 INFO  RESULT: NO loopback - nothing echoed at any baud
+2026-08-15 15:31:43,632 INFO  port /dev/serial/by-id/usb-Prolific_Technology_Inc._USB-Serial_Controller_D-if00-port0
+2026-08-15 15:31:43,652 INFO  baud 9600
+2026-08-15 15:31:44,063 ERROR   counting     256 B TIMEOUT after 409.2 ms (limit 408.3 ms) - 0 bytes back
+2026-08-15 15:31:44,222 ERROR   alternating   64 B TIMEOUT after 158.8 ms (limit 158.3 ms) - 0 bytes back
+2026-08-15 15:31:44,370 ERROR   ascii         56 B TIMEOUT after 148.2 ms (limit 147.9 ms) - 0 bytes back
+2026-08-15 15:31:44,496 INFO    RTS -> CTS: does not follow (not connected)
+2026-08-15 15:31:44,621 INFO    DTR -> DSR: does not follow (not connected)
+2026-08-15 15:31:44,746 INFO    DTR -> CD: does not follow (not connected)
+2026-08-15 15:31:45,025 INFO  baud 115200
+2026-08-15 15:31:45,130 ERROR   counting     256 B TIMEOUT after 103.2 ms (limit 102.8 ms) - 0 bytes back
+2026-08-15 15:31:45,212 ERROR   alternating   64 B TIMEOUT after 82.2 ms (limit 81.9 ms) - 0 bytes back
+2026-08-15 15:31:45,294 ERROR   ascii         56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:31:45,402 INFO  baud 921600
+2026-08-15 15:31:45,482 ERROR   counting     256 B TIMEOUT after 79.0 ms (limit 78.5 ms) - 0 bytes back
+2026-08-15 15:31:45,558 ERROR   alternating   64 B TIMEOUT after 76.1 ms (limit 75.9 ms) - 0 bytes back
+2026-08-15 15:31:45,634 ERROR   ascii         56 B TIMEOUT after 76.0 ms (limit 75.8 ms) - 0 bytes back
+2026-08-15 15:31:45,746 INFO  RESULT: NO loopback - nothing echoed at any baud
+2026-08-15 15:32:37,751 INFO  port /dev/serial/by-id/usb-Prolific_Technology_Inc._USB-Serial_Controller_D-if00-port0
+2026-08-15 15:32:37,751 INFO  baud 9600
+2026-08-15 15:32:38,162 ERROR   counting     256 B TIMEOUT after 409.1 ms (limit 408.3 ms) - 0 bytes back
+2026-08-15 15:32:38,321 ERROR   alternating   64 B TIMEOUT after 158.7 ms (limit 158.3 ms) - 0 bytes back
+2026-08-15 15:32:38,469 ERROR   ascii         56 B TIMEOUT after 148.3 ms (limit 147.9 ms) - 0 bytes back
+2026-08-15 15:32:38,745 INFO  baud 115200
+2026-08-15 15:32:38,849 ERROR   counting     256 B TIMEOUT after 103.2 ms (limit 102.8 ms) - 0 bytes back
+2026-08-15 15:32:38,932 ERROR   alternating   64 B TIMEOUT after 82.2 ms (limit 81.9 ms) - 0 bytes back
+2026-08-15 15:32:39,013 ERROR   ascii         56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:32:39,121 INFO  baud 921600
+2026-08-15 15:32:39,201 ERROR   counting     256 B TIMEOUT after 79.0 ms (limit 78.5 ms) - 0 bytes back
+2026-08-15 15:32:39,278 ERROR   alternating   64 B TIMEOUT after 76.2 ms (limit 75.9 ms) - 0 bytes back
+2026-08-15 15:32:39,354 ERROR   ascii         56 B TIMEOUT after 76.2 ms (limit 75.8 ms) - 0 bytes back
+2026-08-15 15:32:39,465 INFO  RESULT: NO loopback - nothing echoed at any baud
+2026-08-15 15:34:38,552 INFO  port /dev/serial/by-id/usb-Prolific_Technology_Inc._USB-Serial_Controller_D-if00-port0
+2026-08-15 15:34:38,552 INFO  repeat mode: /dev/serial/by-id/usb-Prolific_Technology_Inc._USB-Serial_Controller_D-if00-port0 @ 115200 baud, 56 B every 1.0 s - Ctrl-C to stop
+2026-08-15 15:34:38,554 INFO  port opened
+2026-08-15 15:34:38,635 ERROR   round 1       56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:34:39,717 ERROR   round 2       56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:34:40,799 ERROR   round 3       56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:34:41,880 ERROR   round 4       56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:34:42,962 ERROR   round 5       56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:34:44,044 ERROR   round 6       56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:34:45,126 ERROR   round 7       56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:34:46,208 ERROR   round 8       56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:34:47,289 ERROR   round 9       56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:34:48,371 ERROR   round 10      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:34:49,453 ERROR   round 11      56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:34:50,535 ERROR   round 12      56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:34:51,616 ERROR   round 13      56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:34:52,700 ERROR   round 14      56 B TIMEOUT after 83.1 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:34:53,782 ERROR   round 15      56 B TIMEOUT after 81.7 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:34:54,864 ERROR   round 16      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:34:55,945 ERROR   round 17      56 B TIMEOUT after 81.6 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:34:57,027 ERROR   round 18      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:34:58,109 ERROR   round 19      56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:34:59,191 ERROR   round 20      56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:35:00,272 ERROR   round 21      56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:35:01,354 ERROR   round 22      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:35:02,436 ERROR   round 23      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:35:03,518 ERROR   round 24      56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:35:04,599 ERROR   round 25      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:35:05,681 ERROR   round 26      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:35:06,762 ERROR   round 27      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:35:07,844 ERROR   round 28      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:35:08,926 ERROR   round 29      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:35:10,007 ERROR   round 30      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:35:11,089 ERROR   round 31      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:35:12,171 ERROR   round 32      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:35:13,252 ERROR   round 33      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:35:14,334 ERROR   round 34      56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:35:15,415 ERROR   round 35      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:35:16,497 ERROR   round 36      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:35:17,579 ERROR   round 37      56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:35:18,661 ERROR   round 38      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:35:19,742 ERROR   round 39      56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:35:20,824 ERROR   round 40      56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:35:21,906 ERROR   round 41      56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:35:22,988 ERROR   round 42      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:35:24,070 ERROR   round 43      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:35:25,151 ERROR   round 44      56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:35:26,233 ERROR   round 45      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:35:27,314 ERROR   round 46      56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:35:28,396 ERROR   round 47      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:35:29,478 ERROR   round 48      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:35:30,559 ERROR   round 49      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:35:31,641 ERROR   round 50      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:35:32,722 ERROR   round 51      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:35:33,804 ERROR   round 52      56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:35:34,886 ERROR   round 53      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:35:35,967 ERROR   round 54      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:35:37,049 ERROR   round 55      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:35:38,130 ERROR   round 56      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:35:39,212 ERROR   round 57      56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:35:40,293 ERROR   round 58      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:35:41,375 ERROR   round 59      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:35:42,457 ERROR   round 60      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:35:43,538 ERROR   round 61      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:35:44,620 ERROR   round 62      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:35:45,701 ERROR   round 63      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:35:46,783 ERROR   round 64      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:35:47,865 ERROR   round 65      56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:35:48,946 ERROR   round 66      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:35:50,028 ERROR   round 67      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:35:51,109 ERROR   round 68      56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:35:52,191 ERROR   round 69      56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:35:53,272 ERROR   round 70      56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:35:54,354 ERROR   round 71      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:35:55,436 ERROR   round 72      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:35:56,517 ERROR   round 73      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:35:57,599 ERROR   round 74      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:35:58,681 ERROR   round 75      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:35:59,762 ERROR   round 76      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:36:00,844 ERROR   round 77      56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:36:01,926 ERROR   round 78      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:36:03,007 ERROR   round 79      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:36:04,089 ERROR   round 80      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:36:05,171 ERROR   round 81      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:36:06,252 ERROR   round 82      56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:36:07,334 ERROR   round 83      56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:36:08,415 ERROR   round 84      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:36:09,497 ERROR   round 85      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:36:10,579 ERROR   round 86      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:36:11,661 ERROR   round 87      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:36:12,742 ERROR   round 88      56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:36:13,824 ERROR   round 89      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:36:14,905 ERROR   round 90      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:36:15,987 ERROR   round 91      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:36:17,068 ERROR   round 92      56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:36:18,150 ERROR   round 93      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:36:19,232 ERROR   round 94      56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:36:20,313 ERROR   round 95      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:36:21,395 ERROR   round 96      56 B TIMEOUT after 81.6 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:36:22,477 ERROR   round 97      56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:36:23,559 ERROR   round 98      56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:36:24,641 ERROR   round 99      56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:36:25,723 ERROR   round 100     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:36:26,805 ERROR   round 101     56 B TIMEOUT after 81.6 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:36:27,886 ERROR   round 102     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:36:28,968 ERROR   round 103     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:36:30,050 ERROR   round 104     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:36:31,131 ERROR   round 105     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:36:32,213 ERROR   round 106     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:36:33,295 ERROR   round 107     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:36:34,376 ERROR   round 108     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:36:35,458 ERROR   round 109     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:36:36,540 ERROR   round 110     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:36:37,622 ERROR   round 111     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:36:38,703 ERROR   round 112     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:36:39,785 ERROR   round 113     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:36:40,867 ERROR   round 114     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:36:41,948 ERROR   round 115     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:36:43,030 ERROR   round 116     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:36:44,112 ERROR   round 117     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:36:45,193 ERROR   round 118     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:36:46,275 ERROR   round 119     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:36:47,356 ERROR   round 120     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:36:48,438 ERROR   round 121     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:36:49,519 ERROR   round 122     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:36:50,601 ERROR   round 123     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:36:51,683 ERROR   round 124     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:36:52,764 ERROR   round 125     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:36:53,846 ERROR   round 126     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:36:54,928 ERROR   round 127     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:36:56,009 ERROR   round 128     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:36:57,091 ERROR   round 129     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:36:58,173 ERROR   round 130     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:36:59,254 ERROR   round 131     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:37:00,336 ERROR   round 132     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:37:01,418 ERROR   round 133     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:37:02,499 ERROR   round 134     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:37:03,581 ERROR   round 135     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:37:04,663 ERROR   round 136     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:37:05,745 ERROR   round 137     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:37:06,827 ERROR   round 138     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:37:07,908 ERROR   round 139     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:37:08,990 ERROR   round 140     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:37:10,072 ERROR   round 141     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:37:11,153 ERROR   round 142     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:37:12,235 ERROR   round 143     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:37:13,317 ERROR   round 144     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:37:14,398 ERROR   round 145     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:37:15,480 ERROR   round 146     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:37:16,561 ERROR   round 147     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:37:17,643 ERROR   round 148     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:37:18,725 ERROR   round 149     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:37:19,806 ERROR   round 150     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:37:20,888 ERROR   round 151     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:37:21,969 ERROR   round 152     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:37:23,051 ERROR   round 153     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:37:24,133 ERROR   round 154     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:37:25,214 ERROR   round 155     56 B TIMEOUT after 81.6 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:37:26,296 ERROR   round 156     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:37:27,378 ERROR   round 157     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:37:28,459 ERROR   round 158     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:37:29,541 ERROR   round 159     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:37:30,623 ERROR   round 160     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:37:31,704 ERROR   round 161     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:37:32,786 ERROR   round 162     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:37:33,868 ERROR   round 163     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:37:34,949 ERROR   round 164     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:37:36,031 ERROR   round 165     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:37:37,113 ERROR   round 166     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:37:38,194 ERROR   round 167     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:37:39,276 ERROR   round 168     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:37:40,357 ERROR   round 169     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:37:41,439 ERROR   round 170     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:37:42,520 ERROR   round 171     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:37:43,602 ERROR   round 172     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:37:44,683 ERROR   round 173     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:37:45,765 ERROR   round 174     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:37:46,846 ERROR   round 175     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:37:47,928 ERROR   round 176     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:37:49,010 ERROR   round 177     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:37:50,091 ERROR   round 178     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:37:51,173 ERROR   round 179     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:37:52,254 ERROR   round 180     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:37:53,336 ERROR   round 181     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:37:54,417 ERROR   round 182     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:37:55,499 ERROR   round 183     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:37:56,581 ERROR   round 184     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:37:57,662 ERROR   round 185     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:37:58,744 ERROR   round 186     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:40:57,349 INFO  port /dev/serial/by-id/usb-Prolific_Technology_Inc._USB-Serial_Controller_D-if00-port0
+2026-08-15 15:40:57,349 INFO  repeat mode: /dev/serial/by-id/usb-Prolific_Technology_Inc._USB-Serial_Controller_D-if00-port0 @ 115200 baud, 56 B every 1.0 s - Ctrl-C to stop
+2026-08-15 15:40:57,350 INFO  port opened
+2026-08-15 15:40:57,432 ERROR   round 1       56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:40:58,513 ERROR   round 2       56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:40:59,595 ERROR   round 3       56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:41:00,676 ERROR   round 4       56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:41:01,758 ERROR   round 5       56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:41:02,839 ERROR   round 6       56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:41:03,921 ERROR   round 7       56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:41:05,003 ERROR   round 8       56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:41:06,084 ERROR   round 9       56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:41:07,166 ERROR   round 10      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:41:08,247 ERROR   round 11      56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:41:09,329 ERROR   round 12      56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:41:10,410 ERROR   round 13      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:41:11,492 ERROR   round 14      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:41:12,574 ERROR   round 15      56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:41:13,656 ERROR   round 16      56 B TIMEOUT after 81.6 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:41:14,737 ERROR   round 17      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:41:15,819 ERROR   round 18      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:41:16,900 ERROR   round 19      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:41:17,982 ERROR   round 20      56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:41:19,063 ERROR   round 21      56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:41:20,145 ERROR   round 22      56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:41:21,227 ERROR   round 23      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:41:22,308 ERROR   round 24      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:41:23,390 ERROR   round 25      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:41:24,471 ERROR   round 26      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:41:25,553 ERROR   round 27      56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:41:26,635 ERROR   round 28      56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:41:27,716 ERROR   round 29      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:41:28,798 ERROR   round 30      56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:41:29,880 ERROR   round 31      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:41:30,961 ERROR   round 32      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:41:32,043 ERROR   round 33      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:41:33,125 ERROR   round 34      56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:41:34,206 ERROR   round 35      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:41:35,288 ERROR   round 36      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:41:36,370 ERROR   round 37      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:41:37,451 ERROR   round 38      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:41:38,533 ERROR   round 39      56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:41:39,614 ERROR   round 40      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:41:40,696 ERROR   round 41      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:41:41,778 ERROR   round 42      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:41:42,859 ERROR   round 43      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:41:43,941 ERROR   round 44      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:41:45,023 ERROR   round 45      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:41:46,104 ERROR   round 46      56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:41:47,186 ERROR   round 47      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:41:48,268 ERROR   round 48      56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:41:49,349 ERROR   round 49      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:41:50,431 ERROR   round 50      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:41:51,513 ERROR   round 51      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:41:52,594 ERROR   round 52      56 B MISMATCH: got 19 B, first diff at byte 0 (sent b'The ', got b'o}{{'), 81.5 ms
+2026-08-15 15:41:53,676 ERROR   round 53      56 B MISMATCH: got 18 B, first diff at byte 0 (sent b'The ', got b'uuk{'), 81.4 ms
+2026-08-15 15:41:54,758 ERROR   round 54      56 B MISMATCH: got 18 B, first diff at byte 0 (sent b'The ', got b'uuk{'), 81.4 ms
+2026-08-15 15:41:55,840 ERROR   round 55      56 B MISMATCH: got 18 B, first diff at byte 0 (sent b'The ', got b'uuk{'), 81.4 ms
+2026-08-15 15:41:56,921 ERROR   round 56      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:41:58,003 ERROR   round 57      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:41:59,085 ERROR   round 58      56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:42:00,166 ERROR   round 59      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:42:01,248 ERROR   round 60      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:42:02,330 ERROR   round 61      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:42:03,411 ERROR   round 62      56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:42:04,493 ERROR   round 63      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:42:05,574 ERROR   round 64      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:42:06,656 ERROR   round 65      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:42:07,738 ERROR   round 66      56 B TIMEOUT after 81.7 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:42:08,820 ERROR   round 67      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:42:09,902 ERROR   round 68      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:42:10,983 ERROR   round 69      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:42:12,065 ERROR   round 70      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:42:13,146 ERROR   round 71      56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:42:14,228 ERROR   round 72      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:42:15,310 ERROR   round 73      56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:42:16,391 ERROR   round 74      56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:42:17,473 ERROR   round 75      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:42:18,554 ERROR   round 76      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:42:19,636 ERROR   round 77      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:42:20,718 ERROR   round 78      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:42:21,799 ERROR   round 79      56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:42:22,881 ERROR   round 80      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:42:23,962 ERROR   round 81      56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:42:25,044 ERROR   round 82      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:42:26,126 ERROR   round 83      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:42:27,207 ERROR   round 84      56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:42:44,589 INFO  port /dev/serial/by-id/usb-Prolific_Technology_Inc._USB-Serial_Controller_D-if00-port0
+2026-08-15 15:42:44,589 INFO  repeat mode: /dev/serial/by-id/usb-Prolific_Technology_Inc._USB-Serial_Controller_D-if00-port0 @ 115200 baud, 56 B every 1.0 s, 30 rounds
+2026-08-15 15:42:44,590 INFO  port opened
+2026-08-15 15:42:44,672 ERROR   round 1       56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:42:45,753 ERROR   round 2       56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:42:46,835 ERROR   round 3       56 B TIMEOUT after 81.7 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:42:47,917 ERROR   round 4       56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:42:48,999 ERROR   round 5       56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:42:50,080 ERROR   round 6       56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:42:51,162 ERROR   round 7       56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:42:52,244 ERROR   round 8       56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:42:53,325 ERROR   round 9       56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:42:54,407 ERROR   round 10      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:42:55,488 ERROR   round 11      56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:42:56,570 ERROR   round 12      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:42:57,651 ERROR   round 13      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:42:58,733 ERROR   round 14      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:42:59,815 ERROR   round 15      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:43:00,897 ERROR   round 16      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:43:01,979 ERROR   round 17      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:43:03,062 ERROR   round 18      56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:43:04,144 ERROR   round 19      56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:43:05,226 ERROR   round 20      56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:43:06,308 ERROR   round 21      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:43:07,390 ERROR   round 22      56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:43:08,472 ERROR   round 23      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:43:09,553 ERROR   round 24      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:43:10,635 ERROR   round 25      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:43:11,716 ERROR   round 26      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:43:12,798 ERROR   round 27      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:43:13,879 ERROR   round 28      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:43:14,961 ERROR   round 29      56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:43:16,043 ERROR   round 30      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:43:17,153 INFO  RESULT: 0/30 rounds echoed - NO loopback
+2026-08-15 15:43:20,453 INFO  port /dev/serial/by-id/usb-Prolific_Technology_Inc._USB-Serial_Controller_D-if00-port0
+2026-08-15 15:43:20,453 INFO  repeat mode: /dev/serial/by-id/usb-Prolific_Technology_Inc._USB-Serial_Controller_D-if00-port0 @ 115200 baud, 56 B every 1.0 s, Ctrl-C to stop
+2026-08-15 15:43:20,454 INFO  port opened
+2026-08-15 15:43:20,535 ERROR   round 1       56 B TIMEOUT after 81.2 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:43:21,617 ERROR   round 2       56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:43:22,699 ERROR   round 3       56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:43:23,780 ERROR   round 4       56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:43:24,862 ERROR   round 5       56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:43:25,944 ERROR   round 6       56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:43:27,026 ERROR   round 7       56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:43:28,108 ERROR   round 8       56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:43:29,189 ERROR   round 9       56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:43:30,271 ERROR   round 10      56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:43:31,353 ERROR   round 11      56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:43:32,435 ERROR   round 12      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:43:33,516 ERROR   round 13      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:43:34,598 ERROR   round 14      56 B TIMEOUT after 81.6 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:43:35,680 ERROR   round 15      56 B TIMEOUT after 81.6 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:43:36,762 ERROR   round 16      56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:43:37,843 ERROR   round 17      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:43:38,925 ERROR   round 18      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:43:40,006 ERROR   round 19      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:43:41,088 ERROR   round 20      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:43:42,169 ERROR   round 21      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:43:43,251 ERROR   round 22      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:43:44,333 ERROR   round 23      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:43:45,414 ERROR   round 24      56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:43:46,496 ERROR   round 25      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:43:47,578 ERROR   round 26      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:43:48,659 ERROR   round 27      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:43:49,741 ERROR   round 28      56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:43:50,823 ERROR   round 29      56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:43:51,905 ERROR   round 30      56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:43:52,986 ERROR   round 31      56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:43:54,068 ERROR   round 32      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:43:55,149 ERROR   round 33      56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:43:56,231 ERROR   round 34      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:43:57,313 ERROR   round 35      56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:43:58,395 ERROR   round 36      56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:43:59,476 ERROR   round 37      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:44:00,558 ERROR   round 38      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:44:01,640 ERROR   round 39      56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:44:02,721 ERROR   round 40      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:44:03,803 ERROR   round 41      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:44:04,885 ERROR   round 42      56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:44:05,966 ERROR   round 43      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:44:07,048 ERROR   round 44      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:44:08,130 ERROR   round 45      56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:44:09,211 ERROR   round 46      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:44:10,293 ERROR   round 47      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:44:11,375 ERROR   round 48      56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:44:12,456 ERROR   round 49      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:44:13,538 ERROR   round 50      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:44:14,619 ERROR   round 51      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:44:15,701 ERROR   round 52      56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:44:16,783 ERROR   round 53      56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:44:17,864 ERROR   round 54      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:44:18,946 ERROR   round 55      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:44:20,027 ERROR   round 56      56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:44:21,109 ERROR   round 57      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:44:22,191 ERROR   round 58      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:44:23,272 ERROR   round 59      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:44:24,354 ERROR   round 60      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:44:25,435 ERROR   round 61      56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:44:26,517 ERROR   round 62      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:44:27,599 ERROR   round 63      56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:44:28,680 ERROR   round 64      56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:44:29,762 ERROR   round 65      56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:44:30,843 ERROR   round 66      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:44:31,925 ERROR   round 67      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:44:33,006 ERROR   round 68      56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:44:34,088 ERROR   round 69      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:44:35,170 ERROR   round 70      56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:44:36,251 ERROR   round 71      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:44:37,333 ERROR   round 72      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:44:38,414 ERROR   round 73      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:44:39,496 ERROR   round 74      56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:44:40,578 ERROR   round 75      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:44:41,659 ERROR   round 76      56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:44:42,741 ERROR   round 77      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:44:43,822 ERROR   round 78      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:44:44,904 ERROR   round 79      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:44:45,986 ERROR   round 80      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:44:47,067 ERROR   round 81      56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:44:48,149 ERROR   round 82      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:44:49,231 ERROR   round 83      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:44:50,312 ERROR   round 84      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:44:51,394 ERROR   round 85      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:44:52,476 ERROR   round 86      56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:44:53,557 ERROR   round 87      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:44:54,639 ERROR   round 88      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:44:55,720 ERROR   round 89      56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:44:56,802 ERROR   round 90      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:44:57,883 ERROR   round 91      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:44:58,965 ERROR   round 92      56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:44:59,630 INFO  port /dev/serial/by-id/usb-Silicon_Labs_CP2102_USB_to_UART_Bridge_Controller_0001-if00-port0
+2026-08-15 15:44:59,630 INFO  baud 9600
+2026-08-15 15:45:00,046 ERROR   round 93      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:45:00,308 ERROR   counting     256 B TIMEOUT after 676.8 ms (limit 408.3 ms) - 0 bytes back
+2026-08-15 15:45:00,535 ERROR   alternating   64 B TIMEOUT after 226.6 ms (limit 158.3 ms) - 0 bytes back
+2026-08-15 15:45:00,742 ERROR   ascii         56 B TIMEOUT after 206.5 ms (limit 147.9 ms) - 0 bytes back
+2026-08-15 15:45:00,747 INFO  baud 115200
+2026-08-15 15:45:00,877 ERROR   counting     256 B TIMEOUT after 128.3 ms (limit 102.8 ms) - 0 bytes back
+2026-08-15 15:45:00,965 ERROR   alternating   64 B TIMEOUT after 88.2 ms (limit 81.9 ms) - 0 bytes back
+2026-08-15 15:45:01,053 ERROR   ascii         56 B TIMEOUT after 88.1 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:45:01,058 INFO  baud 921600
+2026-08-15 15:45:01,128 ERROR   round 94      56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:45:01,143 ERROR   counting     256 B TIMEOUT after 83.2 ms (limit 78.5 ms) - 0 bytes back
+2026-08-15 15:45:01,222 ERROR   alternating   64 B TIMEOUT after 78.2 ms (limit 75.9 ms) - 0 bytes back
+2026-08-15 15:45:01,298 ERROR   ascii         56 B TIMEOUT after 76.3 ms (limit 75.8 ms) - 0 bytes back
+2026-08-15 15:45:01,303 INFO  RESULT: NO loopback - nothing echoed at any baud
+2026-08-15 15:45:02,210 ERROR   round 95      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:45:03,291 ERROR   round 96      56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:45:04,373 ERROR   round 97      56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:45:05,454 ERROR   round 98      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:45:06,536 ERROR   round 99      56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:45:07,618 ERROR   round 100     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:45:08,699 ERROR   round 101     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:45:09,781 ERROR   round 102     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:45:10,862 ERROR   round 103     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:45:11,944 ERROR   round 104     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:45:13,026 ERROR   round 105     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:45:14,107 ERROR   round 106     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:45:15,189 ERROR   round 107     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:45:16,271 ERROR   round 108     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:45:17,352 ERROR   round 109     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:45:18,434 ERROR   round 110     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:45:19,515 ERROR   round 111     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:45:20,597 ERROR   round 112     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:45:21,679 ERROR   round 113     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:45:22,760 ERROR   round 114     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:45:23,842 ERROR   round 115     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:45:24,923 ERROR   round 116     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:45:26,005 ERROR   round 117     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:45:27,087 ERROR   round 118     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:45:28,168 ERROR   round 119     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:45:29,250 ERROR   round 120     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:45:30,331 ERROR   round 121     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:45:31,413 ERROR   round 122     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:45:32,495 ERROR   round 123     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:45:33,576 ERROR   round 124     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:45:34,658 ERROR   round 125     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:45:35,739 ERROR   round 126     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:45:36,821 ERROR   round 127     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:45:37,902 ERROR   round 128     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:45:38,984 ERROR   round 129     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:45:40,065 ERROR   round 130     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:45:41,147 ERROR   round 131     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:45:42,228 ERROR   round 132     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:45:43,310 ERROR   round 133     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:45:44,392 ERROR   round 134     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:45:45,473 ERROR   round 135     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:45:46,555 ERROR   round 136     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:45:47,636 ERROR   round 137     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:45:48,718 ERROR   round 138     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:45:49,800 ERROR   round 139     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:45:50,881 ERROR   round 140     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:45:51,963 ERROR   round 141     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:45:53,045 ERROR   round 142     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:45:54,126 ERROR   round 143     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:45:54,354 INFO  port /dev/serial/by-id/usb-Silicon_Labs_CP2102_USB_to_UART_Bridge_Controller_0001-if00-port0
+2026-08-15 15:45:54,354 INFO  probe /dev/serial/by-id/usb-Silicon_Labs_CP2102_USB_to_UART_Bridge_Controller_0001-if00-port0 @ 115200 baud: send b'\r\n', listen 1.0 s, 3 time(s)
+2026-08-15 15:45:55,207 ERROR   round 144     56 B TIMEOUT after 81.2 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:45:55,359 INFO    try 1: silent (1004 ms)
+2026-08-15 15:45:56,289 ERROR   round 145     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:45:56,360 INFO    try 2: silent (1001 ms)
+2026-08-15 15:45:57,361 INFO    try 3: silent (1001 ms)
+2026-08-15 15:45:57,366 INFO  RESULT: 0/3 probes answered
+2026-08-15 15:45:57,371 ERROR   round 146     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:45:58,452 ERROR   round 147     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:45:59,534 ERROR   round 148     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:46:00,615 ERROR   round 149     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:46:01,697 ERROR   round 150     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:46:02,779 ERROR   round 151     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:46:03,860 ERROR   round 152     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:46:04,942 ERROR   round 153     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:46:06,024 ERROR   round 154     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:46:07,105 ERROR   round 155     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:46:07,863 INFO  port /dev/serial/by-id/usb-Silicon_Labs_CP2102_USB_to_UART_Bridge_Controller_0001-if00-port0
+2026-08-15 15:46:07,863 INFO  listen 3.0 s @ 115200 baud (passive, nothing transmitted)
+2026-08-15 15:46:08,187 ERROR   round 156     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:46:09,268 ERROR   round 157     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:46:10,350 ERROR   round 158     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:46:10,871 INFO    silent: 0 bytes in 3.0 s
+2026-08-15 15:46:11,432 ERROR   round 159     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:46:12,513 ERROR   round 160     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:46:13,595 ERROR   round 161     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:46:14,676 ERROR   round 162     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:46:15,758 ERROR   round 163     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:46:16,840 ERROR   round 164     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:46:17,921 ERROR   round 165     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:46:19,003 ERROR   round 166     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:46:20,085 ERROR   round 167     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:46:21,166 ERROR   round 168     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:46:22,248 ERROR   round 169     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:46:23,329 ERROR   round 170     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:46:24,411 ERROR   round 171     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:46:25,493 ERROR   round 172     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:46:26,574 ERROR   round 173     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:46:27,656 ERROR   round 174     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:46:28,737 ERROR   round 175     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:46:29,819 ERROR   round 176     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:46:30,901 ERROR   round 177     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:46:31,730 INFO  port /dev/serial/by-id/usb-Silicon_Labs_CP2102_USB_to_UART_Bridge_Controller_0001-if00-port0
+2026-08-15 15:46:31,731 INFO  probe /dev/serial/by-id/usb-Silicon_Labs_CP2102_USB_to_UART_Bridge_Controller_0001-if00-port0 @ 115200 baud: send b'\r\n', listen 0.8 s, 2 time(s)
+2026-08-15 15:46:31,982 ERROR   round 178     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:46:32,533 INFO    try 1: silent (801 ms)
+2026-08-15 15:46:33,064 ERROR   round 179     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:46:33,334 INFO    try 2: silent (801 ms)
+2026-08-15 15:46:33,339 INFO  RESULT: 0/2 probes answered
+2026-08-15 15:46:33,339 INFO  probe /dev/serial/by-id/usb-Silicon_Labs_CP2102_USB_to_UART_Bridge_Controller_0001-if00-port0 @ 9600 baud: send b'\r\n', listen 0.8 s, 2 time(s)
+2026-08-15 15:46:34,144 INFO    try 1: silent (802 ms)
+2026-08-15 15:46:34,145 ERROR   round 180     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:46:34,947 INFO    try 2: silent (803 ms)
+2026-08-15 15:46:34,952 INFO  RESULT: 0/2 probes answered
+2026-08-15 15:46:34,952 INFO  probe /dev/serial/by-id/usb-Silicon_Labs_CP2102_USB_to_UART_Bridge_Controller_0001-if00-port0 @ 57600 baud: send b'\r\n', listen 0.8 s, 2 time(s)
+2026-08-15 15:46:35,228 ERROR   round 181     56 B TIMEOUT after 82.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:46:35,757 INFO    try 1: silent (804 ms)
+2026-08-15 15:46:36,310 ERROR   round 182     56 B TIMEOUT after 81.6 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:46:36,562 INFO    try 2: silent (804 ms)
+2026-08-15 15:46:36,567 INFO  RESULT: 0/2 probes answered
+2026-08-15 15:46:36,567 INFO  probe /dev/serial/by-id/usb-Silicon_Labs_CP2102_USB_to_UART_Bridge_Controller_0001-if00-port0 @ 38400 baud: send b'\r\n', listen 0.8 s, 2 time(s)
+2026-08-15 15:46:37,373 INFO    try 1: silent (804 ms)
+2026-08-15 15:46:37,392 ERROR   round 183     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:46:38,176 INFO    try 2: silent (803 ms)
+2026-08-15 15:46:38,181 INFO  RESULT: 0/2 probes answered
+2026-08-15 15:46:38,181 INFO  probe /dev/serial/by-id/usb-Silicon_Labs_CP2102_USB_to_UART_Bridge_Controller_0001-if00-port0 @ 19200 baud: send b'\r\n', listen 0.8 s, 2 time(s)
+2026-08-15 15:46:38,473 ERROR   round 184     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:46:38,986 INFO    try 1: silent (803 ms)
+2026-08-15 15:46:39,555 ERROR   round 185     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:46:39,789 INFO    try 2: silent (803 ms)
+2026-08-15 15:46:39,794 INFO  RESULT: 0/2 probes answered
+2026-08-15 15:46:39,794 INFO  probe /dev/serial/by-id/usb-Silicon_Labs_CP2102_USB_to_UART_Bridge_Controller_0001-if00-port0 @ 230400 baud: send b'\r\n', listen 0.8 s, 2 time(s)
+2026-08-15 15:46:40,598 INFO    try 1: silent (803 ms)
+2026-08-15 15:46:40,637 ERROR   round 186     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:46:41,399 INFO    try 2: silent (801 ms)
+2026-08-15 15:46:41,404 INFO  RESULT: 0/2 probes answered
+2026-08-15 15:46:41,404 INFO  SWEEP RESULT: answered at no baud rate
+2026-08-15 15:46:41,718 ERROR   round 187     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:46:42,800 ERROR   round 188     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:46:43,882 ERROR   round 189     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:46:44,964 ERROR   round 190     56 B TIMEOUT after 81.7 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:46:46,046 ERROR   round 191     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:46:47,128 ERROR   round 192     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:46:48,209 ERROR   round 193     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:46:49,291 ERROR   round 194     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:46:50,373 ERROR   round 195     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:46:51,454 ERROR   round 196     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:46:52,536 ERROR   round 197     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:46:53,617 ERROR   round 198     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:46:54,699 ERROR   round 199     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:46:55,780 ERROR   round 200     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:46:56,862 ERROR   round 201     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:46:57,944 ERROR   round 202     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:46:59,025 ERROR   round 203     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:47:00,107 ERROR   round 204     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:47:01,189 ERROR   round 205     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:47:02,270 ERROR   round 206     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:47:03,352 ERROR   round 207     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:47:04,433 ERROR   round 208     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:47:05,515 ERROR   round 209     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:47:06,597 ERROR   round 210     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:47:07,678 ERROR   round 211     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:47:08,760 ERROR   round 212     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:47:09,842 ERROR   round 213     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:47:10,923 ERROR   round 214     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:47:12,005 ERROR   round 215     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:47:13,087 ERROR   round 216     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:47:14,168 ERROR   round 217     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:47:15,250 ERROR   round 218     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:47:16,332 ERROR   round 219     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:47:17,413 ERROR   round 220     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:47:18,495 ERROR   round 221     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:47:19,577 ERROR   round 222     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:47:20,658 ERROR   round 223     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:47:21,740 ERROR   round 224     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:47:22,822 ERROR   round 225     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:47:23,904 ERROR   round 226     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:47:24,985 ERROR   round 227     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:47:26,067 ERROR   round 228     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:47:27,148 ERROR   round 229     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:47:28,230 ERROR   round 230     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:47:29,312 ERROR   round 231     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:47:30,393 ERROR   round 232     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:47:31,475 ERROR   round 233     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:47:32,556 ERROR   round 234     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:47:33,638 ERROR   round 235     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:47:34,720 ERROR   round 236     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:47:35,801 ERROR   round 237     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:47:36,883 ERROR   round 238     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:47:37,965 ERROR   round 239     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:47:39,046 ERROR   round 240     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:47:40,128 ERROR   round 241     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:47:41,209 ERROR   round 242     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:47:42,291 ERROR   round 243     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:47:43,373 ERROR   round 244     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:47:44,455 ERROR   round 245     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:47:45,536 ERROR   round 246     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:47:46,618 ERROR   round 247     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:47:47,699 ERROR   round 248     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:47:48,781 ERROR   round 249     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:47:49,863 ERROR   round 250     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:47:50,944 ERROR   round 251     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:47:52,026 ERROR   round 252     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:47:53,107 ERROR   round 253     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:47:54,189 ERROR   round 254     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:47:55,271 ERROR   round 255     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:47:56,352 ERROR   round 256     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:47:57,434 ERROR   round 257     56 B TIMEOUT after 81.6 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:47:58,516 ERROR   round 258     56 B TIMEOUT after 81.6 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:47:59,598 ERROR   round 259     56 B TIMEOUT after 81.6 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:48:00,680 ERROR   round 260     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:48:01,762 ERROR   round 261     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:48:02,843 ERROR   round 262     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:48:03,925 ERROR   round 263     56 B TIMEOUT after 81.7 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:48:05,007 ERROR   round 264     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:48:06,089 ERROR   round 265     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:48:07,171 ERROR   round 266     56 B TIMEOUT after 81.6 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:48:08,253 ERROR   round 267     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:48:09,334 ERROR   round 268     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:48:10,416 ERROR   round 269     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:48:11,497 ERROR   round 270     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:48:12,579 ERROR   round 271     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:48:13,661 ERROR   round 272     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:48:14,742 ERROR   round 273     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:48:36,104 INFO  port /dev/serial/by-id/usb-Prolific_Technology_Inc._USB-Serial_Controller_D-if00-port0
+2026-08-15 15:48:36,104 INFO  repeat mode: /dev/serial/by-id/usb-Prolific_Technology_Inc._USB-Serial_Controller_D-if00-port0 @ 115200 baud, 56 B every 1.0 s, Ctrl-C to stop
+2026-08-15 15:48:36,105 INFO  port opened
+2026-08-15 15:48:36,187 ERROR   round 1       56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:48:37,269 ERROR   round 2       56 B TIMEOUT after 81.6 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:48:38,350 ERROR   round 3       56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:48:39,432 ERROR   round 4       56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:48:40,513 ERROR   round 5       56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:48:41,595 ERROR   round 6       56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:48:42,677 ERROR   round 7       56 B TIMEOUT after 81.6 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:48:43,759 ERROR   round 8       56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:48:44,841 ERROR   round 9       56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:48:45,923 ERROR   round 10      56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:48:47,004 ERROR   round 11      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:48:48,086 ERROR   round 12      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:48:49,168 ERROR   round 13      56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:48:50,250 ERROR   round 14      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:48:51,331 ERROR   round 15      56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:48:52,413 ERROR   round 16      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:48:53,495 ERROR   round 17      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:48:54,576 ERROR   round 18      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:48:55,658 ERROR   round 19      56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:48:56,740 ERROR   round 20      56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:48:57,822 ERROR   round 21      56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:48:58,904 ERROR   round 22      56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:48:59,986 ERROR   round 23      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:49:01,067 ERROR   round 24      56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:49:02,149 ERROR   round 25      56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:49:03,231 ERROR   round 26      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:49:04,312 ERROR   round 27      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:49:05,394 ERROR   round 28      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:49:06,476 ERROR   round 29      56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:49:07,557 ERROR   round 30      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:49:08,639 ERROR   round 31      56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:49:09,720 ERROR   round 32      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:49:10,802 ERROR   round 33      56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:49:11,883 ERROR   round 34      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:49:12,965 ERROR   round 35      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:49:14,047 ERROR   round 36      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:49:15,128 ERROR   round 37      56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:49:16,210 ERROR   round 38      56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:49:17,291 ERROR   round 39      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:49:18,373 ERROR   round 40      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:49:19,454 ERROR   round 41      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:49:20,536 ERROR   round 42      56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:49:21,618 ERROR   round 43      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:49:22,699 ERROR   round 44      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:49:23,781 ERROR   round 45      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:49:24,863 ERROR   round 46      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:49:25,944 ERROR   round 47      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:49:27,026 ERROR   round 48      56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:49:28,107 ERROR   round 49      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:49:29,189 ERROR   round 50      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:49:30,271 ERROR   round 51      56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:49:31,352 ERROR   round 52      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:49:32,434 ERROR   round 53      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:49:33,516 ERROR   round 54      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:49:34,597 ERROR   round 55      56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:49:35,679 ERROR   round 56      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:49:36,761 ERROR   round 57      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:49:37,842 ERROR   round 58      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:49:38,924 ERROR   round 59      56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:49:40,006 ERROR   round 60      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:49:41,088 ERROR   round 61      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:49:42,169 ERROR   round 62      56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:49:43,251 ERROR   round 63      56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:49:44,332 ERROR   round 64      56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:49:45,414 ERROR   round 65      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:49:46,495 ERROR   round 66      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:49:47,577 ERROR   round 67      56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:49:48,658 ERROR   round 68      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:49:49,740 ERROR   round 69      56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:49:50,821 ERROR   round 70      56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:49:51,903 ERROR   round 71      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:49:52,985 ERROR   round 72      56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:49:54,066 ERROR   round 73      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:49:55,148 ERROR   round 74      56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:49:56,229 ERROR   round 75      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:49:57,311 ERROR   round 76      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:49:58,392 ERROR   round 77      56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:49:59,474 ERROR   round 78      56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:50:00,555 ERROR   round 79      56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:50:01,637 ERROR   round 80      56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:50:02,718 ERROR   round 81      56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:50:03,800 ERROR   round 82      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:50:04,882 ERROR   round 83      56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:50:05,963 ERROR   round 84      56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:50:07,045 ERROR   round 85      56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:50:08,126 ERROR   round 86      56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:50:09,208 ERROR   round 87      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:50:10,289 ERROR   round 88      56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:50:11,371 ERROR   round 89      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:50:12,452 ERROR   round 90      56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:50:13,534 ERROR   round 91      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:50:14,615 ERROR   round 92      56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:50:15,697 ERROR   round 93      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:50:16,779 ERROR   round 94      56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:50:17,860 ERROR   round 95      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:50:18,942 ERROR   round 96      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:50:20,023 ERROR   round 97      56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:50:21,105 ERROR   round 98      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:50:22,187 ERROR   round 99      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:50:23,268 ERROR   round 100     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:50:24,350 ERROR   round 101     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:50:25,432 ERROR   round 102     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:50:26,513 ERROR   round 103     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:50:27,595 ERROR   round 104     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:50:28,676 ERROR   round 105     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:50:29,758 ERROR   round 106     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:50:30,839 ERROR   round 107     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:50:31,921 ERROR   round 108     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:50:33,003 ERROR   round 109     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:50:34,084 ERROR   round 110     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:50:35,166 ERROR   round 111     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:50:36,247 ERROR   round 112     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:50:37,329 ERROR   round 113     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:50:38,411 ERROR   round 114     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:50:39,492 ERROR   round 115     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:50:40,574 ERROR   round 116     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:50:41,655 ERROR   round 117     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:50:42,737 ERROR   round 118     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:50:43,818 ERROR   round 119     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:50:44,900 ERROR   round 120     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:50:45,981 ERROR   round 121     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:50:47,063 ERROR   round 122     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:50:48,145 ERROR   round 123     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:50:49,226 ERROR   round 124     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:50:50,308 ERROR   round 125     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:50:51,389 ERROR   round 126     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:50:52,471 ERROR   round 127     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:50:53,552 ERROR   round 128     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:50:54,634 ERROR   round 129     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:50:55,716 ERROR   round 130     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:50:56,797 ERROR   round 131     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:50:57,879 ERROR   round 132     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:50:58,961 ERROR   round 133     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:51:00,042 ERROR   round 134     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:51:01,124 ERROR   round 135     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:51:02,205 ERROR   round 136     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:51:03,287 ERROR   round 137     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:51:04,368 ERROR   round 138     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:51:05,450 ERROR   round 139     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:51:06,532 ERROR   round 140     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:51:07,613 ERROR   round 141     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:51:08,695 ERROR   round 142     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:51:09,776 ERROR   round 143     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:51:10,858 ERROR   round 144     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:51:11,940 ERROR   round 145     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:51:13,021 ERROR   round 146     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:51:14,103 ERROR   round 147     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:51:15,184 ERROR   round 148     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:51:16,266 ERROR   round 149     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:51:17,348 ERROR   round 150     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:51:18,429 ERROR   round 151     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:51:19,511 ERROR   round 152     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:51:20,592 ERROR   round 153     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:51:21,674 ERROR   round 154     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:51:22,756 ERROR   round 155     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:51:23,837 ERROR   round 156     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:51:24,919 ERROR   round 157     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:51:26,001 ERROR   round 158     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:51:27,082 ERROR   round 159     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:51:28,164 ERROR   round 160     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:51:29,245 ERROR   round 161     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:51:30,327 ERROR   round 162     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:51:31,408 ERROR   round 163     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:51:32,490 ERROR   round 164     56 B TIMEOUT after 81.8 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:51:33,572 ERROR   round 165     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:51:34,654 ERROR   round 166     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:51:35,735 ERROR   round 167     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:51:36,817 ERROR   round 168     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:51:37,898 ERROR   round 169     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:51:38,980 ERROR   round 170     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:51:40,062 ERROR   round 171     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:51:41,143 ERROR   round 172     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:51:42,225 ERROR   round 173     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:51:43,307 ERROR   round 174     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:51:44,389 ERROR   round 175     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:51:45,470 ERROR   round 176     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:51:46,552 ERROR   round 177     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:51:47,634 ERROR   round 178     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:51:48,715 ERROR   round 179     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:51:49,797 ERROR   round 180     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:51:50,878 ERROR   round 181     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:51:51,960 ERROR   round 182     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:51:53,041 ERROR   round 183     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:51:54,123 ERROR   round 184     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:51:55,205 ERROR   round 185     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:51:56,286 ERROR   round 186     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:51:57,368 ERROR   round 187     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:51:58,449 ERROR   round 188     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:51:59,531 ERROR   round 189     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:52:00,613 ERROR   round 190     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:52:01,694 ERROR   round 191     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:52:02,776 ERROR   round 192     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:52:03,857 ERROR   round 193     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:52:04,939 ERROR   round 194     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:52:06,020 ERROR   round 195     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:52:07,102 ERROR   round 196     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:52:08,184 ERROR   round 197     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:52:09,265 ERROR   round 198     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:52:10,347 ERROR   round 199     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:52:11,428 ERROR   round 200     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:52:12,510 ERROR   round 201     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:52:13,592 ERROR   round 202     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:52:14,673 ERROR   round 203     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:52:15,755 ERROR   round 204     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:52:16,836 ERROR   round 205     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:52:17,918 ERROR   round 206     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:52:19,000 ERROR   round 207     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:52:20,081 ERROR   round 208     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:52:21,163 ERROR   round 209     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:52:22,244 ERROR   round 210     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:52:23,326 ERROR   round 211     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:52:24,407 ERROR   round 212     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:52:25,489 ERROR   round 213     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:52:26,571 ERROR   round 214     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:52:27,652 ERROR   round 215     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:52:28,734 ERROR   round 216     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:52:29,815 ERROR   round 217     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:52:30,897 ERROR   round 218     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:52:31,979 ERROR   round 219     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:52:33,060 ERROR   round 220     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:52:34,142 ERROR   round 221     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:52:35,223 ERROR   round 222     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:52:36,305 ERROR   round 223     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:52:37,386 ERROR   round 224     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:52:38,468 ERROR   round 225     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:52:39,550 ERROR   round 226     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:52:40,631 ERROR   round 227     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:52:41,713 ERROR   round 228     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:52:42,794 ERROR   round 229     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:52:43,876 ERROR   round 230     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:52:44,958 ERROR   round 231     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:52:46,039 ERROR   round 232     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:52:47,121 ERROR   round 233     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:52:48,203 ERROR   round 234     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:52:49,284 ERROR   round 235     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:52:50,366 ERROR   round 236     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:52:51,447 ERROR   round 237     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:52:52,529 ERROR   round 238     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:52:53,610 ERROR   round 239     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:52:54,692 ERROR   round 240     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:52:55,774 ERROR   round 241     56 B TIMEOUT after 81.6 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:52:56,856 ERROR   round 242     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:52:57,938 ERROR   round 243     56 B TIMEOUT after 81.6 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:52:59,020 ERROR   round 244     56 B TIMEOUT after 81.6 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:53:00,101 ERROR   round 245     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:53:01,183 ERROR   round 246     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:53:02,265 ERROR   round 247     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:53:03,347 ERROR   round 248     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:53:04,429 ERROR   round 249     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:53:05,511 ERROR   round 250     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:53:06,592 ERROR   round 251     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:53:07,674 ERROR   round 252     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:53:08,756 ERROR   round 253     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:53:09,838 ERROR   round 254     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:53:10,920 ERROR   round 255     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:53:12,001 ERROR   round 256     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:53:13,083 ERROR   round 257     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:53:14,164 ERROR   round 258     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:53:15,246 ERROR   round 259     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:53:16,328 ERROR   round 260     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:53:17,409 ERROR   round 261     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:53:18,491 ERROR   round 262     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:53:19,573 ERROR   round 263     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:53:20,654 ERROR   round 264     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:53:21,736 ERROR   round 265     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:53:22,817 ERROR   round 266     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:53:23,899 ERROR   round 267     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:53:24,981 ERROR   round 268     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:53:26,063 ERROR   round 269     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:53:27,144 ERROR   round 270     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:53:28,226 ERROR   round 271     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:53:29,307 ERROR   round 272     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:53:30,389 ERROR   round 273     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:53:31,471 ERROR   round 274     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:53:32,552 ERROR   round 275     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:53:33,634 ERROR   round 276     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:53:34,715 ERROR   round 277     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:53:35,797 ERROR   round 278     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:53:36,879 ERROR   round 279     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:53:37,960 ERROR   round 280     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:53:39,042 ERROR   round 281     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:53:40,123 ERROR   round 282     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:53:41,205 ERROR   round 283     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:53:42,286 ERROR   round 284     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:53:43,368 ERROR   round 285     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:53:44,450 ERROR   round 286     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:53:45,531 ERROR   round 287     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:53:46,613 ERROR   round 288     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:53:47,695 ERROR   round 289     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:53:48,777 ERROR   round 290     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:53:49,858 ERROR   round 291     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:53:50,940 ERROR   round 292     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:53:52,021 ERROR   round 293     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:53:53,103 ERROR   round 294     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:53:54,185 ERROR   round 295     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:53:55,266 ERROR   round 296     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:53:56,348 ERROR   round 297     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:53:57,429 ERROR   round 298     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:53:58,511 ERROR   round 299     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:53:59,593 ERROR   round 300     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:54:00,674 ERROR   round 301     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:54:01,756 ERROR   round 302     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:54:02,837 ERROR   round 303     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:54:03,919 ERROR   round 304     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:54:05,001 ERROR   round 305     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:54:06,082 ERROR   round 306     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:54:07,164 ERROR   round 307     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:54:08,246 ERROR   round 308     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:54:09,327 ERROR   round 309     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:54:10,409 ERROR   round 310     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:54:11,490 ERROR   round 311     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:54:12,572 ERROR   round 312     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:54:13,654 ERROR   round 313     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:54:14,735 ERROR   round 314     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:54:15,817 ERROR   round 315     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:54:16,898 ERROR   round 316     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:54:17,980 ERROR   round 317     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:54:19,061 ERROR   round 318     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:54:20,143 ERROR   round 319     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:54:21,224 ERROR   round 320     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:54:22,306 ERROR   round 321     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:54:23,388 ERROR   round 322     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:54:24,469 ERROR   round 323     56 B TIMEOUT after 81.6 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:54:25,551 ERROR   round 324     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:54:26,633 ERROR   round 325     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:54:27,715 ERROR   round 326     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:54:28,796 ERROR   round 327     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:54:29,878 ERROR   round 328     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:54:30,960 ERROR   round 329     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:54:32,041 ERROR   round 330     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:54:33,123 ERROR   round 331     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:54:34,205 ERROR   round 332     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:54:35,286 ERROR   round 333     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:54:36,368 ERROR   round 334     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:54:37,449 ERROR   round 335     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:54:38,531 ERROR   round 336     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:54:39,612 ERROR   round 337     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:54:40,694 ERROR   round 338     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:54:41,776 ERROR   round 339     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:54:42,857 ERROR   round 340     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:54:43,939 ERROR   round 341     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:54:45,020 ERROR   round 342     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:54:46,102 ERROR   round 343     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:54:47,184 ERROR   round 344     56 B TIMEOUT after 81.6 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:54:48,265 ERROR   round 345     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:54:49,347 ERROR   round 346     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:54:50,428 ERROR   round 347     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:54:51,510 ERROR   round 348     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:54:52,592 ERROR   round 349     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:54:53,673 ERROR   round 350     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:54:54,755 ERROR   round 351     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:54:55,836 ERROR   round 352     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:54:56,918 ERROR   round 353     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:54:58,000 ERROR   round 354     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:54:59,081 ERROR   round 355     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:55:00,163 ERROR   round 356     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:55:01,244 ERROR   round 357     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:55:02,326 ERROR   round 358     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:55:03,408 ERROR   round 359     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:55:04,489 ERROR   round 360     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:55:05,571 ERROR   round 361     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:55:06,655 ERROR   round 362     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:55:07,736 ERROR   round 363     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:55:08,818 ERROR   round 364     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:55:09,899 ERROR   round 365     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:55:10,981 ERROR   round 366     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:55:12,063 ERROR   round 367     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:55:13,144 ERROR   round 368     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:55:14,226 ERROR   round 369     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:55:15,307 ERROR   round 370     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:55:16,389 ERROR   round 371     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:55:17,471 ERROR   round 372     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:55:18,552 ERROR   round 373     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:55:19,634 ERROR   round 374     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:55:20,716 ERROR   round 375     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:55:21,798 ERROR   round 376     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:55:22,880 ERROR   round 377     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:55:23,961 ERROR   round 378     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:55:25,043 ERROR   round 379     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:55:26,125 ERROR   round 380     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:55:27,206 ERROR   round 381     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:55:28,288 ERROR   round 382     56 B TIMEOUT after 81.6 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:55:29,369 ERROR   round 383     56 B TIMEOUT after 81.2 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:55:30,451 ERROR   round 384     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:55:31,533 ERROR   round 385     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:55:32,614 ERROR   round 386     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:55:33,696 ERROR   round 387     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:55:34,778 ERROR   round 388     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:55:35,859 ERROR   round 389     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:55:36,941 ERROR   round 390     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:55:38,023 ERROR   round 391     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:55:39,104 ERROR   round 392     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:55:40,186 ERROR   round 393     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:55:41,268 ERROR   round 394     56 B TIMEOUT after 81.6 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:55:42,349 ERROR   round 395     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:55:43,431 ERROR   round 396     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:55:44,513 ERROR   round 397     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:55:45,594 ERROR   round 398     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:55:46,676 ERROR   round 399     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:55:47,757 ERROR   round 400     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:55:48,839 ERROR   round 401     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:55:49,921 ERROR   round 402     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:55:51,003 ERROR   round 403     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:55:52,084 ERROR   round 404     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:55:53,166 ERROR   round 405     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:55:54,247 ERROR   round 406     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:55:55,329 ERROR   round 407     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:55:56,411 ERROR   round 408     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:55:57,492 ERROR   round 409     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:55:58,574 ERROR   round 410     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:55:59,655 ERROR   round 411     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:56:00,737 ERROR   round 412     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:56:01,818 ERROR   round 413     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:56:02,900 ERROR   round 414     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:56:03,982 ERROR   round 415     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:56:05,063 ERROR   round 416     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:56:06,145 ERROR   round 417     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:56:07,226 ERROR   round 418     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:56:08,308 ERROR   round 419     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:56:09,389 ERROR   round 420     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:56:10,471 ERROR   round 421     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:56:11,552 ERROR   round 422     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:56:12,634 ERROR   round 423     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:56:13,716 ERROR   round 424     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:56:14,797 ERROR   round 425     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:56:15,879 ERROR   round 426     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:56:16,960 ERROR   round 427     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:56:18,042 ERROR   round 428     56 B TIMEOUT after 81.8 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:56:19,124 ERROR   round 429     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:56:20,206 ERROR   round 430     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:56:21,287 ERROR   round 431     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:56:22,369 ERROR   round 432     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:56:23,450 ERROR   round 433     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:56:24,532 ERROR   round 434     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:56:25,613 ERROR   round 435     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:56:26,695 ERROR   round 436     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:56:27,777 ERROR   round 437     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:56:28,858 ERROR   round 438     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:56:29,940 ERROR   round 439     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:56:31,022 ERROR   round 440     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:56:32,103 ERROR   round 441     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:56:33,185 ERROR   round 442     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:56:34,266 ERROR   round 443     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:56:35,348 ERROR   round 444     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:56:36,430 ERROR   round 445     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:56:37,511 ERROR   round 446     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:56:38,593 ERROR   round 447     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:56:39,674 ERROR   round 448     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:56:40,756 ERROR   round 449     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:56:41,837 ERROR   round 450     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:56:42,919 ERROR   round 451     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:56:44,001 ERROR   round 452     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:56:45,082 ERROR   round 453     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:56:46,164 ERROR   round 454     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:56:47,245 ERROR   round 455     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:56:48,327 ERROR   round 456     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:56:49,409 ERROR   round 457     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:56:50,491 ERROR   round 458     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:56:51,572 ERROR   round 459     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:56:52,654 ERROR   round 460     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:56:53,736 ERROR   round 461     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:56:54,818 ERROR   round 462     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:56:55,899 ERROR   round 463     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:56:56,981 ERROR   round 464     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:56:58,062 ERROR   round 465     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:56:59,144 ERROR   round 466     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:57:00,226 ERROR   round 467     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:57:01,307 ERROR   round 468     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:57:02,389 ERROR   round 469     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:57:03,470 ERROR   round 470     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:57:04,552 ERROR   round 471     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:57:05,634 ERROR   round 472     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:57:06,715 ERROR   round 473     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:57:07,797 ERROR   round 474     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:57:08,878 ERROR   round 475     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:57:09,960 ERROR   round 476     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:57:11,041 ERROR   round 477     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:57:12,123 ERROR   round 478     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:57:13,205 ERROR   round 479     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:57:14,286 ERROR   round 480     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:57:15,368 ERROR   round 481     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:57:16,449 ERROR   round 482     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:57:17,531 ERROR   round 483     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:57:18,612 ERROR   round 484     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:57:19,694 ERROR   round 485     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:57:20,776 ERROR   round 486     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:57:21,857 ERROR   round 487     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:57:22,939 ERROR   round 488     56 B TIMEOUT after 81.7 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:57:24,021 ERROR   round 489     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:57:25,102 ERROR   round 490     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:57:26,184 ERROR   round 491     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:57:27,265 ERROR   round 492     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:57:28,347 ERROR   round 493     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:57:29,429 ERROR   round 494     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:57:30,510 ERROR   round 495     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:57:31,592 ERROR   round 496     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:57:32,674 ERROR   round 497     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:57:33,756 ERROR   round 498     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:57:34,838 ERROR   round 499     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:57:35,919 ERROR   round 500     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:57:37,001 ERROR   round 501     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:57:38,083 ERROR   round 502     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:57:39,164 ERROR   round 503     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:57:40,246 ERROR   round 504     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:57:41,327 ERROR   round 505     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:57:42,409 ERROR   round 506     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:57:43,490 ERROR   round 507     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:57:44,572 ERROR   round 508     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:57:45,654 ERROR   round 509     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:57:46,735 ERROR   round 510     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:57:47,817 ERROR   round 511     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:57:48,899 ERROR   round 512     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:57:49,980 ERROR   round 513     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:57:51,062 ERROR   round 514     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:57:52,143 ERROR   round 515     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:57:53,225 ERROR   round 516     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:57:54,306 ERROR   round 517     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:57:55,388 ERROR   round 518     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:57:56,470 ERROR   round 519     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:57:57,551 ERROR   round 520     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:57:58,633 ERROR   round 521     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:57:59,714 ERROR   round 522     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:58:00,796 ERROR   round 523     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:58:01,878 ERROR   round 524     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:58:02,959 ERROR   round 525     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:58:04,041 ERROR   round 526     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:58:05,122 ERROR   round 527     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:58:06,204 ERROR   round 528     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:58:07,316 ERROR   round 529     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:58:08,398 ERROR   round 530     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:58:09,479 ERROR   round 531     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:58:10,561 ERROR   round 532     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:58:11,643 ERROR   round 533     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:58:12,724 ERROR   round 534     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:58:13,806 ERROR   round 535     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:58:14,888 ERROR   round 536     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:58:15,970 ERROR   round 537     56 B TIMEOUT after 81.7 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:58:17,051 ERROR   round 538     56 B TIMEOUT after 81.6 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:58:18,133 ERROR   round 539     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:58:19,215 ERROR   round 540     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:58:20,297 ERROR   round 541     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:58:21,379 ERROR   round 542     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:58:22,461 ERROR   round 543     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:58:23,543 ERROR   round 544     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:58:24,624 ERROR   round 545     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:58:25,706 ERROR   round 546     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:58:26,788 ERROR   round 547     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:58:27,870 ERROR   round 548     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:58:28,951 ERROR   round 549     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:58:30,033 ERROR   round 550     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:58:31,115 ERROR   round 551     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:58:32,197 ERROR   round 552     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:58:33,279 ERROR   round 553     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:58:34,361 ERROR   round 554     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:58:35,442 ERROR   round 555     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:58:36,524 ERROR   round 556     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:58:37,606 ERROR   round 557     56 B TIMEOUT after 81.6 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:58:38,688 ERROR   round 558     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:58:39,770 ERROR   round 559     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:58:40,851 ERROR   round 560     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:58:41,933 ERROR   round 561     56 B TIMEOUT after 81.6 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:58:43,015 ERROR   round 562     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:58:44,097 ERROR   round 563     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:58:45,178 ERROR   round 564     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:58:46,260 ERROR   round 565     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:58:47,342 ERROR   round 566     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:58:48,423 ERROR   round 567     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:58:49,505 ERROR   round 568     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:58:50,587 ERROR   round 569     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:58:51,668 ERROR   round 570     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:58:52,750 ERROR   round 571     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:58:53,832 ERROR   round 572     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:58:54,913 ERROR   round 573     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:58:55,995 ERROR   round 574     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:58:57,077 ERROR   round 575     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:58:58,158 ERROR   round 576     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:58:59,240 ERROR   round 577     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:59:00,321 ERROR   round 578     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:59:01,403 ERROR   round 579     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:59:02,485 ERROR   round 580     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:59:03,566 ERROR   round 581     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:59:04,648 ERROR   round 582     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:59:05,730 ERROR   round 583     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:59:06,811 ERROR   round 584     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:59:07,893 ERROR   round 585     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:59:08,975 ERROR   round 586     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:59:10,057 ERROR   round 587     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:59:11,138 ERROR   round 588     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:59:12,220 ERROR   round 589     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:59:13,302 ERROR   round 590     56 B TIMEOUT after 81.6 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:59:14,383 ERROR   round 591     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:59:15,465 ERROR   round 592     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:59:16,547 ERROR   round 593     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:59:17,628 ERROR   round 594     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:59:18,710 ERROR   round 595     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:59:19,792 ERROR   round 596     56 B TIMEOUT after 81.6 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:59:20,874 ERROR   round 597     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:59:21,955 ERROR   round 598     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:59:23,037 ERROR   round 599     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:59:24,118 ERROR   round 600     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:59:25,200 ERROR   round 601     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:59:26,282 ERROR   round 602     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:59:27,363 ERROR   round 603     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:59:28,445 ERROR   round 604     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:59:29,526 ERROR   round 605     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:59:30,608 ERROR   round 606     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:59:31,689 ERROR   round 607     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:59:32,771 ERROR   round 608     56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:59:33,853 ERROR   round 609     56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-15 15:59:34,934 ERROR   round 610     56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                2026-08-16 22:26:18,996 INFO  port /dev/serial/by-id/usb-Prolific_Technology_Inc._USB-Serial_Controller_D-if00-port0
+2026-08-16 22:26:18,996 INFO  repeat mode: /dev/serial/by-id/usb-Prolific_Technology_Inc._USB-Serial_Controller_D-if00-port0 @ 115200 baud, 56 B every 1.0 s, 20 rounds
+2026-08-16 22:26:18,997 INFO  port opened
+2026-08-16 22:26:19,079 ERROR   round 1       56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-16 22:26:20,160 ERROR   round 2       56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-16 22:26:21,242 ERROR   round 3       56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-16 22:26:22,323 ERROR   round 4       56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-16 22:26:23,405 ERROR   round 5       56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-16 22:26:24,486 ERROR   round 6       56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-16 22:26:25,568 ERROR   round 7       56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-16 22:26:26,649 ERROR   round 8       56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-16 22:26:27,731 ERROR   round 9       56 B TIMEOUT after 81.7 ms (limit 81.1 ms) - 0 bytes back
+2026-08-16 22:26:28,813 ERROR   round 10      56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-16 22:26:29,894 ERROR   round 11      56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-16 22:26:30,976 ERROR   round 12      56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-16 22:26:32,058 ERROR   round 13      56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-16 22:26:33,139 ERROR   round 14      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-16 22:26:34,221 ERROR   round 15      56 B TIMEOUT after 81.5 ms (limit 81.1 ms) - 0 bytes back
+2026-08-16 22:26:35,303 ERROR   round 16      56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-16 22:26:36,384 ERROR   round 17      56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-16 22:26:37,466 ERROR   round 18      56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-16 22:26:38,547 ERROR   round 19      56 B TIMEOUT after 81.2 ms (limit 81.1 ms) - 0 bytes back
+2026-08-16 22:26:39,629 ERROR   round 20      56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-16 22:26:40,742 INFO  RESULT: 0/20 rounds echoed - NO loopback
+2026-08-16 22:38:05,895 INFO  port /dev/serial/by-id/usb-Prolific_Technology_Inc._USB-Serial_Controller_D-if00-port0
+2026-08-16 22:38:05,895 INFO  baud 9600
+2026-08-16 22:38:06,305 ERROR   counting     256 B TIMEOUT after 409.2 ms (limit 408.3 ms) - 0 bytes back
+2026-08-16 22:38:06,464 ERROR   alternating   64 B TIMEOUT after 158.6 ms (limit 158.3 ms) - 0 bytes back
+2026-08-16 22:38:06,612 ERROR   ascii         56 B TIMEOUT after 148.2 ms (limit 147.9 ms) - 0 bytes back
+2026-08-16 22:38:06,886 INFO  baud 115200
+2026-08-16 22:38:06,991 ERROR   counting     256 B TIMEOUT after 103.3 ms (limit 102.8 ms) - 0 bytes back
+2026-08-16 22:38:07,073 ERROR   alternating   64 B TIMEOUT after 82.2 ms (limit 81.9 ms) - 0 bytes back
+2026-08-16 22:38:07,154 ERROR   ascii         56 B TIMEOUT after 81.3 ms (limit 81.1 ms) - 0 bytes back
+2026-08-16 22:38:07,262 INFO  baud 921600
+2026-08-16 22:38:07,343 ERROR   counting     256 B TIMEOUT after 79.0 ms (limit 78.5 ms) - 0 bytes back
+2026-08-16 22:38:07,419 ERROR   alternating   64 B TIMEOUT after 76.1 ms (limit 75.9 ms) - 0 bytes back
+2026-08-16 22:38:07,495 ERROR   ascii         56 B TIMEOUT after 76.0 ms (limit 75.8 ms) - 0 bytes back
+2026-08-16 22:38:07,606 INFO  RESULT: NO loopback - nothing echoed at any baud
+2026-08-16 22:38:15,460 INFO  port /dev/serial/by-id/usb-Prolific_Technology_Inc._USB-Serial_Controller_D-if00-port0
+2026-08-16 22:38:15,460 INFO  baud 115200
+2026-08-16 22:38:15,565 ERROR   counting     256 B TIMEOUT after 103.3 ms (limit 102.8 ms) - 0 bytes back
+2026-08-16 22:38:15,647 ERROR   alternating   64 B TIMEOUT after 82.2 ms (limit 81.9 ms) - 0 bytes back
+2026-08-16 22:38:15,728 ERROR   ascii         56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-16 22:38:15,854 INFO    RTS -> CTS: does not follow (not connected)
+2026-08-16 22:38:15,979 INFO    DTR -> DSR: does not follow (not connected)
+2026-08-16 22:38:16,104 INFO    DTR -> CD: does not follow (not connected)
+2026-08-16 22:38:16,214 INFO  RESULT: NO loopback - nothing echoed at any baud
+2026-08-18 08:29:49,064 INFO  port /dev/serial/by-id/usb-Prolific_Technology_Inc._USB-Serial_Controller_D-if00-port0
+2026-08-18 08:29:49,074 INFO  repeat mode: /dev/serial/by-id/usb-Prolific_Technology_Inc._USB-Serial_Controller_D-if00-port0 @ 115200 baud, 56 B every 1.0 s, 3 rounds
+2026-08-18 08:29:49,077 INFO  port opened
+2026-08-18 08:29:49,161 ERROR   round 1       56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-18 08:29:50,243 ERROR   round 2       56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-18 08:29:51,327 ERROR   round 3       56 B TIMEOUT after 81.4 ms (limit 81.1 ms) - 0 bytes back
+2026-08-18 08:29:52,439 INFO  RESULT: 0/3 rounds echoed - NO loopback

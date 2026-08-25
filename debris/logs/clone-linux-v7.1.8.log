@@ -1,0 +1,21 @@
+Cloning into '/mnt/2tb/unvr-port-refs/linux-v7.1.8'...
+warning: refs/tags/v7.1.8 1af9bbf117b680f903a81485cd74501c334bf538 is not a commit!
+Note: switching to '25c76bea853d0db65b51fb4697a47cbfd9e35e76'.
+
+You are in 'detached HEAD' state. You can look around, make experimental
+changes and commit them, and you can discard any commits you make in this
+state without impacting any branches by switching back to a branch.
+
+If you want to create a new branch to retain commits you create, you may
+do so (now or later) by using -c with the switch command. Example:
+
+  git switch -c <new-branch-name>
+
+Or undo this operation with:
+
+  git switch -
+
+Turn off this advice by setting config variable advice.detachedHead to false
+
+Updating files:  39% (37432/93715)Updating files:  40% (37486/93715)Updating files:  41% (38424/93715)Updating files:  42% (39361/93715)Updating files:  43% (40298/93715)Updating files:  44% (41235/93715)Updating files:  45% (42172/93715)Updating files:  46% (43109/93715)Updating files:  47% (44047/93715)Updating files:  48% (44984/93715)Updating files:  49% (45921/93715)Updating files:  50% (46858/93715)Updating files:  51% (47795/93715)Updating files:  52% (48732/93715)Updating files:  53% (49669/93715)Updating files:  54% (50607/93715)Updating files:  55% (51544/93715)Updating files:  56% (52481/93715)Updating files:  57% (53418/93715)Updating files:  58% (54355/93715)Updating files:  59% (55292/93715)Updating files:  60% (56229/93715)Updating files:  61% (57167/93715)Updating files:  62% (58104/93715)Updating files:  63% (59041/93715)Updating files:  64% (59978/93715)Updating files:  65% (60915/93715)Updating files:  66% (61852/93715)Updating files:  67% (62790/93715)Updating files:  68% (63727/93715)Updating files:  69% (64664/93715)Updating files:  70% (65601/93715)Updating files:  71% (66538/93715)Updating files:  72% (67475/93715)Updating files:  72% (67731/93715)Updating files:  73% (68412/93715)Updating files:  74% (69350/93715)Updating files:  75% (70287/93715)Updating files:  76% (71224/93715)Updating files:  77% (72161/93715)Updating files:  78% (73098/93715)Updating files:  79% (74035/93715)Updating files:  80% (74972/93715)Updating files:  81% (75910/93715)Updating files:  82% (76847/93715)Updating files:  83% (77784/93715)Updating files:  84% (78721/93715)Updating files:  85% (79658/93715)Updating files:  86% (80595/93715)Updating files:  87% (81533/93715)Updating files:  88% (82470/93715)Updating files:  89% (83407/93715)Updating files:  90% (84344/93715)Updating files:  91% (85281/93715)Updating files:  92% (86218/93715)Updating files:  93% (87155/93715)Updating files:  94% (88093/93715)Updating files:  95% (89030/93715)Updating files:  96% (89967/93715)Updating files:  97% (90904/93715)Updating files:  98% (91841/93715)Updating files:  99% (92778/93715)Updating files: 100% (93715/93715)Updating files: 100% (93715/93715), done.
+V718_EXIT=0

@@ -1,0 +1,15 @@
+2026-08-15 15:43:00,660 port /dev/serial/by-id/usb-Prolific_Technology_Inc._USB-Serial_Controller_D-if00-port0
+2026-08-15 15:43:00,660 sent 56 B: b'The quick brown fox jumps over the lazy dog 0123456789\r\n'
+2026-08-15 15:43:00,660    baud   got ratio  first 16 bytes back
+2026-08-15 15:43:02,641    1200     0     -  nothing back
+2026-08-15 15:43:03,795    2400     0     -  nothing back
+2026-08-15 15:43:04,512    4800     0     -  nothing back
+2026-08-15 15:43:05,010    9600     0     -  nothing back
+2026-08-15 15:43:05,399   19200     0     -  nothing back
+2026-08-15 15:43:05,732   38400     0     -  nothing back
+2026-08-15 15:43:06,046   57600     0     -  nothing back
+2026-08-15 15:43:06,343  115200     0     -  nothing back
+2026-08-15 15:43:06,630  230400     0     -  nothing back
+2026-08-15 15:43:06,913  460800     0     -  nothing back
+2026-08-15 15:43:07,194  921600     0     -  nothing back
+2026-08-15 15:43:07,245 RESULT: no baud gave a clean echo

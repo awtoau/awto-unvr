@@ -1,0 +1,11 @@
+15:23:10.270870+1000  ERROR [dev.py] tcl: unknown command: exit
+
+=== AT-STOCK-UBOOT ===
+ gpio
+gpio - query and control gpio pins
+
+Usage:
+gpio <input|set|clear|toggle> <pin>
+    - input/set/clear/toggle the specified pin
+gpio status [-a] [<bank> | <pin>]  - show [all/claimed] GPIOs
+ALPINE_UBNT_NAS_ALL>

@@ -1,0 +1,84 @@
+2026-08-17T14:54:29+10:00  serving /mnt/2tb/unvr-port-refs/build-out-71-fedora/modroot/lib/modules/7.1.8-dirty/extra on 192.168.25.145:8099
+2026-08-17T14:55:00+10:00  logged in
+2026-08-17T14:55:04+10:00    kernel: rc=1
+2026-08-17T14:55:04+10:00    device kver: 7.1.8-dirty
+2026-08-17T14:55:28+10:00    TIMEOUT: ping selwyn (20s)
+ping -c1 -W2 192.168.25.145 >/dev/null 2>&1; echo @@RC=$?@@
+syntax error
+ALPINE_UBNT_NAS_ALL> 
+2026-08-17T14:57:22+10:00  serving /mnt/2tb/unvr-port-refs/build-out-71-fedora/modroot/lib/modules/7.1.8-dirty/extra on 192.168.25.145:8099
+2026-08-17T14:57:24+10:00  logged in
+2026-08-17T14:57:24+10:00    kernel: rc=0
+2026-08-17T14:57:24+10:00    device kver: 7.1.8-dirty
+2026-08-17T14:57:24+10:00    ping selwyn: rc=0
+2026-08-17T14:57:24+10:00    ensure extra dir: rc=0
+2026-08-17T14:57:24+10:00    backup al_eth.ko: rc=0
+2026-08-17T14:57:25+10:00    fetch al_eth.ko: rc=0
+2026-08-17T14:57:49+10:00    TIMEOUT: install al_eth.ko (20s)
+mv /lib/modules/7.1.8-dirty/extra/al_eth.ko.new /lib/modules/7.1.8-dirty/extra/al_eth.ko; echo @@RC=$?@@
+[?2004l]3008;start=18b5338d-77cd-41a2-997e-5e01a32b8de3;machineid=f17fe72bf4de4483a0dd32963f8c0f4c;user=root;hostname=fedora;bootid=c9220290-3e41-41a0-8f98-5726683ccc21;pid=00000000000000000455;type=command;cwd=/root\mv: overwrite '/lib/modules/7.1.8-dirty/extra/al_eth.ko'? 
+2026-08-17T14:58:45+10:00  serving /mnt/2tb/unvr-port-refs/build-out-71-fedora/modroot/lib/modules/7.1.8-dirty/extra on 192.168.25.145:8099
+2026-08-17T14:59:17+10:00  logged in
+2026-08-17T14:59:17+10:00    kernel: rc=0
+2026-08-17T14:59:17+10:00    device kver: 7.1.8-dirty
+2026-08-17T14:59:17+10:00    ping selwyn: rc=0
+2026-08-17T14:59:17+10:00    ensure extra dir: rc=0
+2026-08-17T14:59:17+10:00    backup al_eth.ko: rc=0
+2026-08-17T14:59:18+10:00    fetch al_eth.ko: rc=0
+2026-08-17T14:59:18+10:00    install al_eth.ko: rc=0
+2026-08-17T14:59:18+10:00    backup al_ssm.ko: rc=0
+2026-08-17T14:59:19+10:00    fetch al_ssm.ko: rc=0
+2026-08-17T14:59:19+10:00    install al_ssm.ko: rc=0
+2026-08-17T14:59:22+10:00    depmod: rc=0
+2026-08-17T14:59:22+10:00    clear dmesg: rc=0
+2026-08-17T14:59:22+10:00    rmmod al_ssm: rc=0
+2026-08-17T14:59:23+10:00    modprobe al_ssm: rc=0
+2026-08-17T14:59:23+10:00    al_ssm dmesg: rc=0
+2026-08-17T14:59:23+10:00  === al_ssm (#50): no self-test failure seen ===
+dmesg | grep -iE 'al.?ssm|xts|skcipher|self-test' | tail -30; echo @@RC=$?@@
+[?2004l]3008;start=bd65dfd5-312a-480a-954a-3b7d89a5af7b;machineid=f17fe72bf4de4483a0dd32963f8c0f4c;user=root;hostname=fedora;bootid=c9220290-3e41-41a0-8f98-5726683ccc21;pid=00000000000000000455;type=command;cwd=/root\[  163.145906] al_ssm 0000:00:04.0: al-internal-pcie: SMCC snoop configured (slot 4, all 4 sub-masters)
+[  163.156069] al_ssm 0000:00:04.0: of_irq_parse_pci: failed with rc=-22
+[  163.163854] al_ssm 0000:00:04.0: Alpine V2 SSM crypto engine found (vendor=1c36 dev=0022 class=100000 rev=2)
+[  163.175084] al_ssm 0000:00:04.0: BAR0=[mem 0xfe080000-0xfe09ffff 64bit] mapped at 000000001058eb32, BAR4=[mem 0xfe0a0000-0xfe0affff 64bit] mapped at 00000000e95c0868
+[  163.191218] al_ssm_dma_init_aux: non optimal adapter configuration
+[  163.220221]  al_iofic_config+0x40/0x80 [al_ssm]
+[  163.220263]  al_udma_iofic_m2s_error_ints_unmask+0x4c/0x120 [al_ssm]
+[  163.220297]  al_udma_init+0x13c/0x3e0 [al_ssm]
+[  163.220329]  al_m2m_udma_init+0x78/0x160 [al_ssm]
+[  163.220361]  al_ssm_dma_init_aux+0xac/0x260 [al_ssm]
+[  163.220393]  al_ssm_dma_init+0x30/0x88 [al_ssm]
+[  163.220424]  al_ssm_pci_probe+0x29c/0x3c0 [al_ssm]
+[  163.220516]  al_ssm_pci_driver_init+0x30/0xfd0 [al_ssm]
+[  163.416823]  al_iofic_abort_mask_clear+0x44/0x98 [al_ssm]
+[  163.416864]  al_udma_iofic_m2s_error_ints_unmask+0x78/0x120 [al_ssm]
+[  163.416897]  al_udma_init+0x13c/0x3e0 [al_ssm]
+[  163.416929]  al_m2m_udma_init+0x78/0x160 [al_ssm]
+[  163.416962]  al_ssm_dma_init_aux+0xac/0x260 [al_ssm]
+[  163.416993]  al_ssm_dma_init+0x30/0x88 [al_ssm]
+[  163.417023]  al_ssm_pci_probe+0x29c/0x3c0 [al_ssm]
+[  163.417113]  al_ssm_pci_driver_init+0x30/0xfd0 [al_ssm]
+[  163.614062]  al_iofic_unmask+0x48/0x80 [al_ssm]
+[  163.614104]  al_udma_iofic_m2s_error_ints_unmask+0x9c/0x120 [al_ssm]
+[  163.614137]  al_udma_init+0x13c/0x3e0 [al_ssm]
+[  163.614170]  al_m2m_udma_init+0x78/0x160 [al_ssm]
+[  163.614202]  al_ssm_dma_init_aux+0xac/0x260 [al_ssm]
+[  163.614233]  al_ssm_dma_init+0x30/0x88 [al_ssm]
+[  163.614265]  al_ssm_pci_probe+0x29c/0x3c0 [al_ssm]
+[  163.614354]  al_ssm_pci_driver_init+0x30/0xfd0 [al_ssm]
+[  163.793275] al_ssm 0000:00:04.0: Alpine V2 SSM crypto engine initialized: AES-XTS, AES-CBC (async, ring 256, max 64 in-flight, separate completion rings)
+@@RC=0@@
+2026-08-17T14:59:23+10:00    clear dmesg: rc=0
+2026-08-17T14:59:24+10:00    rmmod al_eth (drops net): rc=0
+2026-08-17T15:00:08+10:00    TIMEOUT: modprobe al_eth (40s)
+nvoke_syscall.constprop.0+0xac/0x110
+[  164.957697]  el0_svc_common.constprop.0+0x40/0xf0
+[  164.957702]  do_el0_svc+0x24/0x40
+[  164.957708]  el0_svc+0x40/0x198
+[  164.957713]  el0t_64_sync_handler+0xa0/0xf0
+[  164.957718]  el0t_64_sync+0x1b0/0x1b8
+[  164.957723] SMP: stopping secondary CPUs
+[  164.957735] Kernel Offset: 0x80000 from 0xffff800080000000
+[  164.957738] PHYS_OFFSET: 0x0
+[  164.957740] CPU features: 0x04000000,800f0008,00040001,0400421b
+[  164.957744] Memory Limit: none
+

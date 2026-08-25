@@ -1,0 +1,16 @@
+ go 0x1100000
+## Starting application at 0x01100000 ...
+
+
+U-Boot 2026.07-dirty (Aug 19 2026 - 08:19:02 +1000)
+
+Model: Ubiquiti UNVR (Annapurna Labs Alpine V2 AL-324)
+DRAM:  3 GiB (total 4 GiB)
+Core:  33 devices, 12 uclasses, devicetree: separate
+MMC:   
+Loading Environment from nowhere... OK
+In:    serial@fd883000
+Out:   serial@fd883000
+Err:   serial@fd883000
+unvr#
+=== DONE ===

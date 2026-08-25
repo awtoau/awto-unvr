@@ -1,0 +1,36 @@
+2026-08-16T22:37:18+10:00  streaming ESC — REBOOT/POWER-CYCLE woomera now
+2026-08-16T22:40:18+10:00  did not reach U-Boot prompt
+2026-08-16T22:40:48+10:00  streaming ESC — REBOOT/POWER-CYCLE woomera now
+2026-08-16T22:41:56+10:00  ESC send failed: timed out
+2026-08-16T22:45:39+10:00  streaming ESC — REBOOT/POWER-CYCLE woomera now (waiting up to 1800s)
+2026-08-16T22:45:42+10:00  ESC send failed: timed out
+2026-08-16T22:46:29+10:00  streaming ESC — REBOOT/POWER-CYCLE woomera now (waiting up to 1800s)
+2026-08-16T23:16:29+10:00  did not reach U-Boot prompt
+2026-08-16T23:17:42+10:00  streaming ESC — REBOOT/POWER-CYCLE woomera now (waiting up to 3600s)
+2026-08-16T23:48:19+10:00  streaming ESC — REBOOT/POWER-CYCLE woomera now (waiting up to 300s)
+2026-08-16T23:48:19+10:00  U-Boot prompt reached
+2026-08-16T23:48:19+10:00  ORIGINAL bootcmd:
+ printenv bootcmd
+bootcmd=cp.b $fdtaddr $loadaddr_dt 7ffc; fdt addr $loadaddr_dt; fdt rm /soc/nand-flash/partition@1; run loadbootargs; run multiboot
+ALPINE_UBNT_NAS_ALL>
+2026-08-16T23:48:20+10:00  scsi init output:
+ scsi init
+
+Init SCSI
+SATA link 0 timeout.
+SATA link 1 timeout.
+SATA link 2 timeout.
+SATA link 3 timeout.
+AHCI 0001.0300 32 slots 4 ports 6 Gbps 0xf impl SATA mode
+flags: 64bit ncq stag pm led clo only pmp fbss pio slum part ccc apst 
+scanning bus for devices...
+Found 0 device(s).
+ALPINE_UBNT_NAS_ALL> 
+2026-08-16T23:48:21+10:00  saveenv output:
+saveenv
+Saving Environment to SPI Flash...
+SF: Detected MX25U25635F with page size 256 Bytes, erase size 4 KiB, total 32 MiB
+Erasing SPI flash...Writing to SPI flash...done
+Valid environment: 1
+ALPINE_UBNT_NAS_ALL>
+2026-08-16T23:48:21+10:00  DONE — bootcmd set + saved. Run 'boot' or reset to verify standalone boot.

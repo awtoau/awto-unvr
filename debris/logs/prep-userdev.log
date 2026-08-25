@@ -1,0 +1,28 @@
+2026-08-15T16:08:10+10:00  INFO  USB block devices:
+2026-08-15T16:08:10+10:00  INFO    /dev/sdc           3182592 B  STLINK                 serial=005600343431511837393330
+2026-08-15T16:08:10+10:00  INFO    /dev/sdd        7927234560 B  UF3 8GB                serial=07190176402AEE98 [DENYLISTED]
+2026-08-15T16:08:10+10:00  INFO    /dev/sde       63233327104 B  SanDisk Ultra          serial=A20043FE1501C484
+2026-08-15T16:08:10+10:00  WARN  give --serial to select a target
+2026-08-15T16:08:20+10:00  INFO  target : /dev/sde  (SanDisk Ultra, serial A20043FE1501C484, 63233327104 B)
+2026-08-15T16:08:20+10:00  INFO  plan   : wipefs -a, then mkfs.ext4 across the WHOLE device (no partition table)
+2026-08-15T16:08:20+10:00  WARN  dry run - pass --yes to proceed
+2026-08-15T16:59:24+10:00  INFO  target : /dev/sde  (SanDisk Ultra, serial A20043FE1501C484, 63233327104 B)
+2026-08-15T16:59:24+10:00  INFO  plan   : wipefs -a, then mkfs.ext4 across the WHOLE device (no partition table)
+2026-08-15T16:59:24+10:00  INFO  run: wipefs -a /dev/sde
+2026-08-15T16:59:24+10:00  INFO  /dev/sde: 2 bytes were erased at offset 0x000001fe (dos): 55 aa
+/dev/sde: calling ioctl to re-read partition table: Success
+2026-08-15T16:59:24+10:00  INFO  run: mkfs.ext4 -F /dev/sde
+2026-08-15T16:59:41+10:00  INFO  Creating filesystem with 15437824 4k blocks and 3866624 inodes
+Filesystem UUID: af9ea490-4a52-41fb-b9d2-3556a506424d
+Superblock backups stored on blocks: 
+	32768, 98304, 163840, 229376, 294912, 819200, 884736, 1605632, 2654208, 
+	4096000, 7962624, 11239424
+
+Allocating group tables:   0/472       done                            
+Writing inode tables:   0/472       done                            
+Creating journal (65536 blocks): done
+Writing superblocks and filesystem accounting information:   0/472       done
+2026-08-15T16:59:41+10:00  INFO  result:
+NAME  SIZE FSTYPE LABEL
+sde  58.9G
+2026-08-15T16:59:41+10:00  INFO  done - fit this stick in the UNVR and power on

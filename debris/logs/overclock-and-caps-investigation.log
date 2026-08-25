@@ -1,0 +1,17 @@
+overclock-and-caps investigation — 2026-08-16 (AEST)
+Sources read:
+- HAL: al_hal_pll.{h,c}, al_hal_pll_regs.h, al_hal_pll_map.h, al_hal_bootstrap.{c,h}, al_hal_bootstrap_map.h,
+       services/bootstrap/al_bootstrap.c, platform/alpine_v2/include/al_hal_iomap.h, sys_services/al_hal_otp.h,
+       ddr/include/al_hal_ddr_init.h, ddr/src/al_hal_ddr_init_alpine_v2.c
+- U-Boot: board/annapurna-labs/alpine_ubnt/board.c (ft_board_setup freq fixup), configs/*nas*
+- Live: hw-reference/20260816-104601/{cpuinfo,dmesg,live.dts,thermal,hwmon,meminfo}
+- Preboot: docs/nor-reference/preboot-alboot-decompiled.{c,asm}; docs/preboot-decompile.md
+Key derived facts:
+- SB_RING base 0xfd860000; PLL bases SB 0xfd860b00 / NB 0xfd860c00 / CPU 0xfd860d00 (base+0xb00+id*0x100)
+- Alpine V2 = PLL REV2 (V2 register set); ref clk 100MHz (DTS refclk, strap bit19=1)
+- CPU 1.7GHz (hardware.md a324; strap CPU_PLL_FREQ=0x5); DDR NB PLL 933.33MHz = DDR4-1866 (strap NB=0x4; DTS nbclk 0x37a18808)
+- 4GB DDR4 (dmesg 1032192 pages); CPU 50C, fans ~940rpm (headroom)
+- bootstrap reg 0xfd8a8110 (PBS regfile 0xfd8a8000 + 0x110), read-only strap reflection
+- OTP regs 0xfd896000; eFuse cap-hash 0xfd89608c..ac (word 0x23)
+- preboot actively reprograms PLL channels (pll_fixup_crypto_boost -> SB PLL 600MHz; al_pll_channel_div_set calls)
+- no CPUACTLR/L2CTLR writes in A32 al_boot payload (boot-ROM/ATF territory)

@@ -1,0 +1,13 @@
+2026-08-17T00:05:08+10:00    OK: at U-Boot prompt
+2026-08-17T00:05:08+10:00  === flashing Fedora kernel+DTB to NAND (vendor kernel @0x300000 preserved) ===
+2026-08-17T00:05:08+10:00    OK: set ipaddr
+2026-08-17T00:05:08+10:00    OK: set serverip
+2026-08-17T00:05:17+10:00    OK: tftp uImage-unvr-ea16-7.1-fedora-gz
+2026-08-17T00:05:17+10:00    OK: erase kernel region
+2026-08-17T00:05:23+10:00    OK: write kernel
+2026-08-17T00:05:23+10:00    OK: tftp alpine-v2-ubnt-unvr-ea16-7.1-fedora.dtb
+2026-08-17T00:05:23+10:00    OK: erase dtb block
+2026-08-17T00:05:23+10:00    OK: write dtb
+2026-08-17T00:05:23+10:00    OK: set bootcmd
+2026-08-17T00:05:24+10:00    OK: saveenv
+2026-08-17T00:05:24+10:00  DONE — kernel+DTB in NAND, bootcmd set + saved. 'boot' or reset to verify.

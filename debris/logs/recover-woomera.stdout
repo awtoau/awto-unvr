@@ -1,0 +1,7 @@
+2026-08-17T15:17:56+10:00  streaming ESC — POWER-CYCLE woomera now (up to 1800s)
+2026-08-17T15:21:00+10:00  U-Boot prompt caught
+2026-08-17T15:21:00+10:00    bootargs: rintenv bootargs
+Unknown command 'rintenv' - try 'help'
+ALPINE_UBNT_NAS_ALL>
+2026-08-17T15:21:00+10:00  bootargs += modprobe.blacklist=al_eth; booting (one-time)
+2026-08-17T15:21:13+10:00  did not reach login (see console)

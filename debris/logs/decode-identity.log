@@ -1,0 +1,108 @@
+UNVR identity decode (5.1.25 generation)
+[mtd03-Factory] len=65536 -> 100% 0xFF (erased/blank)
+[mtd07-cksum] len=4096 -> 100% 0x00 (actively zeroed)
+
+=== EEPROM (mtd04) ===
+0x0000 base MAC       74:ac:b9:41:a8:11
+0x0006 MAC+2          76:ac:b9:41:a8:11
+0x000C board id       0xea16
+0x000E hw rev         0x0777
+0x0010 device id      0x000b101d
+
+-- UBNT redundant block @0x8000 --
+0x8000 magic          'UBNT'
+0x8004 crc32          0x2a2866d3
+0x8008 length         0x64 (100)
+0x800C ver?           0x0002 0x0001
+0x8010 hw rev         0x0777
+0x8012 board id       0xea16
+0x8014 device id      0x000b101d
+0x8018 base MAC       74:ac:b9:41:a8:11
+0x801E MAC count      512
+   crc32(0x8008..+len) = 0x8dbda091 match=False
+   crc32(0x800c..+len) = 0x4aeeeee0 match=False
+   crc32(0x8008..0x8020) = 0x8696a905 match=False
+
+-- UBNT-TLV block @0xd000 (ONIE 'TlvInfo' magic) --
+0xd000 magic 'TlvInfo\0' ver=1 total_len=0x2b
+   @0x0d00b type=0x01 len=8 val=20200524
+   @0x0d015 type=0x02 len=8 val=20200524
+   @0x0d01f type=0x03 len=1 val=01
+   @0x0d022 type=0x04 len=12 val=113-02832-29
+   @0x0d030 type=0xfe len=4 val=d29bebb4
+   crc32(0xd000..crc) = 0x25a4f6e3 stored=0xd29bebb4 match=False
+   crc32(0xd000..end incl crc) = 0xd935e8b3 stored=0xd29bebb4 match=False
+
+-- blob @0x9000..0xc000 len=12288 entropy=7.983 b/byte (unidentified, near-random) --
+
+-- RSA private key @0xe004 (SSH-wire format) [NO KEY MATERIAL] --
+0xe004 7-byte prefix   39314e54020325 ('91NT..%')
+   @0x0e00b len=7 tag='ssh-rsa'
+   @0x0e016 len=3 mpint bits=17
+   @0x0e01d len=257 mpint bits=2048
+   @0x0e122 len=256 mpint bits=2045
+   @0x0e226 len=129 mpint bits=1024
+   @0x0e2ab len=129 mpint bits=1024
+   modulus bits=2048  p*q==n VERIFIED=True
+   total key region 0xe004..0x0e330 = 812 bytes
+
+=== config (mtd06) ext4 (superblock parse, NOT mounted) ===
+magic=0xef53 ext4=OK
+blocks=14332 block_size=1024 fs_bytes=14675968
+UUID=e98263ea-0a3d-4765-8377-f6de9b33da4e label='' last_mounted='/tmp/.config'
+
+field map -> /mnt/2tb/git/awto-unvr/docs/nor-reference/eeprom-fieldmap.json
+UNVR identity decode (5.1.25 generation)
+[mtd03-Factory] len=65536 -> 100% 0xFF (erased/blank)
+[mtd07-cksum] len=4096 -> 100% 0x00 (actively zeroed)
+
+=== EEPROM (mtd04) ===
+0x0000 base MAC       74:ac:b9:41:a8:11
+0x0006 MAC+2          76:ac:b9:41:a8:11
+0x000C board id       0xea16
+0x000E hw rev         0x0777
+0x0010 device id      0x000b101d
+
+-- UBNT redundant block @0x8000 --
+0x8000 magic          'UBNT'
+0x8004 crc32          0x2a2866d3
+0x8008 length         0x64 (100)
+0x800C ver?           0x0002 0x0001
+0x8010 hw rev         0x0777
+0x8012 board id       0xea16
+0x8014 device id      0x000b101d
+0x8018 base MAC       74:ac:b9:41:a8:11
+0x801E MAC count      2
+   crc32(0x8008..+len) = 0x8dbda091 match=False
+   crc32(0x800c..+len) = 0x4aeeeee0 match=False
+   crc32(0x8008..0x8020) = 0x8696a905 match=False
+
+-- UBNT-TLV block @0xd000 (ONIE 'TlvInfo' magic) --
+0xd000 magic 'TlvInfo\0' ver=1 total_len=0x2b
+   @0x0d00b type=0x01 len=8 val=20200524
+   @0x0d015 type=0x02 len=8 val=20200524
+   @0x0d01f type=0x03 len=1 val=01
+   @0x0d022 type=0x04 len=12 val=113-02832-29
+   @0x0d030 type=0xfe len=4 val=d29bebb4
+   crc32(0xd000..crc) = 0x25a4f6e3 stored=0xd29bebb4 match=False
+   crc32(0xd000..end incl crc) = 0xd935e8b3 stored=0xd29bebb4 match=False
+
+-- blob @0x9000..0xc000 len=12288 entropy=7.983 b/byte (unidentified, near-random) --
+
+-- RSA private key @0xe004 (SSH-wire format) [NO KEY MATERIAL] --
+0xe004 7-byte prefix   39314e54020325 ('91NT..%')
+   @0x0e00b len=7 tag='ssh-rsa'
+   @0x0e016 len=3 mpint bits=17
+   @0x0e01d len=257 mpint bits=2048
+   @0x0e122 len=256 mpint bits=2045
+   @0x0e226 len=129 mpint bits=1024
+   @0x0e2ab len=129 mpint bits=1024
+   modulus bits=2048  p*q==n VERIFIED=True
+   total key region 0xe004..0x0e330 = 812 bytes
+
+=== config (mtd06) ext4 (superblock parse, NOT mounted) ===
+magic=0xef53 ext4=OK
+blocks=14332 block_size=1024 fs_bytes=14675968
+UUID=e98263ea-0a3d-4765-8377-f6de9b33da4e label='' last_mounted='/tmp/.config'
+
+field map -> /mnt/2tb/git/awto-unvr/docs/nor-reference/eeprom-fieldmap.json

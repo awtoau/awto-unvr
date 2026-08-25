@@ -1,0 +1,160 @@
+=== elf verify START 2026-08-16T12:07:30+10:00 ===
+openjdk version "25.0.4" 2026-07-21
+OpenJDK Runtime Environment (Red_Hat-25.0.4.0.7-2) (build 25.0.4+7)
+OpenJDK 64-Bit Server VM (Red_Hat-25.0.4.0.7-2) (build 25.0.4+7, mixed mode)
+INFO  Using log config file: jar:file:/home/dan/tools/ghidra_12.2_DEV_20260816/Ghidra/Framework/Generic/lib/Generic.jar!/generic.log4j.xml (LoggingInitialization)  
+INFO  Using log file: /home/dan/.config/ghidra/ghidra_12.2_DEV/application.log (LoggingInitialization)  
+INFO  Loading user preferences: /home/dan/.config/ghidra/ghidra_12.2_DEV/preferences (Preferences)  
+INFO  Searching for classes... (ClassSearcher)  
+INFO  Class search complete (550 ms) (ClassSearcher)  
+INFO  Initializing SSL Context (DefaultSSLContextInitializer)  
+INFO  Initializing Random Number Generator... (SecureRandomFactory)  
+INFO  Random Number Generator initialization complete: NativePRNGNonBlocking (SecureRandomFactory)  
+INFO  Trust manager disabled, cacerts have not been set (DefaultTrustManagerFactory)  
+INFO  Headless startup complete (1215 ms) (AnalyzeHeadless)  
+INFO  Class searcher loaded 60 extension points (19 false positives) (ClassSearcher)  
+INFO  HEADLESS Script Paths:
+    /home/dan/tools/ghidra_12.2_DEV_20260816/Ghidra/Features/BSim/ghidra_scripts
+    /home/dan/tools/ghidra_12.2_DEV_20260816/Ghidra/Features/SystemEmulation/ghidra_scripts
+    /home/dan/tools/ghidra_12.2_DEV_20260816/Ghidra/Features/FunctionID/ghidra_scripts
+    /home/dan/tools/ghidra_12.2_DEV_20260816/Ghidra/Features/PyGhidra/ghidra_scripts
+    /home/dan/tools/ghidra_12.2_DEV_20260816/Ghidra/Features/BytePatterns/ghidra_scripts
+    /home/dan/tools/ghidra_12.2_DEV_20260816/Ghidra/Features/PDB/ghidra_scripts
+    /home/dan/tools/ghidra_12.2_DEV_20260816/Ghidra/Debug/Debugger-rmi-trace/ghidra_scripts
+    /home/dan/tools/ghidra_12.2_DEV_20260816/Ghidra/Debug/Debugger/ghidra_scripts
+    /home/dan/tools/ghidra_12.2_DEV_20260816/Ghidra/Features/VersionTracking/ghidra_scripts
+    /home/dan/tools/ghidra_12.2_DEV_20260816/Ghidra/Features/GnuDemangler/ghidra_scripts
+    /mnt/2tb/git/awto-unvr/tmp/ghidra-scripts
+    /home/dan/tools/ghidra_12.2_DEV_20260816/Ghidra/Features/Decompiler/ghidra_scripts
+    /home/dan/tools/ghidra_12.2_DEV_20260816/Ghidra/Processors/8051/ghidra_scripts
+    /home/dan/tools/ghidra_12.2_DEV_20260816/Ghidra/Processors/JVM/ghidra_scripts
+    /home/dan/tools/ghidra_12.2_DEV_20260816/Ghidra/Features/DecompilerDependent/ghidra_scripts
+    /home/dan/tools/ghidra_12.2_DEV_20260816/Ghidra/Processors/DATA/ghidra_scripts
+    /home/dan/tools/ghidra_12.2_DEV_20260816/Ghidra/Features/Base/ghidra_scripts
+    /home/dan/tools/ghidra_12.2_DEV_20260816/Ghidra/Features/MicrosoftCodeAnalyzer/ghidra_scripts
+    /home/dan/tools/ghidra_12.2_DEV_20260816/Ghidra/Features/Swift/ghidra_scripts
+    /home/dan/tools/ghidra_12.2_DEV_20260816/Ghidra/Processors/Atmel/ghidra_scripts
+    /home/dan/tools/ghidra_12.2_DEV_20260816/Ghidra/Processors/PIC/ghidra_scripts
+    /home/dan/tools/ghidra_12.2_DEV_20260816/Ghidra/Features/FileFormats/ghidra_scripts
+    /home/dan/tools/ghidra_12.2_DEV_20260816/Ghidra/Features/WildcardAssembler/ghidra_scripts (HeadlessAnalyzer)  
+INFO  HEADLESS: execution starts (HeadlessAnalyzer)  
+INFO  Creating temporary project: /mnt/2tb/git/awto-unvr/tmp/ghidra-elf-proj/elf_proj (HeadlessAnalyzer)  
+INFO  Creating project: /mnt/2tb/git/awto-unvr/tmp/ghidra-elf-proj/elf_proj (DefaultProject)  
+INFO  REPORT: Processing input files:  (HeadlessAnalyzer)  
+INFO       project: /mnt/2tb/git/awto-unvr/tmp/ghidra-elf-proj/elf_proj (HeadlessAnalyzer)  
+INFO  IMPORTING: file:///mnt/2tb/git/awto-unvr/tmp/true-test.elf (HeadlessAnalyzer)  
+INFO  Using Loader: Executable and Linking Format (ELF) (ProgramLoader)  
+INFO  Using Language/Compiler: x86:LE:64:default:gcc (ProgramLoader)  
+INFO  Using Library Search Path: [., /bin, /lib, /lib64, /lib/x86_64-linux-gnu, /lib/aarch64-linux-gnu, /usr/bin, /usr/lib, /usr/X11R6/bin, /usr/X11R6/lib, /usr/java/packages/lib, /usr/lib64] (ProgramLoader)  
+INFO  Additional info:
+Loading file:///mnt/2tb/git/awto-unvr/tmp/true-test.elf?MD5=1e5ea32624631c3250cc652aded25170...
+Found 27 symbols in .gnu_debugdata
+Setting block .init_array to read-only
+Setting block .fini_array to read-only
+Setting block .data.rel.ro to read-only
+Setting block .dynamic to read-only
+------------------------------------------------
+
+Linking the External Programs of 'true-test.elf' to imported libraries...
+  [libc.so.6] -> not found in project
+------------------------------------------------
+
+Resolving External Symbols of [/true-test.elf] - 39 unresolved symbols, no external libraries configured - skipping
+ (ProgramLoader)  
+INFO  IMPORTING: Loaded 0 additional files (HeadlessAnalyzer)  
+INFO  ANALYZING all memory and code: file:///mnt/2tb/git/awto-unvr/tmp/true-test.elf (HeadlessAnalyzer)  
+INFO  DWARF external debug information found: ExternalDebugInfo [filename=true-9.10-5.fc44.x86_64.debug, crc=1941260441, hash=f7347e458f8a60c0d5267d0978ab3df897a34977, objectType=DEBUGINFO, extra=null] (ExternalDebugFileSectionProvider)  
+INFO  Unable to find DWARF information, skipping DWARF analysis (DWARFAnalyzer)  
+INFO  hit non-returning function, restarting decompiler switch analyzer later (DecompilerSwitchAnalyzer)  
+WARN  Decompiling 00101370, pcode error at 00108140: Unable to disassemble EXTERNAL block location: 00108140 (DecompileCallback)  
+WARN  Decompiling 00101340, pcode error at 00108038: Unable to disassemble EXTERNAL block location: 00108038 (DecompileCallback)  
+INFO  Packed database cache: /var/tmp/dan-ghidra/packed-db-cache (PackedDatabaseCache)  
+INFO  Applied data type archive: generic_clib_64 (ApplyDataArchiveAnalyzer)  
+INFO  -----------------------------------------------------
+    ASCII Strings                              0.144 secs
+    Apply Data Archives                        0.136 secs
+    Call Convention ID                         0.438 secs
+    Call-Fixup Installer                       0.012 secs
+    Create Address Tables                      0.005 secs
+    Create Function                            0.009 secs
+    DWARF                                      0.004 secs
+    Data Reference                             0.014 secs
+    Decompiler Switch Analysis                 0.023 secs
+    Decompiler Switch Analysis - One Time      1.196 secs
+    Demangler GNU                              0.015 secs
+    Disassemble                                0.019 secs
+    Disassemble Entry Points                   0.050 secs
+    ELF Scalar Operand References              0.021 secs
+    Embedded Media                             0.003 secs
+    External Entry References                  0.000 secs
+    Function ID                                0.012 secs
+    Function Start Pre Search                  0.003 secs
+    Function Start Search                      0.018 secs
+    Function Start Search After Code           0.001 secs
+    Function Start Search After Data           0.001 secs
+    GCC Exception Handlers                     0.022 secs
+    Non-Returning Functions - Discovered       0.006 secs
+    Non-Returning Functions - Known            0.001 secs
+    Reference                                  0.017 secs
+    Shared Return Calls                        0.008 secs
+    Source Language Support                    0.001 secs
+    Stack                                      0.122 secs
+    Subroutine References                      0.004 secs
+    Subroutine References - One Time           0.000 secs
+    x86 Constant Reference Analyzer            0.127 secs
+-----------------------------------------------------
+     Total Time   2 secs
+-----------------------------------------------------
+ (AutoAnalysisManager)  
+INFO  REPORT: Analysis succeeded for file: file:///mnt/2tb/git/awto-unvr/tmp/true-test.elf (HeadlessAnalyzer)  
+INFO  REPORT: Execute script: ExportAll.java '/mnt/2tb/git/awto-unvr/tmp/ghidra-elf-out'  (HeadlessAnalyzer)  
+INFO  SCRIPT: /mnt/2tb/git/awto-unvr/tmp/ghidra-scripts/ExportAll.java (HeadlessAnalyzer)  
+WARN  Decompiling 00108000, pcode error at 00108000: Unable to disassemble EXTERNAL block location: 00108000 (DecompileCallback)  
+WARN  Decompiling 00108010, pcode error at 00108010: Unable to disassemble EXTERNAL block location: 00108010 (DecompileCallback)  
+WARN  Decompiling 00108018, pcode error at 00108018: Unable to disassemble EXTERNAL block location: 00108018 (DecompileCallback)  
+WARN  Decompiling 00108020, pcode error at 00108020: Unable to disassemble EXTERNAL block location: 00108020 (DecompileCallback)  
+WARN  Decompiling 00108028, pcode error at 00108028: Unable to disassemble EXTERNAL block location: 00108028 (DecompileCallback)  
+WARN  Decompiling 00108030, pcode error at 00108030: Unable to disassemble EXTERNAL block location: 00108030 (DecompileCallback)  
+WARN  Decompiling 00108038, pcode error at 00108038: Unable to disassemble EXTERNAL block location: 00108038 (DecompileCallback)  
+WARN  Decompiling 00108048, pcode error at 00108048: Unable to disassemble EXTERNAL block location: 00108048 (DecompileCallback)  
+WARN  Decompiling 00108050, pcode error at 00108050: Unable to disassemble EXTERNAL block location: 00108050 (DecompileCallback)  
+WARN  Decompiling 00108058, pcode error at 00108058: Unable to disassemble EXTERNAL block location: 00108058 (DecompileCallback)  
+WARN  Decompiling 00108060, pcode error at 00108060: Unable to disassemble EXTERNAL block location: 00108060 (DecompileCallback)  
+WARN  Decompiling 00108068, pcode error at 00108068: Unable to disassemble EXTERNAL block location: 00108068 (DecompileCallback)  
+WARN  Decompiling 00108070, pcode error at 00108070: Unable to disassemble EXTERNAL block location: 00108070 (DecompileCallback)  
+WARN  Decompiling 00108078, pcode error at 00108078: Unable to disassemble EXTERNAL block location: 00108078 (DecompileCallback)  
+WARN  Decompiling 00108080, pcode error at 00108080: Unable to disassemble EXTERNAL block location: 00108080 (DecompileCallback)  
+WARN  Decompiling 00108088, pcode error at 00108088: Unable to disassemble EXTERNAL block location: 00108088 (DecompileCallback)  
+WARN  Decompiling 00108090, pcode error at 00108090: Unable to disassemble EXTERNAL block location: 00108090 (DecompileCallback)  
+WARN  Decompiling 00108098, pcode error at 00108098: Unable to disassemble EXTERNAL block location: 00108098 (DecompileCallback)  
+WARN  Decompiling 001080a0, pcode error at 001080a0: Unable to disassemble EXTERNAL block location: 001080a0 (DecompileCallback)  
+WARN  Decompiling 001080a8, pcode error at 001080a8: Unable to disassemble EXTERNAL block location: 001080a8 (DecompileCallback)  
+WARN  Decompiling 001080b0, pcode error at 001080b0: Unable to disassemble EXTERNAL block location: 001080b0 (DecompileCallback)  
+WARN  Decompiling 001080b8, pcode error at 001080b8: Unable to disassemble EXTERNAL block location: 001080b8 (DecompileCallback)  
+WARN  Decompiling 001080c0, pcode error at 001080c0: Unable to disassemble EXTERNAL block location: 001080c0 (DecompileCallback)  
+WARN  Decompiling 001080c8, pcode error at 001080c8: Unable to disassemble EXTERNAL block location: 001080c8 (DecompileCallback)  
+WARN  Decompiling 001080d0, pcode error at 001080d0: Unable to disassemble EXTERNAL block location: 001080d0 (DecompileCallback)  
+WARN  Decompiling 001080d8, pcode error at 001080d8: Unable to disassemble EXTERNAL block location: 001080d8 (DecompileCallback)  
+WARN  Decompiling 001080e0, pcode error at 001080e0: Unable to disassemble EXTERNAL block location: 001080e0 (DecompileCallback)  
+WARN  Decompiling 001080e8, pcode error at 001080e8: Unable to disassemble EXTERNAL block location: 001080e8 (DecompileCallback)  
+WARN  Decompiling 001080f0, pcode error at 001080f0: Unable to disassemble EXTERNAL block location: 001080f0 (DecompileCallback)  
+WARN  Decompiling 00108100, pcode error at 00108100: Unable to disassemble EXTERNAL block location: 00108100 (DecompileCallback)  
+WARN  Decompiling 00108108, pcode error at 00108108: Unable to disassemble EXTERNAL block location: 00108108 (DecompileCallback)  
+WARN  Decompiling 00108110, pcode error at 00108110: Unable to disassemble EXTERNAL block location: 00108110 (DecompileCallback)  
+WARN  Decompiling 00108118, pcode error at 00108118: Unable to disassemble EXTERNAL block location: 00108118 (DecompileCallback)  
+WARN  Decompiling 00108128, pcode error at 00108128: Unable to disassemble EXTERNAL block location: 00108128 (DecompileCallback)  
+WARN  Decompiling 00108130, pcode error at 00108130: Unable to disassemble EXTERNAL block location: 00108130 (DecompileCallback)  
+WARN  Decompiling 00108138, pcode error at 00108138: Unable to disassemble EXTERNAL block location: 00108138 (DecompileCallback)  
+WARN  Decompiling 00108140, pcode error at 00108140: Unable to disassemble EXTERNAL block location: 00108140 (DecompileCallback)  
+WARN  Decompiling 00108148, pcode error at 00108148: Unable to disassemble EXTERNAL block location: 00108148 (DecompileCallback)  
+WARN  Decompiling 00108150, pcode error at 00108150: Unable to disassemble EXTERNAL block location: 00108150 (DecompileCallback)  
+WARN  Decompiling 00108160, pcode error at 00108160: Unable to disassemble EXTERNAL block location: 00108160 (DecompileCallback)  
+WARN  Decompiling 00108168, pcode error at 00108168: Unable to disassemble EXTERNAL block location: 00108168 (DecompileCallback)  
+WARN  Decompiling 00108170, pcode error at 00108170: Unable to disassemble EXTERNAL block location: 00108170 (DecompileCallback)  
+INFO  ExportAll.java> Exported 103 functions to /mnt/2tb/git/awto-unvr/tmp/ghidra-elf-out (GhidraScript)  
+INFO  ANALYZING changes made by post scripts: file:///mnt/2tb/git/awto-unvr/tmp/true-test.elf (HeadlessAnalyzer)  
+INFO  REPORT: Post-analysis succeeded for file: file:///mnt/2tb/git/awto-unvr/tmp/true-test.elf (HeadlessAnalyzer)  
+INFO  /true-test.elf: file created (dan) (LocalFileSystem)  
+INFO  REPORT: Save succeeded for: /true-test.elf (elf_proj:/true-test.elf) (HeadlessAnalyzer)  
+INFO  REPORT: Import succeeded (HeadlessAnalyzer)  
+ELF_VERIFY_EXIT=0 2026-08-16T12:07:37+10:00

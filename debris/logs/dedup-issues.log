@@ -1,0 +1,58 @@
+dedup-issues — 2026-08-17
+
+CONVENTION (docs/issues/README.md + docs/workflow.md):
+- docs/issues/*.md are LOCAL GitHub-issue DRAFTS, "kept as history" — the drafting
+  record, deliberately retained even after filing. Convention type (b), NOT (a).
+  => "already filed on GitHub" is NOT grounds for deletion here; the README says keep.
+- Numbering map: drafts 00-21 -> GH #4-#25 (offset +4). Drafts 31-37 -> GH #31-#37 (1:1).
+- Drafts 38, 39 are NEW sequential local drafts, NOT yet filed. They do NOT map to
+  GH #38/#39 (which are unrelated: chip-docs / EDK2-UEFI).
+
+GH issues: `gh issue list --repo awtoau/awto-unvr --state all --limit 200` -> 66 issues.
+
+CLASSIFICATION:
+- 00-21, 31-37 (tracked): documented drafting-history archive, each a distinct topic
+  mapping 1:1 to a filed GH issue. Convention = keep as history. KEEP.
+- 38-ssh-normal-access.md (untracked): unique record — box IP found (.149), MAC,
+  open SSH-hardening tasks. Topic != GH #66 (#66 = program a STOCK unit). Overlaps
+  #45 only partially. Not filed. KEEP (unfiled unique record).
+- 39-ddr-spd-eeprom-readout.md (untracked): unique record — supersedes CLOSED #62's
+  "SPD unreadable" conclusion with a 2-byte-offset readout plan. Not filed. KEEP.
+- No two local files share a number or topic. No dup pairs.
+
+RESULT: 0 removed, 32 kept (31 drafts + README). No git changes made.
+
+=== OWNER OVERRIDE applied — 2026-08-17 (convention REVERSED) ===
+New policy: docs/issues/ is transient staging; filed drafts deleted (GitHub is record);
+unique analysis lives in docs/.
+
+Method: fetched every GH body (#4-25, #31-37) via gh, diffed against each draft.
+
+DELETIONS (git rm — byte-identical to GH issue, pure duplicate):
+  00->#4  01->#5  02->#6  03->#7  04->#8  05->#9  06->#10 07->#11 08->#12 09->#13
+  10->#14 11->#15 12->#16 13->#17 14->#18 15->#19 16->#20 17->#21 18->#22 19->#23
+  20->#24 21->#25 31->#31 32->#32 33->#33 34->#34 35->#35 36->#36 37->#37
+  = 29 files, all confirmed identical to their GitHub issue body. No unique content.
+
+MIGRATIONS (untracked, not on GitHub -> folded into docs/, then rm):
+  38-ssh-normal-access -> docs/unvr-access-research.md new section "Our deployment —
+    reaching the Fedora box (woomera)". Moved: box IP 192.168.25.149/24 (DHCP, not
+    netboot .140), MAC 74:ac:b9:41:a8:11, discovery via find-woomera-ssh.py + MAC OUI,
+    Fedora44/OpenSSH_10.2 root pw-auth, why .140 wrong, 6 open hardening tasks +
+    acceptance. Unique -> preserved in full.
+  39-ddr-spd-eeprom-readout -> docs/ddr-config-reverse.md. Content ALREADY fully
+    captured there (better: byte-exact tables + live-confirmed §2c/§7/§8). No new facts
+    to add; merged the read-ddr-spd.py task detail into §7 and removed the now-dangling
+    issues/39 pointers. No unique info lost.
+
+DANGLING-LINK FIXES (drafts deleted, refs repointed to docs/):
+  ddr-config-reverse.md x3 (issues/39 -> §2c / §7), preboot-decompile.md x1
+  (issues/39 -> ddr-config-reverse.md §7).
+
+README.md rewritten: new transient-staging convention, one-line gh pointer, numbering
+archive removed.
+
+RESULT: 31 drafts removed (29 git rm + 2 rm), 0 kept. docs/issues/ now = README.md only.
+No git commit (left staged/unstaged for review).
+NOTE: docs/uboot-2015.07-hal-capture.md + docs/uboot-ddr-port.md show modified but were
+NOT touched by this task (pre-existing/concurrent; left alone).

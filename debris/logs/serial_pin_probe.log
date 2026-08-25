@@ -1,0 +1,21 @@
+2026-08-16 22:40:39,856 port /dev/serial/by-id/usb-Prolific_Technology_Inc._USB-Serial_Controller_D-if00-port0 @ 9600 baud
+2026-08-16 22:40:39,877 
+2026-08-16 22:40:39,878 idle (RTS=0 DTR=0, TX high):   CTS=0  DSR=0  CD=0  RI=0
+2026-08-16 22:40:39,878   a floating input usually reads 0; a driven-high one reads 1
+2026-08-16 22:40:39,878 
+2026-08-16 22:40:39,878 --- TX -> RX (break continuity, baud-independent) ---
+2026-08-16 22:40:39,948   TX held low 50 ms -> RX saw nothing: TX is NOT joined to RX
+2026-08-16 22:40:39,948 
+2026-08-16 22:40:39,948 --- TX -> inputs (does TX reach CTS/DSR/CD/RI?) ---
+2026-08-16 22:40:39,989   TX low : CTS=0  DSR=0  CD=0  RI=0
+2026-08-16 22:40:39,989   TX high: CTS=0  DSR=0  CD=0  RI=0
+2026-08-16 22:40:39,989 
+2026-08-16 22:40:39,989 --- RTS / DTR -> inputs ---
+2026-08-16 22:40:40,030   RTS=0: CTS=0  DSR=0  CD=0  RI=0
+2026-08-16 22:40:40,030   RTS=1: CTS=0  DSR=0  CD=0  RI=0
+2026-08-16 22:40:40,071   DTR=0: CTS=0  DSR=0  CD=0  RI=0
+2026-08-16 22:40:40,071   DTR=1: CTS=0  DSR=0  CD=0  RI=0
+2026-08-16 22:40:40,071 
+2026-08-16 22:40:40,071 RESULT: TX-RX open - no break reached RX
+2026-08-16 22:40:40,071   If a normal loopback ever echoed on this cable, the path is not a
+2026-08-16 22:40:40,071   plain wire: a transceiver/level-shifter blocks DC but passes data.

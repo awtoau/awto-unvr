@@ -1,0 +1,130 @@
+openjdk version "25.0.4" 2026-07-21
+OpenJDK Runtime Environment (Red_Hat-25.0.4.0.7-2) (build 25.0.4+7)
+OpenJDK 64-Bit Server VM (Red_Hat-25.0.4.0.7-2) (build 25.0.4+7, mixed mode)
+INFO  Using log config file: jar:file:/home/dan/.local/opt/ghidra_12.2_DEV/Ghidra/Framework/Generic/lib/Generic.jar!/generic.log4j.xml (LoggingInitialization)  
+INFO  Using log file: /home/dan/.config/ghidra/ghidra_12.2_DEV/application.log (LoggingInitialization)  
+INFO  Loading user preferences: /home/dan/.config/ghidra/ghidra_12.2_DEV/preferences (Preferences)  
+INFO  Searching for classes... (ClassSearcher)  
+INFO  Class search complete (365 ms) (ClassSearcher)  
+INFO  Initializing SSL Context (DefaultSSLContextInitializer)  
+INFO  Initializing Random Number Generator... (SecureRandomFactory)  
+INFO  Random Number Generator initialization complete: NativePRNGNonBlocking (SecureRandomFactory)  
+INFO  Trust manager disabled, cacerts have not been set (DefaultTrustManagerFactory)  
+INFO  Headless startup complete (932 ms) (AnalyzeHeadless)  
+INFO  Class searcher loaded 59 extension points (20 false positives) (ClassSearcher)  
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::staticFieldOffset has been called by org.apache.felix.framework.util.SecureAction (file:/home/dan/.local/opt/ghidra_12.2_DEV/Ghidra/Features/Base/lib/org.apache.felix.framework-7.0.5.jar)
+WARNING: Please consider reporting this to the maintainers of class org.apache.felix.framework.util.SecureAction
+WARNING: sun.misc.Unsafe::staticFieldOffset will be removed in a future release
+INFO  HEADLESS Script Paths:
+    /home/dan/.local/opt/ghidra_12.2_DEV/Ghidra/Features/SwiftDemangler/ghidra_scripts
+    /home/dan/.local/opt/ghidra_12.2_DEV/Ghidra/Features/VersionTracking/ghidra_scripts
+    /home/dan/.local/opt/ghidra_12.2_DEV/Ghidra/Features/BSim/ghidra_scripts
+    /home/dan/.local/opt/ghidra_12.2_DEV/Ghidra/Features/PyGhidra/ghidra_scripts
+    /home/dan/.local/opt/ghidra_12.2_DEV/Ghidra/Features/MicrosoftCodeAnalyzer/ghidra_scripts
+    /home/dan/.local/opt/ghidra_12.2_DEV/Ghidra/Processors/8051/ghidra_scripts
+    /home/dan/.local/opt/ghidra_12.2_DEV/Ghidra/Features/PDB/ghidra_scripts
+    /home/dan/.local/opt/ghidra_12.2_DEV/Ghidra/Features/GnuDemangler/ghidra_scripts
+    /home/dan/.local/opt/ghidra_12.2_DEV/Ghidra/Features/BytePatterns/ghidra_scripts
+    /home/dan/.local/opt/ghidra_12.2_DEV/Ghidra/Processors/DATA/ghidra_scripts
+    /home/dan/.local/opt/ghidra_12.2_DEV/Ghidra/Processors/JVM/ghidra_scripts
+    /home/dan/.local/opt/ghidra_12.2_DEV/Ghidra/Debug/Debugger-rmi-trace/ghidra_scripts
+    /home/dan/.local/opt/ghidra_12.2_DEV/Ghidra/Features/WildcardAssembler/ghidra_scripts
+    /home/dan/.local/opt/ghidra_12.2_DEV/Ghidra/Features/Base/ghidra_scripts
+    /home/dan/.local/opt/ghidra_12.2_DEV/Ghidra/Features/FunctionID/ghidra_scripts
+    /home/dan/.local/opt/ghidra_12.2_DEV/Ghidra/Features/DecompilerDependent/ghidra_scripts
+    /home/dan/.local/opt/ghidra_12.2_DEV/Ghidra/Features/SystemEmulation/ghidra_scripts
+    /home/dan/.local/opt/ghidra_12.2_DEV/Ghidra/Processors/Atmel/ghidra_scripts
+    /mnt/2tb/git/awto-unvr/tmp
+    /home/dan/.local/opt/ghidra_12.2_DEV/Ghidra/Features/FileFormats/ghidra_scripts
+    /home/dan/.local/opt/ghidra_12.2_DEV/Ghidra/Debug/Debugger/ghidra_scripts
+    /home/dan/.local/opt/ghidra_12.2_DEV/Ghidra/Features/Decompiler/ghidra_scripts
+    /home/dan/.local/opt/ghidra_12.2_DEV/Ghidra/Processors/PIC/ghidra_scripts (HeadlessAnalyzer)  
+INFO  HEADLESS: execution starts (HeadlessAnalyzer)  
+INFO  Creating project: /mnt/2tb/git/awto-unvr/tmp/ghidra_proj/unvr_ubnt-tools (HeadlessAnalyzer)  
+INFO  Creating project: /mnt/2tb/git/awto-unvr/tmp/ghidra_proj/unvr_ubnt-tools (DefaultProject)  
+INFO  REPORT: Processing input files:  (HeadlessAnalyzer)  
+INFO       project: /mnt/2tb/git/awto-unvr/tmp/ghidra_proj/unvr_ubnt-tools (HeadlessAnalyzer)  
+INFO  IMPORTING: file:///mnt/2tb/git/awto-unvr/tmp/sections/rootfs/sbin/ubnt-tools (HeadlessAnalyzer)  
+INFO  Using Loader: Executable and Linking Format (ELF) (ProgramLoader)  
+INFO  Using Language/Compiler: AARCH64:LE:64:v8A:default (ProgramLoader)  
+INFO  Using Library Search Path: [., /bin, /lib, /lib64, /lib/x86_64-linux-gnu, /lib/aarch64-linux-gnu, /usr/bin, /usr/lib, /usr/X11R6/bin, /usr/X11R6/lib, /usr/java/packages/lib, /usr/lib64] (ProgramLoader)  
+INFO  Additional info:
+Loading file:///mnt/2tb/git/awto-unvr/tmp/sections/rootfs/sbin/ubnt-tools?MD5=40907ee53952724136629fc6a5b6bf2b...
+Setting block .init_array to read-only
+Setting block .fini_array to read-only
+Setting block .data.rel.ro to read-only
+Setting block .dynamic to read-only
+------------------------------------------------
+
+Linking the External Programs of 'ubnt-tools' to imported libraries...
+  [libpam.so.0] -> not found in project
+  [libevent-2.1.so.7] -> not found in project
+  [libz.so.1] -> not found in project
+  [libcrypto.so.1.1] -> not found in project
+  [libc.so.6] -> not found in project
+  [ld-linux-aarch64.so.1] -> not found in project
+------------------------------------------------
+
+Resolving External Symbols of [/ubnt-tools] - 180 unresolved symbols, no external libraries configured - skipping
+ (ProgramLoader)  
+INFO  IMPORTING: Loaded 0 additional files (HeadlessAnalyzer)  
+INFO  ANALYZING all memory and code: file:///mnt/2tb/git/awto-unvr/tmp/sections/rootfs/sbin/ubnt-tools (HeadlessAnalyzer)  
+INFO  DWARF external debug information found: ExternalDebugInfo [filename=null, crc=0, hash=b6348cdc9ba860d5ac9c171de173a8ea145d1042, objectType=DEBUGINFO, extra=null] (ExternalDebugFileSectionProvider)  
+INFO  Unable to find DWARF information, skipping DWARF analysis (DWARFAnalyzer)  
+INFO  Packed database cache: /var/tmp/dan-ghidra/packed-db-cache (PackedDatabaseCache)  
+INFO  Applied data type archive: generic_clib_64 (ApplyDataArchiveAnalyzer)  
+INFO  -----------------------------------------------------
+    AARCH64 ELF PLT Thunks                     0.068 secs
+    ASCII Strings                              0.156 secs
+    Apply Data Archives                        0.285 secs
+    Basic Constant Reference Analyzer          0.418 secs
+    Call Convention ID                         0.626 secs
+    Call-Fixup Installer                       0.002 secs
+    Create Address Tables                      0.018 secs
+    Create Address Tables - One Time           0.016 secs
+    Create Function                            0.000 secs
+    DWARF                                      0.006 secs
+    Data Reference                             0.025 secs
+    Decompiler Switch Analysis                 1.296 secs
+    Demangler GNU                              0.026 secs
+    Disassemble                                0.005 secs
+    Disassemble Entry Points                   0.427 secs
+    Embedded Media                             0.003 secs
+    External Entry References                  0.000 secs
+    Function ID                                0.014 secs
+    Function Start Search                      0.017 secs
+    Function Start Search After Code           0.020 secs
+    Function Start Search After Data           0.019 secs
+    Function Start Search delayed - One Time   0.003 secs
+    GCC Exception Handlers                     0.098 secs
+    Non-Returning Functions - Discovered       0.014 secs
+    Non-Returning Functions - Known            0.002 secs
+    Reference                                  0.050 secs
+    Shared Return Calls                        0.020 secs
+    Stack                                      0.393 secs
+    Subroutine References                      0.014 secs
+-----------------------------------------------------
+     Total Time   4 secs
+-----------------------------------------------------
+ (AutoAnalysisManager)  
+INFO  REPORT: Analysis succeeded for file: file:///mnt/2tb/git/awto-unvr/tmp/sections/rootfs/sbin/ubnt-tools (HeadlessAnalyzer)  
+INFO  REPORT: Execute script: ghidra_export.py '/mnt/2tb/git/awto-unvr/tmp/logs/ghidra-ubnt-tools.txt'  (HeadlessAnalyzer)  
+ERROR REPORT SCRIPT ERROR: ghidra_export.py : Ghidra was not started with PyGhidra. Python is not available (HeadlessAnalyzer) ghidra.app.script.GhidraScriptLoadException: Ghidra was not started with PyGhidra. Python is not available
+	at ghidra.pyghidra.PyGhidraScriptProvider.getScriptInstance(PyGhidraScriptProvider.java:75)
+	at ghidra.app.util.headless.HeadlessAnalyzer.runScriptsList(HeadlessAnalyzer.java:925)
+	at ghidra.app.util.headless.HeadlessAnalyzer.analyzeProgram(HeadlessAnalyzer.java:1097)
+	at ghidra.app.util.headless.HeadlessAnalyzer.processFileWithImport(HeadlessAnalyzer.java:1596)
+	at ghidra.app.util.headless.HeadlessAnalyzer.processWithLoader(HeadlessAnalyzer.java:1754)
+	at ghidra.app.util.headless.HeadlessAnalyzer.processWithImport(HeadlessAnalyzer.java:1695)
+	at ghidra.app.util.headless.HeadlessAnalyzer.processWithImport(HeadlessAnalyzer.java:1779)
+	at ghidra.app.util.headless.HeadlessAnalyzer.processLocal(HeadlessAnalyzer.java:463)
+	at ghidra.app.util.headless.AnalyzeHeadless.launch(AnalyzeHeadless.java:199)
+	at ghidra.GhidraLauncher.launch(GhidraLauncher.java:81)
+	at ghidra.Ghidra.main(Ghidra.java:54)
+ 
+INFO  ANALYZING changes made by post scripts: file:///mnt/2tb/git/awto-unvr/tmp/sections/rootfs/sbin/ubnt-tools (HeadlessAnalyzer)  
+INFO  REPORT: Post-analysis succeeded for file: file:///mnt/2tb/git/awto-unvr/tmp/sections/rootfs/sbin/ubnt-tools (HeadlessAnalyzer)  
+INFO  /ubnt-tools: file created (dan) (LocalFileSystem)  
+INFO  REPORT: Save succeeded for: /ubnt-tools (unvr_ubnt-tools:/ubnt-tools) (HeadlessAnalyzer)  
+INFO  REPORT: Import succeeded (HeadlessAnalyzer)  

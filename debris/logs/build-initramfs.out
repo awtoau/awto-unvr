@@ -1,0 +1,67 @@
++ docker run --rm --platform=linux/arm64 -v /mnt/2tb/unvr-port-refs/build-out:/out alpine:3.21 rm -rf /out/initramfs-root
++ docker pull --platform=linux/arm64 alpine:3.21
+3.21: Pulling from library/alpine
+Digest: sha256:48b0309ca019d89d40f670aa1bc06e426dc0931948452e8491e3d65087abc07d
+Status: Image is up to date for alpine:3.21
+docker.io/library/alpine:3.21
++ docker start -a b74f331c2f574573840acfd89d758c08095852d47d9a00531062a46f4ce2b5be
+fetch https://dl-cdn.alpinelinux.org/alpine/v3.21/main/aarch64/APKINDEX.tar.gz
+fetch https://dl-cdn.alpinelinux.org/alpine/v3.21/community/aarch64/APKINDEX.tar.gz
+(1/49) Installing libeconf (0.6.3-r0)
+(2/49) Installing libblkid (2.40.4-r1)
+(3/49) Installing libcom_err (1.47.1-r1)
+(4/49) Installing e2fsprogs-libs (1.47.1-r1)
+(5/49) Installing libuuid (2.40.4-r1)
+(6/49) Installing e2fsprogs (1.47.1-r1)
+(7/49) Installing i2c-tools (4.3-r3)
+(8/49) Installing libgpiod (2.2-r1)
+(9/49) Installing acl-libs (2.3.2-r1)
+(10/49) Installing lz4-libs (1.10.0-r0)
+(11/49) Installing popt (1.19-r4)
+(12/49) Installing libxxhash (0.8.2-r2)
+(13/49) Installing zstd-libs (1.5.6-r2)
+(14/49) Installing rsync (3.4.3-r0)
+(15/49) Installing util-linux (2.40.4-r1)
+(16/49) Installing ncurses-terminfo-base (6.5_p20241006-r3)
+(17/49) Installing libncursesw (6.5_p20241006-r3)
+(18/49) Installing dmesg (2.40.4-r1)
+(19/49) Installing setarch (2.40.4-r1)
+(20/49) Installing libfdisk (2.40.4-r1)
+(21/49) Installing sqlite-libs (3.48.0-r4)
+(22/49) Installing liblastlog2 (2.40.4-r1)
+(23/49) Installing libmount (2.40.4-r1)
+(24/49) Installing libsmartcols (2.40.4-r1)
+(25/49) Installing skalibs-libs (2.14.3.0-r0)
+(26/49) Installing utmps-libs (0.1.2.3-r2)
+(27/49) Installing util-linux-misc (2.40.4-r1)
+(28/49) Installing linux-pam (1.6.1-r1)
+(29/49) Installing runuser (2.40.4-r1)
+(30/49) Installing mount (2.40.4-r1)
+(31/49) Installing losetup (2.40.4-r1)
+(32/49) Installing hexdump (2.40.4-r1)
+(33/49) Installing uuidgen (2.40.4-r1)
+(34/49) Installing blkid (2.40.4-r1)
+(35/49) Installing sfdisk (2.40.4-r1)
+(36/49) Installing mcookie (2.40.4-r1)
+(37/49) Installing agetty (2.40.4-r1)
+(38/49) Installing wipefs (2.40.4-r1)
+(39/49) Installing cfdisk (2.40.4-r1)
+(40/49) Installing umount (2.40.4-r1)
+(41/49) Installing flock (2.40.4-r1)
+(42/49) Installing lsblk (2.40.4-r1)
+(43/49) Installing libcap-ng (0.8.5-r0)
+(44/49) Installing setpriv (2.40.4-r1)
+(45/49) Installing lscpu (2.40.4-r1)
+(46/49) Installing logger (2.40.4-r1)
+(47/49) Installing partx (2.40.4-r1)
+(48/49) Installing fstrim (2.40.4-r1)
+(49/49) Installing findmnt (2.40.4-r1)
+Executing busybox-1.37.0-r14.trigger
+OK: 25 MiB in 64 packages
++ docker export b74f331c2f574573840acfd89d758c08095852d47d9a00531062a46f4ce2b5be
++ docker rm b74f331c2f574573840acfd89d758c08095852d47d9a00531062a46f4ce2b5be
+b74f331c2f574573840acfd89d758c08095852d47d9a00531062a46f4ce2b5be
++ tar -xf /mnt/2tb/unvr-port-refs/build-out/alpine-arm64.tar -C /mnt/2tb/unvr-port-refs/build-out/initramfs-root
+devnode list: /mnt/2tb/unvr-port-refs/build-out/initramfs-devnodes
+initramfs dir : /mnt/2tb/unvr-port-refs/build-out/initramfs-root
+initramfs cpio: /mnt/2tb/unvr-port-refs/build-out/initramfs-ea16.cpio.gz (7922 KiB)

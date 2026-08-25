@@ -1,0 +1,9 @@
+make: Entering directory '/mnt/2tb/unvr-port-refs/linux-v7.1.8'
+make[1]: Entering directory '/mnt/2tb/unvr-port-refs/build-out-71-fedora/al_sgpo'
+  CC [M]  al_sgpo.o
+  CHECK   al_sgpo.c
+  MODPOST Module.symvers
+  CC [M]  al_sgpo.mod.o
+  LD [M]  al_sgpo.ko
+make[1]: Leaving directory '/mnt/2tb/unvr-port-refs/build-out-71-fedora/al_sgpo'
+make: Leaving directory '/mnt/2tb/unvr-port-refs/linux-v7.1.8'

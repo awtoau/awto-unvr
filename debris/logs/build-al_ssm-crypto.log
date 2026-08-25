@@ -1,0 +1,9 @@
+make: Entering directory '/mnt/2tb/unvr-port-refs/linux-v7.1.8'
+make[1]: Entering directory '/mnt/2tb/unvr-port-refs/linux-alpine-v2/modules/al_ssm'
+  CC [M]  al_ssm_main.o
+  LD [M]  al_ssm.o
+  MODPOST Module.symvers
+  CC [M]  al_ssm.mod.o
+  LD [M]  al_ssm.ko
+make[1]: Leaving directory '/mnt/2tb/unvr-port-refs/linux-alpine-v2/modules/al_ssm'
+make: Leaving directory '/mnt/2tb/unvr-port-refs/linux-v7.1.8'

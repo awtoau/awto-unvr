@@ -1,0 +1,4 @@
+make: Entering directory '/mnt/2tb/unvr-port-refs/linux-v7.1.8'
+  SYNC    include/config/auto.conf
+  MODPOST vmlinux.symvers
+make: Leaving directory '/mnt/2tb/unvr-port-refs/linux-v7.1.8'

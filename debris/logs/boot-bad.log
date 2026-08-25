@@ -1,0 +1,82 @@
+=== BAD BOOT (2026-08-19 ~15:49) — auto-chainload tftp FAILS, box stays at stock ===
+stage2_loader v2.22.3
+SPD I2C Address: 57
+Executing next!
+
+-----------------------------------------------------
+Stage 3 version: 2.22.0
+Commit ID: 6088bc3
+CVOS commit ID: bac1d52
+HAL commit ID: 61afa9c
+Build date: Sep  8 2020 11:40:22
+-----------------------------------------------------
+
+agent_wakeup v2.10
+EEPROM Revision ID = 39
+Device ID = a324
+Device Info: v2sil-39-rc1
+subsystem id: 0xea16
+hardware revision id: 0x000b101d
+instance_num =  0
+Loading DT to 01100000 (26208 bytes)...
+obj_hdr_dt_offset: 0x81000
+Board config ID: alpine_v2_ubnt one nas v5.0
+Loading application to 01100000 (689728 bytes)...
+Executing application...
+
+
+U-Boot 2015.07-alpine_db-2.21-HAL (Dec 16 2020 - 05:54:51 +0800), Build: jenkins-amaz-alpinev2-boot-master-161
+
+I2C:   ready
+DRAM:  4 GiB
+Trace early: 0000000000ff0000, 10000
+
+temprature: 52 degrees
+eeprom_per_device_init: no valid information found!
+power_init_board: EEPROM per device information is not valid - using defaults!
+SF: Detected MX25U25635F with page size 256 Bytes, erase size 4 KiB, total 32 MiB
+U-Boot script not found in TOC!
+Board config ID: alpine_v2_ubnt one nas v5.0, 113-2832-29
+Trace disabled
+NAND:  1024 MiB
+SF: Detected MX25U25635F with page size 256 Bytes, erase size 4 KiB, total 32 MiB
+mac: [74acb941a811] + [2]
+PCI:
+  00:01.0     - 1c36:0001 - Network controller
+  00:02.0     - 1c36:0002 - Network controller
+  00:04.0     - 1c36:0022 - Cryptographic device
+  00:05.0     - 1c36:0022 - Mass storage controller
+  00:08.0     - 1c36:0031 - Mass storage controller
+  00:09.0     - 1c36:0031 - Mass storage controller
+PCIE_0: Link up. Speed 5GT/s Width x1
+PCI:
+  01:00.0     - 1b21:1142 - Serial bus controller
+In:    serial
+Out:   serial
+Err:   serial
+dtt_get_temp[0] 103
+dtt_get_temp[1] 99
+dtt_get_temp[2] 99
+Boot: warm
+Net:   , al_eth1 [PRIME], al_eth2
+Not yet support, skipping advertising packets
+gpio: pin 37 (gpio 37) value is 0
+Setting bus to 4
+Autobooting in 2 seconds, press "<Esc><Esc>" to stop
+al_eth1 Waiting for PHY auto negotiation to complete... done
+Using al_eth1 device
+TFTP from server 192.168.25.145; our IP address is 192.168.25.140
+Filename 'u-boot-chainload.bin'.
+Load address: 0x1100000
+Loading: T T T T T T T T T T
+Retry count exceeded; starting again
+ALPINE_UBNT_NAS_ALL>
+
+=== ANALYSIS ===
+- Boot is normal through "Net: al_eth1 [PRIME]" — PHY autoneg completes, IP set.
+- FAILURE: tftpboot u-boot-chainload.bin -> "Loading: T T T..." = all tftp read
+  timeouts (RRQ sent, zero response). Retry exceeded -> stays at stock prompt.
+- "Boot: warm" -> this was a WARM (SP805) reset boot, not a cold power-cycle.
+- Root cause candidate: eth TX from the box not reaching the host (0 packets seen
+  by host tcpdump on udp:69; tftpd log shows no RRQ). Link autoneg "done" but no
+  frames flow -> physical/switch/PHY, likely needs the cold power-cycle.

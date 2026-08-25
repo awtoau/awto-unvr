@@ -1,0 +1,246 @@
+make: Entering directory '/mnt/2tb/unvr-port-refs/linux-v7.1.8'
+make[1]: Entering directory '/mnt/2tb/git/awto-unvr/tmp/al-eth-build'
+  CC [M]  al_eth_group_lm.o
+al_eth_group_lm.c: In function ‘al_eth_group_lm_link_manage’:
+al_eth_group_lm.c:385:25: warning: this statement may fall through [-Wimplicit-fallthrough=]
+  385 |                 (state) = (new_state);                                                          \
+      |                 ~~~~~~~~^~~~~~~~~~~~~
+al_eth_group_lm.c:434:17: note: in expansion of macro ‘GROUP_LM_STEP_STAGE_CHANGE_STATE’
+  434 |                 GROUP_LM_STEP_STAGE_CHANGE_STATE(*lm_step_stage,
+      |                 ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+al_eth_group_lm.c:437:9: note: here
+  437 |         case GROUP_LM_STEP_STAGE_LINK_STATE_CHECK:
+      |         ^~~~
+al_eth_group_lm.c:385:25: warning: this statement may fall through [-Wimplicit-fallthrough=]
+  385 |                 (state) = (new_state);                                                          \
+      |                 ~~~~~~~~^~~~~~~~~~~~~
+al_eth_group_lm.c:454:17: note: in expansion of macro ‘GROUP_LM_STEP_STAGE_CHANGE_STATE’
+  454 |                 GROUP_LM_STEP_STAGE_CHANGE_STATE(*lm_step_stage,
+      |                 ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+al_eth_group_lm.c:457:9: note: here
+  457 |         case GROUP_LM_STEP_STAGE_TRY_LOCK_DETECTION:
+      |         ^~~~
+al_eth_group_lm.c:385:25: warning: this statement may fall through [-Wimplicit-fallthrough=]
+  385 |                 (state) = (new_state);                                                          \
+      |                 ~~~~~~~~^~~~~~~~~~~~~
+al_eth_group_lm.c:495:17: note: in expansion of macro ‘GROUP_LM_STEP_STAGE_CHANGE_STATE’
+  495 |                 GROUP_LM_STEP_STAGE_CHANGE_STATE(*lm_step_stage,
+      |                 ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+al_eth_group_lm.c:498:9: note: here
+  498 |         case GROUP_LM_STEP_STAGE_DETECTION_DONE:
+      |         ^~~~
+al_eth_group_lm.c:385:25: warning: this statement may fall through [-Wimplicit-fallthrough=]
+  385 |                 (state) = (new_state);                                                          \
+      |                 ~~~~~~~~^~~~~~~~~~~~~
+al_eth_group_lm.c:531:17: note: in expansion of macro ‘GROUP_LM_STEP_STAGE_CHANGE_STATE’
+  531 |                 GROUP_LM_STEP_STAGE_CHANGE_STATE(*lm_step_stage,
+      |                 ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+al_eth_group_lm.c:535:9: note: here
+  535 |         case GROUP_LM_STEP_STAGE_TRY_LOCK_SPEED_CHANGE:
+      |         ^~~~
+al_eth_group_lm.c:385:25: warning: this statement may fall through [-Wimplicit-fallthrough=]
+  385 |                 (state) = (new_state);                                                          \
+      |                 ~~~~~~~~^~~~~~~~~~~~~
+al_eth_group_lm.c:557:17: note: in expansion of macro ‘GROUP_LM_STEP_STAGE_CHANGE_STATE’
+  557 |                 GROUP_LM_STEP_STAGE_CHANGE_STATE(*lm_step_stage, GROUP_LM_STEP_STAGE_PRE_ESTABLISH);
+      |                 ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+al_eth_group_lm.c:559:9: note: here
+  559 |         case GROUP_LM_STEP_STAGE_PRE_ESTABLISH:
+      |         ^~~~
+al_eth_group_lm.c:385:25: warning: this statement may fall through [-Wimplicit-fallthrough=]
+  385 |                 (state) = (new_state);                                                          \
+      |                 ~~~~~~~~^~~~~~~~~~~~~
+al_eth_group_lm.c:573:17: note: in expansion of macro ‘GROUP_LM_STEP_STAGE_CHANGE_STATE’
+  573 |                 GROUP_LM_STEP_STAGE_CHANGE_STATE(*lm_step_stage,
+      |                 ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+al_eth_group_lm.c:576:9: note: here
+  576 |         case GROUP_LM_STEP_STAGE_TRY_LOCK_ESTABLISH:
+      |         ^~~~
+al_eth_group_lm.c:385:25: warning: this statement may fall through [-Wimplicit-fallthrough=]
+  385 |                 (state) = (new_state);                                                          \
+      |                 ~~~~~~~~^~~~~~~~~~~~~
+al_eth_group_lm.c:599:17: note: in expansion of macro ‘GROUP_LM_STEP_STAGE_CHANGE_STATE’
+  599 |                 GROUP_LM_STEP_STAGE_CHANGE_STATE(*lm_step_stage,
+      |                 ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+al_eth_group_lm.c:602:9: note: here
+  602 |         case GROUP_LM_STEP_STAGE_ESTABLISH_DONE:
+      |         ^~~~
+al_eth_group_lm.c:385:25: warning: this statement may fall through [-Wimplicit-fallthrough=]
+  385 |                 (state) = (new_state);                                                          \
+      |                 ~~~~~~~~^~~~~~~~~~~~~
+al_eth_group_lm.c:642:17: note: in expansion of macro ‘GROUP_LM_STEP_STAGE_CHANGE_STATE’
+  642 |                 GROUP_LM_STEP_STAGE_CHANGE_STATE(*lm_step_stage, GROUP_LM_STEP_STAGE_GROUP_LM_FLOW);
+      |                 ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+al_eth_group_lm.c:644:9: note: here
+  644 |         case GROUP_LM_STEP_STAGE_GROUP_LM_FLOW:
+      |         ^~~~
+  CC [M]  al_eth_main.o
+al_eth_main.c:324:17: warning: no previous prototype for ‘al_eth_udma_get’ [-Wmissing-prototypes]
+  324 | struct al_udma *al_eth_udma_get(struct al_eth_adapter *adapter, int tx)
+      |                 ^~~~~~~~~~~~~~~
+al_eth_main.c:1259:6: warning: no previous prototype for ‘al_eth_initial_moderation_table_restore_default’ [-Wmissing-prototypes]
+ 1259 | void al_eth_initial_moderation_table_restore_default(void)
+      |      ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+al_eth_main.c:1268:6: warning: no previous prototype for ‘al_eth_init_intr_moderation_entry’ [-Wmissing-prototypes]
+ 1268 | void al_eth_init_intr_moderation_entry(enum al_eth_intr_moderation_level level,
+      |      ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+al_eth_main.c:1282:6: warning: no previous prototype for ‘al_eth_get_intr_moderation_entry’ [-Wmissing-prototypes]
+ 1282 | void al_eth_get_intr_moderation_entry(enum al_eth_intr_moderation_level level,
+      |      ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+al_eth_main.c:1296:6: warning: no previous prototype for ‘al_eth_update_intr_moderation’ [-Wmissing-prototypes]
+ 1296 | void al_eth_update_intr_moderation(struct al_eth_adapter *adapter, unsigned int qid,
+      |      ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+al_eth_main.c:2338:5: warning: no previous prototype for ‘al_eth_read_pci_config’ [-Wmissing-prototypes]
+ 2338 | int al_eth_read_pci_config(void *handle, int where, uint32_t *val)
+      |     ^~~~~~~~~~~~~~~~~~~~~~
+al_eth_main.c:2345:5: warning: no previous prototype for ‘al_eth_write_pci_config’ [-Wmissing-prototypes]
+ 2345 | int al_eth_write_pci_config(void *handle, int where, uint32_t val)
+      |     ^~~~~~~~~~~~~~~~~~~~~~~
+al_eth_main.c:1369:12: warning: ‘al_eth_get_coalesce’ defined but not used [-Wunused-function]
+ 1369 | static int al_eth_get_coalesce(struct net_device *net_dev,
+      |            ^~~~~~~~~~~~~~~~~~~
+  CC [M]  al_eth_sysfs.o
+al_eth_sysfs.c:442:5: warning: no previous prototype for ‘al_eth_sysfs_init’ [-Wmissing-prototypes]
+  442 | int al_eth_sysfs_init(
+      |     ^~~~~~~~~~~~~~~~~
+al_eth_sysfs.c:515:6: warning: no previous prototype for ‘al_eth_sysfs_terminate’ [-Wmissing-prototypes]
+  515 | void al_eth_sysfs_terminate(
+      |      ^~~~~~~~~~~~~~~~~~~~~~
+  CC [M]  al_hal_eth_kr.o
+  CC [M]  al_hal_eth_main.o
+In file included from /mnt/2tb/unvr-port-refs/linux-v7.1.8/include/asm-generic/bug.h:31,
+                 from /mnt/2tb/unvr-port-refs/linux-v7.1.8/arch/arm64/include/asm/bug.h:26,
+                 from /mnt/2tb/unvr-port-refs/linux-v7.1.8/include/linux/bug.h:5,
+                 from /mnt/2tb/unvr-port-refs/linux-v7.1.8/include/linux/instrumented.h:10,
+                 from /mnt/2tb/unvr-port-refs/linux-v7.1.8/include/linux/atomic/atomic-instrumented.h:17,
+                 from /mnt/2tb/unvr-port-refs/linux-v7.1.8/include/linux/atomic.h:82,
+                 from /mnt/2tb/unvr-port-refs/linux-v7.1.8/include/asm-generic/bitops/atomic.h:5,
+                 from /mnt/2tb/unvr-port-refs/linux-v7.1.8/arch/arm64/include/asm/bitops.h:25,
+                 from /mnt/2tb/unvr-port-refs/linux-v7.1.8/include/linux/bitops.h:67,
+                 from /mnt/2tb/unvr-port-refs/linux-v7.1.8/include/linux/kernel.h:23,
+                 from al_hal_plat_services.h:67,
+                 from al_hal_common.h:48,
+                 from al_hal_eth.h:52,
+                 from al_hal_eth_main.c:44:
+al_hal_eth_main.c: In function ‘al_eth_mdio_config’:
+/mnt/2tb/unvr-port-refs/linux-v7.1.8/include/linux/printk.h:511:44: warning: this statement may fall through [-Wimplicit-fallthrough=]
+  511 | #define printk(fmt, ...) printk_index_wrap(_printk, fmt, ##__VA_ARGS__)
+      |                                            ^
+/mnt/2tb/unvr-port-refs/linux-v7.1.8/include/linux/printk.h:483:17: note: in definition of macro ‘printk_index_wrap’
+  483 |                 _p_func(_fmt, ##__VA_ARGS__);                           \
+      |                 ^~~~~~~
+/mnt/2tb/unvr-port-refs/linux-v7.1.8/include/linux/printk.h:554:9: note: in expansion of macro ‘printk’
+  554 |         printk(KERN_ERR pr_fmt(fmt), ##__VA_ARGS__)
+      |         ^~~~~~
+al_hal_plat_services.h:118:41: note: in expansion of macro ‘pr_err’
+  118 | #define al_err(...)                     pr_err(__VA_ARGS__)
+      |                                         ^~~~~~
+al_hal_eth_main.c:2424:25: note: in expansion of macro ‘al_err’
+ 2424 |                         al_err("eth [%s]: %s: invalid reference clock frequency"
+      |                         ^~~~~~
+al_hal_eth_main.c:2428:17: note: here
+ 2428 |                 case AL_ETH_REF_FREQ_375_MHZ:
+      |                 ^~~~
+  CC [M]  al_hal_iofic.o
+  CC [M]  al_hal_serdes_25g.o
+al_hal_serdes_25g.c: In function ‘al_serdes_25g_calc_eye_size’:
+al_hal_serdes_25g.c:1033:1: warning: the frame size of 3232 bytes is larger than 2048 bytes [-Wframe-larger-than=]
+ 1033 | }
+      | ^
+  CC [M]  al_hal_serdes_hssp.o
+  CC [M]  al_hal_udma_config.o
+al_hal_udma_config.c:803:5: warning: no previous prototype for ‘al_udma_m2s_q_sc_set’ [-Wmissing-prototypes]
+  803 | int al_udma_m2s_q_sc_set(struct al_udma_q *udma_q,
+      |     ^~~~~~~~~~~~~~~~~~~~
+al_hal_udma_config.c:833:5: warning: no previous prototype for ‘al_udma_m2s_q_sc_pause’ [-Wmissing-prototypes]
+  833 | int al_udma_m2s_q_sc_pause(struct al_udma_q *udma_q, al_bool set)
+      |     ^~~~~~~~~~~~~~~~~~~~~~
+al_hal_udma_config.c:846:5: warning: no previous prototype for ‘al_udma_m2s_q_sc_reset’ [-Wmissing-prototypes]
+  846 | int al_udma_m2s_q_sc_reset(struct al_udma_q *udma_q)
+      |     ^~~~~~~~~~~~~~~~~~~~~~
+  CC [M]  al_hal_udma_debug.o
+  CC [M]  al_hal_udma_iofic.o
+  CC [M]  al_hal_udma_main.o
+  CC [M]  al_init_eth_kr.o
+  CC [M]  al_init_eth_lm.o
+al_init_eth_lm.c: In function ‘al_eth_lm_link_detection_step’:
+al_init_eth_lm.c:1723:25: warning: this statement may fall through [-Wimplicit-fallthrough=]
+ 1723 |                 (state) = (new_state);                                                          \
+      |                 ~~~~~~~~^~~~~~~~~~~~~
+al_init_eth_lm.c:1946:17: note: in expansion of macro ‘LM_STEP_CHANGE_STATE’
+ 1946 |                 LM_STEP_CHANGE_STATE(lm_context->step_data.detection_state,
+      |                 ^~~~~~~~~~~~~~~~~~~~
+al_init_eth_lm.c:1949:9: note: here
+ 1949 |         case LM_STEP_DETECTION_RETIMER_RX_ADAPT_POST:
+      |         ^~~~
+al_init_eth_lm.c:1723:25: warning: this statement may fall through [-Wimplicit-fallthrough=]
+ 1723 |                 (state) = (new_state);                                                          \
+      |                 ~~~~~~~~^~~~~~~~~~~~~
+al_init_eth_lm.c:1979:17: note: in expansion of macro ‘LM_STEP_CHANGE_STATE’
+ 1979 |                 LM_STEP_CHANGE_STATE(lm_context->step_data.detection_state,
+      |                 ^~~~~~~~~~~~~~~~~~~~
+al_init_eth_lm.c:1982:9: note: here
+ 1982 |         case LM_STEP_DETECTION_FINAL:
+      |         ^~~~
+al_init_eth_lm.c: In function ‘al_eth_lm_retimer_25g_rx_adaptation_step’:
+al_init_eth_lm.c:1575:66: warning: this statement may fall through [-Wimplicit-fallthrough=]
+ 1575 |                 lm_context->step_data.retimer_data.rx_adap_state =
+      |                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+ 1576 |                                 LM_STEP_RETIMER_RX_ADAPTATION_SERDES_LOCK_DELAY;
+      |                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+al_init_eth_lm.c:1578:9: note: here
+ 1578 |         case LM_STEP_RETIMER_RX_ADAPTATION_SERDES_LOCK_DELAY:
+      |         ^~~~
+al_init_eth_lm.c: In function ‘al_eth_lm_retimer_signal_lock_check_step’:
+al_init_eth_lm.c:1458:62: warning: this statement may fall through [-Wimplicit-fallthrough=]
+ 1458 |                 lm_context->step_data.retimer_data.slc_state =
+      |                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+ 1459 |                         LM_STEP_RETIMER_SIGNAL_LOCK_IN_PROGRESS;
+      |                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+al_init_eth_lm.c:1461:9: note: here
+ 1461 |         case LM_STEP_RETIMER_SIGNAL_LOCK_IN_PROGRESS:
+      |         ^~~~
+al_init_eth_lm.c: In function ‘al_eth_lm_wait_for_lock_step’:
+al_init_eth_lm.c:1384:41: warning: this statement may fall through [-Wimplicit-fallthrough=]
+ 1384 |                 retimer_data->wfl_state =
+      |                 ~~~~~~~~~~~~~~~~~~~~~~~~^
+ 1385 |                         LM_STEP_RETIMER_WAIT_FOR_LOCK_IN_PROGRESS;
+      |                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+al_init_eth_lm.c:1387:9: note: here
+ 1387 |         case LM_STEP_RETIMER_WAIT_FOR_LOCK_IN_PROGRESS:
+      |         ^~~~
+al_init_eth_lm.c: In function ‘al_eth_lm_link_establish_step’:
+al_init_eth_lm.c:2250:85: warning: this statement may fall through [-Wimplicit-fallthrough=]
+ 2250 |                                                 lm_context->auto_fec_wait_to_toggle =
+      |                                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+ 2251 |                                                         lm_context->auto_fec_toggle_timeout;
+      |                                                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+al_init_eth_lm.c:2253:41: note: here
+ 2253 |                                         case AL_ETH_LM_AUTO_FEC_ENABLED:
+      |                                         ^~~~
+al_init_eth_lm.c:1723:25: warning: this statement may fall through [-Wimplicit-fallthrough=]
+ 1723 |                 (state) = (new_state);                                                          \
+      |                 ~~~~~~~~^~~~~~~~~~~~~
+al_init_eth_lm.c:2158:17: note: in expansion of macro ‘LM_STEP_CHANGE_STATE’
+ 2158 |                 LM_STEP_CHANGE_STATE(lm_context->step_data.establish_state,
+      |                 ^~~~~~~~~~~~~~~~~~~~
+al_init_eth_lm.c:2161:9: note: here
+ 2161 |         case LM_STEP_ESTABLISH_MIDDLE:
+      |         ^~~~
+  CC [M]  al_serdes.o
+  CC [M]  alpine_group_lm.o
+alpine_group_lm.c:39:5: warning: no previous prototype for ‘alpine_group_lm_init’ [-Wmissing-prototypes]
+   39 | int alpine_group_lm_init(void)
+      |     ^~~~~~~~~~~~~~~~~~~~
+alpine_group_lm.c:68:33: warning: no previous prototype for ‘alpine_group_lm_get’ [-Wmissing-prototypes]
+   68 | struct al_eth_group_lm_context *alpine_group_lm_get(u32 group)
+      |                                 ^~~~~~~~~~~~~~~~~~~
+  CC [M]  alpine_serdes.o
+  CC [M]  kcompat.o
+  LD [M]  al_eth.o
+  MODPOST Module.symvers
+  CC [M]  al_eth.mod.o
+  CC [M]  .module-common.o
+  LD [M]  al_eth.ko
+make[1]: Leaving directory '/mnt/2tb/git/awto-unvr/tmp/al-eth-build'
+make: Leaving directory '/mnt/2tb/unvr-port-refs/linux-v7.1.8'

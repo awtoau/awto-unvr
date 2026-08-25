@@ -1,0 +1,5791 @@
+   12c7 2AB8
+   147f TAB8
+   1813 6`N@
+   1fdb KsB!
+   2bf3 TBw@
+   2c03 SBLH
+   31ef T@7@
+   44e7 *!D*
+   4827 *B@8
+   4843 *BL/
+   4b43 R |@
+   4cff RChy
+   4d07 5!|@
+   4d29 h!8 
+   4d2f R k!
+   4d74 d @9
+   4d7f Td$@9
+   4d8f T!|@
+   4dd4 t"@9v&@9`
+   4fef S!`8
+   4ff4 !h`8w
+   501a @y@|
+   5523 *d,G
+   555f *d,G
+   5e9b 4#;N
+   6173 RabN
+   6207 2abN
+   6243 2abN
+   6357 RabN
+   639b 2abN
+   63db 2abN
+   7d95 Ha8a
+   8084 a"@9
+   8094 a&@9
+   80a4 a*@9
+   80b4 a.@9
+   80c4 a6@9
+   80e0 `6@9
+   80e7 *g"@9
+   8104 `.@9
+   810c `*@9
+   8114 `&@9
+   8927 Re~@
+   8b73 *e2B
+   959f 5t~@
+   981a B9?<
+   9826 B9?<
+   9832 B9?<
+   983e B9?<
+   984a B9?<
+   9863 Rc~@
+   9f0f 5`2@
+   9ff5 Ha8a
+   a0bd Ha8a
+   a78b *Z_/
+   a9d7 kbJ!8
+   a9eb kcJ 8
+   aa03 kcJ"8
+   aa0f RbJ 8 
+   ac14 a"T*
+   afd7 Rc@:
+   b00f Rc@:
+   b03b Rc@:
+   b101  B9a
+   b3f7 Rc@<
+   b42f Rc@<
+   b604 AXaxb
+   b91e Ay`6
+   b926 Ay`*
+   be40 AHa8b
+   c42a @zs2
+   d143 *Bh 
+   db18 ?@@q
+   ddbb 5`:@
+   de13 5`:@
+   e147 R`N@
+   e15b TtJ@
+   e17f 6`*@
+   e188 aZ@yb
+   e1a7 T`N@
+   e1cb T`N@
+   e49b q`T@
+   e573 Rsr@
+   e60f Rsr@
+   e6ec `B@9s
+   ea42 @y p
+   eccf T`~y
+   efd0 !Xtxb
+   f388 afU9
+   f3a8 afU9
+   f3d8 afU9?
+   f5f8 afU9
+   f644 afU9
+   f664 afU9?
+   f753 4A8N
+   fab9 Hc8a
+   fb8b 5`NE
+   fba7 y`VE
+   fc53 5`NE
+   fcf4 70@y
+   fd15 X@y#
+   fdf5 6@99
+   ff92 @yd,
+   ffbf 6& @9 
+   ffe3 6 $@9
+   ffef * 0@9!4@9
+  1001b *Bk9
+  100d2 @9`b
+  1016d Z@ys>
+  1025c `2@ya
+  102a8 a2@y`
+  102c2 @y `
+  1056f )!0H
+  1073a @9!<
+  10746 @9A 
+  10766 @9  
+  10943 RCDN
+  1095f T@TN
+  10c4f q (@
+  10c5f * ,@
+  10c6b q! @9u
+  10cbb Su6@
+  10d0f q`>@
+  10d47 *`J@
+  10d4c aRA9
+  10d53 q`N@
+  10d6f *`R@
+  10d77 q`VA9
+  10da7 *`^@
+  10db3 *`f@
+  10dbb S`j@
+  10de3 *az@
+  10e23 *d$E
+  10e2f 9D(J
+  10e5f 9dTT
+  10ed7 9dHL
+  10ef7 9D`X
+  10eff SchY
+  1104b *A @
+  1109c Ax@y!<G
+  1113b *A @
+  1118e @y! 
+  12083 T`bU9
+  120a0 bHb8c
+  120b8 `bU9
+  120d8 `bU9
+  120f8 `bU9
+  12118 `bU9
+  1216f T!|}
+  121c4 BHc8c
+  1225f *!@>
+  1247f 9"$E
+  1249f 9!8N
+  12523 T`JE
+  1253c  H`8a
+  12994 !`@9
+  12c64  X@y"0@y
+  12c7d " ki
+  12d48  [@y!3@y
+  12d64 ?  kH
+  12db4 bXbxc
+  12e04  [@y
+  12e54  [@y
+  12e6c  X@y"0@y
+  12e88 ?  k	
+  12ff3 *Wk9
+  13146 @y{?P
+  133a8 !H|8
+  136a8 `Z@ya
+  13a63 Ra|y
+  143e1 Hs8a
+  1445d j`8!@
+  14511 Ha8a
+  145f9 Ha8a
+  146b1 Xaxa
+  14b38 a"@9
+  14b58 a&@9
+  15875 ?A9`
+  15c20 C$@9B @9c
+  15d38 C @9e
+  15d40 C$@9c
+  15d5c C,@9E(@9c
+  15d84 C0@9B4@9c
+  15e07 *c`@9
+  15ea5 ;`6 
+  1663f RC|y
+  16679 (@)_
+  16ba5 Ht8a
+  16cc5 Xbxa
+  16ce9 Ht8a
+  16d49 Ht8a
+  16eb5 Hc8a
+  170a1 ;`6 
+  17d7d Ht8a
+  17e71 Ht8a
+  18349 Hv8a
+  1873b *E @9
+  1894d 7A9! 
+  18955 ?A9 @
+  18b55 7A9 
+  18bb1 ;A9  
+  18d8f T"Kb8c
+  19052 @yeV
+  19176 @yer
+  191b1 sA9e~
+  19909 ;B9@
+  19a09 ;B9@
+  19b0c lJj8
+  19b81 ;B9`
+  1a055 ?A9@
+  1a0b1 ?A9@
+  1a0f9 ?A9@
+  1a141 ?A9@
+  1a189 ?A9@
+  1a1d1 ?A9@
+  1a25d ;A9 
+  1a78d CB9@
+  1a9df *! %
+  1aa37 *! %
+  1ab8f *! %
+  1afd7 *! #
+  1b46f T`nA
+  1bf03 TaB@
+  1c39b 4`zH
+  1c7bb RM|/
+  1d135 @@Q!
+  1d35b *_0@k
+  1d5fb Q"H@
+  1d8df T$dX
+  1dacf qf0H
+  1daf3 TC B
+  1db0b qelX
+  1db67 TeLP
+  1db87 Te,H
+  1dbc7 qelX
+  1dc1f Sej"8B
+  1dcdf TeLP
+  1ddbf 9bx`
+  1de84 !kb8?
+  1deec !(@9?
+  1df50 !<@9?
+  1e20f 9mMP
+  1e217 9m]T
+  1e26f 9k@G
+  1e27b 9m5H
+  1e283 9mUP
+  1e293 9kDG
+  1e29f 9m5H
+  1e2a7 9mUP
+  1e2af 9kuX
+  1e2b7 9kHG
+  1e2c3 9kPG
+  1e2cf 9m5H
+  1e2d7 9mUP
+  1e2e7 9kTG
+  1e2f3 9m5H
+  1e2fb 9mUP
+  1e30b 9kXG
+  1e337 9m5H
+  1e33f 9mUP
+  1e347 9kuX
+  1e36f 9m5H
+  1e377 9mUP
+  1e397 9m G
+  1e3b7 9k$G
+  1e3e3 9@hj
+  1e419 |	S#
+  1e42f 9@4B
+  1e439 |	S#
+  1e46d |	S#
+  1e483 9@4B
+  1e48d |	S#
+  1e5bd Ha8a
+  1e6d4  X`xa
+  1e7a4 a'@9
+  1efdb *!@7
+  1f09f RCxh
+  1f0ef *bi&
+  1f54c !(@y!<
+  1f640 @kv8
+  1f650 @P@y
+  1f7d4 akv8
+  1f7eb *#@@y
+  1fc05 *@9!
+  1fc11 &@9BL
+  1fc45 >@9a0
+  1fc4f *a.@
+  1febf RbnY
+  20b65 Hb8b
+  20b9d Hb8b
+  20d09 Ha8a
+  217cb *!@ 
+  21923 Rs~C
+  21c50 !Hd8d
+  2234b *! $
+  227db TbVB9
+  227e4 aRB9
+  227eb *eV@
+  22823 *bVB9aRB9
+  22868 ajt8s
+  2290c Thc8`n@
+  2292c bVB9
+  22933 *aRB9
+  22958 dVB9cRB9!
+  229c4 Th`8
+  22a5e A9Ax
+  22aef *bVB9aRB9e
+  22b0b *dVB9cRB9
+  22b6c bVB9aRB9
+  22b7f R`^@
+  22b93 *dVB9
+  22b9c cRB9
+  22bc2 @9bx
+  22bdf 9`n@
+  22c03 RbVB9aRB9e
+  22c27 RdVB9cRB9
+  22c3c bVB9
+  22c44 aRB9
+  22c4b ReV@
+  22c6b RdVB9cRB9
+  22ca3 9`n@
+  22ccb RbVB9aRB9e
+  22cef RdVB9cRB9
+  22d37 T`n@
+  22dab 4an@
+  22e93 5bVB9
+  22e9c aRB9C
+  22ea3 ReV@
+  22f03 5bVB9
+  22f0c aRB9
+  22f13 ReV@
+  22f6b 5bVB9
+  22f74 aRB9
+  22f7b ReV@
+  230da @9a6@8
+  23123 T`f@
+  23137 RB@-
+  23143 SabB9
+  2315b 5aRC9
+  2318b T`n@
+  2322b 4 0@
+  2327b 5"d@
+  2331b 5"d@
+  233a3 *! 	
+  233e7 4`n@
+  233fb *! 	
+  234d3 4an@
+  234f7 *! 	
+  2351b )`6A
+  2357f R`:A
+  2369c !`@9a
+  236a5 f@9a
+  236be @9aR
+  236c6 @9aV
+  2371a @zb^
+  2375b 4`Z@
+  238ed Xtxa
+  239e7 4`n@
+  23a9b 5`n@
+  23ad7 5af@
+  23ba0 bBA9!
+  23bb0 aBA9`
+  23bf3 5`n@
+  23d97 4`b@
+  23ddf 5`n@
+  23e13 T`n@
+  23f13 5`n@
+  24093 5`n@
+  2412c  H`8a
+  2424d Xvxa
+  2436f 4`n@
+  24393 5`n@
+  243c3 4af@
+  2440b T`f@
+  24413 4`n@
+  2450b 4`f@
+  24513 5`n@
+  2451b 4`z@
+  2455b ReV@
+  2458b 5`z@
+  245cf 4`n@
+  245ed +A9eV@
+  2463f T`n@
+  246ad ;A9B
+  246c3 9`f@
+  246d7 T`n@
+  2470f 5`n@
+  2473f 9`f@
+  24753 T`z@
+  24787 R`^@
+  247a3 ReV@
+  247c3 ReV@
+  247e3 ReV@
+  24803 ReV@
+  2481b T`f@
+  24823 4`n@
+  24853 4`z@
+  2485f Taf@
+  2489d 7A9_
+  248db T`n@
+  24901 ;A9`
+  24919 ;A9?
+  24967 5`n@
+  2499f 5`n@
+  249cb 9`f@
+  249df T`z@
+  24ac3 Ta~@
+  24ae4  H`8a
+  24fa7 Tb[cxd
+  25743 4bnH
+  259ff 5bnH
+  25b78 dhb8B
+  25de9 ja8!
+  25e5d ja8!
+  25f08 Cka8!
+  2695b 6`>H
+  269db *! 1
+  2723b )"@"
+  2728f T#@@9"D@9c
+  272a4 "H@9!L@9B
+  272cc #@@9?@
+  272d3 9#D@9?D
+  272db 9#H@9?H
+  272e3 9#L@9?L
+  272eb 9#P@9?P
+  272f3 9#T@9?T
+  272fb 9#X@9?X
+  27303 9#\@9?\
+  2730b 9#p@9?p
+  27313 9#t@9?t
+  2731b 9#x@9?x
+  27323 9#|@9?|
+  2732b 9#`@9?`
+  27333 9#d@9?d
+  2733b 9#h@9?h
+  27343 9#l@9?l
+  273b0 $ @9# 
+  273b7 9C<H
+  273bc $$@9#$
+  273c3 9C\P
+  273c8 $(@9#(
+  273cf 9C|X
+  273d4 $,@9#,
+  273e0 $0@9#0
+  273ec $4@9#4
+  273fc $8@9#8
+  27403 9#<@9"<
+  2743b 9#@@9"D@9c
+  27450 "H@9!L@9B
+  27485 p@9b
+  2748d t@9c
+  27499 x@9B
+  274a5 |@9B
+  27508 C@@9_@
+  2750f 9CD@9_D
+  27517 9CH@9_H
+  2751f 9CL@9_L
+  27527 9Cp@9Gp
+  2752f 9Ct@9_t
+  27537 9Cx@9_x
+  2753f 9C|@9_|
+  27560 E@@9
+  27567 SED@9
+  27574 CH@9c
+  27580 CL@9H@@9c
+  2759b 9e<H
+  275a0 HD@9ED
+  275a7 9e\P
+  275b0 HH@9EH
+  275b7 9EL@9CL
+  275e8 A`@9 
+  275ef SAd@9!
+  275fc @h@9
+  27608 @l@9
+  27618 @@@9_@
+  2761f 9@D@9_D
+  27627 9@H@9_H
+  2762f 9@L@9_L
+  27637 9@P@9_P
+  2763f 9@T@9_T
+  27647 9@X@9_X
+  2764f 9@\@9_\
+  27657 9@p@9_p
+  2765f 9@t@9_t
+  27667 9@x@9_x
+  2766f 9@|@9_|
+  27677 9@`@9_`
+  2767f 9@d@9_d
+  27687 9@h@9_h
+  2768f 9@l@9_l
+  27697 9A@@9 
+  2769f SAD@9!
+  276ac @H@9
+  276b8 @L@9
+  276ef 4`2@
+  27724 @@@9_@
+  2772b 9@D@9_D
+  27733 9@H@9_H
+  2773b 9@L@9_L
+  27743 9@p@9 
+  2774f 9@t@9_t
+  27757 9@x@9_x
+  2775f 9@|@9_|
+  277b1 jd8"
+  277dc A@@9_@
+  277e3 9AD@9_D
+  277eb 9AH@9_H
+  277f3 9AL@9_L
+  277fb 9Ap@9Ep
+  27803 9At@9_t
+  2780b 9Ax@9_x
+  27813 9A|@9_|
+  27824 A@@9#
+  2782b SAD@9!
+  27838 CH@9c
+  27844 CL@9F@@9c
+  2785f 9a<H
+  27864 FD@9AD
+  2786b 9a\P
+  27874 FH@9AH
+  2787b 9AL@9CL
+  27888 A@@9 
+  2788f SAD@9!
+  2789c @H@9
+  278a8 @L@9C@@9
+  278c8 CD@9AD
+  278d8 CH@9AH
+  278df 9AL@9@L
+  279bc @@@9AD@9
+  279d0 @H@9
+  279dc AL@9
+  279f4 @P@9AT@9
+  27a08 @X@9
+  27a14 A\@9
+  27a2c @`@9Ad@9
+  27a40 @h@9
+  27a4c Al@9
+  27a64 @p@9At@9
+  27a78 @x@9
+  27a84 A|@9
+  27aa9 p@9A
+  27ab1 t@9B
+  27abd x@9!
+  27ac9 |@9!
+  27b05 t@9c
+  27b19 |@9B
+  27b64 ?H"8Vc
+  27bc9 J"8=c
+  27bf5 J"8B
+  27f8c ah"8
+  28590 #hb8
+  285af q#hc8c
+  28692 @9_(
+  28840 5h 8`
+  28986 @9Bhc8_
+  292e3 5 #@
+  294a7 T #@
+  2981d H{8`
+  2995f S h`8
+  29d3b *@b@
+  29e07 Tx~@
+  2a043 RA2@
+  2a2e7 qBH@
+  2a377 RA*@
+  2a53f RsfG
+  2ac9f R_@6
+  2af25 v@9?X
+  2b166 A9?8
+  2b247 5aV@
+  2b26e /6zb
+  2b327 T`&@
+  2bf3d hd8$
+  2c26d Ha8a
+  2c710  @B9
+  2c747 5@&@
+  2ca52 @9"@
+  2cb4b 9@&@
+  2cef3 R@&@
+  2d05c `z@9
+  2d51d Jt8b
+  2dcf3 q3{t
+  2deb3 4b|@
+  2deb9 hb8B
+  2e14f T@b@
+  2e53e @9?t
+  2e58c Aka8
+  2e857 *!l9
+  2e981 [axb
+  2f07f *B(!
+  2f7bb RB|@
+  2fcaf RB|@
+  3021c bB@9
+  30223 4cF@9
+  303a5 ha8_
+  30940 Ak{8{
+  30954 Akb8
+  30c63 4yC9
+  31048 !Hu8b
+  310dc !Hu8b
+  31164 !Hb8b
+  31367 S! E
+  314af 8@n@
+  314ec  H`8a
+  31da5 h%8x
+  31db5 h%8`
+  31dcd h#8{
+  31e6f Tt~@
+  31eaf TsfG
+  32035 ja8"h 8!
+  32110 !kt8
+  32188 @k48
+  3256e @9Ahc8
+  3288a @9#h"8
+  3321a @yaB
+  33285 [@y 
+  3331d [@y@
+  33abc 8h`xCk`
+  33b14 @k`x
+  33b63 *&h`
+  33b76 @y! 
+  33cd9 hex?
+  33ddc 8;Ky
+  33f94 _k<8z
+  34445 Hb8a
+  35475 Hb8a
+  35517 R!dG
+  35533 RB4G
+  35e89 _@yh
+  35ef1 w@y@
+  35f11 w@y@
+  35f31 w@y@
+  35f51 w@y@
+  36191 w@y@
+  361b1 w@y@
+  36361 w@y@
+  36381 w@y@
+  363a1 w@y@
+  363c1 w@y@
+  363e1 w@y@
+  36441 w@y@
+  36461 w@y@
+  36521 w@y@
+  36641 w@y@
+  36661 w@y@
+  36681 w@y@
+  366a1 w@y@
+  366c1 w@y@
+  366e1 w@y@
+  36701 w@y@
+  36721 w@y@
+  36781 w@y@
+  367a1 w@y@
+  367c1 w@y@
+  368eb Q?  k
+  36b50 `kx8
+  36ea0 #hc8
+  36ed9 h 8 
+  36f11 j`8X
+  36f17 4"|@
+  36f1d hb8"
+  37062 @9?(
+  375b4  X`xa
+  37724  H`8a
+  37839 h%8<
+  37c87 4`N@
+  37e67 9`B@
+  3824b T`B_
+  38b53 *c&@
+  38b93 *d"@
+  38cfd #C9 
+  38ddd (@9a
+  38f4f QB|@
+  38f94 $hb8
+  38f99 h"8B
+  3907d (@9a
+  3926b TaBH
+  392df 9gBH
+  39397 TaBH
+  39417 T`K@
+  3952f T`K@
+  39541 ,@9!<P
+  39549 $@9"
+  39552 @9c|`
+  39582 @9# 
+  39589 (@9B
+  3959d 4@9!
+  39920 c,@9
+  39c4c "$@9!(@9
+  39e0b KB|@
+  3a3cc  gB)?
+  3a40b T`Ka8a
+  3a80d Ht8a
+  3a963 R`j68
+  3ab59 "@9?
+  3ac04 aB_8
+  3ac14 bb_8
+  3ac1c aR_8
+  3ac3a _8`r_8
+  3ae20 bFD9
+  3af67 7s2@
+  3b505 ,@9?
+  3b784 `.@9
+  3b7ca D9A 
+  3bb17 Tbja8bhb8B
+  3bd43 *!`=
+  3bd6f 9s>H
+  3bf18 eje8
+  3bf21 j 8!
+  3bf30 eJa8
+  3c004 `ZD9
+  3c022 @9?$
+  3c054 wJD9
+  3c074 `*By
+  3c0e7 TtnD9
+  3c1b9 xD9`
+  3c200 cj`8A
+  3c206 @9a 
+  3c210 aj 8!<H
+  3c2c0 d^D9
+  3c330 a:D9
+  3c348 a>D9
+  3c360 aBD9
+  3c416 D9`~
+  3c64f RAb@
+  3c70f 7`~@
+  3c99e @9  
+  3c9d8 `+@9a
+  3c9f3 Ta"@9aC
+  3ca04 c&@9
+  3ca17 T`*@9 H
+  3ca89 4@9sz
+  3ce0c b6@9
+  3ce40 b:@9
+  3cea7 Re2@9
+  3cf00 b6@9
+  3cf24 b:@9
+  3cfdc 6hb8
+  3cfe2 B9_@
+  3cff8 `:@9
+  3d01b * h@
+  3d0d4 t6@9
+  3d0dc b:@9
+  3d13f 6a6@96
+  3d187 6b6@9
+  3d18f qa:@9A
+  3d1d1 3@9?
+  3d230 !hb8!(
+  3d351 2@9#
+  3d478 aB@9?
+  3d493 T`*@y
+  3d4a4 a*@y?
+  3d559 *@y?
+  3d566 @z"|
+  3d628 e6A9d2A9
+  3d674 e6A9d2A9
+  3d7a0 `*@9
+  3d821 3B9v#
+  3d910 `*@9
+  3d991 3B9v#
+  3db66 D9`B
+  3dbfd zD9_
+  3dc0b 5`6@9`
+  3dc13 4`:@9 
+  3dc1b 4`F@9`
+  3dc23 5`>@9
+  3dc2b 4aB@9 
+  3dc82 86b6
+  3dcb8 `>@9
+  3dce3 *@h@
+  3dd67 R@(@9
+  3dfa7 T`2A9
+  3e100 %0@9
+  3e15f R`^<
+  3e300 `z@9
+  3e320 x~@9
+  3e50b 8`z4
+  3e56f Razx
+  3e593 Tazx
+  3ee1c "h`8_
+  3ee27 T?h 8
+  3fee5 j38s
+  40e37 TCn@
+  41367 5C@8
+  4139b TB@8
+  42548 `r@9
+  42554 `v@9
+  42560 `z@9
+  4256c `~@9
+  425dc `z@9
+  4266c `z@9
+  42848 `r@9
+  42853 T`v@9
+  4285f T`z@9
+  42e9c `z@9
+  42eb4 `~@9
+  4350d ha8u
+  43530 "ka8Bk!8!
+  43540 dj!8!
+  439f1 h"8A
+  43a1b 4tB 
+  43aa5 j48`
+  43adf q"pO
+  43bc4  X`xa
+  43e63 T`j`8
+  44437 T {t
+  4472b Rs~ 
+  4491f *@x!
+  449a7 T%h`8
+  449d1 j"8B
+  44d50 !Hb8b
+  44ee8 `i(8
+  44fe1 ?A9s
+  45070 `BP9aFP9
+  45151 JP9?
+  45168 a&Hy!
+  45173 S?  k
+  45190 c @9
+  45260  @P9
+  45417 Ta|@
+  454b3 5`BP9aRP9
+  45790  H`8a
+  45b15 ,@9?
+  45b51 Ha8a
+  45b64 b*@9a&@9e
+  45b8c `2@9
+  45ba0 a.@9!
+  45bb9 Ha8b
+  45d0d  @9?
+  45d4c  H`8a
+  46121  @9?
+  46237 5`Z@
+  46387 T  7
+  4639f 4d|@
+  463b8 Ch(8B
+  4649d DA9cVA9@ 
+  464a8 bJA9
+  464b0 bNA9
+  464b8 `RA9
+  464c0 `ZA9c@
+  464c8 `^A9``
+  464dc bbA9afA9A 
+  464e8 bjA9!@
+  464f0 bnA9"`
+  465fc `2@9
+  46604 b6@9
+  4660c `:@9@@
+  46614 b>@9
+  46660 ab@9`f@9  
+  4666c aj@9
+  46674 an@9
+  4667c `r@9!
+  46684 `v@9 
+  4668c az@9
+  46694 a~@9
+  466be @9  
+  46712 @9  
+  46aba @9J 
+  46ac2 @9k 
+  46aca @9BA
+  46ad2 @9cA
+  46ada @9J`
+  46ae2 @9k`
+  46b56 @9 @
+  46d1a @9B 
+  46d22 @9A@
+  46d2a @9!`
+  46d5a @9C 
+  46d62 @9c@
+  46d6a @9b`
+  46ea6 @yA@
+  46efc 4@A9!DA9
+  46f08 tJA9!@
+  46f10 tNA94`
+  46f58 bBA9`FA9aVA9@ 
+  46f68 bJA9
+  46f70 bNA9
+  46f78 `RA9
+  46f80 `ZA9!@
+  46f88 `^A9 `
+  46fb4 b6@9`n
+  46fbb 9`2@9aj
+  46fcc `:@9@@
+  46fd4 b>@9
+  4704b T`f@9ab@9b
+  47056 @9! 
+  4705c `j@9 @
+  47064 an@9
+  4706c ar@9
+  47074 `v@9!
+  4707c `z@9 
+  47084 a~@9
+  4709a @9B@
+  470a2 @9A`
+  470d3 9"\P
+  470db 9"|X
+  47142 @9b6@9
+  471cf 9`2@9
+  471d8 `:@9@@
+  471e0 b>@9
+  47267 T`b@9
+  47270 af@9
+  47280 `j@9 @
+  47288 an@9
+  47290 `r@9 
+  47298 av@9
+  472a0 `z@9 
+  472a8 a~@9
+  47486 @9!@
+  4748e @9 `
+  4759c B\@9
+  475e7 Re<H
+  475fb 8e\P
+  4760b 8e|X
+  479a3 T@b@
+  47c6f 5`&@
+  47c7f 4!|@
+  47fe3 Rs~ 
+  4822f Rsb!
+  4840b 5@R@
+  48563 5@b@
+  48593 *@R@
+  4894b 4b2@
+  48b2f 4`*@
+  48bdf RAb@
+  48d0b 4`"@
+  48d27 4`*@
+  48d57 4`.@
+  48ec0 $xcx
+  48ecd x#xc
+  48fee PQc@
+  49250  $@8
+  498d6 @y`/
+  49d2b R`"@
+  49d6b T`*@
+  49eba H6CLAy`
+  49ed2 Ay!@
+  49ef6 @y @
+  4a0cf S @3
+  4a0d4 #@s9
+  4a113 S @3
+  4a118 #@s9
+  4a2ad {A9$
+  4a5c8 "@s9A
+  4a5d0 " 39!
+  4a6a5 Xaxa
+  4a90d "s9B 
+  4a999 "s9!
+  4afb8 bb@9
+  4afd8 ub@9
+  4afdf Qsf@9_
+  4aff4 !Hb8b
+  4b16f *`j`
+  4b203 *`j`
+  4b512 (7`r@
+  4b61a H6`b@
+  4b8c3 T `@Q6
+  4b917 R G@
+  4babf 4a2@
+  4bbab 7`V@
+  4bbb3 4`6@
+  4bc5f 7aV@
+  4bc67 4a6@
+  4c26e Az!	
+  4c2a3 R!|@
+  4c2ac Fha8
+  4c2b3 *@h!8
+  4c445 hb8D
+  4c47f T.hm8`!
+  4c48b * h-8
+  4c4c0 .hm8
+  4c4c7 * h-8
+  4c7b4 AXaxb
+  4c887 RB|@
+  4c8cd p@9`
+  4ca23 6;#@
+  4caec bhb8
+  4cafc lj`8
+  4cb04 bj 8y
+  4cbb3 *!|@
+  4cbbc bp@9B
+  4cbd0 "p@9B
+  4cc82 86`j@
+  4cceb T!{z
+  4cd19 h`8D(
+  4cd37 T +@
+  4cd66  6 '@
+  4cd77 R#'@
+  4cd8b 4 +@
+  4cdb1 hb8f(
+  4cf97 9`z8
+  4d02d J`8`o
+  4d194 `J`8
+  4d1dc `J`8
+  4d2f9 p@9Bp@9
+  4d410 "p@9
+  4d415 p@9_
+  4d4eb 6ajB
+  4d609 hd8B
+  4e103 R'hd8
+  4e2f3 *$hb8
+  4e2ff J#h"8
+  4e3f8 $h`8d
+  4e427 S#h 8
+  4e450 $x`xd
+  4e47e @yc<
+  4e483 S#x x
+  4e663 T{&D
+  4e6c8 Aha8
+  4e797 4e6@
+  4e7e7 k`.D
+  4e80f jd6@
+  4e8bc Bha8a^B
+  4ea0b T{&D
+  4ea98 Aha8
+  4eb0f *$4@
+  4eb33 R8 B
+  4ebcc Aha8
+  4eddb TBT@
+  4ee17 Rd6@
+  4eeab Ra&D
+  4f354 Ck`8
+  4f35c Ch!8
+  4f444 #k`8
+  4f44c Ch!8
+  4f7bf TaB@
+  4fa0a H7 DB
+  4fa47 4d:B
+  4fa67 4fFB
+  4fab7 6eF@
+  4fb93 Tb_B
+  4fc8c Dh`8!x`
+  4fc98 dh!8
+  4fdef Tc"B
+  4fef3 TcNB
+  5005b Qc|@
+  504b9 h!8?
+  504c9 hb8c
+  504dd h"8B
+  506b7 Tb:@
+  50817 T@(@
+  50919 hc8B 
+  50983 Ta2@
+  50a9f Rc*@
+  50ab3 Rc*@
+  50aeb Tc*@
+  50b0b Tc*@
+  50b3f Tc*@
+  50cf7 Tc*@
+  50d2b Tc*@
+  50d5b 4`2@
+  50d93 Rc*@
+  50dc7 Tc*@
+  50e2f T`2@
+  516cf 6eF@
+  51937 Sd6@
+  5195c @k58
+  51a3d J@y`
+  51a45 N@y`
+  51ace @zaT
+  51aeb Qdj@
+  51c1f 5d6@
+  51c97 Td6@
+  51cc8 `k58
+  51cea C9A 
+  51cef *?  k
+  51cff Td6@
+  51d8f Td6@
+  51dc1 j;8{
+  51de2 G9A 
+  51de7 *?  k @
+  51e1f 5c.@
+  51ea0 dCA9`GA9
+  51eac dKA9
+  51eb4 dOA9
+  51ec0 `wA9asA9! 
+  51ecc `{A9 @
+  51eec aSA9`WA9  
+  51f02 A9! 
+  51f0a A9 @
+  51f82 B9  
+  51ffc a3@9z7@9: 
+  5200f S@?|
+  52038 b;@9
+  52082 @9A 
+  52087 *?  ka
+  52121 FA9` 
+  52141 rA9! 
+  52149 zA9 @
+  5216d VA9  
+  5217e A9! 
+  52186 A9 @
+  521ce DyaRK9
+  521df T`NK9`
+  5220f 9Bk`8
+  52276 A9?`
+  522b9 hc8_
+  52370  H`8a
+  52410  H`8a
+  525ba @9  
+  525f6 @9  
+  52730 BXcxc
+  52acf Tb"A
+  52cfe @9T 
+  52d5a Bz`	
+  52de7 5@b@
+  52e9e @9aB
+  52ea5 4@yb"
+  52f5d "@9B
+  534da @9sb
+  53bf3 7t>K
+  54014 `2X9
+  541db 9a2X9
+  54207 R`:X9
+  54308 a6X9!|
+  54324 `:X9?
+  5434d Ha8a
+  54374 `R^9
+  54394 `R^9
+  5451b Ta6X9
+  5456c a6X9B_
+  54577 S!|@
+  54594 a6X9
+  5459f S!|@
+  545c7 Ta6X9`
+  545d7 S!|@
+  54604 a6X9
+  5460f S!|@
+  5462c a6X9
+  54637 S!|@
+  5467b Ta6X9
+  5468b S!|@
+  54793 Ta6X9
+  547a3 S!|@
+  54de5 B@9@
+  54df5 J@9B
+  54dfd F@9!
+  54e05 V@9B
+  54e0d R@9!
+  54f89 "y9`R
+  55065 3x90
+  55071 cx9`6
+  55079 gx9`:
+  556e3 *aF@
+  5572b Tb"@
+  55735 ~	)_
+  5574b Sb&@
+  55813 RaF@
+  5583b R`:@
+  5584f RaF@
+  5588f RaF@
+  558c3 RaF@
+  559ff *`*@
+  55ad7 RaF@
+  55af7 RaF@
+  55b41 	06?
+  55b5b RaF@
+  55bcf RaF@
+  55beb RaF@
+  55c37 RaF@
+  55c77 RaF@
+  56293 RaF@
+  5630a @q`&
+  56315 "@q@
+  56367 RaF@
+  563bf RaF@
+  563df RaF@
+  56483 RaF@
+  564db RaF@
+  564f7 RaF@
+  5655f RaF@
+  5657b RaF@
+  56597 2aF@
+  565b3 RaF@
+  565d7 RaF@
+  565f3 RaF@
+  5661b *aF@
+  56633 RaF@
+  56937 *`^P
+  56997 *`^P
+  569f7 *`^P
+  56a53 *`^P
+  56aab *`^P
+  56b03 *`^P
+  56cff 5x*H
+  56d2f Q?  k
+  56ee5 _@y@
+  57673 4s*@
+  57bbd P@9B
+  57bf3 9!<H
+  57c3b 9!<H
+  57c51 P@9B
+  57c65 P@9!
+  5816b RAb@
+  581be @y`*
+  581ee @y`6
+  5821c "@C9 @
+  582ca @9A 
+  58449 $@9%
+  5844e @yD 
+  58469 ,@9%
+  5846e @yD 
+  58489 4@9%
+  5848e @yD 
+  584a9 4@9%
+  584ae @yD 
+  584c2  6%(@9
+  584da (6%,@9
+  584f6 06!0@9
+  58532 86E4@9
+  5854a @6E8@9
+  58562 H6E<@9
+  58582 @9B@@9_
+  58c9c ?`Bk
+  58e3a @9A 
+  58e50 _(@q@
+  58fbf R!`'
+  58fd3 R!`'
+  58fe2 @9S 
+  590ea @9a 
+  59198 aHa8c
+  591f3 R!`'
+  5953e 3*3|SK
+  597a6 @y3 
+  598a6 @9@ 
+  598ce @9@ 
+  5a178 !Hb8c
+  5a1bd Hb8a
+  5a325 Hc8d
+  5a3c9 Hb8a
+  5a8fc ?`@k
+  5a96c ?`Bk
+  5a9d4 ?`Bk
+  5acbc ?`Bk
+  5aeba @9B@
+  5aec2 @9A`
+  5aed2 @9" 
+  5aeda @9B@
+  5aee2 @9A`
+  5afe8 ?`@k
+  5bd76 @yAa
+  5c999 ?B9 
+  5cf2f 4ar@y`
+  5cf3f T`N@
+  5d345 AN).
+  5d3d0 #jc8F
+  5d452 _8J!
+  5d5c1 ky8[h989
+  5d60c \ky8\h989
+  5d63d jc8c
+  5d6b1 ky8[h989
+  5d6e5 ?@8C<
+  5d729 kj89
+  5d732 @9z#
+  5d737 *Zh*xJ	
+  5d775 #Y*9
+  5d7b1 kj80
+  5d88c  xlx
+  5d8bc *xhx
+  5d931 Xsx"xbx_
+  5d97b T7{qx1
+  5da21 i!8A
+  5db6d XsxU
+  5db8c Yio8
+  5dc09 h5xt
+  5dd07 R`*@
+  5df28 $h`8
+  5df46 @9!@
+  5df54 * _8'0_89
+  5df60 %@_8J
+  5df68 8P_8
+  5df74 /`_87p_8
+  5e0f0 $h`8
+  5e187 Rt&@
+  5e1ac  X`xa
+  5e45e P6_?
+  5e51a P6`V@
+  5e547 KA$@
+  5e59b K{C#
+  5e5d4 dK`8A
+  5e5fc DH 8
+  5e643 K{C#
+  5e64b 4`6@
+  5e68f 47#@
+  5e6af *!@5
+  5e73f *aR@
+  5e7b4 dK`8A
+  5e7dc DH 8
+  5e823 K{C#
+  5e83a H6_?
+  5e843 Ta2@y
+  5ec0c  X`x
+  5ec1c az x
+  5ec30  X`x
+  5ec6b Tar@
+  5ecae @y?<
+  5edbc mz`x#
+  5eedf Rd2@
+  5efe7 RbV@
+  5f017 Rd6@
+  5f123 RbZ@
+  5f19f Tc>@
+  5f1a7 Ka"@
+  5f1b7 Kc6@
+  5f1ec #hb8
+  5f1f1 j"8B
+  5f1ff T`V@
+  5f223 4`V@
+  5f367 T`"@
+  5f39b R##@
+  5f4eb T $@
+  5f523 Td$@
+  5f5a1 Ha8a
+  5f748 `	H:k
+  5fac1 jt8 
+  6025b 4b~@
+  603f7 7B|@
+  60683 5a"@
+  6074f Tb&@
+  60eb4 c BJc|@
+  60ebd xcxb 
+  6116f T@b@
+  61413 6E(@9
+  6141c E,@9
+  614cb 6UJ@
+  61753 TbX@
+  618f4 5\@)B
+  61926 A)Bd
+  61e30 zrAQZ
+  626a1 ja8@ka8Bk!8
+  626ad j!8!
+  62c45 Ja8@
+  6328d h`8b
+  632c0 cj 8
+  6342f T{C!
+  6374c 5He8
+  6394a @yB<
+  63951 {#xB<
+  63965 k#8B
+  639f4 Aha8!
+  63a40   @J`
+  63aa4 ` @JA
+  63bee @9"hb8B
+  63c4e @9"hb8"
+  63e0b T`[`xa
+  63ffc !hb8
+  64030 !hb8
+  6405c !hb8
+  64321 hd8_
+  64335 h$8J
+  64341 hd8!
+  64602 @9?p
+  64914 #hb8
+  64919 h"8B
+  64933 T$hc8
+  64939 h#8c
+  64958 $hb8dh"8B
+  64990 %hd8e
+  649b9 hc8"hc8
+  649f1 hd8#hd8
+  64be1 h#8c
+  64c48 %hc8
+  64c4d h#8c
+  64c98 _i'8
+  64cc8 $hc8
+  64ccd h#8c
+  64ce0 #hb8
+  64d05 hd8%hd8
+  65535 j"8B
+  65741 hd8D
+  6579c %hd8!
+  65c9c ghg8dhd8
+  65d6c Ghg8Dhd8
+  65d88 Ghg8Dhd8
+  65e49 i!8!
+  65f37 S!<@
+  65f93 *!|@
+  66047 Qc|@
+  66146 @9_,
+  6618c C,@8
+  6623f Qc|@
+  6628e @9_,
+  662d4 C,@8
+  66503 J!DAJ 
+  66b87 Ts"#
+  66ba7 Qtz 
+  66cd6 @9!<
+  66ce2 @9A 
+  66e2a @9?p
+  66e8f *!x(
+  66ebd k380
+  6701a @9!x
+  6742b R!`@
+  6745a @9!<
+  67982 @9fN@9
+  67996 @9eF@9
+  6799f *dV@9!
+  679a7 *bR@9`J@9!
+  67a50 cB@9
+  67adc aB@9
+  67ae3 7bN@9`J@9
+  67aef *bF@9!
+  67af7 *bV@9
+  67aff *aR@9!
+  68375 Ztxa
+  685e5 Ht8a
+  6885b T`&@9
+  68867 T`R@9
+  68873 T`V@9
+  688b0 f2@yeb
+  688b8 d*@y
+  688bf *b.@yaV@9
+  688e3 *`R@9
+  688ff Td2@y
+  68908 c*@y
+  6890f *a.@y
+  689aa Zyb~
+  68a6e @yb>
+  68b03 y@\J
+  68ea3 Z!,B
+  68f5f Z!,B
+  68ffb Z!,B
+  6908b Z!,B
+  6912b Z!,B
+  69313 *@,B
+  696c3 Z!,B
+  697e0  H`8a
+  698e0 bHb8c
+  69ed4 !P@9
+  6a07d Hb8b
+  6a2a2 Zy@@
+  6a37d Xaxa
+  6ae60 pci_init_board_external
+  6ae78 nand_cw_size_get
+  6ae90 nand_read_buff
+  6aea0 nand_read_word
+  6aeb0 nand_write_buff
+  6aec0 ecc_read_page
+  6aed0 ecc_write_page
+  6aee0 bch_num_bits_convert
+  6aef8 page_size_bytes_convert
+  6af10 al_board_nand_init
+  6af28 dt_read
+  6af30 fdt_fixup_memory_banks
+  6af48 create_bbt
+  6af58 nand_select_chip
+  6af70 __of_translate_address
+  6af88 verify_bbt_descr
+  6afa0 nand_transfer_oob
+  6afb8 eth_get_dev_by_name
+  6afd0 nand_fill_oob
+  6afe0 nand_scan_tail
+  6aff0 xhci_queue_command
+  6b008 xhci_wait_for_event
+  6b020 abort_td
+  6b030 record_transfer_result
+  6b048 xhci_bulk_tx
+  6b058 xhci_ctrl_tx
+  6b068 xhci_flush_cache
+  6b080 xhci_inval_cache
+  6b098 xhci_configure_endpoints
+  6b0b8 xhci_malloc
+  6b0c8 xhci_segment_alloc
+  6b0e0 xhci_ring_alloc
+  6b0f0 xhci_alloc_container_ctx
+  6b110 xhci_address_device
+  6b128 _xhci_alloc_device
+  6b140 xhci_get_input_control_ctx
+  6b160 xhci_setup_addressable_virt_dev
+  6b180 al_pcie_config_device
+  6b198 al_pcie_bus_map
+  6b1a8 dt_based_sgpo_init_group
+  6b1c8 dt_based_sgpo_init
+  6b1e0 dt_based_init_pcie_params_port
+  6b200 dt_based_init_pcie
+  6b218 handle_link
+  6b228 al_eth_register
+  6b238 al_eth_lm_led_config_init_single
+  6b260 al_eth_dev_init
+  6b270 al_eth_init
+  6b280 al_eth_send
+  6b290 al_eth_recv
+  6b2a0 al_eth_halt
+  6b2b0 al_eth_write_hwaddr
+  6b2c8 al_eth_phy_mdio_register
+  6b2e8 al_eth_phy_mdio_read
+  6b300 al_eth_phy_mdio_write
+  6b318 al_eth_mac_mode_set
+  6b330 al_nand_max_onfi_timing_mode_get
+  6b358 eth_board_params_ref_clk_freq_get
+  6b380 boot_mode_load
+  6b390 dt_read
+  6b398 boot_mode_save
+  6b3a8 dt_based_init_pinctrl
+  6b3c0 dt_based_init_gpio
+  6b3d8 dt_based_init_gpio_expander
+  6b3f8 dt_based_init_eth_params_port
+  6b418 dt_based_init
+  6b428 thermal_init
+  6b438 board_init
+  6b448 power_init_board
+  6b460 ft_board_setup_clock
+  6b478 ft_board_setup_feature_disable
+  6b498 ft_board_setup_prop_u32_set
+  6b4b8 ft_board_setup_pcie_set
+  6b4d0 dram_init_banksize
+  6b4e8 al_eth_retimer_init
+  6b500 board_eth_init
+  6b510 get_board_info
+  6b520 print_part_efi
+  6b530 gpio_request
+  6b540 al_gpio_init
+  6b550 gpio_free
+  6b560 al_gpio_dir_set
+  6b570 get_partition_info_efi
+  6b588 gpio_direction_input
+  6b5a0 gpio_direction_output
+  6b5b8 gpio_get_value
+  6b5c8 set_default_env
+  6b5d8 gpio_set_value
+  6b5e8 set_protective_mbr
+  6b600 i2c_mux_set
+  6b610 al_gpio_get
+  6b620 al_timer_config_set
+  6b638 al_iofic_config
+  6b648 al_timer_load_set
+  6b660 al_gpio_set
+  6b670 al_cmos_handle_init
+  6b688 env_import
+  6b698 env_export
+  6b6a8 al_pll_init
+  6b6b8 do_gpt
+  6b6c0 gpt_restore
+  6b6d0 pca953x_set_val
+  6b6e0 al_iofic_unmask
+  6b6f0 al_timer_int_raw_get
+  6b708 al_cmos_rgmii_dll_failure_clear
+  6b728 reg_offset_get
+  6b738 ext4fs_devread
+  6b748 pca953x_set_pol
+  6b758 pca953x_set_dir
+  6b768 al_pll_freq_get
+  6b778 spi_setup_slave
+  6b788 al_iofic_clear_cause
+  6b7a0 is_gpt_valid
+  6b7b0 alloc_read_gpt_entries
+  6b7c8 is_pte_valid
+  6b7d8 clk_rise_pre_warp
+  6b7f0 al_uart_read
+  6b800 spi_xfer
+  6b810 ms_pre_warp
+  6b820 al_pll_channel_freq_get
+  6b838 al_unit_adapter_int_cause_mask_set_ex
+  6b860 spi_claim_bus
+  6b870 freq_pre_warp
+  6b880 spi_release_bus
+  6b890 al_sgpo_hw_init
+  6b8a0 al_iofic_abort_mask_clear
+  6b8c0 al_sgpo_handle_init
+  6b8d8 al_tpm_self_test_full
+  6b8f0 al_uart_soft_reset
+  6b908 al_pll_channel_div_set
+  6b920 al_sgpo_clk_rise_time_set
+  6b940 al_uart_line_status_get
+  6b958 al_sgpo_upd_freq_set
+  6b970 al_sgpo_clk_freq_set
+  6b988 al_otp_handle_init
+  6b9a0 al_i2c_hold_time_set
+  6b9b8 al_flash_toc_validate
+  6b9d0 al_sgpo_sata_mode_set
+  6b9e8 al_otp_read_word
+  6ba00 al_sgpo_group_mode_set
+  6ba18 al_thermal_sensor_handle_init
+  6ba38 al_sgpo_stretch_len_set
+  6ba50 _al_flash_toc_print
+  6ba68 al_uart_ptime_disable
+  6ba80 al_thermal_sensor_enable_set
+  6baa0 al_sgpo_pin_mode_group_set
+  6bac0 al_thermal_sensor_is_ready
+  6bae0 tdm_rx_fifo_fetch
+  6baf8 al_thermal_sensor_trigger_continuous
+  6bb20 al_thermal_sensor_readout_is_valid
+  6bb48 al_ddr_pmu_disable_counter
+  6bb68 al_sgpo_user_val_set
+  6bb80 al_thermal_sensor_readout_get
+  6bba0 al_flash_toc_find_id_with_fallback
+  6bbc8 al_sgpo_pin_mode_set
+  6bbe0 al_addr_map_pasw_get
+  6bbf8 al_sys_fabric_error_int_unmask
+  6bc18 al_sgpo_invert_mode_en
+  6bc30 al_spi_wait_on_sr
+  6bc48 al_flash_toc_stage2_active_instance_get_with_fallback
+  6bc80 al_sgpo_blink_mode_en
+  6bc98 al_addr_map_dram_remap_set
+  6bcb8 al_tpm_extend
+  6bcc8 al_sgpo_stretch_mode_en
+  6bce0 al_sys_fabric_sb_pos_info_get_and_clear
+  6bd08 al_l2_mem_err_syndrome_get
+  6bd28 al_tdm_tx_enable_set
+  6bd40 al_flash_obj_header_read_and_validate
+  6bd68 al_muio_mux_init
+  6bd80 al_tdm_rx_enable_set
+  6bd98 al_tdm_rx_fifo_status_get
+  6bdb8 al_flash_obj_data_load
+  6bdd0 iface_upd_ex_s
+  6bde0 al_sys_fabric_sys_counter_get_64
+  6be08 al_spi_claim_bus
+  6be20 al_spi_release_bus
+  6be38 al_sys_fabric_sys_counter_get_32
+  6be60 al_flash_obj_validate
+  6be78 _al_flash_stage2_validate
+  6be98 al_muio_mux_iface_alloc
+  6beb0 al_sys_fabric_cluster_pd_pu_timer_set
+  6bed8 al_muio_mux_iface_alloc_force
+  6bef8 al_sys_fabric_cluster_power_ctrl
+  6bf20 al_bootstrap_boot_device_get
+  6bf40 al_udma_desc_get
+  6bf58 al_udma_desc_get
+  6bf70 al_udma_desc_get
+  6bf88 al_udma_desc_get
+  6bfa0 al_serdes_25g_reg_read
+  6bfb8 al_udma_ring_id_get
+  6bfd0 al_udma_ring_id_get
+  6bfe8 al_udma_ring_id_get
+  6c000 al_udma_ring_id_get
+  6c018 al_udma_desc_action_add
+  6c030 al_udma_desc_action_add
+  6c048 al_udma_desc_action_add
+  6c060 al_udma_desc_action_add
+  6c078 al_udma_desc_action_add
+  6c090 al_muio_mux_iface_free
+  6c0a8 al_cdesc_next
+  6c0b8 al_cdesc_next
+  6c0c8 al_cdesc_next
+  6c0d8 al_cdesc_next
+  6c0e8 al_serdes_25g_reg_write
+  6c100 al_sys_fabric_core_reset_deassert
+  6c128 _pre_boot_validate
+  6c140 do_env_export
+  6c150 al_spi_write
+  6c160 al_bootstrap_cpu_exist_get
+  6c180 al_udma_cdesc_get_all
+  6c198 al_udma_cdesc_get_all
+  6c1b0 al_udma_cdesc_get_all
+  6c1c8 al_udma_cdesc_get_all
+  6c1e0 al_udma_cdesc_ack
+  6c1f8 al_udma_cdesc_ack
+  6c210 al_udma_cdesc_ack
+  6c228 al_udma_cdesc_ack
+  6c240 al_udma_iofic_m2s_error_ints_unmask
+  6c268 al_udma_iofic_s2m_error_ints_unmask
+  6c290 al_serdes_reg_read
+  6c2a8 do_env_import
+  6c2b8 al_serdes_reg_write
+  6c2d0 al_serdes_25g_mailbox_send_cmd
+  6c2f0 al_bootstrap_parse
+  6c308 al_serdes_bist_overrides_enable
+  6c328 al_serdes_25g_mailbox_recv_rsp
+  6c348 al_serdes_25g_bist_rx_enable
+  6c368 al_serdes_rx_rate_change
+  6c388 al_serdes_25g_bist_pattern_select
+  6c3b0 al_serdes_group_pm_set
+  6c3c8 al_serdes_25g_bist_tx_enable
+  6c3e8 al_serdes_25g_bist_rx_status
+  6c408 al_serdes_lane_pm_set
+  6c420 al_serdes_25g_eye_diag_run
+  6c440 al_serdes_25g_calc_eye_size
+  6c460 al_serdes_loopback_control
+  6c480 al_serdes_bist_pattern_select
+  6c4a0 al_serdes_25g_tx_advanced_params_set
+  6c4c8 al_serdes_25g_cdr_is_locked
+  6c4e8 al_serdes_25g_rx_valid
+  6c500 al_serdes_25g_rx_equalization
+  6c520 _al_serdes_lane_rx_rate_change_sw_flow_dis
+  6c550 al_serdes_25g_gcfsm2_read
+  6c570 _al_serdes_lane_rx_rate_change_sw_flow_en_cond
+  6c5a0 al_udma_m2s_packet_size_cfg_set
+  6c5c0 al_serdes_25g_rx_leq_fsm_op
+  6c5e0 al_serdes_eye_measure_run
+  6c600 al_serdes_eye_diag_pre_sample
+  6c620 al_udma_m2s_max_descs_set
+  6c640 al_serdes_25g_tbus_read
+  6c658 al_udma_s2m_max_descs_set
+  6c678 al_serdes_eye_diag_start_sample
+  6c698 al_serdes_eye_diag_poll_sample
+  6c6b8 al_serdes_25g_rx_advanced_params_get
+  6c6e0 al_serdes_eye_diag_stop_sample
+  6c700 al_serdes_eye_diag_post_sample
+  6c720 al_serdes_25g_tx_diag_info_get
+  6c740 al_serdes_eye_diag_sample
+  6c760 al_serdes_25g_rx_diag_info_get
+  6c780 al_ssm_dma_action
+  6c798 al_udma_q_set_pointers
+  6c7b0 al_serdes_25g_single_iteration_dosc_set
+  6c7d8 al_udma_s2m_compl_desc_burst_config
+  6c800 al_udma_init
+  6c810 al_udma_q_init
+  6c820 al_udma_q_reset
+  6c830 al_udma_q_handle_get
+  6c848 al_udma_state_set
+  6c860 al_serdes_25g_tx_pll_wa_find_window_edge
+  6c890 al_udma_state_get
+  6c8a8 al_serdes_mode_set_sgmii
+  6c8c8 al_serdes_25g_tx_pll_wa_find_window
+  6c8f0 al_serdes_mode_set_kr
+  6c908 al_udma_cdesc_packet_get
+  6c928 al_serdes_rx_equalization
+  6c948 al_serdes_25g_tx_pll_wa
+  6c960 al_raid_dma_prepare
+  6c978 al_serdes_calc_eye_size
+  6c990 al_raid_dma_completion
+  6c9a8 do_bootvx_fdt
+  6c9b8 fdt_find_or_add_subnode
+  6c9d0 early_nand_is_blk_bad_raw
+  6c9f0 al_serdes_hssp_mode_class_get
+  6ca10 al_serdes_25g_fw_init_status_group_common_check
+  6ca40 al_serdes_25g_fw_init_status_lane_check
+  6ca68 early_nand_addr_logic_to_phys
+  6ca88 al_serdes_hssp_serdes_mode_get
+  6caa8 al_serdes_25g_group_cfg
+  6cac0 ahci_init_one
+  6cad0 al_serdes_25g_is_fw_alive
+  6caf0 al_serdes_25g_group_cfg_mode_adv
+  6cb18 ahci_port_start
+  6cb28 al_serdes_25g_mode_get
+  6cb40 ata_scsiop_inquiry
+  6cb58 al_nand_init
+  6cb68 al_nand_dev_select
+  6cb80 al_nand_dev_config_basic
+  6cba0 al_nand_dev_config
+  6cbb8 device_remove
+  6cbc8 al_nand_cw_config
+  6cbe0 al_nand_ecc_set_enabled
+  6cbf8 al_nand_wp_set_enable
+  6cc10 raw_access
+  6cc20 al_init_pcie
+  6cc30 al_nand_tx_set_enable
+  6cc48 al_nand_uncorr_err_get
+  6cc60 al_nand_uncorr_err_clear
+  6cc80 al_nand_corr_err_get
+  6cc98 al_nand_corr_err_clear
+  6ccb0 al_nand_dev_is_ready
+  6ccc8 _al_nand_cmd_seq_size_page_read
+  6cce8 al_nand_cmd_seq_gen_page_read
+  6cd08 do_nand
+  6cd10 device_probe_child
+  6cd28 al_nand_cmd_single_execute
+  6cd48 dev_get_parent_platdata
+  6cd60 al_ddr_address_map_get
+  6cd78 al_nand_cmd_seq_execute
+  6cd90 dev_get_priv
+  6cda0 al_nand_cmd_buff_is_empty
+  6cdc0 dev_get_uclass_priv
+  6cdd8 al_nand_data_buff_base_get
+  6cdf8 dev_get_parentdata
+  6ce10 al_nand_data_buff_read
+  6ce28 _al_nand_dev_config_modes
+  6ce48 env_sf_relocate_spec
+  6ce60 _al_nand_dev_config_ctl_reg_0
+  6ce80 _al_nand_dev_config_sdr_timing_params
+  6cea8 _al_nand_dev_config_rdy_busy_wait_cnt
+  6ced0 _al_nand_dev_config_bch_ctl_reg_0
+  6cef8 _al_nand_dev_config_bch_ctl_reg_1
+  6cf20 al_ddr_rev_get
+  6cf30 al_ddr_cfg_init
+  6cf40 al_eth_pci_probe
+  6cf58 usb_get_configuration_no
+  6cf78 al_eth_an_lt_reg_read
+  6cf90 al_eth_an_lt_reg_write
+  6cfa8 al_eth_kr_an_run
+  6cfc0 al_eth_an_lt_unit_config
+  6cfe0 al_eth_kr_lt_transmitter_task_init
+  6d008 al_eth_kr_an_validate_adv
+  6d028 al_eth_kr_an_read_adv
+  6d040 al_eth_kr_lt_transmitter_task_run
+  6d068 al_eth_kr_an_status_check
+  6d088 xhci_hcd_init
+  6d098 al_eth_sfp_detect
+  6d0b0 al_eth_qsfp_detect
+  6d0c8 al_eth_module_detect
+  6d0e0 al_eth_lm_retimer_br210_config
+  6d100 al_eth_lm_retimer_br410_config
+  6d120 al_eth_lm_retimer_ds25_write_reg
+  6d148 al_eth_group_lm_link_manage
+  6d168 al_eth_lm_retimer_ds25_channel_config
+  6d190 al_eth_lm_retimer_ds25_cdr_reset
+  6d1b8 al_eth_lm_retimer_ds25_signal_detect
+  6d1e0 al_eth_lm_retimer_ds25_cdr_lock
+  6d200 al_eth_lm_retimer_ds25_speed_get
+  6d228 al_eth_lm_wait_for_lock_step
+  6d248 al_eth_lm_retimer_signal_lock_check_step
+  6d278 al_eth_lm_retimer_ds25_full_config
+  6d2a0 al_eth_lm_retimer_25g_rx_adaptation_step
+  6d2d0 al_eth_lm_retimer_ds125_config
+  6d2f0 al_eth_lm_check_for_link
+  6d310 al_eth_lm_link_state_check_for_detection
+  6d340 al_eth_lm_fec_config
+  6d358 al_eth_lm_init
+  6d368 al_eth_lm_link_detection_step
+  6d388 al_eth_lm_link_establish_step
+  6d3a8 al_eth_ec_error_ints_unmask
+  6d3c8 al_eth_mac_error_ints_unmask
+  6d3e8 al_eth_queue_config
+  6d400 al_eth_rx_pkt_limit_config
+  6d420 al_eth_gearbox_reset
+  6d438 al_eth_fec_is_enabled
+  6d450 al_eth_mdio_config
+  6d468 al_eth_tx_pkt_prepare
+  6d480 al_eth_rx_buffer_add
+  6d498 al_eth_pkt_rx
+  6d4a8 al_eth_thash_table_set
+  6d4c0 al_eth_ctrl_table_raw_set
+  6d4e0 al_eth_mac_addr_store
+  6d4f8 al_eth_fwd_mhash_table_set
+  6d518 al_eth_fwd_vid_table_set
+  6d538 al_eth_board_params_set
+  6d550 al_eth_tx_fwd_vid_table_set
+  6d570 al_eth_tx_generic_crc_table_init_ex
+  6d598 al_eth_rx_generic_crc_table_init_ex
+  6d5c0 al_eth_ec_error_ints_masks_get
+  6d5e0 al_eth_mac_error_ints_masks_get
+  6d600 al_pcie_rev_id_get
+  6d618 al_pcie_ib_hcrd_os_ob_reads_config_default
+  6d648 do_cpu_set_speed
+  6d660 pll_sb_init
+  6d670 al_pcie_port_pf_params_config
+  6d690 al_pcie_port_sris_config
+  6d6b0 gpio_board_init
+  6d6c0 al_pcie_port_handle_init
+  6d6e0 al_pcie_pf_handle_init
+  6d6f8 al_spi_baud_rate_get
+  6d710 iodma_pci_init
+  6d720 al_pcie_port_max_num_of_pfs_set
+  6d740 al_pcie_port_ib_hcrd_os_ob_reads_config
+  6d768 al_pcie_operating_mode_get
+  6d788 eeprom_per_device_init
+  6d7a0 eeprom_per_device_save
+  6d7b8 al_pcie_port_config
+  6d7d0 al_pcie_pf_config
+  6d7e8 al_pcie_link_status
+  6d800 al_pcie_port_ram_parity_int_config
+  6d828 al_pcie_port_axi_parity_int_config
+  6d859 (((((
+  6d891 AAAAAA
+  6d8b1 BBBBBB
+  6dacc #F)F2F
+  6db32 !#]CnC
+  6dcb6 #H,F
+  6ddde 8FAFZFKF
+  6de02 8FAFKF
+  6de16 8FAFZFKF
+  6de7a 3xc+L
+  6df34 IF;F
+  6e03a 01TF
+  6e0ae IF0"
+  6e0ea IFZF
+  6e136  #`#
+  6e143 32x0*
+  6e1a6 pGGM
+  6e418 \H]I
+  6e4ec XF)IC
+  6e513 ";F!H
+  6e54c @F!F
+  6e6dc al_ddr_phy_vt_calc_disable
+  6e6f7 %u ranks, %u banks, %u columns, %u rows
+  6e720 Limiting WC to 0xfffc...
+  6e73a  _____________________________________________
+  6e76a | LANE  | WDQDMN | WDQDMX | RDQSDMN | RDQSDMX |
+  6e79b |---------------------------------------------|
+  6e7cc | #%d:   
+  6e7d6 | ECC:  
+  6e7df | %d      | %d     | %d       | %d      |
+  6e80a |_______|________|________|_________|_________|
+  6e83d Please reset the board to continue...
+  6e864 %s: al_ddr_reg_poll32 failed!
+  6e883 rdqsd
+  6e889 wdqd
+  6e88e (null)
+  6e895 al_ddr_phy_datx_bist
+  6e8aa %s: PHY bist error (BISTGSR = %08x)!
+  6e8d0 %s:%d: al_ddr_phy_wait_for_bist_done failed (byte lane %d)!
+  6e90d %s:%d: al_ddr_phy_wait_for_bist_done failed!
+  6e93b %s:%d: power mode timer must be greater than 1!
+  6e96c invalid PHY ROUT (%d)!
+  6e984 invalid PHY ODT (%d)!
+  6e99b al_ddr_ctrl_wait_for_normal_operating_mode
+  6e9c6 al_ddr_phy_vt_calc_disable
+  6e9e1 al_ddr_phy_wait_for_bist_done
+  6f67c B c0
+  6f69c s2R"
+  6f6b8 b$C4 
+  6f6d8 S6r&
+  6f761 >2.Q
+  6f791 P%@Fpg`
+  6f7b3 RwbVr
+  6f7d0 ftGd$T
+  6f7f0 Wfvv
+  6f7f5 F4VL
+  6f808 DXeH
+  6f828 uJTZ7j
+  6f84b ld\EL
+  6f869 n6~UNt^
+  6f8f9  n;^
+  6f9b9 Qkkbal
+  6fac7 i]Wb
+  6fc07 9a&g
+  6fc10 MGiI
+  6fc15 wn>Jj
+  6fc57 #.zf
+  6fc65 +o*7
+  6fcb8 bootargs=
+  6fcc2 bootcmd=run load_fdt; run loadbootargs; run multiboot
+  6fcf8 bootdelay=2
+  6fd04 preboot=
+  6fd0d loadaddr=0x08000000
+  6fd21 arch=arm
+  6fd2a cpu=armv8
+  6fd34 board=alpine_ubnt
+  6fd46 board_name=alpine_ubnt
+  6fd5d vendor=annapurna-labs
+  6fd73 soc=alpine_v2
+  6fd81 ethprime=al_eth1
+  6fd92 load_fdt=cp.b $fdtaddr $loadaddr_dt 7ffc; fdt addr $loadaddr_dt
+  6fdd2 autoload=n
+  6fddd fail=echo Failed!; lcd_print "Failed!"
+  6fe04 loadbootargs=setenv bootargs pci=pcie_bus_perf console=ttyS0,115200  sysid=$sysid boot_carrier=$boot_carrier root=$rootfs $bootargsextra; printenv bootargs
+  6fea0 skip_eth_halt=0
+  6feb0 loadaddr_payload=0x08000004
+  6fecc loadaddr_dt=0x04078000
+  6fee3 loadaddr_rootfs_chk=0x07000000
+  6ff02 spi_pt_addr_kernel=0x00200000
+  6ff20 spi_pt_size_kernel=0x01000000
+  6ff3e bootupd=lcd_print "Updating al-boot" "to SPI"; tftpboot ${loadaddr} ${tftpdir}boot.img; if test $? -ne 0; then run fail; exit; fi;sf probe; sf erase 0 +${filesize}; sf write ${loadaddr} 0 ${filesize}; echo bootupd done;echo Notice: Changes in default environment variables will only take effect once the;echo environment variables are deleted from flash using the 'delenv' script;lcd_print "Done"
+  700cb dtupd=lcd_print "Updating DT" "to SPI"; tftpboot $loadaddr_dt ${tftpdir}${dt_filename};if test $? -ne 0; then run fail; exit; fi;if test ${dt_is_from_toc} != 1; then; else flash_contents_obj_read_mem $loadaddr $loadaddr_dt;if test $? -ne 0; then run fail; exit; fi;fi;sf probe; sf erase ${dt_location} +${filesize}; sf write ${loadaddr_dt} ${dt_location} ${filesize};echo dtupd done;lcd_print "Done"
+  7025b delenv=lcd_print "Deleting env..."; sf probe; sf erase ${env_offset} +2000;if test -n ${env_offset_redund}; then sf erase ${env_offset_redund} +2000;fi;lcd_print "Done"
+  70304 spikernelupd=lcd_print "Updating kernel...";tftpboot $loadaddr_payload ${tftpdir}${kern_img};if test $? -ne 0; then run fail; exit; fi;mw.l $loadaddr $filesize;incenv filesize 4;sf probe;sf erase $spi_pt_addr_kernel $spi_pt_size_kernel;sf write $loadaddr $spi_pt_addr_kernel $filesize;echo spikernelupd done;lcd_print "Done"
+  70449 bootcmdspi=run load_fdt; run loadbootargs;run bootspi
+  7047f bootspi=run loadimg_spi;run dobootm;lcd_print bootspi Failed!
+  704bd loadimg_spi=run preloadimg;lcd_print "Loading OS from spi...";sf probe;sf read $loadaddr $spi_pt_addr_kernel 4;setenvmem filesize $loadaddr;incenv filesize 4;sf read $loadaddr $spi_pt_addr_kernel $filesize;
+  7058c eepromupd=confirm_msg "Perform EEPROM update? [y/n] ";if test $? -ne 0; then exit; fi;tftpboot ${tftpdir}eeprom.bin;if test $? -ne 0; then exit; fi;i2c probe ${pld_i2c_addr};if test $? -ne 0; then exit; fi;i2c write $fileaddr ${pld_i2c_addr} 0.2 $filesize;if test $? -ne 0; then exit;fi;echo eepromupd done
+  706bf bootcmdrecovery=setenv bootargsextra $bootargsextra boot=recovery;run load_fdt;run loadbootargs;run bootcmdspi
+  7072e cvos_tags=0x01000000
+  70743 cvos_tags_seed_a=0x01000004
+  7075f cvos_tags_seed_b=0x01000008
+  7077b cvos_tags_validate=mw.l ${cvos_tags} 0xcf05cf05
+  707ab nand_pt_addr_al_boot=0x0
+  707c4 nand_pt_size_al_boot=0x00200000
+  707e4 nand_pt_addr_kernel=0x00300000
+  70803 nand_pt_size_kernel=0x01000000
+  70822 fdt_high=0xffffffffffffffff
+  7083e bootunsign=bootm $loadaddr_payload - $fdtaddr
+  7086c bootsign=bootm $loadaddr_payload#$model@$fit_index
+  7089f boot_carrier=
+  708ad preloadimg=;
+  708ba prebootm=;
+  708c5 dobootm=run bootunsign
+  708dc kern_img=uImage
+  708ec model=
+  708f3 loadimg_emmc=run preloadimg;lcd_print "Loading OS from emmc ...";usb start;ext4load usb 0 $loadaddr_payload ${kern_img};
+  7096c emmcblk_offset=0x01d5a000
+  70986 emmcblk_size=0x10000
+  7099b loadimg_emmcblk=run preloadimg;lcd_print "Loading OS from emmcblk ...";usb start;usb start;usb dev 0;usb read $loadaddr_payload $emmcblk_offset $emmcblk_size
+  70a39 bootemmc=run loadimg_emmc;run prebootm;run dobootm;lcd_print Failed!
+  70a7e bootemmc_bkp=setenv kern_img uImage.bkp;setenv rootfs rootfs.bkp;run loadbootargs;run bootemmc;
+  70ade bootemmcblk=run loadimg_emmcblk;run prebootm;run dobootm;lcd_print Failed!
+  70b29 kernelupd=lcd_print "Updating kernel...";tftpboot $loadaddr_payload ${tftpdir}${kern_img};if test $? -ne 0; then run fail; exit; fi;nand set_partition_offset $nand_pt_addr_kernel;mw.l $loadaddr $filesize;incenv filesize 4;nand erase.spread $nand_pt_addr_kernel $filesize;nand write $loadaddr $nand_pt_addr_kernel $filesize;nand set_partition_offset $nand_pt_addr_al_boot;echo kernelupd done;lcd_print "Done"
+  70cc1 loadimg_nand=run preloadimg;lcd_print "Loading OS from nand ...";nand set_partition_offset $nand_pt_addr_kernel;nand read $loadaddr $nand_pt_addr_kernel 4;setenvmem filesize $loadaddr;incenv filesize 4;nand read $loadaddr $nand_pt_addr_kernel $filesize;nand set_partition_offset $nand_pt_addr_al_boot
+  70dee bootnand=run loadimg_nand;run prebootm;run dobootm;lcd_print bootnand Failed!
+  70e3c loadimg_tftp=run preloadimg;lcd_print "Loading OS...";tftpboot $loadaddr_payload ${tftpdir}${kern_img};if test $? -ne 0; then run fail; exit; fi;
+  70ece bootcmdtftp=run load_fdt; run loadbootargs;run loadimg_tftp;run prebootm;run dobootm;run fail; exit
+  70f32 boottftp=lcd_print "Loading OS via tftp ...";tftpboot $loadaddr ${tftpdir}${dt_filename};if test $? -ne 0; then run fail; exit; fi;if test ${dt_is_from_toc} != 1; then; else flash_contents_obj_read_mem $loadaddr_dt $loadaddr;if test $? -ne 0; then run fail; exit; fi;fi;tftpboot $loadaddr ${tftpdir}uImage;if test $? -ne 0; then run fail; exit; fi;fdt addr $loadaddr_dt;bootm $loadaddr#$model@$fit_index;run fail; exit
+  710d5 preboot=run slowfan;
+  710ea slowfan=i2c dev 4;i2c mw 0x2e 0x5c 0xe8;i2c mw 0x2e 0x5d 0xe8;i2c mw 0x2e 0x5e 0xe8;i2c mw 0x2e 0x30 $fanspeed;i2c mw 0x2e 0x31 $fanspeed;i2c mw 0x2e 0x32 $fanspeed
+  7118f multiboot=run $bootfrom;echo "Failed to boot from emmc";run ${bootfrom}_bkp;echo "Failed to boot from emmc_bkp";run bootemmcblk;echo "Failed to boot from emmcblk";run bootspi;echo "Failed to boot from spi"
+  712a0 0123456789ABCDEF
+  71340 aroc
+  71348 sdxbim
+  71360 0123456789abcdef
+  71c78 EPTGMK
+  71c90 e03f<ij??ji<f30ef30e?ji<<ij?e03f
+  71cc0 i<?j0ef33fe0j?<i
+  71cf0 j?<i3fe00ef3i<?jj?<i3fe00ef3i<?j
+  71d30 i<?j0ef33fe0j?<i
+  71d50 f30e?ji<<ij?e03fe03f<ij??ji<f30e
+  71ef8         
+  71f80 U-Boot 2015.07-alpine_db-2.21-HAL (Jul 09 2026 - 19:13:29 +0800)
+  71fcc "&*.26:>BFJNRVZ^bfjn
+  71ff3  #&),/25
+  71ffc *[^adgj
+  72004 k(,]SVZg
+  7200d FILORUX[^a
+  72138 !'!!
+  72141 ;>>>5>83	*-
+  7217d #)6CQ_lz
+  722a0 XXX  %DPXXXHLXV
+  722d5 BFJfNfQUY
+  722e9 ;dn;;
+  72489 md5 bytes left: %d
+  7249d %s: flash obj header checksum validation failed!
+  724d3 Current
+  724db DRAM
+  724e0 #  | OBJ ID                    | Instance | Name     | Device  | Offset   | Max Size | Valid | Version
+  72548 ------------------------------------------------------------------------------------------------------
+  725b0 #  | OBJ ID                    | Instance | Name     | Device  | Offset   | Max Size
+  72606 %2d | %06lx (%16s) | %8lu | %8s | %7s | %08x | %08x
+  7263a  | %5c | %u.%u.%u
+  7264c lane != AL_SRDS_LANES_0123
+  72667 ## Error: illegal character '='in variable name "%s"
+  7269d ## Can't malloc %d bytes
+  726b7 ## Error inserting "%s" variable, errno=%d
+  726e3 %-*s- %s
+  726ed Unknown command '%s' - try 'help' without arguments for list of all known commands
+  72742 DTT%d: Failed init!
+  72757 %s: data checksum validation failed!
+  7277d %s: device read failed!
+  72796 Could not allocate xHCI USB device data structures
+  727ca Invalid port number %d
+  727e2 Error:Too much sg!
+  727f6 timeout exit!
+  72805 controller reset failed (0x%x)
+  72825 addr_map: unknown pasw %d
+  72840 /home/dio/jenkins_slave/ubnt_unvr_all1-59-2026-07-09-19-12-56/src/HAL//drivers/pbs/al_hal_addr_map.c
+  728a5 log2size
+  728ae Failed to allocate nand_data!
+  728cd nand init failed
+  728df dev_config_basic failed
+  728f8 pbs_regfile_ptr
+  72908 /home/dio/jenkins_slave/ubnt_unvr_all1-59-2026-07-09-19-12-56/src/HAL//drivers/pbs/al_hal_bootstrap.c
+  7296e bootstrap
+  72978 %s:	 %u[MHz]
+  72986 - %s %uMHz
+  72992 addrmap
+  7299a %s: Unknown DDR rev %08x
+  729b4 %s:%d: al_ddr_cfg_init failed!
+  729d4 ddr_cfg
+  729dc %s: Unknown revision: %d!
+  729f7 al_reg_read32(&phy_regs->alpine_v1.dwc_ddrphy_pub.DSGCR) & DWC_DDR_PHY_REGS_DSGCR_PUREN
+  72a4f /home/dio/jenkins_slave/ubnt_unvr_all1-59-2026-07-09-19-12-56/src/HAL//drivers/ddr/al_hal_ddr.c
+  72aaf al_reg_read32(&phy_regs->alpine_v2.dwc_ddrphy_pub.dsgcr) & ALPINE_V2_DWC_DDR_PHY_REGS_DSGCR_PUREN
+  72b11  ___________________________________________________________________________________________________________
+  72b7f |     | #Taps DLL | ---W R I T E  L E V E L I N G---               | ---R E A D   D Q S   D E L A Y---      |
+  72bee |OCTET| init  now |   r3          r2          r1         r0        |  r3        r2        r1       r0       |
+  72c5d |-----+-----------+------------------------------------------------+----------------------------------------|
+  72ccc | #%d: |
+  72cd5   %3d  
+  72cdd %3d |
+  72ce7 -CK    
+  72cef -1/2CK 
+  72cf7        
+  72cff +1/2CK 
+  72d07 +CK    
+  72d0f +1.5CK 
+  72d17 +2CK   
+  72d1f +2.5CK 
+  72d27 +3CK   
+  72d2f +3.5CK 
+  72d37 +4CK   
+  72d3f +XX    
+  72d4b +%d/2CK
+  72d53 |#%dx4:|
+  72d5c |_____|___________|________________________________________________|________________________________________|
+  72dcb  _______________________________________________________________________________________________________________________________________
+  72e55 | OCTET | WDQD            | RDQSD           | RDQSND           | DQSGSD | WLMN | WBMN | WLMX | WBMX | RLMN | RBMN | RLMX | RBMX | RDDLY |
+  72ee0 |       |  r0  r1  r2  r3 |  r0  r1  r2  r3 |  r0  r1  r2  r3  |                                                                        |
+  72f6b |-------+-----------------+-----------------+------------------+--------+------+------+------+------+------+------+------+------+-------|
+  72ff6 | #%d:   | %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d  | %3d    | %3d  | %3d  | %3d  | %3d  | %3d  | %3d  | %3d  | %3d  | %3d   |
+  73082 | #%dx4: | %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d  | %3d    | %3d  | %3d  | %3d  | %3d  | %3d  | %3d  | %3d  | %3d  | %3d   |
+  7310e |_______|_________________|_________________|__________________|________|______|______|______|______|______|______|______|______|_______|
+  73199  ________________________________________________________________________________________
+  731f4 | OCTET | DQWBD0 | DQWBD1 | DQWBD2 | DQWBD3 | DQWBD4 | DQWBD5 | DQWBD6 | DQWBD7 | DMWBD  |
+  73250 |-------+--------+--------+--------+--------+--------+--------+--------+--------+--------|
+  732ac | #%d:   | %3d    | %3d    | %3d    | %3d    | %3d    | %3d    | %3d    | %3d    | %3d    |
+  73309 |_______|________|________|________|________|________|________|________|________|________|
+  73365 | OCTET | DQRBD0 | DQRBD1 | DQRBD2 | DQRBD3 | DQRBD4 | DQRBD5 | DQRBD6 | DQRBD7 | DMRBD  |
+  733c1  _________________________________________________________________________________________________________________________________________
+  7344d |     | ---  DRAM VREF  --- | ---DRAM VREF MIN--- | ---DRAM VREF MAX--- | ---  HOST VREF  --- | ---HOST VREF MIN--- | ---HOST VREF MAX--- |
+  734da |OCTET| r3   r2   r1   r0   | r3   r2   r1   r0   | r3   r2   r1   r0   | r3   r2   r1   r0   | r3   r2   r1   r0   | r3   r2   r1   r0   |
+  73567 |-----+---------------------+---------------------+---------------------+---------------------+---------------------+---------------------|
+  735f4 |_____|_____________________|_____________________|_____________________|_____________________|_____________________|_____________________|
+  73681 eth tx
+  73688 eth rx
+  7368f adapter->udma_regs_base
+  736a7 Failed
+  736b8 %s %s autonegotiation init failed
+  736db %s %s autonegotiation enable failed
+  73700 %s: Failed to run Rx equalizer (rc = 0x%x)
+  7372c %s: Rx eye measurement failed
+  7374b [%s] Training Fail: status: %s, timeout: %s
+  73778 lane == AL_ETH_AN__LT_LANE_0
+  73795 /home/dio/jenkins_slave/ubnt_unvr_all1-59-2026-07-09-19-12-56/src/HAL//drivers/eth/al_hal_eth_kr.c
+  737f8 %s: Unknown Lane %d
+  7380d reg != 0
+  73816 idx < AL_ETH_RX_CTRL_TABLE_SIZE
+  73836 mac mode not supported!
+  7384f %s: SFP doesn't exist or can't be accessed
+  7387b ec_a_mask
+  73885 ec_b_mask
+  7388f ec_c_mask
+  73899 ec_d_mask
+  738a3 %s: unknown eth rev ID: %d
+  738bf adapter
+  738c7 idx < AL_ETH_FWD_MAC_NUM
+  738e0 idx < AL_ETH_FWD_MAC_HASH_NUM
+  738fe idx < AL_ETH_FWD_VID_TABLE_NUM
+  7391d adapter->rev_id > AL_ETH_REV_ID_2
+  7393f skip_eth_halt
+  7394d al_udma_q_reset(tx) failed!
+  7396a al_udma_q_reset(rx) failed!
+  73987 %s: al_eth_board_params_get failed!
+  739ac %s: al_eth_flr_workaround failed!
+  739cf %s: al_eth_board_params_set failed!
+  739f4 %s: al_eth_write_hwaddr failed!
+  73a15 %s: al_eth_mdio_config failed!
+  73a35 %s: phy_connect failed!
+  73a4e %s: phy_config failed!
+  73a66 %s: phy_startup failed!
+  73a7f %s: No link!
+  73a8d %s: Unknown mac_mode
+  73aa3 [%s]: %s failed on selector_field (%d)
+  73acb [%s]: %s failed on capability bit 2 (%d)
+  73af5 [%s]: %s failed on remote_fault (%d)
+  73b1b [%s]: %s failed on acknowledge (%d)
+  73b40 an_adv != NULL
+  73b4f [%s]: %s AN_STATUS (0x%x) indicated error
+  73b7a %s: >>>> Link state DOWN ==> UP
+  73b9b %s: Failed to establish link
+  73bb9 %s: >>>> Link state DOWN ==> DOWN_RF
+  73bdf (lm_context->sfp_detection == AL_FALSE) || (lm_context->i2c_read != NULL)
+  73c29 (lm_context->retimer_exist == AL_FALSE) || (lm_context->i2c_write != NULL)
+  73c74 params->get_msec
+  73c85 [%s] LED %s (%u): unable to request GPIO
+  73caf Passive
+  73cb7 Active
+  73cbe lm_context != NULL
+  73cd1 old_mode != NULL
+  73ce2 new_mode != NULL
+  73cf3 %s: >>>> Link state UP ==> DOWN
+  73d14 %s: >>>> Link state UP ==> DOWN_RF
+  73d38 %s: >>>> Link state DOWN_RF ==> DOWN
+  73d5e %s: >>>> Link state DOWN_RF ==> UP
+  73d82 %s: SFP not present
+  73d97 %s: Force mode to default (%s)
+  73db7 %s: SFP present, but i2c read from SFP failed. Force mode to default (%s).
+  73e03 %s: SFP disconnected during i2c read
+  73e29 %s: SFP Disconnected
+  73e3f %s: 10G passive DAC (%d M) detected
+  73e64 %s: 10G optic module detected
+  73e83 %s: unknown QSFP inserted. eeprom content: 10G compliance 0x%x. default to %s
+  73ed2 %s: %s DAC (%d M) detected (max signal rate %d)
+  73f03 %s: 10 SFP detected
+  73f18 %s: 1G SFP detected
+  73f2d %s: unknown SFP inserted. eeprom content: 10G compliance 0x%x, 1G compliance 0x%x, sfp+cable 0x%x. default to %s
+  73f9f %s: Force mode to default (%s). mode based of the SFP EEPROM %s
+  73fe0 module_detection failed!
+  73ffa %s: unknown LM mode!
+  74010 %s: Undefined lm_step_destection_state: %d
+  7403c %s: Exiting with error %d
+  74057 DOWN_RF
+  7405f Enabled
+  74067 Disabled
+  74070 %s: return link up
+  74084 %s: return link down (DOWN_RF)
+  740a4 %s: serdes 25G - perform tx gearbox reset
+  740cf serdes signal is down
+  740e6 Initial sys_time (msec): %u, Initial timeout: %u, Toggle timeout: %u
+  7412c %s: manual fec enabled %d
+  74147 %s: serdes 25G - perform rx gearbox reset
+  74172 %s: link is %s with retimer
+  7418f %s: Auto FEC state is %s
+  741a9 %s: Link went DOWN. Starting Auto FEC toggling in %s state
+  741e5 %s: Invalid Auto FEC state value: %d
+  7420b %s: link is up with LT
+  74223 %s: failed to establish LT %d times. reset serdes
+  74256 score | dcgain | dfe3db | dfegain | tap1 | tap2 | tap3 | tap4 | low freq | high freq
+  742ac serdes rx equalization failed on error
+  742d4 %6d|%8x|%8x|%9x|%6x|%6x|%6x|%6x|%10x|%10x|
+  74300 -------------------- best dcgain %d ------------------------------------
+  7434a %s: link is up with Rx Equalization
+  7436f %s: link is up with static parameters
+  74396 %s: Undefined lm_step_establish_state: %d
+  743c1 AL_ETH_LM_MODE_DISCONNECTED
+  743dd AL_ETH_LM_MODE_10G_OPTIC
+  743f6 AL_ETH_LM_MODE_10G_DA
+  7440c AL_ETH_LM_MODE_1G
+  7441e AL_ETH_LM_MODE_25G
+  74435 config retimer boost in channel %d (addr %x) to 0x%x
+  7446b %s: Error occurred (%d) while writing retimer configuration (bus-id %x i2c-addr %x)
+  744c0 (((int)lm_context->retimer_channel) >= 0) && (lm_context->retimer_channel < 4)
+  7450f %s: Unsupported cable length (%dm) for retimer_type %d on this board!
+  74556 Currently only 1m and 3m cables are supported
+  74585 %s: Uncalibrated cable length (%dm) for retimer_type %d on this board is being used! Link might not be optimal.
+  745f6 Retimer params have been calibrated for 1m and 3m cables only
+  74635 %s: Configuring eq_boost for retimer_type %d in channel %d (addr 0x%x) to 0x%x
+  74685 %s: Error occurred (%d) while writing to eq_boost to retimer (bus-id %x i2c-addr %x)
+  746db %s: Error occurred (%d) while reading de_emphasis control reg from retimer (bus-id 0x%x i2c-addr 0x%x internal_reg 0x%x)
+  74755 %s: Configuring de_emphasis for retimer_type %d in channel %d to 0x%x
+  7479c %s: Error occurred (%d) while writing to de_emphasis control reg of retimer (bus-id 0x%x i2c-addr 0x%x internal_reg 0x%x)
+  74817 %s: Error occurred (%d) while reading Vod control reg from retimer (bus-id 0x%x i2c-addr 0x%x internal_reg 0x%x)
+  74889 %s: Configuring Vod for retimer_type %d in channel %d to 0x%x
+  748c8 %s: Error occurred (%d) while writing to Vod control reg in retimer (bus-id 0x%x i2c-addr 0x%x internal_reg 0x%x)
+  7493b %s: retimer full configuration done
+  74960 Perform CDR reset to channel %d
+  74981 %s: retimer channel config done for channel %d
+  749b1 %s: serdes 25G - perform tx and rx gearbox reset
+  749e3 %s: failed to access to the retimer
+  74a08 (reg_mask & reg_value) == reg_value
+  74a2c /home/dio/jenkins_slave/ubnt_unvr_all1-59-2026-07-09-19-12-56/src/HAL//services/eth/al_init_eth_lm.c
+  74a91 %s: no signal detected on retimer channel %d
+  74abf %s: Reached undefined state: %d
+  74ae0 %s: (channel %d) signal %d cdr lock %d rc:%d
+  74b0e Eth: unsupported MAC mode %d
+  74b2c mac_a_mask
+  74b37 mac_b_mask
+  74b42 mac_c_mask
+  74b4d mac_d_mask
+  74b58 adapter->ec_ints_base
+  74b6e adapter->mac_ints_base
+  74b85 %s: unknown adapter rev ID: %d
+  74ba5 eth [%s]: this function not supported in this mac mode.
+  74bde eth [%s]: bad speed parameter (%d).
+  74c03 eth [%s]: half duplex in 1Gbps is not supported.
+  74c35 eth [%s]: tx flush not supported in this mode %d
+  74c67 write
+  74c6d  eth [%s] mdio %s failed. HW is busy
+  74c93  %s mdio %s failed on timeout
+  74cb2  %s mdio %s failed on error. phy_addr 0x%x reg 0x%x
+  74ce7  %s mdio %s failed. HW is busy
+  74d07  %s mdio %s (address frame) failed on timeout
+  74d36  %s mdio %s failed on error. port 0x%x, device 0x%x reg 0x%x
+  74d74 eth [%s]: %s: invalid reference clock frequency (%d)
+  74daa  %s mdio failed to take ownership. MDIO info reg: 0x%08x
+  74de4 %s: Failed enabling mem access or bus mastering!
+  74e16 %s: al_eth_register failed!
+  74e33 %s: al_eth_mdio_read failed!
+  74e51 %s: al_eth_init failed!
+  74e6a %s: al_eth_phy_mdio_write failed!
+  74e8d rc <= AL_ETH_PKT_MAX_BUFS
+  74ea7 cdesc
+  74ead q_params->cdesc_size <= 32
+  74ec8 /home/dio/jenkins_slave/ubnt_unvr_all1-59-2026-07-09-19-12-56/src/HAL//drivers/eth/al_hal_eth_main.c
+  74f2d %s: al_eth_rx_buffer_add failed!
+  74f4f %s: desc_base memalign failed!
+  74f6f al_eth%d
+  74f78 %s: eth_register failed!
+  74f92 %s: invalid speed (%d)
+  74faa %s: invalid mdio freq (%d)
+  74fc6 %s: Non supported media type (%d)!
+  74fe9 %s: mdio_alloc failed!
+  75001 %s: mdio_register failed!
+  7501c %s: al_eth_mdio_register failed!
+  7503e %s: Configuring retimer failed (%02x:%02x). assume no retimer exist
+  75083 (num > 0) && (num <= udma_q->size)
+  750a6 header_buf != NULL
+  750b9 (rx_dma_q->udma->rev_id >= AL_UDMA_REV_ID_2) || (AL_ADDR_HIGH(buf->addr) == AL_ADDR_HIGH(header_buf->addr))
+  75125 max_rx_len <= AL_ETH_MAX_FRAME_LEN
+  75148 num_entries <= AL_ETH_RX_PROTOCOL_DETECT_ENTRIES_NUM
+  7517d %s: al_eth_tx_pkt_prepare failed!
+  751a0 rx_advanced_params_set is not supported for this serdes group
+  751df tx_advanced_params_set is not supported for this serdes group
+  7521e idx < AL_ETH_RX_THASH_TABLE_SIZE
+  7523f /home/dio/jenkins_slave/ubnt_unvr_all1-59-2026-07-09-19-12-56/src/HAL//include/udma/al_hal_udma.h
+  752a1 (pkt->flags & (AL_ETH_TX_FLAGS_L4_CSUM|AL_ETH_TX_FLAGS_L4_PARTIAL_CSUM)) != AL_ETH_TX_FLAGS_L4_PARTIAL_CSUM
+  7530d (pkt->flags & (AL_ETH_TX_FLAGS_TSO|AL_ETH_TX_FLAGS_TS)) != (AL_ETH_TX_FLAGS_TSO|AL_ETH_TX_FLAGS_TS)
+  75371 (adapter->rev_id > AL_ETH_REV_ID_2)
+  75395 num_entries <= AL_ETH_TX_GENERIC_CRC_ENTRIES_NUM
+  753c6 %s: al_eth_mac_addr_store failed!
+  753e9 %s: flash obj header contains invalid magic num
+  7541a 	expected 0x%X, read 0x%X
+  75435 BOOT_MODE
+  7543f STG2
+  75447 STG2_5
+  7544e STG3
+  75453 UBOOT
+  75459 UBOOT_SCRIPT
+  75466 UBOOT_ENV
+  75470 UBOOT_ENV_RED
+  7547e KERNEL
+  75485 ROOT_FS
+  7548d 2ND_TOC
+  75495 PRE_BOOT
+  7549e PRE_BOOT_V2
+  754aa APCEA
+  754b0 APCEA_CFG
+  754ba IPXE
+  754bf BOOT_APP
+  754c8 BOOT_APP_CFG
+  754d5 APP_0
+  754db APP_0_CFG
+  754e5 APP_1
+  754eb APP_1_CFG
+  754f5 APP_2
+  754fb APP_2_CFG
+  75505 APP_3
+  7550b APP_3_CFG
+  75515 CRASH_DUMP
+  75524 SERDES_25G_FW
+  75532 ID = %06lx (%s) - Object failed validation!
+  7555f ID = %06lx (%s)
+  75570 Description = %s
+  75582 Version = %u.%u.%u
+  75596 Size = %08x
+  755a3 Load address = %08x%08x
+  755bc Exec address = %08x%08x
+  755d5 Flags = %08x
+  755e3 %s: unable to find stage 2 at offset %08x
+  7560e %s: flash toc entries checksum validation failed!
+  75641 id < AL_GPIO_DEVICE_PIN_AMOUNT
+  75660 gpio_if != NULL
+  75670 /home/dio/jenkins_slave/ubnt_unvr_all1-59-2026-07-09-19-12-56/src/HAL//drivers/pbs/al_hal_gpio.c
+  756d1 %s: PCIe[%d] 
+  756df could not initialize port handle
+  75700 %s: PCIe[%d] teardown skipped!
+  75720 could not check link status upon init
+  75746 could not stop link upon init
+  75764 could not shutdown memory upon init
+  75788 link already started
+  7579d could not enable port before shutdown
+  757c3 could not disable shutdown memory
+  757e5 could not set mode[%d]
+  757fc could not set max_lanes[%d]
+  75818 could not set max_num_of_pfs[%d]
+  75839 could not configure IB/OB reads
+  75859 could not enable port
+  7586f could not configure port
+  75888 pf_params[%d] should be NULL in RC mode
+  758b0 extended params are not supported in RC mode
+  758dd init_pcie_params->pf_params[i] != NULL
+  75904 /home/dio/jenkins_slave/ubnt_unvr_all1-59-2026-07-09-19-12-56/src/HAL//services/pcie/al_init_pcie.c
+  75968 could not initialize pf[%d] handle
+  7598b could not configure pf[%d]
+  759a6 could not perform extended init
+  759c6 could not start link
+  759db link is not up
+  759ea could not check link status
+  75a06 could not link up port
+  75a1d /home/dio/jenkins_slave/ubnt_unvr_all1-59-2026-07-09-19-12-56/src/HAL//drivers/iofic/al_hal_iofic.c
+  75a81 %s:%d:%s: Assertion failed! (%s)
+  75aa3 group < AL_IOFIC_MAX_GROUPS
+  75abf tx dma
+  75ac6 failed to initialize %s, error %d
+  75ae9 rx dma
+  75af0 [%s]: failed to initialize tx q %d, error %d
+  75b1e [%s]: failed to initialize rx q %d, error %d
+  75b4c /home/dio/jenkins_slave/ubnt_unvr_all1-59-2026-07-09-19-12-56/src/HAL//drivers/pbs/al_hal_muio_mux.c
+  75bb1 cmd_seq_buff
+  75bbe cmd_seq_buff_num_entries
+  75bd7 0 == (num_bytes % code_word_size)
+  75bf9 not enough entries provided - required %d!
+  75c25 *cmd_seq_buff_num_entries == num_required_entries
+  75c57 %s: Not enough CW data (%u, %u)!
+  75c79 dev_properties
+  75c88 ecc_config
+  75c93 al_nand_dev_config failed!
+  75caf dev_index >= 0
+  75cbe dev_index < 8
+  75ccc /home/dio/jenkins_slave/ubnt_unvr_all1-59-2026-07-09-19-12-56/src/HAL//drivers/pbs/al_hal_nand.c
+  75d2d nand_base
+  75d37 nand properties is not valid
+  75d55 %s: Error: single bus per controller is supported.
+  75d88 recevied bus: %d, controller first bus: %d
+  75db4 PCIe device is responding with CRS, waiting... 
+  75de4 Done
+  75dea %s: exceeded maximal number of devices!
+  75e13 PCIe %d: port not enabled, cannot start link
+  75e41 PCIe %d: unknown link speed indication. PCIE LINK STATUS %x
+  75e7e PCIe %d: trying to stop a non-started link
+  75eaa pcie_port
+  75eb4 /home/dio/jenkins_slave/ubnt_unvr_all1-59-2026-07-09-19-12-56/src/HAL//drivers/pcie/al_hal_pcie.c
+  75f16 PCIe %d: unknown device type (%d) in global conf register.
+  75f52 pcie_pf
+  75f5a PCIe %d: port not enabled, cannot configure port
+  75f8c PCIe %d: memory BAR %d: size (0x%llx) less that minimal allowed value
+  75fd3 PCIe %d: IO BAR %d: size (0x%llx) less that minimal allowed value
+  76016 PCIe %d: BAR %d:size (0x%llx) must be power of 2
+  76048 PCIe %d: Expansion BAR enable not supported
+  76075 pf_num < pcie_port->max_num_of_pfs
+  76098 PCIe %d: can't init PF handle with operating mode [%d]
+  760d0 PCIe %d: link already started, cannot configure port
+  76106 PCIe %d: invalid max lanes val (0x%x)
+  7612d PCIe %d: unsupported Max Payload Size (%u)
+  76159 Equalization score value is out of bounds
+  76184 PCIe %d: cannot config Gen%d SRIS with rev_id[%d]
+  761b7 PCIe %d: SRIS config is not supported in rev_id[%d]
+  761ec PCIe %d: trying to disable a non-enabled port
+  7621b PCIe %d: outstanding outbound transactions could not be configured - unknown operating mode
+  76278 %s: Revision ID is unknown
+  76294 PCIe %d: already enabled, cannot configure IB credits and OB OS reads
+  762db ib_hcrd_os_ob_reads_config->nof_np_hdr > 0
+  76306 ib_hcrd_os_ob_reads_config->nof_p_hdr > 0
+  76330 ib_hcrd_os_ob_reads_config->nof_cpl_hdr > 0
+  7635c (ib_hcrd_os_ob_reads_config->nof_cpl_hdr + ib_hcrd_os_ob_reads_config->nof_np_hdr + ib_hcrd_os_ob_reads_config->nof_p_hdr) == AL_PCIE_REV3_IB_HCRD_SUM
+  763f3 (ib_hcrd_os_ob_reads_config->nof_cpl_hdr + ib_hcrd_os_ob_reads_config->nof_np_hdr + ib_hcrd_os_ob_reads_config->nof_p_hdr) == AL_PCIE_REV_1_2_IB_HCRD_SUM
+  7648d PCIe %d: already enabled, cannot set max lanes
+  764bd max_num_of_pfs <= REV3_MAX_NUM_OF_PFS
+  764e3 max_num_of_pfs == REV1_2_MAX_NUM_OF_PFS
+  7650b PCIe %d: not enabled, cannot shutdown memory
+  76539 PCIe %d: already enabled, cannot set operating mode
+  7656e PCIe %d: unknown operating mode: %d
+  76593 %s: requested divider too big (%u > %lu)!
+  765be chan_idx < AL_PLL_NUM_CHNLS
+  765da %s: div_val && ref_clk_bypass!
+  765fa %s: invalid freq (%d)
+  76611 %s: timed out!
+  76621 /home/dio/jenkins_slave/ubnt_unvr_all1-59-2026-07-09-19-12-56/src/HAL//drivers/ring/al_hal_pll.c
+  76682 %s: invalid ref clk freq enum (%d)!
+  766a7 raid_dma->q_types[qid] == AL_RAID_Q
+  766cb /home/dio/jenkins_slave/ubnt_unvr_all1-59-2026-07-09-19-12-56/src/HAL//drivers/ssm/al_hal_ssm_raid.c
+  76730 xaction->op < (sizeof(op_attr_table)/sizeof(op_attr_table[0]))
+  7676f rx_descs <= AL_UDMA_DEFAULT_MAX_ACTN_DESCS
+  7679a rc == 0
+  767a2 tx_descs <= AL_SSM_MAX_SRC_DESCS
+  767c3 _al_raid_xaction_validate_buffers_size(xaction) == 0
+  767f8 %s: Wrong serdes lane %d
+  76812 %s: Error on reading status state
+  76835 %s: Error on reading error 1
+  76853 %s: Error on reading error 2
+  76871 %s: Error on reading error 3
+  7688f %s: failed to run eye_diag
+  768ab %s: Error on reading CDR lock
+  768ca buf_size == (samples_left * sizeof(uint64_t))
+  768f8 %s: Failed to send command %d to mailbox.
+  76923 %s: Failed to send command %d to mailbox. rsp_code %d
+  7695a sample_width <= 40
+  7696d %s: command %d return failure. rsp_code %d
+  76999 %s: Parsed enough samples but f/w is still sending more
+  769d2 %s: Still need more samples but f/w has stopped sending them!?!?!?
+  76a16 %s: Error on reading data low
+  76a35 %s: Error on reading data high
+  76a55 %s: TO waiting for GCFSM2 req to complete (%x)
+  76a85 %s: Unsupported group mode %u
+  76aa4 %s: Got timeout waiting for serdes CM0 and LN0/LN1 to enter PD_READY
+  76aea %s: Got timeout waiting for serdes CM0 Status to become ok
+  76b26 can't apply tx pll WA without temp read
+  76b4f %s: init [l]%d [r]%d outside window, searching for valid window
+  76b90 %s: error: no valid dosc window available!
+  76bbc %s: dosc_target [l]%d [r]%d lower than min, setting to min %d
+  76bfb %s: dosc_target [l]%d [r]%d is higher than max, setting to max %d
+  76c3e %s: stepped outside of window go to center [l]%d [r]%d->[l]%d [r]%d
+  76c83 %s: dosc_target inside the window, but pll is unlocked! stepping towards center of window
+  76cde %s: pll is unlocked, returning to dosc_init value!
+  76d12 %s: failed to lock PLL
+  76d2a %s: Got timeout waiting for LN%d status to become ok
+  76d60 %s: Got FW error! TOP error code %x
+  76d85 %s: Got FW error! CM error code %x
+  76da9 %s: FW CM error is critical (%d)!!
+  76dcd %s: Got FW error! lane %d error code %x
+  76df6 %s: FW lane %d error is critical (%d)!!
+  76e1f %s: error: invalid temperature range, temperature %d!
+  76e56 %s: failed to apply tx pll wa
+  76e75 %s: timeout occurred waiting to RSP_FLAG
+  76e9f Cannot send command, data too long
+  76ec3 %s: timeout occurred waiting to CMD_FLAG
+  76eed %s: Unable to determine the serdes_group_mode (read 0x%x)
+  76f28 /home/dio/jenkins_slave/ubnt_unvr_all1-59-2026-07-09-19-12-56/src/HAL//drivers/serdes/al_hal_serdes_25g.c
+  76f92 %s: wrong serdes type %d
+  76fac %s: al_serdes_25g_rx_leq_fsm_op failed to read att, rc %d, err %d
+  76fef %s: al_serdes_25g_rx_leq_fsm_op failed to read apg, rc %d, err %d
+  77032 %s: al_serdes_25g_rx_leq_fsm_op failed to read lfg, rc %d, err %d
+  77075 %s: al_serdes_25g_rx_leq_fsm_op failed to read hfg, rc %d, err %d
+  770b8 %s: al_serdes_25g_rx_leq_fsm_op failed to read mbg, rc %d, err %d
+  770fb %s: al_serdes_25g_rx_leq_fsm_op failed to read mbf, rc %d, err %d
+  7713e %s: al_serdes_25g_gcfsm2_read failed to read leq_gainstage, rc %d
+  77181 %s: al_serdes_25g_gcfsm2_read failed to read leq_eq %d, rc %d
+  771c0 %s: al_serdes_25g_gcfsm2_read failed to read summer_even_offset, rc %d
+  77208 %s: al_serdes_25g_gcfsm2_read failed to read summer_odd_offset, rc %d
+  7724f %s: al_serdes_25g_gcfsm2_read failed to read vscan_even_offset, rc %d
+  77296 %s: al_serdes_25g_gcfsm2_read failed to read vscan_odd_offset, rc %d
+  772dc %s: al_serdes_25g_gcfsm2_read failed to read cdr_vco_fr, rc %d
+  7731c %s: Timeout waiting for serdes ready
+  77342 %s: TO waiting for lane ready (%x)
+  77366 %s: Failed to run equalization
+  77386 %s: error in RX LEQ FSM req, err status 1=0x%x, err status 2=0x%x
+  773c9 %s: TO waiting for RX LEQ FSM req to complete (opcode %x, target %x, val %x)
+  77417 %s: Error on reading RX valid
+  77436 %s: timeout waiting for pll fcal cmd ack
+  77460 lane < AL_SRDS_NUM_LANES
+  77479 %s: timeout occurred waiting to FW ack
+  774a1 %s: al_serdes_25g_gcfsm2_read failed to read dcd_trim, rc %d
+  774df %s: al_serdes_25g_gcfsm2_read failed to read clk_delay, rc %d
+  7751e %s: dosc [l]%d [r]%d: hole
+  7753a user_data
+  77544 %s: invalid pattern (%d)
+  7755e %s: eye measure error!
+  77576 %s: eye measure timeout!
+  77594 /home/dio/jenkins_slave/ubnt_unvr_all1-59-2026-07-09-19-12-56/src/HAL//drivers/serdes/al_hal_serdes_hssp.c
+  775ff ((int)page) >= AL_SRDS_REG_PAGE_0_LANE_0
+  77628 ((int)page) <= AL_SRDS_REG_PAGE_0123_LANES_0123
+  77658 %s: eye diagram sampling timed out!
+  7767d %s: measure eye failed on timeout
+  776a0 %s: invalid power mode (%d)
+  776bd %s: Inconsistent mode_class configuration between different lanes of the serdes
+  7770e %s: Unable to determine the serdes_group_mode of lane %d (read 0x%x)
+  77754 %s: Inconsistent speed configuration between different lanes of the serdes
+  777a0 %s: invalid rx power mode (%d)
+  777c0 %s: invalid tx power mode (%d)
+  777e0 %s: invalid mode (%d)
+  777f7 ((int)page) <= AL_SRDS_REG_PAGE_4_COMMON
+  77820 ((int)type) >= AL_SRDS_REG_TYPE_PMA
+  77844 ((int)type) <= AL_SRDS_REG_TYPE_PCS
+  77868 %s: Timeout!
+  77876 %s: invalid rate (%d)
+  7788d /soc/trace
+  77898 Trace 'reg' property invalid!
+  778b7 Trace 'reg' property not found!
+  778d8 Trace disabled
+  778e8 Trace final: %p, %x
+  778fd Trace early: %p, %x
+  77912 freq_factor <= 0x10
+  77926 (units == AL_SGPO_RAW) || (units == AL_SGPO_NS)
+  77956 %s: inaccuracy, desired time - %u, calculation time - %u
+  77990 time_factor < MAX_SDI_SETUP
+  779ac sgpo_if
+  779b4 /home/dio/jenkins_slave/ubnt_unvr_all1-59-2026-07-09-19-12-56/src/HAL//drivers/pbs/al_hal_sgpo.c
+  77a15 (units == AL_SGPO_RAW) || (units == AL_SGPO_MS)
+  77a45 time_factor >= scale
+  77a5a (units == AL_SGPO_RAW) || (units == AL_SGPO_KHZ)
+  77a8b %s: inaccuracy, desired freq - %u, calculation freq - %u
+  77ac5 freq_factor < 0x20
+  77ad8 id < AL_SGPO_PINS_NUM
+  77aee val <= 1
+  77af7 %s: called too early!
+  77b0e %s: bus is not free.
+  77b24 %s: Failed. Input slave isn't the current bus holder
+  77b5a 	Current bus holder = 0x%04X, slave CS = 0x%04X
+  77b8b %s: RX fifo full!
+  77b9e %s: Reading %p encountered timeout
+  77bc2 %s: val=%08X ,mask=%08X ,timeout=%08X
+  77be9 %s: al_spi_wait_for_tx_fifo_empty failed!
+  77c14 %s: al_spi_wait_for_sr_idle failed!
+  77c3d /home/dio/jenkins_slave/ubnt_unvr_all1-59-2026-07-09-19-12-56/src/HAL//drivers/ssm/al_hal_ssm.c
+  77c9d failed to initialize udma, error %d
+  77cc2 ssm [%s]: failed to initialize q %d, error %d
+  77cf1 ssm [%s]: failed to change state, error %d
+  77d1d thermal_sensor_handle
+  77d33 /home/dio/jenkins_slave/ubnt_unvr_all1-59-2026-07-09-19-12-56/src/HAL//drivers/sys_services/al_hal_thermal_sensor.c
+  77da7 thermal_sensor_reg_base
+  77dbf pbs_regs_base
+  77dcd * TRACE DUMP: BEGIN
+  77de2 - base = %p
+  77def - size = %x
+  77dfc - en = %d
+  77e07 - head = %p
+  77e14 - start = %p
+  77e22 - end = %p
+  77e2e - add_timestamp = %d
+  77e44 - ctrl = %p
+  77e51 - ctrl->head = %x
+  77e64 - ctrl->tail = %x
+  77e77 - ctrl->reset_request = %d
+  77e93 - ctrl->wrap_around = %d
+  77eae ********************************************************
+  77ee8 !(udma_q->flags & AL_UDMA_Q_FLAGS_NO_COMP_UPDATE)
+  77f1a count <= udma_q->size
+  77f30 udma
+  77f35 /home/dio/jenkins_slave/ubnt_unvr_all1-59-2026-07-09-19-12-56/src/HAL//drivers/udma/al_hal_udma_main.c
+  77f9c udma: invalid num_of_queues parameter
+  77fc3 al_udma_iofic_level_and_group_valid(level, group)
+  77ff5 /home/dio/jenkins_slave/ubnt_unvr_all1-59-2026-07-09-19-12-56/src/HAL//drivers/udma/al_hal_udma_iofic.c
+  7805d max_descs <= AL_UDMA_M2S_MAX_ALLOWED_DESCS_PER_PACKET
+  78093 max_descs > 0
+  780a1 udma->type == UDMA_TX
+  780b7 /home/dio/jenkins_slave/ubnt_unvr_all1-59-2026-07-09-19-12-56/src/HAL//drivers/udma/al_hal_udma_config.c
+  78120 udma [%s]: requested max_pkt_size (0x%x) exceeds thesupported limit (0x%x)
+  7816c q_handle
+  78175 udma [%s]: invalid queue id (%d)
+  78197 q_params
+  781a0 udma: invalid queue id (%d)
+  781bd udma: queue (%d) already enabled!
+  781e0 udma: queue (%d) size too small
+  78201 udma: queue (%d) size too large
+  78222 udma: queue (%d) size (%d) must be power of 2
+  78251 (AL_ADDR_LOW(udma_q->desc_phy_base) & ~UDMA_M2S_Q_TDRBP_LOW_ADDR_MASK) == 0
+  7829d (AL_ADDR_LOW(udma_q->cdesc_phy_base) & ~UDMA_M2S_Q_TCRBP_LOW_ADDR_MASK) == 0
+  782ea udma_q
+  782f1 udma [%s %d]: %s timeout waiting for prefetch and scheduler disable
+  78336 udma [%s %d]: %s timeout waiting for dcp==crhp
+  78366 %s: invalid burst_size value (%d)
+  78389 max_descs <= AL_UDMA_S2M_MAX_ALLOWED_DESCS_PER_PACKET
+  783bf comp_ctrl != UDMA_STATE_RESERVED
+  783e0 stream_if != UDMA_STATE_RESERVED
+  78401 data_rd != UDMA_STATE_RESERVED
+  78420 desc_pref != UDMA_STATE_RESERVED
+  78441 udma != NULL
+  7844e udma: invalid state (%d)
+  78468 [%s] warn: failed to change state, error %d
+  78495 [%s] warn: dma state didn't change to %s
+  784bf DRAM:  
+  784c7 bootargsextra
+  784d5 **WARNING**, bootargsextra do not fit in buffer.
+  78507 reboot=%s
+  78511 **WARNING**, cannot append bootargsextra, buffer too small.
+  7854e bad length %d < %d
+  78562 ## Warning: gatewayip needed but not set
+  7858d ARP Retry count exceeded; starting again
+  785b7 %s: No memory for ataid[port]
+  785d6 ATA     
+  785df scsi_ahci: Error: buffer too small.
+  78604 Autobooting in %d seconds, press "<Esc><Esc>" to stop
+  7863b bootdelaykey
+  78648 bootstopkey
+  78657 *?[\
+  7865c Unknown operator '%s'
+  78673 %s: DT indicates two different retimers on the same address
+  786b0   /_\  _ __  _ __   __ _ _ __  _   _ _ __ _ __   __ _
+  786e7  //_\\| '_ \| '_ \ / _` | '_ \| | | | '__| '_ \ / _` |
+  7871f /  _  \ | | | | | | (_| | |_) | |_| | |  | | | | (_| |
+  78757 \_/ \_/_| |_|_| |_|\__,_| .__/ \__,_|_|  |_| |_|\__,_|
+  7878f    __       _           |_|
+  787ac   / /  __ _| |__  ___
+  787c3  / /  / _` | '_ \/ __|
+  787db / /__| (_| | |_) \__ \
+  787f3 \____/\__,_|_.__/|___/
+  7880b                ___             _
+  7882d  /\ /\        / __\ ___   ___ | |_
+  78851 / / \ \_____ /__\/// _ \ / _ \| __|
+  78876 \ \_/ /_____/ \/  \ (_) | (_) | |_
+  7889a  \___/      \_____/\___/ \___/ \__|
+  788bf %s: bootstrap_read_and_parse failed!
+  788e5 %s: SB PLL initialization failed!
+  78908 muio_mux
+  78911 al_muio_mux_init failed!
+  7892b %s: skipped for Alpine V3
+  78946 Thermal sensor failed to power up or initialized
+  78978 temprature: %d degrees
+  78990 al_serdes_handle_init failed!
+  789af cold
+  789b4 warm
+  789b9 dt_location
+  789c5 pld_i2c_addr
+  789d2 boot_instance_active
+  789e7 boot_instance_non_active
+  78a00 env_offset
+  78a0b env_offset_redund
+  78a1d /soc/gpio_keys/reset_button
+  78a39 Failed to get led nodes: %s
+  78a56 Failed to get gpio num from dt: %d
+  78a7a Reset gpio number: %d
+  78a91 reset
+  78a97 gpio: requesting pin %u failed
+  78ab7 run bootcmdrecovery
+  78acb bootcmd
+  78ad3 Entering recovery mode: %d/%d
+  78af2 Boot: %s
+  78afc fwupd
+  78b02 tftpboot ${tftpdir}uboot_script_fw_update.bin;source ${loadaddr}
+  78b43 dt_is_from_toc
+  78b52 dt_filename
+  78b5e dt.img
+  78b65 alpine_ubnt.dtb
+  78b75 echo recovery boot command!
+  78b91 Failed allocating memory for U-Boot script!
+  78bbe Failed loading U-Boot script!
+  78bdd Failed executing U-Boot script!
+  78bfe !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  78c2d !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  78c5c !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  78c8d              I2C Preload Disabled!
+  78cb2 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  78ce1 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  78d10 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  78d40 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  78d6f !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  78d9e !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  78dcf    Bootstraps / DT / Capabilities Mismatch!
+  78dfd !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  78e2c !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  78e5b !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  78e8b NAND init failed
+  78e9d    reserving fdt memory region: addr=%llx size=%llx
+  78ed2 ## Flattened Device Tree from Legacy Image at %08lx
+  78f07 fdt header checksum invalid
+  78f23 fdt checksum invalid
+  78f38 uImage is not a fdt
+  78f4c uImage is compressed
+  78f61 uImage data is not a fdt
+  78f7a fdt overwritten
+  78f8a ## Flattened Device Tree blob at %08lx
+  78fb2 ERROR: Did not find a cmdline Flattened Device Tree
+  78fe7    Booting using the fdt blob at %#08lx
+  79010 ## Flattened Device Tree from multi component Image at %08lX
+  7904e    Booting using the fdt at 0x%p
+  79070 fdt size != image size
+  79087 ## Loading init Ramdisk from Legacy Image at %08lx ...
+  790bf No Linux %s Ramdisk Image
+  790da Wrong Ramdisk Image Format
+  790f6 ## Loading init Ramdisk from multi component Legacy Image at %08lx ...
+  7913e (fake run for tracing)
+  79156 Starting kernel ...%s
+  7916e %s failed!
+  7917a bootargs
+  79183 FDT creation failed! hanging...
+  791a3 /memory
+  791ab ## WARNING: fixup memory failed!
+  791cd initrd_high
+  791d9 ramdisk - allocation error
+  791f5    Loading Ramdisk to %08lx, end %08lx ... 
+  79221 image is not a fdt
+  79234 fdt_high
+  7923d Failed using fdt_high value for Device Tree
+  79269 device tree - allocation error
+  79289    Using Device Tree in place at %p, end %p
+  792b6    Loading Device Tree to %p, end %p ... 
+  792e0 fdt move failed
+  792f0 bootdelay
+  792fa kernel-offset
+  79308 kernaddr
+  79311 rootdisk-offset
+  79321 rootaddr
+  7932e Loading
+  79336    %s %s ... 
+  79344    Uncompressing %s ... 
+  7935d Unimplemented compression type %d
+  79380 Image too large: increase CONFIG_SYS_BOOTM_LEN
+  793b0 %s: uncompress error %d
+  793c9 Must RESET board to recover
+  793e6 Ramdisk image is corrupt or invalid
+  7940b Could not find a valid device tree
+  7942f autostart
+  7943d Automatic boot of image at addr 0x%08lX ...
+  7946a   Hit any key to stop autoboot: %2d 
+  79492 %2d 
+  7949d [%d;%dH
+  794af BOOTP broadcast %d
+  794c4 Retry time exceeded; starting again
+  794e9 NB PLL
+  794f0 Bad Linux ARM zImage magic!
+  7950d Kernel image @ %#08lx [ %#08lx - %#08lx ]
+  79538 bootsecure
+  79547 ## Error: Secure boot command not specified
+  79574 ## Error: "%s" returned (code %d)
+  79597 Unknown command '%s' - try 'help'
+  795ba 'bootd' recursion detected
+  795d6 Command '%s' failed: Error %d
+  795f5 %s - %s
+  795ff Usage:
+  7960a - No additional help available.
+  7962c Loading from %s device %d, partition %d: Name: %.32s  Type: %.32s
+  7966f ** Read error on %d:%d
+  79688 ** Bad Header Checksum **
+  796a3 No closing ']' bracket
+  796ba No closing bracket
+  796cd Unbalanced brackets
+  796e1 |.^$*+?()[\
+  796fd %.*s
+  79702 %s: null device
+  79712 %s: null device
+  79723 (%d:%d) Vendor: %s Prod.: %s Rev: %s
+  79749 Model: %s Firm: %s Ser#: %s
+  79766 Vendor: %s Rev: %s Prod: %s
+  79783 device type DOC
+  79794 device type unknown
+  797a9 Unhandled device type: %i
+  797c4             Type: 
+  797d7 Removable 
+  797e2 Hard Disk
+  797ec CD ROM
+  797f3 Optical Device
+  79802 Tape
+  79807 # %02X #
+  79810             Capacity: %ld.%ld MB = %ld.%ld GB (%ld x %ld)
+  7984b             Capacity: not available
+  79870 unbind() method failed on dev '%s' on error path
+  798a2 Failed to unbind dev '%s' on error path
+  798cb Cannot find driver '%s'
+  798e4 Cannot create device named '%s' (err=%d)
+  7990e %s: Device '%s' failed to remove on error path
+  7993e %s: Device '%s' failed child_post_remove()
+  79969 %s: Device '%s' failed to remove, but children are gone
+  799a2 %s: Device '%s' failed to post_probe on error path
+  799d6 pxeuci
+  799dd DHCP client bound to address %pI4 (%lu ms)
+  79a09 DHCP: INVALID STATE
+  79a1e Host Name
+  79a28 *** WARNING: %s is too long (%d - max: %d) - truncated
+  79a60 Root Path
+  79a6a Opt Boot File
+  79a78 *** WARNING: using vendor optional boot file
+  79aa6 *** Unhandled DHCP Option in OFFER/ACK: %d
+  79ad2 DHCP sending release packet for address %pI4
+  79b00 ubnt_unvr_all1-59-2026-07-09-19-12-56-bc716c7
+  79b30 %s, Build: %s
+  79b40 Virtual root driver already exists!
+  79b65 Virtual root driver does not exist!
+  79b8a u-boot,dm-pre-reloc
+  79b9e Some drivers failed to bind
+  79bbb Some drivers were not found
+  79bd8 --no-teardown
+  79be6 Bad mode in "Error" handler, esr 0x%08x
+  79c0f Bad mode in "Fiq" handler, esr 0x%08x
+  79c36 Bad mode in "Irq" handler, esr 0x%08x
+  79c5d Bad mode in "Synchronous Abort" handler, esr 0x%08x
+  79c92 Resetting CPU ...
+  79ca5 (not set)
+  79caf arch_number
+  79cbb boot_params
+  79cc7 DRAM bank
+  79cd1 -> start
+  79cda -> size
+  79ce2 eth%dname    = %s
+  79cf5 eth%iaddr
+  79cff %-12s= %s
+  79d0a current eth = %s
+  79d1c ipaddr
+  79d23 ip_addr     = %s
+  79d35 baudrate    = %u bps
+  79d4b TLB addr
+  79d54 relocaddr
+  79d5e reloc off
+  79d68 irq_sp
+  79d6f sp start 
+  79d79 Trying to execute a command out of order
+  79da3 ## Transferring control to NetBSD stage-2 loader (at address %08lx) ...
+  79dec confaddr
+  79df5 ## Transferring control to Plan 9 (at address %08lx) ...
+  79e2f ## Transferring control to RTEMS (at address %08lx) ...
+  79e6b verify
+  79e72 ## Booting kernel from Legacy Image at %08lx ...
+  79ea4 Unsupported Architecture 0x%x
+  79ec3 Wrong Image Type for %s command
+  79ee4 Wrong Image Format for %s command
+  79f07 ERROR: can't get kernel image!
+  79f27 ERROR: unknown image format type!
+  79f4a Could not find a valid setup.bin for x86
+  79f74 Could not find kernel entry point!
+  79f98 WARNING: legacy format multi component image overwritten
+  79fd2 ERROR: new format image overwritten - must RESET the board to recover
+  7a019 initrd_start
+  7a026 initrd_end
+  7a031 ERROR: booting os '%s' (%d) is not supported
+  7a05f subcommand not supported
+  7a079 bootmenu_delay
+  7a088 bootmenu_%d
+  7a094 bootmenu option 0 was not found
+  7a0b5 bootmenu option 0 is invalid
+  7a0d3 Invalid bootmenu entry: %s
+  7a0ef U-Boot console
+  7a0ff [?25l
+  7a10b [?25h
+  7a111 /chosen
+  7a119 ## ERROR: %s : %s
+  7a12c ## Starting vxWorks at 0x%08lx, device tree at 0x%08lx ...
+  7a168 ## vxWorks terminated
+  7a17f [y/n]?
+  7a18a List of available devices:
+  7a1a6 %-8s %08x %c%c%c 
+  7a1b8 CPU PLL
+  7a1c0 %s: al_pll_init failed!
+  7a1d9 %s: al_pll_freq_get failed!
+  7a1f6 %s: PLL freq (%u) not suitable for %dMHz channel!
+  7a229 %s: al_pll_channel_div_set failed!
+  7a24d uncorrectable
+  7a25b al_ddr_address_translate_sys2dram failed!
+  7a286 al_ddr_ecc_data_poison_enable failed!
+  7a2ad Poisoned DRAM address %08x (rank %u, bank %u, column %u, row %u) with %s error
+  7a2fd al_ddr_ecc_data_poison_disable failed!
+  7a325 Disabled poisoning
+  7a339 clear
+  7a33f Syntax error - invalid parameters!
+  7a364 DDR ECC is disabled
+  7a379 al_ddr_ecc_status_get failed!
+  7a398 Corrected status:
+  7a3ab Uncorrected status:
+  7a3c0  - Number of ECC errors detected: %u
+  7a3e6  - First erroneous read address: rank: %u, Bank: %u, Row: %u, Col: %u
+  7a42d  - First errneous data: %08x:%08x:%02x
+  7a455  - Mask for the corrected data portion: %08x:%08x:%02x
+  7a48d  - Bit number corrected by single-bit ECC error: %u
+  7a4c2 I2C preload enabled
+  7a4d6 I2C preload disabled
+  7a4eb Invalid value
+  7a4f9 SPIS preload enabled
+  7a50e SPIS preload disabled
+  7a524 Boot ROM enabled
+  7a535 Boot ROM disabled
+  7a547 8 bit NAND Flash
+  7a558 UART
+  7a55d SPI Flash, mode 0x3
+  7a571 SPI Flash, mode 0x0
+  7a585 Debug mode enabled
+  7a598 Debug mode disabled
+  7a5ac CPU_0 is active
+  7a5bc CPU_0 & CPU_1 are active
+  7a5d5 CPU_0 & CPU_1 & CPU_2 & CPU_3 are active
+  7a5fe Reset strap readouts:
+  7a615 CPU PLL freq
+  7a622 NB PLL freq
+  7a62e SB PLL freq
+  7a63a SB clock freq
+  7a648 PLL ref clock freq
+  7a65b I2C Preload status
+  7a66e %s:	 %s
+  7a677 SPIS Preload status
+  7a68b Boot ROM status
+  7a69b Boot device
+  7a6a7 Debug mode status
+  7a6b9 CPU exist status
+  7a6ca  Class       Probed   Name
+  7a6e6 uclass %d: %s
+  7a6f5 - %c %s @ %08lx
+  7a705 , seq %d, (req %d)
+  7a71b (dirty)
+  7a723 Syntax error - invalid number of parameters!
+  7a752 MAC address %d: %02x:%02x:%02x:%02x:%02x:%02x%s
+  7a783 mac_addr_set
+  7a790 Syntax error - invalid MAC address index!
+  7a7bc save
+  7a7c1 Saving failed!
+  7a7d2 Syntax error - invalid op!
+  7a7ef ## Resetting to default environment
+  7a814 edit: 
+  7a81b ERROR: Cannot export environment: errno = %d
+  7a849 at %s:%d/%s()
+  7a85c ## Warning: defaulting to text format
+  7a883 ## Error: external checksum format must pass size
+  7a8b6 ## Info: input data size = %zu = 0x%zX
+  7a8de ## Error: bad CRC, import failed
+  7a900 common/cmd_nvedit.c
+  7a914 ERROR: Environment import failed: errno = %d
+  7a942 at %s:%d/%s()
+  7a951 ## %s: only one of "-b", "-c" or "-t" allowed
+  7a980 ## Warning: Input data exceeds %d bytes - truncated
+  7a9b6 Environment size: %d/%ld bytes
+  7a9d6 Saving Environment to %s...
+  7a9f3 1000basex
+  7a9fd Syntax error - invalid speed parameter
+  7aa25 Syntax error - invalid duplex parameter
+  7aa4e Syntax error - invalid port number!
+  7aa74 disable
+  7aa7c Syntax error - invalid parameter
+  7aa9e board params load return error
+  7aabe WARNING: freeze settings won't take effect in auto-speed mode.
+  7aafd use eth_mac_mode_set to change it.
+  7ab21 WARNING: link training is enabled and may change the serdes settings.
+  7ab67 use eth_link_training_enable to disable it.
+  7ab94 board params store return error
+  7abb5 serdes_override_set return error
+  7abd7 --exist
+  7abdf Syntax error - exist can get only 0 or 1!
+  7ac0b --bus-id
+  7ac14 --i2c-addr
+  7ac1f --channel
+  7ac29 Syntax error - channel can get only A or B!
+  7ac57 Syntax error - unknown option!
+  7ac78 /* NULL pointer error */
+  7ac94 The address of the fdt is %#08lx
+  7acb6 New length %d < existing length %d, ignoring.
+  7ace5 libfdt fdt_open_into(): %s
+  7ad01 No FDT memory address configured. Please configure
+  7ad34 the FDT address via "fdt addr <address>" command.
+  7ad66 Aborting!
+  7ad74 New length 0x%X < existing length 0x%X, aborting.
+  7adaa libfdt fdt_path_offset() returned %s
+  7add0 libfdt fdt_add_subnode(): %s
+  7adee Sorry, I could not convert "%s"
+  7ae0f Unexpected character '%c'
+  7ae2a libfdt fdt_setprop(): %s
+  7ae44 libfdt node not found
+  7ae5b 0x%08X
+  7ae62 error: unprintable value
+  7ae7c 0x%p
+  7ae81 libfdt fdt_getprop(): %s
+  7ae9b %s%s {
+  7aea3 Nested too deep, aborting.
+  7aebf %s};
+  7aec5 %s%s;
+  7aecc %s%s = 
+  7aed4 %s/* NOP */
+  7aee1 Unknown tag 0x%08X
+  7aef5 libfdt fdt_delprop():  %s
+  7af10 libfdt fdt_del_node():  %s
+  7af2c magic:			0x%x
+  7af3b totalsize:		0x%x (%d)
+  7af52 off_dt_struct:		0x%x
+  7af68 off_dt_strings:		0x%x
+  7af7f off_mem_rsvmap:		0x%x
+  7af96 version:		%d
+  7afa4 last_comp_version:	%d
+  7afbb boot_cpuid_phys:	0x%x
+  7afd2 size_dt_strings:	0x%x
+  7afe9 size_dt_struct:		0x%x
+  7b000 number mem_rsv:		0x%x
+  7b01b index		   start		    size
+  7b036 libfdt fdt_get_mem_rsv():  %s
+  7b055     %x	%08x%08x	%08x%08x
+  7b06f libfdt fdt_add_mem_rsv():  %s
+  7b08e libfdt fdt_del_mem_rsv():  %s
+  7b0b1 Failed to update board information in FDT: %s
+  7b0e0 Unable to update property %s:%s, err=%s
+  7b109 Default app: 0x%x (%s)
+  7b121 Unable to allocate block buff!
+  7b141 Object not found in TOC!
+  7b15b al_flash_obj_info_print failed!
+  7b17c flash_contents_obj_read failed!
+  7b19d filesize
+  7b1a6 loadaddr
+  7b1af al_flash_stage2_validate failed!
+  7b1d1 al_flash_pre_boot_validate failed!
+  7b1f5 al_flash_obj_validate failed!
+  7b214 tftp
+  7b219 ## Starting application at 0x%08lX ...
+  7b241 ## Application terminated, rc = 0x%lX
+  7b268 cmd_gpio
+  7b271 gpio: pin %s (gpio %i) value is %lu
+  7b296 %s: %s dev %d NOT available
+  7b2b3 Writing GPT: 
+  7b2c1 uuid_disk
+  7b2cb Missing disk guid
+  7b2de Wrong uuid format for partition %d
+  7b302 Partition list incomplete
+  7b31d success!
+  7b327 Current bus is %d
+  7b33a Setting bus to %d
+  7b34d Failure changing bus number (%d)
+  7b36f Current bus speed=%d
+  7b385 Setting bus speed to %d Hz
+  7b3a1 Failure changing bus speed (%d)
+  7b3c2 CRC32 for %08lx ... %08lx ==> 
+  7b3e1 reading
+  7b3e9 Error %s the chip: %d
+  7b400 %04x:
+  7b406  %02x
+  7b40c Valid chip addresses:
+  7b422  %02X
+  7b428 Current SDA hold time=%d
+  7b442 Setting SDA hold time to %d ns
+  7b462 Failure changing SDA hold time (%d)
+  7b487 Bus %d:	%s
+  7b492 ->%s@0x%2x:%d
+  7b4a0 Invalid bus %d
+  7b4b6 ## Copying part %d from legacy image at %08lx ...
+  7b4e9 Must specify load address for %s command with compressed image
+  7b529 Bad Image Part
+  7b539 Invalid image type for imxtract
+  7b55a    Loading part %d ... 
+  7b572    Uncompressing part %d ... 
+  7b590 GUNZIP ERROR - image not loaded
+  7b5b1 fileaddr
+  7b5ba iodma failed
+  7b5c7 iodma_memcpy failed!
+  7b5dd iodma_memset failed!
+  7b5f3 Bootstrap parsing failed
+  7b60d Invalid data width specifier
+  7b62b ** No boot file defined **
+  7b647 %llu bytes read in %lu ms
+  7b664 loads_echo
+  7b66f ## Ready for S-Record download ...
+  7b693 ## S-Record download aborted
+  7b6b1 ## Start Addr      = 0x%08lX
+  7b6cf ## Switch baudrate to %d bps and press ENTER ...
+  7b701 loady
+  7b707 ## Ready for binary (ymodem) download to 0x%08lX at %d bps...
+  7b746 loadx
+  7b74c ## Ready for binary (xmodem) download to 0x%08lX at %d bps...
+  7b78b ## Ready for binary (kermit) download to 0x%08lX at %d bps...
+  7b7ca ## Binary (kermit) download aborted
+  7b7ef ## Switch baudrate to %d bps and press ESC ...
+  7b822 md5 for %08lx ... %08lx ==> 
+  7b83f  != 
+  7b844  ** ERROR **
+  7b852 ERROR: %s does not contain a valid md5 sum
+  7b87e PHY does not have extended functions
+  7b8a4 Reading from bus %s
+  7b8b9 PHY at address %d:
+  7b8cd %d - 0x%x
+  7b8d8 Base Address: 0x%08lx
+  7b8ef double word
+  7b8fb byte
+  7b900 halfword
+  7b909 %s at 0x%p (%#0*llx) != %s at 0x%p (%#0*llx)
+  7b937 Total of %ld %s(s) were the same
+  7b959 Zero length ???
+  7b96a Refusing to do empty test
+  7b985 Testing %08x ... %08x:
+  7b99d Iteration: %6d
+  7b9ae Pattern %08lX  Writing...%12s
+  7b9d6 Reading...
+  7b9e2 Mem error @ 0x%08X: found %08lX, expected %08lX
+  7ba13 Tested %d iteration(s) with %lu errors.
+  7ba48 IEEE 802.3
+  7ba53 IEEE 802.9 ISLAN-16T
+  7ba6c PHY 0x%02X: OUI = 0x%04X, Model = 0x%02X, Rev = 0x%02X, %3dbase%s, %s
+  7bab3 Error reading from the PHY addr=%02x reg=%02x
+  7bae2 addr=%02x reg=%02x data=
+  7bafb Error writing to the PHY addr=%02x reg=%02x
+  7bb28 Error reading from the PHY
+  7bb43  addr=%02x
+  7bb4e Error writing to the PHY
+  7bb6a The MII dump command only formats the standard MII registers, 0-5.
+  7bbae %u.     (%04hx)                 -- %s --
+  7bbd8   (%04hx:%04x) %u.
+  7bbeb %2u,%2u =   b%u%u    speed selection = %s Mbps
+  7bc1a %2u    = %5u    duplex = %s
+  7bc36 %2u-%2u = %5u    selector = %s
+  7bc55 %2u-%2u =     %u    selector = %s
+  7bc77 %2u   
+  7bc7e %2u-%2u
+  7bc86  = %5u    %s
+  7bc93 Syntax error!
+  7bca3 Syntax error - invalid iface_arg!
+  7bcc7 free
+  7bccc al_muio_mux_iface_free failed, probably due to syntax error!
+  7bd0b falloc
+  7bd12 al_muio_mux_iface_alloc_force failed, probably due to syntax error!
+  7bd58 Syntax error - invalid iface!
+  7bd78 ERROR
+  7bd7e quiet
+  7bd85 no devices available
+  7bd9c Device %d bad blocks:
+  7bdb3   %08llx
+  7bdbd scrub
+  7bdc3 clean
+  7bdcc .spread
+  7bdd4 .part
+  7bdda .chip
+  7bde1 NAND %s: 
+  7bdeb Warning: scrub option will erase all factory set bad blocks!
+  7be28          There is no reliable way to recover them.
+  7be5b          Use this command only for testing purposes if you
+  7be96          are sure of what you are doing!
+  7bec0 Really scrub this NAND flash? <y/N>
+  7bee5 scrub aborted
+  7bef4 .oob
+  7bef9 No memory for page buffer
+  7bf14 Error (%d) reading page %08lx
+  7bf33 Page %08lx dump:
+  7bf45 OOB:
+  7bf4b 	%02x %02x %02x %02x %02x %02x %02x %02x  %02x %02x %02x %02x %02x %02x %02x %02x
+  7bf9e 	%02x %02x %02x %02x %02x %02x %02x %02x
+  7bfc8 .raw
+  7bfcd '%s' is not a number
+  7bfe3 Size exceeds partition or device limit
+  7c00b size adjusted to 0x%llx (%d bad blocks)
+  7c034 NAND write bytes left: %zu
+  7c050 %s: error at offset %llx, ret %d
+  7c072 Unknown nand command suffix '%s'.
+  7c095  %zu bytes %s: %s
+  7c0a8 markbad
+  7c0b0 block 0x%08lx NOT marked as bad! ERROR %d
+  7c0db block 0x%08lx successfully marked as bad
+  7c105 biterr
+  7c10c set_partition_offset
+  7c121 %s: set partition base address to=%llx
+  7c149 bootdevice
+  7c155 ** No boot device **
+  7c16c ** Device %d not available
+  7c188 .jffs2
+  7c195 Unknown nand load suffix '%s'
+  7c1b5 Loading from %s, offset 0x%lx
+  7c1d4 ** Read error
+  7c1e3 ** Unknown image type
+  7c1fa -bootable
+  7c204 Unknown option %s
+  7c217 %s%d
+  7c220 pca953x@ 0x%x (%d pins):
+  7c23b gpio pins: 
+  7c247 conf:      
+  7c253 invert:    
+  7c25f input:     
+  7c26b output:    
+  7c277 Current device address: 0x%x
+  7c295 chip 0x%02x, pin 0x%lx = %d
+  7c2b2 Error talking to chip at 0x%x
+  7c2d1 ping failed; host %s is not alive
+  7c2f4 host %s is alive
+  7c306 Invalid pxefile address: %s
+  7c323 Error parsing config file
+  7c33e pxefile_addr_r
+  7c34d pxeuuid
+  7c355 Config file found
+  7c368 Config file not found
+  7c37f resetting ...
+  7c38e bootupd	- perform u-boot version update.
+  7c3b7 			* set 'boot_img' to the TFTP server's boot image name.
+  7c3f2 delenv	- delete the env variables of the u-boot img
+  7c42c Init SCSI
+  7c43c Reset SCSI
+  7c44c SCSI dev. %d:  
+  7c45d no SCSI devices available
+  7c479     Device %d: 
+  7c48a SCSI device %d: 
+  7c49b unknown device
+  7c4ac SCSI device %d not available
+  7c4ca bist
+  7c4cf BISTFCTR (BIST FIS Count Reg)       = 0x%x
+  7c4fb BISTSR   (BIST Status Reg)          = 0x%x
+  7c527 BISTDECR (BIST DWord Err Count Reg) = 0x%x
+  7c553 Received invalid bist command, please refer to the scsi help menu
+  7c597 SCSI read: device %d block # %ld, count %ld ... 
+  7c5c8 %ld blocks read: %s
+  7c5de SCSI write: device %d block # %ld, count %ld ... 
+  7c610 %ld blocks written: %s
+  7c628 Received an invalid BIST mode value
+  7c64c Please refer to the SCSI help menu for a list of valid values
+  7c69e scsi
+  7c6a3 Syntax error - invalid group!
+  7c6c3 Syntax error - invalid page!
+  7c6e2 Syntax error - invalid offset!
+  7c703 Syntax error - invalid msb!
+  7c721 Syntax error - invalid lsb!
+  7c73f al_serdes_reg_read failed!
+  7c75c SERDES %d, %s, %s, reg[%d][%d:%d] => 0x%02x
+  7c78c Syntax error - invalid type!
+  7c7ab Syntax error - invalid value!
+  7c7cb Syntax error - p0123 can only be used with msb=7 and lsb=0!
+  7c809 al_serdes_reg_write failed!
+  7c827 SERDES %d, %s, %s, reg[%d][%d:%d] <= 0x%02x
+  7c854 pma_reset_grp_en
+  7c865 pma_reset_lane_en
+  7c877 pm_grp_set
+  7c882 pm_lane_set
+  7c891 Syntax error - invalid loopback mode!
+  7c8b9 bist_overrides
+  7c8d8 Syntax error - invalid rate!
+  7c8f7 bist_pat
+  7c900 bist_tx_en
+  7c90b bist_tx_err
+  7c917 bist_rx_en
+  7c922 bist_rx_stat
+  7c92f SERDES %d, %d BIST RX status: is_locked=%d, err_cnt_overflow=%d err_cnt=%d
+  7c97b eye_diag
+  7c984 rx_scan
+  7c98c HF_AGC_BOOST = 0x%x, LF_AGC_GAIN=0x%x, HF_AGC_GAIN=0x%x, DFE_POST_SHAPING=0x%x, DFE_POST_3DB=0x%x
+  7c9ef tx_params_set
+  7c9fd Syntax error - invalid amplitude!
+  7ca21 Syntax error - invalid 'drivers number'!
+  7ca4c Syntax error - invalid 'post emphasis'!
+  7ca76 Syntax error - invalid 'pre emphasis'!
+  7ca9f Syntax error - invalid 'slew rate'!
+  7cac5 tx_params_get
+  7cad3 group          = %d
+  7cae8 lane           = %d
+  7cafd amplitude      = %d
+  7cb12 drivers number = %d
+  7cb27 post emphasis  = %d
+  7cb3c pre emphasis   = %d
+  7cb51 slew rate      = %d
+  7cb66 c_plus_2       = %d
+  7cb7b for setting Tx params manually, use the following line:
+  7cbb4 %d %d %d %d %d %d %d
+  7cbca rx_equal
+  7cbd3 rx equalization failed with each try, no suitable output
+  7cc0d best test score is: %d
+  7cc25 rx_params_set
+  7cc33 rx_params_get
+  7cc41 Syntax error - invalid number %s of parameter %s
+  7cc72        ------------------------------------------------------------------
+  7ccbd %+4dmV-+
+  7ccc6        |
+  7cccf al_serdes_eye_diag_sample failed!
+  7ccf3         +-------+-------+-------+-------+-------+-------+-------+-------+
+  7cd3e         |       |       |       |       |       |       |       |       |
+  7cd89     -1.00UI -0.75UI -0.50UI -0.25UI +0.00UI +0.25UI +0.50UI +0.75UI +1.00UI
+  7cdd7 ' ' - No errors
+  7cde8 '1' - Less than 10 errors
+  7ce03 '2' - Less than 100 errors
+  7ce1f '3' - Less than 1000 errors
+  7ce3c '4' - Less than 10000 errors
+  7ce5a '5' - More than 10000 errors
+  7ce79 gsub
+  7ce7e invalid op
+  7ce8a user
+  7ce8f sgpo %i value is %d
+  7cea4 sgpo %i mode is %s
+  7ceb8 %s=%s
+  7cec0  ** Abort
+  7cecb ## Error: "%s" not defined
+  7cee7 ## Executing script at %08lx
+  7cf05 malloc
+  7cf0c Read
+  7cf11 Written
+  7cf19 Failed to initialize SPI flash at %u:%u
+  7cf42 No SPI flash selected. Please run `sf probe'
+  7cf70 ERROR: attempting %s past flash size (%#x)
+  7cf9c Failed to map physical memory
+  7cfbf Updating, %zu%% %lu B/s
+  7cfd7 SPI flash failed in %s step
+  7cff4 %zu bytes written, %zu bytes skipped
+  7d019  in %ld.%lds, speed %ld B/s
+  7d036 SF: %zu bytes @ %#x %s: %s
+  7d052 SF: %zu bytes @ %#x Erased: %s
+  7d072 rwrsr
+  7d078 SF: read wrsr value 0x%x
+  7d092 wwrsr
+  7d098 SF: write wrsr with ws 0x%x
+  7d0b5 ext2
+  7d0c2 Invalid filesystem: %s
+  7d0da Error reading config file
+  7d0f5 al_thermal_sensor_readout_is_valid timed out!
+  7d124 al_thermal_sensor_init failed!
+  7d144 al_thermal_sensor_is_ready timed out!
+  7d16b starting USB...
+  7d17c resetting USB...
+  7d18e stop
+  7d193 stopping USB..
+  7d1a3 USB is stopped. Please issue 'usb start' first.
+  7d1d4 USB device tree:
+  7d1e6 config for device %d
+  7d1fc *** No device available ***
+  7d219 Device %d does not exist.
+  7d234 Device is no hub or does not have %d ports.
+  7d261 Setting Test_J mode
+  7d275 Setting Test_K mode
+  7d289 Setting Test_SE0_NAK mode
+  7d2a3 Setting Test_Packet mode
+  7d2bc Setting Test_Force_Enable mode
+  7d2db Unrecognized test mode: %s
+  7d2f6 Available modes: J, K, S[E0_NAK], P[acket], F[orce_Enable]
+  7d332  on downstream facing port %d...
+  7d354  on upstream facing port...
+  7d371 Error during SET_FEATURE.
+  7d38c Test mode successfully set. Use 'usb start' to return to normal operation.
+  7d3d8 stor
+  7d3de no USB devices available
+  7d3f8 no current device selected
+  7d415 USB read: device %d block # %ld, count %ld ... 
+  7d446 USB write: device %d block # %ld, count %ld ... 
+  7d477 %ld blocks write: %s
+  7d48e USB device %d: 
+  7d4a7 aarch64-linux-gnu-gcc (Debian 6.3.0-18) 6.3.0 20170516
+  7d4df GNU ld (GNU Binutils for Debian) 2.28
+  7d506 %s: error DDR size %llu not supported... using 2G size
+  7d53e /soc/leds/ulogo_w
+  7d550 LED gpio number: %d, polarity: %d
+  7d573 /soc/board-cfg/gpio_init
+  7d58c %s: gpio initialization node not found!
+  7d5b5 gpio-list
+  7d5bf %s: property '%s' missing
+  7d5da %s: property 'gpio-list' must contain GPIO triplets!
+  7d610 %s: board gpio initialization failed!
+  7d637 /soc/board-cfg/pcie/port%d
+  7d652 %s: PCIe port %d initialization node not found - assuming gen3x4!
+  7d695 width
+  7d69b /soc/board-cfg/sgpo_init
+  7d6b4 group_mode
+  7d6bf %s: group_mode node not found!
+  7d6e3 four
+  7d6e8 %s: invalid group mode (%s)!
+  7d706 sata_mode
+  7d710 %s: sata_mode node not found!
+  7d72f active-presence
+  7d73f %s: invalid sata mode (%s)!
+  7d75c /soc/board-cfg/sgpo_init/timing/
+  7d77d clk_setup_time_ns
+  7d78f %s: clk_setup_time_ns node not found!
+  7d7b6 update_freq_khz
+  7d7c6 %s: update_freq_khz node not found!
+  7d7eb clk_freq_mhz
+  7d7f8 %s: clk_freq_mhz node not found!
+  7d81a blink_rate
+  7d825 %s: blink_rate node not found!
+  7d845 normal
+  7d84c fast
+  7d851 %s: invalid blink rate (%s)!
+  7d86f /soc/board-cfg/sgpo_init/group%d
+  7d890 %s: sgpo initialization node not found!
+  7d8b9 mode_mask
+  7d8c3 %s: mode_mask node not found!
+  7d8e2 init_val
+  7d8eb %s: init_val node not found!
+  7d909 invert_mask
+  7d915 %s: invert_mask node not found!
+  7d936 stretch_mask
+  7d943 %s: stretch_mask node not found!
+  7d965 blink_mask
+  7d970 %s: blink_mask node not found!
+  7d990 stretch_time_ms
+  7d9a0 %s: stretch_time_ms node not found!
+  7d9c5 al_sgpo_handle_init failed!
+  7d9e2 al_sgpo_hw_init failed!
+  7d9fb %s: dt_based_sgpo_init_group(%d) failed!
+  7da25 baseidx
+  7da2d DTT sensor does not exist
+  7da48 DTT temperature read failed
+  7da65 DTT%d: %i C
+  7da72 Error initialiting ADT7475
+  7da8e dtt_get_temp[%d] %d
+  7daa3 Invalid speed - supported speeds (%u, %u, %u)
+  7dad2 Invalid hold time!
+  7dae6 Timed out. i2c write Failed
+  7db03 al_nand_properties_decode failed
+  7db25 al_nand_dev_config failed
+  7db40 al_nand_cmd_seq_gen_page_read failed!
+  7db67 al_nand_data_buff_read failed!
+  7db87 early_nand_spare_read failed
+  7dba5 %s: invalid method (%d)
+  7dbbe early_nand_is_blk_bad_raw_within_pg_wrd failed!
+  7dbef %s: %u --> %u
+  7dbfe uncorrectable errors!
+  7dc15 early_nand_is_blk_bad_raw_within_pg failed!
+  7dc42 early_nand_is_blk_bad_raw failed!
+  7dc65 early_nand_is_block_bad failed!
+  7dc86 early_nand_addr_logic_to_phys failed!
+  7dcad uncorrected errors found in page %d! (increased to %d)
+  7dce5 ecc_read_page: corrected increased to %d
+  7dd0f ERROR: read subpage not supported!
+  7dd33 %s: i2c read failed!
+  7dd49 %s: no valid information found!
+  7dd6a %s: save failed!
+  7dd7c RE is too long (code overflow)
+  7dd9b .callbacks
+  7dda6 .flags
+  7ddad ## Warning: Unknown environment variable access method '%c'
+  7ddea ## Warning: Unknown environment variable type '%c'
+  7de1e ## Error: flags type check failure for "%s" <= "%s" (type: %c)
+  7de5e ## Error: Can't delete "%s"
+  7de7b ## Error: Can't overwrite "%s"
+  7de9b oldval: %s  defval: %s
+  7deb3 ## Error: Can't create "%s"
+  7ded0 !import failed
+  7dedf SPI Flash
+  7dee9 Can't allocate buffers for environment
+  7df11 !malloc() failed
+  7df22 *** Error - No Valid Environment Area found
+  7df4f *** Warning - some problems detected reading environment; recovered successfully
+  7dfa1 !bad CRC
+  7dfaa redundant NAND
+  7dfb9 Warning: primary env write failed, redundancy is lost!
+  7dff1 ## Error: cannot export environment
+  7e016 !spi_flash_read() failed
+  7e02f common/env_sf.c
+  7e03f ERROR: Cannot import environment: errno = %d
+  7e06d at %s:%d/%s()
+  7e07c env_import failed
+  7e08e !spi_flash_probe() failed
+  7e0a8 Erasing SPI flash...
+  7e0bd Writing to SPI flash...
+  7e0d5 Valid environment: %d
+  7e0ec FAILED!
+  7e0f5 Erasing %s...
+  7e104 Writing to %s... 
+  7e116 ethact
+  7e11d net/eth.c
+  7e127 %s%daddr
+  7e130 %saddr
+  7e137 Board Net Initialization Failed
+  7e158 CPU Net Initialization Failed
+  7e177 Net Initialization Skipped
+  7e193  [PRIME]
+  7e19d Warning: eth device name has a space!
+  7e1c8 eth%dmacskip
+  7e1d5 ethmacskip
+  7e1e1 Warning: %s MAC addresses don't match:
+  7e209 Address in SROM is         %pM
+  7e229 Address in environment is  %pM
+  7e24a Error: %s address not set.
+  7e267 Warning: %s failed to set MAC address
+  7e28f Warning: %s using MAC address from net device
+  7e2bf Error: %s address %pM illegal value
+  7e2e4 ** Cannot support non-zero offset **
+  7e30a ** File not found %s **
+  7e323 ** Invalid Block Device Descriptor (NULL)
+  7e34e %s read outside partition %lu
+  7e36d  ** ext2fs_devread() read error **
+  7e391  ** %s read error - block
+  7e3ac * %s read error - last part
+  7e3c9 <DIR> 
+  7e3d0 <SYM> 
+  7e3d7 < ? > 
+  7e3de %10u %s
+  7e3e7 ** Can not find directory. **
+  7e406 Failed to mount ext2 filesystem...
+  7e42a Error building extent cache!
+  7e44b #address-cells
+  7e45a fdt_chosen: %s
+  7e46a WARNING: could not set bootargs %s.
+  7e48f ERROR: 
+  7e497  - must RESET the board to recover.
+  7e4bc %s: %s: %s
+  7e4c8 /aliases
+  7e4d1 usbethaddr
+  7e4dc ethernet%d
+  7e4e7 local-mac-address
+  7e4f9 %s: num banks %d exceeds hardcoded limit %d. Recompile with higher MEMORY_BANKS_MAX?
+  7e54f device_type
+  7e55b WARNING: could not set %s %s.
+  7e57a linux,phandle
+  7e588 fdt_initrd: %s
+  7e598 linux,initrd-start
+  7e5ab WARNING: could not set linux,initrd-start %s.
+  7e5da linux,initrd-end
+  7e5eb WARNING: could not set linux,initrd-end %s.
+  7e618 fdt_root: %s
+  7e626 serial#
+  7e62e serial-number
+  7e63c WARNING: could not set serial-number %s.
+  7e666 <valid offset/length>
+  7e67c <no error>
+  7e687 <unknown error>
+  7e697 %s: Bad cell count for %s
+  7e6b2 The address of the fdt is invalid (NULL).
+  7e6dd libfdt fdt_check_header(): %s
+  7e6fb  - too old, fdt %d < %d
+  7e713  - too new, fdt %d > %d
+  7e72b /config
+  7e733 okay
+  7e738 No valid device tree binary found - please append one to U-Boot binary, use u-boot-dtb.bin or define CONFIG_OF_EMBED. For sandbox, use -d <file.dtb>
+  7e7ce fdtcontroladdr
+  7e7dd ALPINE_UBNT_NAS_ALL> 
+  7e7f3 Object too big!
+  7e804 Unable to allocate first block buff!
+  7e82a Unable to allocate last block buff!
+  7e84f Object exceed maximal size of %u bytes!
+  7e878 dev_read failed!
+  7e88a dev_erase failed!
+  7e89d dev_write failed!
+  7e8b4 01-%02x-%02x-%02x-%02x-%02x-%02x
+  7e8d5 missing environment variable: %s
+  7e8f7 ** Unrecognized filesystem type **
+  7e91b ** Unable to read file %s **
+  7e939 /soc/clocks/refclk
+  7e94c /soc/clocks/sbclk
+  7e95e /soc/clocks/nbclk
+  7e970 arm,cortex-a15
+  7e97f arm,cortex-a15-timer
+  7e994 arm,armv8-timer
+  7e9a4 ns16550a
+  7e9ad /soc/pcie-external0
+  7e9c1 /soc/pcie-external1
+  7e9d5 /soc/pcie-external2
+  7e9e9 /soc/pcie-external3
+  7e9fd iocc_force
+  7ea08 iocc_force_val
+  7ea17 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  7ea44 I/O CC forced to %lu!
+  7ea5a !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  7ea88 /soc/ccu
+  7ea91 /soc/al-fabric
+  7eaa0 Warning: ccu node has no address.
+  7eac3 dma-coherent
+  7ead0 annapurna-labs,alpine-internal-pcie
+  7eaf4 annapurna-labs,alpine-external-pcie
+  7eb18 clock-frequency
+  7eb28 %s: unable to set %s.%s!
+  7eb42 %s: unable to set %s.status!
+  7eb60 %s: %s node not found!
+  7eb78 ranges
+  7eb7f %s: property length is smaller then expected
+  7ebad Unable to update property %s, err=%s
+  7ebd3 io_coherency
+  7ebe0 Unknown Architecture
+  7ebf5 Unknown Compression
+  7ec09 Unknown OS
+  7ec14 Unknown Image
+  7ec22 %d Bytes = 
+  7ec2e %s Waiting for PHY auto negotiation to complete
+  7ec5e  TIMEOUT !
+  7ec6a user interrupt!
+  7ec7b UnknownBoard
+  7ec88 bootemmc
+  7ec91 udmprose
+  7ec9a %s: boot_read has not been initialized
+  7ecc2 %s: failed to read fcd data via boot_read
+  7eced UBNT
+  7ecf2 %s: incorrect fcd data magic
+  7ed10 %s: foreign vendor id %04x
+  7ed2c %s: fetch hardware revision ID failed
+  7ed53 %s: unable to match any board, sysid: %04x
+  7ed7f Cannot find console
+  7ed94 unable to get device descriptor (error=%d)
+  7edc0 USB device descriptor short read (expected %i, got %i)
+  7edf8 ** Bad device specification %s %s **
+  7ee1e ** Bad HW partition specification %s %s **
+  7ee4a ** Bad device %s %s **
+  7ee62 hostfs
+  7ee69 Sandbox host
+  7ee76 ** No device specified **
+  7ee91 ** Bad partition specification %s %s **
+  7eeba ** Bad device size - %s %s **
+  7eed9 ** No partition table - %s %s **
+  7eefb Whole Disk
+  7ef06 ** Invalid partition %d **
+  7ef22 ** No valid partitions found **
+  7ef43 ** Invalid partition type "%.32s" (expect "U-Boot")
+  7ef78 Phy %d not found
+  7ef8a pxelinux.cfg/
+  7ef98 path (%s%s) too long, skipping
+  7efb8 pxelinux.cfg/%s
+  7efc8 bootfile
+  7efd1 bootfile_path too small. (%zd < %zd)
+  7eff7 Base path too long (%s%s)
+  7f012 Retrieving file: %s
+  7f027 bootm_low
+  7f031 bootm_mapsize
+  7f03f bootm_size
+  7f04a env_buf [%d bytes] too small for value of "%s"
+  7f07a %s: gpio %d mpp mux allocation failed!
+  7f0a2 %s: gpio %d gpio request failed!
+  7f0c4 %s: gpio %d gpio dir out (%d) failed!
+  7f0eb %s: gpio %d gpio dir in failed!
+  7f10c %s: Pin id is out of bound. id = %d
+  7f131 Partition overlap
+  7f144 Partitions layout exceds disk size
+  7f168 Partition no. %d: invalid guid: %s
+  7f18c Error: gunzip out of data in header
+  7f1b1 %s: size %lu not a multiple of %lu
+  7f1d5 %s: start offset %llu not a multiple of %lu
+  7f202 Error: Bad gzipped data
+  7f21b Error: gunzip out of data in header
+  7f23f size of %llx doesn't match trailer low bits %x
+  7f26f %s: uncompressed size %llu exceeds device size
+  7f29f 1.2.3
+  7f2a5 Error: inflateInit2() returned %d
+  7f2c8 %s: weird termination with result %d
+  7f2ee Error: inflate() returned %d
+  7f30c abort
+  7f313 Expected include path: %.*s
+  7f330 Couldn't retrieve %s
+  7f346 Missing default: %s
+  7f35b ### ERROR ### Please RESET the board ###
+  7f385 CRC32 for %08lx ... %08lx ==> %08lx
+  7f3aa Env export buffer too small: %zu, but need %zu
+  7f3da himport_r: can't insert "%s=%s" into hash table
+  7f40b WARNING: '%s' neither in running nor in imported env!
+  7f442 WARNING: '%s' not in imported env, deleting it!
+  7f473 Error, wrong i2c adapter %d max %d possible
+  7f4a0 Wrong I2C-adapter number %d
+  7f4bd i2c: mux disconnect error
+  7f4d8 %s: wrong mux id: %d
+  7f4ee %s: could not set mux: id: %d chip: %x channel: %d
+  7f522 Timed out waiting for bus
+  7f53d TFTP server died
+  7f54e %s(%d): pin %d taken by iface %d!
+  7f571 %s(%d): not fully allocated!
+  7f58f %s: invalid iface (%d, %d)!
+  7f5ad ## Checking Image at %08lx ...
+  7f5cd    Legacy image found
+  7f5e4    Bad Magic Number
+  7f5f9    Bad Header Checksum
+  7f611    Verifying Checksum ... 
+  7f62c    Bad Data CRC
+  7f641 Unknown image format!
+  7f658 %sImage Name:   %.*s
+  7f66e %sImage Type:   
+  7f67f %s %s %s (%s)
+  7f68e %sData Size:    
+  7f69f %sLoad Address: %08x
+  7f6b5 %sEntry Point:  %08x
+  7f6cb %sContents:
+  7f6d8 %s   Image %d: 
+  7f6e8 %s    Offset = 0x%08lx
+  7f700 ERROR: root node setup failed
+  7f71f ERROR: /chosen node create failed
+  7f742 ERROR: arch-specific fdt fixup failed
+  7f769 ERROR: board-specific fdt fixup failed: %s
+  7f795  - must RESET the board to recover.
+  7f7bb incorrect header check
+  7f7d2 unknown compression method
+  7f7ed invalid window size
+  7f801 unknown header flags set
+  7f81a header crc mismatch
+  7f82e invalid block type
+  7f841 invalid stored block lengths
+  7f85e too many length or distance symbols
+  7f882 invalid code lengths set
+  7f89b invalid bit length repeat
+  7f8b5 invalid literal/lengths set
+  7f8d1 invalid distances set
+  7f8e7 incorrect data check
+  7f8fc incorrect length check
+  7f913 invalid distance too far back
+  7f931 invalid distance code
+  7f947 invalid literal/length code
+  7f963 baudrate
+  7f96c I2C:   
+  7f974 initcall sequence %p failed at call %p (err=%d)
+  7f9a5 load-environment
+  7f9b6 %ldk
+  7f9bb NAND:  
+  7f9c3 Net:   
+  7f9cb %s=%s
+  7f9d1 %s: pci_find_devices found no more devices
+  7f9fd Failed to allocate descriptors
+  7fa1c RAID_UDMA
+  7fa26 al_ssm_dma_init failed!
+  7fa3f al_ssm_dma_q_init failed!
+  7fa5a al_ssm_dma_state_set failed!
+  7fa78 Failed to get BARs
+  7fa8d Falied to prepare raid
+  7faa5 raid_dma_action failed
+  7fabd Completion status: %u
+  7fad4 Timed out!
+  7fae0 %d.%d.%d.%d
+  7faec %s: Invalid Argument(s)
+  7fb05 *** ERROR: Can't read GPT header ***
+  7fb2b %s: ERROR: Can't allocate 0x%zX bytes for GPT Entries
+  7fb62 *** ERROR: Can't read GPT Entries ***
+  7fb89 GPT: Failed to allocate memory for PTE
+  7fbb4 localcmd
+  7fbbd No kernel given, skipping %s
+  7fbdb ramdisk_addr_r
+  7fbea Skipping %s for failure retrieving initrd
+  7fc15 kernel_addr_r
+  7fc23 Skipping %s for failure retrieving kernel
+  7fc4e  ip=%s:%s:%s:%s
+  7fc5e  BOOTIF=
+  7fc67 bootarg overflow %zd+%zd+%zd+1 > %zd
+  7fc8d append: %s
+  7fc99 fdt_addr_r
+  7fca4 fdtfile
+  7fcb0 malloc fail (FDT filename)
+  7fccc %s%s%s%s%s%s
+  7fcd9 Skipping %s for failure retrieving fdt
+  7fd01 fdt_addr
+  7fd0a %s:	%s
+  7fd12 No match for driver '%s'
+  7fd2c Device tree error at offset %d
+  7fd4c Error binding driver '%s'
+  7fd67 ERROR: Failed to allocate 0x%lx bytes below 0x%lx.
+  7fd9c ## First Load Addr = 0x%08lX
+  7fdb9 ## Last  Load Addr = 0x%08lX
+  7fdd6 ## Total Size      = 0x%08lX = %ld Bytes
+  7fe00 ## Total Size      = 0x%08x = %d Bytes
+  7fe28 No board_info matched, skip mac setup
+  7fe4f mac: [%02x%02x%08x] + [%u]
+  7fe6b eth%daddr
+  7fe75 %02x:%02x:%02x:%02x:%02x:%02x
+  7fe93 setenv %s: %s
+  7fea2 preboot
+  7feaa unknown cmd (%d) at %d
+  7fec2 ## ERROR: unsupported match method: 0x%02x
+  7fef3 %d - %s
+  7fefb  <--> %s
+  7ff05 %s is not a known ethernet
+  7ff21 mdio_register: non unique device name '%s'
+  7ff4d   *** U-Boot Boot Menu ***
+  7ff6d   Press UP/DOWN to move, ENTER to select
+  7ff96 Enter choice: 
+  7ffa5 %s not found
+  7ffb3 PHY duplex
+  7ffbe PHY AN duplex
+  7ffcc  read failed, assuming half duplex
+  7fff0 NULL device name!
+  80003 MII devices: 
+  80011 '%s' 
+  80017 Current device: '%s'
+  8002d No such device: %s
+  80041 PHY speed
+  8004b PHY AN speed
+  80058  read failed, assuming 10BASE-T
+  80079 %08lx:
+  80080  %02lx
+  80087  %04lx
+  80092 writing
+  8009a  %016llx
+  800a3  %04x
+  800a9 offset is not a number
+  800c1 Offset exceeds device limit
+  800de device %d 
+  800e9 whole chip
+  800f5 offset 0x%llx, size 0x%llx
+  80111 Attempt to erase non block-aligned data
+  8013a Size of erase exceeds limit
+  80158 Skipping bad block at  0x%08llx                                          
+  801a4 %s: MTD get bad block failed: %d
+  801c7 %s: MTD Erase failure: %d
+  801e3 %s: MTD writeoob failure: %d
+  80202 Erasing at 0x%llx -- %3d%% complete.
+  80227  Cleanmarker written at 0x%llx.
+  80247 drivers/mtd/nand/nand_base.c
+  80264 %lu MiB
+  8026d %dx 
+  80272 %s, sector size %u KiB
+  8028a   Page size   %8d b
+  8029f   OOB size    %8d b
+  802b4   Erase size  %8d b
+  802c9   subpagesize %8d b
+  802de   options     0x%8x
+  802f3   bbt options 0x%8x
+  80308 nand_writesize
+  80317 nand_oobsize
+  80324 nand_erasesize
+  80333 Attempt to read non page-aligned data
+  8035a Attempt to read outside the flash area
+  80382 Size of read exceeds partition or device limit
+  803b2 NAND read from offset %llx failed %d
+  803d8 Skipping bad block 0x%08llx
+  803f5 board/annapurna-labs/alpine_ubnt/../common/al_nand.c
+  8042a nand%d
+  80431 EPPS
+  80436 WARNING in %s line %d
+  8044d Wait for empty cmd fifo for more than a sec!
+  8047b Attempt to write non page-aligned data
+  804a3 Attempt to write outside the flash area
+  804cc Size of write exceeds partition or device limit
+  804fd NAND write to offset %llx failed %d
+  80522 Skip bad block 0x%08llx
+  8053b autoload
+  80548 *** ERROR: ping address not given
+  8056b *** ERROR: `serverip' not set
+  8058a *** ERROR: `ipaddr' not set
+  805a7 *** ERROR: No ethernet found.
+  805c6 *** ERROR: `ethaddr' not set
+  805e4 *** ERROR: `eth%daddr' not set
+  80605 Abort
+  8060c Bytes transferred = %d (%x hex)
+  8062d  ICMP Host Redirect to %pI4 
+  8064a netretry
+  80653 once
+  80658 Invalid address/size
+  8066e gatewayip
+  80678 netmask
+  80680 hostname
+  80689 rootpath
+  80692 serverip
+  8069b dnsip
+  806a1 domain
+  806a8 *** ERROR: Cannot mount
+  806c1 *** ERROR: Cannot umount
+  806dc done
+  806e2 *** ERROR: File lookup fail
+  806ff *** ERROR: Symlink fail
+  8071c /nfsroot/%02X%02X%02X%02X.img
+  8073a *** Warning: no boot file name; using '%s'
+  80766 Using %s device
+  80777 File transfer via NFS from server %pI4; our IP address is %pI4
+  807b6 ; sending through gateway %pI4
+  807d6 Filename '%s/%s'.
+  807e8  Size is 0x%x Bytes = 
+  80800 Load address: 0x%lx
+  80814 Loading: *
+  80821 Retry count exceeded; starting again
+  8084a #size-cells
+  80856 ## Baudrate %d bps not supported
+  80878 ## Baudrate may not be deleted
+  80898 \.callbacks:callbacks,\.flags:flags,baudrate:baudrate,bootfile:bootfile,ipaddr:ipaddr,gatewayip:gatewayip,netmask:netmask,serverip:serverip,nvlan:nvlan,vlan:vlan,eth\d?addr:ethaddr,loadaddr:loadaddr,stdin:console,stdout:console,stderr:console,
+  8098c eth\d?addr:ma,ipaddr:i,gatewayip:i,netmask:i,serverip:i,nvlan:i,vlan:i,dnsip:i,
+  809dc Expected string: %.*s
+  809f3 Syntax error - invalid lane!
+  80a16 Syntax error - invalid pm!
+  80a33 Maximum nesting (%d) exceeded
+  80a52 Ignoring malformed menu command: %.*s
+  80a79 Expected label name: %.*s
+  80a94 initrd=
+  80a9c Ignoring unknown command: %.*s
+  80ac8 p0123
+  80ace ptop
+  80ad3 Syntax error - invalid reg page!
+  80afe Syntax error - invalid reg type!
+  80b21 Expected string literal: %.*s
+  80b48 \$'"
+  80b4d ;&|#
+  80b52 ;$&|
+  80b57 exit not allowed from main input shell.
+  80b80 <INTERRUPT>
+  80b8d drivers/gpio/pca953x.c
+  80ba4 ERROR: Trying to write data to bits which are 0 in mask!
+  80bdd DATA = %#x MASK = %#x
+  80bf4 at %s:%d/%s()
+  80c03 pci_bus_to_hose() failed
+  80c1d Build before PCI Rev2.0
+  80c35 Mass storage controller
+  80c4d Network controller
+  80c60 Display controller
+  80c73 Multimedia device
+  80c85 Memory controller
+  80c97 Bridge device
+  80ca5 Simple comm. controller
+  80cbd Base system peripheral
+  80cd4 Input device
+  80ce1 Docking station
+  80cf1 Processor
+  80cfb Serial bus controller
+  80d11 Intelligent controller
+  80d28 Satellite controller
+  80d3d Cryptographic device
+  80d56 Does not fit any class
+  80d6d PCI Cleanup: FLR %d.%d.%d
+  80d88   vendor ID =                   0x%.4x
+  80db0   device ID =                   0x%.4x
+  80dd8   command register =            0x%.4x
+  80e00   status register =             0x%.4x
+  80e28   revision ID =                 0x%.2x
+  80e50   class code =                  0x%.2x (%s)
+  80e7d   sub class code =              0x%.2x
+  80ea5   programming interface =       0x%.2x
+  80ecd   cache line =                  0x%.2x
+  80ef5   latency time =                0x%.2x
+  80f1d   header type =                 0x%.2x
+  80f45   BIST =                        0x%.2x
+  80f6d   base address 0 =              0x%.8x
+  80f95   base address 1 =              0x%.8x
+  80fbd   base address 2 =              0x%.8x
+  80fe5   base address 3 =              0x%.8x
+  8100d   base address 4 =              0x%.8x
+  81035   base address 5 =              0x%.8x
+  8105d   cardBus CIS pointer =         0x%.8x
+  81085   sub system vendor ID =        0x%.4x
+  810ad   sub system ID =               0x%.4x
+  810d5   expansion ROM base address =  0x%.8x
+  810fd   interrupt line =              0x%.2x
+  81125   interrupt pin =               0x%.2x
+  8114d   min Grant =                   0x%.2x
+  81175   max Latency =                 0x%.2x
+  8119d   primary bus number =          0x%.2x
+  811c5   secondary bus number =        0x%.2x
+  811ed   subordinate bus number =      0x%.2x
+  81215   secondary latency timer =     0x%.2x
+  8123d   IO base =                     0x%.2x
+  81265   IO limit =                    0x%.2x
+  8128d   secondary status =            0x%.4x
+  812b5   memory base =                 0x%.4x
+  812dd   memory limit =                0x%.4x
+  81305   prefetch memory base =        0x%.4x
+  8132d   prefetch memory limit =       0x%.4x
+  81355   prefetch memory base upper =  0x%.8x
+  8137d   prefetch memory limit upper = 0x%.8x
+  813a5   IO base upper 16 bits =       0x%.4x
+  813cd   IO limit upper 16 bits =      0x%.4x
+  813f5   bridge control =              0x%.4x
+  8141d   capabilities =                0x%.2x
+  81445   CardBus number =              0x%.2x
+  8146d   CardBus latency timer =       0x%.2x
+  81495   CardBus memory base 0 =       0x%.8x
+  814bd   CardBus memory limit 0 =      0x%.8x
+  814e5   CardBus memory base 1 =       0x%.8x
+  8150d   CardBus memory limit 1 =      0x%.8x
+  81535   CardBus IO base 0 =           0x%.4x
+  8155d   CardBus IO base high 0 =      0x%.4x
+  81585   CardBus IO limit 0 =          0x%.4x
+  815ad   CardBus IO limit high 0 =     0x%.4x
+  815d5   CardBus IO base 1 =           0x%.4x
+  815fd   CardBus IO base high 1 =      0x%.4x
+  81625   CardBus IO limit 1 =          0x%.4x
+  8164d   CardBus IO limit high 1 =     0x%.4x
+  81675   subvendor ID =                0x%.4x
+  8169d   subdevice ID =                0x%.4x
+  816c5   PC Card 16bit base address =  0x%.8x
+  816ed unknown header
+  816fd 0x%.4x     0x%.4x     %-23s 0x%.2x
+  81721 pci_hose_bus_to_phys: invalid hose
+  81745 pci_hose_bus_to_phys: invalid physical address
+  81775 PCI:
+  8177f %02x:%02x.%-*x - %04x:%04x - %s
+  817a0 PCIe RC init skipped
+  817b6 2.5GT/s
+  817be 8GT/s
+  817c4 Unknown
+  817cc rc-link-pre-delay
+  817de rc-link-up-timeout
+  817f1 rc-link-post-delay
+  81804 rc-link-retry
+  81812 ep-ports
+  8181b %s: invalid port num (%d)!
+  81837 board/annapurna-labs/alpine_ubnt/../common/pci.c
+  81868 PCIE_%d: Link establishment failed! retrying...
+  81899 PCIE_%d: Link established with speed %s width x%d. retrying...
+  818d9 PCIE_%d: Link up. Speed %s Width x%d
+  818ff %s: PCIE_%d no link found
+  8191a Scanning PCI devices on bus %d
+  8193a BusDevFun  VendorId   DeviceId   Device Class       Sub-Class
+  81979 %02x.%02x.%02x   
+  8198c Found PCI device %02x.%02x.%02x:
+  819ae Cannot read bus configuration: %d
+  819d1 Could not get PHY for %s: addr %d
+  819f4 %s:%d is connected to %s.  Reconnecting to %s
+  81a23 Failed to allocate PHY device for %s:%d
+  81a4c PHY reset timed out
+  81a61 SB PLL
+  81a68 %s: PLL freq not suitable for %dMHz channel!
+  81a96 <unknown>
+  81aa0 %s: EEPROM per device initialization failed!
+  81ace %s: EEPROM per device information is not valid - using defaults!
+  81b10 %s: early_nand_init failed!
+  81b2d board/annapurna-labs/alpine_ubnt/board.c
+  81b56 BUG: failure at %s:%d/%s()!
+  81b73 BUG!
+  81b78 al_flash_toc_search failed!
+  81b95 %s: TOC parsing failed!
+  81bae al_flash_toc_stage2_active_instance_get failed!
+  81bdf al_flash_toc_find_id failed!
+  81bfd DT not found in TOC!
+  81c13 al_flash_obj_header_read_and_validate failed!
+  81c42 U-Boot script not found in TOC!
+  81c63 U-Boot environment not found in TOC - falling back to instance 0!
+  81ca6 U-Boot environment not found in TOC!
+  81ccc U-Boot redundant environment not found in TOC!
+  81cfc al_flash_obj_data_load failed!
+  81d1c /soc/board-cfg
+  81d2b Board config ID: %s, 113-%d-%d
+  81d4b Board config ID: %s
+  81d60 %s: board id property not found!
+  81d82 %s: board cfg initialization node not found!
+  81db0 /soc/spi/spiflash@0
+  81dc4 spi-max-frequency
+  81dd6 /soc/nand-flash
+  81de6 max-onfi-timing-mode
+  81dfb /soc/i2c-pld/i2c_mux
+  81e14 /soc/i2c-gen
+  81e21 /soc/i2c-pld
+  81e2e i2c-sda-hold-time-ns
+  81e43 i2c-sda-hold-time-ns isn't defined correctly!
+  81e72 /soc/board-cfg/pinctrl_init
+  81e8e %s: pinctrl initialization node not found!
+  81eba pinctrl-0
+  81ec8 al_muio_mux_iface_alloc failed, either due to interface conflict, or syntax error!
+  81f1d %s: gpio initialization failed!
+  81f3e /soc/i2c-pld/gpio
+  81f50 /soc/i2c-pld/gpio%d
+  81f64 compatible
+  81f6f nxp,pca9575
+  81f7b %s: unknown gpio expander chip in DT under i2c_pld node: %s
+  81fb8 lines-initial-states
+  81fcd lines-initial-vals
+  81fe0 %s: Error in obtaining pointer to pca953x_chip_ngpios!
+  82018 %s: Trying to set a value to a gpio line 
+  82042 which hasn't been initialized as an output!
+  8206f %s: gpio expander values initialization failed!
+  820a0 %s: gpio expander direction initialization failed!
+  820d4 %s: sgpo initialization failed!
+  820f5 %s: invalid SB clock frequency (%u)
+  8211a /soc/board-cfg/ethernet/port%d
+  82139 %s: ethernet port %d initialization node not found!
+  8216e sgmii-2.5g
+  82179 auto-detect-auto-speed
+  82190 nbase-t
+  82198 25g-10g-auto-detect
+  821b0 auto
+  821b5 	using mode auto is deprecated! use auto-detect mode instead
+  821f3 serdes-grp
+  821fe serdes-lane
+  8220a gpio-sfp-present
+  8221b GPIO 0 can't be used as SFP present
+  82240 /soc/board-cfg/ethernet/port%d/leds/sfp_1g
+  8226b gpios
+  82271 /soc/board-cfg/ethernet/port%d/leds/sfp_10g
+  8229d /soc/board-cfg/ethernet/port%d/leds/sfp_25g
+  822c9 /soc/board-cfg/ethernet/port%d/sfp-plus
+  822f1 	using sfp-plus is deprecated! use auto-detect mode instead
+  8232e i2c-id
+  82335 /soc/board-cfg/ethernet/port%d/10g-serial
+  8235f /soc/board-cfg/ethernet/port%d/10gbe
+  82384 	using 10gbe is deprecated! use 10g-serial instead
+  823b8 dac-length
+  823c3 dac-length has non-valid value. default to 3
+  823f1 auto-neg
+  823fa link-training
+  82408 auto-fec
+  82411 force-1000base-x
+  82422 /soc/board-cfg/ethernet/port%d/ext_phy
+  82449 /soc/board-cfg/ethernet/port%d/rgmii
+  8246e 	using rgmii is deprecated! use ext_phy instead
+  8249f phy-addr
+  824a8 	property phy-addr is missing
+  824c7 phy_mgmt_if
+  824d3 mdc-mdio
+  824dc 	phy management interface is missing
+  82502 mdc-mdio-freq
+  82510 2.5Mhz
+  82517 auto-neg-mode
+  82525 in-band
+  8252d 	auto-negotiation mode is missing
+  82550 /soc/board-cfg/ethernet/port%d/1g-serial
+  82579 1000M
+  8257f full
+  82584 /soc/board-cfg/ethernet/port%d/retimer
+  825ab 	retimer exist: %s
+  825bf br410
+  825c5 i2c-bus
+  825cd 	Retimer bus id: N/A
+  825e3 	Retimer bus addr: N/A
+  825fb 	retimer channel is missing
+  82618 tx_channel
+  82623 	retimer tx channel is missing
+  82643 /soc/board-cfg/ethernet/port%d/
+  82663 freeze-serdes-params
+  82678 %s: ETH params initialization failed!
+  8269f /soc/board-cfg/pcie
+  826b3 rc-manual-init
+  826c2 AL-Boot
+  826ca -alpine_db-2.21
+  826da %s: DT reading failed!
+  826f2 %s: invalid iface (%s)!
+  8270c %s: pinctrl initialization failed!
+  82730 %s: gpio expander initialization failed!
+  8275e uboot_phy_startup_skip
+  82775 xmdc-xmdio
+  82780 1.0Mhz
+  82787 out-of-band
+  82793 100M
+  8279c half
+  827a1 ds25
+  827a6 ds125
+  827ac WARN urb submitted to disabled ep
+  827cf WARN waiting for error on ep to be cleared
+  827fb WARN halted endpoint, queueing URB anyway.
+  82827 ERROR unknown endpoint state for ep
+  8284c  %0*llx
+  82854     %s
+  8285c ", "
+  82861 * 0x%p [0x%08x]
+  82871 0x%08x%s
+  8287c %02x%s
+  82883 %llu Hz%s
+  82891 .%ld
+  82896  %cHz%s
+  8289e %-12s= 0x%08lX
+  828af Partition Map for 
+  828c6 SATA
+  828cb ATAPI
+  828dd HOST
+  828e2 UNKNOWN
+  828ee  device %d  --   Partition Type: %s
+  82914 ## Unknown partition table
+  82930 %s: *** ERROR: Invalid GPT ***
+  82950 %s: *** ERROR: Invalid Backup GPT ***
+  82977 %s: ***        Using Backup GPT ***
+  8299c Part	Start LBA	End LBA		Name
+  829ba 	Attributes
+  829c7 	Type GUID
+  829d3 	Partition GUID
+  829e4 %3d	0x%08llx	0x%08llx	"%s"
+  82a00 	attrs:	0x%016llx
+  82a13 	type:	%s
+  82a1e 	guid:	%s
+  82a29 dc gain = %02x
+  82a39 dfe ps tap 3db = %02x
+  82a50 dfe ps tap gain = %02x
+  82a68 dfe tap1 gain = %02x
+  82a7e dfe tap2 gain = %02x
+  82a94 dfe tap3 gain = %02x
+  82aaa dfe tap4 gain = %02x
+  82ac0 low freq agc gain = %02x
+  82ada high freq agc cap = %02x
+  82af4 for setting Rx params manually, use the following line:
+  82b2d %d %d %02x %02x %02x %02x %02x %02x %02x %02x %02x
+  82b61 %llu Bytes%s
+  82b6e  %ciB%s
+  82b76 Jump offset is too big
+  82b8d Extent Error
+  82b9b ** SI ext2fs read block (indir 1)malloc failed. **
+  82bcf ** SI ext2fs read block (indir 1):malloc failed. **
+  82c04 ** SI ext2fs read block (indir 1)failed. **
+  82c31 ** DI ext2fs read block (indir 2 1)malloc failed. **
+  82c67 ** DI ext2fs read block (indir 2 1)failed. **
+  82c96 ** DI ext2fs read block (indir 2 2)malloc failed. **
+  82ccc ** DI ext2fs read block (indir 2 2)failed. **
+  82cfb ** TI ext2fs read block (indir 2 1)malloc failed. **
+  82d31 ** TI ext2fs read block (indir 2 1)failed. **
+  82d60 ** TI ext2fs read block (indir 2 2)malloc failed. **
+  82d96 ** TI ext2fs read block (indir 2 2)failed. **
+  82dc5 pre-reloc realloc() is not supported
+  82dea drivers/usb/host/xhci-ring.c
+  82e07 ^%s$
+  82e0c Error compiling regex: %s
+  82e27 ## Error: variable "%s" not defined
+  82e4c ## error: subst buffer overflow: have %d, need %d
+  82e7f %s: No match
+  82e8d ## error: pattern buffer overflow: have %d, need %d
+  82ec2 pram
+  82ec7 Waiting for PHY realtime link
+  82ee5 HUSH_NO_EVAL
+  82ef2 Unknown command '%s' - try 'help' or use 'run' command
+  82f2a scsi_ahci: SCSI READ CAPACITY10 command failure. 	No ATA info!
+  82f69 	Please run SCSI commmand INQUIRY firstly!
+  82f95 scsi_ahci: SCSI READ CAPACITY16 command failure. 	No ATA info!
+  82fd4 	Please run SCSI commmand INQUIRY firstly!
+  83000 Unsupport SCSI command 0x%02x
+  8301f Error: SCSI Controller(s) 
+  8303a %04X:%04X 
+  83049 RAID
+  8304e unknown
+  83056 64bit 
+  8305d ncq 
+  83062 ilck 
+  83068 stag 
+  83072 led 
+  83077 clo 
+  83080 only 
+  83086 pmp 
+  8308b fbss 
+  83091 pio 
+  83096 slum 
+  8309c part 
+  830a2 ccc 
+  830a7 ems 
+  830ac sxs 
+  830b1 apst 
+  830b7 nvmp 
+  830bd boh 
+  830c2 %s: No memory for probe_ent
+  830df SATA link %d timeout.
+  830f6 Target spinup took %d ms.
+  83111 AHCI %02x%02x.%02x%02x %u slots %u ports %s Gbps 0x%x impl %s mode
+  83155 flags: %s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s
+  83186 No Link on this port!
+  8319d %s: No mem for table!
+  831b4 Can not start port %d
+  831cb scanning bus for devices...
+  831e8 Found %d device(s).
+  831fd scsidevs
+  83206 *** Warning - %s, using default environment
+  83234 Using default environment
+  83250 common/env_common.c
+  83264 No such device
+  83274 Device %d: %s
+  83282 ... is now current device
+  8329d ERROR: There is a global environment variable with the same name.
+  832e0 %s: readonly variable
+  832f6 %s: calloc failed!
+  8330a ** Can't write to device %d **
+  8332a fdtaddr
+  83332 setenv
+  83339 model = %s, board_info->bom_rev = %d, fit_index = %d
+  83370 model
+  83376 fit_index
+  83380  %-11s [ %c ]    
+  83392 |   
+  83397 `-- 
+  8339c |-- 
+  833a1 ELR:     %lx
+  833af LR:      %lx
+  833bd x%-2d: %016lx x%-2d: %016lx
+  833da Bad magic number
+  833ec Bad header crc
+  833fc Bad data crc
+  8340a Bad image type
+  8341a Empty Script
+  83428 Wrong image format for "source" command
+  83451 %s: Failed with error#%d
+  8346b memory-map
+  83476 SF: Failed to set up slave
+  83492 SF: Failed to get idcodes
+  834ad SF: Need set QEB func for %02x flash
+  834d3 SF: Detected %s with page size 
+  834f3 , erase size 
+  83501 , total 
+  8350a , mapped at %p
+  83519 SF: Unsupported flash IDs: 
+  83535 manuf %02x, jedec %04x, ext_jedec %04x
+  8355d %s: cs out of bound - cs=%d.
+  8357a %s: tx length cannot be parsed as bytes. bitlen=%d
+  835ae %s: slave input is NULL
+  835c7 %s: slave with cs=%04X is uninitialized
+  835f0 bytelen > MAX_CMD_LEN
+  83607 %s: Invalid transfer
+  8361d In:    
+  83625 No input devices available!
+  83642 Out:   
+  8364a No output devices available!
+  83668 Err:   
+  83670 No error devices available!
+  8368d RE is too long (data overflow)
+  836ac if_nor_8
+  836b5 if_nor_16
+  836bf if_nor_cs_0
+  836cb if_nor_cs_1
+  836d7 if_nor_cs_2
+  836e3 if_nor_cs_3
+  836ef if_nor_wp
+  836f9 if_nand_8
+  83703 if_nand_16
+  8370e if_nand_cs_0
+  8371b if_nand_cs_1
+  83728 if_nand_cs_2
+  83735 if_nand_cs_3
+  83742 if_nand_wp
+  8374d if_sram_8
+  83757 if_sram_16
+  83762 if_sram_cs_0
+  8376f if_sram_cs_1
+  8377c if_sram_cs_2
+  83789 if_sram_cs_3
+  83796 if_sata_0_leds
+  837a5 if_sata_1_leds
+  837b4 if_eth_0_led
+  837c1 if_eth_1_led
+  837ce if_eth_2_led
+  837db if_eth_3_led
+  837e8 if_eth_leds
+  837f4 if_eth_gpio
+  83800 if_uart_1
+  8380a if_uart_1_modem
+  8381a if_uart_2
+  83824 if_uart_3
+  8382e if_i2c_gen
+  83839 if_ulpi_0_rst_n
+  83849 if_ulpi_1_rst_n
+  83859 if_pci_ep_int_a
+  83869 if_pci_ep_reset_out
+  8387d if_spim_a_ss_1
+  8388c if_spim_a_ss_2
+  8389b if_spim_a_ss_3
+  838aa if_ulpi_1_b
+  838b6 if_gpio
+  838be if_sgpo_clk
+  838ca if_sgpo_ds_0
+  838d7 if_sgpo_ds_1
+  838e4 if_sgpo_ds_2
+  838f1 if_sgpo_ds_3
+  838fe if_spim_aux
+  8390a if_tdm
+  83911 UNVR
+  83916 bootnand
+  8391f UNVR-PRO
+  83928 UNAS-PRO
+  83931 unaspro
+  83939 al_eth1
+  83941 UNAS-PRO-8
+  8394c unaspro_8
+  83956 UNAS-PRO-4
+  83961 unaspro_4
+  8396b UDM-PRO-SE
+  83976 pca953x output 7 1;
+  8398a UDM-PRO-MAX
+  83996 udmpromax
+  839a0 UDM-PRO-XG
+  839ab udmproxg
+  839b8 gpio set 0 1;
+  839c6 UDM-PRO
+  839ce udmpro
+  839d5 UDM-BASE
+  839e2 UXG-PRO
+  839ea uxgpro
+  839f1 lcd_print
+  839fb Clears LCD display
+  83a0e <line 1> <line 2>
+  83a21 flash_contents_boot_mode_default_app_show
+  83a4b Show default application loaded by the pre-boot code
+  83a80 flash_contents_boot_mode_default_app_set
+  83aa9 Set default application loaded by the pre-boot code
+  83add <object ID>
+  83ae9 flash_contents_instance_revalidate
+  83b0c Revalidate a boot instance
+  83b27 flash_contents_instance_invalidate
+  83b4a Invalidate a boot instance
+  83b65 flash_contents_obj_update
+  83b7f Update a specific flash object
+  83b9e <object ID> <Instance number> [Load address] [Size]
+  83bd2 flash_contents_obj_validate
+  83bee Validate a specific flash object
+  83c0f flash_contents_obj_read_mem
+  83c2b Read a specific flash object from memory
+  83c54 <Load Address> [Read address (default $loadaddr)]
+  83c86 flash_contents_obj_read
+  83c9e Read a specific flash object
+  83cbb <object ID> <Instance number> [Load address]
+  83ce8 flash_contents_obj_info_print
+  83d06 Print a specific flash object information
+  83d30 <object ID> <Instance number>
+  83d4e flash_contents_toc_print
+  83d67 Print the flash contents TOC
+  83d84 flash_contents_set_dev
+  83d9b Set flash contents current device
+  83dbd <boot / spi / nand>
+  83dd1 eeprom_per_device
+  83de3 EEPROM per device operations
+  83e00 eeprom_per_device op <arg1> <arg2> ...
+  83e28  - op - operation:
+  83e3b         show - show all EEPROM per device information
+  83e72         mac_addr_set - Set MAC address
+  83e99              arg1 - index (0-3)
+  83eb9              arg2 - MAC address (aa:bb:cc:dd:ee:ff)
+  83eee         save - Save all information to EEPROM
+  83f1f cpu_aborts_enable_set
+  83f35 Set enabling state of CPU aborts
+  83f56 cpu_aborts_enable_set <0 - disable, 1 - enable>
+  83f88 cpu_set_speed
+  83f96 Set CPU speed
+  83fa4 cpu_set_speed <speed - MHz>
+  83fc2 thermal_init
+  83fcf Initialize the thermal sensor
+  83fed This command must be called before using thermal_get
+  84022 This command should be called only once
+  8404b thermal_get
+  84057 Thermal sensor get readout
+  84072 Before the first use, thermal_init must be called.
+  840a6 scripth
+  840ae Show help menu for available scripts
+  840d3 This command will show the available scripts you can run.
+  8410d 	Run scripts by using run <SCRIPT_NAME>
+  84135 dev_info
+  8413e Show the device configuration values
+  84163 This command prints the important device configuration values in aconvinient text format.
+  841be is_nand_boot
+  841cb Returns 1 if boot device is NAND
+  841ec Multi usage I/O pins (MUIO) multiplexing control - debug
+  84225 muio_mux op iface iface_arg
+  84242  - op - operation:
+  84255         alloc - allocate an interface
+  8427b         free - free an interface
+  8429c         falloc - force allocate an interface
+  842c9  - iface - the interface to operate on:
+  842f1         nor_8, nor_16
+  84307         nor_cs_0, nor_cs_1, nor_cs_2, nor_cs_3, nor_wp
+  8433e         nand_8, nand_16
+  84356         nand_cs_0, nand_cs_1, nand_cs_2, nand_cs_3, nand_wp
+  84392         sram_8, sram_16, sram_cs_0, sram_cs_1, sram_cs_2, sram_cs_3
+  843d6         sata_0_leds, sata_1_leds
+  843f7         eth_leds, eth_0_led, eth_1_led, eth_2_led, eth_3_led
+  84434         eth_gpio
+  84445         uart_1, uart_1_modem, uart_2, uart_3
+  84472         i2c_gen
+  84482         ulpi_0_rst_n, ulpi_1_rst_n
+  844a5         pci_ep_int_a, pci_ep_reset_o
+  844ca         spim_a_ss_1, spim_a_ss_2, spim_a_ss_3
+  844f8         ulpi_1_b
+  84509         gpio
+  84516         spim_aux
+  84527         tdm
+  84533  - iface_arg - interface specific argument:
+  8455f         gpio - gpio index (decimal: 0 - 43)
+  8458d pci_ep_reset_o
+  8459c dc gain
+  845a4 dfe ps tap 3db
+  845b3 dfe ps tap gain
+  845c3 dfe tap1 gain
+  845d1 dfe tap2 gain
+  845df dfe tap3 gain
+  845ed dfe tap4 gain
+  845fb low freq agc gain
+  8460d high freq agc cap
+  8461f serdes
+  84626 Serdes debug
+  84633 serdes op <arg1> <arg2> ...
+  84650  - op - operation:
+  84663         rd - read a SERDES register
+  84687              arg1 - grp (see below)
+  846ab              arg2 - reg page (see below)
+  846d4              arg3 - reg type (see below)
+  846fd              arg4 - register offset (decimal)
+  8472b              arg5 - msb (0-7)
+  84749              arg6 - lsb (0-7)
+  84768         wr - write a SERDES register
+  8478d              arg1 - grp (see below)
+  847b1              arg2 - reg page (see below)
+  847da              arg3 - reg type (see below)
+  84803              arg4 - register offset (decimal)
+  84831              arg5 - msb (0-7)
+  8484f              arg6 - lsb (0-7)
+  8486d              arg7 - the write value (hex, 0-ff)
+  8489e         pma_reset_grp_en - PMA hard reset group enable/disable
+  848dd                      arg1 - grp (see below)
+  84909                      arg2 - 1 - enable, 0 - disable
+  8493e         pma_reset_lane_en - PMA hard reset lane enable/disable
+  8497d                      arg1 - grp (see below)
+  849a9                      arg2 - lane (0-3)
+  849d0                      arg3 - 1 - enable, 0 - disable
+  84a05         pm_grp_set - Set power mode of a group (not of its lanes)
+  84a47              arg1 - grp (see below)
+  84a6b              arg2 - power mode (pd, p2, p1, p0s, p0)
+  84aa1         pm_lane_set - Set power mode of a lane (not of its group)
+  84ae3              arg1 - grp (see below)
+  84b07              arg2 - lane (0-3)
+  84b26              arg3 - power mode (pd, p2, p1, p0s, p0)
+  84b5c         lb - loopback control
+  84b7a              arg1 - grp (see below)
+  84b9e              arg2 - lane (0-3)
+  84bbd              arg3 - loopback mode:
+  84be0                     0 - No loopback
+  84c04                     1 - Untimed RX to TX
+  84c2d                     2 - TX serializer output into the CDR
+  84c67                     3 - TX driver IO signal to the RX IO pins
+  84ca5                     4 - PMA RX lane data ports to TX lane data ports
+  84ceb         bist_overrides - Enable BIST required overrides
+  84d23              arg1 - grp (see below)
+  84d47              arg2 - SerDes rate:
+  84d68                     1_8 - 1/8 rate
+  84d8b                     1_4 - 1/4 rate
+  84dae                     1_2 - 1/2 rate
+  84dd1                     1_1 - Full rate
+  84df6         bist_pat - BIST pattern selection
+  84e20                    arg1 - grp (see below)
+  84e4a                    arg2 - pattern:
+  84e6d                           0 - PRBS 2^7
+  84e94                           1 - PRBS 2^23
+  84ebc                           2 - PRBS 2^31
+  84ee4                           3 - CLK 1010
+  84f0c         bist_tx_en - BIST TX enable/disable
+  84f38                      arg1 - grp (see below)
+  84f64                      arg2 - lane (0-3)
+  84f8b                      arg3 - 1 - enable, 0 - disable
+  84fc0         bist_tx_err - BIST TX single bit error injection
+  84ff9                       arg1 - grp (see below)
+  85027         bist_rx_en - BIST RX enable/disable
+  85053                      arg1 - grp (see below)
+  8507f                      arg2 - lane (0-3)
+  850a6                      arg3 - 1 - enable, 0 - disable
+  850db         bist_rx_stat - BIST RX status information
+  8510d                        arg1 - grp (see below)
+  8513b                        arg2 - lane (0-3)
+  85165         eye_diag - Eye diagram
+  85184                        arg1 - grp (see below)
+  851b2                        arg2 - lane (0-3)
+  851dc         tx_params_set -Set Tx Params
+  85201                         arg1 - grp (see below)
+  85230                         arg2 - lane (0-3 or 0123 for all)
+  8526a                         arg3 - amplitude:
+  85294                                    0 - Not Supported
+  852c9                                    1 - 952mVdiff-pkpk
+  852ff                                    2 - 1024mVdiff-pkpk
+  85336                                    3 - 1094mVdiff-pkpk
+  8536d                                    4 - 1163mVdiff-pkpk
+  853a4                                    5 - 1227mVdiff-pkpk
+  853db                                    6 - 1283mVdiff-pkpk
+  85412                                    7 - 1331mVdiff-pkpk
+  85449                         arg4 - drivers number (decimal: 0 - 31)
+  85489                         arg5 - post emphasis  (decimal: 0 - 9)
+  854c8                         arg6 - pre emphasis   (decimal: 0 - 6)
+  85507                         arg7 - slew rate:
+  85531                                    0 - 31ps
+  8555d                                    1 - 33ps
+  85589                                    2 - 68ps
+  855b5                                    3 - 170ps
+  855e3         tx_params_get - Get Tx Params
+  85609                         arg1 - grp (see below)
+  85638                         arg2 - lane (0-3)
+  85663         rx_equal- perform SerDes HW equalization several times,
+  856a3                   prints and update parametrs of best resualt
+  856e1                   arg1 - grp (see below)
+  8570a                   arg2 - lane (0-3)
+  8572f         rx_params_set - Set Serdes rx params
+  8575c                         arg1  - grp (see below)
+  8578c                         arg2  - lane (0-3)
+  857b7                         arg3  - dc gain
+  857df                         arg4  - dfe ps tap 3db
+  8580e                         arg5  - dfe ps tap gain
+  8583e                         arg6  - dfe tap1 gain
+  8586c                         arg7  - dfe tap2 gain
+  8589a                         arg8  - dfe tap3 gain
+  858c8                         arg9  - dfe tap4 gain
+  858f6                         arg10 - low freq agc gain
+  85928                         arg11 - high freq agc cap
+  8595b         rx_params_get - Set Serdes rx params
+  85988                         arg1  - grp (see below)
+  859b8                         arg2  - lane (0-3)
+  859e4  - grp - the SERDES group: 0-3
+  85a04  - reg page - the SERDES page:
+  85a23               p0 - page 0
+  85a3d               p1 - page 1
+  85a57               p2 - page 2
+  85a71               p3 - page 3
+  85a8b               p4 - page 4 - common
+  85aae               p0123 - pages 0, 1, 2, 3 simultaneously (write only)
+  85af2  - reg type - the SERDES register type: pma/pcs
+  85b24 iodma_terminate
+  85b34 Terminates the RAID and memory services accelerator
+  85b68 iodma_init
+  85b73 Initialize the RAID and memory services accelerator
+  85ba7 This command must be called before using iodma_memcpy
+  85bde iodma_memset
+  85beb Memory set using the RAID and memory services accelerator
+  85c25 Before the first use, iodma_init must be called.
+  85c56  iodma_memset args:
+  85c6b  - dest - pointer to destination address (in hex)
+  85c9d  - val - value to be set (8 bits hex)
+  85cc3  - size - size to copy (in hex)
+  85ce4 iodma_memcpy
+  85cf1 Memory copy using the RAID and memory services accelerator
+  85d2c Before the first use, iodma_init must be called.
+  85d5d  iodma_memcpy args:
+  85d72  - dest - pointer to destination address (in hex)
+  85da4  - src - pointer to source address (in hex)
+  85dd0  - size - size to copy (in hex)
+  85df5 CPU wait for interrupt CPU idle)
+  85e16 ddr_training_results
+  85e2b DDR training results
+  85e40 ddr_training_results
+  85e57 ddr_ecc_poison
+  85e66 DDR ECC poisoning
+  85e78 ddr_ecc_poison <DRAM address to poison, or 0 to cancel poisoning> <correctable/uncorrectable>
+  85ed8 ddr_ecc_stats
+  85ee6 DDR ECC statistics
+  85ef9 ddr_ecc_stats [clear - clear counters and pending interrupts]
+  85f39 TO BE DEFINED
+  85f47 confirm_msg
+  85f53 get user input and updates "?" varialbe to 0 if 'y' was entered
+  85f93 [confirm_message]
+  85fa5 eth_retimer_config
+  85fb8 override retimer configuration
+  85fd8 eth_retimer_config <port> [options]
+  85ffc options:
+  86005 --exist	<1/0>	retimer is exist on the board
+  86031 --bus-id	<bus>	i2c bus connected to the retimer
+  86061 --i2c-addr	<addr>	i2c address of the retimer
+  8608e --channel	<A/B>	what channel to use for this port
+  860c2 eth_lm_debug_enable
+  860d6 enable / disable link management debug enable
+  86105 eth_lm_debug_enable <port> <enable/disable>
+  86133 eth_link_training_enable
+  8614c enable / disable link training
+  8616c eth_link_training_enable <port> <enable/disable>
+  8619f eth_mac_mode_set
+  861b0 override the mac mode from the device tree
+  861dc eth_mac_mode_set <port> <mac mode>
+  861ff  - port - port number
+  86215  - mac mode:
+  86222 	0 - Auto-detect
+  86233 	1 - RGMII
+  8623e 	2 - 10G serial
+  8624e 	3 - SGMII
+  86259 	4 - 1000BASE-X
+  86269 	5 - Auto-detect Auto-speed
+  86286 eth_1g_params_set
+  86298 configure 1G link parameters.these parameters will also be applied in Linux
+  862e5 eth_1g_params_set <port> <type> <autoneg> <[speed]> <[duplex]>
+  86324  - port - port number
+  8633a  - type - 1000basex / sgmii
+  86356  - autoneg - enable / disable
+  86374 	if autoneg is disabled the following parameters is required
+  863b1 	- speed - 10/100/1000
+  863c8 	- duplex - full / half
+  863e2 eth_freeze_serdes_settings
+  863fd freeze serdes parameters to be used in the upper layer (disable by default)
+  86449 * enabling it will cause the upper layer to avoid replacing these parameters
+  86496 * enabled mode should be used in case the serdes parameter were set in the u-boot
+  864e9 eth_freeze_serdes_settings <port> <enable/disable>
+  8651e dram_margins
+  8652b The command provides current DRAM RDQS/WDQS margins by running a shmoo based on the DDR controller BIST feature
+  8659b trace_dump
+  865a6 Trace dump
+  865b1 al_pcie_ext
+  865bd Enable AL PCIe external
+  865d5 [--no-teardown]
+  865e5 sgpo
+  865ea control SGPO pins
+  865fc <set|clear|user|hw> <pin>
+  86616     - set/clear the specified pin
+  86638     - set specified pin mode to user/hw
+  86660 Disable
+  86668 Idle
+  8666d Normal
+  86674 Abort
+  8667a Reset
+  86680 crc32
+  86686 showvar
+  8668e print local hushshell variables
+  866af     - print values of all hushshell variables
+  866dd showvar name ...
+  866ee     - print value of hushshell variable 'name'
+  8671d then
+  86722 elif
+  86727 else
+  86730 while
+  86736 until
+  8673c done
+  86741 Perform RESET of the CPU
+  8675d start application at address 'addr'
+  86781 addr [arg ...]
+  86790     - start application at address 'addr'
+  867ba       passing 'arg' as arguments
+  867db bootz
+  867e1 boot Linux zImage image from memory
+  86805 iminfo
+  8680c print header information for application image
+  8683b addr [addr ...]
+  8684b     - print header information for application image starting at
+  8688c       address 'addr' in memory; this includes verification of the
+  868ce       image contents (magic number, header and payload checksums)
+  86910 bootd
+  86916 boot default, i.e., run 'bootcmd'
+  86938 boot application image from memory
+  8695b loados
+  86962 ramdisk
+  8696a cmdline
+  86976 prep
+  8697b fake
+  86980 alias for 'help'
+  86991 help
+  86996 print command description/usage
+  869b7 	- print brief description of all commands
+  869e2 help command ...
+  869f3 	- print detailed usage of 'command'
+  86a18 print monitor, compiler and linker version
+  86a43 source
+  86a4a run script from memory
+  86a61 bdinfo
+  86a68 print Board Info structure
+  86a83 ANSI terminal bootmenu
+  86a9a [delay]
+  86aa2     - show ANSI terminal bootmenu with autoboot delay
+  86ad8 coninfo
+  86ae0 print console devices and information
+  86b0a Read temperature from Digital Thermometer and Thermostat
+  86b43 echo args to console
+  86b58 [args..]
+  86b61     - echo args to console; \c suppresses newline
+  86b93 exit
+  86b98 exit script
+  86ba4 ext4load
+  86bad load binary file from a Ext4 filesystem
+  86bd5 <interface> [<dev[:part]> [addr [filename [bytes [pos]]]]]
+  86c10     - load binary file 'filename' from 'dev' on 'interface'
+  86c4c       to address 'addr' from ext4 filesystem
+  86c79 ext4ls
+  86c80 list files in a directory (default /)
+  86ca6 <interface> <dev[:part]> [directory]
+  86ccb     - list files from 'dev' on 'interface' in a 'directory'
+  86d07 ext4size
+  86d10 determine a file's size
+  86d28 <interface> <dev[:part]> <filename>
+  86d4c     - Find file 'filename' from 'dev' on 'interface'
+  86d81       and determine its size.
+  86d9f flattened device tree utility commands
+  86dc6 default
+  86dce protect
+  86dd6 enable or disable FLASH write protection
+  86dff on  start end
+  86e0d     - protect FLASH from addr 'start' to addr 'end'
+  86e41 protect on start +len
+  86e57     - protect FLASH from addr 'start' to end of sect w/addr 'start'+'len'-1
+  86ea3 protect on  N:SF[-SL]
+  86eb9     - protect sectors SF-SL in FLASH bank # N
+  86ee7 protect on  bank N
+  86efa     - protect FLASH bank # N
+  86f17 protect on  all
+  86f27     - protect all FLASH banks
+  86f45 protect off start end
+  86f5b     - make FLASH from addr 'start' to addr 'end' writable
+  86f95 protect off start +len
+  86fac     - make FLASH from addr 'start' to end of sect w/addr 'start'+'len'-1 wrtable
+  86ffd protect off N:SF[-SL]
+  87013     - make sectors SF-SL writable in FLASH bank # N
+  87047 protect off bank N
+  8705a     - make FLASH bank # N writable
+  8707d protect off all
+  8708d     - make all FLASH banks writable
+  870b1 erase
+  870b7 erase FLASH memory
+  870ca start end
+  870d4     - erase FLASH from addr 'start' to addr 'end'
+  87106 erase start +len
+  87117     - erase FLASH from addr 'start' to the end of sect w/addr 'start'+'len'-1
+  87165 erase N:SF[-SL]
+  87175     - erase sectors SF-SL in FLASH bank # N
+  871a1 erase bank N
+  871ae     - erase FLASH bank # N
+  871c9 erase all
+  871d3     - erase all FLASH banks
+  871ef flinfo
+  871f6 print FLASH memory information
+  87216     - print information for all FLASH memory banks
+  87249 flinfo N
+  87252     - print information for FLASH memory bank # N
+  87284 query and control gpio pins
+  872a0 <input|set|clear|toggle> <pin>
+  872bf     - input/set/clear/toggle the specified pin
+  872ee gpio status [-a] [<bank> | <pin>]  - show [all/claimed] GPIOs
+  8732c I2C sub-system
+  8733b loop
+  87349 probe
+  8734f sda-hold-time
+  8735d itest
+  87363 return true/false on integer compare
+  87388 [.b, .w, .l, .s] [*]value1 <op> [*]value2
+  873db load binary file over serial line (ymodem mode)
+  8740b [ off ] [ baud ]
+  8741c     - load binary file over serial line with offset 'off' and baudrate 'baud'
+  8746a load binary file over serial line (xmodem mode)
+  8749a loadb
+  874a0 load binary file over serial line (kermit mode)
+  874d0 loads
+  874d6 load S-Record file over serial line
+  874fa [ off ]
+  87502     - load S-Record file over serial line with offset 'off'
+  8753e md5sum
+  87545 compute MD5 message digest
+  87560 address count [[*]sum]
+  87577     - compute MD5 message digest [save to sum]
+  875a6 md5sum -v address count [*]sum
+  875c5     - verify md5sum of memory area
+  875e8 mtest
+  875ee simple RAM read/write test
+  87609 [start [end [pattern [iterations]]]]
+  8762e infinite loop on address range
+  8764d [.b, .w, .l, .q] address number_of_objects
+  87678 print or set address offset
+  87695     - print address offset for memory commands
+  876c4 base off
+  876cd     - set address offset for memory commands to 'off'
+  87703 checksum calculation
+  87718 address count [addr]
+  8772d     - compute CRC32 checksum [save at addr]
+  8775d memory compare
+  8776c [.b, .w, .l, .q] addr1 addr2 count
+  8778f memory copy
+  8779b [.b, .w, .l, .q] source target count
+  877c0 mem_pattern_set
+  877d0 set values alternately according to the even and odd values
+  8780c <start address> <(64)count> <even 64 bit value> <odd 64 bit value>
+  8784f memory write (fill)
+  87863 [.b, .w, .l, .q] address value [count]
+  8788a memory modify (constant address)
+  878ab [.b, .w, .l, .q] address
+  878c4 memory modify (auto-incrementing address)
+  878ee memory display
+  878fd [.b, .w, .l, .q] address [# of objects]
+  87925 MII utility commands
+  8793a device                            - list available devices
+  87975 mii device <devname>                  - set current device
+  879b0 mii info   <addr>                     - display MII PHY info
+  879ed mii read   <addr> <reg>               - read  MII PHY <addr> register <reg>
+  87a39 mii write  <addr> <reg> <data>        - write MII PHY <addr> register <reg>
+  87a85 mii modify <addr> <reg> <data> <mask> - modify MII PHY <addr> register <reg>
+  87ad2                                         updating bits identified in <mask>
+  87b1d mii dump   <addr> <reg>               - pretty-print <addr> <reg> (0-5 only)
+  87b6a Addr and/or reg may be ranges, e.g. 2-7.
+  87b93 next page able
+  87ba2 acknowledge
+  87bae remote fault
+  87bbb (reserved)
+  87bc6 asymmetric pause able
+  87bdc 100BASE-T4 able
+  87bec 100BASE-X full duplex able
+  87c07 100BASE-TX able
+  87c17 10BASE-T full duplex able
+  87c31 10BASE-T able
+  87c3f xxx to do
+  87c49 asymmetric pause
+  87c5a pause enable
+  87c67 100BASE-TX full duplex able
+  87c83 10BASE-T   full duplex able
+  87c9f 10BASE-T   able
+  87caf OUI portion
+  87cbb manufacturer part number
+  87cd4 manufacturer rev. number
+  87ced 100BASE-X  full duplex able
+  87d09 100BASE-X  half duplex able
+  87d25 10 Mbps    full duplex able
+  87d41 10 Mbps    half duplex able
+  87d5d 100BASE-T2 full duplex able
+  87d79 100BASE-T2 half duplex able
+  87d95 extended status
+  87da5 MF preamble suppression
+  87dbd A/N complete
+  87dca A/N able
+  87dd3 jabber detect
+  87de1 extended capabilities
+  87df7 loopback
+  87e00 speed selection
+  87e10 A/N enable
+  87e1b power-down
+  87e26 isolate
+  87e2e restart A/N
+  87e3a collision test enable
+  87e50 PHY control register
+  87e65 PHY status register
+  87e79 PHY ID 1 register
+  87e8b PHY ID 2 register
+  87e9d Autonegotiation advertisement register
+  87ec4 Autonegotiation partner abilities register
+  87eef MDIO utility commands
+  87f05 list			- List MDIO buses
+  87f1e mdio read <phydev> [<devad>.]<reg> - read PHY's register at <devad>.<reg>
+  87f68 mdio write <phydev> [<devad>.]<reg> <data> - write PHY's register at <devad>.<reg>
+  87fbb mdio rx <phydev> [<devad>.]<reg> - read PHY's extended register at <devad>.<reg>
+  8800c mdio wx <phydev> [<devad>.]<reg> <data> - write PHY's extended register at <devad>.<reg>
+  88065 <phydev> may be:
+  88076    <busname>  <addr>
+  8808b    <addr>
+  88095    <eth name>
+  880a3 <addr> <devad>, and <reg> may be ranges, e.g. 1-5.4-0x1f.
+  880de sleep
+  880e4 delay execution for some time
+  88104     - delay execution for N seconds (N is _decimal_ !!!)
+  8813d nboot
+  88143 boot from NAND device
+  88159 [partition] | [[[loadAddr] dev] offset]
+  88181 NAND sub-system
+  88191 ping
+  88196 send ICMP ECHO_REQUEST to network host
+  881bd pingAddress
+  881cd boot image via network using NFS protocol
+  881f7 [loadAddress] [[hostIPaddr:]bootfilename]
+  88221 dhcprelease
+  8822d release IP address previously leased by DHCP server
+  88261 dhcp
+  88266 boot image via network using DHCP/TFTP protocol
+  88296 tftpput
+  8829e TFTP put command, for uploading files to a server
+  882d0 Address Size [[hostIPaddr:]filename]
+  882f5 tftpboot
+  882fe boot image via network using TFTP protocol
+  88329 bootp
+  8832f boot image via network using BOOTP/TFTP protocol
+  88360 disk partition related commands
+  88380 uuid <interface> <dev>:<part>
+  8839e     - print partition UUID
+  883b9 part uuid <interface> <dev>:<part> <varname>
+  883e6     - set environment variable to partition UUID
+  88417 part list <interface> <dev>
+  88433     - print a device's partition table
+  8845a part list <interface> <dev> [flags] <varname>
+  88488     - set environment variable to the list of partitions
+  884c1       flags can be -bootable (list only bootable partitions)
+  884fe part start <interface> <dev> <part> <varname>
+  8852c     - set environment variable to the start of the partition (in blocks)
+  88575 part size <interface> <dev> <part> <varname>
+  885a2     - set environment variable to the size of the partition (in blocks)
+  885ea list and access PCI Configuration Space
+  88612 sysboot
+  8861a command to get and boot from syslinux files
+  88646 [-p] <interface> <dev[:part]> <ext2|fat|any> [addr] [filename]
+  88685     - load and parse syslinux menu file 'filename' from ext2, fat
+  886c7       or any filesystem on 'dev' on 'interface' to address 'addr'
+  8870d commands to get and boot from pxe files
+  88735 get - try to retrieve a pxe file using tftp
+  88761 pxe boot [pxefile_addr_r] - boot from the pxe file at pxefile_addr_r
+  887a7 title
+  887ad prompt
+  887b4 label
+  887ba kernel
+  887c1 linux
+  887c7 localboot
+  887d1 initrd
+  887d8 include
+  887e0 devicetree
+  887eb devicetreedir
+  887f9 fdtdir
+  88800 ontimeout
+  8880a ipappend
+  88813 default-arm-alpine_v2
+  88829 default-arm
+  88838 SPI flash sub-system
+  8884d probe [[bus:]cs] [hz] [mode]	- init flash device on given SPI bus
+  8888f 				  and chip select
+  888a5 sf read addr offset|partition len	- read `len' bytes starting at
+  888e6 				          `offset' or from start of mtd
+  88912 					  `partition'to memory at `addr'
+  88938 sf write addr offset|partition len	- write `len' bytes from memory
+  8897b 				          at `addr' to flash at `offset'
+  889a8 					  or to start of mtd `partition'
+  889ce sf erase offset|partition [+]len	- erase `len' bytes from `offset'
+  88a11 					  or from start of mtd `partition'
+  88a39 					 `+len' round up `len' to block size
+  88a63 sf update addr offset|partition len	- erase and write `len' bytes from memory
+  88ab1 					  at `addr' to flash at `offset'
+  88ad7 					  or to start of mtd `partition'
+  88afd sf rwrsr - read WRSR
+  88b12 sf wwrsr value - write WRSR with value (ex, 0x34)
+  88b45 scsiboot
+  88b4e boot from SCSI device
+  88b64 loadAddr dev:part
+  88b76 SCSI sub-system
+  88b86 init - initialize the SCSI sub-system
+  88bac scsi reset - reset SCSI controller
+  88bcf scsi info  - show available SCSI devices
+  88bf8 scsi scan  - (re-)scan SCSI bus
+  88c18 scsi device [dev] - show or set current device
+  88c47 scsi part [dev] - print partition table of one or all SCSI devices
+  88c8a scsi read addr blk# cnt - read `cnt' blocks starting at block `blk#'
+  88ccf      to memory address `addr'
+  88ced scsi write addr blk# cnt - write `cnt' blocks starting at block
+  88d2d      `blk#' from memory address `addr'
+  88d54 scsi bist start [mode] [ptrn] - initiate Built-In Self Test on the
+  88d97      current scsi device. parameters:
+  88dbd      mode - BIST mode:
+  88dd4             F - Far End Analog (AFE) Loopback (Optional)
+  88e0d             L - Far End Retimed Loopback* Transmitter shall insert
+  88e50                 additional ALIGNp primitives
+  88e7d             T - Far end transmit only mode
+  88ea8                 following values are valid only when T bit is set:
+  88eeb                 A - ALIGNp Bypass (Do not Transmit ALIGNp  primitives)
+  88f32                 S - Bypass Scrambling
+  88f58                 P - Primitive bit
+  88f7a      ptrn - BIST data pattern:
+  88f99             0 - Simultaneous switching outputs pattern (SSOP)
+  88fd7             1 - High transition density pattern (HTDP)
+  8900e             2 - Low transition density pattern (LTDP)
+  89044             3 - Low frequency spectral component pattern (LFSCP)
+  89085             4 - Composite pattern (COMP)
+  890ae             5 - Lone bit pattern (LBP)
+  890d5             6 - Mid frequency test pattern (MFTP)
+  89107             7 - High frequency test pattern (HFTP)
+  8913a             8 - Low frequency test pattern (LFTP)
+  8916c      Example: scsi bist start L 0
+  8918e               run Far End Retimed Loopback BIST with SSOP pattern
+  891d0 scsi bist status - print BIST status variables
+  89200 scsi_get_disk_count
+  89214 Returns connected disk count
+  89231 setexpr
+  89239 set environment variable as the result of eval expression
+  89273 [.b, .w, .l] name [*]value1 <op> [*]value2
+  8929e     - set environment variable 'name' to the result of the evaluated
+  892e3       expression specified by <op>.  <op> can be &, |, ^, +, -, *, /, %
+  8932b       size argument is only meaningful if value1 and/or value2 are
+  8936e       memory addresses (*)
+  89389 setexpr[.b, .w, .l] name [*]value
+  893ab     - load a value into a variable
+  893ce setexpr name gsub r s [t]
+  893e8     - For each substring matching the regular expression <r> in the
+  8942c       string <t>, substitute the string <s>.  The result is
+  89468       assigned to <name>.  If <t> is not supplied, use the old
+  894a7       value of <name>
+  894bd setexpr name sub r s [t]
+  894d6     - Just like gsub(), but replace only the first matching substring
+  8951c true
+  89521 do nothing, successfully
+  8953a false
+  89540 do nothing, unsuccessfully
+  8955b minimal test like /bin/sh
+  89575 [args..]
+  8958d usbboot
+  89595 boot from USB device
+  895aa USB sub-system
+  895b9 start - start (scan) USB controller
+  895dd usb reset - reset (rescan) USB controller
+  89607 usb stop [f] - stop USB [f]=force stop
+  8962e usb tree - show USB device tree
+  8964e usb info [dev] - show available USB devices
+  8967a usb test [dev] [port] [mode] - set USB 2.0 test mode
+  896af     (specify port 0 to indicate the device's upstream port)
+  896eb     Available modes: J, K, S[E0_NAK], P[acket], F[orce_Enable]
+  8972a usb storage - show details of USB storage devices
+  8975c usb dev [dev] - show or set current USB storage device
+  89793 usb part [dev] - print partition table of one or all USB storage    devices
+  897df usb read addr blk# cnt - read `cnt' blocks starting at block `blk#'
+  89823     to memory address `addr'
+  89840 usb write addr blk# cnt - write `cnt' blocks starting at block `blk#'
+  89886     from memory address `addr'
+  898a5 usb_hub
+  898ad usb-hub
+  898b5 usb_mass_storage
+  898c6 usb-mass-storage
+  898d7 imxtract
+  898e0 extract a part of a multi-image
+  89904 GUID Partition Table
+  89919 <command> <interface> <dev> <partitions_list>
+  89947  - GUID partition table restoration
+  8996b  Restore GPT information on a device connected
+  8999a  to interface
+  899ad run commands in an environment variable
+  899d5 var [...]
+  899df     - run the commands in the environment variable(s) 'var'
+  89a1b incenv
+  89a22 increment environment variable
+  89a41 name <inc val (hex)>
+  89a57 setenvmem
+  89a61 set environment variable from memory
+  89a86 setenv name <address>
+  89a9d set environment variables
+  89ab7 [-f] name value ...
+  89acb     - [forcibly] set environment variable 'name' to 'value ...'
+  89b0b setenv [-f] name
+  89b1c     - [forcibly] delete environment variable 'name'
+  89b50 grepenv
+  89b58 search environment variables
+  89b75 [-e] [-n | -v | -b] string ...
+  89b94     - list environment name=value pairs matching 'string'
+  89bce       "-e": enable regular expressions;
+  89bf6       "-n": search variable names; "-v": search values;
+  89c2e       "-b": search both names and values (default)
+  89c61 printenv
+  89c6a print environment variables
+  89c86 [-a]
+  89c8b     - print [all] values of all environment variables
+  89cc1 printenv name ...
+  89cd3     - print value of environment variable 'name'
+  89d04 editenv
+  89d0c edit environment variable
+  89d26 name
+  89d2b     - edit environment variable 'name'
+  89d52 environment handling commands
+  89d70 delete
+  89d77 edit
+  89d7c export
+  89d83 grep
+  89d88 import
+  89d8f exists
+  89d96 setmem
+  89da1 saveenv
+  89da9 save environment variables to persistent storage
+  89dda none
+  89ddf uncompressed
+  89dec bzip2
+  89df2 bzip2 compressed
+  89e03 gzip
+  89e08 gzip compressed
+  89e18 lzma
+  89e1d lzma compressed
+  89e31 lzo compressed
+  89e40 aisimage
+  89e49 Davinci AIS image
+  89e5b Filesystem Image
+  89e6c firmware
+  89e75 Firmware
+  89e7e flat_dt
+  89e86 Flat Device Tree
+  89e97 gpimage
+  89e9f TI Keystone SPL Image
+  89eb5 Kernel Image
+  89ec2 kernel_noload
+  89ed0 Kernel Image (no loading done)
+  89eef kwbimage
+  89ef8 Kirkwood Boot Image
+  89f0c imximage
+  89f15 Freescale i.MX Boot Image
+  89f2f Invalid Image
+  89f3d multi
+  89f43 Multi-File Image
+  89f54 omapimage
+  89f5e TI OMAP SPL With GP CH
+  89f75 pblimage
+  89f7e Freescale PBL Boot Image
+  89f97 RAMDisk Image
+  89fa5 Script
+  89fac socfpgaimage
+  89fb9 Altera SOCFPGA preloader
+  89fd2 standalone
+  89fdd Standalone Program
+  89ff0 ublimage
+  89ff9 Davinci UBL image
+  8a00b mxsimage
+  8a014 Freescale MXS Boot Image
+  8a02d atmelimage
+  8a038 ATMEL ROM-Boot Image
+  8a04d x86_setup
+  8a057 x86 setup.bin
+  8a065 lpc32xximage
+  8a072 LPC32XX Boot Image
+  8a085 Invalid OS
+  8a090 Linux
+  8a096 netbsd
+  8a09d NetBSD
+  8a0a4 Enea OSE
+  8a0ad plan9
+  8a0b3 Plan 9
+  8a0ba rtems
+  8a0c0 RTEMS
+  8a0c6 u-boot
+  8a0cd U-Boot
+  8a0d4 vxworks
+  8a0dc VxWorks
+  8a0e4 Invalid ARCH
+  8a0f1 alpha
+  8a0f7 Alpha
+  8a101 Intel x86
+  8a10b ia64
+  8a110 IA64
+  8a115 m68k
+  8a11a M68K
+  8a11f microblaze
+  8a12a MicroBlaze
+  8a135 mips
+  8a13a MIPS
+  8a13f mips64
+  8a146 MIPS 64 Bit
+  8a152 nios2
+  8a158 NIOS II
+  8a160 powerpc
+  8a168 PowerPC
+  8a174 s390
+  8a179 IBM S390
+  8a182 SuperH
+  8a189 sparc
+  8a18f SPARC
+  8a195 sparc64
+  8a19d SPARC 64 Bit
+  8a1aa blackfin
+  8a1b3 Blackfin
+  8a1bc avr32
+  8a1c2 AVR32
+  8a1c8 nds32
+  8a1ce NDS32
+  8a1d4 or1k
+  8a1d9 OpenRISC 1000
+  8a1e7 sandbox
+  8a1ef Sandbox
+  8a1f7 arm64
+  8a1fd AArch64
+  8a205 AMD x86_64
+  8a210 stdin
+  8a216 stdout
+  8a21d stderr
+  8a224 root
+  8a229 root_driver
+  8a235 generic_simple_bus
+  8a248 simple-bus
+  8a263 pca953x
+  8a26b pca953x gpio access
+  8a27f device [dev]
+  8a28c 	- show or set current device address
+  8a2b2 pca953x info
+  8a2bf 	- display info for current chip
+  8a2e0 pca953x output pin 0|1
+  8a2f7 	- set pin as output and drive low or high
+  8a322 pca953x invert pin 0|1
+  8a339 	- disable/enable polarity inversion for reads
+  8a368 pca953x input pin
+  8a37a 	- set pin as input and read value
+  8a39d output
+  8a3a4 input
+  8a3aa invert
+  8a3b1 dw_0
+  8a3b6 Toshiba
+  8a3be Samsung
+  8a3c6 Fujitsu
+  8a3ce National
+  8a3d7 Renesas
+  8a3df ST Micro
+  8a3e8 Hynix
+  8a3ee Micron
+  8a3f5 AMD/Spansion
+  8a402 Macronix
+  8a40f SanDisk
+  8a417 Intel
+  8a41d TC58NVG2S0F 4G 3.3V 8-bit
+  8a437 TC58NVG3S0F 8G 3.3V 8-bit
+  8a451 TH58NYG4S0F 16G 1.8V 8-bit
+  8a46c TC58NVG5D2 32G 3.3V 8-bit
+  8a486 TC58NVG6D2 64G 3.3V 8-bit
+  8a4a0 SDTNRGAMA 64G 3.3V 8-bit
+  8a4b9 NAND 4MiB 5V 8-bit
+  8a4cc NAND 4MiB 3,3V 8-bit
+  8a4e1 NAND 8MiB 3,3V 8-bit
+  8a4f6 NAND 16MiB 1,8V 8-bit
+  8a50c NAND 16MiB 3,3V 8-bit
+  8a522 NAND 16MiB 1,8V 16-bit
+  8a539 NAND 16MiB 3,3V 16-bit
+  8a550 NAND 32MiB 1,8V 8-bit
+  8a566 NAND 32MiB 3,3V 8-bit
+  8a57c NAND 32MiB 1,8V 16-bit
+  8a593 NAND 32MiB 3,3V 16-bit
+  8a5aa NAND 64MiB 1,8V 8-bit
+  8a5c0 NAND 64MiB 3,3V 8-bit
+  8a5d6 NAND 64MiB 1,8V 16-bit
+  8a5ed NAND 64MiB 3,3V 16-bit
+  8a604 NAND 128MiB 1,8V 8-bit
+  8a61b NAND 128MiB 3,3V 8-bit
+  8a632 NAND 128MiB 1,8V 16-bit
+  8a64a NAND 128MiB 3,3V 16-bit
+  8a662 NAND 256MiB 3,3V 8-bit
+  8a679 NAND 256MiB 1,8V 8-bit
+  8a690 NAND 256MiB 1,8V 16-bit
+  8a6a8 NAND 256MiB 3,3V 16-bit
+  8a6c0 NAND 512MiB 1,8V 8-bit
+  8a6d7 NAND 512MiB 3,3V 8-bit
+  8a6ee NAND 512MiB 1,8V 16-bit
+  8a706 NAND 512MiB 3,3V 16-bit
+  8a71e NAND 1GiB 1,8V 8-bit
+  8a733 NAND 1GiB 3,3V 8-bit
+  8a748 NAND 1GiB 1,8V 16-bit
+  8a75e NAND 1GiB 3,3V 16-bit
+  8a774 NAND 2GiB 1,8V 8-bit
+  8a789 NAND 2GiB 3,3V 8-bit
+  8a79e NAND 2GiB 1,8V 16-bit
+  8a7b4 NAND 2GiB 3,3V 16-bit
+  8a7ca NAND 4GiB 1,8V 8-bit
+  8a7df NAND 4GiB 3,3V 8-bit
+  8a7f4 NAND 4GiB 1,8V 16-bit
+  8a80a NAND 4GiB 3,3V 16-bit
+  8a820 NAND 8GiB 1,8V 8-bit
+  8a835 NAND 8GiB 3,3V 8-bit
+  8a84a NAND 8GiB 1,8V 16-bit
+  8a860 NAND 8GiB 3,3V 16-bit
+  8a876 NAND 16GiB 1,8V 8-bit
+  8a88c NAND 16GiB 3,3V 8-bit
+  8a8a2 NAND 16GiB 1,8V 16-bit
+  8a8b9 NAND 16GiB 3,3V 16-bit
+  8a8d0 NAND 32GiB 1,8V 8-bit
+  8a8e6 NAND 32GiB 3,3V 8-bit
+  8a8fc NAND 32GiB 1,8V 16-bit
+  8a913 NAND 32GiB 3,3V 16-bit
+  8a92a NAND 64GiB 1,8V 8-bit
+  8a940 NAND 64GiB 3,3V 8-bit
+  8a956 NAND 64GiB 1,8V 16-bit
+  8a96d NAND 64GiB 3,3V 16-bit
+  8a984 AT45DB011D
+  8a98f AT45DB021D
+  8a99a AT45DB041D
+  8a9a5 AT45DB081D
+  8a9b0 AT45DB161D
+  8a9bb AT45DB321D
+  8a9c6 AT45DB641D
+  8a9d1 AT25DF321
+  8a9db EN25Q32B
+  8a9e4 EN25Q64
+  8a9ec EN25Q128B
+  8a9f6 EN25S64
+  8a9fe GD25Q64B
+  8aa07 GD25LQ32
+  8aa10 MX25L2006E
+  8aa1b MX25L4005
+  8aa25 MX25L8005
+  8aa2f MX25L1605D
+  8aa3a MX25L3205D
+  8aa45 MX25L6405D
+  8aa50 MX25L12805
+  8aa5b MX25L25635F
+  8aa67 MX25L51235F
+  8aa73 MX25L12855E
+  8aa7f MX25U3235F
+  8aa8a MX25U6435F
+  8aa95 MX25U12835F
+  8aaa1 MX25U25635F
+  8aaad S25FL008A
+  8aab7 S25FL016A
+  8aac1 S25FL032A
+  8aacb S25FL064A
+  8aad5 S25FL116K
+  8aadf S25FL164K
+  8aae9 S25FL128P_256K
+  8aaf8 S25FL128P_64K
+  8ab06 S25FL032P
+  8ab10 S25FL064P
+  8ab1a S25FL128S_256K
+  8ab29 S25FL128S_64K
+  8ab37 S25FL256S_256K
+  8ab46 S25FL256S_64K
+  8ab54 S25FL512S_256K
+  8ab63 S25FL512S_64K
+  8ab71 S25FL512S_512K
+  8ab80 M25P10
+  8ab87 M25P20
+  8ab8e M25P40
+  8ab95 M25P80
+  8ab9c M25P16
+  8aba3 M25PE16
+  8abab M25PX16
+  8abb3 M25P32
+  8abba M25P64
+  8abc1 M25P128
+  8abc9 M25PX64
+  8abd1 N25Q32
+  8abd8 N25Q32A
+  8abe0 N25Q64A
+  8abe8 N25Q128
+  8abf0 N25Q128A
+  8abf9 N25Q256
+  8ac01 N25Q256A
+  8ac0a N25Q512
+  8ac12 N25Q512A
+  8ac1b N25Q1024
+  8ac24 N25Q1024A
+  8ac2e SST25VF040B
+  8ac3a SST25VF080B
+  8ac46 SST25VF016B
+  8ac52 SST25VF032B
+  8ac5e SST25VF064C
+  8ac6a SST25WF512
+  8ac75 SST25WF010
+  8ac80 SST25WF020
+  8ac8b SST25WF040
+  8ac96 SST25WF040B
+  8aca2 SST25WF080
+  8acad W25P80
+  8acb4 W25P16
+  8acbb W25P32
+  8acc2 W25X40
+  8acc9 W25X16
+  8acd0 W25X32
+  8acd7 W25X64
+  8acde W25Q80BL
+  8ace7 W25Q16CL
+  8acf0 W25Q32BV
+  8acf9 W25Q64CV
+  8ad02 W25Q128BV
+  8ad0c W25Q256
+  8ad14 W25Q80BW
+  8ad1d W25Q16DW
+  8ad26 W25Q32DW
+  8ad2f W25Q64DW
+  8ad38 W25Q128FW
+  8ad42 Generic PHY
+  8ad4e sgmii-2500
+  8ad59 qsgmii
+  8ad60 rmii
+  8ad65 rgmii-id
+  8ad6e rgmii-rxid
+  8ad79 rgmii-txid
+  8ad84 rtbi
+  8ad89 xgmii
+  8ad8f AR8035
+  8ad96 AR8031/AR8033
+  8ada4 AR8021
+  8adab RealTek RTL8211F
+  8adbc RealTek RTL8211DN
+  8adce RealTek RTL8211E
+  8addf RealTek RTL8211B
+  8adf0 usb_dev_generic
+  8ae00 xhci_pci
+  8ae09 ext4
+  8ae0e unsupported
+  8ae1a need dictionary
+  8ae2a stream end
+  8ae35 file error
+  8ae40 stream error
+  8ae4d data error
+  8ae58 insufficient memory
+  8ae6c buffer error
+  8ae79 incompatible version
+  8ae8e FDT_ERR_NOTFOUND
+  8ae9f FDT_ERR_EXISTS
+  8aeae FDT_ERR_NOSPACE
+  8aebe FDT_ERR_BADOFFSET
+  8aed0 FDT_ERR_BADPATH
+  8aee0 FDT_ERR_BADSTATE
+  8aef1 FDT_ERR_TRUNCATED
+  8af03 FDT_ERR_BADMAGIC
+  8af14 FDT_ERR_BADVERSION
+  8af27 FDT_ERR_BADSTRUCTURE
+  8af3c FDT_ERR_BADLAYOUT
+  8af4e <none>
+  8af55 nvidia,tegra20-emc
+  8af68 nvidia,tegra20-emc-table
+  8af81 nvidia,tegra20-kbc
+  8af94 nvidia,tegra20-nand
+  8afa8 nvidia,tegra20-pwm
+  8afbb nvidia,tegra124-dc
+  8afce nvidia,tegra124-sor
+  8afe2 nvidia,tegra124-pmc
+  8aff6 nvidia,tegra20-dc
+  8b008 nvidia,tegra124-sdhci
+  8b01e nvidia,tegra30-sdhci
+  8b033 nvidia,tegra20-sdhci
+  8b048 nvidia,tegra124-pcie
+  8b05d nvidia,tegra30-pcie
+  8b071 nvidia,tegra20-pcie
+  8b085 nvidia,tegra124-xusb-padctl
+  8b0a1 smsc,lan9215
+  8b0ae samsung,exynos-sromc
+  8b0c3 samsung,s3c2440-i2c
+  8b0d7 samsung,exynos-sound
+  8b0ec wolfson,wm8994-codec
+  8b101 google,cros-ec-keyb
+  8b115 samsung,exynos-usb-phy
+  8b12c samsung,exynos5250-usb3-phy
+  8b148 samsung,exynos-tmu
+  8b15b samsung,exynos-fimd
+  8b16f samsung,exynos-mipi-dsi
+  8b187 samsung,exynos5-dp
+  8b19a samsung,exynos-dwmmc
+  8b1af samsung,exynos-mmc
+  8b1c2 samsung,exynos4210-uart
+  8b1da maxim,max77686
+  8b1e9 spi-flash
+  8b1f3 maxim,max98095-codec
+  8b208 infineon,slb9635-tpm
+  8b21d infineon,slb9645tt
+  8b230 samsung,exynos5-hsi2c
+  8b246 sandbox,lcd-sdl
+  8b256 ti,tps65090
+  8b262 nxp,ptn3460
+  8b26e samsung,sysmmu-v3.3
+  8b282 parade,ps8625
+  8b290 intel,microcode
+  8b2a0 memory-spd
+  8b2ab intel,pantherpoint-ahci
+  8b2c3 intel,model-206ax
+  8b2d5 intel,gma
+  8b2df ams,as3722
+  8b2ea intel,ich-spi
+  8b2f8 intel,quark-mrc
+  8b308 intel,x86-pinctrl
+  8b31a socionext,uniphier-xhci
+  8b332 intel,bd82x6x
+  8b340 intel,irq-router
+  8b351 nvlan
+  8b357 Driver model low level access
+  8b375 tree         Dump driver model tree ('*' = activated)
+  8b3ab dm uclass        Dump list of instances for each uclass
+  8b3e3 <NULL>
+  8b3ea ## error: substitution buffer overflow
+  8b412 syntax error
+  8b420 No board_info matched, skip sysid setup
+  8b449 sysid
+  8b44f run bootsign
+  8b45c dobootm
+  8b464 run bootunsign
+  8b473 preloadimg
+  8b47e prebootm
+  8b487 ethprime
+  8b490 boot_carrier
+  8b49d blksize
+  8b4a6 TFTP error: 
+  8b4b3 First block is not block 1 (%ld)
+  8b4d5 Starting again
+  8b4e7 TFTP error: '%s' (%d)
+  8b4fe Not retrying...
+  8b50f octet
+  8b515 blksize%c%d%c
+  8b523 File too large
+  8b532 File has bad magic
+  8b545 tftpblocksize
+  8b553 tftptimeout
+  8b55f TFTP timeout (%ld ms) too low, set min = 1000 ms
+  8b591 TFTP %s server %pI4; our IP address is %pI4
+  8b5bd Filename '%s'.
+  8b5cc Save address: 0x%lx
+  8b5e1 Save size:    0x%lx
+  8b5f6 Saving: *
+  8b601 Load address: 0x%lx
+  8b616 Retry count exceeded
+  8b62c %s; starting again
+  8b640 Thermal sensor failed to measure and convert result
+  8b675 %010u
+  8b67b HUSH_VERSION
+  8b688 0.01
+  8b68d bootfrom
+  8b696 0x%02x
+  8b69d fanspeed
+  8b6a6 bootspi
+  8b6ae 0xff
+  8b6b3 Cannot find uclass for id %d: please add the UCLASS_DRIVER() declaration for this UCLASS_... id
+  8b714 Device '%s': seq %d is in use by '%s'
+  8b73b Reset mt7915 pcie slot
+  8b753 Failed to set gpio %d to %d
+  8b770 usb,device-class
+  8b781 usb,interface-class
+  8b795 Human Interface, Subclass: 
+  8b7b1 None
+  8b7b6 Boot 
+  8b7bc Keyboard
+  8b7c5 Mouse
+  8b7cb reserved
+  8b7d4 Mass Storage, 
+  8b7e3 RBC 
+  8b7e8 SFF-8020i (ATAPI)
+  8b7fa QIC-157 (Tape)
+  8b80d SFF-8070
+  8b816 Transp. SCSI
+  8b823 Command/Bulk
+  8b830 Command/Bulk/Int
+  8b841 Bulk only
+  8b84b Self Powered 
+  8b859 Bus Powered 
+  8b866 Remote Wakeup 
+  8b87c    Configuration: %d
+  8b892    - Interfaces: %d %s%s%dmA
+  8b8b0      Interface: %d
+  8b8c4      - Alternate Setting %d, Endpoints: %d
+  8b8f0      - Class 
+  8b8fe      - 
+  8b906      - Endpoint %d %s 
+  8b91d Control
+  8b925 Isochronous
+  8b931 Interrupt
+  8b93b  MaxPacket %d
+  8b949  Interval %dms
+  8b958 %d: %s,  USB Revision %x.%x
+  8b975  - %s %s %s
+  8b982  - Class: 
+  8b98d  - Class: (from Interface) %s
+  8b9ac  - PacketSize: %d  Configurations: %d
+  8b9d3  - Vendor: 0x%04x  Product 0x%04x Version %d.%d
+  8ba04 String: "%s"
+  8ba11 See Interface
+  8ba1f Audio
+  8ba25 Communication
+  8ba33 Human Interface
+  8ba43 Printer
+  8ba4b Mass Storage
+  8ba5c CDC Data
+  8ba65 Vendor specific
+  8ba75 unable to get descriptor, error %lX
+  8ba9a config descriptor too short (expected %i, got %i)
+  8bacd %s: failed to get descriptor - too long: %d
+  8bafa ERROR: USB_MAX_HUB (%d) reached
+  8bb1b usb_pgood_delay
+  8bb2b Can't allocate memory for USB device!
+  8bb52 Port %d over-current occured %d times
+  8bb79 cannot reset port %i!?
+  8bb91 USB%d:   
+  8bb9b Port not available.
+  8bbb0 probe failed, error %d
+  8bbc8 No controllers found
+  8bbde USB error: all controllers failed lowlevel init
+  8bc0f max USB Storage Device reached: %d stopping
+  8bc3d      Couldn't reset port %i
+  8bc5a scanning bus %d for devices... 
+  8bc7a No USB Device found
+  8bc8f %d USB Device(s) found
+  8bca7 generic_bus_%x_dev_%x
+  8bcbd usb_dev_generic_drv
+  8bcd1 usb_new_device: Cannot read configuration, skipping device %04x:%04x
+  8bd17  ERROR: NOT USB_CONFIG_DESC %x
+  8bd37 ERROR: Invalid USB CFG length (%d)
+  8bd5b ERROR: Invalid USB IF length (%d)
+  8bd7e USB IF descriptor overflowed buffer!
+  8bda4 Too many USB interfaces!
+  8bdbe ERROR: Invalid USB EP length (%d)
+  8bde1 USB EP descriptor overflowed buffer!
+  8be07 Endpoint descriptor out of order!
+  8be2a Interface %d has too many endpoints!
+  8be50 ERROR: Invalid USB EPC length (%d)
+  8be74 USB EPC descriptor overflowed buffer!
+  8be9b EPC descriptor out of order!
+  8beb9 failed to set default configuration len %d, status %lX
+  8bef1 selecting invalid interface %d
+  8bf10 Cannot allocate device context to get SLOT_ID
+  8bf3f usb_new_device: invalid max packet size
+  8bf69       USB device not accepting new address (error=%lX)
+  8bfa1 5 Gb/s
+  8bfa8 480 Mb/s
+  8bfb1 1.5 Mb/s
+  8bfba 12 Mb/s
+  8bfc6  %s (%s, %dmA)
+  8bfd6  %s  %s %s %s
+  8bfe5 	Did not get interrupt on CBI
+  8c004 cmd 0x%02X returned 0x%02X 0x%02X 0x%02X 0x%02X (NOT READY)
+  8c041 cmd 0x%02X returned 0x%02X 0x%02X 0x%02X 0x%02X
+  8c072 error in inquiry
+  8c084 Device NOT ready
+  8c095    Request Sense returned %02X %02X %02X
+  8c0bf READ_CAP ERROR
+  8c0cf No storage devices, perhaps not 'usb start'ed..?
+  8c101 USB Storage Transport unknown / not yet implemented
+  8c136 Sorry, protocol %d not yet supported.
+  8c15d GUID Partition Table Entry Array CRC is wrong
+  8c18b %s: 0x%x != 0x%x
+  8c19d GUID Partition Table Header
+  8c1b9 %s signature is wrong: 0x%llX != 0x%llX
+  8c1e2 %s CRC is wrong: 0x%x != 0x%x
+  8c201 GPT: my_lba incorrect: %llX != %lx
+  8c225 GPT: first_usable_lba incorrect: %llX > %lx
+  8c252 GPT: last_usable_lba incorrect: %llX > %lx
+  8c27e drivers/mtd/nand/nand_bbt.c
+  8c29a Virt dev for slot[%d] already allocated
+  8c2c3 Failed to allocate virtual device
+  8c2e6 Failed to allocate out context for virt dev
+  8c313 Failed to allocate in context for virt dev
+  8c33f Evaluate Context
+  8c350 Configure Endpoint
+  8c363 drivers/usb/host/xhci.c
+  8c37b ERROR: %s command returned completion code %d.
+  8c3ab XHCI host controller not found
+  8c3cb Register %x NbrPorts %d
+  8c3e4 Starting the controller
+  8c3fd USB XHCI %x.%02x
+  8c40f unable to allocate DCBA
+  8c428 Host not halted after %u microseconds.
+  8c450 drivers/usb/host/xhci-mem.c
+  8c46c non-bulk pipe (type=%lu)
+  8c48a non-control pipe (type=%lu)
+  8c4a6 The request port(%d) is not configured
+  8c4ce unknown value DT_STRING %x
+  8c4ea unknown value %x
+  8c4fc unknown feature %x
+  8c510 Unknown request
+  8c521 Setup ERROR: address device command for slot %d.
+  8c553 Device not responding to set address.
+  8c57a ERROR: Incompatible devicefor address device command.
+  8c5b1 ERROR: unexpected command completion code 0x%x.
+  8c5e2 Failed to configure xHCI endpoint
+  8c605 Unexpected XHCI event TRB, skipping... (%08x %08x %08x %08x)
+  8c643 XHCI timeout on event type %d... cannot recover.
+  8c675 ERROR : memory not allocated
+  8c693 Can't access file
+  8c6a5 Sorry, zModem not available yet
+  8c6c5 Timed out
+  8c6cf End of file
+  8c6db Cancelled
+  8c6e5 Invalid framing
+  8c6f5 CRC/checksum error
+  8c708 Block sequence error
+  8c71d Unknown error
+  8c72b Cksum
+  8c731 xyzModem - %s mode, %d(SOH)/%d(STX)/%d(CAN) packets, %d retries
+  8cb1c Annapurna Labs Stub Platform
+  8cb40 chosen
+  8cb50 aliases
+  8cb60 memory
+  8cb73 !memory
+  8cb9b 	#address-cells
+  8cbab #size-cells
+  8cbb7 model
+  8cbbd device_type
+  8d5ab Q0{:
+  91b67 @?@@>@@=
+  92450 [addr [arg ...]]
+  92461     - boot application image stored in memory
+  9248f 	passing arguments 'arg ...'; when booting a Linux kernel,
+  924ca 	'arg' can be the address of an initrd image
+  924f7 	When booting a Linux kernel which requires a flat device-tree
+  92536 	a third argument is required which is the address of the
+  92570 	device-tree blob. To boot that kernel without an initrd image,
+  925b0 	use a '-' for the second argument. If you do not pass a third
+  925ef 	a bd_info struct will be passed instead
+  92619 Sub-commands to do part of the bootm sequence.  The sub-commands must be
+  92662 issued in the order below (it's ok to not issue all sub-commands):
+  926a5 	start [addr [arg ...]]
+  926bd 	loados  - load OS image
+  926d6 	ramdisk - relocate initrd, set env initrd_start/initrd_end
+  92712 	fdt     - relocate flat device tree
+  92737 	cmdline - OS specific command line processing/setup
+  9276c 	bdt     - OS specific bd_t processing
+  92793 	prep    - OS specific prep before relocation or go
+  927c7 	go      - start OS
+  927e0 [addr [initrd[:size]] [fdt]]
+  927fd     - boot Linux zImage stored in memory
+  92826 	The argument 'initrd' is optional and specifies the address
+  92863 	of the initrd in memory. The optional argument ':size' allows
+  928a2 	specifying the size of RAW initrd.
+  928c6 	When booting a Linux kernel which requires a flat device-tree
+  92905 	a third argument is required which is the address of the
+  9293f 	device-tree blob. To boot that kernel without an initrd image,
+  9297f 	use a '-' for the second argument. If you do not pass a third
+  929be 	a bd_info struct will be passed instead
+  92c60 [addr]
+  92c67 	- run script starting at addr
+  92c86 	- A valid image header must be present
+  92cb0 addr [-c]  <addr> [<length>]   - Set the [control] fdt location to <addr>
+  92cfa fdt boardsetup                      - Do board-specific set up
+  92d39 fdt move   <fdt> <newaddr> <length> - Copy the fdt to <addr> and make it active
+  92d89 fdt resize                          - Resize fdt to size + padding to 4k addr
+  92dd7 fdt print  <path> [<prop>]          - Recursive print starting at <path>
+  92e20 fdt list   <path> [<prop>]          - Print one level starting at <path>
+  92e69 fdt get value <var> <path> <prop>   - Get <property> and store in <var>
+  92eb1 fdt get name <var> <path> <index>   - Get name of node <index> and store in <var>
+  92f03 fdt get addr <var> <path> <prop>    - Get start address of <property> and store in <var>
+  92f5c fdt get size <var> <path> [<prop>]  - Get size of [<property>] or num nodes and store in <var>
+  92fbb fdt set    <path> <prop> [<val>]    - Set <property> [to <val>]
+  92ffb fdt mknode <path> <node>            - Create a new node after <path>
+  93040 fdt rm     <path> [<prop>]          - Delete the node or <property>
+  93084 fdt header                          - Display header info
+  930be fdt bootcpu <id>                    - Set boot cpuid
+  930f3 fdt memory <addr> <size>            - Add/Update memory node
+  93130 fdt rsvmem print                    - Show current mem reserves
+  93170 fdt rsvmem add <addr> <size>        - Add a mem reserve
+  931a8 fdt rsvmem delete <index>           - Delete a mem reserves
+  931e4 fdt chosen [<start> <end>]          - Add/update the /chosen branch in the tree
+  93234                                         <start>/<end> - initrd start/end addr
+  93282 NOTE: Dereference aliases by omiting the leading '/', e.g. fdt print ethernet0.
+  932e0 																																
+  93338 bus [muxtype:muxaddr:muxchannel] - show I2C bus info
+  9336d crc32 chip address[.0, .1, .2] count - compute CRC32 checksum
+  933ab i2c dev [dev] - show or set current I2C bus
+  933d7 i2c loop chip address[.0, .1, .2] [# of objects] - looping read of device
+  93421 i2c md chip address[.0, .1, .2] [# of objects] - read from I2C device
+  93467 i2c mm chip address[.0, .1, .2] - write to I2C device (auto-incrementing)
+  934b1 i2c mw chip address[.0, .1, .2] value [count] - write to I2C device (fill)
+  934fc i2c nm chip address[.0, .1, .2] - write to I2C device (constant address)
+  93545 i2c probe [address] - test for and show device(s) on the I2C bus
+  93586 i2c read chip address[.0, .1, .2] length memaddress - read to memory
+  935cb i2c write memaddress chip address[.0, .1, .2] length [-s] [-p <pg size>] - write memory
+  93623           to I2C; the -s option selects bulk write in a single transaction
+  9366e           the -p option selects page size
+  93698 i2c reset - re-init the I2C Controller
+  936bf i2c speed [speed] - show or set I2C bus speed
+  936ed i2c sda-hold-time [hold time ns] - show or set I2C SDA hold time
+  93ed0 info - show available NAND devices
+  93ef3 nand device [dev] - show or set current device
+  93f22 nand read - addr off|partition size
+  93f46 nand write - addr off|partition size
+  93f6b     read/write 'size' bytes starting at offset 'off'
+  93fa0     to/from memory address 'addr', skipping bad blocks.
+  93fd8 nand read.raw - addr off|partition [count]
+  94003 nand write.raw - addr off|partition [count]
+  9402f     Use read.raw/write.raw to avoid ECC and access the flash as-is.
+  94073 nand erase[.spread] [clean] off size - erase 'size' bytes from offset 'off'
+  940bf     With '.spread', erase enough for given file size, otherwise,
+  94100     'size' includes skipped bad blocks.
+  94128 nand erase.part [clean] partition - erase entire mtd partition'
+  94168 nand erase.chip [clean] - erase entire chip'
+  94195 nand bad - show bad blocks
+  941b0 nand dump[.oob] off - dump page
+  941d0 nand scrub [-y] off size | scrub.part partition | scrub.chip
+  9420d     really clean NAND erasing bad blocks (UNSAFE)
+  9423f nand markbad off [...] - mark bad block(s) at offset (UNSAFE)
+  9427d nand biterr off - make a bit error at offset (UNSAFE)
+  942b3 nand set_partition_offset addr
+  942d2 	The offset given to read, write and erase.spread operations will
+  94314 	be shifted based on the bad blocks from the addr to the offset
+  94358 [bus] [long]
+  94365     - short or long list of PCI devices on bus 'bus'
+  9439a pci header b.d.f
+  943ab     - show header of PCI device 'bus.device.function'
+  943e1 pci display[.b, .w, .l] b.d.f [address] [# of objects]
+  94418     - display PCI configuration space (CFG)
+  94444 pci next[.b, .w, .l] b.d.f address
+  94467     - modify, read and keep CFG address
+  9448f pci modify[.b, .w, .l] b.d.f address
+  944b4     -  modify, auto increment CFG address
+  944de pci write[.b, .w, .l] b.d.f address value
+  94508     - write to CFG address
+  948b0 addr part [dest]
+  948c1     - extract <part> from legacy image at <addr> and copy to <dest>
+  94908 default [-f] -a - [forcibly] reset default environment
+  9493f env default [-f] var [...] - [forcibly] reset variable(s) to their default values
+  94991 env delete [-f] var [...] - [forcibly] delete variable(s)
+  949cb env edit name - edit environment variable
+  949f5 env exists name - tests for existence of variable
+  94a27 env export [-t | -b | -c] [-s size] addr [var ...] - export environment
+  94a6f env grep [-e] [-n | -v | -b] string [...] - search environment
+  94aae env import [-d] [-t [-r] | -b | -c] addr [size] - import environment
+  94af3 env print [-a | name ...] - print environment
+  94b21 env run var [...] - run commands in an environment variable
+  94b5d env set [-f] name [arg ...]
+  94b79 env setmem name <address>
+  94b93 env inc name <inc val (hex)>
+  95df4 PCA9548
+  95e10 PCA9548
+  95e2c PCA9548
+  95e48 PCA9548
+  95e64 PCA9548
+  95e80 PCA9548
+  95e9c PCA9548
+  95eb8 PCA9548
+  95ed0 Bbt0
+  95ed8 1tbB
+  9604b 2vV	
+  9a810 eserial0
+  9a868 eserial1

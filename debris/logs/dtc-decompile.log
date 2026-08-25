@@ -1,0 +1,1 @@
+<stdout>: Warning (unique_unit_address): /soc/io-bus@fc000000: duplicate unit-address (also used in node /soc/ethernet@fc000000)

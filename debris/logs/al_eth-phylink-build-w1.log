@@ -1,0 +1,89 @@
+make: Entering directory '/mnt/2tb/unvr-port-refs/linux-v7.1.8'
+make[1]: Entering directory '/mnt/2tb/git/awto-unvr/modules/al_eth'
+  CC [M]  al_eth_main.o
+al_eth_main.c: In function ‘al_eth_get_serdes_25g_speed’:
+al_eth_main.c:527:18: warning: variable ‘serdes_25g_gen_ctrl’ set but not used [-Wunused-but-set-variable=]
+  527 |         uint32_t serdes_25g_gen_ctrl;
+      |                  ^~~~~~~~~~~~~~~~~~~
+al_eth_main.c: In function ‘al_eth_probe’:
+al_eth_main.c:5036:36: warning: variable ‘hal_adapter’ set but not used [-Wunused-but-set-variable=]
+ 5036 |         struct al_hal_eth_adapter *hal_adapter;
+      |                                    ^~~~~~~~~~~
+al_eth_main.c: In function ‘al_eth_get_strings’:
+al_eth_main.c:4568:47: warning: ‘%s’ directive output may be truncated writing up to 71 bytes into a region of size between 12 and 21 [-Wformat-truncation=]
+ 4568 |                                  "queue_%u_tx_%s", i, al_eth_ethtool_stats->name);
+      |                                               ^~
+In function ‘al_eth_queue_strings’,
+    inlined from ‘al_eth_get_strings’ at al_eth_main.c:4601:2:
+al_eth_main.c:4567:25: note: ‘snprintf’ output between 12 and 92 bytes into a destination of size 32
+ 4567 |                         snprintf(*data, ETH_GSTRING_LEN,
+      |                         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ 4568 |                                  "queue_%u_tx_%s", i, al_eth_ethtool_stats->name);
+      |                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+al_eth_main.c: In function ‘al_eth_get_strings’:
+al_eth_main.c:4579:47: warning: ‘%s’ directive output may be truncated writing up to 179 bytes into a region of size between 12 and 21 [-Wformat-truncation=]
+ 4579 |                                  "queue_%u_rx_%s", i, al_eth_ethtool_stats->name);
+      |                                               ^~
+In function ‘al_eth_queue_strings’,
+    inlined from ‘al_eth_get_strings’ at al_eth_main.c:4601:2:
+al_eth_main.c:4578:25: note: ‘snprintf’ output between 12 and 200 bytes into a destination of size 32
+ 4578 |                         snprintf(*data, ETH_GSTRING_LEN,
+      |                         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ 4579 |                                  "queue_%u_rx_%s", i, al_eth_ethtool_stats->name);
+      |                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  CC [M]  al_eth_phylink.o
+  CC [M]  al_eth_sysfs.o
+  CC [M]  al_hal_eth_kr.o
+  CC [M]  al_hal_eth_main.o
+In file included from /mnt/2tb/unvr-port-refs/linux-v7.1.8/include/asm-generic/bug.h:31,
+                 from /mnt/2tb/unvr-port-refs/linux-v7.1.8/arch/arm64/include/asm/bug.h:26,
+                 from /mnt/2tb/unvr-port-refs/linux-v7.1.8/include/linux/bug.h:5,
+                 from /mnt/2tb/unvr-port-refs/linux-v7.1.8/include/linux/instrumented.h:10,
+                 from /mnt/2tb/unvr-port-refs/linux-v7.1.8/include/linux/atomic/atomic-instrumented.h:17,
+                 from /mnt/2tb/unvr-port-refs/linux-v7.1.8/include/linux/atomic.h:82,
+                 from /mnt/2tb/unvr-port-refs/linux-v7.1.8/include/asm-generic/bitops/atomic.h:5,
+                 from /mnt/2tb/unvr-port-refs/linux-v7.1.8/arch/arm64/include/asm/bitops.h:25,
+                 from /mnt/2tb/unvr-port-refs/linux-v7.1.8/include/linux/bitops.h:67,
+                 from /mnt/2tb/unvr-port-refs/linux-v7.1.8/include/linux/kernel.h:23,
+                 from al_hal_plat_services.h:67,
+                 from al_hal_common.h:48,
+                 from al_hal_eth.h:52,
+                 from al_hal_eth_main.c:44:
+al_hal_eth_main.c: In function ‘al_eth_mdio_config’:
+/mnt/2tb/unvr-port-refs/linux-v7.1.8/include/linux/printk.h:511:44: warning: this statement may fall through [-Wimplicit-fallthrough=]
+  511 | #define printk(fmt, ...) printk_index_wrap(_printk, fmt, ##__VA_ARGS__)
+      |                                            ^
+/mnt/2tb/unvr-port-refs/linux-v7.1.8/include/linux/printk.h:483:17: note: in definition of macro ‘printk_index_wrap’
+  483 |                 _p_func(_fmt, ##__VA_ARGS__);                           \
+      |                 ^~~~~~~
+/mnt/2tb/unvr-port-refs/linux-v7.1.8/include/linux/printk.h:554:9: note: in expansion of macro ‘printk’
+  554 |         printk(KERN_ERR pr_fmt(fmt), ##__VA_ARGS__)
+      |         ^~~~~~
+al_hal_plat_services.h:118:41: note: in expansion of macro ‘pr_err’
+  118 | #define al_err(...)                     pr_err(__VA_ARGS__)
+      |                                         ^~~~~~
+al_hal_eth_main.c:2424:25: note: in expansion of macro ‘al_err’
+ 2424 |                         al_err("eth [%s]: %s: invalid reference clock frequency"
+      |                         ^~~~~~
+al_hal_eth_main.c:2428:17: note: here
+ 2428 |                 case AL_ETH_REF_FREQ_375_MHZ:
+      |                 ^~~~
+  CC [M]  al_hal_iofic.o
+  CC [M]  al_hal_serdes_25g.o
+  CC [M]  al_hal_serdes_hssp.o
+  CC [M]  al_hal_udma_config.o
+  CC [M]  al_hal_udma_debug.o
+  CC [M]  al_hal_udma_iofic.o
+  CC [M]  al_hal_udma_main.o
+  CC [M]  al_init_eth_kr.o
+  CC [M]  al_init_eth_lm.o
+  CC [M]  al_serdes.o
+  CC [M]  alpine_serdes.o
+  CC [M]  kcompat.o
+  LD [M]  al_eth.o
+  MODPOST Module.symvers
+  CC [M]  al_eth.mod.o
+  CC [M]  .module-common.o
+  LD [M]  al_eth.ko
+make[1]: Leaving directory '/mnt/2tb/git/awto-unvr/modules/al_eth'
+make: Leaving directory '/mnt/2tb/unvr-port-refs/linux-v7.1.8'

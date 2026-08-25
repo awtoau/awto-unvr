@@ -1,0 +1,518 @@
+make: Entering directory '/mnt/2tb/unvr-port-refs/linux-v7.1.8'
+make[1]: Entering directory '/mnt/2tb/unvr-port-refs/build-out-71-fedora/al_eth'
+  CC [M]  al_eth_main.o
+  CC [M]  al_eth_sysfs.o
+  CC [M]  al_eth_group_lm.o
+  CC [M]  al_hal_eth_kr.o
+  CC [M]  al_hal_eth_main.o
+  CC [M]  al_hal_iofic.o
+  CC [M]  al_hal_serdes_25g.o
+  CC [M]  al_hal_serdes_hssp.o
+  CC [M]  al_hal_udma_config.o
+  CC [M]  al_hal_udma_debug.o
+  CC [M]  al_hal_udma_iofic.o
+  CC [M]  al_hal_udma_main.o
+  CC [M]  al_init_eth_kr.o
+In file included from /mnt/2tb/unvr-port-refs/linux-v7.1.8/include/asm-generic/bug.h:31,
+                 from /mnt/2tb/unvr-port-refs/linux-v7.1.8/arch/arm64/include/asm/bug.h:26,
+                 from /mnt/2tb/unvr-port-refs/linux-v7.1.8/include/linux/bug.h:5,
+                 from /mnt/2tb/unvr-port-refs/linux-v7.1.8/include/linux/instrumented.h:10,
+                 from /mnt/2tb/unvr-port-refs/linux-v7.1.8/include/linux/atomic/atomic-instrumented.h:17,
+                 from /mnt/2tb/unvr-port-refs/linux-v7.1.8/include/linux/atomic.h:82,
+                 from /mnt/2tb/unvr-port-refs/linux-v7.1.8/include/asm-generic/bitops/atomic.h:5,
+                 from /mnt/2tb/unvr-port-refs/linux-v7.1.8/arch/arm64/include/asm/bitops.h:25,
+                 from /mnt/2tb/unvr-port-refs/linux-v7.1.8/include/linux/bitops.h:67,
+                 from /mnt/2tb/unvr-port-refs/linux-v7.1.8/include/linux/kernel.h:23,
+                 from al_hal_plat_services.h:67,
+                 from al_hal_common.h:48,
+                 from al_hal_eth.h:52,
+                 from al_hal_eth_main.c:44:
+al_hal_eth_main.c: In function ‘al_eth_mdio_config’:
+/mnt/2tb/unvr-port-refs/linux-v7.1.8/include/linux/printk.h:511:44: warning: this statement may fall through [-Wimplicit-fallthrough=]
+  511 | #define printk(fmt, ...) printk_index_wrap(_printk, fmt, ##__VA_ARGS__)
+      |                                            ^
+/mnt/2tb/unvr-port-refs/linux-v7.1.8/include/linux/printk.h:483:17: note: in definition of macro ‘printk_index_wrap’
+  483 |                 _p_func(_fmt, ##__VA_ARGS__);                           \
+      |                 ^~~~~~~
+/mnt/2tb/unvr-port-refs/linux-v7.1.8/include/linux/printk.h:554:9: note: in expansion of macro ‘printk’
+  554 |         printk(KERN_ERR pr_fmt(fmt), ##__VA_ARGS__)
+      |         ^~~~~~
+al_hal_plat_services.h:118:41: note: in expansion of macro ‘pr_err’
+  118 | #define al_err(...)                     pr_err(__VA_ARGS__)
+      |                                         ^~~~~~
+al_hal_eth_main.c:2424:25: note: in expansion of macro ‘al_err’
+ 2424 |                         al_err("eth [%s]: %s: invalid reference clock frequency"
+      |                         ^~~~~~
+al_hal_eth_main.c:2428:17: note: here
+ 2428 |                 case AL_ETH_REF_FREQ_375_MHZ:
+      |                 ^~~~
+al_hal_serdes_25g.c: In function ‘al_serdes_25g_calc_eye_size’:
+al_hal_serdes_25g.c:1033:1: warning: the frame size of 3232 bytes is larger than 2048 bytes [-Wframe-larger-than=]
+ 1033 | }
+      | ^
+  CC [M]  al_init_eth_lm.o
+  CC [M]  al_serdes.o
+  CC [M]  alpine_group_lm.o
+  CHECK   al_eth_group_lm.c
+  CHECK   al_hal_eth_kr.c
+  CC [M]  alpine_serdes.o
+  CHECK   al_hal_eth_main.c
+  CHECK   al_hal_udma_config.c
+  CHECK   al_hal_udma_debug.c
+  CHECK   al_hal_udma_iofic.c
+  CHECK   al_hal_iofic.c
+  CC [M]  kcompat.o
+  CHECK   al_hal_serdes_25g.c
+  CHECK   al_hal_udma_main.c
+  CHECK   al_init_eth_kr.c
+  CHECK   al_eth_sysfs.c
+  CHECK   al_hal_serdes_hssp.c
+  CHECK   alpine_group_lm.c
+  CHECK   al_init_eth_lm.c
+  CHECK   al_eth_main.c
+  CHECK   al_serdes.c
+  CHECK   alpine_serdes.c
+  CHECK   kcompat.c
+al_hal_udma_main.c:73:26: warning: cast removes address space '__iomem' of expression
+al_hal_udma_main.c:78:48: warning: incorrect type in argument 1 (different address spaces)
+al_hal_udma_main.c:78:48:    expected unsigned int [noderef] [usertype] __iomem *reg
+al_hal_udma_main.c:78:48:    got unsigned int *
+al_hal_udma_main.c:84:17: warning: incorrect type in argument 2 (different address spaces)
+al_hal_udma_main.c:84:17:    expected void volatile [noderef] __iomem *addr
+al_hal_udma_main.c:84:17:    got unsigned int *
+al_hal_udma_main.c:86:17: warning: incorrect type in argument 2 (different address spaces)
+al_hal_udma_main.c:86:17:    expected void volatile [noderef] __iomem *addr
+al_hal_udma_main.c:86:17:    got unsigned int *
+al_hal_udma_main.c:109:26: warning: incorrect type in assignment (different address spaces)
+al_hal_udma_main.c:109:26:    expected unsigned int [usertype] *reg_addr
+al_hal_udma_main.c:109:26:    got unsigned int [noderef] __iomem *
+al_hal_udma_main.c:111:23: warning: incorrect type in argument 1 (different address spaces)
+al_hal_udma_main.c:111:23:    expected void const volatile [noderef] __iomem *addr
+al_hal_udma_main.c:111:23:    got unsigned int [usertype] *reg_addr
+al_hal_udma_main.c:114:17: warning: incorrect type in argument 2 (different address spaces)
+al_hal_udma_main.c:114:17:    expected void volatile [noderef] __iomem *addr
+al_hal_udma_main.c:114:17:    got unsigned int [usertype] *reg_addr
+al_hal_udma_main.c:132:26: warning: incorrect type in assignment (different address spaces)
+al_hal_udma_main.c:132:26:    expected unsigned int [usertype] *reg_addr
+al_hal_udma_main.c:132:26:    got unsigned int [noderef] __iomem *
+al_hal_udma_main.c:134:26: warning: incorrect type in assignment (different address spaces)
+al_hal_udma_main.c:134:26:    expected unsigned int [usertype] *reg_addr
+al_hal_udma_main.c:134:26:    got unsigned int [noderef] __iomem *
+al_hal_udma_main.c:136:15: warning: incorrect type in argument 1 (different address spaces)
+al_hal_udma_main.c:136:15:    expected void const volatile [noderef] __iomem *addr
+al_hal_udma_main.c:136:15:    got unsigned int [usertype] *reg_addr
+al_hal_udma_main.c:145:9: warning: incorrect type in argument 2 (different address spaces)
+al_hal_udma_main.c:145:9:    expected void volatile [noderef] __iomem *addr
+al_hal_udma_main.c:145:9:    got unsigned int [usertype] *reg_addr
+al_hal_udma_main.c:239:24: warning: incorrect type in assignment (different address spaces)
+al_hal_udma_main.c:239:24:    expected struct udma_gen_regs *gen_regs
+al_hal_udma_main.c:239:24:    got struct udma_gen_regs [noderef] __iomem *
+al_hal_udma_main.c:242:36: warning: cast removes address space '__iomem' of expression
+al_hal_udma_main.c:242:33: warning: incorrect type in assignment (different address spaces)
+al_hal_udma_main.c:242:33:    expected union udma_regs [noderef] __iomem *udma_regs
+al_hal_udma_main.c:242:33:    got union udma_regs *
+al_hal_udma_main.c:244:36: warning: cast removes address space '__iomem' of expression
+al_hal_udma_main.c:244:33: warning: incorrect type in assignment (different address spaces)
+al_hal_udma_main.c:244:33:    expected union udma_regs [noderef] __iomem *udma_regs
+al_hal_udma_main.c:244:33:    got union udma_regs *
+al_hal_udma_main.c:379:20: warning: incorrect type in assignment (different address spaces)
+al_hal_udma_main.c:379:20:    expected unsigned int [usertype] *status_reg
+al_hal_udma_main.c:379:20:    got unsigned int [noderef] __iomem *
+al_hal_udma_main.c:382:35: warning: incorrect type in argument 1 (different address spaces)
+al_hal_udma_main.c:382:35:    expected void const volatile [noderef] __iomem *addr
+al_hal_udma_main.c:382:35:    got unsigned int [usertype] *status_reg
+al_hal_udma_main.c:401:17: warning: incorrect type in assignment (different address spaces)
+al_hal_udma_main.c:401:17:    expected unsigned int [usertype] *dcp_reg
+al_hal_udma_main.c:401:17:    got unsigned int [noderef] __iomem *
+al_hal_udma_main.c:402:18: warning: incorrect type in assignment (different address spaces)
+al_hal_udma_main.c:402:18:    expected unsigned int [usertype] *crhp_reg
+al_hal_udma_main.c:402:18:    got unsigned int [noderef] __iomem *
+al_hal_udma_main.c:405:23: warning: incorrect type in argument 1 (different address spaces)
+al_hal_udma_main.c:405:23:    expected void const volatile [noderef] __iomem *addr
+al_hal_udma_main.c:405:23:    got unsigned int [usertype] *dcp_reg
+al_hal_udma_main.c:406:24: warning: incorrect type in argument 1 (different address spaces)
+al_hal_udma_main.c:406:24:    expected void const volatile [noderef] __iomem *addr
+al_hal_udma_main.c:406:24:    got unsigned int [usertype] *crhp_reg
+al_hal_udma_main.c:423:31: warning: incorrect type in assignment (different address spaces)
+al_hal_udma_main.c:423:31:    expected unsigned int [usertype] *q_sw_ctrl_reg
+al_hal_udma_main.c:423:31:    got unsigned int [noderef] __iomem *
+al_hal_udma_main.c:425:31: warning: incorrect type in assignment (different address spaces)
+al_hal_udma_main.c:425:31:    expected unsigned int [usertype] *q_sw_ctrl_reg
+al_hal_udma_main.c:425:31:    got unsigned int [noderef] __iomem *
+al_hal_udma_main.c:427:9: warning: incorrect type in argument 2 (different address spaces)
+al_hal_udma_main.c:427:9:    expected void volatile [noderef] __iomem *addr
+al_hal_udma_main.c:427:9:    got unsigned int [usertype] *q_sw_ctrl_reg
+al_hal_udma_main.c:568:22: warning: cast to restricted __le32
+al_hal_udma_main.c:577:30: warning: cast to restricted __le32
+al_hal_udma_config.c:74:9: warning: incorrect type in argument 2 (different address spaces)
+al_hal_udma_config.c:74:9:    expected void volatile [noderef] __iomem *addr
+al_hal_udma_config.c:74:9:    got unsigned int *
+al_hal_udma_config.c:76:15: warning: incorrect type in argument 1 (different address spaces)
+al_hal_udma_config.c:76:15:    expected void const volatile [noderef] __iomem *addr
+al_hal_udma_config.c:76:15:    got unsigned int *
+al_hal_udma_config.c:79:9: warning: incorrect type in argument 2 (different address spaces)
+al_hal_udma_config.c:79:9:    expected void volatile [noderef] __iomem *addr
+al_hal_udma_config.c:79:9:    got unsigned int *
+al_hal_udma_config.c:81:15: warning: incorrect type in argument 1 (different address spaces)
+al_hal_udma_config.c:81:15:    expected void const volatile [noderef] __iomem *addr
+al_hal_udma_config.c:81:15:    got unsigned int *
+al_hal_udma_config.c:107:9: warning: incorrect type in argument 2 (different address spaces)
+al_hal_udma_config.c:107:9:    expected void volatile [noderef] __iomem *addr
+al_hal_udma_config.c:107:9:    got unsigned int *
+al_hal_udma_config.c:118:15: warning: incorrect type in argument 1 (different address spaces)
+al_hal_udma_config.c:118:15:    expected void const volatile [noderef] __iomem *addr
+al_hal_udma_config.c:118:15:    got unsigned int [usertype] *cfg_1
+al_hal_udma_config.c:128:9: warning: incorrect type in argument 2 (different address spaces)
+al_hal_udma_config.c:128:9:    expected void volatile [noderef] __iomem *addr
+al_hal_udma_config.c:128:9:    got unsigned int [usertype] *cfg_1
+al_hal_udma_config.c:130:15: warning: incorrect type in argument 1 (different address spaces)
+al_hal_udma_config.c:130:15:    expected void const volatile [noderef] __iomem *addr
+al_hal_udma_config.c:130:15:    got unsigned int [usertype] *cfg_2
+al_hal_udma_config.c:143:9: warning: incorrect type in argument 2 (different address spaces)
+al_hal_udma_config.c:143:9:    expected void volatile [noderef] __iomem *addr
+al_hal_udma_config.c:143:9:    got unsigned int [usertype] *cfg_2
+al_hal_udma_config.c:145:15: warning: incorrect type in argument 1 (different address spaces)
+al_hal_udma_config.c:145:15:    expected void const volatile [noderef] __iomem *addr
+al_hal_udma_config.c:145:15:    got unsigned int [usertype] *cfg_max_beats
+al_hal_udma_config.c:149:9: warning: incorrect type in argument 2 (different address spaces)
+al_hal_udma_config.c:149:9:    expected void volatile [noderef] __iomem *addr
+al_hal_udma_config.c:149:9:    got unsigned int [usertype] *cfg_max_beats
+al_hal_udma_config.c:161:37: warning: incorrect type in argument 2 (different address spaces)
+al_hal_udma_config.c:161:37:    expected unsigned int [usertype] *cfg_1
+al_hal_udma_config.c:161:37:    got unsigned int [noderef] __iomem *
+al_hal_udma_config.c:162:37: warning: incorrect type in argument 3 (different address spaces)
+al_hal_udma_config.c:162:37:    expected unsigned int [usertype] *cfg_2
+al_hal_udma_config.c:162:37:    got unsigned int [noderef] __iomem *
+al_hal_udma_config.c:163:37: warning: incorrect type in argument 4 (different address spaces)
+al_hal_udma_config.c:163:37:    expected unsigned int [usertype] *cfg_max_beats
+al_hal_udma_config.c:163:37:    got unsigned int [noderef] __iomem *
+al_hal_udma_config.c:166:37: warning: incorrect type in argument 2 (different address spaces)
+al_hal_udma_config.c:166:37:    expected unsigned int [usertype] *cfg_1
+al_hal_udma_config.c:166:37:    got unsigned int [noderef] __iomem *
+al_hal_udma_config.c:167:37: warning: incorrect type in argument 3 (different address spaces)
+al_hal_udma_config.c:167:37:    expected unsigned int [usertype] *cfg_2
+al_hal_udma_config.c:167:37:    got unsigned int [noderef] __iomem *
+al_hal_udma_config.c:168:37: warning: incorrect type in argument 4 (different address spaces)
+al_hal_udma_config.c:168:37:    expected unsigned int [usertype] *cfg_max_beats
+al_hal_udma_config.c:168:37:    got unsigned int [noderef] __iomem *
+al_hal_udma_config.c:171:37: warning: incorrect type in argument 2 (different address spaces)
+al_hal_udma_config.c:171:37:    expected unsigned int [usertype] *cfg_1
+al_hal_udma_config.c:171:37:    got unsigned int [noderef] __iomem *
+al_hal_udma_config.c:172:37: warning: incorrect type in argument 3 (different address spaces)
+al_hal_udma_config.c:172:37:    expected unsigned int [usertype] *cfg_2
+al_hal_udma_config.c:172:37:    got unsigned int [noderef] __iomem *
+al_hal_udma_config.c:173:37: warning: incorrect type in argument 4 (different address spaces)
+al_hal_udma_config.c:173:37:    expected unsigned int [usertype] *cfg_max_beats
+al_hal_udma_config.c:173:37:    got unsigned int [noderef] __iomem *
+al_hal_udma_config.c:215:15: warning: incorrect type in argument 1 (different address spaces)
+al_hal_udma_config.c:215:15:    expected void const volatile [noderef] __iomem *addr
+al_hal_udma_config.c:215:15:    got unsigned int [usertype] *cfg_1
+al_hal_udma_config.c:225:9: warning: incorrect type in argument 2 (different address spaces)
+al_hal_udma_config.c:225:9:    expected void volatile [noderef] __iomem *addr
+al_hal_udma_config.c:225:9:    got unsigned int [usertype] *cfg_1
+al_hal_udma_config.c:227:15: warning: incorrect type in argument 1 (different address spaces)
+al_hal_udma_config.c:227:15:    expected void const volatile [noderef] __iomem *addr
+al_hal_udma_config.c:227:15:    got unsigned int [usertype] *cfg_2
+al_hal_udma_config.c:239:9: warning: incorrect type in argument 2 (different address spaces)
+al_hal_udma_config.c:239:9:    expected void volatile [noderef] __iomem *addr
+al_hal_udma_config.c:239:9:    got unsigned int [usertype] *cfg_2
+al_hal_udma_config.c:241:15: warning: incorrect type in argument 1 (different address spaces)
+al_hal_udma_config.c:241:15:    expected void const volatile [noderef] __iomem *addr
+al_hal_udma_config.c:241:15:    got unsigned int [usertype] *cfg_max_beats
+al_hal_udma_config.c:245:9: warning: incorrect type in argument 2 (different address spaces)
+al_hal_udma_config.c:245:9:    expected void volatile [noderef] __iomem *addr
+al_hal_udma_config.c:245:9:    got unsigned int [usertype] *cfg_max_beats
+al_hal_udma_config.c:258:37: warning: incorrect type in argument 2 (different address spaces)
+al_hal_udma_config.c:258:37:    expected unsigned int [usertype] *cfg_1
+al_hal_udma_config.c:258:37:    got unsigned int [noderef] __iomem *
+al_hal_udma_config.c:259:37: warning: incorrect type in argument 3 (different address spaces)
+al_hal_udma_config.c:259:37:    expected unsigned int [usertype] *cfg_2
+al_hal_udma_config.c:259:37:    got unsigned int [noderef] __iomem *
+al_hal_udma_config.c:260:37: warning: incorrect type in argument 4 (different address spaces)
+al_hal_udma_config.c:260:37:    expected unsigned int [usertype] *cfg_max_beats
+al_hal_udma_config.c:260:37:    got unsigned int [noderef] __iomem *
+al_hal_udma_config.c:263:37: warning: incorrect type in argument 2 (different address spaces)
+al_hal_udma_config.c:263:37:    expected unsigned int [usertype] *cfg_1
+al_hal_udma_config.c:263:37:    got unsigned int [noderef] __iomem *
+al_hal_udma_config.c:264:37: warning: incorrect type in argument 3 (different address spaces)
+al_hal_udma_config.c:264:37:    expected unsigned int [usertype] *cfg_2
+al_hal_udma_config.c:264:37:    got unsigned int [noderef] __iomem *
+al_hal_udma_config.c:265:37: warning: incorrect type in argument 4 (different address spaces)
+al_hal_udma_config.c:265:37:    expected unsigned int [usertype] *cfg_max_beats
+al_hal_udma_config.c:265:37:    got unsigned int [noderef] __iomem *
+al_hal_udma_config.c:268:37: warning: incorrect type in argument 2 (different address spaces)
+al_hal_udma_config.c:268:37:    expected unsigned int [usertype] *cfg_1
+al_hal_udma_config.c:268:37:    got unsigned int [noderef] __iomem *
+al_hal_udma_config.c:269:37: warning: incorrect type in argument 3 (different address spaces)
+al_hal_udma_config.c:269:37:    expected unsigned int [usertype] *cfg_2
+al_hal_udma_config.c:269:37:    got unsigned int [noderef] __iomem *
+al_hal_udma_config.c:270:37: warning: incorrect type in argument 4 (different address spaces)
+al_hal_udma_config.c:270:37:    expected unsigned int [usertype] *cfg_max_beats
+al_hal_udma_config.c:270:37:    got unsigned int [noderef] __iomem *
+al_hal_udma_config.c:732:24: warning: incorrect type in argument 1 (different address spaces)
+al_hal_udma_config.c:732:24:    expected void const volatile [noderef] __iomem *addr
+al_hal_udma_config.c:732:24:    got unsigned int *
+al_hal_udma_config.c:739:9: warning: incorrect type in argument 2 (different address spaces)
+al_hal_udma_config.c:739:9:    expected void volatile [noderef] __iomem *addr
+al_hal_udma_config.c:739:9:    got unsigned int *
+al_hal_udma_config.c:741:15: warning: incorrect type in argument 1 (different address spaces)
+al_hal_udma_config.c:741:15:    expected void const volatile [noderef] __iomem *addr
+al_hal_udma_config.c:741:15:    got unsigned int *
+al_hal_udma_config.c:745:9: warning: incorrect type in argument 2 (different address spaces)
+al_hal_udma_config.c:745:9:    expected void volatile [noderef] __iomem *addr
+al_hal_udma_config.c:745:9:    got unsigned int *
+al_hal_udma_config.c:747:15: warning: incorrect type in argument 1 (different address spaces)
+al_hal_udma_config.c:747:15:    expected void const volatile [noderef] __iomem *addr
+al_hal_udma_config.c:747:15:    got unsigned int *
+al_hal_udma_config.c:751:9: warning: incorrect type in argument 2 (different address spaces)
+al_hal_udma_config.c:751:9:    expected void volatile [noderef] __iomem *addr
+al_hal_udma_config.c:751:9:    got unsigned int *
+al_hal_udma_config.c:753:15: warning: incorrect type in argument 1 (different address spaces)
+al_hal_udma_config.c:753:15:    expected void const volatile [noderef] __iomem *addr
+al_hal_udma_config.c:753:15:    got unsigned int *
+al_hal_udma_config.c:757:9: warning: incorrect type in argument 2 (different address spaces)
+al_hal_udma_config.c:757:9:    expected void volatile [noderef] __iomem *addr
+al_hal_udma_config.c:757:9:    got unsigned int *
+al_hal_udma_config.c:759:15: warning: incorrect type in argument 1 (different address spaces)
+al_hal_udma_config.c:759:15:    expected void const volatile [noderef] __iomem *addr
+al_hal_udma_config.c:759:15:    got unsigned int *
+al_hal_udma_config.c:762:9: warning: incorrect type in argument 2 (different address spaces)
+al_hal_udma_config.c:762:9:    expected void volatile [noderef] __iomem *addr
+al_hal_udma_config.c:762:9:    got unsigned int *
+al_hal_udma_config.c:771:18: warning: incorrect type in initializer (different address spaces)
+al_hal_udma_config.c:771:18:    expected struct udma_rlimit_common *rlimit_regs
+al_hal_udma_config.c:771:18:    got struct udma_rlimit_common [noderef] __iomem *
+al_hal_udma_config.c:796:18: warning: incorrect type in initializer (different address spaces)
+al_hal_udma_config.c:796:18:    expected struct udma_rlimit_common *rlimit_regs
+al_hal_udma_config.c:796:18:    got struct udma_rlimit_common [noderef] __iomem *
+al_hal_udma_config.c:798:32: warning: incorrect type in argument 1 (different address spaces)
+al_hal_udma_config.c:798:32:    expected unsigned int [noderef] [usertype] __iomem *reg
+al_hal_udma_config.c:798:32:    got unsigned int *
+al_hal_serdes_25g.c:222:27: warning: incorrect type in argument 1 (different address spaces)
+al_hal_serdes_25g.c:222:27:    expected void const volatile [noderef] __iomem *addr
+al_hal_serdes_25g.c:222:27:    got unsigned int [usertype] *addr
+al_hal_serdes_25g.c:3045:39: warning: incorrect type in argument 2 (different address spaces)
+al_hal_serdes_25g.c:3045:39:    expected unsigned int [usertype] *addr
+al_hal_serdes_25g.c:3045:39:    got unsigned int [noderef] __iomem *
+al_hal_serdes_25g.c:3103:39: warning: incorrect type in argument 2 (different address spaces)
+al_hal_serdes_25g.c:3103:39:    expected unsigned int [usertype] *addr
+al_hal_serdes_25g.c:3103:39:    got unsigned int [noderef] __iomem *
+al_hal_serdes_25g.c:3165:62: warning: incorrect type in argument 2 (different address spaces)
+al_hal_serdes_25g.c:3165:62:    expected unsigned int [usertype] *addr
+al_hal_serdes_25g.c:3165:62:    got unsigned int [noderef] __iomem *
+al_hal_serdes_25g.c:3362:27: warning: cast removes address space '__iomem' of expression
+al_hal_serdes_25g.c:3362:24: warning: incorrect type in assignment (different address spaces)
+al_hal_serdes_25g.c:3362:24:    expected void [noderef] __iomem *regs_base
+al_hal_serdes_25g.c:3362:24:    got struct al_serdes_regs *
+al_hal_eth_main.c:2550:24: warning: cast removes address space '__iomem' of expression
+al_hal_eth_main.c:2550:24: warning: incorrect type in argument 1 (different address spaces)
+al_hal_eth_main.c:2550:24:    expected void const volatile [noderef] __iomem *addr
+al_hal_eth_main.c:2550:24:    got unsigned short [usertype] *
+al_hal_eth_main.c:2588:17: warning: cast removes address space '__iomem' of expression
+al_hal_eth_main.c:2588:17: warning: incorrect type in argument 2 (different address spaces)
+al_hal_eth_main.c:2588:17:    expected void volatile [noderef] __iomem *addr
+al_hal_eth_main.c:2588:17:    got unsigned short [usertype] *
+al_hal_eth_main.c:2592:17: warning: cast removes address space '__iomem' of expression
+al_hal_eth_main.c:2592:17: warning: incorrect type in argument 2 (different address spaces)
+al_hal_eth_main.c:2592:17:    expected void volatile [noderef] __iomem *addr
+al_hal_eth_main.c:2592:17:    got unsigned short [usertype] *
+al_hal_eth_main.c:2611:24: warning: cast removes address space '__iomem' of expression
+al_hal_eth_main.c:2611:24: warning: incorrect type in argument 1 (different address spaces)
+al_hal_eth_main.c:2611:24:    expected void const volatile [noderef] __iomem *addr
+al_hal_eth_main.c:2611:24:    got unsigned short [usertype] *
+al_hal_eth_main.c:2963:43: warning: incorrect type in assignment (different base types)
+al_hal_eth_main.c:2963:43:    expected unsigned int [usertype] len_ctrl
+al_hal_eth_main.c:2963:43:    got restricted __le32 [usertype]
+al_hal_eth_main.c:2964:44: warning: incorrect type in assignment (different base types)
+al_hal_eth_main.c:2964:44:    expected unsigned int [usertype] meta_ctrl
+al_hal_eth_main.c:2964:44:    got restricted __le32 [usertype]
+al_hal_eth_main.c:2965:40: warning: incorrect type in assignment (different base types)
+al_hal_eth_main.c:2965:40:    expected unsigned int [usertype] meta1
+al_hal_eth_main.c:2965:40:    got restricted __le32 [usertype]
+al_hal_eth_main.c:2966:40: warning: incorrect type in assignment (different base types)
+al_hal_eth_main.c:2966:40:    expected unsigned int [usertype] meta2
+al_hal_eth_main.c:2966:40:    got restricted __le32 [usertype]
+al_hal_eth_main.c:3017:38: warning: incorrect type in assignment (different base types)
+al_hal_eth_main.c:3017:38:    expected unsigned int [usertype] len_ctrl
+al_hal_eth_main.c:3017:38:    got restricted __le32 [usertype]
+al_hal_eth_main.c:3019:47: warning: incorrect type in assignment (different base types)
+al_hal_eth_main.c:3019:47:    expected unsigned int [usertype] meta_ctrl
+al_hal_eth_main.c:3019:47:    got restricted __le32 [usertype]
+al_hal_eth_main.c:3020:37: warning: incorrect type in assignment (different base types)
+al_hal_eth_main.c:3020:37:    expected unsigned long long [usertype] buf_ptr
+al_hal_eth_main.c:3020:37:    got restricted __le64 [usertype]
+al_hal_eth_main.c:3205:41: warning: incorrect type in assignment (different base types)
+al_hal_eth_main.c:3205:41:    expected unsigned int [usertype] buf2_ptr_lo
+al_hal_eth_main.c:3205:41:    got restricted __le32 [usertype]
+al_hal_eth_main.c:3207:30: warning: incorrect type in assignment (different base types)
+al_hal_eth_main.c:3207:30:    expected unsigned int [usertype] len_ctrl
+al_hal_eth_main.c:3207:30:    got restricted __le32 [usertype]
+al_hal_eth_main.c:3208:30: warning: incorrect type in assignment (different base types)
+al_hal_eth_main.c:3208:30:    expected unsigned long long [usertype] buf1_ptr
+al_hal_eth_main.c:3208:30:    got restricted __le64 [usertype]
+al_hal_eth_main.c:3252:28: warning: cast to restricted __le32
+al_hal_eth_main.c:3254:34: warning: cast to restricted __le32
+al_hal_eth_main.c:3256:36: warning: cast to restricted __le32
+al_hal_eth_main.c:3260:22: warning: cast to restricted __le32
+al_hal_eth_main.c:3261:27: warning: cast to restricted __le32
+al_hal_eth_main.c:3267:22: warning: cast to restricted __le32
+al_hal_eth_main.c:3278:24: warning: cast to restricted __le32
+al_hal_eth_main.c:3280:27: warning: cast to restricted __le32
+al_hal_eth_main.c:4601:40: warning: cast removes address space '__iomem' of expression
+al_hal_eth_main.c:4601:40: warning: cast removes address space '__iomem' of expression
+al_hal_eth_main.c:4602:44: warning: cast removes address space '__iomem' of expression
+al_hal_eth_main.c:4602:44: warning: cast removes address space '__iomem' of expression
+al_hal_eth_main.c:4603:44: warning: cast removes address space '__iomem' of expression
+al_hal_eth_main.c:4603:44: warning: cast removes address space '__iomem' of expression
+al_hal_eth_main.c:4604:41: warning: cast removes address space '__iomem' of expression
+al_hal_eth_main.c:4604:41: warning: cast removes address space '__iomem' of expression
+al_hal_eth_main.c:4605:41: warning: cast removes address space '__iomem' of expression
+al_hal_eth_main.c:4605:41: warning: cast removes address space '__iomem' of expression
+al_hal_eth_main.c:4606:45: warning: cast removes address space '__iomem' of expression
+al_hal_eth_main.c:4606:45: warning: cast removes address space '__iomem' of expression
+al_hal_eth_main.c:4607:45: warning: cast removes address space '__iomem' of expression
+al_hal_eth_main.c:4607:45: warning: cast removes address space '__iomem' of expression
+al_hal_eth_main.c:4608:37: warning: cast removes address space '__iomem' of expression
+al_hal_eth_main.c:4608:37: warning: cast removes address space '__iomem' of expression
+al_hal_eth_main.c:4609:38: warning: cast removes address space '__iomem' of expression
+al_hal_eth_main.c:4609:38: warning: cast removes address space '__iomem' of expression
+al_hal_eth_main.c:4610:44: warning: cast removes address space '__iomem' of expression
+al_hal_eth_main.c:4610:44: warning: cast removes address space '__iomem' of expression
+al_hal_eth_main.c:4611:47: warning: cast removes address space '__iomem' of expression
+al_hal_eth_main.c:4611:47: warning: cast removes address space '__iomem' of expression
+al_hal_eth_main.c:4614:26: warning: cast removes address space '__iomem' of expression
+al_hal_eth_main.c:4614:26: warning: cast removes address space '__iomem' of expression
+al_hal_eth_main.c:4615:38: warning: cast removes address space '__iomem' of expression
+al_hal_eth_main.c:4615:38: warning: cast removes address space '__iomem' of expression
+al_hal_eth_main.c:4617:31: warning: cast removes address space '__iomem' of expression
+al_hal_eth_main.c:4617:31: warning: cast removes address space '__iomem' of expression
+al_hal_eth_main.c:4621:26: warning: cast removes address space '__iomem' of expression
+al_hal_eth_main.c:4621:26: warning: cast removes address space '__iomem' of expression
+al_hal_eth_main.c:4622:38: warning: cast removes address space '__iomem' of expression
+al_hal_eth_main.c:4622:38: warning: cast removes address space '__iomem' of expression
+al_hal_eth_main.c:4624:31: warning: cast removes address space '__iomem' of expression
+al_hal_eth_main.c:4624:31: warning: cast removes address space '__iomem' of expression
+al_hal_eth_main.c:4627:50: warning: cast removes address space '__iomem' of expression
+al_hal_eth_main.c:4627:50: warning: cast removes address space '__iomem' of expression
+al_hal_eth_main.c:4628:46: warning: cast removes address space '__iomem' of expression
+al_hal_eth_main.c:4628:46: warning: cast removes address space '__iomem' of expression
+al_hal_eth_main.c:4629:44: warning: cast removes address space '__iomem' of expression
+al_hal_eth_main.c:4629:44: warning: cast removes address space '__iomem' of expression
+al_hal_eth_main.c:4630:49: warning: cast removes address space '__iomem' of expression
+al_hal_eth_main.c:4630:49: warning: cast removes address space '__iomem' of expression
+al_hal_eth_main.c:4631:52: warning: cast removes address space '__iomem' of expression
+al_hal_eth_main.c:4631:52: warning: cast removes address space '__iomem' of expression
+al_hal_eth_main.c:4632:43: warning: cast removes address space '__iomem' of expression
+al_hal_eth_main.c:4632:43: warning: cast removes address space '__iomem' of expression
+al_hal_eth_main.c:4633:47: warning: cast removes address space '__iomem' of expression
+al_hal_eth_main.c:4633:47: warning: cast removes address space '__iomem' of expression
+al_hal_eth_main.c:4634:57: warning: cast removes address space '__iomem' of expression
+al_hal_eth_main.c:4634:57: warning: cast removes address space '__iomem' of expression
+al_hal_eth_main.c:4635:54: warning: cast removes address space '__iomem' of expression
+al_hal_eth_main.c:4635:54: warning: cast removes address space '__iomem' of expression
+al_hal_eth_main.c:4636:46: warning: cast removes address space '__iomem' of expression
+al_hal_eth_main.c:4636:46: warning: cast removes address space '__iomem' of expression
+al_hal_eth_main.c:4637:47: warning: cast removes address space '__iomem' of expression
+al_hal_eth_main.c:4637:47: warning: cast removes address space '__iomem' of expression
+al_hal_eth_main.c:4638:44: warning: cast removes address space '__iomem' of expression
+al_hal_eth_main.c:4638:44: warning: cast removes address space '__iomem' of expression
+al_hal_eth_main.c:4639:41: warning: cast removes address space '__iomem' of expression
+al_hal_eth_main.c:4639:41: warning: cast removes address space '__iomem' of expression
+al_hal_eth_main.c:4640:43: warning: cast removes address space '__iomem' of expression
+al_hal_eth_main.c:4640:43: warning: cast removes address space '__iomem' of expression
+al_hal_eth_main.c:4641:49: warning: cast removes address space '__iomem' of expression
+al_hal_eth_main.c:4641:49: warning: cast removes address space '__iomem' of expression
+al_hal_eth_main.c:4642:54: warning: cast removes address space '__iomem' of expression
+al_hal_eth_main.c:4642:54: warning: cast removes address space '__iomem' of expression
+al_hal_eth_main.c:4643:55: warning: cast removes address space '__iomem' of expression
+al_hal_eth_main.c:4643:55: warning: cast removes address space '__iomem' of expression
+al_hal_eth_main.c:4644:55: warning: cast removes address space '__iomem' of expression
+al_hal_eth_main.c:4644:55: warning: cast removes address space '__iomem' of expression
+al_hal_eth_main.c:4645:56: warning: cast removes address space '__iomem' of expression
+al_hal_eth_main.c:4645:56: warning: cast removes address space '__iomem' of expression
+al_hal_eth_main.c:4646:57: warning: cast removes address space '__iomem' of expression
+al_hal_eth_main.c:4646:57: warning: too many warnings
+al_hal_serdes_hssp.c:1220:19: warning: incorrect type in assignment (different address spaces)
+al_hal_serdes_hssp.c:1220:19:    expected struct serdes_lane *lane_regs
+al_hal_serdes_hssp.c:1220:19:    got struct serdes_lane [noderef] __iomem *
+al_hal_serdes_hssp.c:1222:9: warning: incorrect type in argument 2 (different address spaces)
+al_hal_serdes_hssp.c:1222:9:    expected void volatile [noderef] __iomem *addr
+al_hal_serdes_hssp.c:1222:9:    got unsigned int *
+al_hal_serdes_hssp.c:1226:23: warning: incorrect type in argument 1 (different address spaces)
+al_hal_serdes_hssp.c:1226:23:    expected void const volatile [noderef] __iomem *addr
+al_hal_serdes_hssp.c:1226:23:    got unsigned int *
+al_hal_serdes_hssp.c:1239:18: warning: incorrect type in argument 1 (different address spaces)
+al_hal_serdes_hssp.c:1239:18:    expected void const volatile [noderef] __iomem *addr
+al_hal_serdes_hssp.c:1239:18:    got unsigned int *
+al_hal_serdes_hssp.c:1241:9: warning: incorrect type in argument 2 (different address spaces)
+al_hal_serdes_hssp.c:1241:9:    expected void volatile [noderef] __iomem *addr
+al_hal_serdes_hssp.c:1241:9:    got unsigned int *
+al_hal_serdes_hssp.c:3390:27: warning: cast removes address space '__iomem' of expression
+al_hal_serdes_hssp.c:3390:24: warning: incorrect type in assignment (different address spaces)
+al_hal_serdes_hssp.c:3390:24:    expected void [noderef] __iomem *regs_base
+al_hal_serdes_hssp.c:3390:24:    got struct al_serdes_regs *
+al_eth_sysfs.c:299:26: warning: symbol 'dev_attr_serdes_params' was not declared. Should it be static?
+al_eth_main.c:100:16: warning: symbol 'alpine_shared_mdio_bus' was not declared. Should it be static?
+al_eth_main.c:590:53: warning: incorrect type in argument 1 (different address spaces)
+al_eth_main.c:590:53:    expected void *[noderef] __iomem mac_base
+al_eth_main.c:590:53:    got void [noderef] __iomem *mac_base
+al_eth_main.c:620:53: warning: incorrect type in argument 1 (different address spaces)
+al_eth_main.c:620:53:    expected void *[noderef] __iomem mac_base
+al_eth_main.c:620:53:    got void [noderef] __iomem *mac_base
+al_eth_main.c:774:37: warning: incorrect type in argument 1 (different address spaces)
+al_eth_main.c:774:37:    expected void *[noderef] __iomem ec_base
+al_eth_main.c:774:37:    got void [noderef] __iomem *ec_base
+al_eth_main.c:1329:40: warning: cast removes address space '__iomem' of expression
+al_eth_main.c:1381:54: warning: incorrect type in argument 1 (different address spaces)
+al_eth_main.c:1381:54:    expected void [noderef] __iomem *regs_base
+al_eth_main.c:1381:54:    got struct al_iofic_regs *
+al_eth_main.c:1385:54: warning: incorrect type in argument 1 (different address spaces)
+al_eth_main.c:1385:54:    expected void [noderef] __iomem *regs_base
+al_eth_main.c:1385:54:    got struct al_iofic_regs *
+al_eth_main.c:1417:22: warning: cast removes address space '__iomem' of expression
+al_eth_main.c:1431:34: warning: incorrect type in argument 1 (different address spaces)
+al_eth_main.c:1431:34:    expected void [noderef] __iomem *regs_base
+al_eth_main.c:1431:34:    got struct al_iofic_regs *
+al_eth_main.c:1446:34: warning: incorrect type in argument 1 (different address spaces)
+al_eth_main.c:1446:34:    expected void [noderef] __iomem *regs_base
+al_eth_main.c:1446:34:    got struct al_iofic_regs *
+al_eth_main.c:1492:20: warning: cast removes address space '__iomem' of expression
+al_eth_main.c:1492:20: warning: incorrect type in argument 1 (different address spaces)
+al_eth_main.c:1492:20:    expected void [noderef] __iomem *regs_base
+al_eth_main.c:1492:20:    got struct al_iofic_regs *
+al_eth_main.c:1495:20: warning: cast removes address space '__iomem' of expression
+al_eth_main.c:1495:20: warning: incorrect type in argument 1 (different address spaces)
+al_eth_main.c:1495:20:    expected void [noderef] __iomem *regs_base
+al_eth_main.c:1495:20:    got struct al_iofic_regs *
+al_eth_main.c:1916:37: warning: incorrect type in argument 3 (different base types)
+al_eth_main.c:1916:37:    expected unsigned int [usertype] val
+al_eth_main.c:1916:37:    got restricted __be32 [usertype]
+al_eth_main.c:2419:40: warning: incorrect type in argument 1 (different address spaces)
+al_eth_main.c:2419:40:    expected void *[noderef] __iomem mac_base
+al_eth_main.c:2419:40:    got void [noderef] __iomem *mac_base
+al_eth_main.c:2420:37: warning: incorrect type in argument 1 (different address spaces)
+al_eth_main.c:2420:37:    expected void *[noderef] __iomem ec_base
+al_eth_main.c:2420:37:    got void [noderef] __iomem *ec_base
+al_eth_main.c:2427:40: warning: incorrect type in argument 1 (different address spaces)
+al_eth_main.c:2427:40:    expected void *[noderef] __iomem mac_base
+al_eth_main.c:2427:40:    got void [noderef] __iomem *mac_base
+al_eth_main.c:2428:38: warning: incorrect type in argument 1 (different address spaces)
+al_eth_main.c:2428:38:    expected void *[noderef] __iomem ec_base
+al_eth_main.c:2428:38:    got void [noderef] __iomem *ec_base
+al_eth_main.c:2516:50: warning: cast removes address space '__iomem' of expression
+al_eth_main.c:2516:50: warning: incorrect type in argument 1 (different address spaces)
+al_eth_main.c:2516:50:    expected struct unit_regs [noderef] __iomem *regs
+al_eth_main.c:2516:50:    got struct unit_regs *
+al_eth_main.c:2539:50: warning: cast removes address space '__iomem' of expression
+al_eth_main.c:2539:50: warning: incorrect type in argument 1 (different address spaces)
+al_eth_main.c:2539:50:    expected struct unit_regs [noderef] __iomem *regs
+al_eth_main.c:2539:50:    got struct unit_regs *
+al_eth_main.c:4210:45: warning: incorrect type in argument 1 (different address spaces)
+al_eth_main.c:4210:45:    expected void *[noderef] __iomem mac_base
+al_eth_main.c:4210:45:    got void [noderef] __iomem *mac_base
+  LD [M]  al_eth.o
+  MODPOST Module.symvers
+  CC [M]  al_eth.mod.o
+  LD [M]  al_eth.ko
+make[1]: Leaving directory '/mnt/2tb/unvr-port-refs/build-out-71-fedora/al_eth'
+make: Leaving directory '/mnt/2tb/unvr-port-refs/linux-v7.1.8'

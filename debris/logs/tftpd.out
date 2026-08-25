@@ -1,0 +1,13 @@
+2026-08-17T00:02:25+10:00  INFO  tftpd on port 69, root images/tftp
+2026-08-17T00:05:10+10:00  INFO  RRQ  'uImage-unvr-ea16-7.1-fedora-gz' from 192.168.25.140 opts={'timeout': '5', 'blksize': '1468'}
+2026-08-17T00:05:17+10:00  INFO    sent 18557997 B from images/tftp/uImage-unvr-ea16-7.1-fedora-gz
+2026-08-17T00:05:23+10:00  INFO  RRQ  'alpine-v2-ubnt-unvr-ea16-7.1-fedora.dtb' from 192.168.25.140 opts={'timeout': '5', 'blksize': '1468'}
+2026-08-17T00:05:23+10:00  INFO    sent 14773 B from images/tftp/alpine-v2-ubnt-unvr-ea16-7.1-fedora.dtb
+2026-08-17T16:52:23+10:00  INFO  RRQ  'uImage-unvr-ea16-7.1-fedora-gz' from 192.168.25.140 opts={'timeout': '5', 'blksize': '1468'}
+2026-08-17T16:52:30+10:00  INFO    sent 18557997 B from images/tftp/uImage-unvr-ea16-7.1-fedora-gz
+2026-08-17T16:52:30+10:00  INFO  RRQ  'alpine-v2-ubnt-unvr-ea16-7.1.dtb' from 192.168.25.140 opts={'timeout': '5', 'blksize': '1468'}
+2026-08-17T16:52:30+10:00  INFO    sent 14773 B from images/tftp/alpine-v2-ubnt-unvr-ea16-7.1.dtb
+2026-08-17T16:52:31+10:00  INFO  RRQ  'initramfs-dracut.img' from 192.168.25.140 opts={'timeout': '5', 'blksize': '1468'}
+2026-08-17T16:52:45+10:00  INFO    sent 36406448 B from images/tftp/initramfs-dracut.img
+2026-08-17T16:58:28+10:00  INFO  RRQ  'initramfs-dracut.uimg' from 192.168.25.140 opts={'timeout': '5', 'blksize': '1468'}
+2026-08-17T16:58:42+10:00  INFO    sent 36406512 B from images/tftp/initramfs-dracut.uimg

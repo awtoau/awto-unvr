@@ -1,0 +1,190 @@
+2026-08-15T18:10:26+10:00  INFO  device currently reports 1.3.35
+2026-08-15T18:10:26+10:00  INFO  PLAN:
+2026-08-15T18:10:26+10:00  INFO    1.4.9     357780304 B  UNVR4.al324.v1.4.9.dd2faf3.210504.1714
+2026-08-15T18:10:26+10:00  INFO    2.3.14    407350642 B  UNVR4.al324.v2.3.14.a388101.220128.2051
+2026-08-15T18:10:26+10:00  INFO    3.1.16    425082351 B  UNVR4.al324.v3.1.16.456179c.230823.1836
+2026-08-15T18:10:26+10:00  INFO    4.1.22    613761358 B  UNVR4.al324.v4.1.22.47ca036.250414.1648
+2026-08-15T18:10:26+10:00  INFO    5.1.25    786253430 B  UNVR4.al324.v5.1.25.84c48e7.260710.1602
+2026-08-15T18:10:26+10:00  INFO  re-run with --go
+2026-08-15T18:11:04+10:00  INFO  device currently reports 1.3.35
+2026-08-15T18:11:04+10:00  INFO  === hop -> 1.4.9 ===
+2026-08-15T18:11:04+10:00  INFO    backup: --preset state --tag pre-1.4.9
+2026-08-15T18:12:59+10:00  INFO    GET https://fw-download.ubnt.com/data/unifi-nvr/b88d-UNVR-1.4.9-e9232e2867ed4e45bce01b1be6e863ca.bin
+2026-08-15T18:13:33+10:00  INFO    357780304 B, sha256 verified
+2026-08-15T18:13:36+10:00  INFO    device 192.168.25.140, host 192.168.25.145
+2026-08-15T18:13:39+10:00  INFO    pushing UNVR-1.4.9.bin (357780304 B) - limit 900s
+2026-08-15T18:15:16+10:00  INFO    pushed 357780304 B
+2026-08-15T18:23:49+10:00  INFO  device currently reports 1.3.35
+2026-08-15T18:23:49+10:00  INFO  === hop -> 1.4.9 ===
+2026-08-15T18:23:49+10:00  INFO    backup: --preset state --tag pre-1.4.9
+2026-08-15T18:25:44+10:00  INFO    already have sources/UNVR-1.4.9.bin, sha256 OK
+2026-08-15T18:25:44+10:00  INFO    device 192.168.25.140, host 192.168.25.145
+2026-08-15T18:25:44+10:00  INFO    pushing UNVR-1.4.9.bin (357780304 B) - limit 900s
+2026-08-15T18:27:19+10:00  INFO    pushed 357780304 B
+2026-08-15T18:27:19+10:00  INFO    console kernel logging set to emergency-only for the flash
+2026-08-15T18:27:20+10:00  INFO    md5 b5bbf0343e7144d296ce24c0d923aaed matches on device
+2026-08-15T18:27:21+10:00  INFO      | ubnt-tools fwupdate -dcroot@UniFi-NVR:/mnt/.rwfs/upgrade# ubnt-tools fwupdate -dc /mnt/.rwfs/upgrade/fw-
+2026-08-15T18:27:21+10:00  INFO      | -image.bin; echo CHK=$?; echo __UL19__$?
+2026-08-15T18:27:21+10:00  INFO      | CHK=254
+2026-08-15T18:27:21+10:00  INFO      | __UL19__0
+2026-08-15T18:27:21+10:00  ERROR   SIGNATURE CHECK FAILED - not flashing
+2026-08-15T18:27:21+10:00  FATAL LADDER STOPPED at 1.4.9
+2026-08-15T18:31:00+10:00  INFO  device currently reports 1.3.35
+2026-08-15T18:31:00+10:00  INFO  === hop -> 1.4.9 ===
+2026-08-15T18:31:00+10:00  INFO    backup: --preset state --tag pre-1.4.9
+2026-08-15T18:32:55+10:00  INFO    already have sources/UNVR-1.4.9.bin, sha256 OK
+2026-08-15T18:32:55+10:00  INFO    device 192.168.25.140, host 192.168.25.145
+2026-08-15T18:32:55+10:00  INFO    pushing UNVR-1.4.9.bin (357780304 B) - limit 900s
+2026-08-15T18:34:25+10:00  INFO    pushed 357780304 B
+2026-08-15T18:34:25+10:00  INFO    console kernel logging set to emergency-only for the flash
+2026-08-15T18:34:27+10:00  INFO    md5 b5bbf0343e7144d296ce24c0d923aaed matches on device
+2026-08-15T18:34:27+10:00  INFO    verifying with fwsplit (this firmware's own tool)
+2026-08-15T18:34:28+10:00  INFO      | rm -f /tmp/.fwchk.*; fwsplit -s /etc/ssl/unas.pub -o /tmp/.fwchk /mnt/.rwfs/upgrade/fw-image.bin 2>&1; echo CHKroot@UniFi-NVR:/mnt/.rwfs/upgrade# rm -f /tmp/.fwchk.*; fwsplit -s /etc/ssl/unas.
+2026-08-15T18:34:28+10:00  INFO      | .pub -o /tmp/.fwchk /mnt/.rwfs/upgrade/fw-image.bin 2>&1; echo CHK=$?; echo __UL1
+2026-08-15T18:34:28+10:00  INFO      | 18__$?
+2026-08-15T18:34:28+10:00  INFO      | Firmware file: '/mnt/.rwfs/upgrade/fw-image.bin'
+2026-08-15T18:34:28+10:00  INFO      | Creating descriptor file:
+2026-08-15T18:34:28+10:00  INFO      | 	/tmp/.fwchk.txt
+2026-08-15T18:34:28+10:00  INFO      | Creating partition data files:
+2026-08-15T18:34:28+10:00  INFO      | 	/tmp/.fwchk.kernel
+2026-08-15T18:34:28+10:00  INFO      | 	/tmp/.fwchk.rootfs
+2026-08-15T18:34:28+10:00  INFO      | CHK=0
+2026-08-15T18:34:28+10:00  INFO    signature verified against /etc/ssl/unas.pub
+2026-08-15T18:34:28+10:00  INFO    handing off to the device's own upgrade path; rebooting
+2026-08-15T18:34:38+10:00  INFO    waiting for reboot into 1.4.9 (limit 600s)
+2026-08-15T18:37:12+10:00  INFO    login prompt is back
+2026-08-15T18:44:42+10:00  ERROR   did not come back as 1.4.9 within 600s
+2026-08-15T18:44:42+10:00  FATAL LADDER STOPPED at 1.4.9
+2026-08-15T18:52:51+10:00  INFO    shell available
+2026-08-15T18:52:51+10:00  INFO  device currently reports 1.4.9
+2026-08-15T18:52:51+10:00  INFO  PLAN:
+2026-08-15T18:52:51+10:00  INFO    2.3.14    407350642 B  UNVR4.al324.v2.3.14.a388101.220128.2051
+2026-08-15T18:52:51+10:00  INFO  re-run with --go
+2026-08-15T18:53:19+10:00  INFO    shell available
+2026-08-15T18:53:19+10:00  INFO  device currently reports 1.4.9
+2026-08-15T18:53:19+10:00  INFO  already on 1.4.9, skipping
+2026-08-15T18:53:19+10:00  INFO  === hop -> 2.3.14 ===
+2026-08-15T18:53:19+10:00  INFO    backup: --preset state --tag pre-2.3.14
+2026-08-15T18:55:15+10:00  INFO    GET https://fw-download.ubnt.com/data/unifi-nvr/38a8-UNVR-2.3.14-bc0a8f8c5d9144c1955661cce30290e2.bin
+2026-08-15T18:55:53+10:00  INFO    407350642 B, sha256 verified
+2026-08-15T18:55:53+10:00  INFO    device 192.168.25.140, host 192.168.25.145
+2026-08-15T18:55:53+10:00  INFO    pushing UNVR-2.3.14.bin (407350642 B) - limit 900s
+2026-08-15T18:57:38+10:00  INFO    pushed 407350642 B
+2026-08-15T18:57:38+10:00  INFO    console kernel logging set to emergency-only for the flash
+2026-08-15T18:57:40+10:00  INFO    md5 20ce29414898bd7338a4864cf1fd1267 matches on device
+2026-08-15T18:57:40+10:00  INFO    verifying with fwsplit (this firmware's own tool)
+2026-08-15T18:57:40+10:00  INFO      | rm -f /tmp/.fwchk.*; fwsplit -s /etc/ssl/unas.pub -o /tmp/.fwchk /mnt/.rwfs/upgrade/fw-image.bin 2>&1; echo CHK=$?; echo __UL21__$?
+2026-08-15T18:57:40+10:00  INFO      | root@UniFi-NVR:/mnt/.rwfs/upgrade# rm -f /tmp/.fwchk.*; fwsplit -s /etc/ssl/unas.pub -o /tmp/.fwchk /mnt/.rwfs/upgrade/fw-image.bin 2>&1; echo CHK=$?; echo __UL21__$?
+2026-08-15T18:57:40+10:00  INFO      | Ubiquiti firmware splitting utility v1.1
+2026-08-15T18:57:40+10:00  INFO      | Copyright 2006-2019, Ubiquiti Networks, Inc. <support@ubnt.com>
+2026-08-15T18:57:40+10:00  INFO      | This program is proprietary software; you can not redistribute it and/or modify
+2026-08-15T18:57:40+10:00  INFO      | it without signed agreement with Ubiquiti Networks, Inc.
+2026-08-15T18:57:40+10:00  INFO      | Usage: fwsplit [options] <firmware file> [<fw file2> ... <fw fileN>]
+2026-08-15T18:57:40+10:00  INFO      | 	-o <output file prefix>	 - output file prefix, default: firmware version
+2026-08-15T18:57:40+10:00  INFO      | 	-d			 - turn debug output on
+2026-08-15T18:57:40+10:00  INFO      | 	-s			 - RSA public Key file
+2026-08-15T18:57:40+10:00  INFO      | 	-h			 - this help
+2026-08-15T18:57:40+10:00  INFO      | CHK=255
+2026-08-15T18:57:40+10:00  ERROR   SIGNATURE CHECK FAILED - not flashing
+2026-08-15T18:57:40+10:00  FATAL LADDER STOPPED at 2.3.14
+2026-08-15T19:00:09+10:00  INFO    shell available
+2026-08-15T19:00:09+10:00  INFO  device currently reports 1.4.9
+2026-08-15T19:00:09+10:00  INFO  already on 1.4.9, skipping
+2026-08-15T19:00:09+10:00  INFO  === hop -> 2.3.14 ===
+2026-08-15T19:00:09+10:00  INFO    backup: --preset state --tag pre-2.3.14
+2026-08-15T19:02:05+10:00  INFO    already have sources/UNVR-2.3.14.bin, sha256 OK
+2026-08-15T19:02:05+10:00  INFO    device 192.168.25.140, host 192.168.25.145
+2026-08-15T19:02:06+10:00  INFO    pushing UNVR-2.3.14.bin (407350642 B) - limit 900s
+2026-08-15T19:03:51+10:00  INFO    pushed 407350642 B
+2026-08-15T19:03:51+10:00  INFO    console kernel logging set to emergency-only for the flash
+2026-08-15T19:03:53+10:00  INFO    md5 20ce29414898bd7338a4864cf1fd1267 matches on device
+2026-08-15T19:03:53+10:00  INFO    no /etc/ssl/unas.pub in rootfs - al324 keeps it in the initramfs, which verifies before writing
+2026-08-15T19:03:53+10:00  INFO    handing off to the device's own upgrade path; rebooting
+2026-08-15T19:03:59+10:00  INFO    waiting for reboot into 2.3.14 (limit 600s)
+2026-08-15T19:14:10+10:00  ERROR   did not come back as 2.3.14 within 600s
+2026-08-15T19:14:10+10:00  FATAL LADDER STOPPED at 2.3.14
+2026-08-15T19:34:58+10:00  INFO    shell available
+2026-08-15T19:34:59+10:00  INFO  device currently reports 2.3.14
+2026-08-15T19:34:59+10:00  INFO  PLAN:
+2026-08-15T19:34:59+10:00  INFO    3.1.16    425082351 B  UNVR4.al324.v3.1.16.456179c.230823.1836
+2026-08-15T19:34:59+10:00  INFO  re-run with --go
+2026-08-15T19:46:10+10:00  INFO    shell available
+2026-08-15T19:46:10+10:00  INFO  device currently reports 2.3.14
+2026-08-15T19:46:10+10:00  INFO  PLAN:
+2026-08-15T19:46:10+10:00  INFO    3.1.16    425082351 B  UNVR4.al324.v3.1.16.456179c.230823.1836
+2026-08-15T20:38:22+10:00  INFO    shell available
+2026-08-15T20:38:22+10:00  INFO  device currently reports 2.3.14
+2026-08-15T20:38:22+10:00  INFO  PLAN:
+2026-08-15T20:40:05+10:00  INFO    shell available
+2026-08-15T20:40:05+10:00  INFO  device currently reports 2.3.14
+2026-08-15T20:40:05+10:00  INFO  === hop -> 3.1.16 ===
+2026-08-15T20:40:05+10:00  INFO    backup: --preset state --tag pre-3.1.16
+2026-08-15T20:42:00+10:00  INFO    GET https://fw-download.ubnt.com/data/unifi-nvr/5146-UNVR-3.1.16-923e980d-ab69-4884-b152-e68329b6a80a.bin
+2026-08-15T20:42:40+10:00  INFO    425082351 B, sha256 verified
+2026-08-15T20:42:40+10:00  INFO    device 192.168.25.140, host 192.168.25.145
+2026-08-15T20:42:40+10:00  INFO    pushing UNVR-3.1.16.bin (425082351 B) - limit 900s
+2026-08-15T20:44:30+10:00  INFO    pushed 425082351 B
+2026-08-15T20:44:31+10:00  INFO    console kernel logging set to emergency-only for the flash
+2026-08-15T20:44:33+10:00  INFO    md5 268babbbe2b143f9dd7e23d97b955638 matches on device
+2026-08-15T20:44:33+10:00  INFO    no /etc/ssl/unas.pub in rootfs - al324 keeps it in the initramfs, which verifies before writing
+2026-08-15T20:44:33+10:00  INFO    handing off to the device's own upgrade path; rebooting
+2026-08-15T20:44:39+10:00  INFO    waiting for reboot into 3.1.16 (limit 600s)
+2026-08-15T20:47:15+10:00  INFO    login prompt is back
+2026-08-15T20:54:48+10:00  ERROR   did not come back as 3.1.16 within 600s
+2026-08-15T20:54:48+10:00  FATAL LADDER STOPPED at 3.1.16
+2026-08-15T20:59:46+10:00  INFO    shell available (root:ui)
+2026-08-15T20:59:46+10:00  INFO  device currently reports 3.1.16
+2026-08-15T20:59:46+10:00  INFO  PLAN:
+2026-08-15T20:59:46+10:00  INFO    4.1.22    613761358 B  UNVR4.al324.v4.1.22.47ca036.250414.1648
+2026-08-15T21:00:07+10:00  INFO  device currently reports 3.1.16
+2026-08-15T21:00:07+10:00  INFO  === hop -> 1.4.9 ===
+2026-08-15T21:00:07+10:00  INFO    backup: --preset state --tag pre-1.4.9
+2026-08-15T21:01:01+10:00  INFO  device currently reports 3.1.16
+2026-08-15T21:01:01+10:00  INFO  PLAN:
+2026-08-15T21:01:01+10:00  INFO    4.1.22    613761358 B  UNVR4.al324.v4.1.22.47ca036.250414.1648
+2026-08-15T21:01:01+10:00  INFO    5.1.25    786253430 B  UNVR4.al324.v5.1.25.84c48e7.260710.1602
+2026-08-15T21:01:01+10:00  INFO  re-run with --go
+2026-08-15T21:01:07+10:00  INFO  device currently reports 3.1.16
+2026-08-15T21:01:07+10:00  INFO  === hop -> 4.1.22 ===
+2026-08-15T21:01:07+10:00  INFO    backup: --preset state --tag pre-4.1.22
+2026-08-15T21:03:21+10:00  ERROR   pre-hop backup FAILED - stopping
+2026-08-15T21:03:21+10:00  FATAL LADDER STOPPED at 4.1.22
+2026-08-15T21:05:05+10:00  INFO  device currently reports 3.1.16
+2026-08-15T21:05:05+10:00  INFO  PLAN:
+2026-08-15T21:05:05+10:00  INFO    4.1.22    613761358 B  UNVR4.al324.v4.1.22.47ca036.250414.1648
+2026-08-15T21:05:05+10:00  INFO    5.1.25    786253430 B  UNVR4.al324.v5.1.25.84c48e7.260710.1602
+2026-08-15T21:05:05+10:00  INFO  re-run with --go
+2026-08-15T21:05:11+10:00  INFO  device currently reports 3.1.16
+2026-08-15T21:05:11+10:00  INFO  === hop -> 4.1.22 ===
+2026-08-15T21:05:11+10:00  INFO    backup: --preset state --tag pre-4.1.22
+2026-08-15T21:07:07+10:00  INFO    already have sources/UNVR-4.1.22.bin, sha256 OK
+2026-08-15T21:07:07+10:00  INFO    device 192.168.25.140, host 192.168.25.145
+2026-08-15T21:07:07+10:00  INFO    pushing UNVR-4.1.22.bin (613761358 B) - limit 900s
+2026-08-15T21:09:49+10:00  INFO    pushed 613761358 B
+2026-08-15T21:09:49+10:00  INFO    console kernel logging set to emergency-only for the flash
+2026-08-15T21:09:52+10:00  INFO    md5 e43ec6bdadd9ff93627123448a0e45e4 matches on device
+2026-08-15T21:09:52+10:00  INFO    no /etc/ssl/unas.pub in rootfs - al324 keeps it in the initramfs, which verifies before writing
+2026-08-15T21:09:52+10:00  INFO    handing off to the device's own upgrade path; rebooting
+2026-08-15T21:09:58+10:00  INFO    waiting for reboot into 4.1.22 (limit 600s)
+2026-08-15T21:15:24+10:00  INFO    login prompt is back
+2026-08-15T21:15:52+10:00  INFO    shell available (root:ui)
+2026-08-15T21:15:52+10:00  INFO    device reports 4.1.22
+2026-08-15T21:15:52+10:00  INFO    /volume1: [?2004l
+2026-08-15T21:15:52+10:00  INFO    backup: --preset state --tag post-4.1.22
+2026-08-15T21:17:42+10:00  INFO  === 4.1.22 OK ===
+2026-08-15T21:17:42+10:00  INFO  === hop -> 5.1.25 ===
+2026-08-15T21:17:42+10:00  INFO    backup: --preset state --tag pre-5.1.25
+2026-08-15T21:19:34+10:00  INFO    already have sources/UNVR-5.1.25.bin, sha256 OK
+2026-08-15T21:19:34+10:00  INFO    device 192.168.25.140, host 192.168.25.145
+2026-08-15T21:19:34+10:00  INFO    pushing UNVR-5.1.25.bin (786253430 B) - limit 900s
+2026-08-15T21:20:52+10:00  INFO    pushed 786253430 B
+2026-08-15T21:20:53+10:00  INFO    console kernel logging set to emergency-only for the flash
+2026-08-15T21:20:58+10:00  INFO    md5 3f661a852b6fb70946e2a94712df6923 matches on device
+2026-08-15T21:20:58+10:00  INFO    no /etc/ssl/unas.pub in rootfs - al324 keeps it in the initramfs, which verifies before writing
+2026-08-15T21:20:58+10:00  INFO    handing off to the device's own upgrade path; rebooting
+2026-08-15T21:21:09+10:00  INFO    waiting for reboot into 5.1.25 (limit 600s)
+2026-08-15T21:26:13+10:00  INFO    device reports 5.1.25
+2026-08-15T21:26:16+10:00  INFO    /volume1: + '[' 37 -ne 0 ]
+2026-08-15T21:26:16+10:00  INFO    backup: --preset state --tag post-5.1.25
+2026-08-15T21:28:11+10:00  ERROR   post-hop backup FAILED
+2026-08-15T21:28:11+10:00  FATAL LADDER STOPPED at 5.1.25

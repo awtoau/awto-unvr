@@ -1,0 +1,28 @@
+>> i2c dev 0
+ i2c dev 0
+Setting bus to 0
+ALPINE_UBNT_NAS_ALL>
+>> i2c probe
+ i2c probe
+Valid chip addresses: 20 21 57 71
+ALPINE_UBNT_NAS_ALL>
+>> i2c mw 0x71 0 1 1
+ i2c mw 0x71 0 1 1
+ALPINE_UBNT_NAS_ALL>
+>> i2c md 0x30 0 8
+ i2c md 0x30 0 8
+Error reading the chip: 1
+ALPINE_UBNT_NAS_ALL>
+>> i2c mw 0x71 0 8 1
+ i2c mw 0x71 0 8 1
+Error writing the chip: 1
+ALPINE_UBNT_NAS_ALL>
+>> i2c md 0x2e 3d 4
+ i2c md 0x2e 3d 4
+Error reading the chip: 1
+ALPINE_UBNT_NAS_ALL>
+>> i2c mw 0x71 0 0 1
+ i2c mw 0x71 0 0 1
+Error writing the chip: 1
+ALPINE_UBNT_NAS_ALL>
+=== STOCK-I2C-DONE ===

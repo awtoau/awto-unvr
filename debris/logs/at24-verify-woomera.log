@@ -1,0 +1,19 @@
+2026-08-17T23:30:59+10:00  new_device rc=0: ]3008;start=26e[23516.899717] at24 0-0057: supply vcc not found, using dummy regulator
+cdff1-3416-40a5-[23516.907920] at24 0-0057: 8192 byte 24c64 EEPROM, writable, 1 bytes/write
+a917-85326d081a9[23516.915306] i2c i2c-0: new_device: Instantiated device 24c64 at 0x57
+4;machineid=f17fe72bf4de4483a0dd32963f8c0f4c;user=root;hostname=woomera;bootid=126846e9-a8c8-4037-a2b1-6f28471f26ce;pid=00000000000000000734;type=command;cwd=/root\done
+2026-08-17T23:31:00+10:00  eeprom sysfs: /sys/bus/i2c/devices/0-0057/eeprom
+2026-08-17T23:31:01+10:00  read 0 bytes via nvmem sysfs
+2026-08-17T23:31:01+10:00  delete_device done (box restored)
+2026-08-17T23:31:01+10:00  no reference or no data to compare
+2026-08-17T23:31:53+10:00  new_device rc=0: ]3008;start=1a9[23570.640518] at24 0-0057: supply vcc not found, using dummy regulator
+a5dbd-486f-4a54-[23570.648628] at24 0-0057: 8192 byte 24c64 EEPROM, writable, 1 bytes/write
+a3c3-15189314802[23570.656146] i2c i2c-0: new_device: Instantiated device 24c64 at 0x57
+0;machineid=f17fe72bf4de4483a0dd32963f8c0f4c;user=root;hostname=woomera;bootid=126846e9-a8c8-4037-a2b1-6f28471f26ce;pid=00000000000000000734;type=command;cwd=/root\done
+2026-08-17T23:31:53+10:00  eeprom sysfs: /sys/bus/i2c/devices/0-0057/eeprom
+2026-08-17T23:31:54+10:00  at24 nvmem sha256: 743408d21116ebc24f236a9593d27dbe95cfbfff14eca94bef07839d966772fe
+2026-08-17T23:31:54+10:00  at24 nvmem 0x400 sample: aa ff 40 04 00 00 00 00 00 08 00 bb ff 00 cc 01
+]3008;end=2f4be9bf-a48b-4972-a5bb-9feceb0d4361;e
+2026-08-17T23:31:54+10:00  delete_device done (box restored)
+2026-08-17T23:31:54+10:00  COMPARE sha256 (at24 nvmem vs raw i2ctransfer dump): MATCH — proper-driver read is byte-identical
+2026-08-17T23:31:54+10:00    ref  743408d21116ebc24f236a9593d27dbe95cfbfff14eca94bef07839d966772fe

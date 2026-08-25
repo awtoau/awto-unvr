@@ -1,0 +1,274 @@
+   1  docs/boot-flow.md
+   1  docs/chips/al-324.md
+   1  docs/chips/ar8033.md
+   3  docs/chips/sfp-optic.md
+   7  docs/ddr-config-reverse.md
+   1  docs/ddr-s2-parser-analysis.md
+   2  docs/dt-gaps-hardware-of-record.md
+   2  docs/fedora-on-ssd.md
+   1  docs/gpio-switches-leds.md
+   5  docs/hardware.md
+   1  docs/improvements-audit.md
+   7  docs/kernel-boot-fixes.md
+   8  docs/linux-6.12-build.md
+   2  docs/linux-6.18-build.md
+   3  docs/linux-71-build.md
+   1  docs/nor-boot-chain.md
+   1  docs/overclock-and-caps.md
+   1  docs/porting-reference.md
+   7  docs/porting-roadmap.md
+   3  docs/project-status.md
+   2  docs/reboot-driver-handover.md
+   2  docs/rps-subsystem.md
+   1  docs/uboot-2015.07-hal-capture.md
+   9  docs/uboot-ddr-port.md
+   2  docs/uboot-hw-test-suite.md
+   9  docs/uboot-port-plan.md
+   1  docs/uefi.md
+   1  docs/upgrade-process.md
+   2  docs/workflow.md
+   5  dts/alpine-v2-ubnt-unvr-ea16.dts
+   5  kernel-patches/0003-arm64-dts-amazon-add-Ubiquiti-UNVR-ea16-NAND-boot-bo.patch
+   1  kernel-patches/README.md
+   1  modules/.gitignore
+   1  modules/al_reboot/al_reboot.c
+   1  scripts/build-fedora-rootfs.py
+   1  scripts/build-linux-618-ea16.py
+   1  scripts/build-linux-71-ea16.py
+   3  scripts/build-linux-71-fedora.py
+   1  scripts/capture-hw.py
+   1  scripts/deploy-fedora-boot.py
+   1  scripts/fetch-gpl-sources.py
+   1  scripts/fetch-unvr-firmware.py
+   2  scripts/flash-nand.py
+   1  scripts/mmio-dump/README.md
+   2  scripts/netboot.py
+   1  scripts/persist-boot.py
+   2  scripts/probe-mmc-uboot.tcl
+   1  scripts/reboot-verify-woomera.py
+   1  scripts/reflash.tcl
+   1  scripts/upgrade-ladder.py
+   8  scripts/vendor-modules.py
+   1  sources/README.md
+   1  sources/chips/README.md
+
+131 replacements across 53 files
+
+--- 217 residual 'vendor' lines for manual review ---
+docs/boot-flow.md:9:The bootloader contains the **Annapurna `al_eth` driver**, the `Annapurna` vendor
+docs/bootloader.md:182:Second independent vendor snapshot: `SVoxel/R9000` (Netgear, AL-514) carries the
+docs/bootloader.md:187:## `al_boot` is two vendors' code, neither published ✅
+docs/chips/asm1042a.md:11:- **PCI ID:** `1b21:1142` (vendor ASMedia `1b21`).
+docs/chips/asm1042a.md:18:- **Driver:** `xhci_hcd` (mainline) — stock, no vendor glue needed.
+docs/chips/dram-ddr4.md:35:- Nothing to reprogram (RAM). The actionable item is **reading the SPD at 0x57** to close [hardware.md](../hardware.md) open questions and to know the exact timings if ever re-initialising DRAM outside the vendor preboot.
+docs/chips/sfp-optic.md:14:- **Known:** a **third-party Intel** SFP+ module is fitted (per project notes). Exact model/vendor **not captured** — `ethtool -m` returned "No data available" on the stock 4.19.152 kernel (no SFF-8472 diagnostics path).
+docs/chips/sfp-optic.md:19:1. **`ethtool -m enp0s2`** on a kernel with SFP/SFF-8472 support (mainline sfp phylink, or a build with the diagnostic read) — dumps vendor, part, serial, wavelength, DOM.
+docs/chips/sfp-optic.md:21:3. **Physical label** on the module body (vendor + P/N).
+docs/chips/sfp-optic.md:30:- Third-party optic already works in the cage → the port does not enforce a vendor lock at the optic level.
+docs/credentials.md:3:Vendor factory defaults — publicly documented, **not** device secrets. Same for
+docs/ddr-config-reverse.md:67:| +0x04 | `al_ddr_init` retry count (u8) — vendor extension over the GPL struct ✅ | S2 `FUN_f22003d8` | — |
+docs/ddr-config-reverse.md:382:All EEPROM-sourced fields now **RESOLVED** from the live 0x57 dump (decoded through the vendor
+docs/dt-gaps-hardware-of-record.md:24:  "Bluetooth CSR" — wrong UART** (vendor never uses ttyS2). Either BT sits on ttyS1/S3,
+docs/dt-gaps-hardware-of-record.md:39:| # | Gap | What the vendor sets | DT to add |
+docs/dt-gaps-hardware-of-record.md:46:| **C6** | `al-sata-sw-leds` incomplete | vendor `led@0..7` (both AHCI ctrls, 8 ports) each with `fault-led=<0x1ec..0x1ef>` (`live.dts:1666`); ours has `led@0..3`, no fault-led | add `led@4..7` + `fault-led` phandle (or document 4-bay subset) |
+docs/dt-gaps-hardware-of-record.md:55:  eth%d.macaddr, vendorid, manufid, mfgweek, qrid, regdmn, lcm_count`. Optional DT hook:
+docs/fedora-on-ssd.md:126:  `linux_kernel` slot (mtd2 @0x300000), so it's written into the **dead vendor
+docs/firmware-5.1.25.md:114:- **No third-party SFP vendor lock found.** No whitelist/deny strings; SFP i2c A0h EEPROM is read only to *pick a MAC mode*, not to gate vendor. An Intel optic is not blocked by identity.
+docs/gpio-switches-leds.md:3:Reverse-engineered from the Ubiquiti GPL U-Boot + kernel (4.1.37), the live vendor
+docs/hardware.md:36:| BDF | Vendor:Device | Class | What it is | Evidence |
+docs/hardware.md:46:`1c36` is Annapurna Labs' PCI vendor ID. **Two SATA controllers** (`00:08.0`,
+docs/hardware.md:62:| SFP module | **NOT captured** — `ethtool` returned "No data available"; module EEPROM/vendor unconfirmed | ❓ read on hardware |
+docs/hardware.md:199:- SFP+ module type/vendor — `ethtool` gave no module data on the stock kernel.
+docs/identity-partitions.md:25:| vendorid | `0777` | Ubiquiti |
+docs/improvements-audit.md:156:- Cores are at 1.7 GHz; vendor strap table goes to 2.7 GHz. With **no cpufreq**, this is the only compute lever — a flat ~18% uplift at 2.0 GHz for md parity, al_ssm-independent crypto, Samba, dnf, builds.
+docs/linux-6.12-build.md:56:   a `BUS_NOTIFY_BIND_DRIVER` notifier that, for each Annapurna device (vendor
+docs/linux-6.12-build.md:169:This U-Boot (vendor 2015.07 fork) boots a **legacy uImage via `bootm`, unsigned**
+docs/linux-6.12-build.md:179:| DTB | `0x04078000` | TFTP target for the ea16 DTB (vendor `loadaddr_dt`) |
+docs/linux-6.12-build.md:206:- To leave: `reboot -f` (or power-cycle). Vendor firmware is untouched; a normal
+docs/linux-71-build.md:129:the vendor OS. tftp keeps U-Boot busy so the watchdog stays fed.
+docs/linux-71-build.md:131:- Order matters: send `reboot` from the vendor shell FIRST, wait for shutdown to
+docs/linux-71-build.md:132:  start, THEN launch netboot.py — streaming ESC at the vendor bash prompt
+docs/nand-1.3.35.md:54:> **Our current use (Fedora) — the table above is the vendor 1.3.35 baseline.**
+docs/nand-1.3.35.md:56:> **Fedora kernel @`0x1300000` + DTB @`0x2800000`** into it. The vendor `linux_kernel`
+docs/overclock-and-caps.md:84:Note: 2.7 GHz is the vendor bin table max; A57 r1p3 on 28 nm typically rates ~2.0–2.5 GHz.
+docs/porting-roadmap.md:84:- `reference/vendor-4.1` — Ubiquiti 4.19.152 GPL, untouched.
+docs/porting-roadmap.md:111:  - U-Boot is writeable (mtd0 flags 0xc00) but **frozen** — vendor never rewrites
+docs/porting-roadmap.md:261:- Most likely place vendor reuse helps — but only **after** matching PCS/SerDes
+docs/preboot-decompile.md:205:Vendor names recovered from `__func__` strings the AL HAL / contractor stage3 leave
+docs/project-status.md:19:- **Firmware ladder** to 5.1.25 (vendor). [firmware-5.1.25.md](firmware-5.1.25.md).
+docs/project-status.md:39:    (vendor "bus 11") is **disabled** in the ea16 DTS; unidentified 0x57 device (#62).
+docs/project-status.md:63:Vendor USERDEV USB fully backed up (`images/unvr-usb-*.img`), then unplugged — that
+docs/project-status.md:86:- Console creds (vendor): root:ui (al324 gen). Fedora root pw `unvr` (CHANGE).
+docs/reboot-driver-handover.md:21:Ported from the vendor GPL `linux-arm64-unvr-4.1.37-ubnt/drivers/power/reset/alpine-reboot.c`.
+docs/reboot-driver-handover.md:22:**Only port change:** the vendor set `arm_pm_restart = ...` (that hook was removed after
+docs/reboot-driver-handover.md:73:  (the manual SP805 reset we validated), the vendor `alpine-reboot.c` source cited above.
+docs/rps-subsystem.md:82:  claimed by rpsd under the vendor OS (free for us on Fedora).
+docs/uboot-2015.07-hal-capture.md:3:Live runtime dump of the running vendor bootloader
+docs/uboot-2015.07-hal-capture.md:17:- **`dram_margins` crashed U-Boot with a Synchronous Abort** — the vendor SRAM agent blob
+docs/uboot-2015.07-hal-capture.txt:106:vendor=annapurna-labs
+docs/uboot-2015.07-hal-capture.txt:343:BusDevFun  VendorId   DeviceId   Device Class       Sub-Class
+docs/uboot-ddr-port.md:13:  **vendor GPL kernel**).
+docs/uboot-ddr-port.md:15:  copy is the same source the vendor already publishes under GPLv2. Use the **kernel-tree
+docs/uboot-ddr-port.md:128:   live — vendor `stage2_loader` reads it (`dram-ddr4.md:6`). DDR4 SPD (SPD5, JEDEC 4.1.2.12)
+docs/uboot-ddr-port.md:134:   ODT/DIC/VREF/ROUT the vendor preboot programmed — the numbers SPD can't give. Do this from a
+docs/uboot-ddr-port.md:136:3. **Vendor preboot al_boot** — DEAD END for a param table ✅: `preboot-decompile.md` confirms
+docs/uboot-ddr-port.md:169:  delay while running BIST = the shmoo the vendor `dram_margins` produces.
+docs/uboot-ddr-port.md:170:  - NOTE ✅: vendor `dram_margins` runs a **prebuilt SRAM agent blob** (`cmd_dram_margins.c`
+docs/uboot-ddr-port.md:173:  - ⚠ RUNTIME: vendor `dram_margins` **crashed the live U-Boot with a Synchronous Abort**
+docs/uboot-ddr-port.md:183:  (vendor `cmd_ddr.c:175`).
+docs/uboot-ddr-port.md:202:  base 0xf2200000). SPL does: minimal clock/PLL (vendor `pll_init.c` + `al_pll_init`), then
+docs/uboot-ddr-port.md:229:   vendor chain (reboot → stock U-Boot → load SPL to SRAM → jump). NOR's S2 blob is
+docs/uboot-ddr-port.md:234:   deadlock at an unstable freq → watchdog reset → BootROM → vendor chain.
+docs/uboot-ddr-port.md:246:- **PLL/clock** before DDR: vendor `board/annapurna-labs/common/pll_init.c` + `al_pll_init`
+docs/uboot-hw-test-suite.md:9:Feature-parity target = vendor 2015.07 commands **plus** everything we RE'd this
+docs/uboot-hw-test-suite.md:10:session that the vendor never exposed.
+docs/uboot-hw-test-suite.md:22:| **Bay power on/off** | PCA9575 **@0x21** pins 0-3 = bay1-4 **pwren** (gpio 480-483) | i2c + pca953x GPIO; a `bay` command (on/off/status per bay) | vendor has none — **new** |
+docs/uboot-hw-test-suite.md:25:| **Bay activity LEDs** | SGPO (74VHC595 `UB20`), sgpo lines 16-23 | vendor `sgpo` cmd equivalent | port from vendor |
+docs/uboot-hw-test-suite.md:28:| **Reset switch** | gpio4.6 (gpio 38), active-low, PL061 | GPIO read + a `button`/test cmd | **new** (vendor reads it only in Linux) |
+docs/uboot-hw-test-suite.md:32:| **Fan + board temps** | ADT7475 @ i2c-4 0x2e (behind PCA9546 @0x71 ch3) | i2c mux + adt7475 cmd (RPM read, PWM set) | vendor `slowfan` env only |
+docs/uboot-hw-test-suite.md:33:| **SoC die temp** | thermal @0xfd860a00 | `thermal_get` equivalent | port from vendor |
+docs/uboot-hw-test-suite.md:35:| **Identity EEPROM** | AT24C64 @0x57 (2-byte addr) | i2c read + decode (sysid/MAC/serial) | partial in vendor |
+docs/uboot-hw-test-suite.md:37:| **SFP retimer** | `br410` (per vendor `sfpd`), raw i2c writes | optional | **new** |
+docs/uboot-hw-test-suite.md:40:| **NAND** | MT29F8G08, al-nand @0xfa100000 | `nand` — needs the AL NAND driver ported | port from vendor |
+docs/uboot-hw-test-suite.md:42:| **Ethernet 1G** | al_eth + AR8033 PHY (MDIO addr 4) | al_eth port + `mdio`/`mii`, ping/tftp | port from vendor |
+docs/uboot-hw-test-suite.md:43:| **Ethernet 10G** | SFP+ via SerDes, no PHY | serdes cfg + link mgmt | port from vendor |
+docs/uboot-hw-test-suite.md:48:| **Pinmux** | MUIO mux (73 ifaces) | `muio_mux` equivalent | port from vendor |
+docs/uboot-hw-test-suite.md:49:| **Boot instance / TOC** | flash TOC A/B/C/D | `flash_contents_*` equivalent | port from vendor |
+docs/uboot-hw-test-suite.md:74:3. SGPO + AL-NAND + al_eth + serdes ports from the vendor tree.
+docs/uboot-port-plan.md:3:Feasibility + staged plan to replace the frozen vendor **U-Boot 2015.07-alpine_db-2.21-HAL**
+docs/uboot-port-plan.md:24:  loadable via the vendor `go 0x1100000`. Scaffold created (§9).
+docs/uboot-port-plan.md:64:- **Load/entry `0x01100000`** = vendor `CONFIG_SYS_TEXT_BASE` (vendor
+docs/uboot-port-plan.md:65:  `include/configs/alpine_v2_64_ubnt_nas.h:13`) ✅. stage3 loads the vendor `uboot` TOC object
+docs/uboot-port-plan.md:67:- **Stock U-Boot itself is U-Boot-proper: `CONFIG_SKIP_LOWLEVEL_INIT`** (vendor
+docs/uboot-port-plan.md:74:- **Init SP** `0x05000000` (low DRAM, above image); vendor used `0x01800000`. Either is valid
+docs/uboot-port-plan.md:79:   doing DDR/clock/serdes. This is what the vendor does; **no SPL needed**, DRAM already up.
+docs/uboot-port-plan.md:102:  Do **not** reuse the vendor 2015.07 control DTB (different bindings); grow from our own or
+docs/uboot-port-plan.md:113:**SATA/AHCI** (2× `1c36:0031`) | ✅ generic `ahci` binds AHCI-class PCI | **internal-PCIe host enum + DMA coherency (§6)** | vendor `board/annapurna-labs/common/pci.c` + `al_init_pcie`; Linux `pcie-al.c`
+docs/uboot-port-plan.md:114:**Internal PCIe host** (`fbc00000` ECAM) | ❌ no Alpine host driver | new host driver (custom ECAM `addr=(bus<<20)|(dev<<15)|(fn<<12)|reg` — vendor `pci.c:86`) + AXI snoop | vendor `pci.c`/`al_init_pcie*`; delroth `drivers/pcie/`; Linux `drivers/pci/controller/pcie-al.c`
+docs/uboot-port-plan.md:115:**External PCIe** (`fd800000`) | ⚠ DWC common only | Alpine external-PCIe glue | vendor `pci.c`; delroth `drivers/pcie/`
+docs/uboot-port-plan.md:116:**SPI-NOR** (DW SSI `fd882000`, MX25U25635F) | ✅ `designware_spi`+`sf` | DT node `snps,dw-apb-ssi` + `jedec,spi-nor`; verify 1.8V/4KiB/256B | mainline binds directly; vendor board only for env layout
+docs/uboot-port-plan.md:118:**NAND** (`fa100000`, Micron MT29F8G08) | ❌ AL-NAND is a **custom** controller, not Denali | new raw-NAND driver | vendor `board/annapurna-labs/common/al_nand.c` + `early_nand.c`; kernel `al_nand`
+docs/uboot-port-plan.md:121:**SerDes** (`fd8c0000`) | ❌ custom | only needed if we bring up PCIe/SATA PHY from reset (target 2); chainload inherits preboot's serdes | vendor `board/.../common/cmd_serdes*.c`; delroth `drivers/serdes/`
+docs/uboot-port-plan.md:122:**Thermal** (`fd860a00`) | ❌ custom | optional cmd | vendor `cmd_thermal.c`; delroth
+docs/uboot-port-plan.md:123:**SGPO bay LEDs** (`fd8b4000`) | ❌ custom | optional | vendor `dt_based_sgpo_init.c`
+docs/uboot-port-plan.md:132:  Kconfig ✅; `CONFIG_SKIP_LOWLEVEL_INIT` set. The `al_hal_ddr.h` that vendor
+docs/uboot-port-plan.md:145:   PHY training, DDR4 JEDEC init. Feed it the board's SPD (read over I2C `0x57` — vendor
+docs/uboot-port-plan.md:154:- Vendor exposes, all in `board/annapurna-labs/common/cmd_ddr.c` + `cmd_dram_margins.c`:
+docs/uboot-port-plan.md:173:`CONFIG_SCSI_DEV_LIST={PCI_VENDOR_ID_ANNAPURNALABS, PCI_DEVICE_ID_AL_SATA}` (vendor
+docs/uboot-port-plan.md:177:PCIe. Port the enumeration from vendor `board/annapurna-labs/common/pci.c` (custom ECAM
+docs/uboot-port-plan.md:188:- **(b)** If DMA returns stale/garbage, port the **AXI snoop enable** from the vendor HAL /
+docs/uboot-port-plan.md:192:**Stock U-Boot-can't-read-SATA claim** ⚠: the vendor config *has* AHCI+SCSI, so "can't read
+docs/uboot-port-plan.md:193:the SSD" is either an enumeration/timing gap or SSD-specific. Confirm on-device with vendor
+docs/uboot-port-plan.md:201:- Vendor PLL/clock code: `board/annapurna-labs/common/pll_init.c` + `cmd_cpu_misc.c`
+docs/uboot-port-plan.md:225:   thermal, SGPO — port from vendor `board/annapurna-labs/` as needed.
+docs/unvr-access-research.md:1:# UNVR vendor/official access paths — research
+docs/unvr-access-research.md:5:B = reverse the vendor firmware on disk.
+docs/unvr-access-research.md:13:Evidence marks: ✅ confirmed (read it here) · 〄 inferred · 📄 vendor/community claim.
+docs/unvr-access-research.md:23:- Vendor doc: SSH is a supported (if discouraged) access method. UniFi **Consoles
+docs/unvr-access-research.md:161:## Q4 — Vendor toggle to enable TELNET / SSH / debug shell
+docs/unvr-access-research.md:163:**SSH: single vendor toggle, no serial needed.** ✅ — highest-value Q1/Q4 result.
+docs/unvr-access-research.md:179:- Related vendor sub-toggles (all in `ubnt-systool`) ✅:
+docs/unvr-access-research.md:189:**Telnet: not a vendor service, but the applet is on the box.** ✅
+docs/unvr-access-research.md:196:  📄 — a separate vendor debug path that survives a bad `/boot` uImage.
+docs/unvr-access-research.md:232:  `i2cget/i2cset/i2cdump/i2cdetect` present ✅. Vendor daemons already use it:
+docs/unvr-access-research.md:260:## Q6 — Vendor file-transfer / remote services (push a custom image)
+docs/unvr-access-research.md:281:Vendor update/transfer endpoints:
+docs/upgrade-path.md:64:boundaries in the data, not from vendor guidance:
+docs/upgrade-path.md:104:(`ERROR: Bad FW Image Signature` on failure), so an unmodified vendor `.bin`
+docs/workflow.md:109:  tool (only `pdf` writes files). The vendor sha256 is what makes that safe: the
+docs/workflow.md:297:vendor string, `eth0`–`eth3`, the `Net:` banner, PHY handling and
+dts/alpine-v2-ubnt-unvr-ea16.dts:625:		 *   linux_kernel 0x00300000 +0x01000000  (16 MiB, vendor uImage)
+dts/alpine-v2-ubnt-unvr-ea16.dts:836: * owner-confirmed no BT on this board; the vendor "CSR" path is UDM-Pro shared
+kernel-patches/0001-PCI-al-add-Alpine-V2-internal-PCIe-host-controller-d.patch:14:  notifier that, per Annapurna device (vendor 0x1c36) on bus 0, sets
+kernel-patches/0001-PCI-al-add-Alpine-V2-internal-PCIe-host-controller-d.patch:154:+/* Annapurna Labs PCI vendor ID */
+kernel-patches/0001-PCI-al-add-Alpine-V2-internal-PCIe-host-controller-d.patch:155:+#define PCI_VENDOR_ID_ANNAPURNA_LABS	0x1c36
+kernel-patches/0001-PCI-al-add-Alpine-V2-internal-PCIe-host-controller-d.patch:196:+	 * Also filter by vendor ID to avoid writing Alpine-specific
+kernel-patches/0001-PCI-al-add-Alpine-V2-internal-PCIe-host-controller-d.patch:202:+	if (pdev->vendor != PCI_VENDOR_ID_ANNAPURNA_LABS)
+kernel-patches/0003-arm64-dts-amazon-add-Ubiquiti-UNVR-ea16-NAND-boot-bo.patch:8:  from the community ea1a UNVR DTS and grounded in this unit's vendor
+kernel-patches/0003-arm64-dts-amazon-add-Ubiquiti-UNVR-ea16-NAND-boot-bo.patch:12:  corrected to real layout; ramoops region moved to vendor reserve.
+kernel-patches/0003-arm64-dts-amazon-add-Ubiquiti-UNVR-ea16-NAND-boot-bo.patch:643:+		 *   linux_kernel 0x00300000 +0x01000000  (16 MiB, vendor uImage)
+kernel-patches/README.md:12:| # | file | target | ours / upstream / vendor |
+kernel-patches/README.md:39:  `github.com/bcyangkmluohmars/linux-alpine-v2` (6.12-era, vendor GPL HAL +
+kernel-patches/README.md:41:  vendor GPL.
+kernel-patches/README.md:49:  kernel + community/vendor OOT drivers integrated unmodified.
+modules/al_dma/al_dma_drv.c:8: * The Alpine V2 SSM (Security/Storage/Memory) PCI device (vendor 0x1c36,
+modules/al_dma/al_dma_drv.c:91:#ifndef PCI_VENDOR_ID_AMAZON_ANNAPURNA_LABS
+modules/al_dma/al_dma_drv.c:92:#define PCI_VENDOR_ID_AMAZON_ANNAPURNA_LABS	0x1c36
+modules/al_dma/al_hal_unit_adapter_regs.h:48: * Device-ID/Vendor-ID
+modules/al_dma/al_hal_unit_adapter_regs.h:96: * Subsystem-ID/Vendor-ID
+modules/al_dma/al_hal_unit_adapter_regs.h:98:#define  AL_PCI_SUBSYSTEM_VENDOR_ID		0x2c
+modules/al_eth/README.md:9:- **PCI Vendor ID:** `0x1c36`
+modules/al_eth/README.md:112:| ALPINE_NIC | (vendor-specific) | PCIe NIC mode, 1G/10G |
+modules/al_eth/README.md:113:| ALPINE_NIC_V2_10 | (vendor-specific) | V2 10G PCIe NIC |
+modules/al_eth/README.md:114:| ALPINE_NIC_V2_25 | (vendor-specific) | V2 25G PCIe NIC |
+modules/al_eth/README.md:115:| ALPINE_NIC_V2_25_DUAL | (vendor-specific) | V2 dual-port 25G PCIe NIC |
+modules/al_eth/al_eth.h:42:#define PCI_VENDOR_ID_ANNAPURNA_LABS	0x1c36
+modules/al_eth/al_eth_main.c:164:	{ PCI_VENDOR_ID_ANNAPURNA_LABS, PCI_DEVICE_ID_AL_ETH,
+modules/al_eth/al_eth_main.c:168:	{ PCI_VENDOR_ID_ANNAPURNA_LABS, PCI_DEVICE_ID_AL_ETH_ADVANCED,
+modules/al_eth/al_eth_main.c:172:	{ PCI_VENDOR_ID_ANNAPURNA_LABS, PCI_DEVICE_ID_AL_ETH_NIC,
+modules/al_eth/al_eth_main.c:176:	{ PCI_VENDOR_ID_ANNAPURNA_LABS, PCI_DEVICE_ID_AL_ETH_NIC_V2_10,
+modules/al_eth/al_eth_main.c:180:	{ PCI_VENDOR_ID_ANNAPURNA_LABS, PCI_DEVICE_ID_AL_ETH_NIC_V2_25_R0A,
+modules/al_eth/al_eth_main.c:184:	{ PCI_VENDOR_ID_ANNAPURNA_LABS, PCI_DEVICE_ID_AL_ETH_NIC_V2_25_R0A1,
+modules/al_eth/al_eth_main.c:188:	{ PCI_VENDOR_ID_ANNAPURNA_LABS, PCI_DEVICE_ID_AL_ETH_NIC_V2_K2C,
+modules/al_eth/al_hal_unit_adapter_regs.h:48: * Device-ID/Vendor-ID
+modules/al_eth/al_hal_unit_adapter_regs.h:96: * Subsystem-ID/Vendor-ID
+modules/al_eth/al_hal_unit_adapter_regs.h:98:#define  AL_PCI_SUBSYSTEM_VENDOR_ID		0x2c
+modules/al_reboot/al_reboot.c:11: * Ported from the vendor 4.1.37 drivers/power/reset/alpine-reboot.c: the vendor
+modules/al_ssm/README.md:9:- **PCI device:** vendor 0x1c36, device 0x0022, class 0x100000
+modules/al_ssm/al_hal_ssm_crypto_regs.h:723:/* Annapurna Labs PCI vendor ID */
+modules/al_ssm/al_hal_ssm_crypto_regs.h:724:#define CRYPTO_CRYPTO_VERSION_REVISION_VENDOR_ID_MASK 0xFFFF0000
+modules/al_ssm/al_hal_ssm_crypto_regs.h:725:#define CRYPTO_CRYPTO_VERSION_REVISION_VENDOR_ID_SHIFT 16
+modules/al_ssm/al_hal_unit_adapter_gen_regs.h:27:	/* [0x0] Device Id and Vendor Register */
+modules/al_ssm/al_hal_unit_adapter_gen_regs.h:28:	uint32_t device_id_vendor_id;
+modules/al_ssm/al_hal_unit_adapter_gen_regs.h:31:	/* [0x8] Device Id and Vendor Id Register */
+modules/al_ssm/al_hal_unit_adapter_gen_regs.h:33:	/* [0xc] Device Id and Vendor Id Register */
+modules/al_ssm/al_hal_unit_adapter_gen_regs.h:370:	/* [0x0] Device ID and Vendor Register */
+modules/al_ssm/al_hal_unit_adapter_gen_regs.h:371:	uint32_t device_id_vendor_id_vf;
+modules/al_ssm/al_hal_unit_adapter_gen_regs.h:374:	/* [0x8] Device ID and Vendor ID Register */
+modules/al_ssm/al_hal_unit_adapter_gen_regs.h:376:	/* [0xc] Device ID and Vendor ID Register */
+modules/al_ssm/al_hal_unit_adapter_gen_regs.h:477:/**** Device_ID_Vendor_ID register ****/
+modules/al_ssm/al_hal_unit_adapter_gen_regs.h:478:/* Vendor ID */
+modules/al_ssm/al_hal_unit_adapter_gen_regs.h:479:#define UNIT_ADAPTER__DEVICE_ID_VENDOR_ID_VENDOR_ID_MASK 0x0000FFFF
+modules/al_ssm/al_hal_unit_adapter_gen_regs.h:480:#define UNIT_ADAPTER__DEVICE_ID_VENDOR_ID_VENDOR_ID_SHIFT 0
+modules/al_ssm/al_hal_unit_adapter_gen_regs.h:482:#define UNIT_ADAPTER__DEVICE_ID_VENDOR_ID_DEVICE_ID_MASK 0xFFFF0000
+modules/al_ssm/al_hal_unit_adapter_gen_regs.h:483:#define UNIT_ADAPTER__DEVICE_ID_VENDOR_ID_DEVICE_ID_SHIFT 16
+modules/al_ssm/al_hal_unit_adapter_gen_regs.h:862:/**** Vendor_Specific_Extended_Capability register ****/
+modules/al_ssm/al_hal_unit_adapter_gen_regs.h:864:#define UNIT_ADAPTER__VENDOR_SPECIFIC_EXTENDED_CAP_VSEC_CAP_ID_MASK 0x0000FFFF
+modules/al_ssm/al_hal_unit_adapter_gen_regs.h:865:#define UNIT_ADAPTER__VENDOR_SPECIFIC_EXTENDED_CAP_VSEC_CAP_ID_SHIFT 0
+modules/al_ssm/al_hal_unit_adapter_gen_regs.h:867:#define UNIT_ADAPTER__VENDOR_SPECIFIC_EXTENDED_CAP_VSEC_CAP_VERSION_MASK 0x000F0000
+modules/al_ssm/al_hal_unit_adapter_gen_regs.h:868:#define UNIT_ADAPTER__VENDOR_SPECIFIC_EXTENDED_CAP_VSEC_CAP_VERSION_SHIFT 16
+modules/al_ssm/al_hal_unit_adapter_gen_regs.h:870:#define UNIT_ADAPTER__VENDOR_SPECIFIC_EXTENDED_CAP_VSEC_NEXT_CAP_OFFSET_MASK 0xFFF00000
+modules/al_ssm/al_hal_unit_adapter_gen_regs.h:871:#define UNIT_ADAPTER__VENDOR_SPECIFIC_EXTENDED_CAP_VSEC_NEXT_CAP_OFFSET_SHIFT 20
+modules/al_ssm/al_hal_unit_adapter_gen_regs.h:873:/**** Vendor_Specific_Header register ****/
+modules/al_ssm/al_hal_unit_adapter_gen_regs.h:875:#define UNIT_ADAPTER__VENDOR_SPECIFIC_HEADER_VSEC_ID_MASK 0x0000FFFF
+modules/al_ssm/al_hal_unit_adapter_gen_regs.h:876:#define UNIT_ADAPTER__VENDOR_SPECIFIC_HEADER_VSEC_ID_SHIFT 0
+modules/al_ssm/al_hal_unit_adapter_gen_regs.h:878:#define UNIT_ADAPTER__VENDOR_SPECIFIC_HEADER_VSEC_REV_MASK 0x000F0000
+modules/al_ssm/al_hal_unit_adapter_gen_regs.h:879:#define UNIT_ADAPTER__VENDOR_SPECIFIC_HEADER_VSEC_REV_SHIFT 16
+modules/al_ssm/al_hal_unit_adapter_gen_regs.h:881:#define UNIT_ADAPTER__VENDOR_SPECIFIC_HEADER_VSEC_LEN_MASK 0xFFF00000
+modules/al_ssm/al_hal_unit_adapter_gen_regs.h:882:#define UNIT_ADAPTER__VENDOR_SPECIFIC_HEADER_VSEC_LEN_SHIFT 20
+modules/al_ssm/al_hal_unit_adapter_gen_regs.h:1222:/**** Device_ID_Vendor_ID_VF register ****/
+modules/al_ssm/al_hal_unit_adapter_gen_regs.h:1223:/* Vendor ID */
+modules/al_ssm/al_hal_unit_adapter_gen_regs.h:1224:#define UNIT_ADAPTER_VF_REGS_DEVICE_ID_VENDOR_ID_VF_VENDOR_ID_MASK 0x0000FFFF
+modules/al_ssm/al_hal_unit_adapter_gen_regs.h:1225:#define UNIT_ADAPTER_VF_REGS_DEVICE_ID_VENDOR_ID_VF_VENDOR_ID_SHIFT 0
+modules/al_ssm/al_hal_unit_adapter_gen_regs.h:1227:#define UNIT_ADAPTER_VF_REGS_DEVICE_ID_VENDOR_ID_VF_DEVICE_ID_MASK 0xFFFF0000
+modules/al_ssm/al_hal_unit_adapter_gen_regs.h:1228:#define UNIT_ADAPTER_VF_REGS_DEVICE_ID_VENDOR_ID_VF_DEVICE_ID_SHIFT 16
+modules/al_ssm/al_hal_unit_adapter_regs.h:48: * Device-ID/Vendor-ID
+modules/al_ssm/al_hal_unit_adapter_regs.h:128: * Subsystem-ID/Vendor-ID
+modules/al_ssm/al_hal_unit_adapter_regs.h:130:#define  AL_PCI_SUBSYSTEM_VENDOR_ID		0x2c
+modules/al_ssm/al_ssm_main.c:9: * PCI device: vendor 0x1c36, device 0x0022, class 0x100000
+modules/al_ssm/al_ssm_main.c:52:#define AL_SSM_VENDOR_ID	0x1c36
+modules/al_ssm/al_ssm_main.c:740:	dev_info(&pdev->dev, "Alpine V2 SSM crypto engine found (vendor=%04x dev=%04x class=%06x rev=%d)\n",
+modules/al_ssm/al_ssm_main.c:741:		 pdev->vendor, pdev->device, pdev->class, rev_id);
+scripts/fetch-unvr-firmware.py:5:  this uses curl by explicit approval. The vendor publishes an sha256, so the
+scripts/flash-nand.py:5:our gzip uImage + ea16 DTB from the host and writes them into the DEAD vendor
+scripts/name-preboot-funcs.py:2:"""Map preboot FUN_<va> -> FULL vendor name via referenced __func__ strings.
+scripts/netboot.py:6:watchdog resets into, and the next autoboot lands in the vendor OS. This streams
+scripts/probe-mmc-uboot.tcl:2:# The UNVR family reaches its eMMC over a USB bridge (vendor `bootemmc` = `usb start`),
+scripts/soc-temp.py:6:carrying a 12-bit ADC readout; convert with the vendor formula (offsets from
+scripts/stage-firmware.py:4:Downloads each release to sources/ (sha256-verified against the vendor API),
+scripts/uboot-info.tcl:4:# full vendor env, board info, NAND/NOR/USB/PCI/GPIO/clock state.
+scripts/unvr-console.py:52:# sets (console=ttyS0,115200); the rest are common vendor alternatives.
+scripts/unvr-fancontrol.py:9:Interim curve: driven by temp3 (the board sensor the vendor curve targets).
+scripts/upgrade-ladder.py:49:# Vendor default console credentials, recorded in secrets.yaml (gitignored).
+scripts/vendor-modules.py:62:def vendor_one(m):
+scripts/vendor-modules.py:88:        total += vendor_one(m)

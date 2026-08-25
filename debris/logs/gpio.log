@@ -1,0 +1,106 @@
+gpio status -a
+ofnode_read_prop: assigned-clock-rates: <not found>
+Sending event 5/(unknown) to spy 'efi_disk add'
+Bank gpio@fd887000:
+gpio@fd8870000: input: 1 [ ]
+gpio@fd8870001: input: 1 [ ]
+gpio@fd8870002: input: 1 [ ]
+gpio@fd8870003: output: 0 [ ]
+gpio@fd8870004: input: 1 [ ]
+gpio@fd8870005: input: 1 [ ]
+gpio@fd8870006: input: 0 [ ]
+gpio@fd8870007: input: 0 [ ]
+ofnode_read_prop: assigned-clock-rates: <not found>
+Sending event 5/(unknown) to spy 'efi_disk add'
+
+Bank gpio@fd888000:
+gpio@fd8880000: input: 0 [ ]
+gpio@fd8880001: input: 0 [ ]
+gpio@fd8880002: input: 0 [ ]
+gpio@fd8880003: input: 0 [ ]
+gpio@fd8880004: input: 0 [ ]
+gpio@fd8880005: input: 0 [ ]
+gpio@fd8880006: input: 0 [ ]
+gpio@fd8880007: input: 0 [ ]
+ofnode_read_prop: assigned-clock-rates: <not found>
+Sending event 5/(unknown) to spy 'efi_disk add'
+
+Bank gpio@fd889000:
+gpio@fd8890000: input: 0 [ ]
+gpio@fd8890001: input: 0 [ ]
+gpio@fd8890002: input: 0 [ ]
+gpio@fd8890003: input: 0 [ ]
+gpio@fd8890004: input: 1 [ ]
+gpio@fd8890005: input: 0 [ ]
+gpio@fd8890006: input: 0 [ ]
+gpio@fd8890007: input: 0 [ ]
+ofnode_read_prop: assigned-clock-rates: <not found>
+Sending event 5/(unknown) to spy 'efi_disk add'
+
+Bank gpio@fd897000:
+gpio@fd8970000: input: 1 [ ]
+gpio@fd8970001: input: 1 [ ]
+gpio@fd8970002: input: 1 [ ]
+gpio@fd8970003: input: 1 [ ]
+gpio@fd8970004: input: 0 [ ]
+gpio@fd8970005: input: 0 [ ]
+gpio@fd8970006: input: 0 [ ]
+gpio@fd8970007: input: 0 [ ]
+
+Bank gpio@fd88a000:
+gpio@fd88a0000: input: 0 [ ]
+gpio@fd88a0001: input: 0 [ ]
+gpio@fd88a0002: input: 0 [ ]
+gpio@fd88a0003: input: 0 [ ]
+gpio@fd88a0004: input: 1 [ ]
+gpio@fd88a0005: input: 1 [ ]
+gpio@fd88a0006: input: 0 [ ]
+gpio@fd88a0007: output: 0 [x] led-blue.gpios
+
+Bank gpio@fd88b000:
+gpio@fd88b0000: input: 1 [ ]
+gpio@fd88b0001: input: 1 [ ]
+gpio@fd88b0002: input: 1 [ ]
+gpio@fd88b0003: input: 1 [ ]
+gpio@fd88b0004: input: 1 [ ]
+gpio@fd88b0005: output: 0 [x] led-white.gpios
+gpio@fd88b0006: input: 1 [ ]
+gpio@fd88b0007: input: 1 [ ]
+
+Bank gpio@20_:
+gpio@20_0: input: 1 [ ]
+gpio@20_1: input: 1 [ ]
+gpio@20_2: output: 0 [x] led-sfp.gpios
+gpio@20_3: input: 1 [ ]
+gpio@20_4: input: 0 [ ]
+gpio@20_5: input: 1 [ ]
+gpio@20_6: input: 1 [ ]
+gpio@20_7: input: 0 [ ]
+gpio@20_8: input: 1 [ ]
+gpio@20_9: input: 1 [ ]
+gpio@20_10: input: 0 [ ]
+gpio@20_11: input: 0 [ ]
+gpio@20_12: input: 0 [ ]
+gpio@20_13: input: 0 [ ]
+gpio@20_14: input: 0 [ ]
+gpio@20_15: input: 0 [ ]
+
+Bank gpio@21_:
+gpio@21_0: output: 1 [x] hdd-pwren0.gpio-hog
+gpio@21_1: output: 1 [x] hdd-pwren1.gpio-hog
+gpio@21_2: output: 1 [x] hdd-pwren2.gpio-hog
+gpio@21_3: output: 1 [x] hdd-pwren3.gpio-hog
+gpio@21_4: input: 0 [ ]
+gpio@21_5: input: 0 [ ]
+gpio@21_6: input: 0 [ ]
+gpio@21_7: input: 0 [ ]
+gpio@21_8: input: 1 [ ]
+gpio@21_9: input: 1 [ ]
+gpio@21_10: input: 1 [ ]
+gpio@21_11: input: 1 [ ]
+gpio@21_12: output: 1 [x] led-d1.gpios
+gpio@21_13: output: 1 [x] led-d2.gpios
+gpio@21_14: output: 1 [x] led-d3.gpios
+gpio@21_15: output: 1 [x] led-d4.gpios
+awto-nas# 
+<<MATCHED: awto-nas#>>

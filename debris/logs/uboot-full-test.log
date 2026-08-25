@@ -1,0 +1,247 @@
+
+===== version
+ version
+U-Boot 2026.07-dirty (Aug 18 2026 - 13:02:10 +1000)
+
+aarch64-linux-gnu-gcc (GCC) 16.1.1 20260501 (Red Hat Cross 16.1.1-1)
+GNU ld version 2.46-1.fc44
+unvr#
+
+===== bdinfo
+ bdinfo
+boot_params = 0x0000000000000000
+DRAM bank   = 0x0000000000000000
+-> start    = 0x0000000000000000
+-> size     = 0x00000000c0000000
+DRAM bank   = 0x0000000000000001
+-> start    = 0x0000000200000000
+-> size     = 0x0000000040000000
+flashstart  = 0x0000000000000000
+flashsize   = 0x0000000000000000
+flashoffset = 0x0000000000000000
+baudrate    = 115200 bps
+relocaddr   = 0x00000000bff82000
+reloc off   = 0x00000000bee82000
+Build       = 64-bit
+fdt_blob    = 0x00000000bfb70270
+lmb_dump_all:
+ memory.count = 0x2
+ memory[0]	[0x0-0xbfffffff], 0xc0000000 bytes, flags: none
+ memory[1]	[0x200000000-0x23fffffff], 0x40000000 bytes, flags: none
+ reserved.count = 0x2
+ reserved[0]	[0xbeb70260-0xbfffffff], 0x148fda0 bytes, flags: no-overwrite
+ reserved[1]	[0x23fffd000-0x23fffffff], 0x3000 bytes, flags: no-notify, no-overwrite
+devicetree  = separate
+serial addr = 0x00000000fd883000
+ width      = 0x0000000000000004
+ shift      = 0x0000000000000002
+ offset     = 0x0000000000000000
+ clock      = 0x000000001dcd6500
+arch_number = 0x0000000000000000
+TLB addr    = 0x00000000bfff0000
+irq_sp      = 0x00000000bfb70260
+sp start    = 0x00000000bfb70260
+Early malloc usage: 4d0 / 2000
+unvr#
+
+===== pci enum
+ pci enum
+unvr#
+
+===== pci
+ pci
+BusDevFun  VendorId   DeviceId   Device Class       Sub-Class
+_____________________________________________________________
+00.01.00   0x1c36     0x0001     Network controller      0x00
+00.02.00   0x1c36     0x0002     Network controller      0x00
+00.04.00   0x1c36     0x0022     Cryptographic device    0x00
+00.05.00   0x1c36     0x0022     Mass storage controller 0x04
+00.08.00   0x1c36     0x0031     Mass storage controller 0x06
+00.09.00   0x1c36     0x0031     Mass storage controller 0x06
+unvr#
+
+===== i2c dev 0
+ i2c dev 0
+Setting bus to 0
+unvr#
+
+===== i2c probe
+ i2c probe
+Valid chip addresses: 20 21 2E 57 71
+unvr#
+
+===== i2c md 0x57 0.2 20
+ i2c md 0x57 0.2 20
+0000: 36 1c 36 1c 36 1c 36 1c 36 1c 36 1c 00 00 00 20    6.6.6.6.6.6.... 
+0010: 00 61 89 7f f5 00 00 00 07 00 00 00 0c 40 8b fd    .a...........@..
+unvr#
+
+===== i2c md 0x20 0 6
+ i2c md 0x20 0 6
+0000: 2b 2b 2b 2b 2b 2b    ++++++
+unvr#
+
+===== i2c md 0x21 0 6
+ i2c md 0x21 0 6
+0000: 0f 0f 0f 0f 0f 0f    ......
+unvr#
+
+===== gpio status -a
+ gpio status -a
+Bank gpio@21_:
+gpio@21_0: output: 1 [x] hdd-pwren0.gpio-hog
+gpio@21_1: output: 1 [x] hdd-pwren1.gpio-hog
+gpio@21_2: output: 1 [x] hdd-pwren2.gpio-hog
+gpio@21_3: output: 1 [x] hdd-pwren3.gpio-hog
+gpio@21_4: input: 0 [ ]
+gpio@21_5: input: 0 [ ]
+gpio@21_6: input: 0 [ ]
+gpio@21_7: input: 0 [ ]
+gpio@21_8: input: 1 [ ]
+gpio@21_9: input: 1 [ ]
+gpio@21_10: input: 1 [ ]
+gpio@21_11: input: 1 [ ]
+gpio@21_12: input: 0 [ ]
+gpio@21_13: input: 0 [ ]
+gpio@21_14: input: 0 [ ]
+gpio@21_15: input: 0 [ ]
+unvr#
+
+===== scsi scan
+ scsi scan
+scanning bus for devices...
+SATA link 0 timeout.
+SATA link 1 timeout.
+Target spinup took 0 ms.
+SATA link 3 timeout.
+AHCI 0001.0300 32 slots 4 ports 6 Gbps 0xf impl SATA mode
+flags: 64bit ncq stag pm led clo only pmp fbss pio slum part ccc apst 
+  Device 0: (2:0) Vendor: ATA Prod.: Samsung SSD 850 Rev: EMT0
+            Type: Hard Disk
+            Capacity: 953869.7 MB = 931.5 GB (1953525169 x 512)
+Target spinup took 0 ms.
+SATA link 1 timeout.
+Target spinup took 0 ms.
+SATA link 3 timeout.
+AHCI 0001.0300 32 slots 4 ports 6 Gbps 0xf impl SATA mode
+flags: 64bit ncq stag pm led clo only pmp fbss pio slum part ccc apst 
+  Device 1: (0:0) Vendor: ATA Prod.: WDC WD82PURZ-85T Rev: 82.0
+            Type: Hard Disk
+            Capacity: 7630885.3 MB = 7452.0 GB (15628053169 x 512)
+  Device 2: (2:0) Vendor: ATA Prod.: WDC WD82PURZ-85T Rev: 82.0
+            Type: Hard Disk
+            Capacity: 7630885.3 MB = 7452.0 GB (15628053169 x 512)
+unvr#
+
+===== scsi info
+ scsi info
+Device 0: (2:0) Vendor: ATA Prod.: Samsung SSD 850 Rev: EMT0
+            Type: Hard Disk
+            Capacity: 953869.7 MB = 931.5 GB (1953525169 x 512)
+Device 1: (0:0) Vendor: ATA Prod.: WDC WD82PURZ-85T Rev: 82.0
+            Type: Hard Disk
+            Capacity: 7630885.3 MB = 7452.0 GB (15628053169 x 512)
+Device 2: (2:0) Vendor: ATA Prod.: WDC WD82PURZ-85T Rev: 82.0
+            Type: Hard Disk
+            Capacity: 7630885.3 MB = 7452.0 GB (15628053169 x 512)
+unvr#
+
+===== scsi part
+ scsi part
+
+Partition Map for scsi device 0  --   Partition Type: EFI
+
+Part	Start LBA	End LBA		Name
+	Attributes
+	Type GUID
+	Partition GUID
+  1	0x00000028	0x00064027	"EFI System Partition"
+	attrs:	0x0000000000000000
+	type:	c12a7328-f81f-11d2-ba4b-00a0c93ec93b
+	guid:	79cd524f-deea-43fe-ba09-1c0dccf82a1f
+  2	0x00064028	0x74706d87	""
+	attrs:	0x0000000000000000
+	type:	7c3457ef-0000-11aa-aa11-00306543ecac
+	guid:	dcdc291e-9956-48cd-9d7c-48219877881a
+unvr#
+
+===== ext4ls scsi 0:2 /boot
+ ext4ls scsi 0:2 /boot
+            ./
+            ../
+ 18556033   uImage-unvr-ea16-7.1-fedora-gz
+    14918   alpine-v2-ubnt-unvr-ea16-7.1-fedora.dtb
+
+2 file(s), 2 dir(s)
+
+unvr#
+
+===== dm tree
+ dm tree
+ Class     Seq    Probed  Driver                Name
+-----------------------------------------------------------
+ root          0  [ + ]   root_driver           root_driver
+ firmware      0  [   ]   psci                  |-- psci
+ clk           0  [ + ]   fixed_clock           |-- sbclk
+ simple_bus    0  [ + ]   simple_bus            |-- soc
+ serial        0  [ + ]   ns16550_serial        |   |-- serial@fd883000
+ serial        2  [   ]   ns16550_serial        |   |-- serial@fd885000
+ pci           0  [ + ]   pci_generic_ecam      |   |-- pci@fbc00000
+ pci_generi    0  [   ]   pci_generic_drv       |   |   |-- pci_0:1.0
+ pci_generi    1  [   ]   pci_generic_drv       |   |   |-- pci_0:2.0
+ pci_generi    2  [   ]   pci_generic_drv       |   |   |-- pci_0:4.0
+ pci_generi    3  [   ]   pci_generic_drv       |   |   |-- pci_0:5.0
+ ahci          0  [ + ]   ahci_pci              |   |   |-- ahci_pci
+ scsi          0  [ + ]   ahci_scsi             |   |   |   `-- ahci_scsi
+ blk           0  [ + ]   scsi_blk              |   |   |       |-- ahci_scsi.id2lun0
+ partition     0  [ + ]   blk_partition         |   |   |       |   |-- ahci_scsi.id2lun0:1
+ partition     1  [ + ]   blk_partition         |   |   |       |   `-- ahci_scsi.id2lun0:2
+ bootdev       0  [   ]   scsi_bootdev          |   |   |       `-- ahci_scsi.id2lun0.bootdev
+ ahci          1  [ + ]   ahci_pci              |   |   `-- ahci_pci
+ scsi          1  [ + ]   ahci_scsi             |   |       `-- ahci_scsi
+ blk           1  [ + ]   scsi_blk              |   |           |-- ahci_scsi.id0lun0
+ bootdev       1  [   ]   scsi_bootdev          |   |           |-- ahci_scsi.id0lun0.bootdev
+ blk           2  [ + ]   scsi_blk              |   |           |-- ahci_scsi.id2lun0
+ bootdev       2  [   ]   scsi_bootdev          |   |           `-- ahci_scsi.id2lun0.bootdev
+ i2c           0  [ + ]   i2c_designware        |   `-- i2c@fd880000
+ gpio          0  [ + ]   pca953x               |       |-- gpio@21
+ nop           0  [ + ]   gpio_hog              |       |   |-- hdd-pwren0
+ nop           1  [ + ]   gpio_hog              |       |   |-- hdd-pwren1
+ nop           2  [ + ]   gpio_hog              |       |   |-- hdd-pwren2
+ nop           3  [ + ]   gpio_hog              |       |   `-- hdd-pwren3
+ i2c_generi    0  [ + ]   i2c_generic_chip_drv  |       |-- generic_20
+ i2c_generi    1  [ + ]   i2c_generic_chip_drv  |       |-- generic_2e
+ i2c_generi    2  [ + ]   i2c_generic_chip_drv  |       |-- generic_57
+ i2c_generi    3  [ + ]   i2c_generic_chip_drv  |       `-- generic_71
+ bootstd       0  [   ]   bootstd_drv           |-- bootstd
+ bootmeth      0  [   ]   bootmeth_extlinux     |   |-- extlinux
+ bootmeth      1  [   ]   bootmeth_efi_mgr      |   |-- efi_mgr
+ bootmeth      2  [   ]   bootmeth_efi          |   `-- efi
+ efi           0  [   ]   EFI block driver      `-- efi
+unvr#
+
+===== clocks
+ clocks
+Unknown command 'clocks' - try 'help'
+unvr#
+
+===== part list scsi 0
+ part list scsi 0
+
+Partition Map for scsi device 0  --   Partition Type: EFI
+
+Part	Start LBA	End LBA		Name
+	Attributes
+	Type GUID
+	Partition GUID
+  1	0x00000028	0x00064027	"EFI System Partition"
+	attrs:	0x0000000000000000
+	type:	c12a7328-f81f-11d2-ba4b-00a0c93ec93b
+	guid:	79cd524f-deea-43fe-ba09-1c0dccf82a1f
+  2	0x00064028	0x74706d87	""
+	attrs:	0x0000000000000000
+	type:	7c3457ef-0000-11aa-aa11-00306543ecac
+	guid:	dcdc291e-9956-48cd-9d7c-48219877881a
+unvr#
+
+===== DONE

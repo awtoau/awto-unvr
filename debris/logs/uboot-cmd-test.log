@@ -1,0 +1,295 @@
+
+===== version =====
+ version
+U-Boot 2026.07-dirty (Aug 18 2026 - 14:10:33 +1000)
+
+aarch64-linux-gnu-gcc (GCC) 16.1.1 20260501 (Red Hat Cross 16.1.1-1)
+GNU ld version 2.46-1.fc44
+unvr#
+
+===== coninfo =====
+ coninfo
+List of available devices
+|-- serial@fd883000 (IO)
+|   |-- stdin
+|   |-- stdout
+|   |-- stderr
+|-- serial (IO)
+unvr#
+
+===== i2c dev 0 =====
+ i2c dev 0
+Setting bus to 0
+unvr#
+
+===== i2c probe =====
+ i2c probe
+Valid chip addresses: 20 21 2E 57 71
+unvr#
+
+===== i2c speed =====
+ i2c speed
+Current bus speed=400000
+unvr#
+
+===== led list =====
+ led list
+d1              blink
+d2              blink
+d3              blink
+d4              blink
+sfp             blink
+white           blink
+blue            blink
+unvr#
+
+===== gpio status -a =====
+ gpio status -a
+Bank gpio@fd887000:
+gpio@fd8870000: input: 1 [ ]
+gpio@fd8870001: input: 1 [ ]
+gpio@fd8870002: input: 1 [ ]
+gpio@fd8870003: output: 0 [ ]
+gpio@fd8870004: input: 1 [ ]
+gpio@fd8870005: input: 1 [ ]
+gpio@fd8870006: input: 0 [ ]
+gpio@fd8870007: input: 0 [ ]
+
+Bank gpio@fd888000:
+gpio@fd8880000: input: 0 [ ]
+gpio@fd8880001: input: 0 [ ]
+gpio@fd8880002: input: 0 [ ]
+gpio@fd8880003: input: 0 [ ]
+gpio@fd8880004: input: 0 [ ]
+gpio@fd8880005: input: 0 [ ]
+gpio@fd8880006: input: 0 [ ]
+gpio@fd8880007: input: 0 [ ]
+
+Bank gpio@fd889000:
+gpio@fd8890000: input: 0 [ ]
+gpio@fd8890001: input: 0 [ ]
+gpio@fd8890002: input: 0 [ ]
+gpio@fd8890003: input: 0 [ ]
+gpio@fd8890004: input: 1 [ ]
+gpio@fd8890005: input: 0 [ ]
+gpio@fd8890006: input: 0 [ ]
+gpio@fd8890007: input: 0 [ ]
+
+Bank gpio@fd897000:
+gpio@fd8970000: input: 1 [ ]
+gpio@fd8970001: input: 1 [ ]
+gpio@fd8970002: input: 1 [ ]
+gpio@fd8970003: input: 1 [ ]
+gpio@fd8970004: input: 0 [ ]
+gpio@fd8970005: input: 0 [ ]
+gpio@fd8970006: input: 0 [ ]
+gpio@fd8970007: input: 0 [ ]
+
+Bank gpio@fd88a000:
+gpio@fd88a0000: input: 0 [ ]
+gpio@fd88a0001: input: 0 [ ]
+gpio@fd88a0002: input: 0 [ ]
+gpio@fd88a0003: input: 0 [ ]
+gpio@fd88a0004: input: 1 [ ]
+gpio@fd88a0005: input: 1 [ ]
+gpio@fd88a0006: input: 0 [ ]
+gpio@fd88a0007: output: 1 [x] led-blue.gpios
+
+Bank gpio@fd88b000:
+gpio@fd88b0000: input: 1 [ ]
+gpio@fd88b0001: input: 1 [ ]
+gpio@fd88b0002: input: 1 [ ]
+gpio@fd88b0003: input: 1 [ ]
+gpio@fd88b0004: input: 1 [ ]
+gpio@fd88b0005: output: 0 [x] led-white.gpios
+gpio@fd88b0006: input: 1 [ ]
+gpio@fd88b0007: input: 1 [ ]
+
+Bank gpio@20_:
+gpio@20_0: input: 1 [ ]
+gpio@20_1: input: 1 [ ]
+gpio@20_2: output: 0 [x] led-sfp.gpios
+gpio@20_3: input: 1 [ ]
+gpio@20_4: input: 0 [ ]
+gpio@20_5: input: 1 [ ]
+gpio@20_6: input: 1 [ ]
+gpio@20_7: input: 0 [ ]
+gpio@20_8: input: 1 [ ]
+gpio@20_9: input: 1 [ ]
+gpio@20_10: input: 0 [ ]
+gpio@20_11: input: 0 [ ]
+gpio@20_12: input: 0 [ ]
+gpio@20_13: input: 0 [ ]
+gpio@20_14: input: 0 [ ]
+gpio@20_15: input: 0 [ ]
+
+Bank gpio@21_:
+gpio@21_0: output: 1 [x] hdd-pwren0.gpio-hog
+gpio@21_1: output: 1 [x] hdd-pwren1.gpio-hog
+gpio@21_2: output: 1 [x] hdd-pwren2.gpio-hog
+gpio@21_3: output: 1 [x] hdd-pwren3.gpio-hog
+gpio@21_4: input: 0 [ ]
+gpio@21_5: input: 0 [ ]
+gpio@21_6: input: 0 [ ]
+gpio@21_7: input: 0 [ ]
+gpio@21_8: input: 1 [ ]
+gpio@21_9: input: 1 [ ]
+gpio@21_10: input: 1 [ ]
+gpio@21_11: input: 1 [ ]
+gpio@21_12: output: 1 [x] led-d1.gpios
+gpio@21_13: output: 1 [x] led-d2.gpios
+gpio@21_14: output: 1 [x] led-d3.gpios
+gpio@21_15: output: 1 [x] led-d4.gpios
+unvr#
+
+===== clk dump =====
+ clk dump
+ Rate               Usecnt      Name
+------------------------------------------
+ 500000000            0        |-- sbclk
+unvr#
+
+===== dm tree =====
+ dm tree
+ Class     Seq    Probed  Driver                Name
+-----------------------------------------------------------
+ root          0  [ + ]   root_driver           root_driver
+ firmware      0  [   ]   psci                  |-- psci
+ clk           0  [ + ]   fixed_clock           |-- sbclk
+ simple_bus    0  [ + ]   simple_bus            |-- soc
+ serial        0  [ + ]   ns16550_serial        |   |-- serial@fd883000
+ serial        2  [   ]   ns16550_serial        |   |-- serial@fd885000
+ pci          -1  [   ]   pci_generic_ecam      |   |-- pci@fbc00000
+ gpio          0  [ + ]   gpio_pl061            |   |-- gpio@fd887000
+ gpio          1  [ + ]   gpio_pl061            |   |-- gpio@fd888000
+ gpio          2  [ + ]   gpio_pl061            |   |-- gpio@fd889000
+ gpio          3  [ + ]   gpio_pl061            |   |-- gpio@fd897000
+ gpio          4  [ + ]   gpio_pl061            |   |-- gpio@fd88a000
+ gpio          5  [ + ]   gpio_pl061            |   |-- gpio@fd88b000
+ i2c           0  [ + ]   i2c_designware        |   `-- i2c@fd880000
+ gpio          6  [ + ]   pca953x               |       |-- gpio@20
+ gpio          7  [ + ]   pca953x               |       |-- gpio@21
+ nop           0  [ + ]   gpio_hog              |       |   |-- hdd-pwren0
+ nop           1  [ + ]   gpio_hog              |       |   |-- hdd-pwren1
+ nop           2  [ + ]   gpio_hog              |       |   |-- hdd-pwren2
+ nop           3  [ + ]   gpio_hog              |       |   `-- hdd-pwren3
+ i2c_generi    0  [ + ]   i2c_generic_chip_drv  |       |-- generic_2e
+ i2c_generi    1  [ + ]   i2c_generic_chip_drv  |       |-- generic_57
+ i2c_generi    2  [ + ]   i2c_generic_chip_drv  |       `-- generic_71
+ nop           4  [ + ]   gpio_led_wrap         |-- leds
+ led           0  [ + ]   gpio_led              |   |-- led-d1
+ led           1  [ + ]   gpio_led              |   |-- led-d2
+ led           2  [ + ]   gpio_led              |   |-- led-d3
+ led           3  [ + ]   gpio_led              |   |-- led-d4
+ led           4  [ + ]   gpio_led              |   |-- led-sfp
+ led           5  [ + ]   gpio_led              |   |-- led-white
+ led           6  [ + ]   gpio_led              |   `-- led-blue
+ bootstd       0  [   ]   bootstd_drv           |-- bootstd
+ bootmeth      0  [   ]   bootmeth_extlinux     |   |-- extlinux
+ bootmeth      1  [   ]   bootmeth_efi_mgr      |   |-- efi_mgr
+ bootmeth      2  [   ]   bootmeth_efi          |   `-- efi
+ efi           0  [   ]   EFI block driver      `-- efi
+unvr#
+
+===== pci enum =====
+ pci enum
+unvr#
+
+===== pci =====
+ pci
+BusDevFun  VendorId   DeviceId   Device Class       Sub-Class
+_____________________________________________________________
+00.01.00   0x1c36     0x0001     Network controller      0x00
+00.02.00   0x1c36     0x0002     Network controller      0x00
+00.04.00   0x1c36     0x0022     Cryptographic device    0x00
+00.05.00   0x1c36     0x0022     Mass storage controller 0x04
+00.08.00   0x1c36     0x0031     Mass storage controller 0x06
+00.09.00   0x1c36     0x0031     Mass storage controller 0x06
+unvr#
+
+===== scsi scan =====
+ scsi scan
+scanning bus for devices...
+SATA link 0 timeout.
+SATA link 1 timeout.
+Target spinup took 0 ms.
+SATA link 3 timeout.
+AHCI 0001.0300 32 slots 4 ports 6 Gbps 0xf impl SATA mode
+flags: 64bit ncq stag pm led clo only pmp fbss pio slum part ccc apst 
+  Device 0: (2:0) Vendor: ATA Prod.: Samsung SSD 850 Rev: EMT0
+            Type: Hard Disk
+            Capacity: 953869.7 MB = 931.5 GB (1953525169 x 512)
+Target spinup took 0 ms.
+SATA link 1 timeout.
+Target spinup took 0 ms.
+SATA link 3 timeout.
+AHCI 0001.0300 32 slots 4 ports 6 Gbps 0xf impl SATA mode
+flags: 64bit ncq stag pm led clo only pmp fbss pio slum part ccc apst 
+  Device 1: (0:0) Vendor: ATA Prod.: WDC WD82PURZ-85T Rev: 82.0
+            Type: Hard Disk
+            Capacity: 7630885.3 MB = 7452.0 GB (15628053169 x 512)
+  Device 2: (2:0) Vendor: ATA Prod.: WDC WD82PURZ-85T Rev: 82.0
+            Type: Hard Disk
+            Capacity: 7630885.3 MB = 7452.0 GB (15628053169 x 512)
+unvr#
+
+===== scsi info =====
+ scsi info
+Device 0: (2:0) Vendor: ATA Prod.: Samsung SSD 850 Rev: EMT0
+            Type: Hard Disk
+            Capacity: 953869.7 MB = 931.5 GB (1953525169 x 512)
+Device 1: (0:0) Vendor: ATA Prod.: WDC WD82PURZ-85T Rev: 82.0
+            Type: Hard Disk
+            Capacity: 7630885.3 MB = 7452.0 GB (15628053169 x 512)
+Device 2: (2:0) Vendor: ATA Prod.: WDC WD82PURZ-85T Rev: 82.0
+            Type: Hard Disk
+            Capacity: 7630885.3 MB = 7452.0 GB (15628053169 x 512)
+unvr#
+
+===== part list scsi 0 =====
+ part list scsi 0
+
+Partition Map for scsi device 0  --   Partition Type: EFI
+
+Part	Start LBA	End LBA		Name
+	Attributes
+	Type GUID
+	Partition GUID
+  1	0x00000028	0x00064027	"EFI System Partition"
+	attrs:	0x0000000000000000
+	type:	c12a7328-f81f-11d2-ba4b-00a0c93ec93b
+	guid:	79cd524f-deea-43fe-ba09-1c0dccf82a1f
+  2	0x00064028	0x74706d87	""
+	attrs:	0x0000000000000000
+	type:	7c3457ef-0000-11aa-aa11-00306543ecac
+	guid:	dcdc291e-9956-48cd-9d7c-48219877881a
+unvr#
+
+===== ls scsi 0:2 /boot =====
+ ls scsi 0:2 /boot
+            ./
+            ../
+ 18556033   uImage-unvr-ea16-7.1-fedora-gz
+    14918   alpine-v2-ubnt-unvr-ea16-7.1-fedora.dtb
+
+2 file(s), 2 dir(s)
+
+unvr#
+
+===== printenv =====
+ printenv
+baudrate=115200
+bootargs=console=ttyS0,115200 root=PARTUUID=dcdc291e-9956-48cd-9d7c-48219877881a rootfstype=ext4 rw rootwait selinux=0 panic=15
+bootcmd=if itest.l *0x10000000 == 0xb0075709; then echo == CANARY set - staying in U-Boot ==; else scsi scan; ext4load scsi 0:2 0x02000000 /boot/uImage-unvr-ea16-7.1-fedora-gz && ext4load scsi 0:2 0x04078000 /boot/alpine-v2-ubnt-unvr-ea16-7.1-fedora.dtb && bootm 0x02000000 - 0x04078000; fi
+bootdelay=-1
+fdtcontroladdr=bfb6dd20
+loadaddr=0x02000000
+preboot=led d1 blink 300; led d2 blink 300; led d3 blink 300; led d4 blink 300; led white blink 300; led blue blink 300; led sfp blink 300
+stderr=serial@fd883000
+stdin=serial@fd883000
+stdout=serial@fd883000
+
+Environment size: 700/65532 bytes
+unvr#
+
+===== DONE =====
