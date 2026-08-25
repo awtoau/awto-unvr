@@ -37,8 +37,9 @@ import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from _repo import LOGS, REPO, TFTP_ROOT, log_path
 import tftpd as _tftpd
+from _power import power_cycle_verified
+from _repo import LOGS, REPO, TFTP_ROOT, log_path
 
 LOG = log_path("ram-boot-deploy")
 
@@ -68,8 +69,6 @@ def detect_server_ip() -> str:
         s.connect((IPADDR, 69))
         return s.getsockname()[0]
 
-HASS_HOST = "so-th-1.local"
-
 
 def log(msg: str, level: str = "INFO") -> None:
     line = f"{time.strftime('%Y-%m-%dT%H:%M:%S%z')}  {level:5s} {msg}"
@@ -84,7 +83,9 @@ def run_devpy(*args: str, timeout: float = 30.0) -> str:
     that the subprocess exited 0)."""
     cmd = ["./dev.py", "console-send", *args]
     log(f"run: {' '.join(cmd)}")
-    p = subprocess.run(cmd, cwd=REPO, capture_output=True, text=True, timeout=timeout + 10)
+    p = subprocess.run(
+        cmd, cwd=REPO, capture_output=True, text=True, timeout=timeout + 10
+    )
     out = p.stdout + p.stderr
     if "<<MATCHED" not in out and "--expect" in " ".join(args):
         log(f"no match, output tail:\n{out[-2000:]}", "ERROR")
@@ -92,65 +93,10 @@ def run_devpy(*args: str, timeout: float = 30.0) -> str:
     return out
 
 
-# aioesphomeapi lives in awto-terminal's own venv, not this project's - shell
-# out to that interpreter rather than pulling a cross-project dependency in
-# here. (Discovered the hard way: this function used to import it directly
-# and crashed immediately with ModuleNotFoundError on first real use.)
-AWTO_TERMINAL_PY = "/mnt/2tb/git/awto-terminal/.venv/bin/python3"
-
-_POWER_CYCLE_SCRIPT = """
-import asyncio
-from aioesphomeapi import APIClient
-
-async def set_state(state):
-    cli = APIClient('so-th-1.local', 6053, None)
-    await cli.connect(login=True)
-    ents, _ = await cli.list_entities_services()
-    relay = next(e for e in ents if type(e).__name__ == 'SwitchInfo')
-    cli.switch_command(relay.key, state)
-    await asyncio.sleep(1)
-    await cli.disconnect()
-
-async def get_state():
-    cli = APIClient('so-th-1.local', 6053, None)
-    await cli.connect(login=True)
-    ents, _ = await cli.list_entities_services()
-    relay = next(e for e in ents if type(e).__name__ == 'SwitchInfo')
-    states = []
-    cli.subscribe_states(states.append)
-    await asyncio.sleep(2)
-    await cli.disconnect()
-    return next((s.state for s in states if s.key == relay.key), None)
-
-async def cycle():
-    await set_state(False)
-    await asyncio.sleep(5)
-    await set_state(True)
-    await asyncio.sleep(2)
-    st = await get_state()
-    print('FINAL_STATE:', st)
-
-asyncio.run(cycle())
-"""
-
-
-def power_cycle_verified() -> None:
-    """Cut and restore power via the Sonoff TH outlet, VERIFYING the final
-    state - this session was bitten once by trusting the ON command without
-    checking, and the box sat dark until the user noticed."""
-    log("power: cycling via so-th-1")
-    r = subprocess.run(
-        [AWTO_TERMINAL_PY, "-c", _POWER_CYCLE_SCRIPT],
-        cwd="/mnt/2tb/git/awto-terminal",
-        capture_output=True,
-        text=True,
-        timeout=30,
-    )
-    out = r.stdout + r.stderr
-    if "FINAL_STATE: True" not in out:
-        raise RuntimeError(f"power restore did not take, output:\n{out}")
-    log("power: restored, verified ON")
-
+# power_cycle_verified() now lives in scripts/_power.py, shared with the
+# standalone `./dev.py power-cycle` entry point - was a local copy here,
+# duplicated a second time as an inline python3 -c snippet elsewhere in the
+# same session; one copy now, imported above.
 
 # Embedded tftpd, in-process (not a separate sudo'd subprocess). Reuses
 # tftpd.py's own RRQ/WRQ handlers directly rather than reimplementing TFTP -
@@ -272,12 +218,20 @@ def tftp_and_verify(local_path: Path, addr: str) -> int:
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     ap.add_argument("--kernel", required=True, help="path to the gzip'd uImage")
     ap.add_argument("--dtb", required=True, help="path to the DTB")
-    ap.add_argument("--modules-tar", help="optional: tar.gz of the kernel-version modules dir")
-    ap.add_argument("--kver", help="kernel release string, required if --modules-tar is given")
-    ap.add_argument("--skip-power-cycle", action="store_true", help="box is already at a fresh boot")
+    ap.add_argument(
+        "--modules-tar", help="optional: tar.gz of the kernel-version modules dir"
+    )
+    ap.add_argument(
+        "--kver", help="kernel release string, required if --modules-tar is given"
+    )
+    ap.add_argument(
+        "--skip-power-cycle", action="store_true", help="box is already at a fresh boot"
+    )
     a = ap.parse_args()
 
     if a.modules_tar and not a.kver:
@@ -308,19 +262,33 @@ def main() -> int:
             [sys.executable, "scripts/catch-uboot.py", "--seconds", "60"],
             cwd=REPO,
         )
-        power_cycle_verified()
+        power_cycle_verified(log=log)
         try:
             rc = catch.wait(timeout=70)
         except subprocess.TimeoutExpired:
             catch.kill()
             raise RuntimeError("catch-uboot.py hung waiting for the U-Boot prompt")
         if rc != 0:
-            raise RuntimeError("catch-uboot.py did not reach the U-Boot prompt (autoboot won)")
+            raise RuntimeError(
+                "catch-uboot.py did not reach the U-Boot prompt (autoboot won)"
+            )
         log("U-Boot prompt reached, autoboot stopped")
 
     def boot_to_login() -> None:
-        run_devpy("--expect", "ALPINE_UBNT_NAS_ALL>", "--timeout", "8", f"setenv ipaddr {IPADDR}")
-        run_devpy("--expect", "ALPINE_UBNT_NAS_ALL>", "--timeout", "8", f"setenv serverip {server_ip}")
+        run_devpy(
+            "--expect",
+            "ALPINE_UBNT_NAS_ALL>",
+            "--timeout",
+            "8",
+            f"setenv ipaddr {IPADDR}",
+        )
+        run_devpy(
+            "--expect",
+            "ALPINE_UBNT_NAS_ALL>",
+            "--timeout",
+            "8",
+            f"setenv serverip {server_ip}",
+        )
         tftp_and_verify(kernel, KERNEL_ADDR)
         tftp_and_verify(dtb, DTB_ADDR)
         if modules_tar:
@@ -362,21 +330,20 @@ def main() -> int:
         log(f"FATAL: boot-to-login failed 3/3 attempts: {last_exc}", "ERROR")
         return 1
 
-    # A bare "#" is a trap: the standing shell prompt "[root@woomera ~]# "
-    # already contains "#", so --expect can match instantly off the prompt
-    # that was sitting there BEFORE the real command even ran, not off its
-    # completion. Bit the /dev/mem extraction step below tonight - the
-    # checksum "mismatch" was really just reading a truncated echo of the
-    # command being typed, not a real extraction failure. Always echo a
-    # unique marker and expect that instead (same pattern used manually
-    # everywhere else this session).
+    # A bare "#" is a trap: the standing shell prompt already contains "#", so
+    # --expect could match the OLD prompt instead of waiting for the command
+    # to finish. Echo a marker instead - console-send now skips its own input
+    # echo before searching, so the marker being textually present in the
+    # command line (as here) no longer risks a premature match either.
     run_devpy("--expect", "SHELL_READY", "--timeout", "10", "echo SHELL_READY")
 
     if modules_tar:
         modules_size = modules_tar.stat().st_size
         modules_md5 = hashlib.md5(modules_tar.read_bytes()).hexdigest()
         skip_bytes = int(MODULES_ADDR, 16)
-        log(f"extracting modules from /dev/mem (skip={skip_bytes}, count={modules_size})")
+        log(
+            f"extracting modules from /dev/mem (skip={skip_bytes}, count={modules_size})"
+        )
         # Expect the ACTUAL computed hash, not a synthetic "DONE" marker - a
         # marker word is a trap here too: it's textually present in the
         # command line itself, and this console's tty echoes typed input
@@ -395,7 +362,9 @@ def main() -> int:
             f"md5sum /root/rbd-modules.tar.gz",
         )
         if modules_md5 not in out:
-            log(f"FATAL: /dev/mem extraction checksum mismatch. Output:\n{out}", "ERROR")
+            log(
+                f"FATAL: /dev/mem extraction checksum mismatch. Output:\n{out}", "ERROR"
+            )
             return 1
         log("checksum verified, extracting into place")
         # Expected .ko names come from the LOCAL archive we already have, so
@@ -437,7 +406,10 @@ def main() -> int:
         )
         missing = [k for k in expected_kos if k not in ls_out]
         if missing:
-            log(f"FATAL: extraction incomplete, missing {missing}. ls output:\n{ls_out}", "ERROR")
+            log(
+                f"FATAL: extraction incomplete, missing {missing}. ls output:\n{ls_out}",
+                "ERROR",
+            )
             return 1
         log(f"extraction verified: {len(expected_kos)} module(s) present")
 

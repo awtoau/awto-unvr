@@ -894,6 +894,20 @@ def cmd_ram_boot_deploy(extra: list[str]) -> int:
     return _run_script("scripts/ram-boot-deploy.py", extra)
 
 
+@command(
+    "power-cycle the UNVR via the Sonoff TH outlet, verifying it lands ON "
+    "(scripts/power-cycle.py)",
+    kind="action",
+)
+def cmd_power_cycle(extra: list[str]) -> int:
+    # The one power-control primitive - use this instead of an inline
+    # `python3 -c "... aioesphomeapi ..."` snippet (three of those in one
+    # session, each a duplicate of scripts/ram-boot-deploy.py's own
+    # power_cycle_verified(), which now imports the same scripts/_power.py
+    # this runs).
+    return _run_script("scripts/power-cycle.py", extra)
+
+
 def _tftpd_bound(port: int) -> bool:
     r = subprocess.run(
         ["ss", "-lun", f"sport = :{port}"],
