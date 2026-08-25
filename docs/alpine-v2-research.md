@@ -14,9 +14,8 @@ products/users, key people/forums. Researched 2026-08-16.
 ## 1. Overclocking / clocking / DVFS — survey
 
 **Register-exact procedure, strap/ceiling tables, PLL formats, eFuse caps analysis:
-canonical doc is [overclock-and-caps.md](overclock-and-caps.md).** That doc
-corrects this section's earlier claim that Alpine V2 uses the `v1`/REV1 PLL divider
-map — confirmed **REV2** (`al_pll_freq_set_v2`, `setup_0` bitfields), see there.
+canonical doc is [overclock-and-caps.md](overclock-and-caps.md).** PLL divider
+map is **REV2** (`al_pll_freq_set_v2`, `setup_0` bitfields) — full detail there.
 
 Survey findings that stay here (not overclock-and-caps' focus):
 - **No Alpine cpufreq / DVFS / OPP driver exists anywhere.** Checked urnvr-kernel
@@ -82,16 +81,15 @@ Survey findings that stay here (not overclock-and-caps' focus):
 - **Cross-pollination:** a fix on QNAP (delroth) or UDM (fabianishere) often applies
   to UNVR — same PLL/DDR/al_eth/al_dma. This is the main reason to track those repos.
 
-### Correction to earlier notes
+### Part-number disambiguation
 - **AL-314 ≠ AL-324.** TechInfoDepot lists **AL-314 as quad Cortex-A15 @1.4 GHz
   (Alpine V1)**, distinct from **AL-324 = quad A57 (Alpine V2)**. linux-alpine-v2's
   README labels the UNVR SoC "AL-314" — inconsistent with our device's own
   `Device ID = a324`. **Treat AL-324 as authoritative for UNVR/UDM.** The digits are
   conflated in the wild; key nothing on them (as porting-reference.md already warns).
 - **MikroTik RB1100AHx4 / RB4011 are NOT the same SoC** — they use **AL21400
-  (Cortex-A15, Alpine V1)**, not A57 V2. Earlier notes calling RB1100AHx4 "same SoC"
-  are wrong; it shares the Alpine *brand*, not the V2 core. Drivers do not cross over
-  the same way QNAP/UDM do.
+  (Cortex-A15, Alpine V1)**, not A57 V2. Shares the Alpine *brand*, not the V2 core.
+  Drivers do not cross over the same way QNAP/UDM do.
 
 ### Other Alpine (V1 / Cortex-A15, related but not our core)
 - Synology DS215+/DS416/DS715/DS1515/DS2015xs; Netgear R8900/R9000/XR700, ReadyNAS
