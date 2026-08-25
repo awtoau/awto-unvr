@@ -480,6 +480,8 @@ board.serialno=74acb941a811 board.qrid=icvpQD
 
 **`/proc/cmdline`** ✅ —
 `pci=pcie_bus_perf console=ttyS0,115200 sysid=ea16 ubnthal.sysid=ea16 reboot=cold`
+(this capture says `reboot=cold`; hardware.md's boot-log sweep of the same firmware
+generation found only `reboot=warm reboot=warm` — the two disagree, unresolved, #148)
 
 **`uname -a`** ✅ — `Linux (none) 4.1.37-ubnt #2 SMP Wed Dec 16 18:18:20 CST 2020
 aarch64 GNU/Linux`

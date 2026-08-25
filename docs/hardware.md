@@ -183,8 +183,12 @@ matte-black QFP **U1** in the SATA area is unread.
   unpopulated. Power settings fall back to defaults. Not investigated.
 - **`U-Boot script not found in TOC!`** ✅ — a TOC-based script slot exists and is
   empty. Possible customisation hook, unexplored.
-- **`Boot: warm`** ✅ — distinguishes warm from cold reset; `reboot=cold` appears
-  in the kernel cmdline.
+- **`Boot: warm`** ✅ — distinguishes warm from cold reset (U-Boot banner field,
+  the reset *type*). Kernel cmdline carries `reboot=warm reboot=warm` (doubled) —
+  a separate `reboot=` action field — on this boot-log sweep (1.3.35 at 17:03:13,
+  5.1.25 at 21:24:37/10:46:32). workflow.md's live `console-send` capture of the
+  same 1.3.35 generation recorded `reboot=cold` instead — the two disagree,
+  unresolved, tracked in #148.
 - **`ubnt-hdd-pwrctl ... Failed to request gpio 468 pin: -517`** ✅ — `-517` is
   `-EPROBE_DEFER`, normal during probe ordering, not an error.
 
@@ -471,13 +475,4 @@ are software-checksum micro-benches, not disk throughput.
   (4 muxed busses) — all confirmed across boots, matching the live capture.
 - `dtt_get_temp[0..2]` in U-Boot: cold-boot `103/99/101` (17:03), warm reboots
   `97–100`; SoC `temprature: 50 degrees`. Consistent with the chip table.
-
-### ⚠ Contradiction to fix above
-
-- The "Boot-time observations" note says *"`reboot=cold` appears in the kernel
-  cmdline"*. **Wrong.** Every boot's cmdline is `… reboot=warm reboot=warm`
-  (doubled) — 1.3.35 (17:03:13), 5.1.25 (21:24:37, 10:46:32), and the live
-  `cmdline.txt` (`reboot=warm reboot=warm`). No `reboot=cold` anywhere. The
-  U-Boot banner separately reports `Boot: warm` as the reset *type*; that is a
-  different field from the cmdline `reboot=` action.
 
