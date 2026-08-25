@@ -10,4 +10,4 @@ Tracked in-repo (not gitignored) — board photographs used to identify componen
 - Provenance: FCC ID equipment-authorization "Internal Photos" exhibits, retrieved 2026-08-16.
   Re-findable via an FCC-ID search (fcc.report / fccid.io) for the device's FCC ID (chassis label).
   Exact source URLs not recorded — recover from the label if a fresh copy is needed.
-- Related: [../photo-catalog.md](../photo-catalog.md), [../i2c-map.md](../i2c-map.md).
+- Related: [../components.md](../components.md), [../i2c-map.md](../i2c-map.md).

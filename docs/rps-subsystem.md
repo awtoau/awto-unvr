@@ -62,10 +62,10 @@ minimal one** — do not confuse them:
   JB4-in and JB5-out; **`D500`** = DPAK FET/diode in the ORing path.
 - **ORing power-monitor IC:** physical candidate **`U48`** (~10-pin QFN) — marking
   illegible; need a clearer macro. (`U122` is the MAX3221 RS-232 xcvr, not the monitor.)
-  ⚠ **`U1` UNRESOLVED:** the RPS-photo read called U1 a 16-pin monitor; the photo
-  catalog read it as a Marvell 88E6xxx switch OR an ASM1061 SATA/USB bridge (marking
-  worn) — see [photo-catalog.md](photo-catalog.md). Either way it's **not** the ORing
-  monitor (that's U48/other). U1's true ID needs a macro.
+  **`U1` RESOLVED — not the monitor:** confirmed **LMK00338** clock fan-out buffer
+  (not a switch, not a SATA/USB bridge — earlier reads of both were misreads of a
+  worn frame). See [components.md](components.md#unidentified--to-chase). The ORing
+  monitor is U48 (still unresolved) or another candidate, not U1.
 
 ## Power budgeting
 

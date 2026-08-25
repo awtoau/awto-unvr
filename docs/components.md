@@ -49,8 +49,7 @@ board `alpine_v2_ubnt one nas v5.0`, BOM `113-2832-29`, CM = **MSI**, UL `E24877
 
 ## Power / DC-DC
 
-Point-of-load topology — **no single big PMIC**. Full tree in
-[photo-catalog.md](photo-catalog.md#new--notable-parts-not-previously-cataloged).
+Point-of-load topology — **no single big PMIC**.
 
 | Ref | Part / verbatim marking | Function | Location (photo · area) | Status | Value / interest |
 |---|---|---|---|---|---|
