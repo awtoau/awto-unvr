@@ -180,6 +180,47 @@ def sudo_run(*cmd: str, **kw) -> subprocess.CompletedProcess:
     return run("sudo", "-n", *cmd, **kw)
 
 
+def verify_not_container_flavored(root: pathlib.Path) -> None:
+    """Fail loudly, before packaging/deploying anything, if this build ever
+    regresses to a container-flavored rootfs (#114, #150) - dnf's @core
+    weak-dep resolution has silently pulled in fedora-release-container
+    before despite the --exclude above; catch it here instead of finding out
+    from a live box's ConditionVirtualization=!container failures.
+
+    NOTE: this only catches the package-selection failure mode #114 was
+    originally (and wrongly) blamed for. #150 found systemd ALSO wrongly
+    detects "container" at early boot on a rootfs where this check passes
+    clean (fedora-release-server installed, os-release clean) - a deeper,
+    still-unexplained boot-timing issue this build-time check cannot catch,
+    since it only exists at runtime on the actual booted hardware."""
+    os_release = root / "etc" / "os-release"
+    text = os_release.read_text() if os_release.exists() else ""
+    if "container" in text.lower():
+        log(f"FATAL: {os_release} mentions 'container': {text}", "ERROR")
+        sys.exit(1)
+    rpm = subprocess.run(
+        ["rpm", "--root", str(root), "-q", "fedora-release-container"],
+        capture_output=True,
+        text=True,
+    )
+    if rpm.returncode == 0:
+        log(
+            f"FATAL: fedora-release-container IS installed in {root} "
+            f"(dnf's weak-dep resolution won despite --exclude): {rpm.stdout.strip()}",
+            "ERROR",
+        )
+        sys.exit(1)
+    rpm = subprocess.run(
+        ["rpm", "--root", str(root), "-q", "fedora-release-server"],
+        capture_output=True,
+        text=True,
+    )
+    if rpm.returncode != 0:
+        log(f"FATAL: fedora-release-server NOT installed in {root}", "ERROR")
+        sys.exit(1)
+    log("verified: not container-flavored (fedora-release-server present, os-release clean)")
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
@@ -232,6 +273,7 @@ def main() -> int:
         # Apply config via chroot - binfmt_misc runs the aarch64 bash/systemctl
         # transparently, same mechanism dnf's own scriptlets just used above.
         sudo_run("chroot", str(root), "bash", "-c", CONFIG_SH)
+        verify_not_container_flavored(root)
         # Export the configured rootfs (preserve ownership/perms - needs sudo
         # to read root-owned files dnf --installroot creates).
         log(f"exporting rootfs -> {out}")
