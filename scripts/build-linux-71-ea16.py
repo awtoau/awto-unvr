@@ -40,10 +40,10 @@ import sys
 import time
 import zlib
 
-SRC = "/mnt/2tb/unvr-port-refs/linux-v7.1.8"
+SRC = os.environ.get("AWTO_KERNEL_SRC", "/mnt/2tb/unvr-port-refs/linux-v7.1.8")
 PORT = "/mnt/2tb/unvr-port-refs/linux-alpine-v2"
 REPO = "/mnt/2tb/git/awto-unvr"  # ea16 board DTS hardware-of-record lives here (dts/)
-OUT = "/mnt/2tb/unvr-port-refs/build-out-71"
+OUT = os.environ.get("AWTO_KERNEL_OUT", "/mnt/2tb/unvr-port-refs/build-out-71")
 OUT612 = "/mnt/2tb/unvr-port-refs/build-out"  # source of the reusable initramfs
 DTS_NAME = "alpine-v2-ubnt-unvr-ea16"
 VER = "7.1"
