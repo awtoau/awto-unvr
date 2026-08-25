@@ -5016,33 +5016,34 @@ static const struct net_device_ops al_eth_netdev_ops = {
 };
 
 /* TEMP DIAGNOSTIC for #131: bisects which al_eth_probe() call corrupts the
- * tail of struct net_device (net/core/dev.c:11371 WARNs on garbage
- * request_ops_lock/queue_mgmt_ops - confirmed at offsets 3385/3072 of a
- * 3584-byte net_device, i.e. netdev_priv() starts exactly where net_device
- * ends). Snapshots the last 700 bytes of net_device right after alloc
- * (before any adapter->field write, which all land AT/AFTER netdev_priv()),
- * memcmp's at each checkpoint, pr_err's + hexdumps the first checkpoint
- * where it changed. Remove once the actual write is found - see the issue. */
-#define AL_ETH_DBG_TAIL_LEN 700
-static u8 al_eth_dbg_tail_snapshot[AL_ETH_DBG_TAIL_LEN];
+ * SPECIFIC net_device fields net/core/dev.c:11371 WARNs on garbage in
+ * (request_ops_lock/queue_mgmt_ops). v1 of this watched the whole last-700-
+ * bytes "tail" of net_device and got a false positive on 'after mac_addr
+ * set': eth_hw_addr_set()/eth_hw_addr_random() legitimately write into
+ * dev->dev_addr_shadow[] via dev_addr_mod() (net/core/dev_addr_lists.c) -
+ * a real, correct write to a real net_device field, not a bug. Watching
+ * the two actually-corrupted fields BY NAME (offsetof, compiler-resolved
+ * for this exact build - no offset guessing) instead of a broad byte range
+ * excludes that and any other legitimate late-struct write. Remove once
+ * the actual write is found - see the issue. */
+static struct netdev_queue_mgmt_ops const *al_eth_dbg_snap_qmo;
+static bool al_eth_dbg_snap_rol;
 static void al_eth_dbg_snapshot_tail(struct net_device *netdev)
 {
-	memcpy(al_eth_dbg_tail_snapshot,
-	       (u8 *)netdev + sizeof(*netdev) - AL_ETH_DBG_TAIL_LEN,
-	       AL_ETH_DBG_TAIL_LEN);
+	al_eth_dbg_snap_qmo = netdev->queue_mgmt_ops;
+	al_eth_dbg_snap_rol = netdev->request_ops_lock;
 }
 static void al_eth_dbg_check_tail(struct net_device *netdev, const char *checkpoint)
 {
-	u8 *tail = (u8 *)netdev + sizeof(*netdev) - AL_ETH_DBG_TAIL_LEN;
-
-	if (memcmp(tail, al_eth_dbg_tail_snapshot, AL_ETH_DBG_TAIL_LEN)) {
-		pr_err("al_eth #131 DIAG: net_device tail CORRUPTED by checkpoint '%s'\n",
-			checkpoint);
-		print_hex_dump(KERN_ERR, "al_eth #131 tail: ", DUMP_PREFIX_OFFSET, 16, 1,
-				tail, AL_ETH_DBG_TAIL_LEN, true);
-		memcpy(al_eth_dbg_tail_snapshot, tail, AL_ETH_DBG_TAIL_LEN);
+	if (netdev->queue_mgmt_ops != al_eth_dbg_snap_qmo ||
+	    netdev->request_ops_lock != al_eth_dbg_snap_rol) {
+		pr_err("al_eth #131 DIAG: queue_mgmt_ops/request_ops_lock CHANGED by checkpoint '%s' (qmo %px -> %px, rol %d -> %d)\n",
+			checkpoint, al_eth_dbg_snap_qmo, netdev->queue_mgmt_ops,
+			al_eth_dbg_snap_rol, netdev->request_ops_lock);
+		al_eth_dbg_snap_qmo = netdev->queue_mgmt_ops;
+		al_eth_dbg_snap_rol = netdev->request_ops_lock;
 	} else {
-		pr_err("al_eth #131 DIAG: tail clean after '%s'\n", checkpoint);
+		pr_err("al_eth #131 DIAG: qmo/rol clean after '%s'\n", checkpoint);
 	}
 }
 
@@ -5323,11 +5324,13 @@ al_eth_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 	al_eth_init_rings(adapter);
 	al_eth_dbg_check_tail(netdev, "after al_eth_init_rings");
 	INIT_WORK(&adapter->reset_task, al_eth_reset_task);
+	al_eth_dbg_check_tail(netdev, "after INIT_WORK");
 
 	netdev->netdev_ops = &al_eth_netdev_ops;
 
 	netdev->watchdog_timeo = TX_TIMEOUT;
 	netdev->ethtool_ops = &al_eth_ethtool_ops;
+	al_eth_dbg_check_tail(netdev, "after netdev_ops/watchdog/ethtool_ops");
 
 	if (!is_valid_ether_addr(adapter->mac_addr)) {
 		eth_hw_addr_random(netdev);
@@ -5335,8 +5338,10 @@ al_eth_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 	} else {
 		eth_hw_addr_set(netdev, adapter->mac_addr);
 	}
+	al_eth_dbg_check_tail(netdev, "after mac_addr set");
 
 	memcpy(adapter->netdev->perm_addr, adapter->mac_addr, netdev->addr_len);
+	al_eth_dbg_check_tail(netdev, "after perm_addr memcpy");
 
 	netdev->features =	NETIF_F_SG |
 				NETIF_F_IP_CSUM |
@@ -5348,10 +5353,12 @@ al_eth_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 				NETIF_F_NTUPLE |
 				NETIF_F_RXHASH |
 				NETIF_F_HIGHDMA;
+	al_eth_dbg_check_tail(netdev, "after netdev->features");
 
 	netdev->hw_features |= netdev->features;
 
 	netdev->vlan_features |= netdev->features;
+	al_eth_dbg_check_tail(netdev, "after hw_features/vlan_features");
 
 	/* Do NOT enable NETIF_F_HW_VLAN_CTAG_RX — the switch trunk (sw0)
 	 * uses 802.1Q VLAN sub-interfaces (sw0.10, sw0.3000, etc.) that
@@ -5359,18 +5366,23 @@ al_eth_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 	 * would silently eat all VLAN tags and break zone isolation. */
 
 	netdev->priv_flags |= IFF_UNICAST_FLT;
+	al_eth_dbg_check_tail(netdev, "after priv_flags");
 
 	for (i = 0; i < AL_ETH_RX_RSS_TABLE_SIZE; i++)
 		adapter->rss_ind_tbl[i] =
 			ethtool_rxfh_indir_default(i, AL_ETH_NUM_QUEUES);
+	al_eth_dbg_check_tail(netdev, "after rss_ind_tbl loop");
 
 	netdev->min_mtu = AL_ETH_MIN_MTU;
 	netdev->max_mtu = AL_ETH_MAX_MTU;
+	al_eth_dbg_check_tail(netdev, "after min_mtu/max_mtu");
 
 	u64_stats_init(&adapter->syncp);
+	al_eth_dbg_check_tail(netdev, "after u64_stats_init");
 
 	al_eth_dbg_check_tail(netdev, "right before register_netdev");
 	rc = register_netdev(netdev);
+	al_eth_dbg_check_tail(netdev, "right after register_netdev returned");
 	if (rc) {
 		dev_err(&pdev->dev, "Cannot register net device\n");
 		goto err_register;
