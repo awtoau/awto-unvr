@@ -205,7 +205,9 @@ matte-black QFP **U1** in the SATA area is unread.
   a factory/dev leftover with **zero firmware users**; 5.1.25 dropped the partition.
   Image: `docs/photos/chike-firmware-selfie.jpg`. See [mtd.md](mtd.md).
 - Whether `dtt_get_temp[0..2]` maps to the three fan-adjacent sensors.
-- SFP+ module type/vendor — `ethtool` gave no module data on the stock kernel.
+- ~~SFP+ module type/vendor~~ **RESOLVED** — Finisar FTLX8571D3BCL, read live via direct
+  I²C EEPROM (`ethtool` gives no module data on the stock kernel). See
+  [chips/sfp-optic.md](chips/sfp-optic.md).
 
 ## MMIO and address map
 

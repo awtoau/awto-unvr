@@ -1,4 +1,4 @@
-# SFP+ cage + optic (module UNCONFIRMED)
+# SFP+ cage + optic (module confirmed: Finisar FTLX8571D3BCL)
 
 Record the **cage** (on-board connector) and the **module** (removable optic) separately.
 
@@ -9,22 +9,24 @@ Record the **cage** (on-board connector) and the **module** (removable optic) se
 - **MAC:** on-SoC al_eth port 2 (`1c36:0002`). SerDes @ `0xfd8c0000` — [hardware.md#mmio-and-address-map](../hardware.md#mmio-and-address-map).
 - Passive part; no datasheet needed.
 
-## Inserted module (optic) — UNCONFIRMED
+## Inserted module (optic) — CONFIRMED
 
-- **Known:** a **third-party Intel** SFP+ module is fitted (per project notes). Exact model/vendor **not captured** — `ethtool -m` returned "No data available" on the stock 4.19.152 kernel (no SFF-8472 diagnostics path).
-- **Type:** behaves as a 10G optic (`10G_OPTIC` LM mode). Could be SR/LR fibre or a 10GBASE optic; not distinguished yet.
-
-## How to confirm the module
-
-1. **`ethtool -m enp0s2`** on a kernel with SFP/SFF-8472 support (mainline sfp phylink, or a build with the diagnostic read) — dumps vendor, part, serial, wavelength, DOM.
-2. **Read the module EEPROM directly** at I²C **0x50** (SFF-8472 base) / **0x51** (DOM) on the cage's I²C — likely behind the [PCA9546A](pca9546a.md) mux; find the segment first.
-3. **Physical label** on the module body (vendor + P/N).
+- **Part: Finisar FTLX8571D3BCL** — 10G-SR SFP+ optic. Read live via direct I²C EEPROM
+  read (not `ethtool -m` — stock 4.19.152 gave "No data available", no SFF-8472
+  diagnostics path in that kernel).
+- **I²C:** 0x50 = SFF-8079 base EEPROM (ID/vendor/part/serial), 0x51 = SFF-8472 DDM
+  (temp/Vcc/TX/RX power) — both behind [PCA9546A](pca9546a.md) mux **channel 1**
+  (canonical map: [../i2c-map.md](../i2c-map.md)).
+- **Type:** 10G optic (`10G_OPTIC` LM mode in al_eth). Third-party optic works fine in
+  the cage → the port does not enforce a vendor lock at the optic level.
 
 ## Datasheet
 
-- **None** — module unidentified. Once ethtool/EEPROM names the part, fetch that stock optic datasheet.
+- **None saved yet.** Fetch the Finisar FTLX8571D3BCL datasheet if DDM register
+  offsets/scaling are needed beyond the standard SFF-8472 layout.
 
 ## RE / repurpose notes
 
-- Stock kernel gives no DOM — closing this needs either a mainline sfp/phylink kernel or a direct I²C EEPROM read.
-- Third-party optic already works in the cage → the port does not enforce a vendor lock at the optic level.
+- Stock kernel's `ethtool -m` path gives no DOM — a direct I²C EEPROM read (mux ch1,
+  0x50/0x51) is the working path; a mainline sfp/phylink kernel would also expose it
+  via `ethtool -m`.
