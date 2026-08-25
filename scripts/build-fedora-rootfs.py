@@ -129,6 +129,13 @@ systemctl enable NetworkManager.service
 mkdir -p /etc/systemd/system/NetworkManager.service.d /etc/systemd/system/polkit.service.d
 printf '[Service]\nTimeoutStartSec=10\n' > /etc/systemd/system/NetworkManager.service.d/override.conf
 printf '[Service]\nTimeoutStartSec=10\n' > /etc/systemd/system/polkit.service.d/override.conf
+# #131 root cause: al_eth is the driver for BOTH the 1G and 10G PCI devices,
+# and udev's coldplug fires concurrent `modprobe al_eth` for each - a genuine
+# kernel race in idempotent_init_module() (kernel/module/main.c) on the first
+# concurrent load, escalating from an Oops to a full soft-lockup. Loading it
+# once, serially, via modules-load.d (before udev's coldplug ever runs)
+# removes the race's precondition entirely.
+echo 'al_eth' > /etc/modules-load.d/al_eth.conf
 # systemd-resolved's own RPM preset enables it by default, but nothing here
 # ever configures it - NetworkManager already writes /etc/resolv.conf directly
 # and works correctly on its own. Both enabled + unreconciled means resolved
