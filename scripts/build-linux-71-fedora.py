@@ -26,7 +26,6 @@ import zlib
 
 from _repo import NPROC  # -j28 host build parallelism (#146)
 
-ROOT_PASSWORD = "unvr"  # documented default, see docs/fedora-on-ssd.md
 SRC = os.environ.get("AWTO_KERNEL_SRC", "/mnt/2tb/unvr-port-refs/linux-v7.1.8")
 PORT = "/mnt/2tb/unvr-port-refs/linux-alpine-v2"
 REPO = "/mnt/2tb/git/awto-unvr"  # OOT al_* module sources imported here (modules/)
@@ -87,47 +86,35 @@ def run(cmd, **kw):
     subprocess.run(cmd, check=True, env=ENV, **kw)
 
 
+LSMOD_KNOWN_GOOD = os.path.join(REPO, "scripts", "woomera-lsmod-known-good.txt")
+
+
 def trim_to_woomera_modules():
     """Trim Fedora's generic-hardware driver pile down to what woomera's own
     lsmod actually uses (localmodconfig) - debug/dev kernel, board is fixed
     hardware, not a generic PC. Only touches =m stock Fedora drivers; our own
     al_* OOT modules build via a separate M= invocation, unaffected either
-    way. Skippable (WARN, not FATAL) if the box isn't reachable right now."""
-    try:
-        host = subprocess.check_output(
-            [sys.executable, "scripts/ssh-woomera.py", "--print"],
-            cwd=REPO,
-            text=True,
-            timeout=15,
-        ).strip()
-        lsmod = subprocess.check_output(
-            [
-                "sshpass",
-                "-p",
-                ROOT_PASSWORD,
-                "ssh",
-                "-o",
-                "ConnectTimeout=8",
-                "-o",
-                "StrictHostKeyChecking=accept-new",
-                "-o",
-                "PreferredAuthentications=password",
-                "-o",
-                "PubkeyAuthentication=no",
-                f"root@{host}",
-                "lsmod",
-            ],
-            text=True,
-            timeout=15,
-        )
-    except (subprocess.CalledProcessError, subprocess.TimeoutExpired, OSError) as e:
-        log(f"WARN: couldn't reach woomera for lsmod ({e}) - skipping localmodconfig")
-        return
-    lsmod_path = os.path.join(OUT, "woomera-lsmod.txt")
-    os.makedirs(OUT, exist_ok=True)
-    pathlib.Path(lsmod_path).write_text(lsmod)
-    run(["make", "-C", SRC, f"O={KOUT}", f"LSMOD={lsmod_path}", "localmodconfig"])
-    log(f"trimmed to woomera's lsmod ({len(lsmod.splitlines()) - 1} modules)")
+    way.
+
+    Used to SSH to the box live for this every build - fragile by
+    construction (this board's network has been repeatedly flaky this
+    project) and the failure mode was silent: SSH timeout -> WARN ->
+    fall through to the full untrimmed Fedora config, with nothing in
+    the final artifacts distinguishing a trimmed build from a bloated
+    one (#149). The board's actual module set doesn't change on its
+    own between boots - a live fetch was never buying anything a
+    checked-in snapshot doesn't, just adding a network dependency to
+    every build. LSMOD_KNOWN_GOOD is a real `lsmod` capture from the
+    box (scripts/woomera-lsmod-known-good.txt); update it by hand
+    (`lsmod > scripts/woomera-lsmod-known-good.txt` over the console,
+    then commit) when the board's hardware/driver set actually
+    changes, not on every build."""
+    if not os.path.exists(LSMOD_KNOWN_GOOD):
+        log(f"FATAL: {LSMOD_KNOWN_GOOD} missing", "ERROR")
+        sys.exit(1)
+    run(["make", "-C", SRC, f"O={KOUT}", f"LSMOD={LSMOD_KNOWN_GOOD}", "localmodconfig"])
+    n = len(pathlib.Path(LSMOD_KNOWN_GOOD).read_text().splitlines()) - 1
+    log(f"trimmed to {LSMOD_KNOWN_GOOD} ({n} modules)")
 
 
 def configure():

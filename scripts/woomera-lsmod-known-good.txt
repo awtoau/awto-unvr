@@ -1,0 +1,33 @@
+Module                  Size  Used by
+al_ssm                483328  0
+at803x                 40960  2
+qcom_phy_lib           32768  1 at803x
+rfkill                 77824  1
+adt7475               135168  0
+hwmon_vid              12288  1 adt7475
+ofpart                 24576  0
+spi_nor               421888  0
+uas                    65536  0
+mtd                   200704  10 spi_nor,ofpart
+usb_storage           204800  1 uas
+ghash_ce               24576  0
+al_sgpo                16384  0
+gf128mul               20480  1 ghash_ce
+sp805_wdt              20480  0
+i2c_mux_pca954x        36864  0
+i2c_mux                24576  2 i2c_mux_pca954x
+at24                   49152  0
+spi_dw_mmio            24576  0
+spi_dw                 69632  1 spi_dw_mmio
+al_dma                217088  0
+al_eth                995328  0
+ramoops                81920  0
+ledtrig_default_on     12288  0
+reed_solomon           40960  1 ramoops
+leds_gpio              20480  0
+gpio_keys              49152  0
+i2c_dev                40960  0
+fuse                  512000  1
+zram                  143360  0
+lz4hc_compress         45056  1 zram
+lz4_compress           69632  1 zram
