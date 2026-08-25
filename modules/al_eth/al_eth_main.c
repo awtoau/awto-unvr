@@ -5015,6 +5015,37 @@ static const struct net_device_ops al_eth_netdev_ops = {
 	.ndo_set_features       = al_set_features,
 };
 
+/* TEMP DIAGNOSTIC for #131: bisects which al_eth_probe() call corrupts the
+ * tail of struct net_device (net/core/dev.c:11371 WARNs on garbage
+ * request_ops_lock/queue_mgmt_ops - confirmed at offsets 3385/3072 of a
+ * 3584-byte net_device, i.e. netdev_priv() starts exactly where net_device
+ * ends). Snapshots the last 700 bytes of net_device right after alloc
+ * (before any adapter->field write, which all land AT/AFTER netdev_priv()),
+ * memcmp's at each checkpoint, pr_err's + hexdumps the first checkpoint
+ * where it changed. Remove once the actual write is found - see the issue. */
+#define AL_ETH_DBG_TAIL_LEN 700
+static u8 al_eth_dbg_tail_snapshot[AL_ETH_DBG_TAIL_LEN];
+static void al_eth_dbg_snapshot_tail(struct net_device *netdev)
+{
+	memcpy(al_eth_dbg_tail_snapshot,
+	       (u8 *)netdev + sizeof(*netdev) - AL_ETH_DBG_TAIL_LEN,
+	       AL_ETH_DBG_TAIL_LEN);
+}
+static void al_eth_dbg_check_tail(struct net_device *netdev, const char *checkpoint)
+{
+	u8 *tail = (u8 *)netdev + sizeof(*netdev) - AL_ETH_DBG_TAIL_LEN;
+
+	if (memcmp(tail, al_eth_dbg_tail_snapshot, AL_ETH_DBG_TAIL_LEN)) {
+		pr_err("al_eth #131 DIAG: net_device tail CORRUPTED by checkpoint '%s'\n",
+			checkpoint);
+		print_hex_dump(KERN_ERR, "al_eth #131 tail: ", DUMP_PREFIX_OFFSET, 16, 1,
+				tail, AL_ETH_DBG_TAIL_LEN, true);
+		memcpy(al_eth_dbg_tail_snapshot, tail, AL_ETH_DBG_TAIL_LEN);
+	} else {
+		pr_err("al_eth #131 DIAG: tail clean after '%s'\n", checkpoint);
+	}
+}
+
 /**
  * al_eth_probe - Device Initialization Routine
  * @pdev: PCI device information struct
@@ -5109,6 +5140,8 @@ al_eth_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 
 	SET_NETDEV_DEV(netdev, &pdev->dev);
 
+	al_eth_dbg_snapshot_tail(netdev);
+
 	adapter = netdev_priv(netdev);
 	pci_set_drvdata(pdev, adapter);
 
@@ -5196,6 +5229,8 @@ al_eth_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 		}
 	}
 
+	al_eth_dbg_check_tail(netdev, "after board_type iomap setup");
+
 	adapter->rev_id = rev_id;
 	adapter->dev_id = dev_id;
 	adapter->id_number = adapters_found;
@@ -5236,9 +5271,11 @@ al_eth_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 		break;
 	}
 #endif
+	al_eth_dbg_check_tail(netdev, "before al_eth_board_params_init");
 	rc = al_eth_board_params_init(adapter);
 	if (rc)
 		goto err_hw_init;
+	al_eth_dbg_check_tail(netdev, "after al_eth_board_params_init");
 
 #if defined(CONFIG_ARCH_ALPINE)
 	/* 10G SFP+ port: mainline phylink + sfp.c own link management instead
@@ -5255,8 +5292,10 @@ al_eth_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 
 	/** Perform HW stop to clean garbage left-overs from PXE / Uboot driver */
 	al_eth_hal_adapter_init(adapter);
+	al_eth_dbg_check_tail(netdev, "after al_eth_hal_adapter_init");
 	adapter->hal_adapter.mac_mode = adapter->mac_mode;
 	al_eth_hw_stop(adapter);
+	al_eth_dbg_check_tail(netdev, "after al_eth_hw_stop");
 
 #if defined(CONFIG_ARCH_ALPINE)
 	if (use_phylink) {
@@ -5270,15 +5309,19 @@ al_eth_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 		if (rc)
 			goto err_hw_init;
 	}
+	al_eth_dbg_check_tail(netdev, "after phylink/serdes/lm setup block");
 #endif
 
 	al_eth_function_reset(adapter);
+	al_eth_dbg_check_tail(netdev, "after al_eth_function_reset");
 
 	rc = al_eth_hw_init_adapter(adapter);
 	if (rc)
 		goto err_hw_init;
+	al_eth_dbg_check_tail(netdev, "after al_eth_hw_init_adapter");
 
 	al_eth_init_rings(adapter);
+	al_eth_dbg_check_tail(netdev, "after al_eth_init_rings");
 	INIT_WORK(&adapter->reset_task, al_eth_reset_task);
 
 	netdev->netdev_ops = &al_eth_netdev_ops;
@@ -5326,6 +5369,7 @@ al_eth_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 
 	u64_stats_init(&adapter->syncp);
 
+	al_eth_dbg_check_tail(netdev, "right before register_netdev");
 	rc = register_netdev(netdev);
 	if (rc) {
 		dev_err(&pdev->dev, "Cannot register net device\n");
