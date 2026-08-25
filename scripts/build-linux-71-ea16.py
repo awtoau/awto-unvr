@@ -45,6 +45,13 @@ SRC = os.environ.get("AWTO_KERNEL_SRC", "/mnt/2tb/unvr-port-refs/linux-v7.1.8")
 PORT = "/mnt/2tb/unvr-port-refs/linux-alpine-v2"
 REPO = "/mnt/2tb/git/awto-unvr"  # ea16 board DTS hardware-of-record lives here (dts/)
 OUT = os.environ.get("AWTO_KERNEL_OUT", "/mnt/2tb/unvr-port-refs/build-out-71")
+# kbuild's own O= output dir (see build-linux-71-fedora.py's KOUT, #145) - this
+# script shares SRC=linux-v7.1.8 with build-fedora by default, and building
+# in-place here (no O=) was proven this session to break a SUBSEQUENT
+# build-fedora run against the same tree (kbuild refuses O= on a tree ever
+# built in-place - "please run 'make mrproper'"). O= makes the two builds
+# structurally independent instead of order-dependent.
+KOUT = os.path.join(OUT, "kbuild")
 OUT612 = "/mnt/2tb/unvr-port-refs/build-out"  # source of the reusable initramfs
 DTS_NAME = "alpine-v2-ubnt-unvr-ea16"
 VER = "7.1"
@@ -214,12 +221,13 @@ def prep_initramfs():
 
 
 def configure():
-    run(["make", "-C", SRC, "unvr_defconfig"])
+    os.makedirs(KOUT, exist_ok=True)
+    run(["make", "-C", SRC, f"O={KOUT}", "unvr_defconfig"])
     cfg = os.path.join(SRC, "scripts/config")
     args = [
         cfg,
         "--file",
-        os.path.join(SRC, ".config"),
+        os.path.join(KOUT, ".config"),
         "--disable",
         "WERROR",
         "--disable",
@@ -300,8 +308,8 @@ def configure():
             "INITRAMFS_COMPRESSION_GZIP",
         ]
     run(args)
-    run(["make", "-C", SRC, "olddefconfig"])
-    dotcfg = pathlib.Path(os.path.join(SRC, ".config")).read_text()
+    run(["make", "-C", SRC, f"O={KOUT}", "olddefconfig"])
+    dotcfg = pathlib.Path(os.path.join(KOUT, ".config")).read_text()
     for sym in ("CONFIG_PCIE_AL_INTERNAL=y", "CONFIG_PCIE_AL=y"):
         if sym not in dotcfg:
             log(f"FATAL: {sym} not set after olddefconfig")
@@ -311,14 +319,16 @@ def configure():
 
 def kver():
     return (
-        subprocess.check_output(["make", "-s", "-C", SRC, "kernelrelease"], env=ENV)
+        subprocess.check_output(
+            ["make", "-s", "-C", SRC, f"O={KOUT}", "kernelrelease"], env=ENV
+        )
         .decode()
         .strip()
     )
 
 
 def build_modules_intree():
-    run(["make", "-C", SRC, f"-j{NPROC}", "modules"])
+    run(["make", "-C", SRC, f"O={KOUT}", f"-j{NPROC}", "modules"])
 
 
 def adapt_module(m, mpath):
@@ -362,8 +372,7 @@ def build_oot_modules():
                 [
                     "make",
                     "-C",
-                    SRC,
-                    f"KDIR={SRC}",
+                    KOUT,
                     f"M={mpath}",
                     f"-j{NPROC}",
                     "modules",
@@ -384,7 +393,7 @@ def build_oot_modules():
     # module metadata for modprobe.
     mroot = os.path.join(OUT, f"initramfs-root/lib/modules/{kv}")
     for meta in ("modules.builtin", "modules.order", "modules.builtin.modinfo"):
-        s = os.path.join(SRC, meta)
+        s = os.path.join(KOUT, meta)
         if os.path.exists(s):
             shutil.copy(s, mroot)
     subprocess.run(
@@ -398,7 +407,7 @@ def build_oot_modules():
 
 
 def build_image():
-    run(["make", "-C", SRC, f"-j{NPROC}", "Image", "dtbs"])
+    run(["make", "-C", SRC, f"O={KOUT}", f"-j{NPROC}", "Image", "dtbs"])
 
 
 def mkuimage(image_path, out_path, name=f"unvr-ea16-{VER}"):
@@ -450,12 +459,12 @@ def regen_initramfs_cpio():
 
 
 def collect():
-    image = os.path.join(SRC, "arch/arm64/boot/Image")
-    dtb = os.path.join(SRC, f"arch/arm64/boot/dts/amazon/{DTS_NAME}.dtb")
+    image = os.path.join(KOUT, "arch/arm64/boot/Image")
+    dtb = os.path.join(KOUT, f"arch/arm64/boot/dts/amazon/{DTS_NAME}.dtb")
     shutil.copy(image, os.path.join(OUT, "Image"))
     shutil.copy(dtb, os.path.join(OUT, f"{DTS_NAME}-{VER}.dtb"))
     shutil.copy(
-        os.path.join(SRC, ".config"), os.path.join(OUT, f"unvr-ea16-{VER}.config")
+        os.path.join(KOUT, ".config"), os.path.join(OUT, f"unvr-ea16-{VER}.config")
     )
     mkuimage(image, os.path.join(OUT, f"uImage-unvr-ea16-{VER}"))
     regen_initramfs_cpio()
