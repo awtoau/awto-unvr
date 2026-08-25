@@ -872,6 +872,30 @@ def cmd_build_fedora(extra: list[str]) -> int:
 
 
 @command(
+    "build Linux 6.12 netboot/initramfs image (scripts/build-linux-612-ea16.py)",
+    kind="action",
+)
+def cmd_build_612(extra: list[str]) -> int:
+    return _run_script("scripts/build-linux-612-ea16.py", extra)
+
+
+@command(
+    "build Linux 6.18 netboot/initramfs image (scripts/build-linux-618-ea16.py)",
+    kind="action",
+)
+def cmd_build_618(extra: list[str]) -> int:
+    return _run_script("scripts/build-linux-618-ea16.py", extra)
+
+
+@command(
+    "build Linux 7.1 netboot/initramfs image (scripts/build-linux-71-ea16.py)",
+    kind="action",
+)
+def cmd_build_71_ea16(extra: list[str]) -> int:
+    return _run_script("scripts/build-linux-71-ea16.py", extra)
+
+
+@command(
     "build the Fedora rootfs tarball via dnf --installroot "
     "(scripts/build-fedora-rootfs.py)",
     args="[--keep]",

@@ -7,9 +7,9 @@ index; each linked doc covers the version-specific deltas in depth.
 
 | # | What | dev.py | Script | Kernel ver | SRC tree | Output |
 |---|------|--------|--------|-----------|----------|--------|
-| 1 | Linux 6.12, netboot | *(none - run script directly)* | `build-linux-612-ea16.py` | 6.12 | `linux-6.12` | `build-out/` |
-| 2 | Linux 6.18, netboot | *(none)* | `build-linux-618-ea16.py` | 6.18.44 | `linux-v6.18.44` | `build-out-618/` |
-| 3 | Linux 7.1, netboot/initramfs | *(none)* | `build-linux-71-ea16.py` | 7.1.8 | `linux-v7.1.8` (`AWTO_KERNEL_SRC`) | `build-out-71/` (`AWTO_KERNEL_OUT`) |
+| 1 | Linux 6.12, netboot | `build-612` | `build-linux-612-ea16.py` | 6.12 | `linux-6.12` | `build-out/` |
+| 2 | Linux 6.18, netboot | `build-618` | `build-linux-618-ea16.py` | 6.18.44 | `linux-v6.18.44` | `build-out-618/` |
+| 3 | Linux 7.1, netboot/initramfs | `build-71-ea16` | `build-linux-71-ea16.py` | 7.1.8 | `linux-v7.1.8` (`AWTO_KERNEL_SRC`) | `build-out-71/` (`AWTO_KERNEL_OUT`) |
 | 4 | Linux 7.1, Fedora rootfs (**daily driver**) | `build-fedora` | `build-linux-71-fedora.py` | 7.1.8 | `linux-v7.1.8` (`AWTO_KERNEL_SRC`) | `build-out-71-fedora/` |
 | 4a | ↳ same script, KASAN variant | `AWTO_KASAN_BUILD=1 build-fedora` | (same) | 7.1.8-kasan | (same) | `build-out-71-fedora-kasan/` |
 | 5 | On-box native (no cross-compile) | *(none)* | `build-on-box.py` | matches whatever's flashed | `/root/src/linux-v7.1.8` on the box itself | `/lib/modules/<kver>/updates/` on the box |
