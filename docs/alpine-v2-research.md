@@ -11,82 +11,22 @@ products/users, key people/forums. Researched 2026-08-16.
 
 ---
 
-## 1. Overclocking / clocking / DVFS — evidence
+## 1. Overclocking / clocking / DVFS — survey
 
-### The mechanism exists; nobody has used it; there is no Linux driver for it
+**Register-exact procedure, strap/ceiling tables, PLL formats, eFuse caps analysis:
+canonical doc is [overclock-and-caps.md](overclock-and-caps.md).** That doc
+corrects this section's earlier claim that Alpine V2 uses the `v1`/REV1 PLL divider
+map — confirmed **REV2** (`al_pll_freq_set_v2`, `setup_0` bitfields), see there.
+
+Survey findings that stay here (not overclock-and-caps' focus):
 - **No Alpine cpufreq / DVFS / OPP driver exists anywhere.** Checked urnvr-kernel
   4.19.152, delroth qnap 6.0.6, UBNT GPL, linux 6.18/7.1.8 — only generic
   `virtual-cpufreq.c`. CPU frequency is **set once at boot** and fixed thereafter.
 - **No community overclock report exists** for any Alpine V2 device (UNVR, UDM, QNAP
   TS-x32x). Searches surface only QNAP's marketing "CPU burst" and generic OC pages.
-- So the A57 cores run at the **strapped** frequency (UNVR: 1.7 GHz) for the life of
-  the boot. Changing it means either a different strap (pins/OTP) or runtime PLL
-  reprogramming — see below.
-
-### CPU PLL frequency is a 4-bit bootstrap strap (read-only)
-Source: `drivers/pbs/al_hal_bootstrap.c` `al_bootstrap_cpu_pll_freq_get()`.
-The strap register field decodes to a fixed CPU frequency. **Alpine V2** table
-(`dev_id <= ALPINE_V2`):
-
-| field | MHz | | field | MHz |
-|---|---|---|---|---|
-| 0x0 | bypass | | 0x8 | 2100 |
-| 0x1 | 1000 | | 0x9 | 2200 |
-| 0x2 | 1400 | | 0xA | 2300 |
-| 0x3 | 1500 | | 0xB | 2400 |
-| 0x4 | 1600 | | 0xC | 2500 |
-| **0x5** | **1700 (UNVR)** | | 0xD | 2600 |
-| 0x6 | 1800 | | 0xE | **2700 (max)** |
-| 0x7 | 1900 | | 0xF | 2000 (default) |
-
-- **UNVR silicon is strapped 0x5 = 1700 MHz.** The same decode covers 1800→2700 MHz.
-  Whether a given AL-324 die is *binned/stable* above 1.7 GHz is unknown and untested.
-- Alpine **V3** parts (`dev_id > V2`) decode the same field up to **3000 MHz** — not
-  our chip, but shows the family headroom.
-- The strap is a reflection of hardware pins/OTP, so it is **not a runtime knob**.
-
-### PLL divider tables go to 3.0–3.2 GHz
-Source: `drivers/ring/al_hal_pll_map.h`. For **Alpine V2 the relevant map is `v1`**
-(REV1 in the HAL). `al_pll_freq_map_v1_100[]` (100 MHz ref) has divider tuples
-`{nf, nr, od, bwadj}` for every step:
-- 1700 MHz → `{33, 0, 1, 16}`; 2000 → `{19,0,0,9}`; up to **3000 `{29,0,0,14}`**,
-  **3200 `{31,0,0,15}`**.
-- v2/v3 maps (ref_div/fb/frac/post-div style) exist for Alpine V3 and are compiled
-  out when `AL_DEV_ID <= ALPINE_V2`.
-- Enum `al_hal_pll.h` tops out at `AL_PLL_FREQ_3200_000`.
-
-### The PLL is runtime-reprogrammable via the HAL (but only firmware does it)
-Source: `drivers/ring/al_hal_pll.c` `al_pll_freq_set(obj, freq, timeout)` →
-`al_pll_freq_set_v1()` writes the PLL registers directly.
-- `al_hal_pll.h`: three PLLs — **CPU PLL, North-Bridge PLL, South-Bridge PLL**.
-  *"The CPU PLL drives the CPU cores, caches and local interrupt controllers."*
-- Mechanically, a driver could call `al_pll_freq_set()` on the CPU PLL object to
-  raise the core clock. **Risk:** relocking the live CPU PLL requires switching the
-  cluster to bypass/alt clock mid-flight; the stock code path runs in preboot
-  (`al_pll_init` @0x01023ed4, see [preboot-decompile.md](preboot-decompile.md)), not
-  under Linux. No existing Linux code does this on Alpine.
-- **Best-leads takeaway:** an overclock would be a *new* out-of-tree driver that
-  reprograms the CPU PLL via this HAL, tested incrementally 1.7→1.8→1.9 GHz with a
-  stability + thermal watch. Unexplored territory; no prior art to lean on.
-
-### DDR clock / memory tuning
-- **DDR PLL strap** (`al_bootstrap_ddr_pll_freq_get`): V2 field 0x6 = **1200 MHz**
-  (DDR4-2400), 0x5 = 1333 MHz, others 533/667/800/933/1050/1066; default 800.
-- **DDR HAL supports DDR4-800 … DDR4-3200** — enum `AL_DDR_FREQ_{800,1066,1333,1600,
-  1866,2133,2400,2666,2933,3200}` (`ddr/`). Alpine V2 uses the `_alpine_v2` init/PHY
-  reg files; t_xp comments reference 1866/2133/2400 MHz timings.
-- DDR timings come from **SPD over I2C @0x57** + an Annapurna **DDR training "agent"**
-  (CVOS), delegated in preboot; the raw PHY sequence is proprietary and not in the
-  open blobs. See [preboot-decompile.md](preboot-decompile.md) §DDR.
-- Memory-overclock would mean feeding different SPD/timing params to that agent —
-  even less accessible than the CPU PLL.
-
-### Rated max A57 frequency
-- Marketed/shipped: **1.7 GHz** (all AL-324 products). ARM's A57 core is rated well
-  above 2 GHz on suitable process; the bootstrap decode reaching 2.7 GHz suggests the
-  IP block was designed with headroom. No datasheet states a guaranteed fmax for
-  AL-324. Treat 1.7 GHz as a **product/binning choice**, not a proven silicon ceiling
-  — but with zero community data above it.
+- DDR memory-overclock would mean feeding different SPD/timing params to the closed
+  CVOS training agent — see [preboot-decompile.md](preboot-decompile.md) §DDR and
+  [ddr-config-reverse.md](ddr-config-reverse.md) for how that agent is fed.
 
 ---
 
@@ -184,13 +124,12 @@ Source: `drivers/ring/al_hal_pll.c` `al_pll_freq_set(obj, freq, timeout)` →
 
 ## 6. Best leads to pursue
 
-1. **CPU overclock = new out-of-tree driver** calling `al_pll_freq_set()` on the CPU
-   PLL object (REV1/v1 map). Test 1.7→1.8 GHz first, watch al_thermal + stability.
-   No prior art — highest-risk, highest-novelty. Bootstrap decode shows 2.7 GHz is
-   at least *representable* on V2.
-2. **Confirm the CPU PLL register base + object init** on Alpine V2 from the HAL
-   (`al_hal_pll_map.h` instances, `nb_regs`) before touching hardware. Cross-check
-   against our live capture / preboot `al_pll_init` @0x01023ed4.
+1. **CPU overclock = new out-of-tree driver** doing the register-exact procedure in
+   [overclock-and-caps.md](overclock-and-caps.md) §1 (setup_0 target values, RELOCK
+   dance). Test 1.7→1.8 GHz first, watch al_thermal + stability. No prior art —
+   highest-risk, highest-novelty.
+2. Register base + `setup_0` format are now confirmed (REV2, not REV1) — see
+   overclock-and-caps.md; no further HAL archaeology needed before a first live test.
 3. **DDR is a harder target** — timings owned by the proprietary CVOS training agent;
    only SPD@0x57 is externally visible. Deprioritise vs CPU clock.
 4. **Watch delroth + fabianishere + mornepousse** for any clock/thermal commits —

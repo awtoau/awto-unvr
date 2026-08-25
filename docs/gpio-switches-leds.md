@@ -47,17 +47,11 @@ to SW1/SW2). The rear `RPS POWER ON` LED is a hardwired rail indicator, not GPIO
 
 ## Full GPIO / LED / expander map
 
-**SoC PL061:**
-| Global | Bank.pin | Function | Dir |
-|---|---|---|---|
-| 0 | gpio0.0 | SFP+ speed-indication LED (al_eth `"25g"`) | out |
-| 3 | gpio0.3 | U-Boot drives output-low; Linux unclaimed; **unknown** | out |
-| 31 | gpio3.7 | `ulogo_blue` LED, active-low, default-on | out |
-| **33** | gpio4.1 | **RPS present** (`rps_prnt`, rpsd input) — NOT SW1/SW2 | in |
-| **34** | gpio4.2 | **12 V load sense** (`12v_lp`, rpsd input) — NOT SW1/SW2 | in |
-| 37 | gpio4.5 | **`ulogo_white` LED**, active-low (U-Boot `resetled=gpio clear 37`) | out |
-| 38 | gpio4.6 | Reset button, `KEY_RESTART`, active-low, IRQ | in |
-| 42 | gpio5.2 | HDD `force-power-on-wa`, active-high | out |
+**SoC PL061 (all 48 lines, mux registers, spare-pin candidates):** full per-ball
+table → [gpio-map.md](gpio-map.md). Functional notes for the lines this doc covers:
+pin 0 = SFP+ speed LED; pin 31 = `ulogo_blue`; pin 33/34 = RPS sense (`rps_prnt`/
+`12v_lp`, NOT SW1/SW2 — see above); pin 37 = `ulogo_white`; pin 38 = reset button
+(`KEY_RESTART`, IRQ — semantics below); pin 42 = HDD `force-power-on-wa`.
 
 **SGPO** (base 48 → external 74VHC595 `UB20`): lines 16–23 (global 64–71) = SATA
 activity/presence LEDs, 8 ports (host0/host1 × 0–3); ea16 maps the 4 populated

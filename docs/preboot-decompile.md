@@ -9,19 +9,11 @@ Builds on: [nor-boot-chain.md](nor-boot-chain.md), [bootloader.md](bootloader.md
 
 ## Decompiler fix (was the blocker)
 
-- Ghidra 12.2 requires **JDK 21** (`application.java.min=21`). System default JDK
-  is **25** → decompiler/analysis hangs.
-- Only real alternate JDK present was 17 (rejected by 12.2); the 21-openjdk dir was
-  an empty stub.
-- **Fix:** installed Temurin JDK **21** and set
-  `JAVA_HOME_OVERRIDE=/usr/lib/jvm/java-21-temurin-jdk` in
-  `<ghidra>/support/launch.properties` (both installs on this box).
-- **Verified working:** headless import + auto-analysis + decompile-all of the
-  **304,816-B** al_boot payload → **377 functions, 0 decompile failures**, ~20 s
-  wall. S2 blob → 82 functions. Real data-flow C (coprocessor cache ops, recovered
-  `switch` on sysid, RSA loops). JDK 25 previously hung indefinitely on the same input.
-- Runner: `scripts/ghidra-decompile.py` (wraps analyzeHeadless + `ExportAll.java`,
-  reused from awto-2000). Log `tmp/logs/ghidra-decompile.log`.
+Setup/JDK fix + methodology: [ghidra.md](ghidra.md) §1. This doc's verification of
+that fix: headless import + auto-analysis + decompile-all of the **304,816-B**
+al_boot payload → **377 functions, 0 decompile failures**, ~20 s wall. S2 blob →
+82 functions. Real data-flow C (coprocessor cache ops, recovered `switch` on
+sysid, RSA loops). JDK 25 previously hung indefinitely on the same input.
 
 ## Targets, arch, load — confirmed from container
 
