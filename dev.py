@@ -465,7 +465,13 @@ def cmd_console_send(extra: list[str]) -> int:
     a U-Boot/shell command; raise it for tftp/nand writes). On expiry it prints
     what it captured and logs a loud FAIL naming the needle + elapsed, exit 3.
     --raw expands CR/LF/CRLF/ESC/TAB/CTRL-C/... and \\xNN escapes and does NOT
-    append a CR (you control the line ending)."""
+    append a CR (you control the line ending).
+
+    --expect never matches inside the echo of what you just sent (its byte
+    length is known exactly, so those bytes are skipped before searching) -
+    a needle that's also literally in the command text, e.g.
+    `--expect DONE ... "echo DONE"`, will NOT false-match on the echo, only
+    on the command's real post-execution output."""
     if not _console_pid():
         log("console not running - start it with ./dev.py console", "ERROR")
         return 1
@@ -520,7 +526,16 @@ def cmd_console_send(extra: list[str]) -> int:
     # `--expect` matches ANY of `|`-separated needles (one call instead of N
     # probes for awto-nas#/stock/login). On match, prints "<<MATCHED: needle>>" so
     # the caller knows which fired without a second round-trip.
+    #
+    # The console echoes typed input character-for-character before any real
+    # output appears. A needle baked into the SAME command line (e.g.
+    # `--expect DONE ... "echo DONE"`) used to match on that echo instantly,
+    # before the command even ran - hit repeatedly during #131 debugging
+    # despite being a known pitfall. Fix: the echo of our own send is exactly
+    # len(payload) bytes, so never search those bytes - only what arrives
+    # after can be genuine command output.
     needles = [n.encode() for n in expect.split("|") if n]
+    echo_len = len(payload)
     t0 = time.monotonic()
     end = t0 + timeout
     while time.monotonic() < end:
@@ -531,7 +546,8 @@ def cmd_console_send(extra: list[str]) -> int:
         if not chunk:
             break
         got += chunk
-        hit = next((n for n in needles if n in got), None)
+        searchable = got[echo_len:] if len(got) > echo_len else b""
+        hit = next((n for n in needles if n in searchable), None)
         if hit is not None:
             s.close()
             sys.stdout.buffer.write(got)
