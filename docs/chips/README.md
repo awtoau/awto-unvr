@@ -33,9 +33,10 @@ location) live in [../components.md](../components.md) — not duplicated here.
   (records @ base `0x400`: `0xAA` SPD-pointer, `0xBB` voltage, `0xCC` impedance) that holds
   the JEDEC SPD (live-confirmed, byte2 `0x0C` = DDR4). A 1-byte dump at offset 0 misreads it.
   Decode path + proofs: [../ddr-config-reverse.md](../ddr-config-reverse.md). (0x57 is NOT the
-  identity EEPROM — that's a separate open item, #62.)
+  identity EEPROM — that was a separate item, #62, closed.)
 - **SFP+ = Finisar FTLX8571D3BCL** 10G-SR — read live (0x50 = SFF-8079 EEPROM, 0x51 =
   SFF-8472 DDM). Behind PCA9546 channel 1.
 - **1G PHY = AR8033**, not AR8031/Marvell; the 10G port is an **SFP optic, no PHY**.
 - **I²C mux is 4-channel** (PCA9546/TCA9546A); PCA9575 **@0x29 never probes** (EREMOTEIO —
-  phantom 8-bay node, see #49).
+  Pro-only 8-bay node, unpopulated on this 4-bay board, correctly absent; node removed
+  from the DTS — see [kernel-boot-fixes.md](../kernel-boot-fixes.md) Bug 3).
