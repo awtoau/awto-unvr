@@ -3915,7 +3915,16 @@ static int al_eth_close(struct net_device *netdev)
 
 	netdev_dbg(adapter->netdev, "%s\n", __func__);
 
+	/* link_status_task is only ever INIT_DELAYED_WORK()'d in the
+	 * !CONFIG_ARCH_ALPINE path below (al_eth_up(), IS_NIC branch) - this
+	 * board always builds CONFIG_ARCH_ALPINE=y, so that init never runs
+	 * and the work_struct's .func stays NULL. Canceling it unconditionally
+	 * here hit kernel/workqueue.c's WARN_ON(!work->func) on every close
+	 * (#143) - cancel only when it was actually armed.
+	 */
+#ifndef CONFIG_ARCH_ALPINE
 	cancel_delayed_work_sync(&adapter->link_status_task);
+#endif
 	cancel_work_sync(&adapter->reset_task);
 
 #if defined(CONFIG_ARCH_ALPINE)
@@ -5457,7 +5466,12 @@ al_eth_remove(struct pci_dev *pdev)
 #endif
 
 	pci_set_drvdata(pdev, NULL);
-	pci_disable_device(pdev);
+	/* No explicit pci_disable_device() here: probe used pcim_enable_device()
+	 * (the devm-managed variant), which already registers an automatic
+	 * disable-on-unbind cleanup - it fires right after this function
+	 * returns. Calling it here too raced ahead of that cleanup and hit
+	 * pci.c's "disabling already-disabled device" WARN on every remove
+	 * (#143). */
 }
 
 #ifdef CONFIG_PM
