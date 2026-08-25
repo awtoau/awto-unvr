@@ -55,7 +55,18 @@ MODULES_ADDR = "0xa0000000"  # 2.5GB - well clear of early kernel allocations,
 # confirmed safe via /proc/iomem showing System RAM 0x0-0xBFFFFFFF as one bank
 
 IPADDR = "192.168.25.140"
-SERVERIP = "192.168.25.145"
+
+
+def detect_server_ip() -> str:
+    """This host's local IP on the route to the UNVR, via a UDP connect()
+    (SOCK_DGRAM connect() only picks a route/local address, sends no packet).
+    Was hardcoded to 192.168.25.145; this host's DHCP lease drifted to .147,
+    so every tftpboot request went to an address nothing was listening on -
+    zero RRQs ever arrived, which looked exactly like #90's TX hang (all-T
+    retries) but wasn't."""
+    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+        s.connect((IPADDR, 69))
+        return s.getsockname()[0]
 
 HASS_HOST = "so-th-1.local"
 
@@ -282,6 +293,8 @@ def main() -> int:
             return 1
 
     ensure_tftpd()
+    server_ip = detect_server_ip()
+    log(f"tftp server IP (auto-detected): {server_ip}")
 
     def catch_uboot_prompt() -> None:
         """Race catch-uboot.py against the power-cycle to land at the stock
@@ -307,7 +320,7 @@ def main() -> int:
 
     def boot_to_login() -> None:
         run_devpy("--expect", "ALPINE_UBNT_NAS_ALL>", "--timeout", "8", f"setenv ipaddr {IPADDR}")
-        run_devpy("--expect", "ALPINE_UBNT_NAS_ALL>", "--timeout", "8", f"setenv serverip {SERVERIP}")
+        run_devpy("--expect", "ALPINE_UBNT_NAS_ALL>", "--timeout", "8", f"setenv serverip {server_ip}")
         tftp_and_verify(kernel, KERNEL_ADDR)
         tftp_and_verify(dtb, DTB_ADDR)
         if modules_tar:
@@ -316,7 +329,9 @@ def main() -> int:
             "--expect",
             "Uncompressing|Starting kernel",
             "--timeout",
-            "20",
+            "50",  # measured: consistently ~39s bootm->"Starting kernel" for this
+            # 148 MiB uncompressed KASAN image (tmp/logs/ram-boot-embedded-tftpd-
+            # test5.log) - 1.25x that, not a round-number guess.
             f"bootm {KERNEL_ADDR} - {DTB_ADDR}",
         )
         log("waiting for login...")

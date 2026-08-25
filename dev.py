@@ -549,6 +549,21 @@ def cmd_console_send(extra: list[str]) -> int:
     return 3
 
 
+@command(
+    "what's actually at the console right now - send CR, print whatever answers",
+    kind="action",
+)
+def cmd_check(_extra: list[str]) -> int:
+    """Ground truth for 'is it hung or just quiet'. A U-Boot/shell prompt often
+    sits unread in the tio buffer with no trailing newline, so line-counting or
+    grepping the console log (tmp/logs/unvr-console.log) can show no new lines
+    even though something IS live and would answer instantly. This sends a bare
+    CR and prints exactly what comes back in 1.5s - empty means genuinely no
+    live prompt (or something still executing), non-empty means the box is
+    responsive right now, whatever the log tail looks like."""
+    return cmd_console_send([])
+
+
 # Home of the pure-Python mini Jim-Tcl interpreter (written for espjtag). Reused
 # here so console automation is Tcl scripts, same as the espjtag Tcl harness.
 ESPJTAG_TCL = Path("/mnt/2tb/git/espjtag/scripts")
