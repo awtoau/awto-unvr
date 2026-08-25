@@ -41,11 +41,31 @@ _OUT_DEFAULT = (
     else "/mnt/2tb/unvr-port-refs/build-out-71-fedora"
 )
 OUT = os.environ.get("AWTO_KERNEL_OUT", _OUT_DEFAULT)
+# kbuild's own O= output dir (Documentation/kbuild/kbuild.rst) - separate from
+# OUT itself (which holds the COLLECTED final artifacts: uImage, dtb, config
+# copy, modroot/). Before this, every build ran `make -C SRC` with no O=, so
+# .config/generated-headers/.o files all lived IN SRC, shared and clobbered
+# across every variant (fedora/kasan/ea16/whatever AWTO_KERNEL_SRC points at)
+# no matter what OUT was set to - the actual bug class behind #131's false
+# "config drift" lead this session (a module rebuilt against SRC's CURRENT,
+# since-mutated .config didn't match a kernel built from SRC hours earlier).
+# O= gives each OUT its own real, persistent kbuild state - config drift
+# becomes structurally impossible instead of a discipline problem.
+KOUT = os.path.join(OUT, "kbuild")
 FEDORA_CONFIG = "/mnt/2tb/git/awto-unvr/tmp/fedora-kernel/fedora-aarch64.config"
 DTS_NAME = "alpine-v2-ubnt-unvr-ea16"
 VER = "7.1"
 CROSS = "aarch64-linux-gnu-"
 NPROC = str(multiprocessing.cpu_count())
+# ccache: ~free incremental-rebuild speed across variants sharing mostly-
+# identical source (KASAN vs plain differ in a handful of CONFIG_* symbols;
+# most .o files compile identically either way, and ccache is keyed on
+# preprocessed source+flags, not the O= path, so KASAN and fedora builds
+# share cache hits for anything neither actually changes). Documented
+# invocation per Documentation/kbuild/llvm.rst's ccache example
+# (`CC="ccache clang"` there; `CC="ccache <CROSS_COMPILE>gcc"` here).
+_CCACHE = shutil.which("ccache")
+CC_ARG = [f"CC=ccache {CROSS}gcc"] if _CCACHE else []
 
 IH_MAGIC, IH_OS_LINUX, IH_ARCH_ARM64, IH_TYPE_KERNEL, IH_COMP_NONE = (
     0x27051956,
@@ -106,18 +126,19 @@ def trim_to_woomera_modules():
     lsmod_path = os.path.join(OUT, "woomera-lsmod.txt")
     os.makedirs(OUT, exist_ok=True)
     pathlib.Path(lsmod_path).write_text(lsmod)
-    run(["make", "-C", SRC, f"LSMOD={lsmod_path}", "localmodconfig"])
+    run(["make", "-C", SRC, f"O={KOUT}", f"LSMOD={lsmod_path}", "localmodconfig"])
     log(f"trimmed to woomera's lsmod ({len(lsmod.splitlines()) - 1} modules)")
 
 
 def configure():
-    shutil.copy(FEDORA_CONFIG, os.path.join(SRC, ".config"))
+    os.makedirs(KOUT, exist_ok=True)
+    shutil.copy(FEDORA_CONFIG, os.path.join(KOUT, ".config"))
     cfg = os.path.join(SRC, "scripts/config")
     run(
         [
             cfg,
             "--file",
-            os.path.join(SRC, ".config"),
+            os.path.join(KOUT, ".config"),
             # our platform + drivers (off in stock Fedora)
             "--enable",
             "ARCH_ALPINE",
@@ -182,7 +203,7 @@ def configure():
         [
             cfg,
             "--file",
-            os.path.join(SRC, ".config"),
+            os.path.join(KOUT, ".config"),
             # 10G SFP+ port: mainline phylink + sfp.c (#113). PHYLINK has no
             # Kconfig prompt (select-only) - PCS_XPCS selects it. localmodconfig
             # above cannot know about any of these by construction (it only sees
@@ -227,8 +248,8 @@ def configure():
             ),
         ]
     )
-    run(["make", "-C", SRC, "olddefconfig"])
-    dotcfg = pathlib.Path(os.path.join(SRC, ".config")).read_text()
+    run(["make", "-C", SRC, f"O={KOUT}", "olddefconfig"])
+    dotcfg = pathlib.Path(os.path.join(KOUT, ".config")).read_text()
     for sym in (
         "CONFIG_ARCH_ALPINE=y",
         "CONFIG_PCIE_AL_INTERNAL=y",
@@ -268,7 +289,7 @@ def kver():
     version's extra/ entirely. Read the file kbuild itself writes as part of
     the real build instead of trusting a separate, apparently-stale-prone
     target."""
-    path = os.path.join(SRC, "include/config/kernel.release")
+    path = os.path.join(KOUT, "include/config/kernel.release")
     if not os.path.exists(path):
         sys.exit(f"FATAL: {path} missing - build the kernel before calling kver()")
     return pathlib.Path(path).read_text().strip()
@@ -325,7 +346,7 @@ def build():
     check_dts_shared()
     configure()
     stage_dts()
-    run(["make", "-C", SRC, f"-j{NPROC}", "Image", "dtbs", "modules"])
+    run(["make", "-C", SRC, f"O={KOUT}", *CC_ARG, f"-j{NPROC}", "Image", "dtbs", "modules"])
     # kver() reads include/config/kernel.release off disk - only trustworthy
     # AFTER this real build has actually run and written it fresh.
     kv = kver()
@@ -341,13 +362,19 @@ def build():
             "make",
             "-C",
             SRC,
+            f"O={KOUT}",
             f"INSTALL_MOD_PATH={modroot}",
             "INSTALL_MOD_STRIP=1",
             "modules_install",
         ]
     )
 
-    # out-of-tree al_* modules into the same tree
+    # out-of-tree al_* modules into the same tree. -C KOUT (not SRC): with an
+    # O= kernel build, KOUT *is* "$KDIR" for external-module purposes
+    # (Documentation/kbuild/modules.rst - "$KDIR refers to ... the kernel
+    # output directory if the kernel was built in a separate build
+    # directory"). mpath is already OUT-scoped (a fresh per-build copy), so
+    # its own .o/.ko outputs never cross variants either.
     extra = os.path.join(modroot, f"lib/modules/{kv}/extra")
     os.makedirs(extra, exist_ok=True)
     for m in ("al_eth", "al_dma", "al_ssm", "al_sgpo"):
@@ -362,9 +389,9 @@ def build():
             [
                 "make",
                 "-C",
-                SRC,
-                f"KDIR={SRC}",
+                KOUT,
                 f"M={mpath}",
+                *CC_ARG,
                 f"-j{NPROC}",
                 "modules",
             ]
@@ -383,12 +410,12 @@ def build():
     subprocess.run(["depmod", "-b", modroot, kv], check=False)
 
     # collect boot artifacts
-    image = os.path.join(SRC, "arch/arm64/boot/Image")
-    dtb = os.path.join(SRC, f"arch/arm64/boot/dts/amazon/{DTS_NAME}.dtb")
+    image = os.path.join(KOUT, "arch/arm64/boot/Image")
+    dtb = os.path.join(KOUT, f"arch/arm64/boot/dts/amazon/{DTS_NAME}.dtb")
     shutil.copy(image, os.path.join(OUT, "Image"))
     shutil.copy(dtb, os.path.join(OUT, f"{DTS_NAME}-{VER}.dtb"))
     shutil.copy(
-        os.path.join(SRC, ".config"),
+        os.path.join(KOUT, ".config"),
         os.path.join(OUT, f"unvr-ea16-{VER}-fedora.config"),
     )
     mkuimage(image, os.path.join(OUT, f"uImage-unvr-ea16-{VER}-fedora"), kv)
