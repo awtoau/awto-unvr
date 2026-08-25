@@ -183,6 +183,17 @@ def configure():
             "--set-val",
             "PANIC_TIMEOUT",
             "10",
+            # CONFIG_SOFTLOCKUP_DETECTOR (already on, stock Fedora default)
+            # only catches a CPU spinning at 100% without yielding - it
+            # caught #131's multi-CPU udev-worker lockup, but a task simply
+            # BLOCKED indefinitely in an uninterruptible sleep (D-state, no
+            # CPU spin) is invisible to it. CONFIG_DETECT_HUNG_TASK is the
+            # separate detector for exactly that (default 120s), and was
+            # off - confirmed live: a genuine-looking hang produced zero
+            # kernel output after 5+ minutes of waiting, precisely because
+            # this was disabled, not because nothing was actually stuck.
+            "--enable",
+            "DETECT_HUNG_TASK",
         ]
     )
     trim_to_woomera_modules()
