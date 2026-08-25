@@ -261,4 +261,3 @@ to run at EL2.
   all**. EDK2 buys standard UEFI/GRUB provisioning (TrueNAS installer, distro
   installers expecting UEFI), not raw capability. Weigh P3's al_eth-in-UEFI cost
   against that.
-```

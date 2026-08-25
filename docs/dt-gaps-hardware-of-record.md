@@ -64,8 +64,8 @@ the items below in.
 
 - i2c `1-0031..37` "dummy" = the S-35390A RTC's 8-address command scheme, not chips.
 - PCA9575@0x29 = Pro bays 5-8, EREMOTEIO here (unpopulated) — correctly absent.
-- ADT7475 in DTS; `ustdbox` is the userland PID fan controller. SoC-die thermal still
-  needs `al_thermal` (#44).
+- ADT7475 in DTS; `ustdbox` is the userland PID fan controller. SoC-die thermal
+  (`al_thermal`) landed — #44 closed.
 
 ## Ranked action list (DTS as hardware-of-record)
 

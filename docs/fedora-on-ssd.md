@@ -132,8 +132,8 @@ woomera boots Fedora with **no host**: `scripts/flash-nand.py` verified end-to-e
 - **Reboot caveat**: `reboot` from Linux hangs (#51 — no AL-324 reset driver);
   power-cycle to reboot. Cold boot works.
 
-Follow-ups: hostname → woomera (`hostnamectl`), change root pw, al_ssm crypto (#50),
-al_thermal into the build (#44/#49).
+Follow-ups: hostname → woomera (`hostnamectl`), change root pw, al_ssm crypto (#50).
+al_thermal is in the build (#44, closed).
 
 ## After this — dev work self-hosts on woomera
 

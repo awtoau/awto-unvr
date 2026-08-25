@@ -101,6 +101,6 @@ shifted SSD/HDD from sdb/… down to sda/…. Two 8 TB disks → repurpose plan
 - **Reboot/reset**: **#51 (reboot hang — al_reboot, in flight)**, #60 (early watchdog),
   **#47 (reset button — CLOSED)**.
 - **Perf/OC/validation**: **#29 (overclock)**, **#41 (7.1 matrix)**, **#42 (network)**,
-  **#44 (al_thermal)**, #49/#50 (thermal/crypto).
+  **#44 (al_thermal — CLOSED)**, #50 (crypto), #125 (SFP+ thermal zone).
 - **Chips/datasheets**: **#38 (DRAM & SFP identified — CLOSED)**, **#62 (i2c 0x57 device — CLOSED)**.
 - **Security**: #1, #2.
