@@ -14,21 +14,17 @@
 - **Controller:** on-SoC `annapurna-labs,alpine-mc` (memctl @ `0xf0080000`) — [hardware.md#mmio-and-address-map](../hardware.md#mmio-and-address-map).
 - **SPD: present, in a config EEPROM at I²C 0x57** (matches U-Boot `SPD I2C Address: 57`). 0x57 is a **16-bit-addressed multi-record store** (records at base `0x400`, magic-guarded: `0xAA` SPD-pointer, `0xBB` DRAM-voltage GPIO, `0xCC` impedance override) that **contains the JEDEC DDR4 SPD** — live-confirmed (`i2ctransfer -y 0 w2@0x57 0x04 0x00 r128` → byte2 `0x0C` = DDR4). A naive 1-byte dump at offset 0 reads garbage (do NOT conclude 'no SPD'). Full decode path + proofs: [ddr-config-reverse.md](../ddr-config-reverse.md), the S2 loader reads this at boot; also cross-checkable via live-controller readback (`al_ddr_cfg_init`).
 
-## How to confirm the part
+## How the part was confirmed
 
-1. **Read the SPD** (best): `i2cdump`/`decode-dimms` against the bus carrying 0x57 (may be behind the [PCA9546A](pca9546a.md) mux). SPD bytes give manufacturer (JEDEC ID), density, organisation, speed bin, week/year.
-2. **Silkscreen / package photo:** read the DDR4 chip top-marking directly and decode (Samsung K4A…, SK Hynix H5A…, Micron MT40A…).
-3. Count devices × width to cross-check 4 GiB (e.g. 2× 16 Gbit ×16, or 4× 8 Gbit ×8).
-
-## Candidates (typical Alpine V2 NAS BOM — to be confirmed, not asserted)
-
-- Samsung K4A8G/K4AAG DDR4.
-- SK Hynix H5AN DDR4.
-- Micron MT40A DDR4.
+- Board-photo top-marking (`SEC 013 / K4A8G16 / 5WB-BCRC`) on all 4 packages, cross-checked
+  against U-Boot `DRAM: 4 GiB` / `SPD I2C Address: 57` and live SPD decode
+  ([ddr-config-reverse.md](../ddr-config-reverse.md)). Same method as
+  [components.md](../components.md) and [hardware.md](../hardware.md#physical-chip-ids--board-photo-catalog).
 
 ## Datasheet
 
-- **None saved** — part unconfirmed, so no specific datasheet. Fetch once the SPD/silkscreen identifies it.
+- **None saved yet.** Fetch the Samsung K4A8G165WB-BCRC datasheet if exact timing
+  parameters are needed for a from-scratch DRAM re-init.
 
 ## RE / repurpose notes
 
