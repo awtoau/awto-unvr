@@ -36,6 +36,7 @@ from functools import partial
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+from _net import detect_server_ip
 from _repo import LOGS
 
 SOCK = Path(os.environ.get("XDG_RUNTIME_DIR", "/tmp")) / "tio-unvr.sock"
@@ -43,7 +44,6 @@ EXTRA = Path(
     "/mnt/2tb/unvr-port-refs/build-out-71-fedora/modroot/lib/modules/7.1.8-dirty/extra"
 )
 MODS = ["al_eth.ko", "al_ssm.ko"]  # the two with fixes; al_dma/al_sgpo unchanged
-SELWYN_IP = "192.168.25.145"
 HTTP_PORT = 8099
 USER, PASSWD = "root", "unvr"
 PROMPT = "@@P@@"  # our own unambiguous shell marker
@@ -153,8 +153,11 @@ def main():
         if not (EXTRA / m).exists():
             sys.exit(f"missing module {EXTRA / m} — run build-linux-71-fedora.py")
 
+    selwyn_ip = detect_server_ip()
+    log(f"dev host IP (auto-detected): {selwyn_ip}")
+
     httpd = serve()
-    log(f"serving {EXTRA} on {SELWYN_IP}:{HTTP_PORT}")
+    log(f"serving {EXTRA} on {selwyn_ip}:{HTTP_PORT}")
     s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
     s.settimeout(0.2)
     s.connect(str(SOCK))
@@ -167,16 +170,16 @@ def main():
         log(f"  device kver: {kv}")
 
         # reachability
-        rc, _ = sh(s, f"ping -c1 -W2 {SELWYN_IP} >/dev/null 2>&1", label="ping selwyn")
+        rc, _ = sh(s, f"ping -c1 -W2 {selwyn_ip} >/dev/null 2>&1", label="ping selwyn")
         if rc != 0:
             rc, out = sh(s, "ip -4 addr show scope global | grep inet")
-            log(f"ABORT: woomera can't reach {SELWYN_IP}. Its addrs:\n{out}")
+            log(f"ABORT: woomera can't reach {selwyn_ip}. Its addrs:\n{out}")
             raise SystemExit(4)
 
         extra = f"/lib/modules/{kv}/extra"
         sh(s, f"mkdir -p {extra}", label="ensure extra dir")
         for m in MODS:
-            url = f"http://{SELWYN_IP}:{HTTP_PORT}/{m}"
+            url = f"http://{selwyn_ip}:{HTTP_PORT}/{m}"
             dst = f"{extra}/{m}"
             sh(s, f"cp -af {dst} {dst}.bak 2>/dev/null; true", label=f"backup {m}")
             rc, out = sh(

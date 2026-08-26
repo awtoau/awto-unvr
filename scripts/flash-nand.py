@@ -29,12 +29,13 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from _fedora_deploy import TFTP_DIMG, TFTP_KIMG, assert_fresh
+from _net import detect_server_ip
 from _repo import LOGS
 
 SOCK = Path(os.environ.get("XDG_RUNTIME_DIR", "/tmp")) / "tio-unvr.sock"
 PROMPT = b"ALPINE_UBNT_NAS_ALL>"
 
-IPADDR, SERVERIP = "192.168.25.140", "192.168.25.145"
+IPADDR = "192.168.25.140"
 KIMG = TFTP_KIMG.name
 DIMG = TFTP_DIMG.name
 K_NAND, K_SPAN = "0x1300000", "0x1200000"  # 18.9 MiB span (kernel ~18.5)
@@ -80,6 +81,8 @@ def main():
     assert_fresh()
     if not SOCK.exists():
         sys.exit(f"console socket absent: {SOCK}")
+    server_ip = detect_server_ip()
+    log(f"tftp server IP (auto-detected): {server_ip}")
     s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
     s.settimeout(0.1)
     s.connect(str(SOCK))
@@ -87,7 +90,7 @@ def main():
     step(s, "", "ALPINE_UBNT_NAS_ALL>", 5, "at U-Boot prompt")
     log("=== flashing Fedora kernel+DTB to NAND (stock kernel @0x300000 preserved) ===")
     step(s, f"setenv ipaddr {IPADDR}", "ALPINE_UBNT_NAS_ALL>", 5, "set ipaddr")
-    step(s, f"setenv serverip {SERVERIP}", "ALPINE_UBNT_NAS_ALL>", 5, "set serverip")
+    step(s, f"setenv serverip {server_ip}", "ALPINE_UBNT_NAS_ALL>", 5, "set serverip")
     # kernel
     step(s, f"tftpboot {K_RAM} {KIMG}", "Bytes transferred", 60, f"tftp {KIMG}")
     step(s, f"nand erase {K_NAND} {K_SPAN}", "OK", 30, "erase kernel region")

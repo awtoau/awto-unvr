@@ -10,7 +10,7 @@ race). tftp keeps U-Boot busy so the watchdog never idles out.
 
 Run (device must be power-cycling or about to reboot):
     ./scripts/netboot.py --tag 7.1
-    ./scripts/netboot.py --tag 6.18 --ip 192.168.25.140 --server 192.168.25.145
+    ./scripts/netboot.py --tag 6.18 --ip 192.168.25.140  # --server auto-detected
 """
 
 from __future__ import annotations
@@ -24,6 +24,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+from _net import detect_server_ip
 from _repo import LOGS
 
 SOCK = Path(os.environ.get("XDG_RUNTIME_DIR", "/tmp")) / "tio-unvr.sock"
@@ -68,7 +69,13 @@ def main() -> int:
     )
     ap.add_argument("--tag", required=True, help="image suffix, e.g. 7.1 or 6.18")
     ap.add_argument("--ip", default="192.168.25.140")
-    ap.add_argument("--server", default="192.168.25.145")
+    ap.add_argument(
+        "--server",
+        default=None,
+        help="tftp server (this dev host) IP; default: auto-detect via "
+        "_net.detect_server_ip() (this host's DHCP lease drifts, so a "
+        "hardcoded default goes stale)",
+    )
     ap.add_argument("--kaddr", default="0x02000000")
     ap.add_argument("--dtaddr", default="0x04078000")
     ap.add_argument(
@@ -91,6 +98,9 @@ def main() -> int:
     # Catch ceiling: long enough to power-cycle + preboot (~15s) with margin.
     ap.add_argument("--catch-seconds", type=float, default=180.0)
     a = ap.parse_args()
+    if a.server is None:
+        a.server = detect_server_ip()
+        log(f"tftp server IP (auto-detected): {a.server}")
 
     uimage = a.uimage or f"uImage-unvr-ea16-{a.tag}"
     dtb = a.dtb or f"alpine-v2-ubnt-unvr-ea16-{a.tag}.dtb"

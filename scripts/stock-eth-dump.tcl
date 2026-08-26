@@ -5,6 +5,10 @@
 # -> dump adapter cfg + UDMA M2S ring state AFTER a working TX/RX.
 # UDMA BAR assumed 0xfe000000 (same device 1c36:0001; BAR0 dumped to confirm).
 # tftpd must serve u-boot-chainload.bin; firewalld trusted. Box left at stock.
+# serverip below is THIS dev host's IP and drifts with its DHCP lease (standalone
+# script, no dev.py command drives it, so it can't get an injected value like
+# scripts/uboot-test.tcl's $SERVERIP does) - if tftpboot retries forever, check
+# `ip -4 addr` on this host and update serverip.
 send "reset"
 set ok 0
 for {set i 0} {$i < 3000} {incr i} { send_raw ESC; if {[catch {expect "ALPINE_UBNT_NAS_ALL>" 1}] == 0} { set ok 1; break } }

@@ -2,6 +2,9 @@
 # initramfs, no NAND flash, no dependency on the (currently module-mismatched)
 # SSD rootfs. Assumes we're already sitting at the stock U-Boot prompt
 # (bootdelay=-1, no reset needed).
+# serverip below is THIS dev host's IP and drifts with its DHCP lease (standalone
+# script, no dev.py command drives it) - if tftpboot retries forever, check
+# `ip -4 addr` on this host and update serverip.
 send_raw CR
 expect "ALPINE_UBNT_NAS_ALL>" 8
 send "setenv ipaddr 192.168.25.140"; expect "ALPINE_UBNT_NAS_ALL>" 6

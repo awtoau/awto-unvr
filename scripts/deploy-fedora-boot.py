@@ -25,10 +25,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import _console as con
+from _net import detect_server_ip
 from _repo import LOGS
 
 OUT = Path("/mnt/2tb/unvr-port-refs/build-out-71-fedora")
-SELWYN_IP = "192.168.25.145"
 HTTP_PORT = 8099
 # (local source file, /boot destination name)
 FILES = [
@@ -61,14 +61,17 @@ def main():
     for src, dst in FILES:
         log(f"local {src}: {sha256(OUT / src)}  ({(OUT / src).stat().st_size} B)")
 
+    selwyn_ip = detect_server_ip()
+    log(f"dev host IP (auto-detected): {selwyn_ip}")
+
     handler = partial(http.server.SimpleHTTPRequestHandler, directory=str(OUT))
     httpd = socketserver.TCPServer(("0.0.0.0", HTTP_PORT), handler)
     threading.Thread(target=httpd.serve_forever, daemon=True).start()
-    log(f"serving {OUT} on {SELWYN_IP}:{HTTP_PORT}")
+    log(f"serving {OUT} on {selwyn_ip}:{HTTP_PORT}")
 
     s = con.connect()
     con.login(s)
-    rc, _ = con.sh(s, f"ping -c1 -W2 {SELWYN_IP} >/dev/null 2>&1")
+    rc, _ = con.sh(s, f"ping -c1 -W2 {selwyn_ip} >/dev/null 2>&1")
     if rc != 0:
         log("FATAL: woomera cannot reach selwyn — aborting (nothing changed)")
         httpd.shutdown()
@@ -81,7 +84,7 @@ def main():
         # guarded backup: keep the FIRST (known-good) copy, never clobber it
         con.sh(s, f"[ -e {b}.bak ] || cp -a {b} {b}.bak 2>/dev/null; echo bkdone")
         rc, _ = con.sh(s, f"ls {b}.bak >/dev/null 2>&1 && echo have.bak || echo NO.bak")
-        url = f"http://{SELWYN_IP}:{HTTP_PORT}/{src}"
+        url = f"http://{selwyn_ip}:{HTTP_PORT}/{src}"
         log(f"fetch {src} -> {b}.new")
         rc, out = con.sh(
             s, f"curl -fsS {url} -o {b}.new && echo FETCH_OK || echo FETCH_FAIL", 120

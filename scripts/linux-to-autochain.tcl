@@ -3,6 +3,11 @@
 # fallback (owner: never boot Linux on reset) -> chainload now -> our U-Boot.
 # Revert = restore stock bootcmd. Requires host tftpd serving u-boot-chainload.bin.
 # If tftp is ever down, reset stops at the stock prompt (recoverable) — never Linux.
+# serverip below is THIS dev host's IP and is SAVED into U-Boot's persisted env
+# (saveenv) - it drifts with this host's DHCP lease, and a stale value baked in
+# here means every future auto-chainload silently retries forever against nobody.
+# Standalone script, no dev.py command drives it; re-run this after any DHCP
+# lease change to refresh the saved value (check `ip -4 addr` on this host).
 send {python3 -c "import fcntl,struct; f=open('/dev/watchdog','r+b',buffering=0); fcntl.ioctl(f,0xC0045706,struct.pack('I',1)); exec('while True: pass')"}
 set found 0
 for {set i 0} {$i < 400} {incr i} {

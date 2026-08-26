@@ -1084,9 +1084,17 @@ def cmd_chainload(extra: list[str]) -> int:
     shutil.copy2(UBOOT_BIN, CHAINLOAD_BIN)
     log(f"staged {CHAINLOAD_BIN.relative_to(REPO)} ({UBOOT_BIN.stat().st_size} bytes)")
     _ensure_tftpd()
+    scripts_dir = str(REPO / "scripts")
+    if scripts_dir not in sys.path:
+        sys.path.insert(0, scripts_dir)
+    from _net import detect_server_ip
+
+    server_ip = detect_server_ip()
+    log(f"tftp server IP (auto-detected): {server_ip}")
     tcl = extra[0] if extra else "scripts/chainload-and-test.tcl"
     log(f"chainloading via {tcl} (reset the box now to hit stock U-Boot)")
-    return cmd_console_tcl([tcl])
+    script = f"set SERVERIP {server_ip}\n" + Path(tcl).read_text()
+    return cmd_console_tcl(["-e", script])
 
 
 @command(
@@ -1105,8 +1113,16 @@ def cmd_uboot_test(_extra: list[str]) -> int:
     shutil.copy2(UBOOT_BIN, CHAINLOAD_BIN)
     log(f"staged {CHAINLOAD_BIN.relative_to(REPO)} ({UBOOT_BIN.stat().st_size} bytes)")
     _ensure_tftpd()
+    scripts_dir = str(REPO / "scripts")
+    if scripts_dir not in sys.path:
+        sys.path.insert(0, scripts_dir)
+    from _net import detect_server_ip
+
+    server_ip = detect_server_ip()
+    log(f"tftp server IP (auto-detected): {server_ip}")
     log("uboot-test: reset+catch+tftp+go, then STOP at awto-nas# (no auto-tests)")
-    return cmd_console_tcl(["scripts/uboot-test.tcl"])
+    script = f"set SERVERIP {server_ip}\n" + Path("scripts/uboot-test.tcl").read_text()
+    return cmd_console_tcl(["-e", script])
 
 
 @command(

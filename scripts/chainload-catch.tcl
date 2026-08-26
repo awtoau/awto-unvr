@@ -2,11 +2,14 @@
 # U-Boot to 0x1100000 and `go`, stopping at awto-nas#. No SP805 reset — use this when
 # the box is already rebooting on its own (vs uboot-test.tcl which resets from our
 # awto-nas#). tftpd must serve u-boot-chainload.bin; firewalld must allow tftp.
+# $SERVERIP is injected by cmd_chainload (scripts/_net.py detect_server_ip(), fresh
+# each run): run via `./dev.py chainload scripts/chainload-catch.tcl`, not standalone
+# (running this directly leaves $SERVERIP unset).
 set ok 0
 for {set i 0} {$i < 2400} {incr i} { send_raw ESC; if {[catch {expect "ALPINE_UBNT_NAS_ALL>" 1}] == 0} { set ok 1; break } }
 if {!$ok} { puts "NO-STOCK (box not booting through stock in the window)"; return }
 send "setenv ipaddr 192.168.25.140";   expect "ALPINE_UBNT_NAS_ALL>" 6
-send "setenv serverip 192.168.25.145"; expect "ALPINE_UBNT_NAS_ALL>" 6
+send "setenv serverip $SERVERIP"; expect "ALPINE_UBNT_NAS_ALL>" 6
 send "tftpboot 0x1100000 u-boot-chainload.bin"; catch {expect "Bytes transferred" 40}
 expect "ALPINE_UBNT_NAS_ALL>" 6
 send "go 0x1100000"

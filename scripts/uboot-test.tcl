@@ -3,6 +3,10 @@
 # stock U-Boot -> tftp our U-Boot to 0x1100000 -> go -> STOP at awto-nas#. No
 # auto-tests — the live prompt is the user's to drive (i2c scan / ping / serdes /
 # ddr bist). SP805 @0xfd88c000: Lock@0xC00, Load@0x000, Control@0x008 (INTEN|RESEN).
+# $SERVERIP is injected by cmd_uboot_test (scripts/_net.py detect_server_ip(),
+# fresh each run - a hardcoded serverip goes stale the moment this dev host's
+# DHCP lease drifts, and looks exactly like a TFTP TX hang). Not standalone-safe:
+# running this .tcl directly (not via ./dev.py uboot-test) leaves $SERVERIP unset.
 send_raw CR
 if {[catch {expect "awto-nas#" 8}]} { puts "NOT-AT-UNVR (get the box to our awto-nas# or stock, then re-run)"; return }
 send "mw 0xfd88cc00 0x1acce551"; expect "awto-nas#" 6
@@ -12,8 +16,8 @@ puts "SP805-ARMED — catching stock U-Boot"
 set ok 0
 for {set i 0} {$i < 1200} {incr i} { send_raw ESC; if {[catch {expect "ALPINE_UBNT_NAS_ALL>" 1}] == 0} { set ok 1; break } }
 if {!$ok} { puts "NO-STOCK (SP805 reset didn't reach stock; a power-cycle may be needed)"; return }
-send "setenv ipaddr 192.168.25.140";   expect "ALPINE_UBNT_NAS_ALL>" 6
-send "setenv serverip 192.168.25.145"; expect "ALPINE_UBNT_NAS_ALL>" 6
+send "setenv ipaddr 192.168.25.140";     expect "ALPINE_UBNT_NAS_ALL>" 6
+send "setenv serverip $SERVERIP"; expect "ALPINE_UBNT_NAS_ALL>" 6
 send "tftpboot 0x1100000 u-boot-chainload.bin"; catch {expect "Bytes transferred" 30}
 expect "ALPINE_UBNT_NAS_ALL>" 6
 send "go 0x1100000"

@@ -7,6 +7,11 @@
 
 # --- catch the U-Boot prompt: send ESC, poll for the prompt, up to ~120 tries ---
 # --- LAN config: EDIT for your setup (device = ipaddr, tftp host = serverip) ---
+# serverip is THIS dev host's IP and drifts with its DHCP lease - no injection point
+# here (standalone script, not driven by a dedicated dev.py command). If tftpboot
+# retries forever ("Retry count exceeded"), check `ip -4 addr` on this host and
+# update serverip below - see scripts/_net.py detect_server_ip() for the pattern
+# used where a driving dev.py command CAN inject it fresh.
 set ipaddr   192.168.25.140
 set serverip 192.168.25.145
 

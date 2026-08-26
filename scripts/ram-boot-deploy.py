@@ -38,6 +38,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import tftpd as _tftpd
+from _net import UNVR_IPADDR as IPADDR
+from _net import detect_server_ip
 from _power import power_cycle_verified
 from _repo import LOGS, REPO, TFTP_ROOT, log_path
 
@@ -54,21 +56,6 @@ KERNEL_ADDR = "0x20000000"
 DTB_ADDR = "0x30000000"
 MODULES_ADDR = "0xa0000000"  # 2.5GB - well clear of early kernel allocations,
 # confirmed safe via /proc/iomem showing System RAM 0x0-0xBFFFFFFF as one bank
-
-IPADDR = "192.168.25.140"
-
-
-def detect_server_ip() -> str:
-    """This host's local IP on the route to the UNVR, via a UDP connect()
-    (SOCK_DGRAM connect() only picks a route/local address, sends no packet).
-    Was hardcoded to 192.168.25.145; this host's DHCP lease drifted to .147,
-    so every tftpboot request went to an address nothing was listening on -
-    zero RRQs ever arrived, which looked exactly like #90's TX hang (all-T
-    retries) but wasn't."""
-    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
-        s.connect((IPADDR, 69))
-        return s.getsockname()[0]
-
 
 def log(msg: str, level: str = "INFO") -> None:
     line = f"{time.strftime('%Y-%m-%dT%H:%M:%S%z')}  {level:5s} {msg}"
