@@ -434,6 +434,83 @@ call site.
     the pasted text's "agent" framing — but this "agent" is a data blob copied into PBS
     SRAM, unrelated to the AArch64 resume-agent discussed in
     [preboot-coverage.md](preboot-coverage.md) (that one goes to phys `0x1000`, not here).
+  - **`LAB_0102ef70` blob DISASSEMBLED, arch + purpose CONFIRMED (2026-08-26).** File
+    offset `0x2ef70` in the corrected 304,816 B al_boot carve (`tmp/alboot-payload.bin`,
+    same file — carve recipe above), 5,628 B, runs from PBS SRAM at `0xfbff4200`
+    (position-independent, matches copy-to-fixed-address design). **ARM A32 at entry,
+    interworks to Thumb-2 via `BLX`** (confirmed both directions: ARM `blx #0xfbff4588`
+    switches into a clean Thumb region; Thumb `blx #0xfbff42f4` / `blx #0xfbff437c` call
+    back into ARM functions already identified from the A32 pass — consistent call
+    graph both ways). Ghidra headless run **on this blob standalone**
+    (`--arch arm32 --base 0xfbff4200 --entry 0xfbff4200 --preboot`) recovered **38
+    functions**, artifacts staged: `docs/nor-reference/preboot-alboot-sram-agent-decompiled.c`
+    / `-disassembly.asm`. (A naive same-mode linear sweep — capstone, ARM-only —
+    decodes 90%+ of words as valid instructions purely because every SoC address
+    literal in this blob's pools starts with a `0xf0`-`0xff` byte, which is ARM's
+    unconditional-instruction encoding space; the Ghidra run with proper interworking
+    is the trustworthy source, not that raw percentage.)
+  - **Confirms the CPU-resume-setup hypothesis, with exact register hits — this is
+    Annapurna's `agent_wakeup v2.10` secondary-CPU wake/resume stub** (banner string
+    already known to be inside al_boot, `nor-boot-chain.md`):
+    - `FUN_fbff4d54` (`-disassembly.asm:839`) writes **`al_nb_cpun_config_status.resume_addr_l`
+      (off `0x28`) and `.resume_addr_h` (off `0x2c`)** — `movw r2,#0x2028` +
+      `str r4,[r0,#0x2c]` off a base computed as `NB_SERVICE_BASE + 0x2000 + cpu*0x100`
+      (the `cpun_config_status[cpu]` array, `al_hal_nb_regs_v1_v2.h:368-411`,
+      `AL_NB_SERVICE_BASE = AL_NB_BASE(0xf0000000) + 0x70000 = 0xf0070000`). Called in a
+      **loop over all 4 CPUs** (`FUN_fbff48a0`, cpu index 0..3) from the entry chain.
+    - `FUN_fbff4d2c` writes **`.power_ctrl` (off `0x20`)** the same way (`movw
+      r3,#0x2020`), called with value `3` (park/wait) from the per-CPU dispatch loop
+      and `0` (run) once a wake target is set.
+    - Did **NOT** find a literal/offset hit for `rvbar_low`/`rvbar_high` (off `0x48`/
+      `0x4c`) anywhere in this blob — either RVBAR is fixed in hardware to this SRAM
+      entry point on the AL-324 (so it never needs runtime programming) or it's set
+      elsewhere (al_boot's own ARM body, not chased here). Not confirmed either way;
+      flagging as open rather than assuming.
+    - **Writes the resume-valid magic itself**: `FUN_fbff48a0` ends with
+      `*(u32*)0xfbff4120 = 0xf0e1d2c4` (`SRAM_CPU_RESUME_ADDRESS`, literal pool pair
+      around `fbff48ec-fbff48f8` in the disassembly) and zeroes 7 more words of a
+      small struct there (`CPU resume structure`, matches the pasted-text framing
+      already cross-checked above). `0xc4 > 0xc2` — this exact value satisfies the
+      caller's own validity check in `thermal_sensor_trim_init`
+      (`preboot-alboot-decompiled.c:673`), i.e. **this agent blob is the thing that
+      makes the magic valid**; before it runs, `_DAT_fbff4120` is whatever cold-boot
+      SRAM contents happen to be.
+    - Per-CPU **GIC Distributor init**: `FUN_fbff4d88`, called for both `id=0` and
+      `id=1` from `FUN_fbff4e0c`, selects base offset `0x200000` vs `0x9000` off
+      `AL_NB_BASE` — **exactly** `AL_NB_GIC_DIST_BASE(id)`'s ternary
+      (`al_hal_iomap.h:188`, `AL_NB_GIC_MAIN` vs the per-cluster GIC). Sets interrupt
+      priority bytes to `0x80808080` and an enable/clear mask to `0xffffffff`. A raw
+      literal-pool scan of the blob independently turned up the absolute GICv2
+      Distributor register addresses `0xf0200080/0100/0180/0400/0800/0c00`
+      (`ICDISR/ICDISER/ICDICER/ICDIPR/ICDIPTR/ICDICFR` off `AL_NB_GIC_DIST_BASE_MAIN
+      0xf0200000`), confirming the same block from the data side.
+    - Also does an **EL3→NS/Hyp handoff**: `FUN_fbff4fa0`/`FUN_fbff4ff4` read/write
+      `SCR` (Secure Configuration Register, NS bit), execute `smc #0` and `hvc #0`,
+      and touch `NSACR`/`ACTLR` (`FUN_fbff5058`, SMP-alike bit `0x80000000`) — this
+      isn't just SRAM/GIC housekeeping, it's actively switching security state before
+      handing a woken CPU to its target exception level. Not fully mapped (which
+      64-bit coprocessor pair it's programming via `MRRC/MCRR p15,1` — plausibly
+      `VTTBR` — wasn't chased further; low priority next to the resume-address/GIC
+      finds).
+    - Also contains a **printf-family debug backend**: `FUN_fbff4628`
+      (itoa/number-format), `FUN_fbff4740` (`%d/%x/%X/%p/%u/%c/%s` format-string
+      parser), `FUN_fbff4f08`/`FUN_fbff4ed8` (UART TX with CR→CRLF translation) — logs
+      to the same UART al_boot's main body uses.
+    - `FUN_fbff42f4` (the ARM function called from the Thumb wake-dispatch with
+      param `1`) is the **SMP-coherency-before-caches** sequence: writes an
+      implementation-defined CP15 "peripheral system" register, then bit `0x82`/
+      `0x200082` (depending on the param) into **L2CTLR** (`opc1=1,CRn=c9,CRm=c0,opc2=2`
+      — Cortex-A15/A17 L2 Control Register) — guarded by a two-CPU handshake
+      (`*DAT_fbff434c=1; while(*DAT_fbff4350!=2);`) so only one CPU touches the
+      shared L2 config. Textbook Cortex-A15-family secondary-CPU bring-up (enable
+      SMP/coherency before turning on D-cache), not AL-specific.
+  - **`FUN_0100016c`** (called right before `(*(code *)&SUB_fbff4200)()` at
+    `preboot-alboot-decompiled.c:749`) — checked: `ICIALLU` (Invalidate Entire
+    Instruction cache, `mcr p15,0,r0,c7,c5,0`) + `ISB` + `DSB`, both `SY`. **Confirmed
+    cache-invalidate-and-barrier before executing freshly-`memcpy`'d code from SRAM** —
+    exactly what's needed after writing code bytes and before jumping into them on
+    ARMv7 (I-cache may hold stale/no data for the new address; barriers order the
+    writes before the fetch). No surprises here.
   - **"+0x000 = Stage-2 image offset" — REFUTED / not this SRAM.** S2 links and runs at
     `0xF2200000` (`s2_sram`, a separate 256 KiB window — [hardware.md](hardware.md)), not
     at `0xfbff4000+0`. Nothing in the HAL or our decompiles puts S2 inside the 4 KiB PBS
