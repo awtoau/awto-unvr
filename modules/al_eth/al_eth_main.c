@@ -65,7 +65,20 @@
 #include "al_hal_eth_ec_regs.h"
 #include "al_hal_eth_mac_regs.h"
 
+/* #131 split: pci_driver.name (DRV_MODULE_NAME) is a driver-core registration
+ * key, separate from the .ko filename - two modules both registering "al_eth"
+ * fail insmod on the second ("Driver 'al_eth' is already registered"), same
+ * failure class as the EXPORT_SYMBOL collision above but at a different
+ * layer (runtime driver-core, not link-time symbol table - readelf doesn't
+ * catch this one). Must track AL_ETH_BUILD_1G_ONLY/_10G_ONLY same as the
+ * PCI ID table below. */
+#if defined(AL_ETH_BUILD_1G_ONLY)
+#define DRV_MODULE_NAME	 "al_eth_1g"
+#elif defined(AL_ETH_BUILD_10G_ONLY)
+#define DRV_MODULE_NAME	 "al_eth_10g"
+#else
 #define DRV_MODULE_NAME	 "al_eth"
+#endif
 #ifndef DRV_MODULE_VERSION
 #define DRV_MODULE_VERSION      "0.2"
 #endif
