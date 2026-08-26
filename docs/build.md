@@ -12,6 +12,7 @@ index; each linked doc covers the version-specific deltas in depth.
 | 3 | Linux 7.1, netboot/initramfs | `build-71-ea16` | `build-linux-71-ea16.py` | 7.1.8 | `linux-v7.1.8` (`AWTO_KERNEL_SRC`) | `build-out-71/` (`AWTO_KERNEL_OUT`) |
 | 4 | Linux 7.1, Fedora rootfs (**daily driver**) | `build-fedora` | `build-linux-71-fedora.py` | 7.1.8 | `linux-v7.1.8` (`AWTO_KERNEL_SRC`) | `build-out-71-fedora/` |
 | 4a | ↳ same script, KASAN variant | `AWTO_KASAN_BUILD=1 build-fedora` | (same) | 7.1.8-kasan | (same) | `build-out-71-fedora-kasan/` |
+| 4b | ↳ same script, latest mainline (**not standardised** - see #156) | `AWTO_KERNEL_SRC=/mnt/2tb/unvr-port-refs/linux-v7.3-fresh AWTO_KERNEL_OUT=/mnt/2tb/unvr-port-refs/build-out-71-3-fresh build-fedora` | (same) | 7.2.0-13187-g66498c75b4f8 (pre-7.3 snapshot) | `linux-v7.3-fresh` (`AWTO_KERNEL_SRC`) | `build-out-71-3-fresh/` |
 | 5 | On-box native (no cross-compile) | *(none)* | `build-on-box.py` | matches whatever's flashed | `/root/src/linux-v7.1.8` on the box itself | `/lib/modules/<kver>/updates/` on the box |
 | 6 | Fedora rootfs tarball | `build-fedora-rootfs` | `build-fedora-rootfs.py` | n/a (userspace) | dnf `--installroot`, not a kernel tree | `tmp/fedora-rootfs.tar.gz` |
 | 7 | awto-uboot (our U-Boot) | `build-uboot` | `uboot-build.py` | n/a | `uboot-port/` (this repo) + staged into `/mnt/2tb/unvr-port-refs/u-boot-v2026.07` | chainload-able U-Boot image |
@@ -20,6 +21,12 @@ index; each linked doc covers the version-specific deltas in depth.
 daily-driver, its KASAN twin, and on-box native). Rows 1-2 are the earlier
 6.12→6.18 forward-port work that established the driver deltas 7.1 inherits
 unchanged - kept for history/reference, not actively rebuilt.
+
+Row 4b (latest mainline) was a one-off experiment, driven by env-var overrides
+on the fedora script rather than its own scripted/tested build - built once
+successfully (`tmp/logs/build-v73-fresh.log`), never boot-tested. Its
+`al_eth.ko` is the old combined module (built before the #131 split), so
+booting it live would still hit the original udev race. See #156.
 
 ## Which one do I actually want?
 
