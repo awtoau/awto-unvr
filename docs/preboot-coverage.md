@@ -84,7 +84,9 @@ Carved 0x01029158-0x0102e164, analysed as AArch64. **66 functions**, code 15,396
 (75.1%); remaining 5,048 B = its own literal pools + zero padding + jump tables (largest
 is a 2,024 B zero run). Secondary-A57 CPU bring-up / resume agent — not on the DDR path;
 not required for a mainline SMP/PSCI port. From al_boot's A32 view it is a data payload;
-listed here as code because it decompiles cleanly as AArch64.
+listed here as code because it decompiles cleanly as AArch64. Artifacts:
+`docs/nor-reference/preboot-alboot-a64agent-decompiled.c` /
+`-disassembly.asm`.
 
 ## Verdict — is it true 100%?
 
