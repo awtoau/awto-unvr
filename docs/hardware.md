@@ -225,6 +225,10 @@ not re-table it. Verified against
 | DRAM0 | `0x00000000` | `0xC0000000` (3 GiB) | bank 0; kernel/reserved carve-outs within |
 | DRAM1 | `0x200000000` | `0x40000000` (1 GiB) | bank 1, above 4 GiB |
 
+Pstore/ramoops crash-dump carve-out inside DRAM0: `0x92000000`, 0x200000 —
+DT `compatible = "ramoops"`, matches the `reserved` range in `iomem.txt`. Not
+a separate MMIO peripheral.
+
 ### On-SoC PBS peripherals (`compatible` → mainline driver → HAL header)
 
 | region | base | size | compatible | driver | HAL header |
@@ -256,17 +260,39 @@ not re-table it. Verified against
 > base is chosen to cover `0xfd89608c` and its 0x1000 size is a guess (OTP is
 > one-time-programmed). All other rows above are confirmed from DT + iomem.
 
+> **SerDes (`0xfd8c0000`) group layout**: vendor U-Boot decompile (both OLD/NEW
+> builds) iterates register windows at `+0x000`/`+0x400`/`+0x800`/`+0xc00`
+> (groups 0-3, stride 0x400) plus a 5th window at `+0x2000` (not on the linear
+> stride) — `docs/nor-reference/uboot-old-decompiled.c`/`uboot-new-decompiled.c`,
+> `preboot-alboot-decompiled.c`. Group 3 (`+0xc00`) = 10G SFP+ HSSP lane 0,
+> confirmed independently in
+> [hal-provenance-and-cross-system.md](hal-provenance-and-cross-system.md) §3;
+> the `+0x2000` window's role is not identified.
+
 ### SoC service / fabric blocks
 
 | region | base | size | compatible / role |
 |---|---|---|---|
 | GIC-v3 dist | `0xf0200000` | 0x10000 | `arm,gic-v3` (GICR @`0xf0280000` 0x200000; +f0100000/f0110000/f0120000) |
-| nb-service | `0xf0070000` | 0x10000 | `annapurna-labs,al-nb-service`,`syscon` — **= preboot agent mailbox** |
-| memctl | `0xf0080000` | 0x10000 | `annapurna-labs,alpine-mc` |
-| ccu | `0xf0090000` | 0x10000 | `annapurna-labs,al-ccu` — **= preboot agent mailbox** |
+| nb-service | `0xf0070000` | 0x10000 | `annapurna-labs,al-nb-service`,`al,alpine-sysfabric-service`,`syscon` — `AL_NB_SERVICE_BASE`, arg to `al_ddr_cfg_init`/preboot fabric config. **Not an agent mailbox** — corrected, was mislabeled; see [ddr-config-reverse.md](ddr-config-reverse.md) §"NOT a DDR mailbox" |
+| memctl | `0xf0080000` | 0x10000 | `annapurna-labs,alpine-mc` — internally split uMCTL2 ctrl `+0x0`/0x8000 (`AL_NB_DDR_CTL_BASE`) + PUB PHY `+0x8000`/0x8000 (`AL_NB_DDR_PHY_BASE`), per `al_hal_iomap.h` ([uboot-ddr-port.md](uboot-ddr-port.md) §4) |
+| ccu | `0xf0090000` | 0x10000 | `annapurna-labs,al-ccu` — **CCU (Cache Coherency Unit)**. **Corrected — was mislabeled "preboot agent mailbox"**; full decompile + HAL cross-ref proves it's the coherency block. See sub-offsets below |
 | msix | `0xfbe00000` | 0x100000 | `annapurna-labs,alpine-msix`,`al,alpine-msix` |
 | al-nand | `0xfa100000` | 0x202000 | `annapurna-labs,al-nand` (custom driver) |
 | tdm | `0xf2300000` | 0x11000 | `annapurna-labs,al-tdm` |
+
+> **CCU (`0xf0090000`) sub-offsets** — confirmed by full Ghidra decompile of both
+> vendor U-Boot builds (OLD 2020-12, NEW 2026-07) cross-referenced against
+> `delroth-alpine_hal/include/sys_fabric/al_hal_ccu_regs.h` (`struct al_ccu_regs`)
+> and `services/sys_fabric/al_init_sys_fabric.c`
+> ([nor-reference/uboot-ccu-coherency.md](nor-reference/uboot-ccu-coherency.md)):
+> `+0x4` = `speculation_ctrl_register_v1_v2`, written `7` unconditionally on
+> every `bootm` (Alpine V1/V2-only field); `+0x4000` = `slaves[3].snoop_control_register`
+> (cluster 0 snoop/DVM enable); `+0x5000` = `slaves[4].snoop_control_register`
+> (cluster 1) — both gated on `/soc/ccu`'s DT `io_coherency` property (`1` on
+> this unit). The vendor binary writes bit0 only (`1`, snoop-request enable) to
+> the slave registers, not `3` (snoop+DVM, per the HAL source) — open
+> discrepancy, unresolved, does not change the coherency-gate conclusion.
 
 ### PCIe / ECAM
 
@@ -306,13 +332,16 @@ EPs decode. (Bare `eth0..3` platform nodes at `0xfc000000`+ exist in DT but are
 ### Preboot-only SoC regions (not in Linux DT)
 
 From [preboot-decompile.md](preboot-decompile.md); Ghidra `--preboot` adds these.
+nb-service (`0xf0070000`) and ccu (`0xf0090000`) are also poked pre-DT by preboot
+(`al_boot`) — see the SoC service/fabric table above, they are **not** separate
+mailbox regions (correction: rows previously here read "agent_mb0"/"agent_mb1"
+= CVOS mailboxes; removed, was the same mislabeling as the CCU row above).
 
 | region | base | size | what |
 |---|---|---|---|
 | s2_sram | `0xf2200000` | 0x40000 | S2 first-stage link base (SRAM) |
-| agent_mb0 | `0xf0070000` | 0x1000 | CVOS DDR agent mailbox = nb-service block above |
-| agent_mb1 | `0xf0090000` | 0x1000 | CVOS agent mailbox = ccu block above |
-| ddr_ready | `0xfbff4000` | 0x1000 | `_DAT_fbff4150 == 0x31415926` DDR-ready poll |
+| pll ring | `0xfd860000` | ~0x1000 | `AL_SB_RING_BASE` — SB PLL `+0xb00` (I/O fabric), NB PLL `+0xc00` (DRAM+fabric), CPU PLL `+0xd00` (A57 cores); each has `setup_0`/`status_7`/channel-div regs, format V2. Shares the base with the DT `al-thermal` node (`+0xa00`). [P] proven, [overclock-and-caps.md](overclock-and-caps.md) |
+| ddr_ready | `0xfbff4000` | 0x1000 | shared_parameters SRAM: `+0x100` `SRAM_DEV_INFO_ADDRESS`, `+0x120` `SRAM_CPU_RESUME_ADDRESS`, `+0x150` `magic_num==0x31415926`/`ddr_size` (DDR-ready poll), `+0x200` `SRAM_AGENT_ADDRESS`. [ddr-config-reverse.md](ddr-config-reverse.md) |
 
 **Standard-IP notes (do not re-derive):** UART is 8250-style DesignWare
 (`al_hal_uart_regs.h` = rbr_thr/dll/ier…), **not PL011** — use the 8250 layout. GPIO

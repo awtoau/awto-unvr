@@ -10,6 +10,7 @@
 #include <config.h>
 #include <command.h>
 #include <dm.h>
+#include <fdt_support.h>
 #include <fdtdec.h>
 #include <i2c.h>
 #include <init.h>
@@ -37,7 +38,8 @@ DECLARE_GLOBAL_DATA_PTR;
  * Flat MMU map:
  *  - 0x00000000..0xC0000000  DRAM bank0 (normal, cacheable)
  *  - 0xC0000000..0x100000000 device (all SoC MMIO: fbxxxxxx/fdxxxxxx PBS,
- *    PCIe ECAM/windows, GIC f0xxxxxx, MSI-X fbe00000)
+ *    PCIe ECAM/windows, GIC f0xxxxxx, MSI-X fbe00000), CCU (0xf0090000) split
+ *    out as its own entry (#97, see ft_board_setup())
  *  - 0x200000000..0x240000000 DRAM bank1 (normal, cacheable)
  *
  * Device range covers every peripheral in docs/hardware.md MMIO map. Kept as
@@ -53,7 +55,28 @@ static struct mm_region alpine_mem_map[] = {
 	}, {
 		.virt = 0xC0000000UL,
 		.phys = 0xC0000000UL,
-		.size = 0x40000000UL,
+		.size = 0xf0090000UL - 0xC0000000UL,
+		.attrs = PTE_BLOCK_MEMTYPE(MT_DEVICE_NGNRNE) |
+			 PTE_BLOCK_NON_SHARE |
+			 PTE_BLOCK_PXN | PTE_BLOCK_UXN,
+	}, {
+		/*
+		 * CCU (Cache Coherency Unit), carved out of the block above so it has
+		 * its own table entry. #97: `md.l 0xf0090000` from our prompt data-
+		 * aborted even though this whole range was nominally already device-
+		 * mapped — see ft_board_setup() below, which needs to touch this
+		 * block on every bootm.
+		 */
+		.virt = 0xf0090000UL,
+		.phys = 0xf0090000UL,
+		.size = 0x10000UL,
+		.attrs = PTE_BLOCK_MEMTYPE(MT_DEVICE_NGNRNE) |
+			 PTE_BLOCK_NON_SHARE |
+			 PTE_BLOCK_PXN | PTE_BLOCK_UXN,
+	}, {
+		.virt = 0xf00a0000UL,
+		.phys = 0xf00a0000UL,
+		.size = 0x100000000UL - 0xf00a0000UL,
 		.attrs = PTE_BLOCK_MEMTYPE(MT_DEVICE_NGNRNE) |
 			 PTE_BLOCK_NON_SHARE |
 			 PTE_BLOCK_PXN | PTE_BLOCK_UXN,
@@ -244,6 +267,48 @@ static int do_snoopfix(struct cmd_tbl *cmdtp, int flag, int argc,
 }
 U_BOOT_CMD(snoopfix, 1, 0, do_snoopfix,
 	   "enable AXI SMCC snoop on the internal PCIe devices (coherent DMA)", "");
+
+/*
+ * CCU (Cache Coherency Unit) coherency-enable fixup (#97). Vendor U-Boot does
+ * this from its own ft_board_setup on every bootm; ours never did, and Linux's
+ * ahci driver then hangs on IDENTIFY when OUR U-Boot did the pre-Linux bring-up
+ * (stock's bring-up boots fine — it never touches AHCI or the CCU at all).
+ * Registers recovered via delroth-alpine_hal + vendor binary decompile, see
+ * docs/nor-reference/uboot-ccu-coherency.md. Vendor writes plain SNOOP_EN (1),
+ * not the HAL's SNOOP_EN|DVMS (3) — matching the binary's real behavior.
+ */
+#define AL_CCU_COMPAT		"annapurna-labs,al-ccu"
+#define AL_CCU_SPECULATION	0x4	/* speculation_ctrl_register_v1_v2 */
+#define AL_CCU_SPECULATION_VAL	7
+#define AL_CCU_SLAVE3_SNOOP	0x4000	/* slaves[3].snoop_control_register, cluster 0 */
+#define AL_CCU_SLAVE4_SNOOP	0x5000	/* slaves[4].snoop_control_register, cluster 1 */
+#define AL_CCU_SNOOP_EN		1
+
+int ft_board_setup(void *blob, struct bd_info *bd)
+{
+	int off;
+	u64 base;
+	u32 iocc;
+
+	off = fdt_node_offset_by_compatible(blob, -1, AL_CCU_COMPAT);
+	if (off < 0)
+		return 0;	/* no ccu node in this DTB - nothing to do */
+
+	base = fdt_get_base_address(blob, off);
+	if (base == OF_BAD_ADDR)
+		return 0;
+
+	iocc = fdtdec_get_uint(blob, off, "io_coherency", 0);
+	if (iocc) {
+		writel(AL_CCU_SNOOP_EN, (void __iomem *)(base + AL_CCU_SLAVE3_SNOOP));
+		writel(AL_CCU_SNOOP_EN, (void __iomem *)(base + AL_CCU_SLAVE4_SNOOP));
+	}
+	writel(AL_CCU_SPECULATION_VAL, (void __iomem *)(base + AL_CCU_SPECULATION));
+
+	printf("al-ccu: coherency fixup applied (base 0x%llx, io_coherency=%u)\n",
+	       base, iocc);
+	return 0;
+}
 
 /*
  * Apply the snoop fix automatically at boot (after relocation, before bootcmd /

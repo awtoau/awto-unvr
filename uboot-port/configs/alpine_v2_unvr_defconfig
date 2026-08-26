@@ -30,6 +30,8 @@ CONFIG_BOOTARGS="console=ttyS0,115200 root=PARTUUID=dcdc291e-9956-48cd-9d7c-4821
 # next boot instead of booting off the SSD.
 CONFIG_USE_BOOTCOMMAND=y
 CONFIG_BOOTCOMMAND="if itest.l *0x10000000 == 0xb0075709; then echo == CANARY set - staying in U-Boot ==; else scsi scan; ext4load scsi 0:2 0x02000000 /boot/uImage-unvr-ea16-7.1-fedora-gz && ext4load scsi 0:2 0x04078000 /boot/alpine-v2-ubnt-unvr-ea16-7.1-fedora.dtb && bootm 0x02000000 - 0x04078000; fi"
+# CCU coherency fixup (#97) needs ft_board_setup() to run at bootm FDT-prep.
+CONFIG_OF_BOARD_SETUP=y
 CONFIG_OF_CONTROL=y
 CONFIG_DM=y
 CONFIG_DM_SERIAL=y

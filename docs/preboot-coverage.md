@@ -88,6 +88,32 @@ listed here as code because it decompiles cleanly as AArch64. Artifacts:
 `docs/nor-reference/preboot-alboot-a64agent-decompiled.c` /
 `-disassembly.asm`.
 
+**Fact-check vs. an unsourced pasted claim ("AArch64 DDR margin-testing agent at
+0xF2200000") — REFUTED, 2026-08-26:**
+- Runtime placement is proven by al_boot's own caller: `preboot-alboot-decompiled.c:1702`
+  — `FUN_010129d8(0x1000, &DAT_01029158, 0x5e18)`. `FUN_010129d8` is memcpy (same
+  call shape used elsewhere for stack-buffer copies, e.g. line 3091/4765). Source
+  `&DAT_01029158` = this agent's own start VA. Destination is **physical `0x1000`**,
+  not `0xF2200000` and not PBS SRAM.
+- `0xF2200000` (`s2_sram`, [hardware.md](hardware.md) preboot table) runs the S2
+  `stage2_loader v2.22.3` — a **completely different blob**: A32 entry stub + **Thumb-2**
+  body (not AArch64), 82 fns, the real DDR-PHY trainer (`al_ddr_init` etc, see below).
+  It never contains this AArch64 agent.
+- The a64-agent's own decompile has **zero refs to DDR/PHY registers** (no
+  `0xf0080000`/`0xf0088000` memctl/PUB-PHY hits; grepped the full 3,161-line decompile).
+  What it does touch: `DC_ISW`/`DC_CISW` (D-cache by set/way), `WaitForEvent`/
+  `WaitForInterrupt`/`SendEvent`, MPIDR-based core-id (`FUN_01029248`), and two words read
+  from PBS SRAM at **`DAT_fbff40f8`/`DAT_fbff40fc`** (a jump-target function pointer pair,
+  called via `(*pcVar12)()` — `preboot-alboot-a64agent-decompiled.c:271-336`) — classic
+  **PSCI `CPU_ON`/resume trampoline** shape, not DDR margin-testing. `0xfbff40f8` sits
+  just below the HAL's own `SRAM_DEV_INFO_ADDRESS` (`0xfbff4100` for Alpine V2 —
+  `delroth-alpine_hal/platform/alpine_v2/include/al_hal_iomap.h:358`).
+- Verdict: the pasted claim conflates two real, separate mechanisms — S2 really does
+  train DDR at `0xF2200000` (Thumb-2/A32, not AArch64); this AArch64 agent really is
+  copied out of al_boot at runtime, but to physical `0x1000`, and it does CPU
+  bring-up/resume, not DDR work. "Advanced Ethernet SRAM" and "DDR margin-testing agent"
+  are not supported by any decompiled reference — omitted as unverified/likely wrong.
+
 ## Verdict — is it true 100%?
 
 - **Classification: 100%.** Every byte of both primary blobs is disassembled code,

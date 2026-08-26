@@ -390,6 +390,55 @@ trainer (`stage2_loader v2.22.3`) — see [ddr-config-reverse.md](ddr-config-rev
   this document is 4 too high** (e.g. `al_ddr_cfg_init` = 0x01021f10). The instruction
   decode itself is valid.
 
+## Boot ROM / PBS SRAM layout — fact-check vs. unsourced pasted claims (2026-08-26)
+
+Cross-checked an external, uncited pasted analysis against
+`delroth-alpine_hal/platform/alpine_v2/include/al_hal_iomap.h` (**this SoC's own
+platform header, alpine_v2**) and our decompiles. Our S2/al_boot decompiled code never
+references the boot ROM addresses/entry points directly (it runs after the ROM has
+already handed off) — those are confirmed via the HAL header, not via a decompiled
+call site.
+
+- **Boot ROM base `0xFBFF0000`, size `0x4000` (16 KiB) — CONFIRMED.**
+  `AL_PBS_INT_MEM_BASE 0xfbff0000UL` (line 120), `AL_PBS_INT_MEM_BOOT_ROM_BASE =
+  AL_PBS_INT_MEM_BASE + 0x0` (line 343), `AL_PBS_INT_MEM_SRAM_BASE = AL_PBS_INT_MEM_BASE
+  + 0x4000` (line 344) — the boot ROM occupies exactly `0xfbff0000..0xfbff4000` and the
+  PBS-internal SRAM (`ddr_ready` in [hardware.md](hardware.md)) begins right after it.
+- **Alternate mapping `0xFD8A0000` — CONFIRMED.** `AL_SB_BASE 0xfc000000` (line 70) +
+  `AL_SB_PBS_OFF 0x01880000` (line 161) → `AL_SB_PBS_BASE 0xfd880000`;
+  `AL_PBS_BOOT_ROM_BASE = AL_SB_PBS_BASE + 0x20000` (line 303) = **`0xfd8a0000`** exactly.
+  (`AL_SB_PBS_BASE 0xfd880000` is also the base of [hardware.md](hardware.md)'s whole
+  PBS-peripheral table.)
+- **Third mapping `0xFFFF0000` — UNVERIFIED as a boot-ROM alias**, but a `0xffff0000`
+  high vector table is real and in-use elsewhere in this boot chain: al_boot calls
+  `set_vectors(&DAT_01049000, 0xffff0000)` right before jumping into stage-3
+  (`preboot-alboot-decompiled.c:1705`). Not proven to be the *ROM's* vectors specifically.
+- **"Entry points" `0xFFFF0021`/`0xFFFF12F9` — CONFIRMED as HAL constants, not literally
+  ROM entry points.** alpine_v2 HAL: `BOOT_ROM_NAND_READ_FUNC_PTR 0xffff0021`,
+  `BOOT_ROM_XMODEM_RECIEVE_FUNC_PTR 0xffff12f9` (lines 349-350) — real ROM service
+  routine pointers (NAND read / XMODEM receive callable from later stages), not a single
+  reset vector. Not referenced anywhere in our decompiled S2/al_boot.
+- **PBS SRAM internal layout — matches [hardware.md](hardware.md)'s `ddr_ready` row,
+  MOSTLY CONFIRMED:**
+  - `+0x100` = `SRAM_DEV_INFO_ADDRESS` (`0xfbff4100`, HAL line 358) — pasted "boot ROM
+    device info at +0x100" **CONFIRMED**.
+  - `+0x120` = `SRAM_CPU_RESUME_ADDRESS` (`0xfbff4120`, HAL line 357) — pasted "CPU
+    resume structure at +0x120" **CONFIRMED**.
+  - `+0x150` = `magic_num == 0x31415926` / `ddr_size` (`shared_parameters`,
+    `PBS_INT_MEM_SHARED_PARAMS_OFFSET 0x0150`) — pasted "DDR init shared params at
+    +0x150, magic 0x31415926" **CONFIRMED**, already established above and in
+    [ddr-config-reverse.md](ddr-config-reverse.md).
+  - `+0x200` = `SRAM_AGENT_ADDRESS` (`0xfbff4200`, HAL line 356) — real HAL term, and
+    genuinely written by al_boot: `FUN_010129d8(&SUB_fbff4200, &LAB_0102ef70, 0x15fc)`
+    (`preboot-alboot-decompiled.c:748`, memcpy 5,628 B into it). Likely the source of
+    the pasted text's "agent" framing — but this "agent" is a data blob copied into PBS
+    SRAM, unrelated to the AArch64 resume-agent discussed in
+    [preboot-coverage.md](preboot-coverage.md) (that one goes to phys `0x1000`, not here).
+  - **"+0x000 = Stage-2 image offset" — REFUTED / not this SRAM.** S2 links and runs at
+    `0xF2200000` (`s2_sram`, a separate 256 KiB window — [hardware.md](hardware.md)), not
+    at `0xfbff4000+0`. Nothing in the HAL or our decompiles puts S2 inside the 4 KiB PBS
+    SRAM block.
+
 ## Open / not chased
 
 - Exact AL-324 DDR PHY timings — recoverable: read the SPD + impedance records off the
