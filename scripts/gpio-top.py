@@ -19,6 +19,11 @@ PCA9575@0x21, chip2-7=the 6 PL061 banks, chip8=[fd8b4000.sgpo] (32 lines).
 No chip for @0x29 (Pro bays 5-8) - confirms it's unpopulated on this SKU.
 
 Root only (raw /dev/mem MMIO read + gpioget). Ctrl-C or q to quit.
+
+--headless: same poll+log loop, no curses display - curses needs a real
+controlling TTY, which a backgrounded/nohup'd process doesn't have. Use
+this to leave the box monitoring GPIO changes unattended, e.g.:
+    setsid nohup python3 gpio-top.py --headless < /dev/null > /dev/null 2>&1 &
 """
 
 import curses
@@ -134,54 +139,142 @@ def gpioget_chip(chip: str, n_lines: int) -> list[int] | None:
 
 
 def log_changes(log_f, source: str, prev: list[int] | None, cur: list[int],
-                 labels: dict) -> None:
+                 labels: dict, changed_at: dict | None = None) -> None:
     """Append one line per changed GPIO to the change log - only on actual
     transitions, not every poll, so the log stays meaningful over a long
-    run rather than growing at the full 100ms/1s poll rate."""
-    if prev is None or log_f is None:
+    run rather than growing at the full 100ms/1s poll rate. If given,
+    also stamps changed_at[(source, i)] = monotonic() for the curses UI's
+    recency colouring - shared so the log and the display never disagree
+    about when something last changed."""
+    if prev is None:
         return
     for i, (old, new) in enumerate(zip(prev, cur)):
         if old == new:
             continue
+        if changed_at is not None:
+            changed_at[(source, i)] = time.monotonic()
+        if log_f is None:
+            continue
         label = labels.get(i, ("",))[0] if isinstance(labels.get(i), tuple) else labels.get(i, "")
         ts = time.strftime("%Y-%m-%dT%H:%M:%S%z")
         log_f.write(f"{ts} {source} line {i:<2} {label:<28} {old} -> {new}\n")
-    log_f.flush()
+    if log_f is not None:
+        log_f.flush()
+
+
+# Recency colour thresholds (seconds since last change) -> curses color
+# pair index, per request: <1s red, <5s orange(-ish), <10s yellow.
+RECENCY_TIERS = [(1.0, 1), (5.0, 2), (10.0, 3)]
+
+
+def recency_attr(changed_at: dict, key: tuple, colors_ok: bool = True) -> int:
+    if not colors_ok:
+        return curses.A_NORMAL
+    ts = changed_at.get(key)
+    if ts is None:
+        return curses.A_NORMAL
+    age = time.monotonic() - ts
+    for max_age, pair in RECENCY_TIERS:
+        if age < max_age:
+            return curses.color_pair(pair) | curses.A_BOLD
+    return curses.A_NORMAL
+
+
+def new_poll_state() -> dict:
+    return {
+        "tick": 0,
+        "pca20": None, "pca21": None, "sgpo": None,
+        "prev_bits": None, "prev_pca20": None, "prev_pca21": None, "prev_sgpo": None,
+        "changed_at": {},  # (source, line_index) -> monotonic() of last change
+    }
+
+
+def poll_tick(mem_fd: int, log_f, state: dict) -> list[int]:
+    """One poll cycle: always reads the 48 fast SoC lines, reads the slow
+    I2C-expander/SGPO chips only every SLOW_REFRESH_TICKS-th call, logs any
+    real changes either way (and stamps state["changed_at"] for the
+    curses UI's recency colouring). Shared between the curses UI and
+    --headless mode so the two never drift apart. Returns the current
+    `bits` list."""
+    ca = state["changed_at"]
+    banks = read_soc_banks(mem_fd)
+    bits = [(banks[p // 8] >> (p % 8)) & 1 for p in range(48)]
+
+    log_changes(log_f, "SoC", state["prev_bits"], bits, PIN_INFO, ca)
+    state["prev_bits"] = bits
+
+    if state["tick"] % SLOW_REFRESH_TICKS == 0:
+        new_pca20 = gpioget_chip("gpiochip0", 16)
+        if new_pca20:
+            log_changes(log_f, "PCA9575@0x20", state["prev_pca20"], new_pca20, PCA9575_0X20_LINES, ca)
+            state["prev_pca20"] = state["pca20"] = new_pca20
+        new_pca21 = gpioget_chip("gpiochip1", 16)
+        if new_pca21:
+            log_changes(log_f, "PCA9575@0x21", state["prev_pca21"], new_pca21, PCA9575_0X21_LINES, ca)
+            state["prev_pca21"] = state["pca21"] = new_pca21
+        new_sgpo = gpioget_chip("gpiochip8", 32)
+        if new_sgpo:
+            log_changes(log_f, "SGPO", state["prev_sgpo"], new_sgpo, {}, ca)
+            state["prev_sgpo"] = state["sgpo"] = new_sgpo
+    state["tick"] += 1
+    return bits
+
+
+def run_headless(mem_fd: int, log_f) -> None:
+    """No curses, no display - just the poll+log loop, safe to run as a
+    detached background daemon (curses needs a real controlling TTY, which
+    a backgrounded/nohup'd process doesn't have - this mode exists so the
+    box can be left monitoring GPIO changes unattended)."""
+    state = new_poll_state()
+    while True:
+        poll_tick(mem_fd, log_f, state)
+        time.sleep(REFRESH_S)
+
+
+def init_colors() -> bool:
+    """Returns False (and leaves recency_attr() a no-op) if this terminal
+    doesn't support colour at all - some serial-console terminfo entries
+    lack even the default-colour extension, or (confirmed live on this
+    box's console) report curses.COLORS as -1 without start_color()
+    itself raising - checked explicitly since that's not an exception.
+    Not fatal either way."""
+    try:
+        curses.start_color()
+    except curses.error:
+        return False
+    if curses.COLORS < 8:
+        return False
+    try:
+        curses.use_default_colors()
+        bg = -1
+    except curses.error:
+        bg = curses.COLOR_BLACK  # fall back to an explicit background
+    try:
+        curses.init_pair(1, curses.COLOR_RED, bg)      # <1s
+        orange = 208 if curses.COLORS >= 256 else curses.COLOR_YELLOW  # <5s
+        curses.init_pair(2, orange, bg)                # true orange on 256-color
+        curses.init_pair(3, curses.COLOR_YELLOW, bg)   # <10s
+        return True
+    except curses.error:
+        return False
 
 
 def render(stdscr, mem_fd: int, log_f) -> None:
     curses.curs_set(0)
     stdscr.nodelay(True)
-    tick = 0
-    pca20 = pca21 = sgpo = None
-    prev_bits = prev_pca20 = prev_pca21 = prev_sgpo = None
+    colors_ok = init_colors()
+    state = new_poll_state()
 
     while True:
-        banks = read_soc_banks(mem_fd)
-        bits = [(banks[p // 8] >> (p % 8)) & 1 for p in range(48)]
-
-        log_changes(log_f, "SoC", prev_bits, bits, PIN_INFO)
-        prev_bits = bits
-
-        if tick % SLOW_REFRESH_TICKS == 0:
-            new_pca20 = gpioget_chip("gpiochip0", 16)
-            if new_pca20:
-                log_changes(log_f, "PCA9575@0x20", prev_pca20, new_pca20, PCA9575_0X20_LINES)
-                prev_pca20, pca20 = new_pca20, new_pca20
-            new_pca21 = gpioget_chip("gpiochip1", 16)
-            if new_pca21:
-                log_changes(log_f, "PCA9575@0x21", prev_pca21, new_pca21, PCA9575_0X21_LINES)
-                prev_pca21, pca21 = new_pca21, new_pca21
-            new_sgpo = gpioget_chip("gpiochip8", 32)
-            if new_sgpo:
-                log_changes(log_f, "SGPO", prev_sgpo, new_sgpo, {})
-                prev_sgpo, sgpo = new_sgpo, new_sgpo
-        tick += 1
+        bits = poll_tick(mem_fd, log_f, state)
+        pca20, pca21, sgpo = state["pca20"], state["pca21"], state["sgpo"]
+        ca = state["changed_at"]
 
         stdscr.erase()
         row = 0
         stdscr.addstr(row, 0, "awto-unvr GPIO live monitor (q to quit) - "
-                               "SoC lines 100ms, I2C expanders ~1s")
+                               "SoC lines 100ms, I2C expanders ~1s. "
+                               "red<1s orange<5s yellow<10s since last change")
         row += 2
 
         # --- 48 SoC lines: table by port, columns = the 6 banks ---
@@ -191,18 +284,20 @@ def render(stdscr, mem_fd: int, log_f) -> None:
         stdscr.addstr(row, 0, header)
         row += 1
         for bit in range(8):
-            line = f"{bit:<5}"
+            try:
+                stdscr.addstr(row, 0, f"{bit:<5}")
+            except curses.error:
+                pass
             for bank in range(6):
                 pin = bank * 8 + bit
                 v = bits[pin]
-                label, active_low, is_gpio = PIN_INFO[pin]
-                active = (v == 0) if active_low else (v == 1)
+                active = (v == 0) if PIN_INFO[pin][1] else (v == 1)
                 cell = f"{pin:>2}={v}{'*' if active else ' '}"
-                line += f"{cell:<11}"
-            try:
-                stdscr.addstr(row, 0, line)
-            except curses.error:
-                pass
+                col = 5 + bank * 11
+                try:
+                    stdscr.addstr(row, col, f"{cell:<11}", recency_attr(ca, ("SoC", pin), colors_ok))
+                except curses.error:
+                    pass
             row += 1
         row += 1
         stdscr.addstr(row, 0, "* = active per docs/gpio-map.md polarity. Labels below for named pins:")
@@ -214,17 +309,18 @@ def render(stdscr, mem_fd: int, log_f) -> None:
             v = bits[pin]
             active = (v == 0) if active_low else (v == 1)
             try:
-                stdscr.addstr(row, 0, f"  pin {pin:<2} {label:<28} {'ACTIVE' if active else '-'}")
+                stdscr.addstr(row, 0, f"  pin {pin:<2} {label:<28} {'ACTIVE' if active else '-'}",
+                              recency_attr(ca, ("SoC", pin), colors_ok))
             except curses.error:
                 pass
             row += 1
         row += 1
 
         # --- I2C-expander / SGPO GPIO, same table-by-port idea ---
-        for title, chip_vals, labels, ncols in (
-            ("PCA9575 @0x20 (gpiochip0, 16 lines)", pca20, PCA9575_0X20_LINES, 4),
-            ("PCA9575 @0x21 (gpiochip1, 16 lines, HDD bay control)", pca21, PCA9575_0X21_LINES, 4),
-            ("SGPO (gpiochip8, 32 lines, bay-activity shift-reg)", sgpo, {}, 8),
+        for source, title, chip_vals, labels, ncols in (
+            ("PCA9575@0x20", "PCA9575 @0x20 (gpiochip0, 16 lines)", pca20, PCA9575_0X20_LINES, 4),
+            ("PCA9575@0x21", "PCA9575 @0x21 (gpiochip1, 16 lines, HDD bay control)", pca21, PCA9575_0X21_LINES, 4),
+            ("SGPO", "SGPO (gpiochip8, 32 lines, bay-activity shift-reg)", sgpo, {}, 8),
         ):
             try:
                 stdscr.addstr(row, 0, title + (":" if chip_vals else " - unavailable"))
@@ -234,13 +330,14 @@ def render(stdscr, mem_fd: int, log_f) -> None:
             if not chip_vals:
                 continue
             for start in range(0, len(chip_vals), ncols):
-                line = ""
+                col = 0
                 for i in range(start, min(start + ncols, len(chip_vals))):
-                    line += f"{i:>2}={chip_vals[i]}  "
-                try:
-                    stdscr.addstr(row, 0, line)
-                except curses.error:
-                    pass
+                    cell = f"{i:>2}={chip_vals[i]}  "
+                    try:
+                        stdscr.addstr(row, col, cell, recency_attr(ca, (source, i), colors_ok))
+                    except curses.error:
+                        pass
+                    col += len(cell)
                 row += 1
             for i, (label, active_low) in sorted(labels.items()):
                 if i >= len(chip_vals):
@@ -248,7 +345,8 @@ def render(stdscr, mem_fd: int, log_f) -> None:
                 v = chip_vals[i]
                 active = (v == 0) if active_low else (v == 1)
                 try:
-                    stdscr.addstr(row, 0, f"  line {i:<2} {label:<28} {'ACTIVE' if active else '-'}")
+                    stdscr.addstr(row, 0, f"  line {i:<2} {label:<28} {'ACTIVE' if active else '-'}",
+                                  recency_attr(ca, (source, i), colors_ok))
                 except curses.error:
                     pass
                 row += 1
@@ -265,6 +363,17 @@ def render(stdscr, mem_fd: int, log_f) -> None:
 
 
 def main() -> int:
+    headless = "--headless" in sys.argv
+
+    # This box's serial-getty defaults TERM=vt220 (confirmed live) - a real
+    # VT220 never had color, so its terminfo entry has none and curses.COLORS
+    # comes back -1. ANSI colour codes work fine over any serial link; it's
+    # purely a terminfo-selection issue. Force a colour-capable entry unless
+    # the caller already asked for something specific (e.g. testing a
+    # different terminal type intentionally).
+    if os.environ.get("TERM") in (None, "", "vt220"):
+        os.environ["TERM"] = "xterm-256color"
+
     try:
         mem_fd = os.open("/dev/mem", os.O_RDONLY)
     except (PermissionError, OSError) as e:
@@ -276,7 +385,10 @@ def main() -> int:
     log_path = log_dir / f"gpio-top-changes-{time.strftime('%Y%m%d-%H%M%S')}.log"
     print(f"logging GPIO changes to {log_path}")
     with open(log_path, "a") as log_f:
-        curses.wrapper(render, mem_fd, log_f)
+        if headless:
+            run_headless(mem_fd, log_f)
+        else:
+            curses.wrapper(render, mem_fd, log_f)
     return 0
 
 
