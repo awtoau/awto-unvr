@@ -214,6 +214,15 @@ def main() -> int:
         "--modules-tar", help="optional: tar.gz of the kernel-version modules dir"
     )
     ap.add_argument(
+        "--modules-dir",
+        help="optional: a build's modroot dir (containing lib/modules/<kver>/) - "
+        "tarred internally, kver auto-derived. Mutually exclusive with "
+        "--modules-tar/--kver (which stay for a pre-built tar from elsewhere). "
+        "Exists because 'cd .../lib/modules && tar -czf out.tar.gz <kver>' by "
+        "hand is exactly the double-nesting trap this script's own module "
+        "extraction warns about if you tar the wrong directory level.",
+    )
+    ap.add_argument(
         "--kver", help="kernel release string, required if --modules-tar is given"
     )
     ap.add_argument(
@@ -221,6 +230,9 @@ def main() -> int:
     )
     a = ap.parse_args()
 
+    if a.modules_tar and a.modules_dir:
+        log("FATAL: --modules-tar and --modules-dir are mutually exclusive", "ERROR")
+        return 2
     if a.modules_tar and not a.kver:
         log("FATAL: --modules-tar needs --kver", "ERROR")
         return 2
@@ -228,6 +240,25 @@ def main() -> int:
     kernel = Path(a.kernel).resolve()
     dtb = Path(a.dtb).resolve()
     modules_tar = Path(a.modules_tar).resolve() if a.modules_tar else None
+    kver = a.kver
+
+    if a.modules_dir:
+        modroot = Path(a.modules_dir).resolve()
+        modules_lib = modroot / "lib" / "modules"
+        if not modules_lib.is_dir():
+            log(f"FATAL: no lib/modules/ under {modroot}", "ERROR")
+            return 1
+        kvers = [p.name for p in modules_lib.iterdir() if p.is_dir()]
+        if len(kvers) != 1:
+            log(f"FATAL: expected exactly one kver dir under {modules_lib}, found {kvers}", "ERROR")
+            return 1
+        kver = kvers[0]
+        modules_tar = TFTP_ROOT / f"ram-boot-modules-{kver}.tar.gz"
+        TFTP_ROOT.mkdir(parents=True, exist_ok=True)
+        with tarfile.open(modules_tar, "w:gz") as tf:
+            tf.add(modules_lib / kver, arcname=kver)
+        log(f"tarred {modules_lib / kver} -> {modules_tar} (kver={kver}, auto-derived)")
+
     for p in (kernel, dtb, *([modules_tar] if modules_tar else [])):
         if not p.exists():
             log(f"FATAL: not found: {p}", "ERROR")
@@ -375,7 +406,7 @@ def main() -> int:
         # no benefit - this small archive extracts well within the plain
         # 1.5s read window console-send uses when --expect is omitted.
         run_devpy(
-            f"rm -rf /lib/modules/{a.kver} && "
+            f"rm -rf /lib/modules/{kver} && "
             f"tar xzf /root/rbd-modules.tar.gz -C /lib/modules 2>&1 | grep -v 'in the future'"
         )
         # `ls` output is alphabetically sorted, so matching on ANY of the
@@ -389,7 +420,7 @@ def main() -> int:
             f"{expected_kos[-1]}|No such file",
             "--timeout",
             "10",
-            f"ls /lib/modules/{a.kver}/extra/",
+            f"ls /lib/modules/{kver}/extra/",
         )
         missing = [k for k in expected_kos if k not in ls_out]
         if missing:
