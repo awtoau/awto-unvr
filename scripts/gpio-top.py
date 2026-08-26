@@ -28,6 +28,7 @@ import struct
 import subprocess
 import sys
 import time
+from pathlib import Path
 
 GPIO_BANK_BASE = [0xFD887000, 0xFD888000, 0xFD889000, 0xFD88A000, 0xFD88B000, 0xFD897000]
 GPIODATA_ALL_OFF = 0x3FC  # PL061 address-mask trick: all 8 mask bits set
@@ -132,20 +133,49 @@ def gpioget_chip(chip: str, n_lines: int) -> list[int] | None:
         return None
 
 
-def render(stdscr, mem_fd: int) -> None:
+def log_changes(log_f, source: str, prev: list[int] | None, cur: list[int],
+                 labels: dict) -> None:
+    """Append one line per changed GPIO to the change log - only on actual
+    transitions, not every poll, so the log stays meaningful over a long
+    run rather than growing at the full 100ms/1s poll rate."""
+    if prev is None or log_f is None:
+        return
+    for i, (old, new) in enumerate(zip(prev, cur)):
+        if old == new:
+            continue
+        label = labels.get(i, ("",))[0] if isinstance(labels.get(i), tuple) else labels.get(i, "")
+        ts = time.strftime("%Y-%m-%dT%H:%M:%S%z")
+        log_f.write(f"{ts} {source} line {i:<2} {label:<28} {old} -> {new}\n")
+    log_f.flush()
+
+
+def render(stdscr, mem_fd: int, log_f) -> None:
     curses.curs_set(0)
     stdscr.nodelay(True)
     tick = 0
     pca20 = pca21 = sgpo = None
+    prev_bits = prev_pca20 = prev_pca21 = prev_sgpo = None
 
     while True:
         banks = read_soc_banks(mem_fd)
         bits = [(banks[p // 8] >> (p % 8)) & 1 for p in range(48)]
 
+        log_changes(log_f, "SoC", prev_bits, bits, PIN_INFO)
+        prev_bits = bits
+
         if tick % SLOW_REFRESH_TICKS == 0:
-            pca20 = gpioget_chip("gpiochip0", 16) or pca20
-            pca21 = gpioget_chip("gpiochip1", 16) or pca21
-            sgpo = gpioget_chip("gpiochip8", 32) or sgpo
+            new_pca20 = gpioget_chip("gpiochip0", 16)
+            if new_pca20:
+                log_changes(log_f, "PCA9575@0x20", prev_pca20, new_pca20, PCA9575_0X20_LINES)
+                prev_pca20, pca20 = new_pca20, new_pca20
+            new_pca21 = gpioget_chip("gpiochip1", 16)
+            if new_pca21:
+                log_changes(log_f, "PCA9575@0x21", prev_pca21, new_pca21, PCA9575_0X21_LINES)
+                prev_pca21, pca21 = new_pca21, new_pca21
+            new_sgpo = gpioget_chip("gpiochip8", 32)
+            if new_sgpo:
+                log_changes(log_f, "SGPO", prev_sgpo, new_sgpo, {})
+                prev_sgpo, sgpo = new_sgpo, new_sgpo
         tick += 1
 
         stdscr.erase()
@@ -241,7 +271,12 @@ def main() -> int:
         print(f"/dev/mem open failed ({e}) -- run as root", file=sys.stderr)
         return 2
 
-    curses.wrapper(render, mem_fd)
+    log_dir = Path(__file__).resolve().parent.parent / "tmp" / "logs"
+    log_dir.mkdir(parents=True, exist_ok=True)
+    log_path = log_dir / f"gpio-top-changes-{time.strftime('%Y%m%d-%H%M%S')}.log"
+    print(f"logging GPIO changes to {log_path}")
+    with open(log_path, "a") as log_f:
+        curses.wrapper(render, mem_fd, log_f)
     return 0
 
 
