@@ -366,6 +366,76 @@ static int do_fan(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 U_BOOT_CMD(fan, 2, 0, do_fan,
 	   "set all 3 fans to a manual PWM duty (0-255), or read current", "[duty]");
 
+/*
+ * `bootstrap` — decode PBS boot_strap reg (0xfd8a8000+0x110) for the running
+ * clock tree, esp. ddr_pll_freq: the one live-open field in
+ * docs/ddr-config-reverse.md §7 (EEPROM/SPD only bounds it to <=1866 MT/s).
+ * Port of al_bootstrap_parse() / al_hal_bootstrap.c (delroth-alpine_hal),
+ * Alpine V2 branches only — this board is fixed AL-324/Alpine V2.
+ * Field layout: al_hal_bootstrap_map.h; value tables: al_hal_bootstrap.c.
+ * Linux-side twin (same tables, cite the same lines): scripts/read-ddr-bootstrap.py.
+ */
+#define AL_BOOTSTRAP_REG	0xfd8a8110UL
+#define BS_F(reg, shift, mask)	(((reg) >> (shift)) & (mask))
+
+/* al_bootstrap_cpu_pll_freq_get(), dev_id<=ALPINE_V2 table. Index = field[3:0]. */
+static const u32 bs_cpu_pll_tbl[16] = {
+	0 /* bypass */, 1000000000, 1400000000, 1500000000, 1600000000,
+	1700000000, 1800000000, 1900000000, 2100000000, 2200000000,
+	2300000000, 2400000000, 2500000000, 2600000000, 2700000000, 2000000000,
+};
+
+/* al_bootstrap_ddr_pll_freq_get(), Alpine V2 arm. Index = field[6:4]. */
+static const u32 bs_ddr_pll_tbl[8] = {
+	0 /* bypass */, 1066666666, 666666666, 1300000000,
+	933333333, 1050000000, 1200000000, 800000000,
+};
+
+static const u32 bs_sb_clk_tbl[4] = { 250000000, 375000000, 428000000, 500000000 };
+
+static const char * const bs_boot_dev_names[8] = {
+	"UART-CLI", "UART(2000000bps)", "NAND", "reserved",
+	"UART(115200bps)", "SPI(M3)", "UART(1000000bps)", "SPI(M0)",
+};
+
+static int do_bootstrap(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
+{
+	u32 reg = readl((void __iomem *)AL_BOOTSTRAP_REG);
+	u32 ref_clk = BS_F(reg, 19, 0x1) ? 100000000 : 25000000;
+	u32 cpu_pll = bs_cpu_pll_tbl[BS_F(reg, 0, 0xf)];
+	u32 ddr_pll = bs_ddr_pll_tbl[BS_F(reg, 4, 0x7)];
+	u32 sb_field = BS_F(reg, 7, 0x3);
+	u32 sb_pll, sb_clk;
+
+	if (cpu_pll == 0)
+		cpu_pll = ref_clk;
+	if (ddr_pll == 0)
+		ddr_pll = ref_clk;
+
+	if (sb_field == 0) {
+		sb_pll = ref_clk;
+		sb_clk = ref_clk;	/* bypass: clk follows pll */
+	} else {
+		sb_pll = (sb_field == 1) ? 3000000000U : 1500000000U;
+		sb_clk = bs_sb_clk_tbl[BS_F(reg, 9, 0x3)];
+	}
+
+	printf("bootstrap: reg=0x%08x (PBS +0x110)\n", reg);
+	printf("  pll_ref_clk_freq  %u MHz\n", ref_clk / 1000000);
+	printf("  cpu_pll_freq      %u MHz\n", cpu_pll / 1000000);
+	printf("  ddr_pll_freq      %u MHz  (%u MT/s DDR)\n",
+	       ddr_pll / 1000000, (ddr_pll / 1000000) * 2);
+	printf("  sb_pll_freq       %u MHz\n", sb_pll / 1000000);
+	printf("  sb_clk_freq       %u MHz\n", sb_clk / 1000000);
+	printf("  boot_device       %s\n", bs_boot_dev_names[BS_F(reg, 15, 0x7)]);
+	printf("  debug_mode        %s\n", BS_F(reg, 18, 0x1) ? "disabled" : "enabled");
+	printf("  cpu_exist field   %u  (0=1 core, 1=2, 3=4)\n", BS_F(reg, 20, 0x3));
+
+	return CMD_RET_SUCCESS;
+}
+U_BOOT_CMD(bootstrap, 1, 0, do_bootstrap,
+	   "decode the PBS bootstrap strap register (clocks incl. ddr_pll_freq)", "");
+
 int dram_init(void)
 {
 	return fdtdec_setup_mem_size_base();

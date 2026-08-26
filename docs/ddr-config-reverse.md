@@ -417,6 +417,15 @@ Structural + per-unit config now known. The EEPROM is dumped
 |---|---|---|
 | `al_bootstrap.ddr_pll_freq` | picks the *running* point on the freq ladder (SPD bounds it to ≤1866) → exact `tmg.ddr_freq`, `ref_clk_freq_mhz`, and CL/CWL | live PBS read (0xfd8a8000) via `/dev/mem`, or infer from the trained controller (§8) |
 
+**Tooling now exists** to take the live PBS read: U-Boot `bootstrap` command
+(`uboot-port/board/annapurna/alpine/alpine.c`) and `scripts/read-ddr-bootstrap.py` (runs on
+woomera, root, reads `/dev/mem` @ `0xfd8a8110`). Both port `al_bootstrap_parse()` /
+`al_hal_bootstrap.c` (delroth-alpine_hal), Alpine V2 branches only. Not yet run against the
+box — SSH reachability check (2026-08-26) found no host answering on the box's expected IP;
+a MAC-matched host on the LAN spoke old-dropbear SSH incompatible with this workstation's
+OpenSSL crypto policy. Run `scripts/read-ddr-bootstrap.py` on-box (or the `bootstrap` U-Boot
+command) and record the result here once reachable.
+
 `al_bootstrap.i2c_preload_addr` is resolved by the dump itself (records present at 0x57 offset
 0x400; `spd_i2c_addr=0xff` ⇒ strap fallback, live console prints `SPD I2C Address: 57`).
 Remaining SPL task: feed the decoded `al_ddr_init_cfg` (this doc / analysis doc) into

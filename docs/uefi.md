@@ -4,10 +4,12 @@ Goal: run **EDK2 UEFI as a later-stage payload** on this UNVR (AL-324 / Alpine V
 quad Cortex-A57, aarch64, sysid **0xea16**). Strategy owner: Dan.
 
 - **Chosen chain:** `ROM → Annapurna S2 → al_boot/stage3 → U-Boot → EDK2 → GRUB/Linux`.
-- **Rejected chain:** `ROM → our-EDK2` — needs undocumented AL-324 DDR training / PLL /
-  fabric / SATA-PHY init. DDR training is owned by the proprietary CVOS agent
-  (`agent_wakeup v2.10`, `exec_via_agent`), not recoverable
-  ([preboot-decompile.md](preboot-decompile.md) §DRAM). Do **not** attempt.
+- **Rejected chain:** `ROM → our-EDK2` — needs AL-324 DDR training / PLL / fabric /
+  SATA-PHY init from cold. DDR training's algorithm is open
+  (`al_hal_ddr_init_alpine_v2.c`) and per-unit config is decoded
+  ([ddr-config-reverse.md](ddr-config-reverse.md) §6-7) — porting it is feasible, just
+  real work not yet done. PLL/fabric/SATA-PHY cold-init remain genuinely undocumented.
+  Do **not** attempt without that work first.
 - Context, not restated: [hardware.md](hardware.md#mmio-and-address-map) (address map),
   [nor-boot-chain.md](nor-boot-chain.md) (boot chain + trust model),
   [uboot-update-path.md](uboot-update-path.md), [bootloader.md](bootloader.md),

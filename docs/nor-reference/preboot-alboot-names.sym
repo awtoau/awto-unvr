@@ -1,6 +1,6 @@
 # preboot function names -> ApplyAlRegs .sym (name<TAB>0xADDR)
 set_vectors	0x01000578
-bac1d52	0x0100063c
+stg3_print_banner	0x0100063c
 enabled	0x01000834
 thermal_sensor_trim_init	0x01000b30
 stg3_board_init	0x01001108
@@ -118,3 +118,14 @@ al_flash_toc_find_id_with_fallback	0x01027c54
 al_flash_toc_stage2_active_instance_get_with_fallback	0x01027e10
 al_flash_obj_header_read_and_validate	0x01027f6c
 al_flash_obj_data_load	0x010280d4
+# --- reset/entry chain, added this pass (docs/preboot-decompile.md Gap 1) ---
+s_reset_tail	0x010005a8
+s_stage3_orchestrator	0x01002e8c
+s_memcpy	0x010129d8
+s_sctlr_bits_set	0x0100036c
+s_nb_acf_misc_wr_pos_set	0x010274e4
+s_nb_acf_misc_wr_pos_clear	0x0102752c
+s_ccu_cluster_snoop_enable	0x01027504
+s_ccu_cluster_snoop_disable	0x0102753c
+s_soc_fabric_port_init	0x01002800
+s_boot_app_load_exec	0x01002a88

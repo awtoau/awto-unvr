@@ -51,50 +51,86 @@ FUN_ addresses below are VAs; names in **bold** are from `__func__`/banner strin
 
 ## Boot sequence — al_boot payload (VA 0x01000000)
 
-Reset/entry chain into the reversed region:
+Reset/entry chain into the reversed region. Ledger:
+[preboot-alboot-names.sym](nor-reference/preboot-alboot-names.sym) /
+[-names.md](nor-reference/preboot-alboot-names.md) (addresses below are the
+**corrected** carve — see [preboot-coverage.md](preboot-coverage.md) "Carve
+correction"):
 
-1. `FUN_010005ac` (reset tail) → calls `FUN_01002e90`, then `halt_baddata` (never
-   returns; control has left via the U-Boot jump inside).
-2. `FUN_01002e90` — **stage3 DRAM/SoC-init orchestrator**:
-   - logs `dram_clear` (`FUN_010129dc(0x1000, "dram_clear", 0x5e18)`)
+1. `s_reset_tail` (`FUN_010005a8`) → calls `s_stage3_orchestrator`, then
+   `halt_baddata` (never returns; control has left via the U-Boot jump
+   inside).
+2. `s_stage3_orchestrator` (`FUN_01002e8c`) — **stage3 DRAM/SoC-init
+   orchestrator**:
+   - `s_memcpy(0x1000, &DAT_01029158, 0x5e18)` — copies the embedded
+     AArch64 resume-agent (20,492 B) to **physical `0x1000`**
+     (`preboot-coverage.md` "AArch64 resume-agent")
    - ISB/DSB
-   - `FUN_0100057c(&DAT_01049000, 0xffff0000)` — MMU/vectors + SCTLR
-   - `FUN_01000370(1,1,1)` — SCTLR: I-cache(0x1000)+align(0x2)+branch-pred(0x800)
-   - `FUN_010274e8(0xf0070000, 0)` / `FUN_01027508(0xf0090000, 1)` — poke SoC
-     fabric/agent mailbox regs
-   - `FUN_0100110c()` — **`stg3_early_init`** (`__func__`): TOC scan + multi_dt (below)
-   - `FUN_01002804()` — SoC/PCIe/ethernet fabric bring-up (table-driven)
-   - `FUN_01002a8c()` — **loads U-Boot** (below)
-   - returns `_DAT_fbff4150 == 0x31415926` — DDR-ready magic (pi digits) written by
-     the CVOS agent; main core polls it.
-3. `FUN_01000640` — **Stage 3 banner** printer: `Stage 3 version: %s`, `Commit
-   ID: %s`, `CVOS commit ID: %s`, `HAL commit ID: %s`, `Press CTRL-F to print
-   full trace`.
+   - `set_vectors(&DAT_01049000, 0xffff0000)` — vector base + MMU/SCTLR
+   - `s_sctlr_bits_set(1,1,1)` (`FUN_0100036c`) — SCTLR: I-cache(0x1000) +
+     align(4) + branch-pred(0x800), all enabled
+   - `s_nb_acf_misc_wr_pos_set(0xf0070000, 0)` / `s_ccu_cluster_snoop_enable(0xf0090000, 1)`
+     — **not agent-mailbox pokes** (corrected below)
+   - `stg3_board_init()` (`FUN_01001108`, `__func__`-confirmed) — TOC scan +
+     multi_dt switch (below) — **not `stg3_early_init`**, correcting an
+     earlier mislabel; see `preboot-alboot-names.md`'s "Correction" note
+   - `s_soc_fabric_port_init()` (`FUN_01002800`) — SoC/PCIe/ethernet fabric
+     bring-up (table-driven)
+   - `s_boot_app_load_exec()` (`FUN_01002a88`) — **loads U-Boot** (below)
+   - returns `_DAT_fbff4150 == 0x31415926` — DDR-ready magic (pi digits),
+     `struct shared_parameters` at `AL_PBS_INT_MEM_SRAM_BASE + 0x150`; main
+     core polls it. Unrelated to the `0xf0070000`/`0xf0090000` pokes above.
+3. `stg3_print_banner` (`FUN_0100063c`) — **Stage 3 banner** printer: `Stage 3
+   version: %s`, `Commit ID: %s`, `CVOS commit ID: %s`, `HAL commit ID:
+   %s`, `Press CTRL-F to print full trace`.
 
 CPU/cache/MMU primitives (reproduce or skip in a mainline port — all standard
 ARMv8-A32 SCTLR/cache-maintenance, no board secrets):
-- `FUN_01000088` — read cache-type / CLIDR level.
-- `FUN_010000bc` — clean/invalidate D-cache by set/way (loops CSSELR/CCSIDR).
-- `FUN_01000370` — SCTLR bit compose (I/C/A/Z).
-- `FUN_0100057c` — set vector base + MMU enable/disable, SCTLR M/TE bits.
-- `FUN_01000618` — CPACR: enable CP10/CP11 (NEON/VFP), `|0xff00000`.
+- `FUN_01000084` — read cache-type / CLIDR level.
+- `FUN_010000b8` — clean/invalidate D-cache by set/way (loops CSSELR/CCSIDR).
+- `s_sctlr_bits_set` (`FUN_0100036c`) — SCTLR bit compose (I/C/A/Z).
+- `set_vectors` (`FUN_01000578`) — set vector base + MMU enable/disable, SCTLR M/TE bits.
+- `FUN_01000614` — CPACR: enable CP10/CP11 (NEON/VFP), `|0xff00000`.
 
 ### DRAM/SoC init — what a mainline port must know
 
 - **DDR training is NOT in this payload as open code.** It is delegated to the
   Annapurna CVOS **agent** ("agent_wakeup v2.10", `exec_via_agent`). This payload
-  only pokes agent mailbox regs (`0xf0070000`, `0xf0090000`) and **polls
-  `_DAT_fbff4150` for `0x31415926`** to learn DDR is up. DRAM size/timings come
+  **polls `_DAT_fbff4150` for `0x31415926`** to learn DDR is up. DRAM size/timings come
   from the agent, not from a table here.
-- Porting consequence: a mainline U-Boot/ATF port on AL-324 must either keep the
+- `0xf0070000`/`0xf0090000` are NOT agent mailbox regs — per the actual
+  decompile (`preboot-alboot-names.md`):
+  - `0xf0070000` = `AL_NB_SERVICE_BASE`; `s_nb_acf_misc_wr_pos_set` toggles
+    `NB_GLOBAL.acf_misc` bit 30
+    (`NB_GLOBAL_ACF_MISC_WR_POS_DEV_AFTER_DEV_DIS`) — a fabric
+    write-posting/ordering knob, unrelated to DDR handshake.
+  - `0xf0090000` = the CCU; `s_ccu_cluster_snoop_enable` writes
+    `speculation_ctrl_register_v1_v2` (`+4=7`) and `slaves[4]`/`slaves[5]`
+    `.snoop_control_register` (`+0x4000`/`+0x5000 = 1`) — enabling ACE
+    snoop requests from the two CPU-cluster CCU slave ports. **This is the
+    same three offsets/values as U-Boot proper's later, DT-gated
+    `al_ccu_init_inlined`** ([uboot-ccu-coherency.md](nor-reference/uboot-ccu-coherency.md)):
+    al_boot does an unconditional early CCU-snoop enable, then **tears it
+    back down** (`s_ccu_cluster_snoop_disable` / `s_nb_acf_misc_wr_pos_clear`,
+    called from `s_boot_app_load_exec` right before the U-Boot jump) — so
+    U-Boot inherits snoop *disabled* and must re-enable it itself, which is
+    exactly what its `io_coherency`-gated init does. Relevant to the #97 CCU
+    investigation: this is a genuine, deliberate early/late pairing, not a
+    duplicate or a leftover.
+- Porting consequence: a mainline U-Boot/ATF port on AL-324 can either keep the
   Annapurna DDR agent/al-boot doing DRAM bring-up (this is what ships), or
-  re-implement the AL-324 DDR PHY sequence (proprietary, not recoverable here).
-  Everything downstream (MMU, cache, multi_dt, U-Boot load) is reproducible.
-- `FUN_01002804` — fabric/PCIe/ethernet SoC config, driven by const tables at
+  re-implement the AL-324 DDR PHY sequence directly — the algorithm is open
+  (`al_hal_ddr_init_alpine_v2.c`, 5,608 lines, BSD-style license,
+  `delroth-alpine_hal/ddr/src/`), and the per-unit config it needs is fully
+  decoded ([ddr-config-reverse.md](ddr-config-reverse.md) §6-7: EEPROM SPD +
+  impedance, plus the live `ddr_pll_freq` strap via the `bootstrap` U-Boot
+  command / `scripts/read-ddr-bootstrap.py`). Everything downstream (MMU,
+  cache, multi_dt, U-Boot load) is reproducible too.
+- `s_soc_fabric_port_init` (`FUN_01002800`) — fabric/PCIe/ethernet SoC config, driven by const tables at
   `DAT_010290a0..`; sets per-port endpoint config. References `soc_board_cfg
   ethernet port %d`, `exec_via_agent`, `ep_ports`.
 
-### U-Boot handoff — `FUN_01002a8c`
+### U-Boot handoff — `s_boot_app_load_exec` (`FUN_01002a88`)
 
 - Reads image size via SPI read-fn `(*DAT_01049d8c)(0x40000, &sz)` then loads
   application **from SPI off 0x40000 to 0x1100000** (`Loading application to
@@ -108,9 +144,11 @@ Question was: what input drives DTB selection, and how does it map to an index
 (prior RE inferred EEPROM board id but had not disassembled the switch in the NEW
 preboot). **Now confirmed in decompiled C AND disassembly.**
 
-Location: inside `FUN_0100110c` = **`stg3_early_init`** (`__func__`-confirmed; NOT
-"stg3 board init" — that is `FUN_01002460`; references `dt_based_init_pcie`).
-Decompiled read + switch:
+Location: inside `stg3_board_init` (`FUN_01001108`, `__func__`-confirmed via
+`s_stg3_board_init_0102913c` at 5 call sites). The `stg3_early_init`
+`__func__` string (`0x0102912c`, 16 B before `stg3_board_init`'s own string)
+belongs to a single error path inside `thermal_sensor_trim_init`
+(`FUN_01000b30`), not to this switch. Decompiled read + switch:
 
 ```c
 // board-id read via SPI-NOR read fn-ptr: (offset, dst, len)
@@ -218,17 +256,26 @@ recurs, hits≥4), m=medium (hits 2–3), R=hand-RE.
 
 ### Boot orchestration — contractor stage3
 
+**Corrected 2026-08-26** (`preboot-alboot-names.md`): this table previously used
+the uncorrected (+4) carve addresses AND had `stg3_early_init`/`stg3_board_init`
+swapped (`0x0100110c`/`0x01002460` old-addressing). Re-verified against the
+current decompile — `stg3_board_init`'s `__func__` string is confirmed at 5
+call sites inside the multi_dt-switch function itself; `dram_clear`'s
+`__func__` string is confirmed inside the DDR-size-check/iodma function.
+Corrected addresses below are the current carve (`container[0x21004:0x6b6b4]`,
+load `0x01000000`).
+
 | VA | name | d | role |
 |---|---|---|---|
-| 0x010005ac | (reset_tail) | R | reset entry tail → `FUN_01002e90`, then `halt_baddata` |
-| 0x01002e90 | (stg3 orchestrator) | R | DRAM/SoC-init: dram_clear, MMU/cache, board init, fabric, U-Boot load; polls DDR-ready `0x31415926` |
-| 0x0100110c | `stg3_early_init` | h | **TOC scan + sysid(NOR 0x1F000C)/hwrev(0x1F0010) read + multi_dt DTB switch + obj load** (§multi_dt) — **corrects** earlier "stg3 board init" label |
-| 0x01002460 | `stg3_board_init` | h | DDR-size check, "clearing physical memory", iodma init |
-| 0x01000b34 | `dt_based_init` | h | DT-driven init dispatch (thermal trim, `dt_based_init_pcie`) |
-| 0x01002df0 | `power_down_secondary_cpus` | m | parks secondary A57 cores |
-| 0x01000640 | (stage3 banner) | R | prints Stage 3 version/Commit/CVOS/HAL |
-| 0x01002804 | (SoC fabric bring-up) | R | PCIe/eth SoC config, table-driven (`DAT_010290a0..`) |
-| 0x01002a8c | (U-Boot loader) | R | SPI read → load app to 0x1100000, transfer control |
+| 0x010005a8 | `s_reset_tail` | R | reset entry tail → `s_stage3_orchestrator`, then `halt_baddata` |
+| 0x01002e8c | `s_stage3_orchestrator` | R | AArch64 resume-agent memcpy, MMU/cache, `stg3_board_init`, fabric, U-Boot load; polls DDR-ready `0x31415926` |
+| 0x01001108 | `stg3_board_init` | h | **TOC scan + sysid(NOR 0x1F000C)/hwrev(0x1F0010) read + multi_dt DTB switch + obj load** (§multi_dt) |
+| 0x0100245c | `dram_clear` | h | DDR-size check, "clearing physical memory", iodma init |
+| 0x01000b30 | `thermal_sensor_trim_init` | h | OTP/thermal trim + SRAM-agent memcpy/invoke + CPU-resume-regs validity check. **Open**: this function's own decompile embeds *three* different `__func__`-shaped strings across its error paths (`thermal_sensor_trim_init`, and separately `stg3_early_init` for one "cpu resume regs invalid" branch) — plausibly several small source functions got inlined into one Ghidra-recovered body; needs a source-level (not decompile-level) resolution to pick a single name. |
+| 0x01002dec | `exec_via_agent` | m | calls `thermal_sensor_trim_init`, dispatches stage-3 to the resuming secondary core or runs it directly via `s_reset_tail` |
+| 0x0100063c | `stg3_print_banner` | R | prints Stage 3 version/Commit/CVOS/HAL banner |
+| 0x01002800 | `s_soc_fabric_port_init` | R | PCIe/eth SoC config, table-driven (`DAT_010290a0..`) |
+| 0x01002a88 | `s_boot_app_load_exec` | R | SPI read → load app to 0x1100000, transfer control |
 
 ### CPU / cache / MMU primitives (ARMv8-A32; reproduce or skip in a port)
 
@@ -451,22 +498,29 @@ call site.
     is the trustworthy source, not that raw percentage.)
   - **Confirms the CPU-resume-setup hypothesis, with exact register hits — this is
     Annapurna's `agent_wakeup v2.10` secondary-CPU wake/resume stub** (banner string
-    already known to be inside al_boot, `nor-boot-chain.md`):
-    - `FUN_fbff4d54` (`-disassembly.asm:839`) writes **`al_nb_cpun_config_status.resume_addr_l`
+    already known to be inside al_boot, `nor-boot-chain.md`; not traced to a specific
+    one of the 38 functions — see `preboot-alboot-sram-agent-names.md`'s note. Full
+    ledger: [preboot-alboot-sram-agent-names.sym](nor-reference/preboot-alboot-sram-agent-names.sym)
+    / [-names.md](nor-reference/preboot-alboot-sram-agent-names.md)):
+    - `nb_cpu_resume_addr_set` (`FUN_fbff4d54`, `-disassembly.asm:839`) writes
+      **`al_nb_cpun_config_status.resume_addr_l`
       (off `0x28`) and `.resume_addr_h` (off `0x2c`)** — `movw r2,#0x2028` +
       `str r4,[r0,#0x2c]` off a base computed as `NB_SERVICE_BASE + 0x2000 + cpu*0x100`
       (the `cpun_config_status[cpu]` array, `al_hal_nb_regs_v1_v2.h:368-411`,
       `AL_NB_SERVICE_BASE = AL_NB_BASE(0xf0000000) + 0x70000 = 0xf0070000`). Called in a
-      **loop over all 4 CPUs** (`FUN_fbff48a0`, cpu index 0..3) from the entry chain.
-    - `FUN_fbff4d2c` writes **`.power_ctrl` (off `0x20`)** the same way (`movw
-      r3,#0x2020`), called with value `3` (park/wait) from the per-CPU dispatch loop
-      and `0` (run) once a wake target is set.
+      **loop over all 4 CPUs** (`nb_cpu_resume_setup_all`, `FUN_fbff48a0`, cpu index
+      0..3) from the entry chain.
+    - `nb_cpu_power_ctrl_set` (`FUN_fbff4d2c`) writes **`.power_ctrl` (off `0x20`)** the
+      same way (`movw r3,#0x2020`), called with value `3` (park/wait) from the per-CPU
+      dispatch loop (`s_cpu_wake_dispatch_loop`, `FUN_fbff48fc`) and `0` (run) once a
+      wake target is set.
     - Did **NOT** find a literal/offset hit for `rvbar_low`/`rvbar_high` (off `0x48`/
       `0x4c`) anywhere in this blob — either RVBAR is fixed in hardware to this SRAM
       entry point on the AL-324 (so it never needs runtime programming) or it's set
       elsewhere (al_boot's own ARM body, not chased here). Not confirmed either way;
       flagging as open rather than assuming.
-    - **Writes the resume-valid magic itself**: `FUN_fbff48a0` ends with
+    - **Writes the resume-valid magic itself**: `nb_cpu_resume_setup_all`
+      (`FUN_fbff48a0`) ends with
       `*(u32*)0xfbff4120 = 0xf0e1d2c4` (`SRAM_CPU_RESUME_ADDRESS`, literal pool pair
       around `fbff48ec-fbff48f8` in the disassembly) and zeroes 7 more words of a
       small struct there (`CPU resume structure`, matches the pasted-text framing
@@ -475,8 +529,9 @@ call site.
       (`preboot-alboot-decompiled.c:673`), i.e. **this agent blob is the thing that
       makes the magic valid**; before it runs, `_DAT_fbff4120` is whatever cold-boot
       SRAM contents happen to be.
-    - Per-CPU **GIC Distributor init**: `FUN_fbff4d88`, called for both `id=0` and
-      `id=1` from `FUN_fbff4e0c`, selects base offset `0x200000` vs `0x9000` off
+    - Per-CPU **GIC Distributor init**: `nb_gic_dist_init` (`FUN_fbff4d88`), called for
+      both `id=0` and `id=1` from `s_nb_gic_dist_init_all` (`FUN_fbff4e0c`), selects
+      base offset `0x200000` vs `0x9000` off
       `AL_NB_BASE` — **exactly** `AL_NB_GIC_DIST_BASE(id)`'s ternary
       (`al_hal_iomap.h:188`, `AL_NB_GIC_MAIN` vs the per-cluster GIC). Sets interrupt
       priority bytes to `0x80808080` and an enable/clear mask to `0xffffffff`. A raw
@@ -484,19 +539,25 @@ call site.
       Distributor register addresses `0xf0200080/0100/0180/0400/0800/0c00`
       (`ICDISR/ICDISER/ICDICER/ICDIPR/ICDIPTR/ICDICFR` off `AL_NB_GIC_DIST_BASE_MAIN
       0xf0200000`), confirming the same block from the data side.
-    - Also does an **EL3→NS/Hyp handoff**: `FUN_fbff4fa0`/`FUN_fbff4ff4` read/write
-      `SCR` (Secure Configuration Register, NS bit), execute `smc #0` and `hvc #0`,
-      and touch `NSACR`/`ACTLR` (`FUN_fbff5058`, SMP-alike bit `0x80000000`) — this
+    - Also does an **EL3→NS/Hyp handoff**: `s_scr_ns_set_and_jump`/`s_smc_el3_transition`
+      (`FUN_fbff4fa0`/`FUN_fbff4ff4`) read/write
+      `SCR` (Secure Configuration Register, NS bit), execute `smc #0` (also standalone in
+      `hvc_call`/`FUN_fbff4f8c`) and `hvc #0`,
+      and touch `NSACR`/`ACTLR` (`s_actlr_nsacr_smp_setup`, `FUN_fbff5058`, SMP-alike bit
+      `0x80000000`) — this
       isn't just SRAM/GIC housekeeping, it's actively switching security state before
       handing a woken CPU to its target exception level. Not fully mapped (which
       64-bit coprocessor pair it's programming via `MRRC/MCRR p15,1` — plausibly
       `VTTBR` — wasn't chased further; low priority next to the resume-address/GIC
       finds).
-    - Also contains a **printf-family debug backend**: `FUN_fbff4628`
-      (itoa/number-format), `FUN_fbff4740` (`%d/%x/%X/%p/%u/%c/%s` format-string
-      parser), `FUN_fbff4f08`/`FUN_fbff4ed8` (UART TX with CR→CRLF translation) — logs
+    - Also contains a **printf-family debug backend**: `s_itoa`
+      (`FUN_fbff4628`, itoa/number-format), `s_vprintf_format` (`FUN_fbff4740`,
+      `%d/%x/%X/%p/%u/%c/%s` format-string
+      parser), `s_uart_tx_raw`/`s_uart_putc_crlf` (`FUN_fbff4f08`/`FUN_fbff4ed8`, UART TX
+      with CR→CRLF translation) — logs
       to the same UART al_boot's main body uses.
-    - `FUN_fbff42f4` (the ARM function called from the Thumb wake-dispatch with
+    - `l2ctlr_smp_park_sync` (`FUN_fbff42f4`, the ARM function called from the Thumb
+      wake-dispatch with
       param `1`) is the **SMP-coherency-before-caches** sequence: writes an
       implementation-defined CP15 "peripheral system" register, then bit `0x82`/
       `0x200082` (depending on the param) into **L2CTLR** (`opc1=1,CRn=c9,CRm=c0,opc2=2`
@@ -518,8 +579,11 @@ call site.
 
 ## Open / not chased
 
-- Exact AL-324 DDR PHY timings — recoverable: read the SPD + impedance records off the
-  I²C EEPROM ([ddr-config-reverse.md](ddr-config-reverse.md) §7).
+- Exact AL-324 DDR PHY timings — **RESOLVED**: SPD/impedance decoded from the live I²C
+  EEPROM ([ddr-config-reverse.md](ddr-config-reverse.md) §6, `scripts/decode-ddr-records.py`).
+  The one field the EEPROM can't give (`al_bootstrap.ddr_pll_freq`, the running strap —
+  EEPROM only bounds it ≤1866 MT/s) now has tooling to read it live: U-Boot `bootstrap`
+  command + `scripts/read-ddr-bootstrap.py` (ddr-config-reverse.md §7).
 - `FUN_01012b08` used as both memcmp and RSA-verify entry — same primitive; not
   split into named sub-ops here.
 - S2 0xf22000fc jumptable (pointer-dispatch) not reconstructed.

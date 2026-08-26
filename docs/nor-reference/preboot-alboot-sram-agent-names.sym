@@ -1,0 +1,32 @@
+# SRAM-agent blob (agent_wakeup, runs @0xfbff4200) function names ->
+# ApplyAlRegs .sym (name<TAB>0xADDR). See preboot-alboot-sram-agent-names.md
+# for confidence/rationale. Built docs/preboot-decompile.md Gap 2, 2026-08-26.
+s_agent_entry	0xfbff4200
+cpu_affinity_id	0xfbff4278
+cpacr_vfp_enable	0xfbff4284
+l2ctlr_smp_park_sync	0xfbff42f4
+s_fnptr_trampoline	0xfbff43b8
+s_agent_wakeup_sequence	0xfbff4588
+s_freq_setup_early	0xfbff45b0
+s_itoa	0xfbff4628
+s_fmt_sink_write_str	0xfbff46d2
+s_fmt_sink_write_char	0xfbff4712
+s_vprintf_format	0xfbff4740
+s_debug_printf	0xfbff4880
+nb_cpu_resume_setup_all	0xfbff48a0
+s_cpu_wake_dispatch_loop	0xfbff48fc
+s_freq_table_init_once	0xfbff49bc
+nb_cpu_power_ctrl_set	0xfbff4d2c
+nb_cpu_resume_addr_set	0xfbff4d54
+nb_gic_dist_init	0xfbff4d88
+s_nb_gic_dist_init_all	0xfbff4e0c
+s_noop_stub	0xfbff4e26
+s_gic_cpuif_init	0xfbff4e28
+s_gic_cpuif_ack_wait	0xfbff4eb0
+s_uart_putc_crlf	0xfbff4ed8
+s_uart_puts	0xfbff4ef4
+s_uart_tx_raw	0xfbff4f08
+hvc_call	0xfbff4f8c
+s_scr_ns_set_and_jump	0xfbff4fa0
+s_smc_el3_transition	0xfbff4ff4
+s_actlr_nsacr_smp_setup	0xfbff5058
