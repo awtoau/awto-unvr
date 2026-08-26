@@ -1,0 +1,8 @@
+# Vendor U-Boot proper, OLD build (Dec 16 2020, currently flashed) — confirmed
+# function names -> ApplyAlRegs .sym (name<TAB>0xADDR). See uboot-vendor-names.md.
+ft_board_setup	0x1104670
+ft_board_setup_feature_disable	0x1101e20
+ft_board_setup_clock	0x1101ea0
+ft_board_setup_pcie_set	0x1101f00
+ft_board_setup_prop_u32_set	0x1102020
+al_ccu_init_inlined	0x112629c
