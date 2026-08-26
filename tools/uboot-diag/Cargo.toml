@@ -1,0 +1,22 @@
+[package]
+name = "uboot-diag"
+version = "0.1.0"
+edition = "2021"
+
+# No external crates deliberately - raw libc FFI only, so this cross-builds
+# for aarch64-unknown-linux-musl without needing registry/network access.
+[lib]
+name = "uboot_diag"
+path = "src/lib.rs"
+
+[[bin]]
+name = "regdump"
+path = "src/bin/regdump.rs"
+
+[[bin]]
+name = "snapshot"
+path = "src/bin/snapshot.rs"
+
+[profile.release]
+strip = true
+opt-level = "z"
