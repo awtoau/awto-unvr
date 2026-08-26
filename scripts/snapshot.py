@@ -35,6 +35,8 @@ logging.basicConfig(
 )
 log = logging.getLogger(__name__)
 
+PCIE_EXT0_BASE = 0xFD800000
+
 _MEM_FD = None
 
 
@@ -226,7 +228,67 @@ def dump_mtd() -> None:
             log.info("  %-24s %-8s %s", label, dev, sha.split()[0])
 
 
+# --- PCI / USB / SCSI trees ------------------------------------------------
+
+def dump_pci() -> None:
+    log.info("--- PCI tree (lspci -vv) ---")
+    out = run(["lspci", "-vv", "-nn"], timeout=15)
+    if out:
+        log.info("%s", out.strip())
+
+
+def dump_usb() -> None:
+    log.info("--- USB tree (lsusb -t) ---")
+    out = run(["lsusb", "-t"])
+    if out:
+        log.info("%s", out.strip())
+    log.info("--- USB verbose (lsusb -v) ---")
+    out = run(["lsusb", "-v"], timeout=15)
+    if out:
+        log.info("%s", out.strip())
+
+
+def dump_scsi() -> None:
+    log.info("--- SCSI/storage tree ---")
+    out = run(["lsscsi", "-v"])
+    if out:
+        log.info("lsscsi:\n%s", out.strip())
+    else:
+        out = run(["cat", "/proc/scsi/scsi"])
+        if out:
+            log.info("/proc/scsi/scsi:\n%s", out.strip())
+    out = run(["lsblk", "-o", "NAME,SIZE,TRAN,MODEL,SERIAL,ROTA,TYPE"])
+    if out:
+        log.info("lsblk:\n%s", out.strip())
+
+
 # --- I2C ------------------------------------------------------------------
+
+# docs/hardware.md:373-379 + gpio-map.md - known I2C address -> device name,
+# for the tree summary below. Keep in sync if a new device gets documented.
+I2C_KNOWN_DEVICES = {
+    0x20: "PCA9575 GPIO expander (SFP-1G-LED + straps)",
+    0x21: "PCA9575 GPIO expander (bay pwr/present/fault)",
+    0x29: "PCA9575 GPIO expander (Pro bays 5-8, unpopulated on this SKU)",
+    0x2E: "ADT7475 fan/temp controller",
+    0x30: "S35390A RTC",
+    0x50: "SFP module EEPROM (SFF-8079/8472)",
+    0x51: "SFP module EEPROM (SFF-8079/8472, page 1)",
+    0x57: "AT24C64 identity EEPROM (MAC/serial) / DRAM SPD",
+    0x71: "PCA9546 I2C mux (4 channels)",
+}
+
+
+def find_rtc_bus() -> str | None:
+    """Which i2c-N hosts the s35390a RTC (addr 0x30), found via sysfs only -
+    no bus traffic, so this is safe even while the bus is wedged. Matches
+    `/sys/bus/i2c/devices/<N>-0030`."""
+    for p in Path("/sys/bus/i2c/devices").glob("*-0030"):
+        n = p.name.split("-")[0]
+        if n.isdigit():
+            return n
+    return None
+
 
 def dump_i2c_scan() -> None:
     log.info("--- I2C bus scan (all buses incl. pca9546 mux channels) ---")
@@ -234,14 +296,54 @@ def dump_i2c_scan() -> None:
     if not buses:
         return
     log.info("%s", buses.strip())
+
+    rtc_bus = find_rtc_bus()
+    if rtc_bus:
+        log.info(
+            "i2c-%s hosts the s35390a RTC (0x30) - a full i2cdetect scan on this "
+            "bus has repeatedly wedged it live tonight (docs/rtc-s35390a-fault.md: "
+            "phantom START/STOP mis-read holds SDA, unrecoverable in SW). "
+            "SKIPPING the raw scan; read via the bound kernel driver instead "
+            "(dump_i2c_devices()'s hwclock call, below).",
+            rtc_bus,
+        )
+
+    tree: dict[str, list[str]] = {}
     for line in buses.splitlines():
         m = re.match(r"i2c-(\d+)", line)
         if not m:
             continue
         n = m.group(1)
+        if n == rtc_bus:
+            continue
         out = run(["i2cdetect", "-y", n])
-        if out:
-            log.info("i2c-%s:\n%s", n, out.strip())
+        if not out:
+            continue
+        log.info("i2c-%s:\n%s", n, out.strip())
+        found = []
+        for row in out.splitlines()[1:]:
+            cols = row.split(":", 1)
+            if len(cols) != 2:
+                continue
+            try:
+                row_base = int(cols[0].strip(), 16)
+            except ValueError:
+                continue
+            for i, cell in enumerate(cols[1].split()):
+                if cell in ("--", ""):
+                    continue
+                addr = row_base + i
+                name = I2C_KNOWN_DEVICES.get(addr, "unknown")
+                found.append(f"0x{addr:02x} ({name})")
+        if found:
+            tree[n] = found
+
+    if rtc_bus:
+        tree[rtc_bus] = ["0x30 (S35390A RTC) [via bound driver, not scanned]"]
+
+    log.info("--- I2C summary tree ---")
+    for n, devs in tree.items():
+        log.info("i2c-%s: %s", n, ", ".join(devs))
 
 
 def dump_i2c_devices() -> None:
@@ -276,6 +378,100 @@ def dump_i2c_devices() -> None:
             log.info("PCA9575 @0x%s gpiochip node(s):\n%s", addr[-2:], gc.strip())
 
 
+# --- English decode summary ------------------------------------------------
+
+# docs/gpio-map.md per-ball table - (label, active_low, muxed_to_gpio).
+# Keep in sync with scripts/gpio-top.py's PIN_INFO (same source doc).
+GPIO_PIN_LABELS = {
+    0: ("SFP 25G speed LED", True), 31: ("ulogo_blue LED", True),
+    33: ("rps_prnt (RPS present)", False), 34: ("12v_lp (RPS 12V sense)", False),
+    37: ("ulogo_white LED", True), 38: ("reset button", True),
+    42: ("hdd force-power-on-wa", False),
+}
+
+
+def dump_english_decode() -> None:
+    log.info("--- English decode summary ---")
+
+    rev = read32(PCIE_EXT0_BASE + 0x16C)
+    if rev is not None:
+        log.info("PCIe ext0 controller revision: dev_id_val=%d -> %s",
+                  (rev >> 16) & 0xFFFF,
+                  {0: "REV_ID_2", 2: "REV_ID_3", 4: "REV_ID_4"}.get((rev >> 16) & 0xFFFF, "?"))
+
+    ltssm_val = read32(PCIE_EXT0_BASE + 0x2080)
+    if ltssm_val is not None:
+        state = (ltssm_val & 0x1F8) >> 3
+        up = "LINK UP" if state in (0x11, 0x12) else "link NOT trained"
+        log.info("PCIe ext0 link: LTSSM 0x%x -> %s", state, up)
+
+    tb = read32(PCIE_EXT0_BASE + 0x30)
+    if tb is not None:
+        log.info("PCIe ext0 CFG_TARGET_BUS: mask=0x%x target_bus=%d",
+                  tb & 0xFF, (tb >> 8) & 0xFF)
+
+    cmd = read32(PCIE_EXT0_BASE + 0x10004)
+    if cmd is not None:
+        c = cmd & 0xFFFF
+        flags = [n for bit, n in ((0, "IO"), (1, "Mem"), (2, "BusMaster")) if c & (1 << bit)]
+        log.info("PCIe ext0 CFGHDR command: %s", "|".join(flags) or "(none enabled)")
+
+    spec = read32(0xF0090004)
+    s3 = read32(0xF0094000)
+    s4 = read32(0xF0095000)
+    if spec is not None:
+        log.info("CCU speculation_ctrl=0x%x (7 = speculative fetches disabled from masters)", spec)
+    if s3 is not None:
+        log.info("CCU cluster0 snoop: %s (bit0=%d)", "ENABLED" if s3 & 1 else "disabled", s3 & 1)
+    if s4 is not None:
+        log.info("CCU cluster1 snoop: %s (bit0=%d)", "ENABLED" if s4 & 1 else "disabled", s4 & 1)
+
+    gctlr = read32(0xF0200000)
+    if gctlr is not None:
+        log.info("GIC-v3 GICD_CTLR: Group0=%s Group1=%s",
+                  "enabled" if gctlr & 1 else "disabled",
+                  "enabled" if gctlr & 2 else "disabled")
+
+    # Bootstrap strap - reuse read-ddr-bootstrap.py's real decode table,
+    # loaded by path since its filename has a dash (not import-able directly).
+    try:
+        import importlib.util
+
+        spec_mod = importlib.util.spec_from_file_location(
+            "read_ddr_bootstrap", Path(__file__).parent / "read-ddr-bootstrap.py"
+        )
+        rdb = importlib.util.module_from_spec(spec_mod)
+        spec_mod.loader.exec_module(rdb)
+        strap = read32(0xFD8A8110)
+        if strap is not None:
+            d = rdb.decode(strap)
+            log.info(
+                "Bootstrap: cpu_pll=%.0fMHz ddr_pll=%.0fMHz (%.0f MT/s) sb_pll=%.0fMHz "
+                "boot_device=%s debug_mode=%s",
+                d["cpu_pll_freq"] / 1e6, d["ddr_pll_freq"] / 1e6,
+                d["ddr_pll_freq"] * 2 / 1e6, d["sb_pll_freq"] / 1e6,
+                d["boot_device"], d["debug_mode"],
+            )
+    except Exception as e:
+        log.warning("bootstrap decode failed: %s", e)
+
+    log.info("GPIO pins of interest:")
+    for i, base in enumerate(
+        [0xFD887000, 0xFD888000, 0xFD889000, 0xFD88A000, 0xFD88B000, 0xFD897000]
+    ):
+        val = read32(base + 0x3FC)
+        if val is None:
+            continue
+        for bit in range(8):
+            pin = i * 8 + bit
+            if pin not in GPIO_PIN_LABELS:
+                continue
+            label, active_low = GPIO_PIN_LABELS[pin]
+            v = (val >> bit) & 1
+            active = (v == 0) if active_low else (v == 1)
+            log.info("  pin %-2d %-28s %s", pin, label, "ACTIVE" if active else "-")
+
+
 def main() -> int:
     log.info("=== awto-unvr full hardware snapshot, %s ===", STAMP)
     dump_cpu()
@@ -286,8 +482,12 @@ def main() -> int:
     dump_ddr_sram()
     dump_pcie_ext0_gpio()
     dump_mtd()
+    dump_pci()
+    dump_usb()
+    dump_scsi()
     dump_i2c_scan()
     dump_i2c_devices()
+    dump_english_decode()
     log.info("=== snapshot done, log at %s ===", LOG_PATH)
     return 0
 
