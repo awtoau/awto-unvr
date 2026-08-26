@@ -17,18 +17,25 @@ gpio4=32, gpio5=40, sgpo=48 (64 lines), pca9575@0x29=464, @0x21=480, @0x20=496.
   **gpio 33 = `rps_prnt` (RPS present)** and **gpio 34 = `12v_lp` (12 V load sense)** —
   those are the RPS sense inputs (see [rps-subsystem.md](rps-subsystem.md)), exported by
   rpsd, not the buttons.
-- **2026-08-27 live finding**: pressing one of the two (unclear which — needs re-test
-  with the side noted) caused a real reboot. `journalctl` showed the identical signature
-  as the documented reset button: `systemd-logind: Reboot key pressed short.` The
-  `gpio-keys` DTS node ([dts/alpine-v2-ubnt-unvr-ea16.dts:849-858](../dts/alpine-v2-ubnt-unvr-ea16.dts#L849-L858))
-  defines only ONE input, `KEY_RESTART` on gpio4.6 (pin 38) — no other line can produce
-  that event. So whichever of SW1/SW2 was pressed is **wired in parallel onto the same
-  net as the documented reset button**, not to a separate/unknown line. Still open:
-  which specific switch (SW1 vs SW2), and whether the other one matches — untested,
-  and re-testing means triggering another reboot.
-- **Function:** no boot-mode/strap read in U-Boot or preboot. At least one of the two is
-  a duplicate/service access point for the same reset signal as the main button — not a
-  distinct factory-test/debug function as previously guessed. NOT boot-select/recovery.
+- **2026-08-27 live finding, confirmed by the user against the physical board**:
+  **the SMD switch nearer the board's front edge is wired in parallel with the
+  external front-panel reset button** — same net as `gpio-keys`'s `KEY_RESTART`
+  on gpio4.6 (pin 38; [dts/alpine-v2-ubnt-unvr-ea16.dts:849-858](../dts/alpine-v2-ubnt-unvr-ea16.dts#L849-L858),
+  the only input that line can produce). Live evidence matched exactly:
+  `gpio-top.py`'s own capture showed pin 38 toggle ACTIVE then release, and
+  the *very next* console line was `stage2_loader v2.22.3` — boot ROM
+  restarting with **no OS shutdown sequence at all** in between. So this
+  isn't only a software `KEY_RESTART`/logind reboot — the net drives a real
+  hardware POR, which is why disabling `HandleRebootKey=` in logind
+  (see reset-button section below) did NOT stop it: nothing for logind to
+  react to, Linux never got a chance to run any shutdown code.
+  **Still open: which switch this is by silkscreen (SW1 or SW2), and
+  whether the other (rear-facing) one does anything at all** — untested,
+  and testing the front-facing one means triggering another hardware reset.
+- **Function:** no boot-mode/strap read in U-Boot or preboot. The front-facing
+  switch is a duplicate/service access point for the same physical reset net
+  as the external button — not a distinct factory-test/debug function as
+  previously guessed. The rear-facing one is still unknown. NOT boot-select/recovery.
 
 ## Reset button — press-duration semantics
 
@@ -41,7 +48,15 @@ gpio4=32, gpio5=40, sgpo=48 (64 lines), pca9575@0x29=464, @0x21=480, @0x20=496.
     `/boot/reset2defaults` + `/persistent/system/reset_reason`, runs reset hooks.
   - re-entry guarded ("RESET in progress, ignoring..").
 - The **~10 s-at-power-on recovery is a separate U-Boot function**.
-- Disable: `ubnt-systool` / `infctld -n`.
+- Disable: `ubnt-systool` / `infctld -n`. (Vendor stock firmware only — our
+  Fedora build has no `infctld`; short-press reboot on our build was instead
+  `systemd-logind`'s own default `HandleRebootKey=`, now disabled via
+  `/etc/systemd/logind.conf.d/99-awto-no-reboot-key.conf`, see
+  `scripts/build-fedora-rootfs.py`.)
+- **2026-08-27: the button/net is a genuine hardware POR, not only a software
+  key event** — disabling logind's handling did not stop a reboot triggered
+  via this net (see SW1/SW2 finding above: boot ROM restarted with zero OS
+  shutdown sequence in between). No software-only "unwiring" is possible.
 
 ## RPS connector (PSE) — summary
 
