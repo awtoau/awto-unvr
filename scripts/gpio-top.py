@@ -24,6 +24,11 @@ Root only (raw /dev/mem MMIO read + gpioget). Ctrl-C or q to quit.
 controlling TTY, which a backgrounded/nohup'd process doesn't have. Use
 this to leave the box monitoring GPIO changes unattended, e.g.:
     setsid nohup python3 gpio-top.py --headless < /dev/null > /dev/null 2>&1 &
+
+--once: prints the same table as the curses UI, once, plain text, no
+cursor-positioning/clear-screen codes - readable when captured over a
+scripted request/response channel (e.g. a serial console driven by
+console-send) rather than a real interactive TTY.
 """
 
 import curses
@@ -220,6 +225,54 @@ def poll_tick(mem_fd: int, log_f, state: dict) -> list[int]:
     return bits
 
 
+def run_once(mem_fd: int, log_f) -> None:
+    """Print the same table as the curses UI once, plain text, no cursor
+    positioning/clear-screen codes - so it's readable when captured over a
+    scripted request/response channel (e.g. a serial console driven by
+    console-send) rather than a real interactive TTY, where curses output
+    comes back as scrambled escape sequences."""
+    state = new_poll_state()
+    bits = poll_tick(mem_fd, log_f, state)
+    pca20, pca21, sgpo = state["pca20"], state["pca21"], state["sgpo"]
+
+    print("SoC PL061 banks (port = bank number, row = bit):")
+    header = "bit  " + "".join(f"port{p:<7}" for p in range(6))
+    print(header)
+    for bit in range(8):
+        cells = []
+        for bank in range(6):
+            pin = bank * 8 + bit
+            v = bits[pin]
+            active = (v == 0) if PIN_INFO[pin][1] else (v == 1)
+            cells.append(f"{pin:>2}={v}{'*' if active else ' '}")
+        print(f"{bit:<5}" + "".join(f"{c:<11}" for c in cells))
+    print("* = active per docs/gpio-map.md polarity. Labels below for named pins:")
+    for pin in sorted(PIN_INFO):
+        label, active_low, is_gpio = PIN_INFO[pin]
+        if "spare" in label or "NAND" in label:
+            continue
+        v = bits[pin]
+        active = (v == 0) if active_low else (v == 1)
+        print(f"  pin {pin:<2} {label:<28} {'ACTIVE' if active else '-'}")
+
+    for title, chip_vals, labels, ncols in (
+        ("PCA9575 @0x20 (gpiochip0, 16 lines)", pca20, PCA9575_0X20_LINES, 4),
+        ("PCA9575 @0x21 (gpiochip1, 16 lines, HDD bay control)", pca21, PCA9575_0X21_LINES, 4),
+        ("SGPO (gpiochip8, 32 lines, bay-activity shift-reg)", sgpo, {}, 8),
+    ):
+        print(title + (":" if chip_vals else " - unavailable"))
+        if not chip_vals:
+            continue
+        for start in range(0, len(chip_vals), ncols):
+            print("".join(f"{i:>2}={chip_vals[i]}  " for i in range(start, min(start + ncols, len(chip_vals)))))
+        for i, (label, active_low) in sorted(labels.items()):
+            if i >= len(chip_vals):
+                continue
+            v = chip_vals[i]
+            active = (v == 0) if active_low else (v == 1)
+            print(f"  line {i:<2} {label:<28} {'ACTIVE' if active else '-'}")
+
+
 def run_headless(mem_fd: int, log_f) -> None:
     """No curses, no display - just the poll+log loop, safe to run as a
     detached background daemon (curses needs a real controlling TTY, which
@@ -364,6 +417,7 @@ def render(stdscr, mem_fd: int, log_f) -> None:
 
 def main() -> int:
     headless = "--headless" in sys.argv
+    once = "--once" in sys.argv
 
     # This box's serial-getty defaults TERM=vt220 (confirmed live) - a real
     # VT220 never had color, so its terminfo entry has none and curses.COLORS
@@ -385,7 +439,9 @@ def main() -> int:
     log_path = log_dir / f"gpio-top-changes-{time.strftime('%Y%m%d-%H%M%S')}.log"
     print(f"logging GPIO changes to {log_path}")
     with open(log_path, "a") as log_f:
-        if headless:
+        if once:
+            run_once(mem_fd, log_f)
+        elif headless:
             run_headless(mem_fd, log_f)
         else:
             curses.wrapper(render, mem_fd, log_f)
