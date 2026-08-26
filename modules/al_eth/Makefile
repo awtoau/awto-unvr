@@ -11,11 +11,32 @@
 # Kernel build directory (override with KDIR= on command line)
 KDIR ?= /lib/modules/$(shell uname -r)/build
 
-# Module name
-obj-m := al_eth.o
+# MODULE_VARIANT selects which .ko this Makefile produces from the same
+# sources (#131 - one module bound to both the 1G and 10G PCI devices let
+# udev's two independent modprobes race on one finit_module()):
+#   (unset)  al_eth.ko      - original combined table (both PCI IDs)
+#   1g       al_eth_1g.ko   - PCI_DEVICE_ID_AL_ETH only
+#   10g      al_eth_10g.ko  - PCI_DEVICE_ID_AL_ETH_ADVANCED only
+# Build each variant in its own $(CURDIR) copy - Kbuild tracks per-object
+# cmdline flags in .*.o.cmd, but re-running here with a different variant
+# would still serialize a same-directory rebuild, so callers use separate
+# source copies (see scripts/build-linux-71-fedora.py).
+MODULE_VARIANT ?=
+
+ifeq ($(MODULE_VARIANT),1g)
+MODNAME := al_eth_1g
+ccflags-y += -DAL_ETH_BUILD_1G_ONLY=1
+else ifeq ($(MODULE_VARIANT),10g)
+MODNAME := al_eth_10g
+ccflags-y += -DAL_ETH_BUILD_10G_ONLY=1
+else
+MODNAME := al_eth
+endif
+
+obj-m := $(MODNAME).o
 
 # Object files that make up the module
-al_eth-y := al_eth_main.o \
+$(MODNAME)-y := al_eth_main.o \
             al_eth_phylink.o \
             al_eth_sysfs.o \
             al_hal_eth_kr.o \

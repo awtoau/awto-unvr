@@ -95,9 +95,15 @@ MODULE_VERSION(DRV_MODULE_VERSION);
  * Shared MDIO bus — on Alpine V2, all Ethernet ports share one physical
  * MDIO bus. The first port with phy_exist registers the bus, others reuse it.
  * This replaces the stock "alpine_mdio_shared" platform driver.
+ *
+ * static, not EXPORT_SYMBOL: with al_eth split into al_eth_1g.ko/al_eth_10g.ko
+ * (#131), two loaded modules each defining the same exported symbol name
+ * would fail to insmod ("exports duplicate symbol"). Nothing in this tree
+ * ever consumed the export (grep confirms no extern user), and on this board
+ * only the 1G/RGMII port has phy_exist=true (the 10G port is phylink/SFP+,
+ * see al_eth_open()) so the bus is only ever touched from al_eth_1g.ko.
  */
-struct mii_bus *alpine_shared_mdio_bus;
-EXPORT_SYMBOL(alpine_shared_mdio_bus);
+static struct mii_bus *alpine_shared_mdio_bus;
 static struct al_eth_adapter *al_shared_mdio_adapter;
 static DEFINE_MUTEX(al_shared_mdio_lock);
 /* Count of adapters currently attached to alpine_shared_mdio_bus.
@@ -163,15 +169,27 @@ static struct {
 	},
 };
 
+#if defined(AL_ETH_BUILD_1G_ONLY) && defined(AL_ETH_BUILD_10G_ONLY)
+#error "AL_ETH_BUILD_1G_ONLY and AL_ETH_BUILD_10G_ONLY are mutually exclusive"
+#endif
+
+/*
+ * #131: this table drives which PCI device(s) THIS .ko binds to, so udev's
+ * per-device modprobe never targets a module shared with another live probe.
+ * AL_ETH_BUILD_1G_ONLY / AL_ETH_BUILD_10G_ONLY restrict it to one ID for the
+ * split al_eth_1g.ko / al_eth_10g.ko builds; undefined (neither macro) keeps
+ * the original combined table.
+ */
 static const struct pci_device_id al_eth_pci_tbl[] = {
-#ifdef PCI_DEVICE_ID_AL_ETH
+#if !defined(AL_ETH_BUILD_10G_ONLY) && defined(PCI_DEVICE_ID_AL_ETH)
 	{ PCI_VENDOR_ID_ANNAPURNA_LABS, PCI_DEVICE_ID_AL_ETH,
 	  PCI_ANY_ID, PCI_ANY_ID, 0, 0, ALPINE_INTEGRATED},
 #endif
-#ifdef PCI_DEVICE_ID_AL_ETH_ADVANCED
+#if !defined(AL_ETH_BUILD_1G_ONLY) && defined(PCI_DEVICE_ID_AL_ETH_ADVANCED)
 	{ PCI_VENDOR_ID_ANNAPURNA_LABS, PCI_DEVICE_ID_AL_ETH_ADVANCED,
 	  PCI_ANY_ID, PCI_ANY_ID, 0, 0, ALPINE_INTEGRATED},
 #endif
+#if !defined(AL_ETH_BUILD_1G_ONLY) && !defined(AL_ETH_BUILD_10G_ONLY)
 #ifdef PCI_DEVICE_ID_AL_ETH_NIC
 	{ PCI_VENDOR_ID_ANNAPURNA_LABS, PCI_DEVICE_ID_AL_ETH_NIC,
 	  PCI_ANY_ID, PCI_ANY_ID, 0, 0, ALPINE_NIC},
@@ -192,6 +210,7 @@ static const struct pci_device_id al_eth_pci_tbl[] = {
 	{ PCI_VENDOR_ID_ANNAPURNA_LABS, PCI_DEVICE_ID_AL_ETH_NIC_V2_K2C,
 	  PCI_ANY_ID, PCI_ANY_ID, 0, 0, ALPINE_NIC_V2_25_DUAL},
 #endif
+#endif /* !AL_ETH_BUILD_1G_ONLY && !AL_ETH_BUILD_10G_ONLY */
 	{ 0, }
 };
 

@@ -129,26 +129,12 @@ systemctl enable NetworkManager.service
 mkdir -p /etc/systemd/system/NetworkManager.service.d /etc/systemd/system/polkit.service.d
 printf '[Service]\nTimeoutStartSec=10\n' > /etc/systemd/system/NetworkManager.service.d/override.conf
 printf '[Service]\nTimeoutStartSec=10\n' > /etc/systemd/system/polkit.service.d/override.conf
-# #131 root cause: al_eth is the driver for BOTH the 1G and 10G PCI devices.
-# udev spawns one (udev-worker) per matching device, and EACH independently
-# runs `modprobe al_eth` for its own MODALIAS match - a genuine kernel race
-# in idempotent_init_module() (kernel/module/main.c) on concurrent
-# finit_module() calls for the same module, escalating from an Oops to a
-# full multi-CPU soft-lockup (confirmed live: 3 concurrent `load_module`
-# call stacks from 3 separate udev-worker PIDs).
-#
-# A modules-load.d entry ALONE does not fix this - it only HOPES to win a
-# race against udev's coldplug phase (no ordering guarantee exists between
-# systemd-modules-load.service and systemd-udev-trigger.service), and
-# reproduced the exact same lockup live even with the entry present. The
-# actual fix needs udev to never auto-probe-load al_eth at all: blacklist
-# suppresses modprobe.d's own MODALIAS-triggered auto-load path (udev's
-# per-device probes), while the explicit modules-load.d entry still loads
-# it once, deliberately - `blacklist` only suppresses the *automatic*
-# load, not an explicit `modprobe`/modules-load.d request, so both together
-# give genuine mutual exclusion instead of a timing hope.
-echo 'blacklist al_eth' > /etc/modprobe.d/al_eth-no-udev-autoload.conf
-echo 'al_eth' > /etc/modules-load.d/al_eth.conf
+# #131: al_eth was ONE module bound to BOTH the 1G and 10G PCI devices, so
+# udev's 2 per-device modprobes raced finit_module() on the same module ->
+# soft lockup. Fixed structurally: al_eth now builds as al_eth_1g.ko /
+# al_eth_10g.ko (modules/al_eth/Makefile MODULE_VARIANT), each bound to
+# only one PCI ID, so no blacklist/modules-load.d ordering hack is needed -
+# normal MODALIAS auto-load is safe for both.
 # systemd-resolved's own RPM preset enables it by default, but nothing here
 # ever configures it - NetworkManager already writes /etc/resolv.conf directly
 # and works correctly on its own. Both enabled + unreconciled means resolved

@@ -398,10 +398,8 @@ def build():
     # its own .o/.ko outputs never cross variants either.
     extra = os.path.join(modroot, f"lib/modules/{kv}/extra")
     os.makedirs(extra, exist_ok=True)
-    for m in ("al_eth", "al_dma", "al_ssm", "al_sgpo"):
-        mpath = os.path.join(OUT, m)
-        if os.path.exists(mpath):
-            shutil.rmtree(mpath)
+
+    def build_oot(m, mpath, ko_name, make_vars=()):
         # imported source-of-truth: repo modules/ (carries iofic + crypto fixes).
         shutil.copytree(os.path.join(REPO, "modules", m), mpath)
         if m == "al_sgpo":
@@ -413,21 +411,49 @@ def build():
                 KOUT,
                 f"M={mpath}",
                 *CC_ARG,
+                *make_vars,
                 f"-j{NPROC}",
                 "modules",
             ]
         )
-        shutil.copy(os.path.join(mpath, f"{m}.ko"), extra)
-        log(f"OOT {m}: ok")
+        shutil.copy(os.path.join(mpath, f"{ko_name}.ko"), extra)
+        log(f"OOT {ko_name}: ok")
         # A prior run here silently produced a modroot with `kernel/` fully
         # populated but `extra/` empty - "OOT al_eth: ok" printed (this log
         # line ran) yet the .ko wasn't in the final tree. Root cause not
         # pinned down; this check turns a repeat into a loud failure instead
         # of a working-but-broken build discovered only after flashing.
-        copied = os.path.join(extra, f"{m}.ko")
+        copied = os.path.join(extra, f"{ko_name}.ko")
         if not os.path.exists(copied):
             log(f"FATAL: {copied} missing right after copying it", "ERROR")
             sys.exit(1)
+
+    for m in ("al_eth", "al_dma", "al_ssm", "al_sgpo"):
+        mpath = os.path.join(OUT, m)
+        if os.path.exists(mpath):
+            shutil.rmtree(mpath)
+        if m == "al_eth":
+            # #131: split into 2 .ko's (Makefile MODULE_VARIANT), each bound
+            # to one PCI ID, so udev's 2 independent per-device modprobes
+            # can never race on the same module. Separate source copies per
+            # variant since MODULE_VARIANT changes ccflags.
+            for suffix in ("_1g", "_10g"):
+                if os.path.exists(mpath + suffix):
+                    shutil.rmtree(mpath + suffix)
+            build_oot(
+                "al_eth",
+                mpath + "_1g",
+                "al_eth_1g",
+                make_vars=["MODULE_VARIANT=1g"],
+            )
+            build_oot(
+                "al_eth",
+                mpath + "_10g",
+                "al_eth_10g",
+                make_vars=["MODULE_VARIANT=10g"],
+            )
+            continue
+        build_oot(m, mpath, m)
     subprocess.run(["depmod", "-b", modroot, kv], check=False)
 
     # collect boot artifacts
