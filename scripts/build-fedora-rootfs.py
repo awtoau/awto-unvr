@@ -119,6 +119,15 @@ systemctl enable serial-getty@ttyS0.service
 # compiled-in default (#97 - want serial BREAK+key recoverable without a
 # physical power-cycle). Higher-sorting drop-in wins. ---
 echo 'kernel.sysrq = 1' > /etc/sysctl.d/99-awto-sysrq.conf
+# --- reset button: systemd-logind's own default HandleRebootKey= treats the
+# gpio-keys KEY_RESTART event (pin 38, and at least one of the undocumented
+# SW1/SW2 test switches wired to the same net) as a real reboot trigger with
+# zero custom code. Fine for a deployed device, a hazard on a dev box under
+# active testing (killed background collectors mid-run, see #docs/gpio-
+# switches-leds.md). Disable the auto-action; the button still generates the
+# KEY_RESTART evdev event for anyone who wants to handle it deliberately. ---
+mkdir -p /etc/systemd/logind.conf.d
+printf '[Login]\nHandleRebootKey=ignore\n' > /etc/systemd/logind.conf.d/99-awto-no-reboot-key.conf
 # --- network: NetworkManager (Fedora default, installed), auto-DHCPs all wired links ---
 systemctl enable NetworkManager.service
 # Stock TimeoutStartSec=600 (NetworkManager.service) / systemd's 90s default
