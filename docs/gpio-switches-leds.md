@@ -16,10 +16,19 @@ gpio4=32, gpio5=40, sgpo=48 (64 lines), pca9575@0x29=464, @0x21=480, @0x20=496.
   two orphan `sysfs`-owned inputs in gpio.txt), but the `rpsd` binary reverse proves
   **gpio 33 = `rps_prnt` (RPS present)** and **gpio 34 = `12v_lp` (12 V load sense)** —
   those are the RPS sense inputs (see [rps-subsystem.md](rps-subsystem.md)), exported by
-  rpsd, not the buttons. **So SW1/SW2's actual GPIO is unknown — needs a continuity probe.**
-- **Function:** no boot-mode/strap read in U-Boot or preboot, and no daemon polls
-  buttons on gpio 33/34 (those are RPS). SW1/SW2 look like factory-test / debug buttons,
-  but until we know their pins that's provisional. NOT boot-select/recovery/factory-reset.
+  rpsd, not the buttons.
+- **2026-08-27 live finding**: pressing one of the two (unclear which — needs re-test
+  with the side noted) caused a real reboot. `journalctl` showed the identical signature
+  as the documented reset button: `systemd-logind: Reboot key pressed short.` The
+  `gpio-keys` DTS node ([dts/alpine-v2-ubnt-unvr-ea16.dts:849-858](../dts/alpine-v2-ubnt-unvr-ea16.dts#L849-L858))
+  defines only ONE input, `KEY_RESTART` on gpio4.6 (pin 38) — no other line can produce
+  that event. So whichever of SW1/SW2 was pressed is **wired in parallel onto the same
+  net as the documented reset button**, not to a separate/unknown line. Still open:
+  which specific switch (SW1 vs SW2), and whether the other one matches — untested,
+  and re-testing means triggering another reboot.
+- **Function:** no boot-mode/strap read in U-Boot or preboot. At least one of the two is
+  a duplicate/service access point for the same reset signal as the main button — not a
+  distinct factory-test/debug function as previously guessed. NOT boot-select/recovery.
 
 ## Reset button — press-duration semantics
 
@@ -52,6 +61,12 @@ table → [gpio-map.md](gpio-map.md). Functional notes for the lines this doc co
 pin 0 = SFP+ speed LED; pin 31 = `ulogo_blue`; pin 33/34 = RPS sense (`rps_prnt`/
 `12v_lp`, NOT SW1/SW2 — see above); pin 37 = `ulogo_white`; pin 38 = reset button
 (`KEY_RESTART`, IRQ — semantics below); pin 42 = HDD `force-power-on-wa`.
+
+Reset button short-press is already fully wired end-to-end with **no custom code**:
+`gpio-keys` DTS node → `KEY_RESTART` evdev → `systemd-logind`'s own built-in
+`HandleRebootKey=` default handling triggers a real reboot. Confirmed live via
+`journalctl`: `Reboot key pressed short. / Rebooting... / System is rebooting.`
+No userspace daemon (ours or vendor's `infctld`) is involved.
 
 **SGPO** (base 48 → external 74VHC595 `UB20`): lines 16–23 (global 64–71) = SATA
 activity/presence LEDs, 8 ports (host0/host1 × 0–3); ea16 maps the 4 populated
