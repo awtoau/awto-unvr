@@ -8,10 +8,15 @@ CONFIG_NR_DRAM_BANKS=2
 CONFIG_ENV_SIZE=0x10000
 CONFIG_DEFAULT_DEVICE_TREE="awto-alpine-v2-unvr-uboot"
 CONFIG_SYS_LOAD_ADDR=0x02000000
-# -1 = never autoboot: our U-Boot always stops at its prompt on start ("stop on
-# reset"). Prevents auto-running bootcmd (which can hang on a bad bootm before we
-# have OF_LIBFDT + a working sysreset). Boot on demand with `run bootcmd` / `boot`.
-CONFIG_BOOTDELAY=-1
+# 2s: was -1 (never autoboot - see #97 in git history for the original
+# reasoning: a bad bootm before OF_LIBFDT/sysreset were solid could hang with
+# no recoverable prompt). #97's AHCI/SATA handoff hang is now fixed (CCU
+# coherency fix, closed), so auto-continuing through CONFIG_BOOTCOMMAND to
+# Fedora is safe again - matches re-enabling stock's own auto-chainload. The
+# CANARY check in CONFIG_BOOTCOMMAND (itest.l *0x10000000 == 0xb0075709) is
+# the interactive-test override: a script that wants to stop here for manual
+# testing pre-sets that memory location before triggering the boot.
+CONFIG_BOOTDELAY=2
 CONFIG_BOARD_LATE_INIT=y
 CONFIG_USE_PREBOOT=y
 # Solid-on, NOT blink: the software blink is CYCLIC and re-writes the pca9575
