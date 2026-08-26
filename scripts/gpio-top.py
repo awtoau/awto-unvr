@@ -225,12 +225,25 @@ def poll_tick(mem_fd: int, log_f, state: dict) -> list[int]:
     return bits
 
 
-def run_once(mem_fd: int, log_f) -> None:
+_ANSI_GREEN = "\033[1;32m"
+_ANSI_RESET = "\033[0m"
+
+
+def _c(text: str, active: bool, color: bool) -> str:
+    """Wrap text in bold-green if active and colour is enabled - plain
+    inline SGR codes, no cursor positioning, so unlike full curses redraws
+    this actually renders correctly when captured over console-send."""
+    return f"{_ANSI_GREEN}{text}{_ANSI_RESET}" if (active and color) else text
+
+
+def run_once(mem_fd: int, log_f, color: bool = True) -> None:
     """Print the same table as the curses UI once, plain text, no cursor
     positioning/clear-screen codes - so it's readable when captured over a
     scripted request/response channel (e.g. a serial console driven by
     console-send) rather than a real interactive TTY, where curses output
-    comes back as scrambled escape sequences."""
+    comes back as scrambled escape sequences. Active lines are bold-green
+    when color=True (plain SGR codes render fine without a real TTY;
+    cursor-positioning codes, which curses needs, don't)."""
     state = new_poll_state()
     bits = poll_tick(mem_fd, log_f, state)
     pca20, pca21, sgpo = state["pca20"], state["pca21"], state["sgpo"]
@@ -244,8 +257,9 @@ def run_once(mem_fd: int, log_f) -> None:
             pin = bank * 8 + bit
             v = bits[pin]
             active = (v == 0) if PIN_INFO[pin][1] else (v == 1)
-            cells.append(f"{pin:>2}={v}{'*' if active else ' '}")
-        print(f"{bit:<5}" + "".join(f"{c:<11}" for c in cells))
+            padded = f"{pin:>2}={v}{'*' if active else ' '}".ljust(11)
+            cells.append(_c(padded, active, color))
+        print(f"{bit:<5}" + "".join(cells))
     print("* = active per docs/gpio-map.md polarity. Labels below for named pins:")
     for pin in sorted(PIN_INFO):
         label, active_low, is_gpio = PIN_INFO[pin]
@@ -253,7 +267,7 @@ def run_once(mem_fd: int, log_f) -> None:
             continue
         v = bits[pin]
         active = (v == 0) if active_low else (v == 1)
-        print(f"  pin {pin:<2} {label:<28} {'ACTIVE' if active else '-'}")
+        print(_c(f"  pin {pin:<2} {label:<28} {'ACTIVE' if active else '-'}", active, color))
 
     for title, chip_vals, labels, ncols in (
         ("PCA9575 @0x20 (gpiochip0, 16 lines)", pca20, PCA9575_0X20_LINES, 4),
@@ -270,7 +284,7 @@ def run_once(mem_fd: int, log_f) -> None:
                 continue
             v = chip_vals[i]
             active = (v == 0) if active_low else (v == 1)
-            print(f"  line {i:<2} {label:<28} {'ACTIVE' if active else '-'}")
+            print(_c(f"  line {i:<2} {label:<28} {'ACTIVE' if active else '-'}", active, color))
 
 
 def run_headless(mem_fd: int, log_f) -> None:
