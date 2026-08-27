@@ -180,6 +180,28 @@ def sync_modules() -> None:
         sys.exit(f"ABORT: depmod on woomera failed (rc={rc}) - refusing to deploy")
     _verify_sync_integrity(host)
     _deploy_kernel_module_check(host)
+    # 2026-08-27: found via #162 testing - a file transferred via scp/rsync
+    # can report rc=0 while its data is still only in the remote page cache,
+    # not yet fsync'd to the physical SSD. This box is routinely reset via
+    # the SP805 watchdog (no plain `reboot` - #51) within seconds of a
+    # deploy for iterative testing; an abrupt hardware reset that soon after
+    # can lose that unflushed data even though the transfer "succeeded" -
+    # confirmed live: a just-scp'd 305-byte marker file read back as 305
+    # zero bytes after exactly that sequence (ext4 journaled the file's
+    # size/existence, not its never-flushed content). Explicit sync here
+    # protects every file this function just wrote, including the module
+    # tree itself, not just the marker - covers a real gap in #161's own
+    # fix too, not only #162's addition.
+    rc = subprocess.run(
+        ["sshpass", "-p", ROOT_PASSWORD, "ssh",
+         "-o", "StrictHostKeyChecking=accept-new",
+         "-o", "PreferredAuthentications=password",
+         "-o", "PubkeyAuthentication=no",
+         f"root@{host}", "sync"],
+        check=False,
+    ).returncode
+    if rc != 0:
+        sys.exit(f"ABORT: sync on woomera failed (rc={rc}) - files may not be durable")
     log("module sync + depmod OK")
 
 
