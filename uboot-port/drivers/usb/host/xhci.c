@@ -770,6 +770,19 @@ static int _xhci_alloc_device(struct usb_device *udev)
 	 */
 	printf("#140-diag: pre-doorbell cmd_ring enq=%p cycle=%d dba=%p\n",
 	       ctrl->cmd_ring->enqueue, ctrl->cmd_ring->cycle_state, ctrl->dba);
+	/* Register-level baseline: does the controller even see the doorbell?
+	 * USBCMD/USBSTS/CRCR are the operational registers (not DRAM, no
+	 * cache concerns - MMIO). CRCR bit0 (CMD_RING_RUNNING) and its
+	 * pointer field are HW's own view of the command ring; if that
+	 * pointer never advances past this baseline, the controller never
+	 * even fetched our command. IMAN bit0 is "interrupt pending" - set
+	 * any time the HC posts to the event ring, whether or not IRQs are
+	 * enabled, so it's a HW-side signal independent of our own polling. */
+	printf("#140-diag: pre-doorbell regs usbcmd=0x%08x usbsts=0x%08x crcr=0x%016llx iman=0x%08x erdp=0x%016llx\n",
+	       ctrl->hcor->or_usbcmd, ctrl->hcor->or_usbsts,
+	       (unsigned long long)ctrl->hcor->or_crcr,
+	       ctrl->ir_set->irq_pending,
+	       (unsigned long long)ctrl->ir_set->erst_dequeue);
 	xhci_queue_command(ctrl, 0, 0, 0, TRB_ENABLE_SLOT);
 	printf("#140-diag: post-doorbell db[0]=0x%08x cmd_ring enq=%p\n",
 	       le32_to_cpu(ctrl->dba->doorbell[0]), ctrl->cmd_ring->enqueue);
@@ -784,6 +797,23 @@ static int _xhci_alloc_device(struct usb_device *udev)
 		       ev, le32_to_cpu(ev->generic.field[0]), le32_to_cpu(ev->generic.field[1]),
 		       le32_to_cpu(ev->generic.field[2]), le32_to_cpu(ev->generic.field[3]),
 		       ctrl->event_ring->cycle_state, le32_to_cpu(ctrl->dba->doorbell[0]));
+		printf("#140-diag: TIMEOUT regs usbcmd=0x%08x usbsts=0x%08x crcr=0x%016llx iman=0x%08x erdp=0x%016llx\n",
+		       ctrl->hcor->or_usbcmd, ctrl->hcor->or_usbsts,
+		       (unsigned long long)ctrl->hcor->or_crcr,
+		       ctrl->ir_set->irq_pending,
+		       (unsigned long long)ctrl->ir_set->erst_dequeue);
+		/* usbsts had STS_PORT set on a prior run - dump PORTSC for
+		 * every port this HC has, to see which port hardware thinks
+		 * changed and what its live link state is (connect/enable/
+		 * PLS), independent of anything the command/event ring shows. */
+		{
+			int __nports = HCS_MAX_PORTS(ctrl->hccr->cr_hcsparams1);
+			int __p;
+			printf("#140-diag: TIMEOUT portsc (max_ports=%d)\n", __nports);
+			for (__p = 0; __p < __nports && __p < MAX_HC_PORTS; __p++)
+				printf("#140-diag:   port[%d] portsc=0x%08x\n",
+				       __p, ctrl->hcor->portregs[__p].or_portsc);
+		}
 		return -ETIMEDOUT;
 	}
 

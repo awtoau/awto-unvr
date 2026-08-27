@@ -68,6 +68,7 @@ FILES = {
     # are otherwise unmodified stock xhci.c/xhci-ring.c plus printf's.
     "drivers/usb/host/xhci.c": "drivers/usb/host/xhci.c",
     "drivers/usb/host/xhci-ring.c": "drivers/usb/host/xhci-ring.c",
+    "drivers/usb/host/xhci-mem.c": "drivers/usb/host/xhci-mem.c",
 }
 
 # Whole subtrees copied verbatim: scaffold rel-dir -> tree rel-dir.

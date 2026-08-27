@@ -21,5 +21,15 @@ send "setenv serverip $SERVERIP"; expect "ALPINE_UBNT_NAS_ALL>" 6
 send "tftpboot 0x1100000 u-boot-chainload.bin"; catch {expect "Bytes transferred" 30}
 expect "ALPINE_UBNT_NAS_ALL>" 6
 send "go 0x1100000"
-if {[catch {expect "awto-nas#" 15}]} { puts "NO-UNVR (go failed — check the tftp'd image)"; return }
+# Our own U-Boot also autoboots (CONFIG_BOOTDELAY=2) - nothing sets the
+# CANARY that would make it stay at the prompt on its own, so a passive
+# expect races that 2s countdown and loses about half the time (falls
+# through to Linux instead). Actively spam CR to interrupt it, same
+# pattern as the stock ESC-catch above.
+set ok2 0
+for {set i 0} {$i < 20} {incr i} {
+    send_raw CR
+    if {[catch {expect "awto-nas#" 1}] == 0} { set ok2 1; break }
+}
+if {!$ok2} { puts "NO-UNVR (go failed — check the tftp'd image)"; return }
 puts "=== LIVE at awto-nas# — fresh build on hardware, box is yours to test ==="
