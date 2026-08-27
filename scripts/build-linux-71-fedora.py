@@ -54,7 +54,12 @@ OUT = os.environ.get("AWTO_KERNEL_OUT", _OUT_DEFAULT)
 KOUT = os.path.join(OUT, "kbuild")
 FEDORA_CONFIG = "/mnt/2tb/git/awto-unvr/tmp/fedora-kernel/fedora-aarch64.config"
 DTS_NAME = "alpine-v2-ubnt-unvr-ea16"
-VER = "7.1"
+# Baked into every output filename AND the uImage's own internal Image Name
+# field (U-Boot displays this on boot) - "7.1" was correct when this script
+# only ever built 7.1.8. Override for any other AWTO_KERNEL_SRC, or the
+# artifacts (and what U-Boot reports booting) actively lie about their own
+# version - exactly what row 4b (linux-v7.3-fresh) was doing before this.
+VER = os.environ.get("AWTO_KERNEL_VER", "7.1")
 # Empty string for a NATIVE build (e.g. running this script ON woomera itself,
 # an aarch64 box - CROSS_COMPILE="" makes kbuild call plain `gcc`, which IS
 # the right compiler there). Cross-compiling on the x86 dev host (the
