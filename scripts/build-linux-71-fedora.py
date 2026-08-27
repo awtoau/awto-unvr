@@ -55,7 +55,12 @@ KOUT = os.path.join(OUT, "kbuild")
 FEDORA_CONFIG = "/mnt/2tb/git/awto-unvr/tmp/fedora-kernel/fedora-aarch64.config"
 DTS_NAME = "alpine-v2-ubnt-unvr-ea16"
 VER = "7.1"
-CROSS = "aarch64-linux-gnu-"
+# Empty string for a NATIVE build (e.g. running this script ON woomera itself,
+# an aarch64 box - CROSS_COMPILE="" makes kbuild call plain `gcc`, which IS
+# the right compiler there). Cross-compiling on the x86 dev host (the
+# default, and what every existing row-4/4a/4b build has used) needs the
+# real prefix.
+CROSS = os.environ.get("AWTO_CROSS_COMPILE", "aarch64-linux-gnu-")
 # ccache: ~free incremental-rebuild speed across variants sharing mostly-
 # identical source (KASAN vs plain differ in a handful of CONFIG_* symbols;
 # most .o files compile identically either way, and ccache is keyed on
