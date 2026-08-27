@@ -179,7 +179,80 @@ def sync_modules() -> None:
     if rc != 0:
         sys.exit(f"ABORT: depmod on woomera failed (rc={rc}) - refusing to deploy")
     _verify_sync_integrity(host)
+    _deploy_kernel_module_check(host)
     log("module sync + depmod OK")
+
+
+def _kernel_banner() -> str:
+    """Extract the `Linux version ...` banner directly from the raw kernel
+    Image binary - this differs per actual build even when the KVER string
+    itself doesn't (e.g. "7.1.8-dirty" for every build regardless of date),
+    since it embeds the build timestamp. Confirmed present via plain
+    `strings` on the uncompressed arm64 Image - no need to boot it."""
+    out = subprocess.run(
+        ["strings", "-a", str(BUILD_IMAGE)], capture_output=True, text=True, check=True
+    ).stdout
+    for line in out.splitlines():
+        if line.startswith("Linux version"):
+            return line.strip()
+    sys.exit(f"ABORT: no 'Linux version' banner found in {BUILD_IMAGE} - can't record #162 provenance")
+
+
+def _deploy_kernel_module_check(host: str) -> None:
+    """#162: write a marker recording which exact kernel build this module
+    sync came from, and ship the boot-time checker that compares it against
+    whatever kernel is actually running - see scripts/check-kernel-module-
+    match.py's own docstring for the full rationale. Ships on every sync
+    (idempotent - same content each time) so it self-heals onto any rootfs
+    built before #162 landed, without needing a full rootfs rebuild."""
+    from datetime import datetime, timezone
+
+    banner = _kernel_banner()
+    marker = (
+        f"banner={banner}\n"
+        f"build_out={OUT}\n"
+        f"kver={KVER}\n"
+        f"synced_at={datetime.now(timezone.utc).astimezone().isoformat(timespec='seconds')}\n"
+    )
+    ssh_base = [
+        "sshpass", "-p", ROOT_PASSWORD, "ssh",
+        "-o", "StrictHostKeyChecking=accept-new",
+        "-o", "PreferredAuthentications=password",
+        "-o", "PubkeyAuthentication=no",
+        f"root@{host}",
+    ]
+    rc = subprocess.run(
+        [*ssh_base, f"cat > /lib/modules/{KVER}/.deployed-from"],
+        input=marker, text=True, check=False,
+    ).returncode
+    if rc != 0:
+        sys.exit(f"ABORT: writing #162 provenance marker failed (rc={rc})")
+
+    script = Path(__file__).resolve().parent / "check-kernel-module-match.py"
+    unit = Path(__file__).resolve().parent / "check-kernel-module-match.service"
+    for src, dst in (
+        (script, "/usr/local/bin/check-kernel-module-match.py"),
+        (unit, "/etc/systemd/system/check-kernel-module-match.service"),
+    ):
+        rc = subprocess.run(
+            ["sshpass", "-p", ROOT_PASSWORD, "scp",
+             "-o", "StrictHostKeyChecking=accept-new",
+             "-o", "PreferredAuthentications=password",
+             "-o", "PubkeyAuthentication=no",
+             str(src), f"root@{host}:{dst}"],
+            check=False,
+        ).returncode
+        if rc != 0:
+            sys.exit(f"ABORT: shipping {src.name} failed (rc={rc})")
+    rc = subprocess.run(
+        [*ssh_base, "chmod +x /usr/local/bin/check-kernel-module-match.py "
+                    "&& systemctl daemon-reload "
+                    "&& systemctl enable check-kernel-module-match.service"],
+        check=False,
+    ).returncode
+    if rc != 0:
+        sys.exit(f"ABORT: enabling check-kernel-module-match.service failed (rc={rc})")
+    log(f"#162 provenance marker + checker deployed (banner: {banner})")
 
 
 def _verify_sync_integrity(host: str) -> None:
