@@ -24,11 +24,16 @@ import sys
 import time
 import zlib
 
-from _repo import NPROC  # -j28 host build parallelism (#146)
+from _repo import NPROC, REPO  # -j28 host build parallelism (#146); self-locating repo root
 
 SRC = os.environ.get("AWTO_KERNEL_SRC", "/mnt/2tb/unvr-port-refs/linux-v7.1.8")
-PORT = "/mnt/2tb/unvr-port-refs/linux-alpine-v2"
-REPO = "/mnt/2tb/git/awto-unvr"  # OOT al_* module sources imported here (modules/)
+PORT = os.environ.get("AWTO_KERNEL_PORT", "/mnt/2tb/unvr-port-refs/linux-alpine-v2")
+# REPO (OOT al_* module sources live in modules/) was hardcoded to the dev
+# host's absolute path - broke the instant this script ran anywhere else
+# (e.g. natively on woomera itself, where the repo is synced to
+# /root/awto-unvr). _repo.py's REPO already self-locates via git
+# rev-parse --show-toplevel relative to this file, so it's correct
+# wherever the script actually lives.
 # KASAN and normal builds used to share this path - every build did an
 # unconditional rmtree() of the whole modroot, so a normal rebuild silently
 # wiped the KASAN environment (and vice versa) even though they're both
@@ -52,7 +57,7 @@ OUT = os.environ.get("AWTO_KERNEL_OUT", _OUT_DEFAULT)
 # O= gives each OUT its own real, persistent kbuild state - config drift
 # becomes structurally impossible instead of a discipline problem.
 KOUT = os.path.join(OUT, "kbuild")
-FEDORA_CONFIG = "/mnt/2tb/git/awto-unvr/tmp/fedora-kernel/fedora-aarch64.config"
+FEDORA_CONFIG = os.path.join(REPO, "tmp", "fedora-kernel", "fedora-aarch64.config")
 DTS_NAME = "alpine-v2-ubnt-unvr-ea16"
 # Baked into every output filename AND the uImage's own internal Image Name
 # field (U-Boot displays this on boot) - "7.1" was correct when this script
