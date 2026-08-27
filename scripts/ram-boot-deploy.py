@@ -228,6 +228,12 @@ def main() -> int:
     ap.add_argument(
         "--skip-power-cycle", action="store_true", help="box is already at a fresh boot"
     )
+    ap.add_argument(
+        "--bootargs",
+        help="override U-Boot's persisted bootargs for this boot only (setenv, "
+        "not saveenv - reverts on the next real reset). For one-off diagnostic "
+        "boots needing a different root=/dyndbg=/loglevel= than the daily driver.",
+    )
     a = ap.parse_args()
 
     if a.modules_tar and a.modules_dir:
@@ -311,6 +317,15 @@ def main() -> int:
         tftp_and_verify(dtb, DTB_ADDR)
         if modules_tar:
             tftp_and_verify(modules_tar, MODULES_ADDR)
+        if a.bootargs:
+            run_devpy(
+                "--expect",
+                "ALPINE_UBNT_NAS_ALL>",
+                "--timeout",
+                "8",
+                f"setenv bootargs '{a.bootargs}'",
+            )
+            log(f"bootargs overridden for this boot only: {a.bootargs}")
         run_devpy(
             "--expect",
             "Uncompressing|Starting kernel",
