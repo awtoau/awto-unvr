@@ -18,6 +18,7 @@ sequencing mistake that led to this:
 
 from __future__ import annotations
 
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -25,7 +26,19 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from _repo import IMAGES, REPO, log_path
 
-OUT = Path("/mnt/2tb/unvr-port-refs/build-out-71-fedora")
+# Must mirror build-linux-71-fedora.py's own _OUT_DEFAULT exactly (and the
+# same AWTO_KERNEL_OUT override) - this was hardcoded to the plain path only,
+# so a KASAN build (AWTO_KASAN_BUILD=1, its own build-out-71-fedora-kasan/)
+# would silently deploy whatever stale artifacts sat in the PLAIN dir instead
+# of the KASAN build just made. Same failure class as #131's module-mismatch
+# incident, just in the deploy step's own OUT selection instead of the build
+# step's.
+_OUT_DEFAULT = (
+    "/mnt/2tb/unvr-port-refs/build-out-71-fedora-kasan"
+    if os.environ.get("AWTO_KASAN_BUILD")
+    else "/mnt/2tb/unvr-port-refs/build-out-71-fedora"
+)
+OUT = Path(os.environ.get("AWTO_KERNEL_OUT", _OUT_DEFAULT))
 DTS_NAME = "alpine-v2-ubnt-unvr-ea16"
 VER = "7.1"
 
