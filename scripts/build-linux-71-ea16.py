@@ -39,11 +39,14 @@ import sys
 import time
 import zlib
 
-from _repo import NPROC  # -j28 host build parallelism (#146)
+from _repo import NPROC, REPO  # -j28 host build parallelism (#146); self-locating repo root
 
 SRC = os.environ.get("AWTO_KERNEL_SRC", "/mnt/2tb/unvr-port-refs/linux-v7.1.8")
-PORT = "/mnt/2tb/unvr-port-refs/linux-alpine-v2"
-REPO = "/mnt/2tb/git/awto-unvr"  # ea16 board DTS hardware-of-record lives here (dts/)
+PORT = os.environ.get("AWTO_KERNEL_PORT", "/mnt/2tb/unvr-port-refs/linux-alpine-v2")
+# REPO (ea16 board DTS hardware-of-record lives in dts/) was hardcoded to the
+# dev host's absolute path - see build-linux-71-fedora.py's identical fix for
+# why. _repo.py's REPO already self-locates correctly wherever this script
+# actually runs from.
 OUT = os.environ.get("AWTO_KERNEL_OUT", "/mnt/2tb/unvr-port-refs/build-out-71")
 # kbuild's own O= output dir (see build-linux-71-fedora.py's KOUT, #145) - this
 # script shares SRC=linux-v7.1.8 with build-fedora by default, and building
@@ -54,8 +57,12 @@ OUT = os.environ.get("AWTO_KERNEL_OUT", "/mnt/2tb/unvr-port-refs/build-out-71")
 KOUT = os.path.join(OUT, "kbuild")
 OUT612 = "/mnt/2tb/unvr-port-refs/build-out"  # source of the reusable initramfs
 DTS_NAME = "alpine-v2-ubnt-unvr-ea16"
-VER = "7.1"
-CROSS = "aarch64-linux-gnu-"
+# Both baked into output filenames/uImage Image Name - see identical fix in
+# build-linux-71-fedora.py.
+VER = os.environ.get("AWTO_KERNEL_VER", "7.1")
+# Empty string for a native build (e.g. running this script ON woomera
+# itself) - see identical fix in build-linux-71-fedora.py.
+CROSS = os.environ.get("AWTO_CROSS_COMPILE", "aarch64-linux-gnu-")
 MIN_FREE_GB = 15
 
 IH_MAGIC, IH_OS_LINUX, IH_ARCH_ARM64, IH_TYPE_KERNEL, IH_COMP_NONE = (
@@ -102,9 +109,11 @@ def run(cmd, **kw):
 
 
 def check_space():
-    st = os.statvfs("/mnt/2tb")
+    # Was hardcoded to /mnt/2tb (dev host's data mount) - check OUT's own
+    # mount instead, correct wherever this actually runs.
+    st = os.statvfs(OUT if os.path.isdir(OUT) else os.path.dirname(OUT) or ".")
     free_gb = st.f_bavail * st.f_frsize / 1e9
-    log(f"free space on /mnt/2tb: {free_gb:.1f} GB")
+    log(f"free space at {OUT}: {free_gb:.1f} GB")
     if free_gb < MIN_FREE_GB:
         log(f"ABORT: <{MIN_FREE_GB} GB free")
         sys.exit(2)
