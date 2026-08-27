@@ -760,6 +760,30 @@ static int _xhci_alloc_device(struct usb_device *udev)
 	}
 
 	/*
+	 * #140 DIAGNOSTIC: a plain No-Op command, queued and waited on exactly
+	 * like Enable Slot below, but isolating the command/event-ring
+	 * machinery from anything USB-enumeration-specific (slot allocation,
+	 * device context, etc). If this ALSO times out, the fault is generic
+	 * to command/event-ring completion posting. If it succeeds where
+	 * Enable Slot doesn't, that's a completely different, much more
+	 * specific problem than anything tested so far.
+	 */
+	{
+		union xhci_trb *noop_event;
+		printf("#140-diag: NOOP pre-doorbell cmd_ring enq=%p cycle=%d\n",
+		       ctrl->cmd_ring->enqueue, ctrl->cmd_ring->cycle_state);
+		xhci_queue_command(ctrl, 0, 0, 0, TRB_CMD_NOOP);
+		noop_event = xhci_wait_for_event(ctrl, TRB_COMPLETION);
+		if (!noop_event) {
+			printf("#140-diag: NOOP TIMED OUT - command/event ring completion posting is generically broken, not Enable-Slot-specific\n");
+		} else {
+			printf("#140-diag: NOOP SUCCEEDED - comp_code=%d - command/event ring works for No-Op, problem is Enable-Slot-specific\n",
+			       GET_COMP_CODE(le32_to_cpu(noop_event->event_cmd.status)));
+			xhci_acknowledge_event(ctrl);
+		}
+	}
+
+	/*
 	 * #140 DIAGNOSTIC (temporary - revert once root-caused): dump the
 	 * command ring/doorbell state around Enable Slot, since this is
 	 * exactly where "Cannot allocate device context to get SLOT_ID"
