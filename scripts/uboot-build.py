@@ -68,6 +68,13 @@ FILES = {
     # are otherwise unmodified stock xhci.c/xhci-ring.c plus printf's.
     "drivers/usb/host/xhci.c": "drivers/usb/host/xhci.c",
     "drivers/usb/host/xhci-ring.c": "drivers/usb/host/xhci-ring.c",
+    # #140 CANDIDATE FIX: CRS (Configuration Request Retry Status) handling,
+    # ported from vendor's own GPL source for this exact board family
+    # (al_pci_read_config32/readl_might_abort/soak_all_aborts) - a just-
+    # linked-up downstream PCIe device answering CRS surfaces as a pending
+    # SError on this SoC, which the stock (QEMU-derived) generic ECAM driver
+    # has no handling for at all. See the file's own top-of-file comment.
+    "drivers/pci/pcie_ecam_generic.c": "drivers/pci/pcie_ecam_generic.c",
 }
 
 # Whole subtrees copied verbatim: scaffold rel-dir -> tree rel-dir.
