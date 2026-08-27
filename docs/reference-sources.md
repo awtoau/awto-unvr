@@ -44,7 +44,29 @@ survey, and the ccr2004/board-param findings. Read that for the *conclusions*; t
 
 ## Kernels / U-Boot mainline
 - `linux-v7.1.8/` — dev target (our Fedora build). `linux-v6.18/` — newest-LTS port target.
+- `linux-v7.3-fresh/` — mainline dev tip (row 4b, `docs/build.md`), commit-pinned not tag-pinned;
+  drifts stale fast (checked 2026-08-28: already 2607 commits / ~3 days behind real HEAD).
 - `u-boot-v2026.07/` — mainline U-Boot our port overlays.
+
+## Fedora's real kernel patch — checked, confirmed irrelevant to us
+Our `build-linux-71-fedora.py` only takes Fedora's `.config` as a config starting point; it never
+applies Fedora's own kernel patch. Checked whether that's actually a gap (2026-08-28, fetched
+`patch-7.3-redhat.patch` from `src.fedoraproject.org/rpms/kernel`, rawhide branch, 77 files /
++2676/-113 lines) — **it isn't**. Breakdown:
+- ~85% of the diff is RHEL-only infrastructure that doesn't compile on Fedora at all: `rh_kabi.h`
+  (541 lines, RHEL point-release kABI-stability macros), `rh_waived.c`/`rh_flags.c`/`rh_messages.c`
+  (RHEL's "waived items" feature-gate subsystem). Fedora never sets `CONFIG_RHEL_DIFFERENCES`.
+- Every hardware-touching hunk is either gated the same way (`pci-driver.c`, `scsi/hpsa.c`,
+  `scsi/qla2xxx/qla_os.c`, `scsi/sd.c` - all `#ifdef CONFIG_RHEL_DIFFERENCES`) or hardcoded to
+  unrelated silicon: `drivers/ata/libahci.c` + `drivers/pci/quirks.c` fix a **Broadcom Vulcan
+  CN99XX** SATA/BAR5 bug (`PCI_VENDOR_ID_BROADCOM, 0x9027`), `drivers/usb/core/hub.c` quirks a
+  controller literally string-matched on `"tegra-ehci.0"` (NVIDIA Tegra TrimSlice), `ipmi_dmi.c`/
+  `ipmi_msghandler.c` match `DMI_PRODUCT_NAME == "ProLiant m400 Server"`. None of these match
+  Annapurna Alpine V2 / ASMedia hardware - dead code for us either way.
+- `arch/arm64/kernel/setup.c` adds EFI Secure Boot mode detection via a DT `secure-boot-mode`
+  `/chosen` property we never set - no-ops on our boot path (U-Boot chainload, no UEFI).
+Not applying this patch is the right call, not a gap. Re-check only if a future Fedora patch
+version starts touching PCIe/AHCI/xHCI code outside the RHEL-gated sections.
 
 ## Note
 `delroth-alpine_hal` is catalogued as a "register/descriptor reference" but is in fact the full
