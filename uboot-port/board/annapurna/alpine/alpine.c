@@ -19,6 +19,7 @@
 #include <asm/global_data.h>
 #include <asm/io.h>
 #include <linux/delay.h>
+#include <linux/sizes.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -225,6 +226,22 @@ struct mm_region *mem_map = alpine_mem_map;
 #define AL_PCIE_EXT0_PM_STATE_PF(n)	(AL_PCIE_EXT0_BASE + 0x24b0 + (n) * 4)
 /* ASPM_PF_ENABLE_MAX_FUNC_NUMBER(bit7) | DSATE_PF_ENABLE_MAX_FUNC_NUMBER(bit8) */
 #define AL_PCIE_PM_STATE_DISABLE_MASK	0x180U
+/*
+ * #140 candidate fix: RMN 10181 - "BAR4/5 Registers Not Properly Disabled in
+ * RC mode" (al_hal_pcie.c:1985-2008, delroth-alpine_hal). In RC mode the
+ * silicon leaves func0's BAR4/5 live unless explicitly zeroed - a config-
+ * space BAR field that's still "enabled" can make the RC decode an inbound
+ * memory write against its OWN BAR instead of forwarding it to the fabric,
+ * which is exactly the shape of "DMA writes silently vanish" this issue is
+ * chasing. Same func0 config_header base as AL_PCIE_EXT0_CONFIG_HEADER_CMD
+ * above (0xfd810000); BAR4/BAR5 are the standard PCI config-space offsets
+ * 0x20/0x24 within it. Regular config-space writes to a BAR are read-only
+ * once the field is populated - the HAL uses a special "DBI CS2" write
+ * alias (bit 0x4000 OR'd into the address, rev3+ per al_reg_write32_dbi_cs2)
+ * to actually clear it; same 2 addresses, computed the same way.
+ */
+#define AL_PCIE_EXT0_BAR4_CS2		((AL_PCIE_EXT0_BASE + 0x10020) | 0x4000)
+#define AL_PCIE_EXT0_BAR5_CS2		((AL_PCIE_EXT0_BASE + 0x10024) | 0x4000)
 
 #define AL_PCIE_CONF1_EXIST		(1U << AL_PCIE_EXT0_PORT_ID)	/* PCIE_EXIST bit */
 #define AL_PCIE_GLOBAL_MEM_SHUTDOWN	(1U << 20)	/* rev3/4 MEM_SHUTDOWN, bit 20 */
@@ -389,6 +406,13 @@ static void al_pcie_ext0_link_retrain_wait(void)
 static void al_pcie_ext0_port_config_fixup(void)
 {
 	printf("al-pcie-ext0: port_config fixup starting\n");
+
+	/* RMN 10181 - disable func0's BAR4/5 in RC mode (see the #defines
+	 * above for the full rationale). First thing in vendor's own
+	 * al_pcie_port_config() (al_hal_pcie.c:1985-2008) - applied here in
+	 * the same relative position. */
+	al_pcie_reg_set("bar4(rmn10181,disable)", AL_PCIE_EXT0_BAR4_CS2, 0xffffffffU, 0);
+	al_pcie_reg_set("bar5(rmn10181,disable)", AL_PCIE_EXT0_BAR5_CS2, 0xffffffffU, 0);
 
 	/*
 	 * cfg_target_bus(0): NOT part of the real al_pcie_port_config() - this
@@ -667,6 +691,55 @@ static int do_aldiag(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv
 }
 U_BOOT_CMD(aldiag, 1, 0, do_aldiag,
 	   "dump PCIe ext0 + GPIO diagnostic registers (#140)", "");
+
+/*
+ * #140 candidate fix: CPUECTLR_EL1.SMPEN.
+ *
+ * Cortex-A53/A57/A72 require this bit set for the core to participate in
+ * cluster/interconnect coherency at all - mainline's own comment on the
+ * equivalent code says as much (arch/arm/cpu/armv8/start.S: "this bit
+ * should be set for A53/A57/A72"). Our cores are A57 (confirmed live,
+ * docs/hardware.md - MIDR part 0xd07). Mainline's own SMPEN-setting code
+ * (CONFIG_ARMV8_SET_SMPEN) is gated on starting at EL3 (`switch_el x1, 3f,
+ * 1f, 1f` - only takes the write path at EL3) and does nothing at any
+ * other EL. This board hands U-Boot off at EL2 directly, not EL3 -
+ * confirmed both live (Linux dmesg "All CPU(s) started at EL2") and in
+ * this project's own docs (reboot-driver-handover.md, hardware.md) - so
+ * enabling that Kconfig option alone would be a silent no-op here.
+ *
+ * Runs from arch_cpu_init() (weak hook in common/board_f.c, called via
+ * INITCALL before relocation) specifically because that's before
+ * dcache_enable() ever runs (board_r.c, post-relocation) - SMPEN needs to
+ * be set before caches/MMU are live, matching mainline's own EL3 code's
+ * position in start.S (before "Cache/BPB/TLB Invalidate").
+ *
+ * CPUECTLR_EL1 (encoding S3_1_C15_C2_1) is a Cortex-A57-implementation-
+ * defined register, documented as accessible from EL2 and EL3 (not
+ * restricted to EL1-only) - per ARM's Cortex-A57 TRM. Defensively checks
+ * CurrentEL first and only acts at EL2 or EL3, matching what this board
+ * is actually confirmed to use; does nothing (silently) at EL1, where the
+ * access would trap.
+ */
+static void al_smpen_enable(void)
+{
+	unsigned long el, cpuectlr;
+
+	asm volatile("mrs %0, CurrentEL" : "=r"(el));
+	el = (el >> 2) & 0x3;
+	if (el != 2 && el != 3)
+		return;
+
+	asm volatile("mrs %0, S3_1_c15_c2_1" : "=r"(cpuectlr));
+	cpuectlr |= (1UL << 6);	/* SMPEN */
+	asm volatile("msr S3_1_c15_c2_1, %0" : : "r"(cpuectlr));
+	asm volatile("isb");
+}
+
+int arch_cpu_init(void)
+{
+	al_smpen_enable();
+	return 0;
+}
 
 /* Defined below (CCU section) - forward-declared so board_init() can apply
  * it before any manual usb/pci command, not just at bootm time (#140). */
@@ -1097,6 +1170,38 @@ int dram_init(void)
 int dram_init_banksize(void)
 {
 	return fdtdec_setup_memory_banksize();
+}
+
+/*
+ * #140 candidate fix: keep DMA-visible RAM away from the PCIe0-external
+ * outbound aperture boundary.
+ *
+ * board_get_usable_ram_top() sets gd->ram_top, which becomes gd->relocaddr
+ * - U-Boot's own relocated code+data, stack, AND malloc pool (where every
+ * xHCI DMA structure - DCBAA, command ring, event ring, ERST - gets
+ * allocated) all sit at or just below this address. Our DT reports DRAM as
+ * exactly 0x0-0xC0000000 (arch/dts/awto-alpine-v2-unvr-uboot.dts), and the
+ * PCIe0-external outbound aperture (AL_PCIE_0_BASE, delroth-alpine_hal's
+ * al_hal_iomap.h) starts AT 0xC0000000 - so with the default
+ * board_get_usable_ram_top() (just gd->ram_top unmodified), every xHCI DMA
+ * buffer sits immediately adjacent to a live PCIe MMIO decode region, zero
+ * margin. Vendor's own firmware never exercises this: dram_init() there
+ * hard-caps RAM at 64 MB (board.c, UBNT GPL source), so ALL its DMA
+ * structures sit ~3 GB away from the same boundary.
+ *
+ * 256 MiB is a defensive margin choice, not derived from a documented
+ * hardware alignment/decode-window requirement (none found) - large enough
+ * to rule out any subtle boundary/alignment effect at the DRAM/PCIe edge,
+ * small enough to leave U-Boot ~2.75 GiB of usable RAM, far more than it
+ * needs for kernel/DTB staging.
+ */
+phys_addr_t board_get_usable_ram_top(phys_size_t total_size)
+{
+	phys_addr_t margin = SZ_256M;
+
+	if (gd->ram_top > margin)
+		return gd->ram_top - margin;
+	return gd->ram_top;
 }
 
 /*
