@@ -935,6 +935,18 @@ def cmd_power_cycle(extra: list[str]) -> int:
     return _run_script("scripts/power-cycle.py", extra)
 
 
+@command(
+    "send a serial BREAK (+ optional Magic SysRq letter) to the UNVR's "
+    "console, e.g. to grab a live blocked-task dump during a hang that "
+    "console-send can't reach - tio's socket mode doesn't relay ctrl-t "
+    "sequences (scripts/serial-break.py)",
+    args="[--sysrq LETTER]",
+    kind="action",
+)
+def cmd_serial_break(extra: list[str]) -> int:
+    return _run_script("scripts/serial-break.py", extra)
+
+
 def _tftpd_bound(port: int) -> bool:
     r = subprocess.run(
         ["ss", "-lun", f"sport = :{port}"],
