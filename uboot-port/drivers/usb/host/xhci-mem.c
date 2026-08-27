@@ -541,89 +541,30 @@ int xhci_mem_init(struct xhci_ctrl *ctrl, struct xhci_hccr *hccr,
 
 	ctrl->dcbaa->dma = xhci_dma_map(ctrl, ctrl->dcbaa,
 				sizeof(struct xhci_device_context_array));
+
 	/* Set the pointer in DCBAA register */
 	xhci_writeq(&hcor->or_dcbaap, ctrl->dcbaa->dma);
-	/* #140 DIAGNOSTIC (temporary): does DCBAAP (also 64-bit, same
-	 * xhci_writeq path, written just before CRCR) stick? If CRCR reads
-	 * back zero but this doesn't, the fault is CRCR-specific, not a
-	 * general 64-bit-write problem on this register block. */
-	printf("#140-diag: dcbaap write-then-readback: wrote=0x%016llx read=0x%016llx\n",
-	       (unsigned long long)ctrl->dcbaa->dma,
-	       (unsigned long long)xhci_readq(&hcor->or_dcbaap));
 
 	/* Command ring control pointer register initialization */
 	ctrl->cmd_ring = xhci_ring_alloc(ctrl, 1, true);
 
 	/* Set the address in the Command Ring Control register */
 	trb_64 = ctrl->cmd_ring->first_seg->dma;
-	/* #140 DIAGNOSTIC: raw address for a manual mw.q/md.q test at the
-	 * U-Boot prompt, completely bypassing this driver - the ultimate
-	 * isolation test for whether this is a pure hardware/register
-	 * behavior independent of any software write pattern. */
-	printf("#140-diag: hcor=%p or_crcr addr=%p\n", hcor, &hcor->or_crcr);
 	val_64 = xhci_readq(&hcor->or_crcr);
-	/* #140 DIAGNOSTIC: does the PRE-write readback (before we OR in our
-	 * own pointer) already carry stray CS/CA bits from undefined
-	 * post-reset state? If so, our read-modify-write preserves them
-	 * (CMD_RING_RSVD_BITS keeps the low 6 bits from this read), and HW
-	 * may treat the write as an abort/stop action rather than a plain
-	 * pointer-set - which would explain why the pointer never sticks. */
-	printf("#140-diag: crcr PRE-write raw readback=0x%016llx (low6=0x%llx: RCS=%d CS=%d CA=%d CRR=%d)\n",
-	       (unsigned long long)val_64, (unsigned long long)(val_64 & 0x3f),
-	       (int)(val_64 & 1), (int)((val_64 >> 1) & 1),
-	       (int)((val_64 >> 2) & 1), (int)((val_64 >> 3) & 1));
 	val_64 = (val_64 & (u64) CMD_RING_RSVD_BITS) |
 		(trb_64 & (u64) ~CMD_RING_RSVD_BITS) |
 		ctrl->cmd_ring->cycle_state;
-	/* #140 DIAGNOSTIC: xhci_writeq() writes low-word-then-high. CRCR's
-	 * low word carries RCS (bit0) - if this silicon latches the full
-	 * 64-bit register the instant the low word lands, the high
-	 * (pointer) word written a moment later is too late to matter,
-	 * and HW commits pointer_hi=stale/0. DCBAAP has no such
-	 * significant low-word bit, so write order wouldn't affect it -
-	 * consistent with DCBAAP sticking and CRCR not. Test: write HIGH
-	 * word first, LOW word (with RCS) last, bypassing xhci_writeq(). */
-	{
-		__u32 *__ptr = (__u32 *)&hcor->or_crcr;
-		u32 __lo = lower_32_bits(val_64);
-		u32 __hi = upper_32_bits(val_64);
-		writel(__hi, __ptr + 1);
-		writel(__lo, __ptr);
-		printf("#140-diag: crcr HIGH-THEN-LOW write-then-readback: wrote=0x%016llx read=0x%016llx\n",
-		       (unsigned long long)val_64, (unsigned long long)xhci_readq(&hcor->or_crcr));
-	}
 	xhci_writeq(&hcor->or_crcr, val_64);
-	/* #140 DIAGNOSTIC (temporary): read CRCR back immediately, before any
-	 * doorbell has ever rung on this controller (CRR is HW-set on first
-	 * doorbell, not on this write) - the one point where a readback is
-	 * unambiguous: if the pointer field doesn't stick right here, the
-	 * MMIO write path itself is suspect, not command/event ring timing. */
-	printf("#140-diag: crcr write-then-readback: wrote=0x%016llx read=0x%016llx (trb_64=0x%016llx cycle=%d)\n",
-	       (unsigned long long)val_64, (unsigned long long)xhci_readq(&hcor->or_crcr),
-	       (unsigned long long)trb_64, ctrl->cmd_ring->cycle_state);
-	/* #140 DIAGNOSTIC: is this a dropped write, or a posted-write
-	 * visibility race that resolves within microseconds? Re-read a
-	 * handful more times immediately - if it's a race, the real value
-	 * should appear within the first 1-2 iterations. If it stays zero
-	 * through all of them, the write is genuinely not landing. */
-	{
-		int __i;
-		for (__i = 0; __i < 5; __i++)
-			printf("#140-diag:   re-read[%d]=0x%016llx\n",
-			       __i, (unsigned long long)xhci_readq(&hcor->or_crcr));
-	}
-	/* #140 DIAGNOSTIC: direct test of the CS/CA-preservation hypothesis -
-	 * write a CLEAN value (pointer + cycle bit only, ignoring whatever
-	 * was in the low 6 bits from the pre-write read) instead of
-	 * preserving whatever CRCR held before. If this one sticks where the
-	 * spec-standard preserve-reserved-bits write didn't, stray CS/CA
-	 * bits in the pre-write read are the cause. */
-	{
-		u64 __clean = (trb_64 & (u64) ~CMD_RING_RSVD_BITS) | ctrl->cmd_ring->cycle_state;
-		xhci_writeq(&hcor->or_crcr, __clean);
-		printf("#140-diag: crcr CLEAN write-then-readback: wrote=0x%016llx read=0x%016llx\n",
-		       (unsigned long long)__clean, (unsigned long long)xhci_readq(&hcor->or_crcr));
-	}
+	/* #140 CORRECTION: CRCR's pointer field and RCS bit are write-only
+	 * by spec (xHCI 5.4.5) - "reading the other bits will consistently
+	 * return 0" except CRR (bit3). A prior round of this investigation
+	 * misread that as "the write doesn't stick" and chased several
+	 * write-pattern variants as a result - all reverted. This readback
+	 * is expected to be all-zero pre-doorbell on ANY compliant xHCI
+	 * implementation; it says nothing about whether the write landed.
+	 * Kept only as a boot-time sanity trace, not evidence either way. */
+	printf("#140-diag: crcr post-write readback (expected all-zero pre-doorbell per spec): 0x%016llx\n",
+	       (unsigned long long)xhci_readq(&hcor->or_crcr));
 
 	/* write the address of db register */
 	val = xhci_readl(&hccr->cr_dboff);
