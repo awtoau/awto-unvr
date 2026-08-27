@@ -216,6 +216,22 @@ def configure():
             "MDIO_I2C",
             "--enable",
             "I2C_MUX_PCA954x",
+            # #157: USB-as-root never works on this board's no-initramfs boot
+            # (root=PARTUUID, no UEFI/GRUB, no embedded initramfs - see this
+            # file's own docstring). rootwait's prepare_namespace() just polls
+            # msleep() forever waiting for the root device (confirmed live via
+            # a sysrq-w blocked-task dump during the actual hang - the ONLY
+            # blocked task is that poll loop itself, nothing stuck on I/O or a
+            # lock) because usb_storage/uas were =m with nowhere to load a
+            # module from this early - no rootfs mounted yet (that's what's
+            # being waited for), no initramfs to stage them. xhci_hcd already
+            # works fine because Fedora's own config has it =y; do the same
+            # for the two drivers actually needed to attach a block device on
+            # top of that link.
+            "--enable",
+            "USB_STORAGE",
+            "--enable",
+            "USB_UAS",
             # DIAGNOSTIC KASAN build for #131 - disabled by default so the
             # normal build (matching the flashed NAND kernel/modules) stays
             # the daily-driver. Re-enable via AWTO_KASAN_BUILD=1 to continue
@@ -281,6 +297,14 @@ def configure():
     ):
         if f"{sym}=y" not in dotcfg and f"{sym}=m" not in dotcfg:
             log(f"FATAL: {sym} not set (y or m) after olddefconfig")
+            sys.exit(1)
+    # #157: unlike the above, these MUST be =y specifically (not =m) - the
+    # whole fix is that they need to be active before any rootfs/initramfs
+    # exists to load a module from. =m here would silently reintroduce the
+    # exact bug this was added to fix.
+    for sym in ("CONFIG_USB_STORAGE", "CONFIG_USB_UAS"):
+        if f"{sym}=y" not in dotcfg:
+            log(f"FATAL: {sym} not built in (=y) after olddefconfig - #157 fix regressed")
             sys.exit(1)
     log(
         "configured: Fedora base + ARCH_ALPINE + PCIE_AL_INTERNAL + phylink/sfp confirmed"
