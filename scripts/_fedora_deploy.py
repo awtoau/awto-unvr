@@ -226,10 +226,27 @@ def _deploy_kernel_module_check(host: str) -> None:
         "-o", "PubkeyAuthentication=no",
         f"root@{host}",
     ]
-    rc = subprocess.run(
-        [*ssh_base, f"cat > /lib/modules/{KVER}/.deployed-from"],
-        input=marker, text=True, check=False,
-    ).returncode
+    # Piping content via `input=` through an sshpass-wrapped ssh landed as a
+    # silently-empty 0-byte file (sshpass's own pty handling for the
+    # password prompt apparently interferes with forwarding stdin to the
+    # remote command) - scp of a real local file, like the two below, is
+    # the proven-working path in this function; use that instead.
+    import tempfile
+
+    with tempfile.NamedTemporaryFile("w", suffix=".deployed-from", delete=False) as tf:
+        tf.write(marker)
+        marker_path = Path(tf.name)
+    try:
+        rc = subprocess.run(
+            ["sshpass", "-p", ROOT_PASSWORD, "scp",
+             "-o", "StrictHostKeyChecking=accept-new",
+             "-o", "PreferredAuthentications=password",
+             "-o", "PubkeyAuthentication=no",
+             str(marker_path), f"root@{host}:/lib/modules/{KVER}/.deployed-from"],
+            check=False,
+        ).returncode
+    finally:
+        marker_path.unlink()
     if rc != 0:
         sys.exit(f"ABORT: writing #162 provenance marker failed (rc={rc})")
 
@@ -249,6 +266,17 @@ def _deploy_kernel_module_check(host: str) -> None:
         ).returncode
         if rc != 0:
             sys.exit(f"ABORT: shipping {src.name} failed (rc={rc})")
+    # Zero-byte check on the marker specifically: this exact function just
+    # proved (2026-08-27) that a 0-length remote file is possible even with
+    # rc=0 from the transfer command, the same failure class
+    # _verify_sync_integrity below exists to catch for modules. Confirming
+    # non-empty AND grep for the expected key, not just "exists".
+    check = subprocess.run(
+        [*ssh_base, f"grep -q '^banner=' /lib/modules/{KVER}/.deployed-from"],
+        check=False,
+    ).returncode
+    if check != 0:
+        sys.exit(f"ABORT: #162 marker landed but is empty/malformed on woomera - refusing to continue")
     rc = subprocess.run(
         [*ssh_base, "chmod +x /usr/local/bin/check-kernel-module-match.py "
                     "&& systemctl daemon-reload "
