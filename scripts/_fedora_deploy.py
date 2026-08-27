@@ -188,14 +188,19 @@ def _kernel_banner() -> str:
     Image binary - this differs per actual build even when the KVER string
     itself doesn't (e.g. "7.1.8-dirty" for every build regardless of date),
     since it embeds the build timestamp. Confirmed present via plain
-    `strings` on the uncompressed arm64 Image - no need to boot it."""
+    `strings` on the uncompressed arm64 Image - no need to boot it.
+
+    The binary contains this string twice: a truncated copy missing the
+    build number/date (`... # SMP PREEMPT_DYNAMIC` with no trailing text -
+    some other symbol/template sharing a prefix, not investigated further)
+    and the real, complete one. Take the longest match, not the first."""
     out = subprocess.run(
         ["strings", "-a", str(BUILD_IMAGE)], capture_output=True, text=True, check=True
     ).stdout
-    for line in out.splitlines():
-        if line.startswith("Linux version"):
-            return line.strip()
-    sys.exit(f"ABORT: no 'Linux version' banner found in {BUILD_IMAGE} - can't record #162 provenance")
+    matches = [line.strip() for line in out.splitlines() if line.startswith("Linux version")]
+    if not matches:
+        sys.exit(f"ABORT: no 'Linux version' banner found in {BUILD_IMAGE} - can't record #162 provenance")
+    return max(matches, key=len)
 
 
 def _deploy_kernel_module_check(host: str) -> None:
