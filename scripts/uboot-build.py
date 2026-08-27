@@ -131,7 +131,27 @@ def log(msg):
         f.write(line + "\n")
 
 
+def unstage_stale():
+    """Reset TREE to pristine (git checkout --) before staging, so a file
+    removed from FILES/DIRS (e.g. a reverted diagnostic/candidate-fix
+    overlay) actually goes away instead of silently lingering, modified,
+    forever - stage() only ever copies files IN, nothing previously
+    unstaged them. Found live (2026-08-27): a #140 CRS-handling patch was
+    reverted in this repo (commit 73f4701) but the shared TREE still had
+    the modified file - `git status` showed 153 lines still there, weeks
+    of future builds would have silently kept using it. TREE is a plain
+    git checkout of mainline that only ever gets modified by this script,
+    so a full reset here is safe - nothing else should have uncommitted
+    changes in it."""
+    rc = subprocess.run(["git", "checkout", "--", "."], cwd=TREE, check=False).returncode
+    if rc != 0:
+        log(f"WARNING: git checkout -- . in {TREE} failed (rc={rc}) - stale files may remain")
+    else:
+        log(f"reset {TREE} to pristine before staging")
+
+
 def stage():
+    unstage_stale()
     for src, dst in FILES.items():
         s = os.path.join(SCAFFOLD, src)
         d = os.path.join(TREE, dst)

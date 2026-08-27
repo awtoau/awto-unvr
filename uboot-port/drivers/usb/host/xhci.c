@@ -776,6 +776,10 @@ static int _xhci_alloc_device(struct usb_device *udev)
 	event = xhci_wait_for_event(ctrl, TRB_COMPLETION);
 	if (!event) {
 		union xhci_trb *ev = ctrl->event_ring->dequeue;
+		/* Invalidate before reading, same reasoning as xhci-ring.c's
+		 * periodic print - otherwise this shows a stale cached view,
+		 * not what's actually in DRAM at timeout. */
+		xhci_inval_cache((uintptr_t)ev, sizeof(*ev));
 		printf("#140-diag: TIMEOUT - event_ring deq=%p raw=%08x %08x %08x %08x cycle_state=%d db[0]=0x%08x\n",
 		       ev, le32_to_cpu(ev->generic.field[0]), le32_to_cpu(ev->generic.field[1]),
 		       le32_to_cpu(ev->generic.field[2]), le32_to_cpu(ev->generic.field[3]),

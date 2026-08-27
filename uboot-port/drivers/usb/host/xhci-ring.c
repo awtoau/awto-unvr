@@ -471,6 +471,16 @@ union xhci_trb *xhci_wait_for_event(struct xhci_ctrl *ctrl, trb_type expected)
 
 	do {
 		union xhci_trb *event = ctrl->event_ring->dequeue;
+		/* event_ready() invalidates the cache line before its own
+		 * read - MUST run before the diagnostic print below touches
+		 * the same memory, or the print shows a stale cached view
+		 * instead of what's actually in DRAM right now. (Found via
+		 * external code review, 2026-08-27: the original version of
+		 * this diagnostic printed BEFORE the invalidate, which made
+		 * an earlier "genuine completion event, wrong cycle bit"
+		 * capture untrustworthy - it may have been reading a stale
+		 * cache line, not real late-arriving hardware data.) */
+		int ready = event_ready(ctrl);
 
 		if (expected == TRB_COMPLETION && get_timer(last_diag_ts) >= 200) {
 			last_diag_ts = get_timer(0);
@@ -481,7 +491,7 @@ union xhci_trb *xhci_wait_for_event(struct xhci_ctrl *ctrl, trb_type expected)
 			       le32_to_cpu(ctrl->dba->doorbell[0]));
 		}
 
-		if (!event_ready(ctrl))
+		if (!ready)
 			continue;
 
 		type = TRB_FIELD_TO_TYPE(le32_to_cpu(event->event_cmd.flags));
