@@ -41,7 +41,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from _repo import LOGS, TMP
+from _repo import LOGS, REPO, TMP
 
 REL = "44"
 ARCH = "aarch64"
@@ -115,6 +115,9 @@ dnf -y remove 'abrt*' 2>/dev/null || true
 # --- serial console login, auto (owner directive - headless bring-up box,
 # no reason to retype root/unvr every time the shared console is attached) ---
 systemctl enable serial-getty@ttyS0.service
+# --- fan daemon (#44) - staged into /usr/local/bin + /etc/systemd/system
+# above, just needs enabling here ---
+systemctl enable unvr-fand.service
 mkdir -p /etc/systemd/system/serial-getty@ttyS0.service.d
 cat > /etc/systemd/system/serial-getty@ttyS0.service.d/autologin.conf << 'GETTYEOF'
 [Service]
@@ -284,6 +287,17 @@ def main() -> int:
             str(root),
             "clean",
             "all",
+        )
+        # Stage the fan daemon (#44) before the chroot config step enables it.
+        sudo_run(
+            "install", "-m", "755",
+            str(REPO / "scripts" / "unvr-fand.py"),
+            str(root / "usr/local/bin/unvr-fand.py"),
+        )
+        sudo_run(
+            "install", "-m", "644",
+            str(REPO / "scripts" / "unvr-fand.service"),
+            str(root / "etc/systemd/system/unvr-fand.service"),
         )
         # Apply config via chroot - binfmt_misc runs the aarch64 bash/systemctl
         # transparently, same mechanism dnf's own scriptlets just used above.

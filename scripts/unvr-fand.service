@@ -1,0 +1,13 @@
+[Unit]
+Description=UNVR fan control - hysteresis on al_thermal cpu-thermal zone (#44)
+Documentation=https://github.com/awtoau/awto-unvr/issues/44
+After=multi-user.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/unvr-fand.py
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
