@@ -178,7 +178,7 @@
 		 * driver ever lands.
 		 */
 		pbs: pbs@fd8a8000 {
-			compatible = "annapurna-labs,al-pbs";
+			compatible = "annapurna-labs,al-pbs", "al,alpine-pbs";
 			reg = <0x00 0xfd8a8000 0x00 0x1000>;
 			interrupts = <GIC_SPI 0 IRQ_TYPE_LEVEL_HIGH>;
 		};
@@ -197,7 +197,7 @@
 
 		/* Thermal sensor */
 		thermal: thermal@fd860a00 {
-			compatible = "annapurna-labs,al-thermal";
+			compatible = "annapurna-labs,al-thermal", "al,alpine-thermal";
 			reg = <0x00 0xfd860a00 0x00 0x100>;
 			#thermal-sensor-cells = <0>;
 		};

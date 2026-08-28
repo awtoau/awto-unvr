@@ -362,15 +362,16 @@ def adapt_module(m, mpath):
 
 
 def build_oot_modules():
-    """Build al_eth/al_dma/al_ssm/al_sgpo against 7.1. Non-fatal per module so a
-    module API break does not deny us a bootable kernel; failures are reported."""
+    """Build al_eth/al_dma/al_ssm/al_sgpo/al_thermal against 7.1. Non-fatal per
+    module so a module API break does not deny us a bootable kernel; failures
+    are reported."""
     kv = kver()
     mdst = os.path.join(OUT, "modules")
     if os.path.exists(mdst):
         shutil.rmtree(mdst)
     os.makedirs(mdst)
     results = {}
-    for m in ("al_eth", "al_dma", "al_ssm", "al_sgpo"):
+    for m in ("al_eth", "al_dma", "al_ssm", "al_sgpo", "al_thermal"):
         mpath = os.path.join(mdst, m)
         # imported source-of-truth: repo modules/ (carries iofic + crypto fixes).
         shutil.copytree(os.path.join(REPO, "modules", m), mpath)

@@ -467,7 +467,7 @@ def build():
             log(f"FATAL: {copied} missing right after copying it", "ERROR")
             sys.exit(1)
 
-    for m in ("al_eth", "al_dma", "al_ssm", "al_sgpo"):
+    for m in ("al_eth", "al_dma", "al_ssm", "al_sgpo", "al_thermal"):
         mpath = os.path.join(OUT, m)
         if os.path.exists(mpath):
             shutil.rmtree(mpath)
