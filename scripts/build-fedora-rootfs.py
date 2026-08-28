@@ -112,8 +112,15 @@ dnf -y remove firewalld 2>/dev/null || true
 systemctl disable abrtd.service abrt-ccpp.service abrt-oops.service \
     abrt-journal-core.service abrt-xorg.service 2>/dev/null || true
 dnf -y remove 'abrt*' 2>/dev/null || true
-# --- serial console login ---
+# --- serial console login, auto (owner directive - headless bring-up box,
+# no reason to retype root/unvr every time the shared console is attached) ---
 systemctl enable serial-getty@ttyS0.service
+mkdir -p /etc/systemd/system/serial-getty@ttyS0.service.d
+cat > /etc/systemd/system/serial-getty@ttyS0.service.d/autologin.conf << 'GETTYEOF'
+[Service]
+ExecStart=
+ExecStart=-/sbin/agetty --autologin root --noclear %I $TERM
+GETTYEOF
 # --- sysrq: Fedora's own /usr/lib/sysctl.d/50-default.conf sets kernel.sysrq=16
 # (log only) at every boot via systemd-sysctl, overriding the kernel's own
 # compiled-in default (#97 - want serial BREAK+key recoverable without a
