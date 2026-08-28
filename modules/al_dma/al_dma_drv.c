@@ -225,6 +225,23 @@ static void al_dma_cleanup_tasklet(struct tasklet_struct *t)
 			dma_run_dependencies(&desc->txd);
 		}
 	} while (ret > 0);
+
+	/* #23 (part 2): this tasklet is only ever scheduled from
+	 * issue_pending() - there is no hardware interrupt (confirmed: no
+	 * request_irq anywhere in this driver) and no other re-arming path.
+	 * The drain loop above only sees whatever's ALREADY complete the
+	 * instant it runs; if outstanding descriptors are still in flight
+	 * when it exits, nothing will ever check again until some unrelated
+	 * future issue_pending() call happens to fire - by which point any
+	 * caller waiting on THIS completion has already timed out. Verified
+	 * live: without this, dmatest's first op completes (caught by the
+	 * one guaranteed tasklet run) and every op after it times out.
+	 * Re-schedule ourselves while work remains outstanding - softirq
+	 * scheduling naturally paces the re-checks, no busy-spin. */
+	spin_lock_irqsave(&ch->lock, flags);
+	if (ch->completed != ch->tail)
+		tasklet_schedule(&ch->cleanup_task);
+	spin_unlock_irqrestore(&ch->lock, flags);
 }
 
 static int al_dma_alloc_chan_resources(struct dma_chan *c)
