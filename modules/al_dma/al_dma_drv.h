@@ -38,6 +38,13 @@ struct al_dma_chan {
 	int				sw_ring_count;
 	int				head;
 	int				tail;
+	/* Oldest submitted-but-not-yet-hardware-completed descriptor (#23).
+	 * `tail` reaches `head` immediately on issue_pending() (all queued
+	 * ops get kicked to hardware in one pass), so it never distinguished
+	 * "submitted" from "safe to reuse" - ring-full checks must compare
+	 * against this instead, and this is what the completion tasklet
+	 * advances as real completions come in. */
+	int				completed;
 
 	/* HAL queue resources */
 	union al_udma_desc		*tx_ring;

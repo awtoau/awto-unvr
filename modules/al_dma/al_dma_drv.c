@@ -116,7 +116,10 @@ static inline struct al_dma_sw_desc *al_dma_get_sw_desc(struct al_dma_chan *ch)
 {
 	struct al_dma_sw_desc *desc;
 
-	if (((ch->head + 1) % ch->sw_ring_count) == ch->tail)
+	/* #23: must check against `completed`, not `tail` - tail catches up
+	 * to head on every issue_pending() regardless of hardware progress,
+	 * so it never actually protected an in-flight descriptor from reuse. */
+	if (((ch->head + 1) % ch->sw_ring_count) == ch->completed)
 		return NULL;  /* ring full */
 
 	desc = &ch->sw_ring[ch->head];
@@ -180,15 +183,46 @@ static void al_dma_cleanup_tasklet(struct tasklet_struct *t)
 	struct al_dma_device *dev = ch->device;
 	uint32_t comp_status;
 	int ret;
+	unsigned long flags;
 
+	/* #23: al_raid_dma_completion() pops one hardware completion per
+	 * call (one "packet", matching one sw_desc submitted with its own
+	 * tx_descs_count) - each one maps 1:1 to the oldest still-submitted
+	 * descriptor, ring order guarantees FIFO completion. Previously this
+	 * only logged errors and never told the dmaengine core anything
+	 * completed - async_tx callback chains (RAID xor/pq) could never
+	 * fire. */
 	do {
 		ret = al_raid_dma_completion(&dev->hal_dma, ch->idx,
 					     &comp_status);
 		if (ret > 0) {
+			struct al_dma_sw_desc *desc;
+
 			if (comp_status)
 				dev_warn(&dev->pdev->dev,
 					 "DMA chan %d completion error: 0x%x\n",
 					 ch->idx, comp_status);
+
+			spin_lock_irqsave(&ch->lock, flags);
+			if (ch->completed == ch->tail) {
+				/* Shouldn't happen (hardware reported a
+				 * completion we have no submitted descriptor
+				 * for) - warn and stop rather than run past
+				 * the ring into unsubmitted slots. */
+				spin_unlock_irqrestore(&ch->lock, flags);
+				dev_warn(&dev->pdev->dev,
+					 "DMA chan %d spurious completion\n",
+					 ch->idx);
+				break;
+			}
+			desc = &ch->sw_ring[ch->completed];
+			ch->completed = (ch->completed + 1) % ch->sw_ring_count;
+			spin_unlock_irqrestore(&ch->lock, flags);
+
+			dma_cookie_complete(&desc->txd);
+			if (desc->txd.callback)
+				desc->txd.callback(desc->txd.callback_param);
+			dma_run_dependencies(&desc->txd);
 		}
 	} while (ret > 0);
 }
@@ -262,6 +296,7 @@ static int al_dma_alloc_chan_resources(struct dma_chan *c)
 
 	ch->head = 0;
 	ch->tail = 0;
+	ch->completed = 0;
 
 	/* dma_cookie_init removed in 6.12 — handled automatically */
 

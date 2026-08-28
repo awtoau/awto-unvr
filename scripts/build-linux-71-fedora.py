@@ -227,6 +227,10 @@ def configure():
             "PCS_XPCS",
             "--enable",
             "SFP",
+            # dmaengine self-test/benchmark module - used to verify al_dma
+            # completion handling (#23) without needing a real RAID array.
+            "--module",
+            "DMATEST",
             "--enable",
             "MDIO_I2C",
             "--enable",
