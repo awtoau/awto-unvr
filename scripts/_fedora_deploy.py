@@ -40,7 +40,11 @@ _OUT_DEFAULT = (
 )
 OUT = Path(os.environ.get("AWTO_KERNEL_OUT", _OUT_DEFAULT))
 DTS_NAME = "alpine-v2-ubnt-unvr-ea16"
-VER = "7.1"
+# Must mirror whatever AWTO_KERNEL_VER the build script was invoked with -
+# it's baked into the build's own filenames (Image is unversioned, but the
+# DTB/uImage/tftp names all embed it). Same failure class as the OUT
+# mismatch above: default "7.1" keeps existing 7.1 deploys byte-identical.
+VER = os.environ.get("AWTO_KERNEL_VER", "7.1")
 
 
 def _detect_kver() -> str:
