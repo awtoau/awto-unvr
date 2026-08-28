@@ -4956,8 +4956,11 @@ static u16 al_eth_select_queue(struct net_device *dev, struct sk_buff *skb,
 		 * which reorders a single TCP flow across independently
 		 * serviced TX rings with zero driver/MAC-visible error.
 		 * Always use the host/NIC flow-hash path here regardless of
-		 * CONFIG_ARCH_ALPINE. */
-		qid = skb_tx_hash(dev, skb);
+		 * CONFIG_ARCH_ALPINE. skb_tx_hash() no longer exists in this
+		 * kernel (the vendor driver predates its removal from
+		 * mainline) - netdev_pick_tx() is the modern replacement,
+		 * same flow-hash-based selection. */
+		qid = netdev_pick_tx(dev, skb, sb_dev);
 		pr_debug("sel_smp_qid=%d\n", qid);
 	}
 	return qid;
