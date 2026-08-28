@@ -183,9 +183,11 @@ Each phase boots and is reverted by power-cycle (RAM payload, no flash write).
 ### P3 — network
 
 - 1G `al_eth` `1c36:0001` (RGMII → AR8031 addr 4) and/or 10G `1c36:0002` (SFP+).
-- **No EDK2 al_eth driver exists** — largest P3 unknown. Fallback: keep netboot in
-  U-Boot, do EDK2 network later, or use the ASMedia-path USB NIC. UEFI SNP/MNP over
-  a fresh al_eth UEFI driver is a real write, not a reuse.
+- **An EDK2 al_eth driver exists**: `imbushuo/ccr2004-uefi`'s `Drivers/AlEthNextDxe/`
+  is a real SimpleNetworkProtocol driver for the same SoC (AL324/Alpine V2), on the
+  same delroth-vintage HAL (2.9) ours uses ([hal-provenance-and-cross-system.md](hal-provenance-and-cross-system.md)
+  §3, #85). Still a genuine port for our board (own DTS/board params), not a drop-in,
+  but the "no reference exists" framing was wrong — this is a strong reference.
 
 ### P4 — GRUB → Linux
 
@@ -243,8 +245,9 @@ to run at EL2.
   50000000` ([bootloader.md](bootloader.md)) but the **live DT says 58 333 312 Hz**
   and Linux runs at 58.33 MHz. Trust the DT / read `CNTFRQ_EL0` at runtime; a wrong
   value = all EDK2 timeouts/delays wrong by 1.17×.
-- **No EDK2 al_eth driver** (P3). Networking inside UEFI is a genuine new driver,
-  not a reuse — same conclusion as the Linux port's Phase 3.
+- **al_eth port still needed for our board** (P3) — a reference now exists
+  (`AlEthNextDxe` in `imbushuo/ccr2004-uefi`, see §P3) but our DTS/board params
+  still need porting; not a drop-in reuse.
 - **PCIe internal host is not cache-coherent-DMA-safe** without the Alpine AXI-snoop
   glue ([porting-roadmap.md](porting-roadmap.md) §Phase 4). P1 must program it or
   DMA (USB/SATA/eth) corrupts silently.
