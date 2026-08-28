@@ -23,10 +23,15 @@ AES-XTS/CBC hardware crypto; al_dma exposes 4 XOR/PQ channels to async_tx; SoC
 - NAS hits SHA constantly: btrfs/dm-verity checksums, TLS, SMB3 signing, ssh, dnf. CE gives multi-x speedup.
 - Set: `CONFIG_CRYPTO_SHA1_ARM64_CE=y`, `CONFIG_CRYPTO_SHA2_ARM64_CE=y`, `CONFIG_CRYPTO_SHA512_ARM64_CE=y`, `CONFIG_CRYPTO_CRCT10DIF_ARM64_CE=y`, `CONFIG_CRYPTO_POLYVAL_ARM64_CE=y`.
 
-### 1.2 No zram/zswap on a 4 GiB box — Med
-- `CONFIG_ZRAM` and `CONFIG_ZSWAP` both unset. 4 GiB is tight once Samba/containers/md run; compressed swap avoids early OOM without touching the SSD.
-- zstd/lz4 compressors already built (`CRYPTO_ZSTD=y`, `LZ4_*`). zram is a cheap module.
-- Set: `CONFIG_ZRAM=m` (+ `ZRAM_DEF_COMP_ZSTD`), optionally `CONFIG_ZSWAP=y`. Ship `zram-generator` in Fedora rootfs.
+### 1.2 No active swap on a 4 GiB box — Med [blocked, not a config gap]
+- Checked 2026-08-28: `CONFIG_ZRAM=m`/`CONFIG_ZSWAP=y` are already set (Fedora base config), `zram`
+  loads and `/dev/zram0` exists, `zram-generator` is already installed and correctly generates
+  `dev-zram0.swap`. None of that is the gap.
+- **Actual blocker: #164.** systemd core (`swap_start()`/`swap_supported()` in `src/core/swap.c`)
+  hardcodes `if (detect_container() > 0) return -EPERM` — no `Condition=`, no drop-in possible.
+  PID1's cached (wrong) container detection blocks the swap unit outright:
+  `Starting of dev-zram0.swap - Compressed Swap on /dev/zram0 unsupported.` 4 GiB box, zero swap,
+  until #164's root cause is found and fixed.
 
 ### 1.3 XFS not built; BTRFS lacks POSIX ACL — Med [Fedora-milestone-adjacent]
 - `CONFIG_XFS_FS` unset. `BTRFS_FS=m` but `BTRFS_FS_POSIX_ACL` unset — ACLs are standard for a file server.
@@ -201,7 +206,7 @@ all namespaces incl `USER_NS`, `SECCOMP_FILTER`, `FANOTIFY`, `INOTIFY_USER`,
 6. **[Med, Fedora]** `CONFIG_PSI=y` so systemd-oomd starts (2.1).
 7. **[Med, Fedora]** `CONFIG_CGROUP_BPF=y` + `CONFIG_BPF_JIT=y` for systemd device sandboxing + eBPF (2.2).
 8. **[Med]** 10 G networking: `TCP_CONG_ADVANCED`+`BBR`+`NET_SCH_FQ` and matching sysctls (3.3).
-9. **[Med]** `CONFIG_ZRAM=m` + zram-generator on the 4 GiB box (1.2).
+9. **[Med, blocked on #164]** Get swap active on the 4 GiB box — config/zram-generator already correct, blocked by systemd's swap-subsystem container misdetection (1.2).
 10. **[Med]** Conservative CPU overclock to ~2.0 GHz as a togglable boot step (6.1), gated on porting al_thermal (1.4).
 
 Runners-up: XFS/btrfs-ACL for the data array (1.3); SP805→systemd watchdog (5.2); per-device I/O scheduler + HDD readahead/dirty tuning (3.4/3.5); drop dead `iommu.passthrough=1` (3.1); cheap slab/YAMA hardening (7.4).

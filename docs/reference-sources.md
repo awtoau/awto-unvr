@@ -68,6 +68,27 @@ applies Fedora's own kernel patch. Checked whether that's actually a gap (2026-0
 Not applying this patch is the right call, not a gap. Re-check only if a future Fedora patch
 version starts touching PCIe/AHCI/xHCI code outside the RHEL-gated sections.
 
+## TrueNAS SCALE kernel — checked for hardware-relevant fixes (#163)
+`truenas-linux/` — github.com/truenas/linux, branch `truenas/linux-6.18` (tracks their 26.x
+release line). Cloned dev host + on-box (`/root/src/truenas-linux`), 2026-08-28.
+- **x86_64-only in practice.** `arch/arm64/` present only as generic inherited mainline code —
+  no TrueNAS-specific ARM enablement commits in the history. Not useful as an ARM64/Annapurna
+  reference tree.
+- Checked `drivers/usb/host/xhci*`, `drivers/ata/{libahci,ahci}.c`,
+  `drivers/pci/controller/dwc/` history for anything relevant to #140 or our SATA/PCIe setup.
+  Nothing Annapurna/Alpine-specific (expected, x86 NAS distro). One recurring **pattern** worth
+  noting: several controllers (VIA VL805/806 `fe7892d46921`, JMicron JMB582/585 `f5a5d0e8704e`,
+  **ASMedia ASM1061/ASM106x** `20730e9b2778`/`51af8f255bda`) advertise full 64-bit DMA capability
+  (AC64/S64A bit) but actually fault on DMA addresses above some narrower width (36/32/43 bits) —
+  same silicon-lies-about-capability class as our own ASMedia xHCI's `XHCI_NO_64BIT_SUPPORT`
+  quirk. All of these are about **DMA buffer address width** (the controller reading/writing
+  system memory), not register-access width. Our #140 symptom is a plain MMIO register write
+  (CRCR) not taking effect, proven via raw U-Boot shell commands with zero buffer/DMA content
+  involved — a different mechanism, so this pattern doesn't explain it. Recorded here as
+  supporting context (ASMedia specifically has a track record of this bug class across product
+  lines — ASM106x SATA and our ASM1042A xHCI), not a fix.
+- No PCIe DesignWare (`drivers/pci/controller/dwc/`) commits relevant to our controller/quirks.
+
 ## Note
 `delroth-alpine_hal` is catalogued as a "register/descriptor reference" but is in fact the full
 buildable HAL (plat_api + samples) — usable as the port's engine, not just a reg reference.
