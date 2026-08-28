@@ -1138,6 +1138,106 @@ def cmd_uboot_test(_extra: list[str]) -> int:
 
 
 @command(
+    "redeploy a completely fresh Fedora rootfs onto the SSD: SP805-reset "
+    "(over SSH) -> catch stock -> netboot installer -> reformat sda2 -> "
+    "stream fresh rootfs+modules over HTTP. Leaves box at installer shell; "
+    "run reboot-to-uboot.tcl + ./dev.py flash + power-cycle after to boot "
+    "it (scripts/deploy-fedora-rootfs.tcl)",
+    kind="action",
+)
+def cmd_deploy_fedora_rootfs(_extra: list[str]) -> int:
+    scripts_dir = str(REPO / "scripts")
+    if scripts_dir not in sys.path:
+        sys.path.insert(0, scripts_dir)
+    from _net import detect_server_ip
+    import _fedora_deploy as fd
+
+    ea16_out = Path(os.environ.get("AWTO_KERNEL_OUT_EA16", "/mnt/2tb/unvr-port-refs/build-out-71"))
+    ea16_uimage = ea16_out / "uImage-unvr-ea16-7.1"
+    ea16_dtb = ea16_out / "alpine-v2-ubnt-unvr-ea16-7.1.dtb"
+    rootfs_tar = REPO / "tmp" / "fedora-rootfs-ea16.tar"
+    for p in (ea16_uimage, ea16_dtb, rootfs_tar):
+        if not p.is_file():
+            log(f"ABORT: missing {p} - build it first", "ERROR")
+            return 1
+    if not fd.MODROOT.is_dir():
+        log(f"ABORT: no module tree at {fd.MODROOT} - build the fedora kernel first", "ERROR")
+        return 1
+
+    TFTP_ROOT.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(ea16_uimage, TFTP_ROOT / ea16_uimage.name)
+    shutil.copy2(ea16_dtb, TFTP_ROOT / ea16_dtb.name)
+    log(f"staged installer {ea16_uimage.name} + {ea16_dtb.name} into {TFTP_ROOT.relative_to(REPO)}")
+    _ensure_tftpd()
+
+    serve_dir = REPO / "tmp" / "rootfs-deploy"
+    serve_dir.mkdir(parents=True, exist_ok=True)
+    link = serve_dir / "fedora-rootfs-ea16.tar"
+    if link.is_symlink() or link.exists():
+        link.unlink()
+    link.symlink_to(rootfs_tar)
+    modtar = serve_dir / f"modules-{fd.KVER}.tar"
+    subprocess.run(
+        ["tar", "-C", str(fd.MODROOT.parent), "-cf", str(modtar), fd.KVER], check=True
+    )
+    log(f"staged rootfs tar (symlink) + fresh module tar ({modtar.name}) in {serve_dir.relative_to(REPO)}")
+
+    import http.server
+    import socketserver
+    import threading
+    from functools import partial
+
+    http_port = 8100
+    handler = partial(http.server.SimpleHTTPRequestHandler, directory=str(serve_dir))
+    httpd = socketserver.TCPServer(("0.0.0.0", http_port), handler)
+    threading.Thread(target=httpd.serve_forever, daemon=True).start()
+    server_ip = detect_server_ip()
+    log(f"serving {serve_dir.relative_to(REPO)} on {server_ip}:{http_port}")
+
+    host = subprocess.run(
+        [sys.executable, "scripts/ssh-woomera.py", "--print"],
+        cwd=REPO, capture_output=True, text=True, timeout=15, check=False,
+    ).stdout.strip()
+    if not host:
+        log("ABORT: woomera not reachable over SSH - can't arm the SP805 reset", "ERROR")
+        httpd.shutdown()
+        return 1
+    log(f"arming SP805 watchdog over SSH ({host}) - box resets to stock U-Boot in ~2s")
+    subprocess.run(
+        [
+            "sshpass", "-p", fd.ROOT_PASSWORD, "ssh",
+            "-o", "StrictHostKeyChecking=accept-new",
+            "-o", "PreferredAuthentications=password",
+            "-o", "PubkeyAuthentication=no",
+            "-o", "ConnectTimeout=5",
+            f"root@{host}",
+            "python3 -c \"import fcntl,struct; f=open('/dev/watchdog','r+b',buffering=0); "
+            "fcntl.ioctl(f,0xC0045706,struct.pack('I',1)); exec('while True: pass')\"",
+        ],
+        timeout=8, check=False,
+    )
+
+    script = (
+        f"set SERVERIP {server_ip}\nset HTTPPORT {http_port}\n"
+        + Path("scripts/deploy-fedora-rootfs.tcl").read_text()
+    )
+    rc = cmd_console_tcl(["-e", script])
+    httpd.shutdown()
+    return rc
+
+
+@command(
+    "sync a freshly-built Fedora rootfs onto woomera's LIVE running SSD "
+    "over SSH - rsync --delete, no reboot/reformat/console needed "
+    "(scripts/sync-fedora-rootfs.py) [--dry-run] [--yes]",
+    args="[--dry-run] [--yes]",
+    kind="action",
+)
+def cmd_sync_fedora_rootfs(extra: list[str]) -> int:
+    return _run_script("scripts/sync-fedora-rootfs.py", extra)
+
+
+@command(
     "poll the console log for boot progress (trouble markers / login prompt) "
     "instead of one long blocking wait (scripts/wait-for-boot.py)",
     kind="action",
