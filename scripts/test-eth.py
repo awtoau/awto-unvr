@@ -23,13 +23,12 @@ whichever port answered the host-discovery ping, not necessarily the 10G one
 (see #121 - every throughput number in that issue before this fix was
 actually the 1G port, mislabeled as 10G).
 
-Caveat this script CANNOT fix on its own: if the machine running this test
-has multiple NICs on the same subnet as the box, Linux route selection is
-destination-driven and may silently route enp0s2's traffic out your 1G NIC
-regardless of which NIC you intended - the script checks and reports which
-local interface `ip route get` would actually use, but forcing a specific
-egress interface needs a routing change outside this script's scope
-(temporary host route, e.g. `sudo ip route add <enp0s2 IP>/32 dev <10G nic>`).
+The iperf3 client binds via `iperf3 -B <ip>%<iface>` (SO_BINDTODEVICE), not
+just a source-address bind - a plain -B doesn't reliably force egress out a
+chosen NIC, since Linux route selection is destination-driven and a 1G and
+10G NIC on the same subnet can tie (see #121). Auto-picks the fastest local
+iface on the target's subnet by `ethtool` link speed; override with
+--bind-ip/--bind-iface if auto-detect picks wrong.
 
 Exits 0 if every check passes, 1 otherwise. Prints a clear PASS/FAIL summary
 either way - meant to be readable standalone or dispatched to an agent.
@@ -37,12 +36,14 @@ either way - meant to be readable standalone or dispatched to an agent.
   ./scripts/test-eth.py                    # full run, ~30s iperf3 each way
   ./scripts/test-eth.py --skip-iperf        # quick check, no throughput test
   ./scripts/test-eth.py --iperf-duration 60 # longer throughput test
+  ./scripts/test-eth.py --bind-iface enp7s0 # force a specific local NIC
 """
 
 from __future__ import annotations
 
 import argparse
 import datetime
+import ipaddress
 import re
 import subprocess
 import sys
@@ -259,48 +260,117 @@ def enp0s2_ip(host: str, password: str) -> str | None:
     return m.group(1) if rc == 0 and m else None
 
 
-def check_local_route(target_ip: str, report: Report) -> None:
-    """Sanity-check which LOCAL interface will actually carry the iperf3
-    traffic. Binding a source IP (-B) does NOT control this - Linux route
-    selection is destination-driven, so a multi-NIC host on the box's subnet
-    can silently send "10G" traffic out a 1G NIC with no error (see #121)."""
+def _iface_speed_mbps(iface: str) -> int:
+    """Link speed in Mb/s, or -1 if unknown/unparseable (e.g. down link)."""
     result = subprocess.run(
-        ["ip", "route", "get", target_ip],
-        capture_output=True,
-        text=True,
-        check=False,
+        ["ethtool", iface], capture_output=True, text=True, check=False
     )
-    m = re.search(r"\bdev (\S+)", result.stdout)
-    iface = m.group(1) if m else None
-    ethtool = subprocess.run(
-        ["ethtool", iface] if iface else ["true"],
-        capture_output=True,
-        text=True,
-        check=False,
+    m = re.search(r"Speed:\s*(\d+)Mb/s", result.stdout)
+    return int(m.group(1)) if m else -1
+
+
+def _local_candidates(target_ip: str) -> list[tuple[str, str]]:
+    """(iface, local_ip) pairs whose subnet actually contains target_ip -
+    i.e. interfaces that could plausibly carry traffic to it directly."""
+    result = subprocess.run(
+        ["ip", "-4", "-o", "addr", "show"], capture_output=True, text=True, check=False
     )
-    speed_m = re.search(r"Speed:\s*(\S+)", ethtool.stdout)
-    speed = speed_m.group(1) if speed_m else "unknown"
-    ok = iface is not None and (speed == "10000Mb/s" or speed == "unknown")
+    dst = ipaddress.ip_address(target_ip)
+    candidates = []
+    for line in result.stdout.splitlines():
+        m = re.match(r"\d+:\s+(\S+)\s+inet\s+(\d+\.\d+\.\d+\.\d+)/(\d+)", line)
+        if not m:
+            continue
+        iface, ip, prefixlen = m.groups()
+        if iface == "lo":
+            continue
+        try:
+            net = ipaddress.ip_network(f"{ip}/{prefixlen}", strict=False)
+        except ValueError:
+            continue
+        if dst in net:
+            candidates.append((iface, ip))
+    return candidates
+
+
+def pick_bind_target(
+    target_ip: str, bind_ip: str | None, bind_iface: str | None
+) -> tuple[str, str] | None:
+    """Pick the (local_ip, iface) to hand iperf3's `-B ip%iface` (which uses
+    SO_BINDTODEVICE, not just a source-address bind). A plain source-address
+    bind does NOT reliably force egress out a chosen NIC - Linux route
+    selection is destination-driven, so a multi-NIC host on the box's subnet
+    can silently send "10G" traffic out a 1G NIC with no error (see #121).
+    SO_BINDTODEVICE sidesteps that by picking the interface directly.
+
+    Explicit --bind-ip/--bind-iface (either or both) override auto-detect.
+    With neither, auto-picks the fastest local iface whose subnet reaches
+    target_ip, by `ethtool` link speed - skips loopback and any iface not on
+    the target's subnet."""
+    if bind_ip or bind_iface:
+        if bind_ip and bind_iface:
+            return bind_ip, bind_iface
+        candidates = _local_candidates(target_ip)
+        if bind_iface:
+            match = next((ip for i, ip in candidates if i == bind_iface), None)
+            return (match or "0.0.0.0", bind_iface)
+        # bind_ip only: find its iface
+        match = next((i for i, ip in candidates if ip == bind_ip), None)
+        return (bind_ip, match) if match else None
+    candidates = _local_candidates(target_ip)
+    if not candidates:
+        return None
+    iface, ip = max(candidates, key=lambda c: _iface_speed_mbps(c[0]))
+    return ip, iface
+
+
+def check_local_route(
+    target_ip: str, bind_ip: str | None, bind_iface: str | None, report: Report
+) -> tuple[str, str] | None:
+    """Resolve and report the local (ip, iface) the iperf3 client will be
+    bound to, and confirm it's actually 10G-capable - see pick_bind_target()
+    docstring for why SO_BINDTODEVICE is used instead of trusting routing."""
+    picked = pick_bind_target(target_ip, bind_ip, bind_iface)
+    if picked is None:
+        report.add(
+            "local bind selection",
+            False,
+            f"no local interface found on {target_ip}'s subnet - "
+            "pass --bind-ip/--bind-iface explicitly",
+        )
+        return None
+    ip, iface = picked
+    speed = _iface_speed_mbps(iface)
+    speed_str = f"{speed}Mb/s" if speed >= 0 else "unknown"
+    ok = speed == 10000 or speed < 0
     report.add(
-        "local route to enp0s2",
+        "local bind selection",
         ok,
-        f"traffic to {target_ip} goes out local iface={iface or '?'} speed={speed}"
-        + (
-            ""
-            if ok
-            else " (NOT a 10G-capable local NIC - result below is not a real 10G test)"
-        ),
+        f"binding to {ip}%{iface} (speed={speed_str}) for traffic to {target_ip}"
+        + ("" if ok else " (NOT a 10G-capable local NIC - result below is not a real 10G test)"),
     )
+    return ip, iface
 
 
-def run_iperf(host: str, password: str, report: Report, duration: int) -> None:
+def run_iperf(
+    host: str,
+    password: str,
+    report: Report,
+    duration: int,
+    bind_ip: str | None,
+    bind_iface: str | None,
+) -> None:
     target = enp0s2_ip(host, password)
     if target is None:
         report.add(
             "iperf3 throughput", False, "couldn't determine enp0s2's IP - skipping"
         )
         return
-    check_local_route(target, report)
+    bind = check_local_route(target, bind_ip, bind_iface, report)
+    if bind is None:
+        report.add("iperf3 throughput", False, "no valid local bind target - skipping")
+        return
+    local_ip, local_iface = bind
     run_remote(
         host,
         password,
@@ -325,6 +395,8 @@ def run_iperf(host: str, password: str, report: Report, duration: int) -> None:
             "iperf3",
             "-c",
             target,
+            "-B",
+            f"{local_ip}%{local_iface}",
             "-p",
             "5601",
             "-t",
@@ -385,6 +457,17 @@ def main() -> int:
     ap.add_argument(
         "--iperf-duration", type=int, default=30, help="seconds per direction"
     )
+    ap.add_argument(
+        "--bind-ip",
+        help="local IP for the iperf3 client to bind to (default: auto-pick "
+        "the fastest local NIC on the target's subnet, by ethtool speed - "
+        "see #121)",
+    )
+    ap.add_argument(
+        "--bind-iface",
+        help="local interface for the iperf3 client to bind to (SO_BINDTODEVICE; "
+        "default: auto-pick, see --bind-ip)",
+    )
     args = ap.parse_args()
 
     host = args.host or locate_woomera()
@@ -397,7 +480,14 @@ def main() -> int:
     check_mac_errors(host, args.password, report)
     check_dmesg(host, args.password, report)
     if not args.skip_iperf:
-        run_iperf(host, args.password, report, args.iperf_duration)
+        run_iperf(
+            host,
+            args.password,
+            report,
+            args.iperf_duration,
+            args.bind_ip,
+            args.bind_iface,
+        )
 
     LOG.parent.mkdir(parents=True, exist_ok=True)
     stamp = datetime.datetime.now().astimezone().isoformat(timespec="seconds")
