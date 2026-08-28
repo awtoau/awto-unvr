@@ -155,12 +155,21 @@ printf '[Service]\nTimeoutStartSec=10\n' > /etc/systemd/system/polkit.service.d/
 # only one PCI ID, so no blacklist/modules-load.d ordering hack is needed -
 # normal MODALIAS auto-load is safe for both.
 # systemd-resolved's own RPM preset enables it by default, but nothing here
-# ever configures it - NetworkManager already writes /etc/resolv.conf directly
-# and works correctly on its own. Both enabled + unreconciled means resolved
-# spins forever trying to open a file NetworkManager owns at 0700, ~1 failure
+# ever configures it. Both enabled + unreconciled means resolved spins
+# forever trying to open a file NetworkManager owns at 0700, ~1 failure
 # every 0.3s for the life of every boot (#124). Disable it explicitly instead
 # of leaving an unreconciled default.
 systemctl disable --now systemd-resolved.service 2>/dev/null || true
+# NetworkManager writes real DNS content to /run/NetworkManager/resolv.conf
+# every boot (confirmed correct on a live box), but does NOT reliably create
+# the /etc/resolv.conf symlink pointing at it on a genuinely fresh rootfs -
+# confirmed live: a fresh boot had a fully-populated /run/NetworkManager/
+# resolv.conf and no /etc/resolv.conf at all, breaking dnf/curl/every
+# hostname lookup. Create the symlink at build time instead of trusting
+# NetworkManager to create it at runtime.
+mkdir -p /etc/NetworkManager/conf.d
+printf '[main]\ndns=default\nrc-manager=symlink\n' > /etc/NetworkManager/conf.d/dns.conf
+ln -sf /run/NetworkManager/resolv.conf /etc/resolv.conf
 # --- ssh ---
 systemctl enable sshd.service
 sed -i 's/^#\?PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config
