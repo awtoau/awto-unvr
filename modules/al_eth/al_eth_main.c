@@ -4946,13 +4946,18 @@ static u16 al_eth_select_queue(struct net_device *dev, struct sk_buff *skb,
 		pr_debug("sel_rec_qid=%d\n", qid);
 	}
 	else {
-#ifdef CONFIG_ARCH_ALPINE
-		/** Is an integrated networking driver */
-		qid = smp_processor_id();
-#else
-		/** Is a host/NIC mode driver */
+		/* #121: CONFIG_ARCH_ALPINE is set on this build for unrelated
+		 * platform support, but this board is used as a general NAS
+		 * host NIC (this NAS host, not an integrated SoC forwarding
+		 * appliance) - the vendor's smp_processor_id() path assumes
+		 * the sending CPU stays fixed per-flow (true for an in-kernel
+		 * forwarding service, false for a multi-threaded/parallel
+		 * userspace sender whose thread migrates cores under load),
+		 * which reorders a single TCP flow across independently
+		 * serviced TX rings with zero driver/MAC-visible error.
+		 * Always use the host/NIC flow-hash path here regardless of
+		 * CONFIG_ARCH_ALPINE. */
 		qid = skb_tx_hash(dev, skb);
-#endif /* CONFIG_ARCH_ALPINE */
 		pr_debug("sel_smp_qid=%d\n", qid);
 	}
 	return qid;
