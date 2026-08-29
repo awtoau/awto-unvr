@@ -77,6 +77,76 @@ File: `dts/alpine-v2-ubnt-unvr-ea16.dts` (tracked here).
   references `&i2c_gpio2` (verified). `gpio@21` (the populated PCA9575 driving
   bays 1-4) is retained.
 
+## Bug 4 — al_dma: only the first RAID op on a channel ever completes (#23)
+
+File: `modules/al_dma/al_dma_drv.c`. NOT a hardware fault — confirmed the
+opposite: hardware processes every submitted op correctly the whole time
+(kprobe-traced `rcrhp`, the real completion-ring hardware register, climbing
+continuously through a "stuck" test run). The driver was reading its own
+software copy of the completion ring at the wrong stride.
+
+- Root cause: `rx_params.cdesc_size = sizeof(union al_udma_cdesc)` = 4 bytes.
+  The real hardware completion descriptor is 8 bytes (real vendor source,
+  `al_dma.h`: `#define AL_DMA_RAID_RX_CDESC_SIZE 8` for real silicon — the
+  vendor never derives this from the struct's `sizeof()`, it's a named
+  constant, precisely because the struct only models the descriptor's first
+  word for read convenience). Reading every 4 bytes instead of every 8 means
+  half of every real completion write lands in a byte range the driver never
+  looks at — verified directly: a raw dump of the completion ring showed
+  written/empty/written/empty alternating every 4 bytes.
+- Symptom: op #1 on a channel always completes; every op after that times out
+  forever, 100% reproducible, regardless of op type or concurrency (both
+  ruled out as factors before the real cause was found).
+- Fix: `cdesc_size = 2 * sizeof(union al_udma_cdesc)` (=8), with the
+  `rx_cring` DMA allocation doubled to match (otherwise hardware would write
+  past the allocated buffer). Tested clean: `dma0chan0-copy0`/`-xor0` both
+  0 failures across repeated runs; `-pq0` (Reed-Solomon Q output) still has a
+  separate, narrower data-correctness bug, not a timeout — tracked
+  separately.
+- Current state: this is a working fix but still the "double the struct
+  size" form, not the clean fix (a proper second word added to
+  `union al_udma_cdesc`, or a named constant matching the vendor's, instead
+  of a `2 *` multiplier at the one call site). Not yet committed as final.
+
+## Bug 5 — al_ssm crypto: `cdesc_size` also wrong, unconfirmed impact
+
+File: `modules/al_ssm/al_ssm_main.c`. Found while investigating Bug 4 above -
+**not confirmed to cause any observed symptom**, flagging as a known latent
+issue rather than a proven bug.
+
+- `tx_params.cdesc_size`/`rx_params.cdesc_size` are both set to
+  `sizeof(union al_udma_desc)` = 16 bytes - the *submission* descriptor's
+  size, not the completion descriptor's. The real vendor crypto driver
+  (`al_crypto_core.c`) hardcodes `AL_CRYPTO_RX_CDESC_SIZE = 8` for real
+  silicon (same constant family as Bug 4's `AL_DMA_RAID_RX_CDESC_SIZE`).
+  16 is a different wrong number, borrowed from an unrelated struct - same
+  category of mistake as Bug 4, not the same value.
+- No evidence yet that this actually breaks anything in current usage (a
+  485 MB/s AF_ALG benchmark this session, and the self-test itself, both
+  passed with this value still wrong) - the RX completion path here may use
+  a different/less stride-sensitive code path than al_dma's. Worth checking
+  directly, not yet done.
+
+## Bug 6 — al_ssm: module reload hangs the crypto self-test indefinitely (#167)
+
+File: `modules/al_ssm/`. NOT a hardware fault - the crypto self-test passes
+cleanly and quickly on every genuinely fresh boot, confirmed live
+(`/proc/crypto`: `selftest: passed` for both `cbc-aes-al-ssm` and
+`xts-aes-al-ssm`).
+
+- Symptom: a live `rmmod al_ssm; modprobe al_ssm` (no reboot) causes the
+  self-test to hang forever instead of passing or failing - both
+  `cryptomgr_test` kernel threads get stuck in `wait_for_completion()`
+  (`test_skcipher_vec_cfg`), never receiving a hardware completion callback
+  for the op they submitted. Reproduced 2/2 times; only a reboot clears it.
+- Likely same root cause as [[al-dma-udma-state-survives-reload]] (memory)/#23's
+  finding for al_dma: a module reload does not reset the UDMA hardware queue
+  state, only software structures get torn down on free. Not yet directly
+  confirmed for al_ssm's own teardown path.
+- Practical impact: low for normal boot-once operation; real for anyone
+  iterating on al_ssm driver changes without a reboot between tests - the
+  same trap #23's investigation fell into with al_dma before this was known.
+
 ## timer0 — "deferred probe pending: (reason unknown)"
 
 File: `dts/alpine-v2-ubnt-unvr-ea16.dts`.
