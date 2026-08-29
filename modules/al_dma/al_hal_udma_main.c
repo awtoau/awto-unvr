@@ -563,6 +563,16 @@ uint32_t al_udma_cdesc_packet_get(
 	/* this function requires the completion ring update */
 	al_assert(!(udma_q->flags & AL_UDMA_Q_FLAGS_NO_COMP_UPDATE));
 
+	/* #23: the submit path (al_udma_desc_action_add) has an explicit
+	 * barrier before ringing the doorbell so hardware sees fresh
+	 * descriptor content; this poll path had no barrier before
+	 * re-reading completion flags from coherent memory, so repeated
+	 * polls could keep observing the same stale read instead of a
+	 * fresh one. Verified live: without this, exactly one completion
+	 * is ever seen per channel, forever, no matter how many times
+	 * polled. */
+	al_data_memory_barrier();
+
 	/* comp_head points to the last comp desc that was processed */
 	curr = udma_q->comp_head_ptr;
 	comp_flags = swap32_from_le(curr->al_desc_comp_tx.ctrl_meta);
