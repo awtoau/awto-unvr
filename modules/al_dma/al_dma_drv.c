@@ -78,6 +78,7 @@ static inline enum dma_status dma_cookie_status(struct dma_chan *chan,
 	return DMA_IN_PROGRESS;
 }
 #include <linux/interrupt.h>
+#include <linux/jiffies.h>
 #include <linux/slab.h>
 #include <linux/spinlock.h>
 #include <linux/async_tx.h>
@@ -146,9 +147,6 @@ static dma_cookie_t al_dma_tx_submit(struct dma_async_tx_descriptor *txd)
 	cookie = dma_cookie_assign(txd);
 	spin_unlock_irqrestore(&ch->lock, flags);
 
-	pr_info("al_dma TRACE: chan %d submit cookie=%d head=%d tail=%d completed=%d\n",
-		ch->idx, cookie, ch->head, ch->tail, ch->completed);
-
 	return cookie;
 }
 
@@ -169,8 +167,6 @@ static void al_dma_issue_pending(struct dma_chan *c)
 		if (desc->tx_descs_count > 0) {
 			al_raid_dma_action(&dev->hal_dma, ch->idx,
 					   desc->tx_descs_count);
-			pr_info("al_dma TRACE: chan %d action tail=%d tx_descs=%d cookie=%d\n",
-				ch->idx, ch->tail, desc->tx_descs_count, desc->txd.cookie);
 			submitted++;
 		}
 		ch->tail = (ch->tail + 1) % ch->sw_ring_count;
@@ -221,9 +217,9 @@ static void al_dma_cleanup_tasklet(struct tasklet_struct *t)
 				break;
 			}
 			desc = &ch->sw_ring[ch->completed];
-			pr_info("al_dma TRACE: chan %d complete idx=%d cookie=%d status=0x%x tail=%d\n",
-				ch->idx, ch->completed, desc->txd.cookie, comp_status, ch->tail);
 			ch->completed = (ch->completed + 1) % ch->sw_ring_count;
+			ch->stall_start = 0;
+			ch->stall_reported = false;
 			spin_unlock_irqrestore(&ch->lock, flags);
 
 			dma_cookie_complete(&desc->txd);
@@ -243,15 +239,33 @@ static void al_dma_cleanup_tasklet(struct tasklet_struct *t)
 	 * caller waiting on THIS completion has already timed out. Verified
 	 * live: without this, dmatest's first op completes (caught by the
 	 * one guaranteed tasklet run) and every op after it times out.
-	 * Re-schedule ourselves while work remains outstanding - softirq
-	 * scheduling naturally paces the re-checks, no busy-spin. */
+	 * Re-schedule ourselves while work remains outstanding.
+	 *
+	 * BOUNDED: verified live that hardware can genuinely never complete
+	 * a descriptor (a separate, deeper bug - see #23) - an unconditional
+	 * self-reschedule pegged a CPU core in an infinite softirq loop.
+	 * 50ms is ~50x the ~1ms a real completion took when this worked;
+	 * give up and log loudly rather than spin forever on a dead
+	 * descriptor. */
 	spin_lock_irqsave(&ch->lock, flags);
 	if (ch->completed != ch->tail) {
-		pr_info("al_dma TRACE: chan %d tasklet re-arm completed=%d tail=%d\n",
-			ch->idx, ch->completed, ch->tail);
-		tasklet_schedule(&ch->cleanup_task);
+		if (ch->stall_start == 0)
+			ch->stall_start = jiffies;
+		if (time_after(jiffies, ch->stall_start + msecs_to_jiffies(50))) {
+			if (!ch->stall_reported) {
+				dev_warn(&dev->pdev->dev,
+					 "DMA chan %d: descriptor(s) never completed "
+					 "after 50ms (completed=%d tail=%d) - giving "
+					 "up polling, not spinning forever\n",
+					 ch->idx, ch->completed, ch->tail);
+				ch->stall_reported = true;
+			}
+		} else {
+			tasklet_schedule(&ch->cleanup_task);
+		}
 	} else {
-		pr_info("al_dma TRACE: chan %d tasklet drained, no re-arm\n", ch->idx);
+		ch->stall_start = 0;
+		ch->stall_reported = false;
 	}
 	spin_unlock_irqrestore(&ch->lock, flags);
 }
@@ -326,6 +340,8 @@ static int al_dma_alloc_chan_resources(struct dma_chan *c)
 	ch->head = 0;
 	ch->tail = 0;
 	ch->completed = 0;
+	ch->stall_start = 0;
+	ch->stall_reported = false;
 
 	/* dma_cookie_init removed in 6.12 — handled automatically */
 

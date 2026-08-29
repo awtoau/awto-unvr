@@ -32,6 +32,13 @@ struct al_dma_chan {
 
 	spinlock_t			lock;
 	struct tasklet_struct		cleanup_task;
+	/* #23: bounds the tasklet's self-reschedule loop below - a
+	 * descriptor that never completes (real hardware bug, confirmed
+	 * live: ops 2+ on a channel already mid-transaction never signal
+	 * completion no matter how many times polled) must not spin this
+	 * core forever. 0 = not currently stalled. */
+	unsigned long			stall_start;
+	bool				stall_reported;
 
 	/* Descriptor management */
 	struct al_dma_sw_desc		*sw_ring;
