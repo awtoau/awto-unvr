@@ -71,6 +71,18 @@ static void al_udma_set_defaults(struct al_udma *udma)
 	if (udma->type == UDMA_TX) {
 		struct unit_regs* tmp_unit_regs =
 			(struct unit_regs*)udma->udma_regs;
+		/* #23: al_ssm's independently-vendored copy of this exact
+		 * function (which works - benchmarked 485 MB/s, zero
+		 * failures) unconditionally sets max_pkt_size here; al_dma's
+		 * copy never did. Untested whether an unconfigured M2S max
+		 * packet size is why the M2S/S2M completion path goes silent
+		 * after the first op (kprobe-confirmed hardware-level stall,
+		 * see the issue) - this is the most concrete lead found so
+		 * far, from a working reference, not a guess. */
+		struct al_udma_m2s_pkt_len_conf conf = {
+			.encode_64k_as_zero = AL_TRUE,
+			.max_pkt_size = UDMA_M2S_CFG_LEN_MAX_PKT_SIZE_MASK,
+		};
 
 		/* Setting the data fifo depth to 4K (256 strips of 16B)
 		 * This allows the UDMA to have 16 outstanding writes */
@@ -85,6 +97,8 @@ static void al_udma_set_defaults(struct al_udma *udma)
 
 		al_reg_write32(&tmp_unit_regs->m2s.m2s_comp.cfg_application_ack
 					, 0); /* Ack time out */
+
+		al_udma_m2s_packet_size_cfg_set(udma, &conf);
 	}
 	if (udma->type == UDMA_RX) {
 		al_reg_write32(
