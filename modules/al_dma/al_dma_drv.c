@@ -447,7 +447,16 @@ al_dma_prep_dma_memcpy(struct dma_chan *c, dma_addr_t dest,
 
 	memset(&xaction, 0, sizeof(xaction));
 	xaction.op = AL_RAID_OP_MEM_CPY;
-	xaction.flags = AL_SSM_SRC_NO_SNOOP | AL_SSM_DEST_NO_SNOOP;
+	/* #23: al_ssm's working crypto driver (al_ssm_main.c, benchmarked
+	 * 485 MB/s, zero failures) never sets NO_SNOOP - only AL_SSM_INTERRUPT.
+	 * We set both unconditionally on every transaction. If completions
+	 * are written no-snoop, the CPU's cache line for that ring slot is
+	 * never invalidated by the write, so every read after the first
+	 * keeps hitting a stale cached copy - indistinguishable from
+	 * "hardware never wrote a new completion", which is exactly what
+	 * the kprobe trace showed (frozen ctrl_meta, 27000+ identical reads).
+	 * Dropping both flags to match the known-working reference. */
+	xaction.flags = 0;
 	if (flags & DMA_PREP_INTERRUPT)
 		xaction.flags |= AL_SSM_INTERRUPT;
 	xaction.srcs_blocks = &src_block;
@@ -531,7 +540,16 @@ al_dma_prep_dma_xor(struct dma_chan *c, dma_addr_t dest,
 
 	memset(&xaction, 0, sizeof(xaction));
 	xaction.op = AL_RAID_OP_P_CALC;
-	xaction.flags = AL_SSM_SRC_NO_SNOOP | AL_SSM_DEST_NO_SNOOP;
+	/* #23: al_ssm's working crypto driver (al_ssm_main.c, benchmarked
+	 * 485 MB/s, zero failures) never sets NO_SNOOP - only AL_SSM_INTERRUPT.
+	 * We set both unconditionally on every transaction. If completions
+	 * are written no-snoop, the CPU's cache line for that ring slot is
+	 * never invalidated by the write, so every read after the first
+	 * keeps hitting a stale cached copy - indistinguishable from
+	 * "hardware never wrote a new completion", which is exactly what
+	 * the kprobe trace showed (frozen ctrl_meta, 27000+ identical reads).
+	 * Dropping both flags to match the known-working reference. */
+	xaction.flags = 0;
 	if (flags & DMA_PREP_INTERRUPT)
 		xaction.flags |= AL_SSM_INTERRUPT;
 	xaction.srcs_blocks = src_blocks;
@@ -650,7 +668,16 @@ al_dma_prep_dma_pq(struct dma_chan *c, dma_addr_t *dst,
 	else
 		xaction.op = AL_RAID_OP_PQ_CALC;
 
-	xaction.flags = AL_SSM_SRC_NO_SNOOP | AL_SSM_DEST_NO_SNOOP;
+	/* #23: al_ssm's working crypto driver (al_ssm_main.c, benchmarked
+	 * 485 MB/s, zero failures) never sets NO_SNOOP - only AL_SSM_INTERRUPT.
+	 * We set both unconditionally on every transaction. If completions
+	 * are written no-snoop, the CPU's cache line for that ring slot is
+	 * never invalidated by the write, so every read after the first
+	 * keeps hitting a stale cached copy - indistinguishable from
+	 * "hardware never wrote a new completion", which is exactly what
+	 * the kprobe trace showed (frozen ctrl_meta, 27000+ identical reads).
+	 * Dropping both flags to match the known-working reference. */
+	xaction.flags = 0;
 	if (flags & DMA_PREP_INTERRUPT)
 		xaction.flags |= AL_SSM_INTERRUPT;
 	xaction.srcs_blocks = src_blocks;
@@ -789,6 +816,26 @@ static int al_dma_pci_probe(struct pci_dev *pdev,
 		dev_err(&pdev->dev, "al_udma_iofic_config failed: %d\n", rc);
 		goto err_unmap_app;
 	}
+
+	/* #23: s2m_aborts_disable=0x1E0 above masks bit 6
+	 * (AL_INT_2ND_GROUP_B_S2M_NO_DESC_TO) from ever aborting the S2M
+	 * engine - i.e. if the RX/S2M completion ring runs out of
+	 * descriptors, hardware silently waits forever with no error,
+	 * instead of aborting. al_ssm's independently-vendored HAL (working,
+	 * benchmarked 485 MB/s) explicitly re-enables abort on exactly this
+	 * condition right after init, with a comment that it's deliberately
+	 * masked in the generic path only because "in eth case its not
+	 * fatal, UDMA will back pressure the MAC to drop packets" - RAID has
+	 * no MAC to back-pressure. Re-enable it here so a real S2M
+	 * descriptor-starvation event surfaces as a visible UDMA_ABORT state
+	 * instead of the silent frozen completion ring the kprobe trace
+	 * showed. Untested - matches the symptom precisely but doesn't by
+	 * itself explain why the ring goes dry after op #1. */
+	al_iofic_abort_mask_clear(
+		al_udma_iofic_reg_base_get((struct unit_regs *)aldev->udma_regs,
+					    AL_UDMA_IOFIC_LEVEL_SECONDARY),
+		AL_INT_GROUP_B,
+		AL_INT_2ND_GROUP_B_S2M_NO_DESC_TO);
 
 	/* Initialize RAID GF tables */
 	al_raid_init(&aldev->hal_dma, aldev->app_regs);
