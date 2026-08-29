@@ -27,7 +27,9 @@ al_dma-y += al_hal_ssm.o \
 # HAL: UDMA (Unified DMA) infrastructure - shared with al_eth
 al_dma-y += al_hal_udma_main.o \
             al_hal_udma_config.o \
-            al_hal_udma_debug.o
+            al_hal_udma_debug.o \
+            al_hal_udma_iofic.o \
+            al_hal_iofic.o
 
 # Extra CFLAGS for the module
 ccflags-y += -I$(src)

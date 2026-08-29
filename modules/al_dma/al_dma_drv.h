@@ -56,8 +56,6 @@ struct al_dma_chan {
 	/* HAL queue resources */
 	union al_udma_desc		*tx_ring;
 	dma_addr_t			tx_ring_dma;
-	uint8_t				*tx_cring;
-	dma_addr_t			tx_cring_dma;
 
 	union al_udma_desc		*rx_ring;
 	dma_addr_t			rx_ring_dma;

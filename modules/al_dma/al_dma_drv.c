@@ -84,6 +84,7 @@ static inline enum dma_status dma_cookie_status(struct dma_chan *chan,
 #include <linux/async_tx.h>
 
 #include "al_dma_drv.h"
+#include "al_hal_udma_iofic.h"
 
 #define DRV_NAME		"al_dma"
 #define DRV_VERSION		"1.0.0-k6.12"
@@ -308,13 +309,6 @@ static int al_dma_alloc_chan_resources(struct dma_chan *c)
 	if (!ch->tx_ring)
 		goto err_tx_ring;
 
-	/* Allocate TX completion ring */
-	ch->tx_cring = dma_alloc_coherent(&dev->pdev->dev,
-		ring_size * sizeof(union al_udma_cdesc),
-		&ch->tx_cring_dma, GFP_KERNEL);
-	if (!ch->tx_cring)
-		goto err_tx_cring;
-
 	/* Allocate RX submission ring */
 	ch->rx_ring = dma_alloc_coherent(&dev->pdev->dev,
 		ring_size * sizeof(union al_udma_desc),
@@ -334,9 +328,11 @@ static int al_dma_alloc_chan_resources(struct dma_chan *c)
 	tx_params.size = ring_size;
 	tx_params.desc_base = ch->tx_ring;
 	tx_params.desc_phy_base = ch->tx_ring_dma;
-	tx_params.cdesc_base = ch->tx_cring;
-	tx_params.cdesc_phy_base = ch->tx_cring_dma;
-	tx_params.cdesc_size = sizeof(union al_udma_cdesc);
+	/* #23: no TX completion ring - vendor's al_dma_core.c never allocates
+	 * chan->tx_dma_cdesc_virt either (confirmed by reading it directly),
+	 * matching that here. */
+	tx_params.cdesc_base = NULL;
+	tx_params.cdesc_phy_base = 0;
 
 	memset(&rx_params, 0, sizeof(rx_params));
 	rx_params.size = ring_size;
@@ -377,10 +373,6 @@ err_rx_cring:
 		ch->rx_ring, ch->rx_ring_dma);
 err_rx_ring:
 	dma_free_coherent(&dev->pdev->dev,
-		ring_size * sizeof(union al_udma_cdesc),
-		ch->tx_cring, ch->tx_cring_dma);
-err_tx_cring:
-	dma_free_coherent(&dev->pdev->dev,
 		ring_size * sizeof(union al_udma_desc),
 		ch->tx_ring, ch->tx_ring_dma);
 err_tx_ring:
@@ -408,10 +400,6 @@ static void al_dma_free_chan_resources(struct dma_chan *c)
 		dma_free_coherent(&dev->pdev->dev,
 			ring_size * sizeof(union al_udma_desc),
 			ch->rx_ring, ch->rx_ring_dma);
-	if (ch->tx_cring)
-		dma_free_coherent(&dev->pdev->dev,
-			ring_size * sizeof(union al_udma_cdesc),
-			ch->tx_cring, ch->tx_cring_dma);
 	if (ch->tx_ring)
 		dma_free_coherent(&dev->pdev->dev,
 			ring_size * sizeof(union al_udma_desc),
@@ -786,6 +774,19 @@ static int al_dma_pci_probe(struct pci_dev *pdev,
 	rc = al_ssm_dma_state_set(&aldev->hal_dma, UDMA_NORMAL);
 	if (rc) {
 		dev_err(&pdev->dev, "Failed to set DMA state: %d\n", rc);
+		goto err_unmap_app;
+	}
+
+	/* #23: vendor's al_dma_core.c calls this unconditionally in probe
+	 * (al_dma_setup_interrupts()) before any channel does DMA work; our
+	 * port never called it at all. LEGACY mode since we poll for
+	 * completion rather than wiring up MSI-X - untested whether the
+	 * M2S/S2M state machine depends on this being configured regardless
+	 * of whether Linux ever services a real interrupt from it. */
+	rc = al_udma_iofic_config((struct unit_regs *)aldev->udma_regs,
+				   AL_IOFIC_MODE_LEGACY, 0x480, 0x480, 0x1E0, 0x1E0);
+	if (rc) {
+		dev_err(&pdev->dev, "al_udma_iofic_config failed: %d\n", rc);
 		goto err_unmap_app;
 	}
 
