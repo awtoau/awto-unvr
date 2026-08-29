@@ -245,8 +245,6 @@ def active_driver(alg_name):
     # Highest-priority registered driver for `alg_name`, per /proc/crypto -
     # what AF_ALG's generic-name bind will actually resolve to.
     best_driver, best_prio = None, None
-    name = driver = None
-    prio = None
     with open("/proc/crypto") as f:
         blocks = f.read().split("\\n\\n")
     for block in blocks:
