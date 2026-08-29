@@ -146,6 +146,9 @@ static dma_cookie_t al_dma_tx_submit(struct dma_async_tx_descriptor *txd)
 	cookie = dma_cookie_assign(txd);
 	spin_unlock_irqrestore(&ch->lock, flags);
 
+	pr_info("al_dma TRACE: chan %d submit cookie=%d head=%d tail=%d completed=%d\n",
+		ch->idx, cookie, ch->head, ch->tail, ch->completed);
+
 	return cookie;
 }
 
@@ -166,6 +169,8 @@ static void al_dma_issue_pending(struct dma_chan *c)
 		if (desc->tx_descs_count > 0) {
 			al_raid_dma_action(&dev->hal_dma, ch->idx,
 					   desc->tx_descs_count);
+			pr_info("al_dma TRACE: chan %d action tail=%d tx_descs=%d cookie=%d\n",
+				ch->idx, ch->tail, desc->tx_descs_count, desc->txd.cookie);
 			submitted++;
 		}
 		ch->tail = (ch->tail + 1) % ch->sw_ring_count;
@@ -216,6 +221,8 @@ static void al_dma_cleanup_tasklet(struct tasklet_struct *t)
 				break;
 			}
 			desc = &ch->sw_ring[ch->completed];
+			pr_info("al_dma TRACE: chan %d complete idx=%d cookie=%d status=0x%x tail=%d\n",
+				ch->idx, ch->completed, desc->txd.cookie, comp_status, ch->tail);
 			ch->completed = (ch->completed + 1) % ch->sw_ring_count;
 			spin_unlock_irqrestore(&ch->lock, flags);
 
@@ -239,8 +246,13 @@ static void al_dma_cleanup_tasklet(struct tasklet_struct *t)
 	 * Re-schedule ourselves while work remains outstanding - softirq
 	 * scheduling naturally paces the re-checks, no busy-spin. */
 	spin_lock_irqsave(&ch->lock, flags);
-	if (ch->completed != ch->tail)
+	if (ch->completed != ch->tail) {
+		pr_info("al_dma TRACE: chan %d tasklet re-arm completed=%d tail=%d\n",
+			ch->idx, ch->completed, ch->tail);
 		tasklet_schedule(&ch->cleanup_task);
+	} else {
+		pr_info("al_dma TRACE: chan %d tasklet drained, no re-arm\n", ch->idx);
+	}
 	spin_unlock_irqrestore(&ch->lock, flags);
 }
 
