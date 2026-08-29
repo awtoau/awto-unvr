@@ -1,0 +1,70 @@
+{
+  "timestamp": "2026-08-29T15:45:25+10:00",
+  "commit": "f649984-dirty",
+  "host": "192.168.25.133",
+  "checks": [
+    {
+      "name": "eth 1G host->box",
+      "ok": true,
+      "detail": "943 Mbits/sec"
+    },
+    {
+      "name": "eth 1G box->host",
+      "ok": true,
+      "detail": "38.5 Mbits/sec"
+    },
+    {
+      "name": "eth 10G host->box",
+      "ok": true,
+      "detail": "941 Mbits/sec"
+    },
+    {
+      "name": "eth 10G box->host",
+      "ok": true,
+      "detail": "24.2 Mbits/sec"
+    },
+    {
+      "name": "crypto xts(aes) [xts-aes-al-ssm]",
+      "ok": true,
+      "detail": "486.9 MB/s (32.0MB in 0.07s)"
+    },
+    {
+      "name": "sata sdb",
+      "ok": true,
+      "detail": "189.6 MB/sec"
+    },
+    {
+      "name": "sata sdc",
+      "ok": true,
+      "detail": "129.9 MB/sec"
+    },
+    {
+      "name": "sata sdd",
+      "ok": true,
+      "detail": "176.6 MB/sec"
+    },
+    {
+      "name": "sata sde",
+      "ok": true,
+      "detail": "474.2 MB/sec"
+    },
+    {
+      "name": "usb sda",
+      "ok": true,
+      "detail": "39.4 MB/sec"
+    }
+  ],
+  "metrics": {
+    "eth 1G host->box": 943.0,
+    "eth 1G box->host": 38.5,
+    "eth 10G host->box": 941.0,
+    "eth 10G box->host": 24.2,
+    "crypto xts(aes) [xts-aes-al-ssm]": 486.9044388415638,
+    "sata sdb": 189.6,
+    "sata sdc": 129.95,
+    "sata sdd": 176.64,
+    "sata sde": 474.21,
+    "usb sda": 39.36
+  },
+  "all_ok": true
+}

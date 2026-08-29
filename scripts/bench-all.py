@@ -32,11 +32,16 @@ modprobe doesn't reset the UDMA queue state machine), so back-to-back runs
 without a reboot between them silently corrupt later results - not safe to
 fold into a suite meant to be run repeatedly without a reboot each time.
 
-  ./scripts/bench-all.py                            # full run, ~2min
-  ./scripts/bench-all.py --out tmp/before.json
-  ./scripts/bench-all.py --compare tmp/before.json tmp/after.json
+  ./scripts/bench-all.py                            # full run, ~2min, snapshot
+                                                       # committed to bench-history/
+  ./scripts/bench-all.py --out tmp/before.json        # throwaway snapshot instead
+  ./scripts/bench-all.py --compare bench-history/bench-20260829-142901.json bench-history/bench-20260829-144540.json
   ./scripts/bench-all.py --skip-eth --skip-crypto --skip-disk --skip-usb
   ./scripts/bench-all.py --eth-duration 5 --crypto-mb 16   # faster, noisier
+
+Snapshots default to bench-history/ (git-tracked, NOT tmp/) so there's a
+committed record to diff against later - `git log --oneline bench-history/`
+is the run history. Commit each snapshot right after it's taken.
 """
 
 from __future__ import annotations
@@ -434,7 +439,11 @@ def main() -> int:
     ap.add_argument("--skip-usb", action="store_true")
     ap.add_argument("--eth-duration", type=int, default=8, help="seconds per direction per port")
     ap.add_argument("--crypto-mb", type=int, default=32, help="MB encrypted per crypto driver")
-    ap.add_argument("--out", type=Path, help="write JSON snapshot here (default: tmp/bench-<timestamp>.json)")
+    ap.add_argument(
+        "--out", type=Path,
+        help="write JSON snapshot here (default: bench-history/bench-<timestamp>.json, "
+        "git-tracked - commit it after the run)",
+    )
     ap.add_argument(
         "--compare", nargs=2, metavar=("BEFORE.json", "AFTER.json"),
         help="skip running, just diff two prior snapshots",
@@ -452,7 +461,9 @@ def main() -> int:
         for c in result["checks"]:
             f.write(f"[{'PASS' if c['ok'] else 'FAIL'}] {c['name']}: {c['detail']}\n")
 
-    out_path = args.out or Path(f"tmp/bench-{datetime.datetime.now().strftime('%Y%m%d-%H%M%S')}.json")
+    out_path = args.out or Path(
+        f"bench-history/bench-{datetime.datetime.now().strftime('%Y%m%d-%H%M%S')}.json"
+    )
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(json.dumps(result, indent=2))
     print(f"\nsnapshot written to {out_path}")
