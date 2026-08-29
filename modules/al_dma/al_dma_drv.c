@@ -199,6 +199,17 @@ static void al_dma_cleanup_tasklet(struct tasklet_struct *t)
 		if (ret > 0) {
 			struct al_dma_sw_desc *desc;
 
+			/* #23: the real vendor driver (al_dma_cleanup_fn in
+			 * shipped UNVR firmware, drivers/dma/al/al_dma_cleanup.c)
+			 * has this exact barrier here, between seeing a
+			 * completion and reading the descriptor content it
+			 * names - our port dropped it entirely when this file
+			 * was restructured. smp_read_barrier_depends() itself
+			 * no longer exists in this kernel (removed from
+			 * mainline, same as skb_tx_hash() earlier); smp_rmb()
+			 * is the modern equivalent. */
+			smp_rmb();
+
 			if (comp_status)
 				dev_warn(&dev->pdev->dev,
 					 "DMA chan %d completion error: 0x%x\n",
@@ -228,6 +239,12 @@ static void al_dma_cleanup_tasklet(struct tasklet_struct *t)
 			dma_run_dependencies(&desc->txd);
 		}
 	} while (ret > 0);
+
+	/* #23: the real vendor driver also has a full smp_mb() here, after
+	 * the completion-drain loop and before the tail-equivalent state
+	 * update below becomes visible to other CPUs - also dropped in our
+	 * port. */
+	smp_mb();
 
 	/* #23 (part 2): this tasklet is only ever scheduled from
 	 * issue_pending() - there is no hardware interrupt (confirmed: no
