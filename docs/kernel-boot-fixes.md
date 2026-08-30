@@ -97,16 +97,32 @@ software copy of the completion ring at the wrong stride.
 - Symptom: op #1 on a channel always completes; every op after that times out
   forever, 100% reproducible, regardless of op type or concurrency (both
   ruled out as factors before the real cause was found).
-- Fix: `cdesc_size = 2 * sizeof(union al_udma_cdesc)` (=8), with the
-  `rx_cring` DMA allocation doubled to match (otherwise hardware would write
-  past the allocated buffer). Tested clean: `dma0chan0-copy0`/`-xor0` both
-  0 failures across repeated runs; `-pq0` (Reed-Solomon Q output) still has a
-  separate, narrower data-correctness bug, not a timeout — tracked
-  separately.
-- Current state: this is a working fix but still the "double the struct
-  size" form, not the clean fix (a proper second word added to
-  `union al_udma_cdesc`, or a named constant matching the vendor's, instead
-  of a `2 *` multiplier at the one call site). Not yet committed as final.
+- Fix: `AL_DMA_RAID_RX_CDESC_SIZE = 8` (named constant, matching vendor
+  naming) used directly for `rx_params.cdesc_size` and the `rx_cring` DMA
+  allocation size at all 4 call sites. Final, clean form — committed.
+- **Confirmed on real hardware, fresh boot, 2026-08-30**: `dmatest`
+  (`channel=dma0chan0`, all 3 capability threads running concurrently, ~3.5
+  min): `copy0` 1,047,425 tests / 2 failures; `xor0` 547,163 tests / 4
+  failures — both failure types are `'test timed out'`, not data errors, and
+  neither triggered the driver's own 50ms stall-detection (no "never
+  completed after 50ms" log) — the hardware completion landed in time both
+  times, `dmatest`'s own outer timeout just occasionally lost the race under
+  3 CPU-bound polling threads contending for the same core. Not the #23 bug
+  recurring (that was 100% of ops after the first, unconditionally); this is
+  a benign ~1-in-500k scheduling artifact of the synthetic self-test's
+  concurrency, not observed to affect a single-threaded RAID workload.
+  `pq0` (Reed-Solomon Q) is unrelated and separately broken — see below.
+
+### PQ (Reed-Solomon) data-correctness bug — separate from the stride fix
+
+Not a completion-tracking bug: PQ completions land immediately and land
+correctly (`dstbuf` mismatches, not timeouts). The Q-parity math itself
+produces wrong output.
+
+- Confirmed 2026-08-30: `dma0chan0-pq0` — 1,414 tests, **754 failures (53%)**,
+  every failure `'data error'` (byte-for-byte `dstbuf` mismatch), zero
+  timeouts.
+- Not yet root-caused. Tracked separately: #169.
 
 ## Bug 5 — al_ssm crypto: `cdesc_size` also wrong, unconfirmed impact
 

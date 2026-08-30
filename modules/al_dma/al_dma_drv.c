@@ -89,6 +89,13 @@ static inline enum dma_status dma_cookie_status(struct dma_chan *chan,
 #define DRV_NAME		"al_dma"
 #define DRV_VERSION		"1.0.0-k6.12"
 
+/* Real completion descriptor stride on real silicon (vendor al_dma.h:
+ * AL_DMA_RAID_RX_CDESC_SIZE, 16 only under the emulator-only
+ * CONFIG_ALPINE_VP_WA) - NOT sizeof(union al_udma_cdesc)=4, which only
+ * models the descriptor's first word. See docs/kernel-boot-fixes.md Bug 4
+ * (#23) for the root-cause writeup. */
+#define AL_DMA_RAID_RX_CDESC_SIZE	8
+
 /* PCI IDs */
 #ifndef PCI_VENDOR_ID_AMAZON_ANNAPURNA_LABS
 #define PCI_VENDOR_ID_AMAZON_ANNAPURNA_LABS	0x1c36
@@ -187,28 +194,19 @@ static void al_dma_cleanup_tasklet(struct tasklet_struct *t)
 	int ret;
 	unsigned long flags;
 
-	/* #23: al_raid_dma_completion() pops one hardware completion per
-	 * call (one "packet", matching one sw_desc submitted with its own
-	 * tx_descs_count) - each one maps 1:1 to the oldest still-submitted
-	 * descriptor, ring order guarantees FIFO completion. Previously this
-	 * only logged errors and never told the dmaengine core anything
-	 * completed - async_tx callback chains (RAID xor/pq) could never
-	 * fire. */
+	/* Each al_raid_dma_completion() call pops one hardware completion,
+	 * mapping 1:1 to the oldest still-submitted descriptor (ring order
+	 * guarantees FIFO completion). */
 	do {
 		ret = al_raid_dma_completion(&dev->hal_dma, ch->idx,
 					     &comp_status);
 		if (ret > 0) {
 			struct al_dma_sw_desc *desc;
 
-			/* #23: the real vendor driver (al_dma_cleanup_fn in
-			 * shipped UNVR firmware, drivers/dma/al/al_dma_cleanup.c)
-			 * has this exact barrier here, between seeing a
-			 * completion and reading the descriptor content it
-			 * names - our port dropped it entirely when this file
-			 * was restructured. smp_read_barrier_depends() itself
-			 * no longer exists in this kernel (removed from
-			 * mainline, same as skb_tx_hash() earlier); smp_rmb()
-			 * is the modern equivalent. */
+			/* Matches vendor al_dma_cleanup_fn's barrier between
+			 * seeing a completion and reading the descriptor it
+			 * names; smp_read_barrier_depends() no longer exists
+			 * in this kernel, smp_rmb() is the modern equivalent. */
 			smp_rmb();
 
 			if (comp_status)
@@ -247,24 +245,12 @@ static void al_dma_cleanup_tasklet(struct tasklet_struct *t)
 	 * port. */
 	smp_mb();
 
-	/* #23 (part 2): this tasklet is only ever scheduled from
-	 * issue_pending() - there is no hardware interrupt (confirmed: no
-	 * request_irq anywhere in this driver) and no other re-arming path.
-	 * The drain loop above only sees whatever's ALREADY complete the
-	 * instant it runs; if outstanding descriptors are still in flight
-	 * when it exits, nothing will ever check again until some unrelated
-	 * future issue_pending() call happens to fire - by which point any
-	 * caller waiting on THIS completion has already timed out. Verified
-	 * live: without this, dmatest's first op completes (caught by the
-	 * one guaranteed tasklet run) and every op after it times out.
-	 * Re-schedule ourselves while work remains outstanding.
-	 *
-	 * BOUNDED: verified live that hardware can genuinely never complete
-	 * a descriptor (a separate, deeper bug - see #23) - an unconditional
-	 * self-reschedule pegged a CPU core in an infinite softirq loop.
-	 * 50ms is ~50x the ~1ms a real completion took when this worked;
-	 * give up and log loudly rather than spin forever on a dead
-	 * descriptor. */
+	/* No hardware interrupt (no request_irq anywhere in this driver) -
+	 * this tasklet only ever runs from issue_pending() or its own
+	 * reschedule below, so it must re-arm itself while work remains
+	 * outstanding or nothing will ever poll again. Bounded at 50ms
+	 * (~50x a real completion's ~1ms) so a genuinely dead descriptor
+	 * logs and gives up instead of pegging a core forever. */
 	spin_lock_irqsave(&ch->lock, flags);
 	if (ch->completed != ch->tail) {
 		if (ch->stall_start == 0)
@@ -318,7 +304,7 @@ static int al_dma_alloc_chan_resources(struct dma_chan *c)
 
 	/* Allocate RX completion ring */
 	ch->rx_cring = dma_alloc_coherent(&dev->pdev->dev,
-		ring_size * sizeof(union al_udma_cdesc),
+		ring_size * AL_DMA_RAID_RX_CDESC_SIZE,
 		&ch->rx_cring_dma, GFP_KERNEL);
 	if (!ch->rx_cring)
 		goto err_rx_cring;
@@ -340,7 +326,7 @@ static int al_dma_alloc_chan_resources(struct dma_chan *c)
 	rx_params.desc_phy_base = ch->rx_ring_dma;
 	rx_params.cdesc_base = ch->rx_cring;
 	rx_params.cdesc_phy_base = ch->rx_cring_dma;
-	rx_params.cdesc_size = sizeof(union al_udma_cdesc);
+	rx_params.cdesc_size = AL_DMA_RAID_RX_CDESC_SIZE;
 
 	rc = al_ssm_dma_q_init(&dev->hal_dma, ch->idx,
 				&tx_params, &rx_params, AL_RAID_Q);
@@ -348,6 +334,25 @@ static int al_dma_alloc_chan_resources(struct dma_chan *c)
 		dev_err(&dev->pdev->dev,
 			"Failed to init DMA queue %d: %d\n", ch->idx, rc);
 		goto err_q_init;
+	}
+
+	/* This driver has no interrupt, only polling - a nonzero coalescing
+	 * timeout/threshold could buffer a completion past when polling
+	 * checks for it. Disable outright rather than rely on hardware's
+	 * power-on default. */
+	{
+		struct al_udma *rx_udma_for_coal;
+		struct al_udma_q *rx_q_for_coal;
+
+		if (al_m2m_udma_handle_get(&dev->hal_dma.m2m_udma, UDMA_RX, &rx_udma_for_coal) == 0 &&
+		    al_udma_q_handle_get(rx_udma_for_coal, ch->idx, &rx_q_for_coal) == 0) {
+			int coal_rc = al_udma_s2m_q_compl_coal_config(rx_q_for_coal, AL_FALSE, 0);
+
+			if (coal_rc)
+				dev_warn(&dev->pdev->dev,
+					 "chan %d: failed to disable S2M completion coalescing, rc=%d\n",
+					 ch->idx, coal_rc);
+		}
 	}
 
 	ch->head = 0;
@@ -365,7 +370,7 @@ static int al_dma_alloc_chan_resources(struct dma_chan *c)
 
 err_q_init:
 	dma_free_coherent(&dev->pdev->dev,
-		ring_size * sizeof(union al_udma_cdesc),
+		ring_size * AL_DMA_RAID_RX_CDESC_SIZE,
 		ch->rx_cring, ch->rx_cring_dma);
 err_rx_cring:
 	dma_free_coherent(&dev->pdev->dev,
@@ -394,7 +399,7 @@ static void al_dma_free_chan_resources(struct dma_chan *c)
 
 	if (ch->rx_cring)
 		dma_free_coherent(&dev->pdev->dev,
-			ring_size * sizeof(union al_udma_cdesc),
+			ring_size * AL_DMA_RAID_RX_CDESC_SIZE,
 			ch->rx_cring, ch->rx_cring_dma);
 	if (ch->rx_ring)
 		dma_free_coherent(&dev->pdev->dev,
@@ -447,15 +452,10 @@ al_dma_prep_dma_memcpy(struct dma_chan *c, dma_addr_t dest,
 
 	memset(&xaction, 0, sizeof(xaction));
 	xaction.op = AL_RAID_OP_MEM_CPY;
-	/* #23: al_ssm's working crypto driver (al_ssm_main.c, benchmarked
-	 * 485 MB/s, zero failures) never sets NO_SNOOP - only AL_SSM_INTERRUPT.
-	 * We set both unconditionally on every transaction. If completions
-	 * are written no-snoop, the CPU's cache line for that ring slot is
-	 * never invalidated by the write, so every read after the first
-	 * keeps hitting a stale cached copy - indistinguishable from
-	 * "hardware never wrote a new completion", which is exactly what
-	 * the kprobe trace showed (frozen ctrl_meta, 27000+ identical reads).
-	 * Dropping both flags to match the known-working reference. */
+	/* No NO_SNOOP (matches al_ssm's known-working driver) - no-snoop
+	 * completions never invalidate the CPU's cached copy of that ring
+	 * slot, reading as a frozen/stuck completion forever. See
+	 * docs/kernel-boot-fixes.md Bug 4 (#23). */
 	xaction.flags = 0;
 	if (flags & DMA_PREP_INTERRUPT)
 		xaction.flags |= AL_SSM_INTERRUPT;
@@ -540,15 +540,10 @@ al_dma_prep_dma_xor(struct dma_chan *c, dma_addr_t dest,
 
 	memset(&xaction, 0, sizeof(xaction));
 	xaction.op = AL_RAID_OP_P_CALC;
-	/* #23: al_ssm's working crypto driver (al_ssm_main.c, benchmarked
-	 * 485 MB/s, zero failures) never sets NO_SNOOP - only AL_SSM_INTERRUPT.
-	 * We set both unconditionally on every transaction. If completions
-	 * are written no-snoop, the CPU's cache line for that ring slot is
-	 * never invalidated by the write, so every read after the first
-	 * keeps hitting a stale cached copy - indistinguishable from
-	 * "hardware never wrote a new completion", which is exactly what
-	 * the kprobe trace showed (frozen ctrl_meta, 27000+ identical reads).
-	 * Dropping both flags to match the known-working reference. */
+	/* No NO_SNOOP (matches al_ssm's known-working driver) - no-snoop
+	 * completions never invalidate the CPU's cached copy of that ring
+	 * slot, reading as a frozen/stuck completion forever. See
+	 * docs/kernel-boot-fixes.md Bug 4 (#23). */
 	xaction.flags = 0;
 	if (flags & DMA_PREP_INTERRUPT)
 		xaction.flags |= AL_SSM_INTERRUPT;
@@ -668,15 +663,10 @@ al_dma_prep_dma_pq(struct dma_chan *c, dma_addr_t *dst,
 	else
 		xaction.op = AL_RAID_OP_PQ_CALC;
 
-	/* #23: al_ssm's working crypto driver (al_ssm_main.c, benchmarked
-	 * 485 MB/s, zero failures) never sets NO_SNOOP - only AL_SSM_INTERRUPT.
-	 * We set both unconditionally on every transaction. If completions
-	 * are written no-snoop, the CPU's cache line for that ring slot is
-	 * never invalidated by the write, so every read after the first
-	 * keeps hitting a stale cached copy - indistinguishable from
-	 * "hardware never wrote a new completion", which is exactly what
-	 * the kprobe trace showed (frozen ctrl_meta, 27000+ identical reads).
-	 * Dropping both flags to match the known-working reference. */
+	/* No NO_SNOOP (matches al_ssm's known-working driver) - no-snoop
+	 * completions never invalidate the CPU's cached copy of that ring
+	 * slot, reading as a frozen/stuck completion forever. See
+	 * docs/kernel-boot-fixes.md Bug 4 (#23). */
 	xaction.flags = 0;
 	if (flags & DMA_PREP_INTERRUPT)
 		xaction.flags |= AL_SSM_INTERRUPT;
@@ -817,20 +807,10 @@ static int al_dma_pci_probe(struct pci_dev *pdev,
 		goto err_unmap_app;
 	}
 
-	/* #23: s2m_aborts_disable=0x1E0 above masks bit 6
-	 * (AL_INT_2ND_GROUP_B_S2M_NO_DESC_TO) from ever aborting the S2M
-	 * engine - i.e. if the RX/S2M completion ring runs out of
-	 * descriptors, hardware silently waits forever with no error,
-	 * instead of aborting. al_ssm's independently-vendored HAL (working,
-	 * benchmarked 485 MB/s) explicitly re-enables abort on exactly this
-	 * condition right after init, with a comment that it's deliberately
-	 * masked in the generic path only because "in eth case its not
-	 * fatal, UDMA will back pressure the MAC to drop packets" - RAID has
-	 * no MAC to back-pressure. Re-enable it here so a real S2M
-	 * descriptor-starvation event surfaces as a visible UDMA_ABORT state
-	 * instead of the silent frozen completion ring the kprobe trace
-	 * showed. Untested - matches the symptom precisely but doesn't by
-	 * itself explain why the ring goes dry after op #1. */
+	/* s2m_aborts_disable=0x1E0 above masks S2M_NO_DESC_TO, so a starved
+	 * RX completion ring would hang silently instead of aborting.
+	 * al_ssm's HAL re-enables it post-init since RAID (unlike eth) has
+	 * no MAC to back-pressure instead - matches here, untested standalone. */
 	al_iofic_abort_mask_clear(
 		al_udma_iofic_reg_base_get((struct unit_regs *)aldev->udma_regs,
 					    AL_UDMA_IOFIC_LEVEL_SECONDARY),
