@@ -427,9 +427,17 @@ def main() -> int:
         # this rootfs (systemd/dnf need it) so `python3 -m tarfile` is the one
         # extractor guaranteed present. Only rm+swap the real target after the
         # scratch extraction is confirmed to contain what we expect.
+        # --filter fully_trusted: PEP 706's default `data` filter refuses any
+        # absolute-target symlink and aborts the WHOLE extraction on the first
+        # one - found live tonight via modroot's own standard
+        # /lib/modules/<kver>/build -> <host kbuild path> symlink. This is a
+        # fully-trusted, self-generated archive (both ends are this script),
+        # not third-party content, so the safety filter has nothing to guard
+        # against here.
         run_devpy(
             "rm -rf /root/rbd-modules-new && mkdir -p /root/rbd-modules-new && "
-            "python3 -m tarfile -e /root/rbd-modules.tar.gz /root/rbd-modules-new"
+            "python3 -m tarfile -e /root/rbd-modules.tar.gz /root/rbd-modules-new "
+            "--filter fully_trusted"
         )
         # `ls` output is alphabetically sorted, so matching on ANY of the
         # names via OR (dev.py's --expect returns on the FIRST alternative
