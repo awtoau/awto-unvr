@@ -1846,8 +1846,8 @@ static	struct sk_buff *al_eth_rx_skb(struct al_eth_adapter *adapter,
 		return skb;
 	}
 
-	dma_unmap_single(rx_ring->dev, dma_unmap_addr(rx_info, dma),
-			 rx_info->data_size, DMA_FROM_DEVICE);
+	/* No unmap here - page_pool keeps the page DMA-mapped and recycles
+	 * it once the skb (marked below) is dropped; see #168. */
 #if 0
 	skb = build_skb(rx_info->data, rx_ring->frag_size);
 	if (unlikely(!skb))
@@ -1860,6 +1860,8 @@ static	struct sk_buff *al_eth_rx_skb(struct al_eth_adapter *adapter,
 		u64_stats_update_end(&rx_ring->syncp);
 		return NULL;
 	}
+
+	skb_mark_for_recycle(skb);
 
 	skb_fill_page_desc(skb, skb_shinfo(skb)->nr_frags,
 				rx_info->page,
@@ -1881,15 +1883,13 @@ static	struct sk_buff *al_eth_rx_skb(struct al_eth_adapter *adapter,
 				skb->len, skb->data_len);
 
 	rx_info->data = NULL;
+	rx_info->page = NULL;
 	*next_to_clean = AL_ETH_RX_RING_IDX_NEXT(rx_ring, *next_to_clean);
 
 	while (--descs) {
 		rx_info = &rx_ring->rx_buffer_info[*next_to_clean];
 		len = hal_pkt->bufs[++buf].len;
 		rx_ring->bytes += len;
-
-		dma_unmap_single(rx_ring->dev, dma_unmap_addr(rx_info, dma),
-				 rx_info->data_size, DMA_FROM_DEVICE);
 
 		skb_add_rx_frag(skb, skb_shinfo(skb)->nr_frags,
 				rx_info->page,
@@ -1900,6 +1900,7 @@ static	struct sk_buff *al_eth_rx_skb(struct al_eth_adapter *adapter,
 			skb->len, skb->data_len);
 
 		rx_info->data = NULL;
+		rx_info->page = NULL;
 
 		*next_to_clean = AL_ETH_RX_RING_IDX_NEXT(rx_ring, *next_to_clean);
 	}
@@ -2775,6 +2776,30 @@ al_eth_setup_rx_resources(struct al_eth_adapter *adapter, unsigned int qid)
 	rx_ring->next_to_clean = 0;
 	rx_ring->next_to_use = 0;
 
+	{
+		struct page_pool_params pp_params = { 0 };
+
+		pp_params.order = 0;
+		pp_params.pool_size = rx_ring->sw_count;
+		pp_params.nid = NUMA_NO_NODE;
+		pp_params.dev = dev;
+		pp_params.napi = rx_ring->napi;
+		pp_params.dma_dir = DMA_FROM_DEVICE;
+		pp_params.max_len = PAGE_SIZE - AL_ETH_RX_OFFSET;
+		pp_params.offset = AL_ETH_RX_OFFSET;
+		pp_params.flags = PP_FLAG_DMA_MAP | PP_FLAG_DMA_SYNC_DEV;
+
+		rx_ring->page_pool = page_pool_create(&pp_params);
+		if (IS_ERR(rx_ring->page_pool)) {
+			int rc = PTR_ERR(rx_ring->page_pool);
+
+			dev_err(dev, "failed to create page pool for rx queue %d: %d\n",
+				qid, rc);
+			rx_ring->page_pool = NULL;
+			return rc;
+		}
+	}
+
 	return 0;
 }
 
@@ -2793,6 +2818,11 @@ al_eth_free_rx_resources(struct al_eth_adapter *adapter, unsigned int qid)
 
 	kfree(rx_ring->rx_buffer_info);
 	rx_ring->rx_buffer_info = NULL;
+
+	if (rx_ring->page_pool) {
+		page_pool_destroy(rx_ring->page_pool);
+		rx_ring->page_pool = NULL;
+	}
 
 	/* if not set, then don't free */
 	if (!q_params->desc_base)
@@ -2863,8 +2893,9 @@ al_eth_alloc_rx_frag(struct al_eth_adapter *adapter,
 		     struct al_eth_rx_buffer *rx_info)
 {
 	struct al_buf *al_buf;
+	struct page *page;
 	dma_addr_t dma;
-	u8 *data;
+	unsigned int offset;
 
 	/* if previous allocated frag is not used */
 	if (rx_info->data != NULL)
@@ -2878,32 +2909,21 @@ al_eth_alloc_rx_frag(struct al_eth_adapter *adapter,
 				   rx_info->data_size,
 				   AL_ETH_DEFAULT_MIN_RX_BUFF_ALLOC_SIZE);
 
-	rx_info->frag_size = SKB_DATA_ALIGN(rx_info->data_size + AL_ETH_RX_OFFSET) +
-			     SKB_DATA_ALIGN(sizeof(struct skb_shared_info));
-	data = netdev_alloc_frag(rx_info->frag_size);
-
-	if (!data)
+	/* page_pool keeps pages DMA-mapped and recycles them across
+	 * refills instead of a fresh netdev_alloc_frag()+dma_map_single()
+	 * per buffer - see docs/kernel-boot-fixes.md, #168. */
+	page = page_pool_dev_alloc_frag(rx_ring->page_pool, &offset,
+			SKB_DATA_ALIGN(rx_info->data_size + AL_ETH_RX_OFFSET));
+	if (!page)
 		return -ENOMEM;
 
-	dma = dma_map_single(rx_ring->dev, data + AL_ETH_RX_OFFSET,
-			rx_info->data_size, DMA_FROM_DEVICE);
-	if (unlikely(dma_mapping_error(rx_ring->dev, dma))) {
-		u64_stats_update_begin(&rx_ring->syncp);
-		rx_ring->rx_stats.dma_mapping_err++;
-		u64_stats_update_end(&rx_ring->syncp);
+	dma = page_pool_get_dma_addr(page) + offset + AL_ETH_RX_OFFSET;
+	netdev_dbg(rx_ring->netdev, "alloc frag page %p offset %u, rx_info %p len %x\n",
+		page, offset, rx_info, rx_info->data_size);
 
-		put_page(virt_to_head_page(data));
-		return -EIO;
-	}
-	netdev_dbg(rx_ring->netdev, "alloc frag %p, rx_info %p len %x skb size %x\n",
-		data, rx_info, rx_info->data_size, rx_info->frag_size);
-
-	rx_info->data = data;
-
-	BUG_ON(!virt_addr_valid(rx_info->data));
-	rx_info->page = virt_to_head_page(rx_info->data);
-	rx_info->page_offset = (uintptr_t)rx_info->data -
-			       (uintptr_t)page_address(rx_info->page);
+	rx_info->data = page_address(page) + offset;
+	rx_info->page = page;
+	rx_info->page_offset = offset;
 	al_buf = &rx_info->al_buf;
 	dma_unmap_addr_set(al_buf, addr, dma);
 	dma_unmap_addr_set(rx_info, dma, dma);
@@ -2913,19 +2933,15 @@ al_eth_alloc_rx_frag(struct al_eth_adapter *adapter,
 
 static void
 al_eth_free_rx_frag(struct al_eth_adapter *adapter,
+		    struct al_eth_ring *rx_ring,
 		    struct al_eth_rx_buffer *rx_info)
 {
-	u8 *data = rx_info->data;
-	struct al_buf *al_buf = &rx_info->al_buf;
-
-	if (!data)
+	if (!rx_info->data)
 		return;
 
-	dma_unmap_single(&adapter->pdev->dev, dma_unmap_addr(al_buf, addr),
-		       rx_info->data_size, DMA_FROM_DEVICE);
-
-	put_page(virt_to_head_page(data));
+	page_pool_put_full_page(rx_ring->page_pool, rx_info->page, false);
 	rx_info->data = NULL;
+	rx_info->page = NULL;
 }
 
 static int
@@ -2982,7 +2998,7 @@ al_eth_free_rx_bufs(struct al_eth_adapter *adapter, unsigned int qid)
 		struct al_eth_rx_buffer *rx_info = &rx_ring->rx_buffer_info[i];
 
 		if (rx_info->data)
-			al_eth_free_rx_frag(adapter, rx_info);
+			al_eth_free_rx_frag(adapter, rx_ring, rx_info);
 	}
 }
 
@@ -4325,6 +4341,14 @@ static int al_eth_set_rxfh(struct net_device *netdev,
 	if (!rxfh->indir)
 		return 0;
 
+	/* Reject entries pointing past the currently-active RX queue count -
+	 * otherwise RSS would steer live traffic into a ring al_eth_down()
+	 * has already idled and freed (same class of bug as finding #2,
+	 * al_eth_set_channels() below). */
+	for (i = 0; i < AL_ETH_RX_RSS_TABLE_SIZE; i++)
+		if (rxfh->indir[i] >= adapter->num_rx_queues)
+			return -EINVAL;
+
 	for (i = 0; i < AL_ETH_RX_RSS_TABLE_SIZE; i++) {
 		adapter->rss_ind_tbl[i] = rxfh->indir[i];
 		al_eth_thash_table_set(&adapter->hal_adapter, i, adapter->udma_num, rxfh->indir[i]);
@@ -4346,6 +4370,66 @@ static void al_eth_get_channels(struct net_device *netdev,
 	channels->tx_count = adapter->num_tx_queues;
 	channels->other_count = 0;
 	channels->combined_count = 0;
+}
+
+/* tx_ring/rx_ring/al_napi are all statically sized to AL_ETH_NUM_QUEUES
+ * (al_eth.h) and every setup/teardown loop already iterates
+ * adapter->num_{tx,rx}_queues rather than the compile-time max, so changing
+ * the count is just "use fewer of the pre-allocated slots" - no dynamic
+ * (re)allocation needed.
+ *
+ * Goes through the real al_eth_close()/al_eth_open() (ndo_stop/ndo_open),
+ * not the lower-level al_eth_down()/al_eth_up() al_eth_reset_task() uses -
+ * a legacy-PHY port (CONFIG_PHYLIB, adapter->phydev, e.g. the 1G RGMII
+ * port) only gets its MDIO bus/PHY torn down and rebuilt inside
+ * close()/open(), not down()/up(). Confirmed live: down()+up() alone left
+ * enp0s1 at NO-CARRIER indefinitely after a queue-count change; the
+ * phylink-based 10G port tolerated it, the MDIO-PHY port did not.
+ *
+ * No rtnl_lock() here since ethtool ops already run under RTNL. */
+static int al_eth_set_channels(struct net_device *netdev,
+			       struct ethtool_channels *channels)
+{
+	struct al_eth_adapter *adapter = netdev_priv(netdev);
+	unsigned int tx = channels->tx_count;
+	unsigned int rx = channels->rx_count;
+	bool was_running = netif_running(netdev);
+	int rc;
+
+	if (channels->other_count || channels->combined_count)
+		return -EINVAL;
+	if (!tx || !rx || tx > AL_ETH_NUM_QUEUES || rx > AL_ETH_NUM_QUEUES)
+		return -EINVAL;
+
+	if (was_running)
+		al_eth_close(netdev);
+
+	adapter->num_tx_queues = tx;
+	adapter->num_rx_queues = rx;
+
+	/* rss_ind_tbl[] is populated once at probe against AL_ETH_NUM_QUEUES
+	 * (al_eth_main.c ~5469) and al_eth_up() -> al_eth_restore_ethtool_
+	 * params() unconditionally reprograms all 256 hardware entries from
+	 * it - without this, shrinking rx here would leave RSS steering live
+	 * traffic into a ring that's about to be idled/freed below. */
+	{
+		u32 i;
+
+		for (i = 0; i < AL_ETH_RX_RSS_TABLE_SIZE; i++)
+			adapter->rss_ind_tbl[i] = ethtool_rxfh_indir_default(i, rx);
+	}
+
+	rc = netif_set_real_num_tx_queues(netdev, tx);
+	if (rc)
+		return rc;
+	rc = netif_set_real_num_rx_queues(netdev, rx);
+	if (rc)
+		return rc;
+
+	if (was_running)
+		return al_eth_open(netdev);
+
+	return 0;
 }
 
 #if defined(CONFIG_PHYLIB) || defined(CONFIG_ARCH_ALPINE)
@@ -4671,6 +4755,7 @@ static const struct ethtool_ops al_eth_ethtool_ops = {
 	.get_rxfh		= al_eth_get_rxfh,
 	.set_rxfh		= al_eth_set_rxfh,
 	.get_channels		= al_eth_get_channels,
+	.set_channels		= al_eth_set_channels,
 	.get_eee		= al_eth_get_eee,
 	.set_eee		= al_eth_set_eee,
 };
@@ -4946,13 +5031,13 @@ static u16 al_eth_select_queue(struct net_device *dev, struct sk_buff *skb,
 		pr_debug("sel_rec_qid=%d\n", qid);
 	}
 	else {
-#ifdef CONFIG_ARCH_ALPINE
-		/** Is an integrated networking driver */
-		qid = smp_processor_id();
-#else
-		/** Is a host/NIC mode driver */
-		qid = skb_tx_hash(dev, skb);
-#endif /* CONFIG_ARCH_ALPINE */
+		/* Was smp_processor_id() under CONFIG_ARCH_ALPINE - re-picks
+		 * per packet, not per-flow, scrambling wire order under core
+		 * migration. netdev_pick_tx() (exported, net/core/dev.c) is
+		 * the modern stable-per-flow/XPS-aware replacement; the old
+		 * skb_tx_hash() call is core-internal in this kernel. See
+		 * #121, docs/kernel-boot-fixes.md. */
+		qid = netdev_pick_tx(dev, skb, sb_dev);
 		pr_debug("sel_smp_qid=%d\n", qid);
 	}
 	return qid;

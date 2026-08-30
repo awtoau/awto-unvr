@@ -15,6 +15,7 @@
 #include <linux/etherdevice.h>
 #include <linux/skbuff.h>
 #include <linux/inetdevice.h>
+#include <net/page_pool/helpers.h>
 
 #include "kcompat.h"
 
@@ -159,7 +160,6 @@ struct al_eth_rx_buffer {
 	unsigned int page_offset;
 	u8 *data;
 	unsigned int data_size;
-	unsigned int frag_size; /* used in rx skb allocation */
 	DEFINE_DMA_UNMAP_ADDR(dma);
 	struct al_buf	al_buf;
 };
@@ -182,6 +182,7 @@ struct al_eth_stats_rx {
 struct al_eth_ring {
 	struct device *dev;
 	struct napi_struct	*napi;
+	struct page_pool *page_pool; /* RX only - NULL on tx_ring */
 	struct al_eth_pkt hal_pkt; /* used to get rx packets from hal */
 	struct al_udma_q *dma_q; /* udma queue handler */
 	u16 next_to_use;

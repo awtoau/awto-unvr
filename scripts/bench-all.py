@@ -104,14 +104,26 @@ def ssh_cmd(host: str, password: str) -> list[str]:
 
 
 def run_remote(host: str, password: str, remote_script: str, timeout: int = 60) -> tuple[int, str]:
-    result = subprocess.run(
-        ssh_cmd(host, password) + [remote_script],
-        capture_output=True,
-        text=True,
-        check=False,
-        timeout=timeout,
-    )
-    return result.returncode, result.stdout + result.stderr
+    """Never raises TimeoutExpired - an uncaught one here crashed this whole
+    suite live (crypto's own SIGALRM only bounds a milder interruptible
+    hang; a genuine kernel D-state wedge on the box, as actually observed,
+    leaves the remote process stuck regardless - killing this LOCAL
+    subprocess on timeout does not and cannot force-kill it, only a reboot
+    of the box does. This just keeps that failure local and reported
+    instead of taking down every other check in the suite with it."""
+    try:
+        result = subprocess.run(
+            ssh_cmd(host, password) + [remote_script],
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=timeout,
+        )
+        return result.returncode, result.stdout + result.stderr
+    except subprocess.TimeoutExpired:
+        return 124, (f"ssh call timed out after {timeout}s - if this was the crypto "
+                      f"benchmark, the remote process may still be stuck (kernel D-state) "
+                      f"and need a reboot to clear, not just a retry")
 
 
 class Report:
@@ -244,7 +256,7 @@ def bench_ethernet(host: str, password: str, duration: int, report: Report) -> N
 # ======== Crypto (AF_ALG) ========
 
 _CRYPTO_REMOTE_SCRIPT = """
-import socket, os, time, json, sys, re
+import socket, os, time, json, sys, re, signal
 
 def active_driver(alg_name):
     # Highest-priority registered driver for `alg_name`, per /proc/crypto -
@@ -265,6 +277,14 @@ def active_driver(alg_name):
             best_prio, best_driver = p, m_driver.group(1)
     return best_driver
 
+class _BenchTimeout(Exception):
+    pass
+
+
+def _bench_alarm(signum, frame):
+    raise _BenchTimeout("bench() exceeded its overall time budget")
+
+
 def bench(alg_name, total_mb, chunk):
     key = os.urandom(64)  # AES-256-XTS: two 32-byte keys concatenated
     iv = os.urandom(16)
@@ -281,6 +301,23 @@ def bench(alg_name, total_mb, chunk):
     buf = os.urandom(chunk)
     n = max(1, (total_mb << 20) // chunk)
     t0 = time.monotonic()
+    # SIGALRM, not socket.settimeout() on `s` (see comment above - that
+    # breaks accept() itself). A healthy run does ~128 accept()s in 33ms
+    # per the comment above; even a slow real transfer at 32MB/50MBps
+    # software-AES worst case is under a second. 15s is generous headroom
+    # over that, bounding the documented "accept() gets pathologically
+    # slow" case.
+    #
+    # Does NOT and cannot rescue a genuine kernel D-state (uninterruptible)
+    # hang - a queued signal is not delivered until the blocking syscall
+    # itself returns, which is the definition of D-state. That did happen
+    # live (20+ min stuck, only cleared by a reboot) - the real backstop
+    # for that is the caller's own ssh-level subprocess timeout (now also
+    # fails gracefully instead of crashing the whole suite - see
+    # run_remote()), not this alarm. If it recurs, expect this alarm to
+    # NOT fire and the outer timeout to be what actually ends it.
+    old_handler = signal.signal(signal.SIGALRM, _bench_alarm)
+    signal.alarm(15)
     try:
         for _ in range(n):
             op, _ = s.accept()
@@ -301,9 +338,12 @@ def bench(alg_name, total_mb, chunk):
                 raise OSError(f"sendmsg only queued {sent} of {chunk} bytes - chunk too large for this kernel's AF_ALG limit")
             op.recv(chunk)
             op.close()
-    except (OSError, socket.timeout) as e:
+    except (OSError, socket.timeout, _BenchTimeout) as e:
         s.close()
         return {"available": True, "error": f"op failed: {e}"}
+    finally:
+        signal.alarm(0)
+        signal.signal(signal.SIGALRM, old_handler)
     dt = time.monotonic() - t0
     s.close()
     mb_done = (n * chunk) / (1 << 20)

@@ -1,11 +1,14 @@
 /*
- * kcompat.h - Kernel 6.12 LTS compatibility header for al_eth driver
+ * kcompat.h - compatibility header for al_eth driver
  *
- * This is a minimal kcompat header targeting ONLY Linux 6.12 LTS.
- * All backwards compatibility code for older kernels has been removed.
+ * Minimal kcompat header for the range of kernels this project currently
+ * builds al_eth against (6.12 through 7.1 - see scripts/build-linux-*.py).
+ * No version branching below: every symbol here has been stable since long
+ * before 6.12, so there's nothing to gate on LINUX_VERSION_CODE. All
+ * backwards compatibility code for pre-6.12 kernels has been removed.
  *
  * Copyright (c) 2016 Amazon.com, Inc.
- * Copyright (c) 2024 - Ported to kernel 6.12
+ * Copyright (c) 2024 - Ported to kernel 6.12+
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
