@@ -871,6 +871,20 @@ static void al_ssm_pci_remove(struct pci_dev *pdev)
 		al_ssm_complete_one(rctx, -ESHUTDOWN);
 	}
 
+	/* UDMA_DISABLE below only pauses new-descriptor fetch, it doesn't
+	 * drain/reset the queue - without this a live reload hung forever on
+	 * stale hardware state (#167). Matches vendor al_eth's own
+	 * al_eth_hw_stop(). See docs/kernel-boot-fixes.md Bug 6. */
+	{
+		struct al_udma_q *tx_q = al_ssm_dma_tx_queue_handle_get(&dev->ssm_dma, 0);
+		struct al_udma_q *rx_q = al_ssm_dma_rx_queue_handle_get(&dev->ssm_dma, 0);
+
+		if (tx_q)
+			al_udma_q_reset(tx_q);
+		if (rx_q)
+			al_udma_q_reset(rx_q);
+	}
+
 	al_ssm_free_channel(dev);
 	al_ssm_dma_state_set(&dev->ssm_dma, UDMA_DISABLE);
 	if (dev->bar4) pci_iounmap(pdev, dev->bar4);

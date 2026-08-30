@@ -150,18 +150,31 @@ cleanly and quickly on every genuinely fresh boot, confirmed live
 (`/proc/crypto`: `selftest: passed` for both `cbc-aes-al-ssm` and
 `xts-aes-al-ssm`).
 
-- Symptom: a live `rmmod al_ssm; modprobe al_ssm` (no reboot) causes the
+- Symptom: a live `rmmod al_ssm; modprobe al_ssm` (no reboot) caused the
   self-test to hang forever instead of passing or failing - both
-  `cryptomgr_test` kernel threads get stuck in `wait_for_completion()`
+  `cryptomgr_test` kernel threads stuck in `wait_for_completion()`
   (`test_skcipher_vec_cfg`), never receiving a hardware completion callback
-  for the op they submitted. Reproduced 2/2 times; only a reboot clears it.
-- Likely same root cause as [[al-dma-udma-state-survives-reload]] (memory)/#23's
-  finding for al_dma: a module reload does not reset the UDMA hardware queue
-  state, only software structures get torn down on free. Not yet directly
-  confirmed for al_ssm's own teardown path.
-- Practical impact: low for normal boot-once operation; real for anyone
-  iterating on al_ssm driver changes without a reboot between tests - the
-  same trap #23's investigation fell into with al_dma before this was known.
+  for the op they submitted. Reproduced 2/2 times; only a reboot cleared it.
+- Root cause confirmed: `al_ssm_pci_remove()` called
+  `al_ssm_dma_state_set(UDMA_DISABLE)`, which only pauses the engine's
+  scheduler/prefetch from fetching *new* descriptors - it neither drains
+  in-flight work nor resets the queue's own head/tail/completion-ring
+  pointers. A reload's `probe()` allocates fresh DMA ring memory at new
+  addresses, but the hardware queue itself still holds state from the old
+  rings, so completions never land where the new instance polls.
+- Fix: call `al_udma_q_reset()` on both the TX and RX queue handles in
+  `al_ssm_pci_remove()`, before the ring memory is freed - the same
+  primitive the genuine vendor al_eth driver calls (`al_eth_hw_stop()` ->
+  `al_eth_udma_queues_reset_all()`) on every queue before teardown, that
+  this port's al_dma/al_ssm both dropped. It quiesces scheduling/prefetch,
+  waits for `DCP == CRHP` (drains in-flight), and resets ring pointers.
+- **Confirmed fixed on real hardware, 2026-08-30**: 2/2 live
+  `rmmod`+`modprobe` cycles after the fix - both self-tests pass
+  immediately (`selftest: passed`), no stuck `cryptomgr_test` threads.
+  Previously 2/2 reproduced the hang; now 2/2 clean.
+- al_dma has the same `UDMA_DISABLE`-only teardown and is presumed to share
+  this root cause (see [[al-dma-udma-state-survives-reload]] memory) - not
+  yet fixed there, tracked as a follow-up.
 
 ## timer0 — "deferred probe pending: (reason unknown)"
 
