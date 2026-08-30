@@ -209,22 +209,40 @@ def sudo_run(*cmd: str, **kw) -> subprocess.CompletedProcess:
 
 def verify_not_container_flavored(root: pathlib.Path) -> None:
     """Fail loudly, before packaging/deploying anything, if this build ever
-    regresses to a container-flavored rootfs (#114, #150) - dnf's @core
-    weak-dep resolution has silently pulled in fedora-release-container
+    regresses to a container-flavored rootfs (#114, #150, #164) - dnf's
+    @core weak-dep resolution has silently pulled in fedora-release-container
     before despite the --exclude above; catch it here instead of finding out
     from a live box's ConditionVirtualization=!container failures.
 
-    NOTE: this only catches the package-selection failure mode #114 was
-    originally (and wrongly) blamed for. #150 found systemd ALSO wrongly
-    detects "container" at early boot on a rootfs where this check passes
-    clean (fedora-release-server installed, os-release clean) - a deeper,
-    still-unexplained boot-timing issue this build-time check cannot catch,
-    since it only exists at runtime on the actual booted hardware."""
+    #164 root-caused the deeper mechanism #150 found but couldn't explain:
+    on this rootfs's no-initramfs direct-kernel-boot path, PID1 checks
+    /run/.containerenv in its very first mount-table pass - BEFORE /run
+    gets its own tmpfs mount - so a stale, on-disk /run/.containerenv left
+    over from this project's old podman-based build (dropped in c712df1)
+    fooled systemd's detect_container() into caching "container" for PID1's
+    entire lifetime, even though a live systemd-detect-virt (a fresh
+    process, checking AFTER /run's tmpfs is up) always read "none". The
+    file is only ever written by a container runtime, never by systemd -
+    its presence in a freshly-built installroot before packaging is
+    unambiguous evidence of exactly this regression, not a false positive."""
     os_release = root / "etc" / "os-release"
     text = os_release.read_text() if os_release.exists() else ""
     if "container" in text.lower():
         log(f"FATAL: {os_release} mentions 'container': {text}", "ERROR")
         sys.exit(1)
+    for marker in (".containerenv", ".dockerenv"):
+        for rel in (pathlib.Path("run") / marker, pathlib.Path(marker)):
+            p = root / rel
+            if p.exists():
+                log(f"FATAL: container marker file present in installroot: {p} "
+                    f"(#164 - this shadows systemd's real virtualization state "
+                    f"on the no-initramfs boot path, not just cosmetic)", "ERROR")
+                sys.exit(1)
+    for rel in ("run/systemd/container", "run/host/container-manager"):
+        p = root / rel
+        if p.exists():
+            log(f"FATAL: container marker file present in installroot: {p} (#164)", "ERROR")
+            sys.exit(1)
     rpm = subprocess.run(
         ["rpm", "--root", str(root), "-q", "fedora-release-container"],
         capture_output=True,
