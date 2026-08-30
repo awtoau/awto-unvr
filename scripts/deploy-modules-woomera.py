@@ -17,7 +17,7 @@ al_eth live and captures the verification lines:
 Console-only (works even though `reboot` hangs, #51). Reversible: old .ko are
 kept as *.ko.bak on the device.
 
-Prereqs: build-out present (scripts/build-linux-71-fedora.py), console socket up
+Prereqs: build-out present (scripts/build-linux-fedora.py), console socket up
 (./dev.py console), woomera at the `fedora login:` prompt on ttyS0.
 """
 
@@ -38,11 +38,13 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from _net import detect_server_ip
 from _repo import LOGS
+import _fedora_deploy as fd
 
 SOCK = Path(os.environ.get("XDG_RUNTIME_DIR", "/tmp")) / "tio-unvr.sock"
-EXTRA = Path(
-    "/mnt/2tb/unvr-port-refs/build-out-71-fedora/modroot/lib/modules/7.1.8-dirty/extra"
-)
+# fd.OUT/fd.KVER are the single source of truth (kernel_build_out() +
+# the modroot's own real kernelrelease) - a hardcoded copy here silently
+# drifted from the actual build-out path/kernel version once already.
+EXTRA = fd.OUT / "modroot" / "lib" / "modules" / fd.KVER / "extra"
 MODS = ["al_eth.ko", "al_ssm.ko"]  # the two with fixes; al_dma/al_sgpo unchanged
 HTTP_PORT = 8099
 USER, PASSWD = "root", "unvr"
@@ -151,7 +153,7 @@ def main():
         sys.exit(f"console socket absent: {SOCK} — start ./dev.py console")
     for m in MODS:
         if not (EXTRA / m).exists():
-            sys.exit(f"missing module {EXTRA / m} — run build-linux-71-fedora.py")
+            sys.exit(f"missing module {EXTRA / m} — run build-linux-fedora.py")
 
     selwyn_ip = detect_server_ip()
     log(f"dev host IP (auto-detected): {selwyn_ip}")

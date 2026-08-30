@@ -99,3 +99,37 @@ def rel(p: Path | str) -> str:
 # 32 cores; the 4 spare keep the box interactive during a kernel build. Env
 # override AWTO_NPROC for a different host.
 NPROC = max(1, min(os.cpu_count() or 4, int(os.environ.get("AWTO_NPROC") or 28)))
+
+
+def kernel_build_out(kasan: bool | None = None) -> Path:
+    """The single source of truth for where a Fedora kernel build's output
+    lives - build-linux-fedora.py (the producer) and _fedora_deploy.py (the
+    consumer) used to each hardcode their own copy of this default, and one
+    got updated without the other during a rename, silently deploying a
+    3-day-stale build. Both now call this instead of hardcoding it again.
+
+    AWTO_KERNEL_OUT always wins if set (matches build-linux-fedora.py's own
+    override precedent). `kasan=None` reads AWTO_KASAN_BUILD from the
+    environment; pass True/False to force a choice regardless of env."""
+    if kasan is None:
+        kasan = bool(os.environ.get("AWTO_KASAN_BUILD"))
+    default = (
+        "/mnt/2tb/unvr-port-refs/build-out-fedora-kasan"
+        if kasan
+        else "/mnt/2tb/unvr-port-refs/build-out-fedora"
+    )
+    return Path(os.environ.get("AWTO_KERNEL_OUT", default))
+
+
+def ea16_build_out() -> Path:
+    """Same single-source-of-truth reasoning as kernel_build_out(), for
+    build-linux-ea16.py's own output dir instead of the fedora one."""
+    return Path(os.environ.get("AWTO_KERNEL_OUT", "/mnt/2tb/unvr-port-refs/build-out-ea16"))
+
+
+def kernel_build_ver() -> str:
+    """AWTO_KERNEL_VER as build-linux-fedora.py resolved it - baked into
+    every output filename (uImage/dtb/tftp names), so the deploy step must
+    read the exact same value or look for files that don't exist. Single
+    source of truth for the same reason as kernel_build_out()."""
+    return os.environ.get("AWTO_KERNEL_VER", "7.2")

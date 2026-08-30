@@ -863,36 +863,21 @@ def cmd_build_uboot(extra: list[str]) -> int:
 
 
 @command(
-    "build the Fedora 7.1 kernel + DTB + al_* modules "
-    "(scripts/build-linux-71-fedora.py)",
+    "build the Fedora kernel + DTB + al_* modules, version set by "
+    "AWTO_KERNEL_SRC/AWTO_KERNEL_VER env vars (scripts/build-linux-fedora.py)",
     kind="action",
 )
 def cmd_build_fedora(extra: list[str]) -> int:
-    return _run_script("scripts/build-linux-71-fedora.py", extra)
+    return _run_script("scripts/build-linux-fedora.py", extra)
 
 
 @command(
-    "build Linux 6.12 netboot/initramfs image (scripts/build-linux-612-ea16.py)",
+    "build the ea16 netboot/initramfs image, version set by AWTO_KERNEL_SRC/ "
+    "AWTO_KERNEL_VER env vars (scripts/build-linux-ea16.py)",
     kind="action",
 )
-def cmd_build_612(extra: list[str]) -> int:
-    return _run_script("scripts/build-linux-612-ea16.py", extra)
-
-
-@command(
-    "build Linux 6.18 netboot/initramfs image (scripts/build-linux-618-ea16.py)",
-    kind="action",
-)
-def cmd_build_618(extra: list[str]) -> int:
-    return _run_script("scripts/build-linux-618-ea16.py", extra)
-
-
-@command(
-    "build Linux 7.1 netboot/initramfs image (scripts/build-linux-71-ea16.py)",
-    kind="action",
-)
-def cmd_build_71_ea16(extra: list[str]) -> int:
-    return _run_script("scripts/build-linux-71-ea16.py", extra)
+def cmd_build_ea16(extra: list[str]) -> int:
+    return _run_script("scripts/build-linux-ea16.py", extra)
 
 
 @command(
@@ -1150,11 +1135,13 @@ def cmd_deploy_fedora_rootfs(_extra: list[str]) -> int:
     if scripts_dir not in sys.path:
         sys.path.insert(0, scripts_dir)
     from _net import detect_server_ip
+    from _repo import ea16_build_out, kernel_build_ver
     import _fedora_deploy as fd
 
-    ea16_out = Path(os.environ.get("AWTO_KERNEL_OUT_EA16", "/mnt/2tb/unvr-port-refs/build-out-71"))
-    ea16_uimage = ea16_out / "uImage-unvr-ea16-7.1"
-    ea16_dtb = ea16_out / "alpine-v2-ubnt-unvr-ea16-7.1.dtb"
+    ea16_out = ea16_build_out()
+    ea16_ver = kernel_build_ver()
+    ea16_uimage = ea16_out / f"uImage-unvr-ea16-{ea16_ver}"
+    ea16_dtb = ea16_out / f"alpine-v2-ubnt-unvr-ea16-{ea16_ver}.dtb"
     rootfs_tar = REPO / "tmp" / "fedora-rootfs-ea16.tar"
     for p in (ea16_uimage, ea16_dtb, rootfs_tar):
         if not p.is_file():

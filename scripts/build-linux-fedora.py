@@ -1,17 +1,15 @@
 #!/usr/bin/env python3
 """Production kernel: Fedora 44 aarch64 config + our Alpine V2 patches, no UEFI.
 
-"Take Fedora stock and patch like we did to 7.1" — Fedora 44 ships kernel 7.1.8,
-the exact version we patched. This builds the SAME source tree (our Alpine
-patches already integrated by build-linux-71-ea16.py) but with **Fedora's own
-aarch64 kernel config** as the base, so every systemd/fs/net symbol is correct
-by construction (no hand-curation). Booted by U-Boot (no UEFI/GRUB) via
-root=PARTUUID, no embedded initramfs -> the kernel runs Fedora's systemd.
+Builds AWTO_KERNEL_SRC (our Alpine patches already integrated by
+build-linux-ea16.py) with **Fedora's own aarch64 kernel config** as the
+base, so every systemd/fs/net symbol is correct by construction. Booted by
+U-Boot (no UEFI/GRUB) via root=PARTUUID, no embedded initramfs.
 
-Prereq: run build-linux-71-ea16.py first (integrates the patches into the tree)
+Prereq: run build-linux-ea16.py first (integrates the patches into the tree)
 and have tmp/fedora-kernel/fedora-aarch64.config extracted.
 
-Out: build-out-71-fedora/  (uImage-unvr-ea16-7.1-fedora, dtb, config, modroot/).
+Out: build-out-fedora/ (uImage-unvr-ea16-<VER>-fedora, dtb, config, modroot/).
 Deploy modroot/lib/modules/<kv> -> the Fedora rootfs /lib/modules; boot the uImage.
 """
 
@@ -24,28 +22,16 @@ import sys
 import time
 import zlib
 
-from _repo import NPROC, REPO  # -j28 host build parallelism (#146); self-locating repo root
+from _repo import NPROC, REPO, kernel_build_out, kernel_build_ver  # -j28 host build parallelism (#146); self-locating repo root
 
-SRC = os.environ.get("AWTO_KERNEL_SRC", "/mnt/2tb/unvr-port-refs/linux-v7.1.8")
+SRC = os.environ.get("AWTO_KERNEL_SRC", "/mnt/2tb/unvr-port-refs/linux-v7.3-fresh")
 PORT = os.environ.get("AWTO_KERNEL_PORT", "/mnt/2tb/unvr-port-refs/linux-alpine-v2")
-# REPO (OOT al_* module sources live in modules/) was hardcoded to the dev
-# host's absolute path - broke the instant this script ran anywhere else
-# (e.g. natively on woomera itself, where the repo is synced to
-# /root/awto-unvr). _repo.py's REPO already self-locates via git
-# rev-parse --show-toplevel relative to this file, so it's correct
-# wherever the script actually lives.
-# KASAN and normal builds used to share this path - every build did an
-# unconditional rmtree() of the whole modroot, so a normal rebuild silently
-# wiped the KASAN environment (and vice versa) even though they're both
-# meant to coexist for on-demand diagnostic use. Give KASAN builds their own
-# OUT by default so neither clobbers the other; AWTO_KERNEL_OUT still wins
-# if explicitly set (e.g. the v7.3-fresh experiment).
-_OUT_DEFAULT = (
-    "/mnt/2tb/unvr-port-refs/build-out-71-fedora-kasan"
-    if os.environ.get("AWTO_KASAN_BUILD")
-    else "/mnt/2tb/unvr-port-refs/build-out-71-fedora"
-)
-OUT = os.environ.get("AWTO_KERNEL_OUT", _OUT_DEFAULT)
+# _repo.py's REPO self-locates via git rev-parse, correct wherever this
+# script runs from (dev host or natively on woomera).
+# kernel_build_out() is the single source of truth shared with
+# _fedora_deploy.py (the consumer) - see its own docstring for why this
+# used to be two independently-hardcoded copies.
+OUT = str(kernel_build_out())
 # kbuild's own O= output dir (Documentation/kbuild/kbuild.rst) - separate from
 # OUT itself (which holds the COLLECTED final artifacts: uImage, dtb, config
 # copy, modroot/). Before this, every build ran `make -C SRC` with no O=, so
@@ -60,11 +46,9 @@ KOUT = os.path.join(OUT, "kbuild")
 FEDORA_CONFIG = os.path.join(REPO, "tmp", "fedora-kernel", "fedora-aarch64.config")
 DTS_NAME = "alpine-v2-ubnt-unvr-ea16"
 # Baked into every output filename AND the uImage's own internal Image Name
-# field (U-Boot displays this on boot) - "7.1" was correct when this script
-# only ever built 7.1.8. Override for any other AWTO_KERNEL_SRC, or the
-# artifacts (and what U-Boot reports booting) actively lie about their own
-# version - exactly what row 4b (linux-v7.3-fresh) was doing before this.
-VER = os.environ.get("AWTO_KERNEL_VER", "7.1")
+# field (U-Boot displays this on boot) - must match AWTO_KERNEL_SRC's real
+# version or the artifacts (and what U-Boot reports booting) lie about it.
+VER = kernel_build_ver()
 # Empty string for a NATIVE build (e.g. running this script ON woomera itself,
 # an aarch64 box - CROSS_COMPILE="" makes kbuild call plain `gcc`, which IS
 # the right compiler there). Cross-compiling on the x86 dev host (the
@@ -265,27 +249,42 @@ def configure():
             # modules and vice versa, repeatedly, until this was fixed).
             *(
                 [
-                    "--enable",
-                    "KASAN",
-                    "--enable",
-                    "KASAN_GENERIC",
-                    "--enable",
-                    "PROVE_LOCKING",
-                    "--enable",
-                    "DEBUG_LOCKDEP",
-                    "--enable",
-                    "DEBUG_ATOMIC_SLEEP",
-                    "--enable",
-                    "FTRACE",
-                    "--enable",
-                    "FUNCTION_TRACER",
-                    "--enable",
-                    "FUNCTION_GRAPH_TRACER",
-                    "--enable",
-                    "DYNAMIC_FTRACE",
-                    "--set-str",
-                    "LOCALVERSION",
-                    "-kasan",
+                    "--enable", "KASAN",
+                    "--enable", "KASAN_GENERIC",
+                    "--enable", "KASAN_VMALLOC",
+                    "--enable", "PROVE_LOCKING",
+                    "--enable", "DEBUG_LOCKDEP",
+                    "--enable", "DEBUG_ATOMIC_SLEEP",
+                    "--enable", "DEBUG_SPINLOCK",
+                    "--enable", "DEBUG_MUTEXES",
+                    "--enable", "FTRACE",
+                    "--enable", "FUNCTION_TRACER",
+                    "--enable", "FUNCTION_GRAPH_TRACER",
+                    "--enable", "DYNAMIC_FTRACE",
+                    # #172 is a double-unmap - this is the tool built to catch
+                    # exactly that class of bug directly, not just its symptom.
+                    "--enable", "DMA_API_DEBUG",
+                    # Plain UBSAN, not UBSAN_TRAP - TRAP replaces the whole
+                    # point of it (a descriptive report of exactly what
+                    # overflowed/misaligned/etc.) with a bare crash and no
+                    # explanation, actively working against finding the bug.
+                    # No KCSAN here: lib/Kconfig.kcsan depends on !KASAN,
+                    # mutually exclusive with the KASAN above, not just an
+                    # unmet dependency - would need a separate build.
+                    "--enable", "UBSAN",
+                    # A lockup gets logged by default (softlockup_panic=0) -
+                    # promote it to a real panic so pstore/ramoops actually
+                    # captures it instead of a console message nobody sees.
+                    # SOFTLOCKUP_PANIC is int type ("panic after N*20s") -
+                    # HARDLOCKUP_PANIC (despite the near-identical name) is
+                    # plain bool - verified against lib/Kconfig.debug
+                    # directly rather than assuming they match.
+                    "--set-val", "BOOTPARAM_SOFTLOCKUP_PANIC", "1",
+                    "--enable", "BOOTPARAM_HARDLOCKUP_PANIC",
+                    # panic_on_warn is a runtime sysctl/boot param, not a
+                    # Kconfig symbol - set `sysctl kernel.panic_on_warn=1`
+                    # after boot instead of trying to bake it in here.
+                    "--set-str", "LOCALVERSION", "-kasan",
                 ]
                 if os.environ.get("AWTO_KASAN_BUILD")
                 else []
@@ -302,6 +301,33 @@ def configure():
         if sym not in dotcfg:
             log(f"FATAL: {sym} not set after olddefconfig")
             sys.exit(1)
+    if os.environ.get("AWTO_KASAN_BUILD"):
+        # scripts/config --enable silently no-ops on an unknown symbol name
+        # instead of erroring - verify every debug flag actually landed
+        # rather than assuming the invocation above worked.
+        for sym in (
+            "CONFIG_KASAN=y",
+            "CONFIG_KASAN_GENERIC=y",
+            "CONFIG_KASAN_VMALLOC=y",
+            "CONFIG_PROVE_LOCKING=y",
+            "CONFIG_DEBUG_LOCKDEP=y",
+            "CONFIG_DEBUG_ATOMIC_SLEEP=y",
+            "CONFIG_DEBUG_SPINLOCK=y",
+            "CONFIG_DEBUG_MUTEXES=y",
+            "CONFIG_DMA_API_DEBUG=y",
+            "CONFIG_UBSAN=y",
+            "CONFIG_BOOTPARAM_SOFTLOCKUP_PANIC=1",  # int type, not =y
+            "CONFIG_BOOTPARAM_HARDLOCKUP_PANIC=y",
+            "CONFIG_FTRACE=y",
+            "CONFIG_FUNCTION_TRACER=y",
+            "CONFIG_FUNCTION_GRAPH_TRACER=y",
+            "CONFIG_DYNAMIC_FTRACE=y",
+        ):
+            if sym not in dotcfg:
+                log(f"FATAL: {sym} not set after olddefconfig - AWTO_KASAN_BUILD "
+                    f"requested it but it didn't land (renamed symbol? "
+                    f"unmet Kconfig dependency?)")
+                sys.exit(1)
     # al_eth.ko (OOT, loaded via modprobe post-boot) can depend on these as
     # modules just as well as built-in - only "enabled at all" matters, not
     # =y vs =m. I2C_MUX_PCA954x in particular lands as =m here because its
@@ -348,7 +374,7 @@ def kver():
 
 
 def adapt_sgpo(mpath):
-    """7.1 gpio_chip.set returns int (same fix as build-linux-71-ea16.py)."""
+    """7.1 gpio_chip.set returns int (same fix as build-linux-ea16.py)."""
     f = os.path.join(mpath, "al_sgpo.c")
     t = pathlib.Path(f).read_text()
     t = t.replace(
@@ -364,7 +390,7 @@ def adapt_sgpo(mpath):
 
 def stage_dts():
     """Copy the repo-tracked DTS + DTSI into the kernel tree so the build ALWAYS
-    compiles the tracked source. Previously only build-linux-71-ea16.py staged the
+    compiles the tracked source. Previously only build-linux-ea16.py staged the
     board DTS; running this script alone compiled whatever stale copy was last left
     in the kernel tree -> edits to dts/ silently didn't take ("bugs keep coming
     back"). Repo dts/ is now the single source of truth (dts + the alpine-v2.dtsi

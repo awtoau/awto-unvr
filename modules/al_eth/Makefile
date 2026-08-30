@@ -20,7 +20,7 @@ KDIR ?= /lib/modules/$(shell uname -r)/build
 # Build each variant in its own $(CURDIR) copy - Kbuild tracks per-object
 # cmdline flags in .*.o.cmd, but re-running here with a different variant
 # would still serialize a same-directory rebuild, so callers use separate
-# source copies (see scripts/build-linux-71-fedora.py).
+# source copies (see scripts/build-linux-fedora.py).
 MODULE_VARIANT ?=
 
 ifeq ($(MODULE_VARIANT),1g)

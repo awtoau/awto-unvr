@@ -9,7 +9,7 @@ Until the trees are unified (#75) these live in two files and can drift. This
 check fails the build on any drift from the canonical values below.
 
 Standalone:  python3 scripts/check-dts-shared.py
-Wired into:  build-linux-71-fedora.py, uboot-build.py (run before compile).
+Wired into:  build-linux-fedora.py, uboot-build.py (run before compile).
 """
 
 import os

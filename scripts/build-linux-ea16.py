@@ -1,33 +1,31 @@
 #!/usr/bin/env python3
-"""Forward-port the working 6.18 Alpine-V2 ea16 build to Linux 7.1.8.
+"""Forward-port the Alpine-V2 ea16 build onto AWTO_KERNEL_SRC.
 
 Cross-compiled on the HOST (no docker) with the host aarch64-linux-gnu-gcc (16).
 Netboot-ready: legacy uImage (initramfs embedded) + ea16 DTB. No flashing.
 
-6.18 -> 7.1 forward-port deltas (see docs/linux-71-build.md):
-  * All THREE 6.18 API adaptations persist UNCHANGED at 7.1.8:
-      1. pcie-al-internal.c: pci_host_common_probe/remove still declared in the
-         PRIVATE header drivers/pci/controller/pci-host-common.h ->
-         `#include "pci-host-common.h"`; .remove_new still gone (removed 6.15),
-         pci_host_common_remove() still returns void -> `.remove_new` -> `.remove`.
-      2. pcie-al.c: 7.1.8's in-tree file still carries `pci->pp.native_ecam =
-         true;` and the same `dev_dbg("From DT: controller_base"...)` anchor, so
-         the DBI-at-+0x10000 pre-set is INSERTED in place (keeps native_ecam).
-      3. al_sgpo.c: gpio_chip.set still `int (*set)(gc, offset, value)` ->
-         al_sgpo_set returns int.
-  * DTS: unchanged. dtsi already io-bus@fc000000 (renamed at 6.18); ea16 DTS
-      references uart0/uart2/sbclk labels which still exist.
+Forward-port deltas needed against current AWTO_KERNEL_SRC (7.2.0):
+  1. pcie-al-internal.c: pci_host_common_probe/remove declared in the
+     PRIVATE header drivers/pci/controller/pci-host-common.h ->
+     `#include "pci-host-common.h"`; no `.remove_new` (removed upstream
+     6.15), pci_host_common_remove() returns void -> `.remove`.
+  2. pcie-al.c: `pci->pp.native_ecam = true;` and the
+     `dev_dbg("From DT: controller_base"...)` anchor still present - the
+     DBI-at-+0x10000 pre-set is inserted in place (keeps native_ecam).
+  3. al_sgpo.c: gpio_chip.set is `int (*set)(gc, offset, value)` ->
+     al_sgpo_set returns int.
+  * DTS: dts/alpine-v2.dtsi is byte-identical to upstream's own
+    arch/arm64/boot/dts/amazon/alpine-v2.dtsi at this tree's HEAD.
   * al_eth/al_dma/al_ssm: built as-is; any new netdev/phylink/dmaengine/crypto
-      break is caught per-module (non-fatal) and reported, same as 6.18.
+    break is caught per-module (non-fatal) and reported.
 
 Toolchain: host aarch64-linux-gnu-gcc (GCC 16). WERROR disabled defensively.
 
-Order (mirrors the 6.18 script so out-of-tree modules ride the embedded
-initramfs): configure -> `make modules` (builds vmlinux + Module.symvers) ->
+Order: configure -> `make modules` (builds vmlinux + Module.symvers) ->
 out-of-tree al_* -> install into initramfs -> `make Image dtbs` (embeds the
 now-populated initramfs) -> pure-python uImage wrap.
 
-Out: /mnt/2tb/unvr-port-refs/build-out-71/
+Out: /mnt/2tb/unvr-port-refs/build-out-ea16/
 """
 
 import os
@@ -39,29 +37,20 @@ import sys
 import time
 import zlib
 
-from _repo import NPROC, REPO  # -j28 host build parallelism (#146); self-locating repo root
+from _repo import NPROC, REPO, ea16_build_out, kernel_build_ver  # -j28 host build parallelism (#146); self-locating repo root
 
-SRC = os.environ.get("AWTO_KERNEL_SRC", "/mnt/2tb/unvr-port-refs/linux-v7.1.8")
+SRC = os.environ.get("AWTO_KERNEL_SRC", "/mnt/2tb/unvr-port-refs/linux-v7.3-fresh")
 PORT = os.environ.get("AWTO_KERNEL_PORT", "/mnt/2tb/unvr-port-refs/linux-alpine-v2")
-# REPO (ea16 board DTS hardware-of-record lives in dts/) was hardcoded to the
-# dev host's absolute path - see build-linux-71-fedora.py's identical fix for
-# why. _repo.py's REPO already self-locates correctly wherever this script
-# actually runs from.
-OUT = os.environ.get("AWTO_KERNEL_OUT", "/mnt/2tb/unvr-port-refs/build-out-71")
-# kbuild's own O= output dir (see build-linux-71-fedora.py's KOUT, #145) - this
-# script shares SRC=linux-v7.1.8 with build-fedora by default, and building
-# in-place here (no O=) was proven this session to break a SUBSEQUENT
-# build-fedora run against the same tree (kbuild refuses O= on a tree ever
-# built in-place - "please run 'make mrproper'"). O= makes the two builds
-# structurally independent instead of order-dependent.
+# _repo.py's REPO self-locates via git rev-parse, correct wherever this
+# script runs from.
+OUT = str(ea16_build_out())
+# kbuild's own O= output dir, independent of SRC's own in-tree state (a
+# build-fedora run against the same SRC needs this to not collide).
 KOUT = os.path.join(OUT, "kbuild")
-OUT612 = "/mnt/2tb/unvr-port-refs/build-out"  # source of the reusable initramfs
+INITRAMFS_BASE = "/mnt/2tb/unvr-port-refs/build-out"  # base busybox initramfs skeleton, kernel-version-agnostic
 DTS_NAME = "alpine-v2-ubnt-unvr-ea16"
-# Both baked into output filenames/uImage Image Name - see identical fix in
-# build-linux-71-fedora.py.
-VER = os.environ.get("AWTO_KERNEL_VER", "7.1")
-# Empty string for a native build (e.g. running this script ON woomera
-# itself) - see identical fix in build-linux-71-fedora.py.
+VER = kernel_build_ver()  # baked into output filenames/uImage Image Name
+# Empty string for a native build (e.g. running this script ON woomera itself).
 CROSS = os.environ.get("AWTO_CROSS_COMPILE", "aarch64-linux-gnu-")
 MIN_FREE_GB = 15
 
@@ -206,7 +195,7 @@ def prep_initramfs():
     # symlinks=True is REQUIRED: the alpine rootfs is hundreds of busybox
     # symlinks; dereferencing them balloons 11 MB -> 400+ MB (and the Image).
     shutil.copytree(
-        os.path.join(OUT612, "initramfs-root"),
+        os.path.join(INITRAMFS_BASE, "initramfs-root"),
         dst,
         symlinks=True,
         ignore=shutil.ignore_patterns("modules"),
@@ -223,7 +212,7 @@ def prep_initramfs():
     pathlib.Path(init).write_text(it)
     # devnode list (real /dev/console for PID1 controlling tty).
     shutil.copy(
-        os.path.join(OUT612, "initramfs-devnodes"),
+        os.path.join(INITRAMFS_BASE, "initramfs-devnodes"),
         os.path.join(OUT, "initramfs-devnodes"),
     )
     log("prepped initramfs-root (reused 6.12, modules cleared)")

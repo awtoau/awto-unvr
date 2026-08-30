@@ -1,4 +1,4 @@
-"""Shared state for deploying a build-out-71-fedora build to woomera.
+"""Shared state for deploying a build-out-fedora build to woomera.
 
 2026-08-20: flashed a kernel binary into NAND that was ~50 min OLDER than the
 module tree synced alongside it - images/tftp/ was a manually-copied cache
@@ -18,33 +18,16 @@ sequencing mistake that led to this:
 
 from __future__ import annotations
 
-import os
 import subprocess
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from _repo import IMAGES, REPO, log_path
+from _repo import IMAGES, REPO, kernel_build_out, kernel_build_ver, log_path
 
-# Must mirror build-linux-71-fedora.py's own _OUT_DEFAULT exactly (and the
-# same AWTO_KERNEL_OUT override) - this was hardcoded to the plain path only,
-# so a KASAN build (AWTO_KASAN_BUILD=1, its own build-out-71-fedora-kasan/)
-# would silently deploy whatever stale artifacts sat in the PLAIN dir instead
-# of the KASAN build just made. Same failure class as #131's module-mismatch
-# incident, just in the deploy step's own OUT selection instead of the build
-# step's.
-_OUT_DEFAULT = (
-    "/mnt/2tb/unvr-port-refs/build-out-71-fedora-kasan"
-    if os.environ.get("AWTO_KASAN_BUILD")
-    else "/mnt/2tb/unvr-port-refs/build-out-71-fedora"
-)
-OUT = Path(os.environ.get("AWTO_KERNEL_OUT", _OUT_DEFAULT))
+OUT = kernel_build_out()
 DTS_NAME = "alpine-v2-ubnt-unvr-ea16"
-# Must mirror whatever AWTO_KERNEL_VER the build script was invoked with -
-# it's baked into the build's own filenames (Image is unversioned, but the
-# DTB/uImage/tftp names all embed it). Same failure class as the OUT
-# mismatch above: default "7.1" keeps existing 7.1 deploys byte-identical.
-VER = os.environ.get("AWTO_KERNEL_VER", "7.1")
+VER = kernel_build_ver()
 
 
 def _detect_kver() -> str:
@@ -100,7 +83,7 @@ def publish_artifacts() -> None:
     """Regenerate the tftp-served uImage+DTB from build-out, UNCONDITIONALLY -
     no mtime heuristics that can be fooled, always fresh from what's actually
     on disk right now. Must run before sync_modules(): both this and the
-    module tree need to trace to the exact same build-out-71-fedora build."""
+    module tree need to trace to the exact same build-out-fedora build."""
     if not BUILD_IMAGE.is_file():
         sys.exit(f"ABORT: no build at {BUILD_IMAGE} - build first")
     TFTP_DIR.mkdir(parents=True, exist_ok=True)

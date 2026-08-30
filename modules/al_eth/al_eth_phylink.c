@@ -45,7 +45,7 @@
 #if defined(CONFIG_ARCH_ALPINE) && !IS_ENABLED(CONFIG_PHYLINK)
 /* Loud on purpose: this whole file compiles to nothing without PHYLINK and the
  * SFP+ port then comes up with no link management at all, which is invisible
- * until the box is booted. scripts/build-linux-71-fedora.py force-enables
+ * until the box is booted. scripts/build-linux-fedora.py force-enables
  * PCS_XPCS/SFP so localmodconfig cannot drop it. */
 #warning "CONFIG_PHYLINK is off: the 10G SFP+ port will have NO link management"
 #endif

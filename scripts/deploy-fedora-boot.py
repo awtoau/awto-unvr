@@ -7,9 +7,10 @@ Every file is sha256-verified after transfer. Does NOT reboot — verify first, 
 reboot separately (scripts/reboot-and-verify or a manual `reboot`). NAND untouched.
 
 Fallback if the new kernel doesn't boot: at the stock U-Boot prompt,
-  ext4load scsi 0:2 0x02000000 /boot/uImage-unvr-ea16-7.1-fedora-gz.bak
-  ext4load scsi 0:2 0x04078000 /boot/alpine-v2-ubnt-unvr-ea16-7.1-fedora.dtb.bak
+  ext4load scsi 0:2 0x02000000 /boot/uImage-unvr-ea16-<VER>-fedora-gz.bak
+  ext4load scsi 0:2 0x04078000 /boot/alpine-v2-ubnt-unvr-ea16-<VER>-fedora.dtb.bak
   bootm 0x02000000 - 0x04078000
+(<VER> from AWTO_KERNEL_VER / _repo.kernel_build_ver()'s default)
 """
 
 from __future__ import annotations
@@ -26,14 +27,15 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import _console as con
 from _net import detect_server_ip
-from _repo import LOGS
+from _repo import LOGS, kernel_build_out, kernel_build_ver
 
-OUT = Path("/mnt/2tb/unvr-port-refs/build-out-71-fedora")
+OUT = kernel_build_out()
+_VER = kernel_build_ver()
 HTTP_PORT = 8099
 # (local source file, /boot destination name)
 FILES = [
-    ("uImage-unvr-ea16-7.1-fedora-gz", "uImage-unvr-ea16-7.1-fedora-gz"),
-    ("alpine-v2-ubnt-unvr-ea16-7.1.dtb", "alpine-v2-ubnt-unvr-ea16-7.1-fedora.dtb"),
+    (f"uImage-unvr-ea16-{_VER}-fedora-gz", f"uImage-unvr-ea16-{_VER}-fedora-gz"),
+    (f"alpine-v2-ubnt-unvr-ea16-{_VER}.dtb", f"alpine-v2-ubnt-unvr-ea16-{_VER}-fedora.dtb"),
 ]
 LOG = LOGS / "deploy-fedora-boot.log"
 

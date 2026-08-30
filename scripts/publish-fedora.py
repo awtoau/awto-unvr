@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Publish a build-out-71-fedora build: regenerate tftp artifacts + sync the
+"""Publish a build-out-fedora build: regenerate tftp artifacts + sync the
 module tree onto woomera. Must run while Fedora is up (needs SSH).
 
 Phase 1 of 2 for a Fedora deploy - see scripts/_fedora_deploy.py for why this
