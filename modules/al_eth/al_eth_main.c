@@ -3079,7 +3079,7 @@ al_eth_free_all_tx_bufs(struct al_eth_adapter *adapter)
 {
 	int i;
 
-	for (i = 0; i < adapter->num_rx_queues; i++)
+	for (i = 0; i < adapter->num_tx_queues; i++)
 		al_eth_free_tx_bufs(adapter, i);
 }
 
