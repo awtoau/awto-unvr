@@ -420,9 +420,16 @@ def main() -> int:
         # same-line marker would just reintroduce the input-echo race for
         # no benefit - this small archive extracts well within the plain
         # 1.5s read window console-send uses when --expect is omitted.
+        # Extract to a scratch dir first, not straight into /lib/modules/{kver} -
+        # this Fedora rootfs has no `tar` (found live tonight: extraction silently
+        # no-op'd after an earlier `rm -rf` had already deleted the previous,
+        # working tree, losing it for nothing). python3 is a hard dependency of
+        # this rootfs (systemd/dnf need it) so `python3 -m tarfile` is the one
+        # extractor guaranteed present. Only rm+swap the real target after the
+        # scratch extraction is confirmed to contain what we expect.
         run_devpy(
-            f"rm -rf /lib/modules/{kver} && "
-            f"tar xzf /root/rbd-modules.tar.gz -C /lib/modules 2>&1 | grep -v 'in the future'"
+            "rm -rf /root/rbd-modules-new && mkdir -p /root/rbd-modules-new && "
+            "python3 -m tarfile -e /root/rbd-modules.tar.gz /root/rbd-modules-new"
         )
         # `ls` output is alphabetically sorted, so matching on ANY of the
         # names via OR (dev.py's --expect returns on the FIRST alternative
@@ -435,7 +442,7 @@ def main() -> int:
             f"{expected_kos[-1]}|No such file",
             "--timeout",
             "10",
-            f"ls /lib/modules/{kver}/extra/",
+            f"ls /root/rbd-modules-new/{kver}/extra/",
         )
         missing = [k for k in expected_kos if k not in ls_out]
         if missing:
@@ -444,7 +451,13 @@ def main() -> int:
                 "ERROR",
             )
             return 1
-        log(f"extraction verified: {len(expected_kos)} module(s) present")
+        log(f"extraction verified: {len(expected_kos)} module(s) present - swapping into place")
+        # Only now, with the new tree confirmed complete, replace the live one.
+        run_devpy(
+            f"rm -rf /lib/modules/{kver} && "
+            f"mv /root/rbd-modules-new/{kver} /lib/modules/{kver} && "
+            f"depmod -a {kver}"
+        )
 
     log("DONE - box booted, at a shell.")
     return 0
