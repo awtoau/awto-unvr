@@ -1,25 +1,19 @@
 #!/usr/bin/env python3
-"""Forward-port the Alpine-V2 ea16 build onto AWTO_KERNEL_SRC.
+"""Build the ea16 netboot installer image against AWTO_KERNEL_SRC.
 
-Cross-compiled on the HOST (no docker) with the host aarch64-linux-gnu-gcc (16).
+Cross-compiled on the HOST (no docker) with aarch64-linux-gnu-gcc.
 Netboot-ready: legacy uImage (initramfs embedded) + ea16 DTB. No flashing.
 
-Forward-port deltas needed against current AWTO_KERNEL_SRC (7.2.0):
-  1. pcie-al-internal.c: pci_host_common_probe/remove declared in the
-     PRIVATE header drivers/pci/controller/pci-host-common.h ->
-     `#include "pci-host-common.h"`; no `.remove_new` (removed upstream
-     6.15), pci_host_common_remove() returns void -> `.remove`.
-  2. pcie-al.c: `pci->pp.native_ecam = true;` and the
-     `dev_dbg("From DT: controller_base"...)` anchor still present - the
-     DBI-at-+0x10000 pre-set is inserted in place (keeps native_ecam).
-  3. al_sgpo.c: gpio_chip.set is `int (*set)(gc, offset, value)` ->
-     al_sgpo_set returns int.
-  * DTS: dts/alpine-v2.dtsi is byte-identical to upstream's own
-    arch/arm64/boot/dts/amazon/alpine-v2.dtsi at this tree's HEAD.
-  * al_eth/al_dma/al_ssm: built as-is; any new netdev/phylink/dmaengine/crypto
-    break is caught per-module (non-fatal) and reported.
+Board support (DTS, pcie-al-internal.c, the pcie-al.c DBI fix, unvr_defconfig)
+lives as real commits in AWTO_KERNEL_SRC's own git history now, not as
+patches applied by this script - nothing here needs to stage or integrate
+them. This script's only job is the netboot installer artifact:
+deploy-fedora-rootfs uses it to bootstrap a completely bare disk (no
+existing rootfs) before formatting and streaming the real Fedora rootfs.
+ram-boot-deploy can't substitute for that - it still needs root=PARTUUID=...
+pointing at something already on disk.
 
-Toolchain: host aarch64-linux-gnu-gcc (GCC 16). WERROR disabled defensively.
+Toolchain: host aarch64-linux-gnu-gcc. WERROR disabled defensively.
 
 Order: configure -> `make modules` (builds vmlinux + Module.symvers) ->
 out-of-tree al_* -> install into initramfs -> `make Image dtbs` (embeds the
@@ -40,7 +34,6 @@ import zlib
 from _repo import NPROC, REPO, ea16_build_out, kernel_build_ver  # -j28 host build parallelism (#146); self-locating repo root
 
 SRC = os.environ.get("AWTO_KERNEL_SRC", "/mnt/2tb/unvr-port-refs/linux-v7.3-fresh")
-PORT = os.environ.get("AWTO_KERNEL_PORT", "/mnt/2tb/unvr-port-refs/linux-alpine-v2")
 # _repo.py's REPO self-locates via git rev-parse, correct wherever this
 # script runs from.
 OUT = str(ea16_build_out())
@@ -72,19 +65,6 @@ LOAD_ADDR = ENTRY_ADDR = 0x08000000
 PROD = ("--production" in sys.argv) or os.environ.get("UNVR_PRODUCTION") == "1"
 SUFFIX = "-prod" if PROD else ""
 
-KCONFIG_SNIPPET = """
-config PCIE_AL_INTERNAL
-\tbool "Annapurna Labs Alpine V2 internal PCIe host controller"
-\tdepends on OF && (ARM64 || COMPILE_TEST)
-\tselect PCI_HOST_COMMON
-\tselect IRQ_DOMAIN
-\thelp
-\t  Host controller for the Alpine V2 internal PCIe bus (on-SoC AHCI,
-\t  Ethernet, crypto, DMA). Configures AXI sub-master snoop (SMCC) and
-\t  APP_CONTROL so internal bus masters do cache-coherent DMA.
-"""
-MAKEFILE_LINE = "obj-$(CONFIG_PCIE_AL_INTERNAL) += pcie-al-internal.o\n"
-
 ENV = dict(os.environ, ARCH="arm64", CROSS_COMPILE=CROSS)
 
 
@@ -106,85 +86,6 @@ def check_space():
     if free_gb < MIN_FREE_GB:
         log(f"ABORT: <{MIN_FREE_GB} GB free")
         sys.exit(2)
-
-
-def prep_tree():
-    os.makedirs(OUT, exist_ok=True)
-    amazon = os.path.join(SRC, "arch/arm64/boot/dts/amazon")
-    shutil.copy(
-        os.path.join(PORT, "configs/unvr_defconfig"),
-        os.path.join(SRC, "arch/arm64/configs/unvr_defconfig"),
-    )
-    # ea16 board DTS = the repo's tracked hardware-of-record (single source of
-    # truth, dts/). Reference boards (unvr/udmpro) still come from PORT.
-    shutil.copy(os.path.join(REPO, "dts", f"{DTS_NAME}.dts"), amazon)
-    for f in ("dts/alpine-v2-ubnt-unvr.dts", "dts/alpine-v2-ubnt-udmpro.dts"):
-        s = os.path.join(PORT, f)
-        if os.path.exists(s):
-            shutil.copy(s, amazon)
-    mk = os.path.join(amazon, "Makefile")
-    txt = pathlib.Path(mk).read_text()
-    if DTS_NAME not in txt:
-        pathlib.Path(mk).write_text(
-            txt + f"dtb-$(CONFIG_ARCH_ALPINE)\t+= {DTS_NAME}.dtb\n"
-        )
-    log("prepped tree: defconfig + dts installed")
-
-
-def integrate_patches():
-    ctl = os.path.join(SRC, "drivers/pci/controller")
-    # 1. internal PCIe driver (new file) + 7.1 API adaptations (same as 6.18).
-    dst = os.path.join(ctl, "pcie-al-internal.c")
-    src_txt = pathlib.Path(os.path.join(PORT, "patches/pcie-al-internal.c")).read_text()
-    # 7.1: pci_host_common_probe/remove decls live in a private header.
-    if '#include "pci-host-common.h"' not in src_txt:
-        src_txt = src_txt.replace(
-            "#include <linux/pci-ecam.h>\n",
-            '#include <linux/pci-ecam.h>\n#include "pci-host-common.h"\n',
-            1,
-        )
-    # 7.1: platform_driver .remove_new removed; .remove is void-returning.
-    src_txt = src_txt.replace(
-        ".remove_new = pci_host_common_remove", ".remove = pci_host_common_remove"
-    )
-    pathlib.Path(dst).write_text(src_txt)
-
-    kc = os.path.join(ctl, "Kconfig")
-    txt = pathlib.Path(kc).read_text()
-    if "PCIE_AL_INTERNAL" not in txt:
-        idx = txt.rstrip().rfind("endmenu")
-        txt = txt[:idx] + KCONFIG_SNIPPET + "\n" + txt[idx:]
-        pathlib.Path(kc).write_text(txt)
-    mkf = os.path.join(ctl, "Makefile")
-    mtxt = pathlib.Path(mkf).read_text()
-    if "pcie-al-internal.o" not in mtxt:
-        pathlib.Path(mkf).write_text(mtxt.rstrip("\n") + "\n" + MAKEFILE_LINE)
-
-    # 2. External DWC PCIe DBI fix: insert into 7.1's own pcie-al.c in place,
-    #    preserving the `native_ecam = true` line.
-    al = os.path.join(SRC, "drivers/pci/controller/dwc/pcie-al.c")
-    atxt = pathlib.Path(al).read_text()
-    if "controller_res->start + 0x10000" not in atxt:
-        anchor = '\tdev_dbg(dev, "From DT: controller_base: %pR\\n", controller_res);\n'
-        block = (
-            "\n\t/*\n"
-            "\t * Alpine V2: DWC DBI registers sit at controller_base + 0x10000.\n"
-            '\t * Pre-set dbi_base so dw_pcie_get_resources() skips the "dbi"\n'
-            "\t * resource lookup and avoids a resource conflict (forward-port of\n"
-            "\t * the 6.12 patches/pcie-al-dbi-fix.c, applied in place for 7.1).\n"
-            "\t */\n"
-            "\tpci->dbi_base = devm_ioremap(dev, controller_res->start + 0x10000,\n"
-            "\t\t\t\t     0x10000);\n"
-            "\tif (!pci->dbi_base) {\n"
-            '\t\tdev_err(dev, "couldn\'t map DBI base\\n");\n'
-            "\t\treturn -ENOMEM;\n"
-            "\t}\n"
-        )
-        if anchor not in atxt:
-            raise RuntimeError("pcie-al.c anchor not found; 7.1 source changed")
-        atxt = atxt.replace(anchor, anchor + block, 1)
-        pathlib.Path(al).write_text(atxt)
-    log("integrated patches: pcie-al-internal (7.1 adapted) + pcie-al DBI in-place")
 
 
 def prep_initramfs():
@@ -329,27 +230,6 @@ def build_modules_intree():
     run(["make", "-C", SRC, f"O={KOUT}", f"-j{NPROC}", "modules"])
 
 
-def adapt_module(m, mpath):
-    """Apply 7.1 API forward-port fixes to a copied out-of-tree module.
-    al_eth/al_dma/al_ssm build unchanged; only al_sgpo needs a fix."""
-    if m == "al_sgpo":
-        # 6.15+/7.1: gpio_chip.set (and set_multiple) return int, not void.
-        # gcc-14+ makes incompatible-pointer-types a hard error.
-        f = os.path.join(mpath, "al_sgpo.c")
-        t = pathlib.Path(f).read_text()
-        t = t.replace(
-            "static void al_sgpo_set(struct gpio_chip *gc, unsigned int offset, int value)\n{",
-            "static int al_sgpo_set(struct gpio_chip *gc, unsigned int offset, int value)\n{",
-        )
-        # the early-return inside the now-int function + a trailing return 0.
-        t = t.replace(
-            "\tif (group >= sgpo->num_groups)\n\t\treturn;\n\n\tspin_lock_irqsave(&sgpo->lock, flags);\n\n\twritel(value ? (1 << bit) : 0,\n\t       al_sgpo_group_reg(sgpo, group, GRP_VEC(1 << bit)));\n\n\tspin_unlock_irqrestore(&sgpo->lock, flags);\n}",
-            "\tif (group >= sgpo->num_groups)\n\t\treturn -EINVAL;\n\n\tspin_lock_irqsave(&sgpo->lock, flags);\n\n\twritel(value ? (1 << bit) : 0,\n\t       al_sgpo_group_reg(sgpo, group, GRP_VEC(1 << bit)));\n\n\tspin_unlock_irqrestore(&sgpo->lock, flags);\n\n\treturn 0;\n}",
-        )
-        pathlib.Path(f).write_text(t)
-        log("adapted al_sgpo: .set callback returns int (7.1 gpio_chip API)")
-
-
 def build_oot_modules():
     """Build al_eth/al_dma/al_ssm/al_sgpo/al_thermal against 7.1. Non-fatal per
     module so a module API break does not deny us a bootable kernel; failures
@@ -364,7 +244,6 @@ def build_oot_modules():
         mpath = os.path.join(mdst, m)
         # imported source-of-truth: repo modules/ (carries iofic + crypto fixes).
         shutil.copytree(os.path.join(REPO, "modules", m), mpath)
-        adapt_module(m, mpath)
         log(f"=== out-of-tree {m} ===")
         try:
             subprocess.run(
@@ -477,8 +356,6 @@ def collect():
 def main():
     t0 = time.time()
     check_space()
-    prep_tree()
-    integrate_patches()
     prep_initramfs()
     configure()
     build_modules_intree()
