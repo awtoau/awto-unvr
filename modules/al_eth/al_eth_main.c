@@ -129,11 +129,8 @@ MODULE_PARM_DESC(disable_msi, "Disable Message Signaled Interrupt (MSI)");
 /** Linux kernel driver always uses port 0. On host driver it can be changes with loading of module in load.sh */
 #define AL_ETH_DEFAULT_PORT  0
 
-#if defined(CONFIG_ARCH_ALPINE) /** Linux kernerl driver uses udma 0 always */
+/** Linux kernel driver uses udma 0 always */
 #define AL_ETH_DEFAULT_UDMA  0
-#else
-#define AL_ETH_DEFAULT_UDMA  1  /** host driver uses udma 1 by default, can be changed in load.sh */
-#endif
 
 static int port_num = AL_ETH_DEFAULT_PORT;
 static int udma_num = AL_ETH_DEFAULT_UDMA;
@@ -3563,20 +3560,11 @@ static void al_eth_up_complete(struct al_eth_adapter *adapter)
 
 	al_eth_interrupts_unmask(adapter);
 
-#if !defined(CONFIG_ARCH_ALPINE) && defined(CONFIG_AL_ETH_SRIOV)
-	if (adapter->pdev->is_physfn) {
-		/* enable forwarding interrupts from eth through pci end point*/
-		if (IS_NIC(adapter->board_type))
-			writel(0x1FFFF, adapter->internal_pcie_base + 0x1800000
-					+ 0x1210);
-	}
-#else
 	/** Linux kernel / Alpine integrated driver */
 	/* enable forwarding interrupts from eth through pci end point*/
 	if (IS_NIC(adapter->board_type))
 		writel(0x1FFFF, adapter->internal_pcie_base + 0x1800000
 				+ 0x1210);
-#endif
 
 	/* enable transmits */
 	netif_tx_start_all_queues(adapter->netdev);
@@ -3831,39 +3819,6 @@ static void al_eth_down(struct al_eth_adapter *adapter)
 	al_eth_free_all_rx_resources(adapter);
 }
 
-#if !defined(CONFIG_ARCH_ALPINE)
-static void al_eth_link_status_task_nic(struct work_struct *work)
-{
-	struct al_eth_adapter *adapter = container_of(to_delayed_work(work),
-			       struct al_eth_adapter, link_status_task);
-	struct al_eth_link_status status;
-
-	al_eth_link_status_get(&adapter->hal_adapter, &status);
-
-	if ((adapter->last_link == true) && (status.link_up == false)) {
-		netdev_info(adapter->netdev, "%s link down\n", __func__);
-
-		netif_carrier_off(adapter->netdev);
-		adapter->last_link = false;
-	} else if ((adapter->last_link == false) && (status.link_up == true)) {
-		netdev_info(adapter->netdev, "%s link up\n", __func__);
-
-		netif_carrier_on(adapter->netdev);
-		adapter->last_link = true;
-	}
-
-
-	if (adapter->link_poll_interval != 0) {
-		unsigned long delay;
-
-		delay = msecs_to_jiffies(adapter->link_poll_interval);
-
-		schedule_delayed_work(&adapter->link_status_task, delay);
-	}
-}
-#endif /* defined(CONFIG_ARCH_ALPINE) */
-
-#ifdef CONFIG_ARCH_ALPINE
 static unsigned int al_eth_systime_msec_get(void)
 {
 	struct timespec64 ts;
@@ -3894,7 +3849,6 @@ static void al_eth_lm_static_init(struct al_eth_adapter *adapter)
 
 	al_eth_lm_init(&adapter->lm_context, &params);
 }
-#endif /* CONFIG_ARCH_ALPINE */
 
 #define AQUANTIA_AQR105_ID			0x3a1b4a2
 
@@ -4001,20 +3955,11 @@ static int al_eth_open(struct net_device *netdev)
 	adapter->dev_stats.interface_up++;
 	u64_stats_update_end(&adapter->syncp);
 
-#ifdef CONFIG_ARCH_ALPINE
 	/* phylink owns carrier + polling (1s, phylink_pcs.poll) for its
 	 * port; every other ALPINE_INTEGRATED port had no link task once
 	 * the vendor group-LM was retired, so carrier is just declared up. */
 	if (!adapter->plink)
 		netif_carrier_on(adapter->netdev);
-#else
-	if (IS_NIC(adapter->board_type)) {
-		delay = msecs_to_jiffies(AL_ETH_FIRST_LINK_POLL_INTERVAL);
-		INIT_DELAYED_WORK(&adapter->link_status_task,
-				al_eth_link_status_task_nic);
-		schedule_delayed_work(&adapter->link_status_task, delay);
-	}
-#endif
 
 	return rc;
 }
@@ -4036,16 +3981,6 @@ static int al_eth_close(struct net_device *netdev)
 
 	netdev_dbg(adapter->netdev, "%s\n", __func__);
 
-	/* link_status_task is only ever INIT_DELAYED_WORK()'d in the
-	 * !CONFIG_ARCH_ALPINE path below (al_eth_up(), IS_NIC branch) - this
-	 * board always builds CONFIG_ARCH_ALPINE=y, so that init never runs
-	 * and the work_struct's .func stays NULL. Canceling it unconditionally
-	 * here hit kernel/workqueue.c's WARN_ON(!work->func) on every close
-	 * (#143) - cancel only when it was actually armed.
-	 */
-#ifndef CONFIG_ARCH_ALPINE
-	cancel_delayed_work_sync(&adapter->link_status_task);
-#endif
 	cancel_work_sync(&adapter->reset_task);
 
 #if defined(CONFIG_ARCH_ALPINE)
