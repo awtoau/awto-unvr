@@ -865,7 +865,9 @@ static int al_dma_pci_probe(struct pci_dev *pdev,
 		goto err_unmap_app;
 	}
 
-	al_dma_sysfs_init(aldev);
+	rc = al_dma_sysfs_init(aldev);
+	if (rc)
+		dev_err(&pdev->dev, "Failed to init sysfs: %d\n", rc);
 
 	dev_info(&pdev->dev,
 		 "Registered %d DMA channels (XOR max %d sources, PQ max %d sources)\n",

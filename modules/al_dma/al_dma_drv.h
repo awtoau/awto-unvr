@@ -81,7 +81,7 @@ struct al_dma_device {
 };
 
 /* Sysfs */
-int al_dma_sysfs_init(struct al_dma_device *dev);
+__must_check int al_dma_sysfs_init(struct al_dma_device *dev);
 void al_dma_sysfs_remove(struct al_dma_device *dev);
 
 #endif /* __AL_DMA_DRV_H__ */
