@@ -65,7 +65,7 @@ static int al_m2m_udma_init_aux(struct al_m2m_udma *m2m_udma,
 	if (init_device) {
 		rc = al_udma_init(&m2m_udma->tx_udma, &dma_params);
 		if (rc != 0) {
-			al_err("failed to initialize %s, error %d\n",
+			pr_err("failed to initialize %s, error %d\n",
 			       dma_params.name, rc);
 			return rc;
 		}
@@ -73,7 +73,7 @@ static int al_m2m_udma_init_aux(struct al_m2m_udma *m2m_udma,
 	} else {
 		rc = al_udma_handle_init(&m2m_udma->tx_udma, &dma_params);
 		if (rc != 0) {
-			al_err("failed to initialize handle for %s, error %d\n",
+			pr_err("failed to initialize handle for %s, error %d\n",
 			       dma_params.name, rc);
 			return rc;
 		}
@@ -88,7 +88,7 @@ static int al_m2m_udma_init_aux(struct al_m2m_udma *m2m_udma,
 	if (init_device) {
 		rc = al_udma_init(&m2m_udma->rx_udma, &dma_params);
 		if (rc != 0) {
-			al_err("failed to initialize %s, error %d\n",
+			pr_err("failed to initialize %s, error %d\n",
 			       dma_params.name, rc);
 			return rc;
 		}
@@ -96,7 +96,7 @@ static int al_m2m_udma_init_aux(struct al_m2m_udma *m2m_udma,
 	} else {
 		rc = al_udma_handle_init(&m2m_udma->rx_udma, &dma_params);
 		if (rc != 0) {
-			al_err("failed to initialize handle for %s, error %d\n",
+			pr_err("failed to initialize handle for %s, error %d\n",
 			       dma_params.name, rc);
 			return rc;
 		}
@@ -111,7 +111,7 @@ static int al_m2m_udma_init_aux(struct al_m2m_udma *m2m_udma,
 int al_m2m_udma_init(struct al_m2m_udma *m2m_udma,
 		     struct al_m2m_udma_params *params)
 {
-	al_dbg("raid [%s]: Initialize unit\n", params->name);
+	pr_debug("raid [%s]: Initialize unit\n", params->name);
 
 	return al_m2m_udma_init_aux(m2m_udma, params, AL_TRUE);
 }
@@ -122,7 +122,7 @@ int al_m2m_udma_init(struct al_m2m_udma *m2m_udma,
 int al_m2m_udma_handle_init(struct al_m2m_udma *m2m_udma,
 			    struct al_m2m_udma_params *params)
 {
-	al_dbg("raid [%s]: Initialize unit handle\n", params->name);
+	pr_debug("raid [%s]: Initialize unit handle\n", params->name);
 
 	return al_m2m_udma_init_aux(m2m_udma, params, AL_FALSE);
 }
@@ -136,19 +136,19 @@ int al_m2m_udma_q_init(struct al_m2m_udma *m2m_udma, uint32_t qid,
 {
 	int rc;
 
-	al_dbg("udma [%s]: Initialize queue %d\n", m2m_udma->name,
+	pr_debug("udma [%s]: Initialize queue %d\n", m2m_udma->name,
 		 qid);
 
 	rc = al_udma_q_init(&m2m_udma->tx_udma, qid, tx_params);
 	if (rc != 0) {
-		al_err("[%s]: failed to initialize tx q %d, error %d\n",
+		pr_err("[%s]: failed to initialize tx q %d, error %d\n",
 			 m2m_udma->name, qid, rc);
 		return rc;
 	}
 
 	rc = al_udma_q_init(&m2m_udma->rx_udma, qid, rx_params);
 	if (rc != 0) {
-		al_err("[%s]: failed to initialize rx q %d, error %d\n",
+		pr_err("[%s]: failed to initialize rx q %d, error %d\n",
 			 m2m_udma->name, qid, rc);
 		return rc;
 	}
@@ -166,14 +166,14 @@ int al_m2m_udma_state_set(struct al_m2m_udma *m2m_udma,
 
 	rc = al_udma_state_set(&m2m_udma->tx_udma, udma_state);
 	if (rc != 0) {
-		al_err("[%s]: failed to change state, error %d\n",
+		pr_err("[%s]: failed to change state, error %d\n",
 			 m2m_udma->name, rc);
 		return rc;
 	}
 
 	rc = al_udma_state_set(&m2m_udma->rx_udma, udma_state);
 	if (rc != 0) {
-		al_err("[%s]: failed to change state, error %d\n",
+		pr_err("[%s]: failed to change state, error %d\n",
 			 m2m_udma->name, rc);
 		return rc;
 	}

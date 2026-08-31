@@ -98,11 +98,11 @@ static int al_udma_main_iofic_config(struct al_iofic_regs __iomem *base,
 				INT_CONTROL_GRP_MASK_MSI_X);
 		break;
 	default:
-		al_err("%s: invalid mode (%d)\n", __func__, mode);
+		pr_err("%s: invalid mode (%d)\n", __func__, mode);
 		return -EINVAL;
 	}
 
-	al_dbg("%s: base.%p mode %d\n", __func__, base, mode);
+	pr_debug("%s: base.%p mode %d\n", __func__, base, mode);
 	return 0;
 }
 
@@ -182,7 +182,7 @@ int al_udma_iofic_config_ex(
 			AL_UDMA_V4_IOFIC_2ND_GROUP_C_ERROR_INTS);
 	}
 
-	al_dbg("%s int_regs %p mode %d\n", __func__, int_regs, mode);
+	pr_debug("%s int_regs %p mode %d\n", __func__, int_regs, mode);
 	return 0;
 }
 

@@ -139,14 +139,14 @@ static int al_eth_kr_an_run(struct al_eth_kr_data *kr_data,
 
 	rc = al_eth_kr_an_init(kr_data->adapter, an_adv);
 	if (rc) {
-		al_err("%s %s autonegotiation init failed\n",
+		pr_err("%s %s autonegotiation init failed\n",
 			kr_data->adapter->name, __func__);
 		return rc;
 	}
 
 	rc = al_eth_kr_an_start(kr_data->adapter, AL_ETH_AN__LT_LANE_0, AL_FALSE, AL_TRUE);
 	if (rc) {
-		al_err("%s %s autonegotiation enable failed\n",
+		pr_err("%s %s autonegotiation enable failed\n",
 			kr_data->adapter->name,	__func__);
 		return rc;
 	}
@@ -155,7 +155,7 @@ static int al_eth_kr_an_run(struct al_eth_kr_data *kr_data,
 		al_msleep(10);
 		timeout -= 10;
 		if (timeout <= 0) {
-			al_info("%s %s autonegotiation failed on timeout\n",
+			pr_info("%s %s autonegotiation failed on timeout\n",
 				kr_data->adapter->name, __func__);
 
 			return -ETIMEDOUT;
@@ -166,7 +166,7 @@ static int al_eth_kr_an_run(struct al_eth_kr_data *kr_data,
 	} while (page_received == AL_FALSE);
 
 	if (error != 0) {
-		al_info("%s %s autonegotiation failed (status error)\n",
+		pr_err("%s %s autonegotiation failed (status error)\n",
 				kr_data->adapter->name, __func__);
 
 			return -EIO;
@@ -174,7 +174,7 @@ static int al_eth_kr_an_run(struct al_eth_kr_data *kr_data,
 
 	al_eth_kr_an_read_adv(kr_data->adapter, an_partner_adv);
 
-	al_dbg("%s %s autonegotiation completed. error = %d\n",
+	pr_debug("%s %s autonegotiation completed. error = %d\n",
 			kr_data->adapter->name,	__func__, error);
 
 	return 0;
@@ -263,7 +263,7 @@ static void al_eth_coeff_req_handle(struct al_eth_kr_data *kr_data,
 					     AL_SERDES_TX_DEEMP_C_PLUS,
 					     lpcoeff->c_plus);
 
-	al_dbg("%s: c(0) = 0x%x c(-1) = 0x%x c(1) = 0x%x\n",
+	pr_debug("%s: c(0) = 0x%x c(-1) = 0x%x c(1) = 0x%x\n",
 		__func__, report->c_zero, report->c_plus, report->c_minus);
 }
 
@@ -344,7 +344,7 @@ static int al_eth_kr_lt_transmitter_task_init(struct al_eth_kr_data *kr_data)
 				AL_ETH_KR_EYE_MEASURE_TIMEOUT,
 				&temp_val);
 	if (rc != 0) {
-		al_warn("%s: Failed to run Rx equalizer (rc = 0x%x)\n",
+		pr_warn("%s: Failed to run Rx equalizer (rc = 0x%x)\n",
 			__func__, rc);
 
 		return rc;
@@ -478,12 +478,12 @@ static int al_eth_kr_lt_transmitter_task_run(struct al_eth_kr_data *kr_data)
 					AL_ETH_KR_EYE_MEASURE_TIMEOUT,
 					&val);
 		if (rc != 0) {
-			al_warn("%s: Rx eye measurement failed\n", __func__);
+			pr_warn("%s: Rx eye measurement failed\n", __func__);
 
 			return rc;
 		}
 
-		al_dbg("%s: Rx Measure eye returned 0x%x\n", __func__, val);
+		pr_debug("%s: Rx Measure eye returned 0x%x\n", __func__, val);
 
 		/* put the new value into the array at the top. */
 		for (i = 0 ; i < QARRAY_SIZE-1 ; i++)
@@ -623,7 +623,7 @@ static int al_eth_kr_lt_transmitter_task_run(struct al_eth_kr_data *kr_data)
 			kr_data->coeff_status_step = C72_CSTATE_NOT_UPDATED;
 			kr_data->curr_coeff++;
 
-			al_dbg("[%s]: doing next coefficient: %d ---\n\n",
+			pr_debug("[%s]: doing next coefficient: %d ---\n\n",
 				kr_data->adapter->name, kr_data->curr_coeff);
 
 			nextstate = QMEASURE;
@@ -661,7 +661,7 @@ static int al_eth_kr_lt_transmitter_task_run(struct al_eth_kr_data *kr_data)
 	 * with the transmitter's rx ready status.
 	 */
 	if (kr_data->algo_state != nextstate)
-		al_dbg("[%s] [al_eth_kr_lt_transmit_run] STM changes %s -> %s: "
+		pr_debug("[%s] [al_eth_kr_lt_transmit_run] STM changes %s -> %s: "
 			" Qarray=%d/%d/%d\n", kr_data->adapter->name,
 			al_eth_kr_mac_sm_name[kr_data->algo_state],
 			al_eth_kr_mac_sm_name[nextstate],
@@ -725,11 +725,11 @@ static int al_eth_kr_run_lt(struct al_eth_kr_data *kr_data)
 
 		training_failure = al_eth_kr_training_status_fail_get(kr_data->adapter,
 								      AL_ETH_AN__LT_LANE_0);
-		al_dbg("[%s] training ended after %d rounds, failed = %s\n",
+		pr_debug("[%s] training ended after %d rounds, failed = %s\n",
 			kr_data->adapter->name, cnt,
 			(training_failure) ? "Yes" : "No");
 		if(training_failure || cnt > AL_ETH_KR_LT_MAX_ROUNDS) {
-			al_warn("[%s] Training Fail: status: %s, timeout: %s\n",
+			pr_warn("[%s] Training Fail: status: %s, timeout: %s\n",
 			       kr_data->adapter->name,
 			       (training_failure) ? "Failed" : "OK",
 			       (cnt > AL_ETH_KR_LT_MAX_ROUNDS) ? "Yes" : "No");
@@ -744,7 +744,7 @@ static int al_eth_kr_run_lt(struct al_eth_kr_data *kr_data)
 
 	} else {
 
-		al_info("[%s] FAILED: did not achieve initial frame lock...\n",
+		pr_info("[%s] FAILED: did not achieve initial frame lock...\n",
 			kr_data->adapter->name);
 
 		ret = -EIO;
@@ -765,7 +765,7 @@ static int al_eth_kr_run_lt(struct al_eth_kr_data *kr_data)
 					  &error);
 		al_udelay(1);
 		if ((cnt--) == 0) {
-			al_info("%s: wait for an complete timeout!\n", __func__);
+			pr_info("%s: wait for an complete timeout!\n", __func__);
 			ret = -ETIMEDOUT;
 			goto error;
 		}
@@ -806,14 +806,14 @@ int al_eth_an_lt_execute(struct al_hal_eth_adapter	*adapter,
 	if (rc) {
 		al_eth_kr_lt_stop(adapter, AL_ETH_AN__LT_LANE_0);
 		al_eth_kr_an_stop(adapter);
-		al_dbg("%s: auto-negotiation failed!\n", __func__);
+		pr_err("%s: auto-negotiation failed!\n", __func__);
 		return rc;
 	}
 
 	if (partner_adv->technology != AL_ETH_AN_TECH_10GBASE_KR) {
 		al_eth_kr_lt_stop(adapter, AL_ETH_AN__LT_LANE_0);
 		al_eth_kr_an_stop(adapter);
-		al_dbg("%s: link partner isn't 10GBASE_KR.\n", __func__);
+		pr_err("%s: link partner isn't 10GBASE_KR.\n", __func__);
 		return rc;
 	}
 
@@ -821,7 +821,7 @@ int al_eth_an_lt_execute(struct al_hal_eth_adapter	*adapter,
 	if (rc) {
 		al_eth_kr_lt_stop(adapter, AL_ETH_AN__LT_LANE_0);
 		al_eth_kr_an_stop(adapter);
-		al_dbg("%s: Link-training failed!\n", __func__);
+		pr_err("%s: Link-training failed!\n", __func__);
 		return rc;
 	}
 

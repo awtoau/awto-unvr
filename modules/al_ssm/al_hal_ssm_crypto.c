@@ -262,7 +262,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifdef CRYPTO_DEBUG
 static void al_print_crypto_desc(union al_udma_desc *desc)
 {
-	al_dbg(" Crypto: Desc: %08x %08x %08x %08x\n",
+	pr_debug(" Crypto: Desc: %08x %08x %08x %08x\n",
 			desc->tx_meta.len_ctrl, desc->tx_meta.meta_ctrl,
 			desc->tx_meta.meta1, desc->tx_meta.meta2);
 }
@@ -272,75 +272,75 @@ void al_print_crypto_xaction(struct al_crypto_transaction *xaction)
 {
 	unsigned int i;
 
-	al_dbg("Crypto: Transaction debug\n");
-	al_dbg(" Direction %s\n",
+	pr_debug("Crypto: Transaction debug\n");
+	pr_debug(" Direction %s\n",
 		(xaction->dir == AL_CRYPT_ENCRYPT) ? "Encrypt" : "Decrypt");
-	al_dbg(" Flags %d\n", xaction->flags);
+	pr_debug(" Flags %d\n", xaction->flags);
 
-	al_dbg("-SRC buf size %d num of buffers  %d\n",
+	pr_debug("-SRC buf size %d num of buffers  %d\n",
 		xaction->src_size, xaction->src.num);
 	for (i = 0 ; i < xaction->src.num; i++)
-		al_dbg(" addr 0x%016" PRIx64 " len %d\n",
+		pr_debug(" addr 0x%016" PRIx64 " len %d\n",
 			xaction->src.bufs[i].addr,
 			xaction->src.bufs[i].len);
 
-	al_dbg("-DST num of buffers  %d\n",
+	pr_debug("-DST num of buffers  %d\n",
 			xaction->dst.num);
 	for (i = 0 ; i < xaction->dst.num; i++)
-		al_dbg(" addr 0x%016" PRIx64 " len %d\n",
+		pr_debug(" addr 0x%016" PRIx64 " len %d\n",
 			xaction->dst.bufs[i].addr,
 			xaction->dst.bufs[i].len);
 
-	al_dbg("-SA index %d address 0x%016" PRIx64 " len %d\n",
+	pr_debug("-SA index %d address 0x%016" PRIx64 " len %d\n",
 		xaction->sa_indx, xaction->sa_in.addr,
 		xaction->sa_in.len);
-	al_dbg(" SA OUT size: %d , addr 0x%016" PRIx64 "\n",
+	pr_debug(" SA OUT size: %d , addr 0x%016" PRIx64 "\n",
 		xaction->sa_out.len,
 		xaction->sa_out.addr);
 
-	al_dbg("-Enc IV IN size: %d, addr 0x%016" PRIx64 "\n",
+	pr_debug("-Enc IV IN size: %d, addr 0x%016" PRIx64 "\n",
 		xaction->enc_iv_in.len,
 		xaction->enc_iv_in.addr);
-	al_dbg(" Enc IV OUT size: %d, addr 0x%016" PRIx64 "\n",
+	pr_debug(" Enc IV OUT size: %d, addr 0x%016" PRIx64 "\n",
 		xaction->enc_iv_out.len,
 		xaction->enc_iv_out.addr);
-	al_dbg(" Enc Next IV OUT size: %d, addr 0x%016" PRIx64 "\n",
+	pr_debug(" Enc Next IV OUT size: %d, addr 0x%016" PRIx64 "\n",
 		xaction->enc_next_iv_out.len,
 		xaction->enc_next_iv_out.addr);
-	al_dbg(" Enc Offset %d EOP valid %d EOP %d Len %d\n",
+	pr_debug(" Enc Offset %d EOP valid %d EOP %d Len %d\n",
 		xaction->enc_in_off, xaction->enc_in_off_eop_valid, xaction->enc_in_off_eop,
 		xaction->enc_in_len);
 
-	al_dbg("-Auth fl_valid %d, first %d last %d\n",
+	pr_debug("-Auth fl_valid %d, first %d last %d\n",
 		xaction->auth_fl_valid, xaction->auth_first,
 		xaction->auth_last);
-	al_dbg(" Auth IV IN size: %d, addr 0x%016" PRIx64 "\n",
+	pr_debug(" Auth IV IN size: %d, addr 0x%016" PRIx64 "\n",
 		xaction->auth_iv_in.len,
 		xaction->auth_iv_in.addr);
-	al_dbg(" Auth IV OUT size: %d, addr 0x%016" PRIx64 "\n",
+	pr_debug(" Auth IV OUT size: %d, addr 0x%016" PRIx64 "\n",
 		xaction->auth_iv_out.len,
 		xaction->auth_iv_out.addr);
-	al_dbg(" Auth SIGN IN size: %d, addr 0x%016" PRIx64 "\n",
+	pr_debug(" Auth SIGN IN size: %d, addr 0x%016" PRIx64 "\n",
 		xaction->auth_sign_in.len,
 		xaction->auth_sign_in.addr);
-	al_dbg(" Auth SIGN OUT size: %d, addr 0x%016" PRIx64 "\n",
+	pr_debug(" Auth SIGN OUT size: %d, addr 0x%016" PRIx64 "\n",
 		xaction->auth_sign_out.len,
 		xaction->auth_sign_out.addr);
-	al_dbg(" Auth Offset %d EOP valid %d EOP %d Len %d\n",
+	pr_debug(" Auth Offset %d EOP valid %d EOP %d Len %d\n",
 		xaction->auth_in_off, xaction->auth_in_off_eop_valid, xaction->auth_in_off_eop,
 		xaction->auth_in_len);
-	al_dbg(" Auth Byte Count %d\n",
+	pr_debug(" Auth Byte Count %d\n",
 		xaction->auth_bcnt);
 
-	al_dbg("-Cmprs fl_valid %d\n", xaction->cmprs_fl_valid);
-	al_dbg(" Cmprs his win in size: %d, addr 0x%016llx\n",
+	pr_debug("-Cmprs fl_valid %d\n", xaction->cmprs_fl_valid);
+	pr_debug(" Cmprs his win in size: %d, addr 0x%016llx\n",
 		xaction->cmprs_his_win_in.len,
 		(unsigned long long)xaction->cmprs_his_win_in.addr);
-	al_dbg(" Cmprs dynamic deflate dec tbl size: %d, addr 0x%016llx\n",
+	pr_debug(" Cmprs dynamic deflate dec tbl size: %d, addr 0x%016llx\n",
 		xaction->cmprs_dynamic_deflate_dec_tbl.len,
 		(unsigned long long)xaction->cmprs_dynamic_deflate_dec_tbl.addr);
 
-	al_dbg(" Protection info metadata in size: %d, addr 0x%016llx\n",
+	pr_debug(" Protection info metadata in size: %d, addr 0x%016llx\n",
 		xaction->protection_info_in.len,
 		(unsigned long long)xaction->protection_info_in.addr);
 }
@@ -603,14 +603,14 @@ void al_crypto_set_tx_descs(struct al_udma_q *tx_udma_q,
 		uint32_t enc_in_off_eop;
 		uint32_t auth_in_off_eop;
 
-		al_dbg("Crypto: preparing metadata desc:\n");
-		al_dbg("	Enc Offset %d EOP valid %d EOP %d Len %d\n",
+		pr_debug("Crypto: preparing metadata desc:\n");
+		pr_debug("	Enc Offset %d EOP valid %d EOP %d Len %d\n",
 			xaction->enc_in_off, xaction->enc_in_off_eop_valid,
 			xaction->enc_in_off_eop, xaction->enc_in_len);
-		al_dbg("	Auth Offset %d EOP valid %d EOP %d Len %d\n",
+		pr_debug("	Auth Offset %d EOP valid %d EOP %d Len %d\n",
 			xaction->auth_in_off, xaction->auth_in_off_eop_valid,
 			xaction->auth_in_off_eop, xaction->auth_in_len);
-		al_dbg("	Cmprs+Enc padding resolution %d Auto padding %d\n",
+		pr_debug("	Cmprs+Enc padding resolution %d Auto padding %d\n",
 			xaction->cmprs_enc_padding_res, xaction->cmprs_enc_auto_padding);
 		/* having only metdata desc isnt valid */
 		desc_cnt--;
@@ -1185,7 +1185,7 @@ int al_crypto_dma_prepare(struct al_ssm_dma *dma, uint32_t qid,
 		/* check again */
 		if (unlikely(al_udma_available_get(tx_udma_q) < tx_descs
 				+ AL_CRYPT_DESC_RES)) {
-			al_dbg("crypt[%s]:tx q has no enough free desc\n",
+			pr_debug("crypt[%s]:tx q has no enough free desc\n",
 					dma->m2m_udma.name);
 			return -ENOSPC;
 		}
@@ -1201,7 +1201,7 @@ int al_crypto_dma_prepare(struct al_ssm_dma *dma, uint32_t qid,
 	al_assert(!rc);
 	if (unlikely(al_udma_available_get(rx_udma_q)
 		     < (rx_descs ? rx_descs : 1))) {
-		al_dbg("crypto [%s]: rx q has no enough free desc\n",
+		pr_debug("crypto [%s]: rx q has no enough free desc\n",
 			 dma->m2m_udma.name);
 		return -ENOSPC;
 	}

@@ -54,7 +54,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 static void al_udma_regs_m2s_axi_print(struct al_udma *udma)
 {
-	al_dbg("M2S AXI regs:\n");
+	pr_debug("M2S AXI regs:\n");
 	AL_UDMA_PRINT_REG(udma, " ", "\n", m2s, axi_m2s, comp_wr_cfg_1);
 	AL_UDMA_PRINT_REG(udma, " ", "\n", m2s, axi_m2s, comp_wr_cfg_2);
 	AL_UDMA_PRINT_REG(udma, " ", "\n", m2s, axi_m2s, data_rd_cfg_1);
@@ -79,7 +79,7 @@ static void al_udma_regs_m2s_axi_print(struct al_udma *udma)
 
 static void al_udma_regs_m2s_general_print(struct al_udma *udma)
 {
-	al_dbg("M2S general regs:\n");
+	pr_debug("M2S general regs:\n");
 
 	AL_UDMA_PRINT_REG(udma, " ", "\n", m2s, m2s, state);
 	AL_UDMA_PRINT_REG_FIELD(udma, "  ", "\n", "%d", m2s, m2s, state,
@@ -111,7 +111,7 @@ static void al_udma_regs_m2s_general_print(struct al_udma *udma)
 
 static void al_udma_regs_m2s_rd_print(struct al_udma *udma)
 {
-	al_dbg("M2S read regs:\n");
+	pr_debug("M2S read regs:\n");
 	AL_UDMA_PRINT_REG(udma, " ", "\n", m2s, m2s_rd, desc_pref_cfg_1);
 	AL_UDMA_PRINT_REG(udma, " ", "\n", m2s, m2s_rd, desc_pref_cfg_2);
 
@@ -134,19 +134,19 @@ static void al_udma_regs_m2s_rd_print(struct al_udma *udma)
 
 static void al_udma_regs_m2s_dwrr_print(struct al_udma *udma)
 {
-	al_dbg("M2S DWRR regs:\n");
+	pr_debug("M2S DWRR regs:\n");
 	AL_UDMA_PRINT_REG(udma, " ", "\n", m2s, m2s_dwrr, cfg_sched);
 }
 
 static void al_udma_regs_m2s_rate_limiter_print(struct al_udma *udma)
 {
-	al_dbg("M2S rate limiter regs:\n");
+	pr_debug("M2S rate limiter regs:\n");
 	AL_UDMA_PRINT_REG(udma, " ", "\n", m2s, m2s_rate_limiter, gen_cfg);
 }
 
 static void al_udma_regs_m2s_stream_rate_limiter_print(struct al_udma *udma)
 {
-	al_dbg("M2S stream rate limiter regs:\n");
+	pr_debug("M2S stream rate limiter regs:\n");
 
 	AL_UDMA_PRINT_REG(udma, " ", "\n", m2s, m2s_stream_rate_limiter,
 			rlimit.cfg_1s);
@@ -162,7 +162,7 @@ static void al_udma_regs_m2s_stream_rate_limiter_print(struct al_udma *udma)
 
 static void al_udma_regs_m2s_comp_print(struct al_udma *udma)
 {
-	al_dbg("M2S completion regs:\n");
+	pr_debug("M2S completion regs:\n");
 
 	AL_UDMA_PRINT_REG(udma, " ", "\n", m2s, m2s_comp, cfg_1c);
 
@@ -188,7 +188,7 @@ static void al_udma_regs_m2s_comp_print(struct al_udma *udma)
 
 static void al_udma_regs_m2s_stat_print(struct al_udma *udma)
 {
-	al_dbg("M2S statistics regs:\n");
+	pr_debug("M2S statistics regs:\n");
 	AL_UDMA_PRINT_REG(udma, " ", "\n", m2s, m2s_stat, cfg_st);
 	AL_UDMA_PRINT_REG(udma, " ", "\n", m2s, m2s_stat, tx_pkt);
 	AL_UDMA_PRINT_REG(udma, " ", "\n", m2s, m2s_stat, tx_bytes_low);
@@ -201,7 +201,7 @@ static void al_udma_regs_m2s_stat_print(struct al_udma *udma)
 
 static void al_udma_regs_m2s_feature_print(struct al_udma *udma)
 {
-	al_dbg("M2S feature regs:\n");
+	pr_debug("M2S feature regs:\n");
 	AL_UDMA_PRINT_REG(udma, " ", "\n", m2s, m2s_feature, reg_1);
 	AL_UDMA_PRINT_REG(udma, " ", "\n", m2s, m2s_feature, reg_3);
 	AL_UDMA_PRINT_REG(udma, " ", "\n", m2s, m2s_feature, reg_4);
@@ -210,14 +210,14 @@ static void al_udma_regs_m2s_feature_print(struct al_udma *udma)
 
 static void al_udma_regs_m2s_q_print(struct al_udma *udma, uint32_t qid)
 {
-	al_dbg("M2S Q[%d] status regs:\n", qid);
+	pr_debug("M2S Q[%d] status regs:\n", qid);
 	al_reg_write32(&udma->udma_regs->m2s.m2s.indirect_ctrl, qid);
 	AL_UDMA_PRINT_REG(udma, " ", "\n", m2s, m2s, sel_pref_fifo_status);
 	AL_UDMA_PRINT_REG(udma, " ", "\n", m2s, m2s, sel_comp_fifo_status);
 	AL_UDMA_PRINT_REG(udma, " ", "\n", m2s, m2s, sel_rate_limit_status);
 	AL_UDMA_PRINT_REG(udma, " ", "\n", m2s, m2s, sel_dwrr_status);
 
-	al_dbg("M2S Q[%d] regs:\n", qid);
+	pr_debug("M2S Q[%d] regs:\n", qid);
 	AL_UDMA_PRINT_REG(udma, " ", "\n", m2s, m2s_q[qid], cfg);
 	AL_UDMA_PRINT_REG(udma, " ", "\n", m2s, m2s_q[qid], status);
 	AL_UDMA_PRINT_REG(udma, " ", "\n", m2s, m2s_q[qid], tdrbp_low);
@@ -247,7 +247,7 @@ static void al_udma_regs_m2s_q_print(struct al_udma *udma, uint32_t qid)
 
 static void al_udma_regs_s2m_axi_print(struct al_udma *udma)
 {
-	al_dbg("S2M AXI regs:\n");
+	pr_debug("S2M AXI regs:\n");
 	AL_UDMA_PRINT_REG(udma, " ", "\n", s2m, axi_s2m, data_wr_cfg_1);
 	AL_UDMA_PRINT_REG(udma, " ", "\n", s2m, axi_s2m, data_wr_cfg_2);
 	AL_UDMA_PRINT_REG(udma, " ", "\n", s2m, axi_s2m, desc_rd_cfg_4);
@@ -263,7 +263,7 @@ static void al_udma_regs_s2m_axi_print(struct al_udma *udma)
 
 static void al_udma_regs_s2m_general_print(struct al_udma *udma)
 {
-	al_dbg("S2M general regs:\n");
+	pr_debug("S2M general regs:\n");
 	AL_UDMA_PRINT_REG(udma, " ", "\n", s2m, s2m, state);
 	AL_UDMA_PRINT_REG(udma, " ", "\n", s2m, s2m, err_log_mask);
 	AL_UDMA_PRINT_REG(udma, " ", "\n", s2m, s2m, log_0);
@@ -281,7 +281,7 @@ static void al_udma_regs_s2m_general_print(struct al_udma *udma)
 
 static void al_udma_regs_s2m_rd_print(struct al_udma *udma)
 {
-	al_dbg("S2M read regs:\n");
+	pr_debug("S2M read regs:\n");
 	AL_UDMA_PRINT_REG(udma, " ", "\n", s2m, s2m_rd, desc_pref_cfg_1);
 	AL_UDMA_PRINT_REG(udma, " ", "\n", s2m, s2m_rd, desc_pref_cfg_2);
 	AL_UDMA_PRINT_REG(udma, " ", "\n", s2m, s2m_rd, desc_pref_cfg_3);
@@ -290,14 +290,14 @@ static void al_udma_regs_s2m_rd_print(struct al_udma *udma)
 
 static void al_udma_regs_s2m_wr_print(struct al_udma *udma)
 {
-	al_dbg("S2M write regs:\n");
+	pr_debug("S2M write regs:\n");
 	AL_UDMA_PRINT_REG(udma, " ", "\n", s2m, s2m_wr, data_cfg_1);
 	AL_UDMA_PRINT_REG(udma, " ", "\n", s2m, s2m_wr, data_cfg_2);
 }
 
 static void al_udma_regs_s2m_comp_print(struct al_udma *udma)
 {
-	al_dbg("S2M completion regs:\n");
+	pr_debug("S2M completion regs:\n");
 	AL_UDMA_PRINT_REG(udma, " ", "\n", s2m, s2m_comp, cfg_1c);
 	AL_UDMA_PRINT_REG(udma, " ", "\n", s2m, s2m_comp, cfg_2c);
 	AL_UDMA_PRINT_REG(udma, " ", "\n", s2m, s2m_comp, cfg_application_ack);
@@ -305,7 +305,7 @@ static void al_udma_regs_s2m_comp_print(struct al_udma *udma)
 
 static void al_udma_regs_s2m_stat_print(struct al_udma *udma)
 {
-	al_dbg("S2M statistics regs:\n");
+	pr_debug("S2M statistics regs:\n");
 	AL_UDMA_PRINT_REG(udma, " ", "\n", s2m, s2m_stat, drop_pkt);
 	AL_UDMA_PRINT_REG(udma, " ", "\n", s2m, s2m_stat, rx_bytes_low);
 	AL_UDMA_PRINT_REG(udma, " ", "\n", s2m, s2m_stat, rx_bytes_high);
@@ -317,7 +317,7 @@ static void al_udma_regs_s2m_stat_print(struct al_udma *udma)
 
 static void al_udma_regs_s2m_feature_print(struct al_udma *udma)
 {
-	al_dbg("S2M feature regs:\n");
+	pr_debug("S2M feature regs:\n");
 	AL_UDMA_PRINT_REG(udma, " ", "\n", s2m, s2m_feature, reg_1);
 	AL_UDMA_PRINT_REG(udma, " ", "\n", s2m, s2m_feature, reg_3);
 	AL_UDMA_PRINT_REG(udma, " ", "\n", s2m, s2m_feature, reg_4);
@@ -327,12 +327,12 @@ static void al_udma_regs_s2m_feature_print(struct al_udma *udma)
 
 static void al_udma_regs_s2m_q_print(struct al_udma *udma, uint32_t qid)
 {
-	al_dbg("S2M Q[%d] status regs:\n", qid);
+	pr_debug("S2M Q[%d] status regs:\n", qid);
 	al_reg_write32(&udma->udma_regs->s2m.s2m.indirect_ctrl, qid);
 	AL_UDMA_PRINT_REG(udma, " ", "\n", s2m, s2m, sel_pref_fifo_status);
 	AL_UDMA_PRINT_REG(udma, " ", "\n", s2m, s2m, sel_comp_fifo_status);
 
-	al_dbg("S2M Q[%d] regs:\n", qid);
+	pr_debug("S2M Q[%d] regs:\n", qid);
 	AL_UDMA_PRINT_REG(udma, " ", "\n", s2m, s2m_q[qid], cfg);
 	AL_UDMA_PRINT_REG(udma, " ", "\n", s2m, s2m_q[qid], status);
 	AL_UDMA_PRINT_REG(udma, " ", "\n", s2m, s2m_q[qid], rdrbp_low);
@@ -416,28 +416,28 @@ void al_udma_q_struct_print(struct al_udma *udma, uint32_t qid)
 
 	queue = &udma->udma_q[qid];
 
-	al_dbg("Q[%d] struct:\n", qid);
-	al_dbg(" size_mask = 0x%08x\n", queue->size_mask);
-	al_dbg(" q_regs = %p\n", queue->q_regs);
-	al_dbg(" desc_base_ptr = %p\n", queue->desc_base_ptr);
-	al_dbg(" next_desc_idx = %d\n", queue->next_desc_idx);
-	al_dbg(" desc_ring_id = %d\n", queue->desc_ring_id);
-	al_dbg(" cdesc_base_ptr = %p\n", queue->cdesc_base_ptr);
-	al_dbg(" cdesc_size = %d\n", queue->cdesc_size);
-	al_dbg(" next_cdesc_idx = %d\n", queue->next_cdesc_idx);
-	al_dbg(" end_cdesc_ptr = %p\n", queue->end_cdesc_ptr);
-	al_dbg(" comp_head_idx = %d\n", queue->comp_head_idx);
-	al_dbg(" comp_head_ptr = %p\n", queue->comp_head_ptr);
-	al_dbg(" pkt_crnt_descs = %d\n", queue->pkt_crnt_descs);
-	al_dbg(" comp_ring_id = %d\n", queue->comp_ring_id);
-	al_dbg(" desc_phy_base = 0x%016" PRIx64 "\n", (uint64_t)queue->desc_phy_base);
-	al_dbg(" cdesc_phy_base = 0x%016" PRIx64 "\n",
+	pr_debug("Q[%d] struct:\n", qid);
+	pr_debug(" size_mask = 0x%08x\n", queue->size_mask);
+	pr_debug(" q_regs = %p\n", queue->q_regs);
+	pr_debug(" desc_base_ptr = %p\n", queue->desc_base_ptr);
+	pr_debug(" next_desc_idx = %d\n", queue->next_desc_idx);
+	pr_debug(" desc_ring_id = %d\n", queue->desc_ring_id);
+	pr_debug(" cdesc_base_ptr = %p\n", queue->cdesc_base_ptr);
+	pr_debug(" cdesc_size = %d\n", queue->cdesc_size);
+	pr_debug(" next_cdesc_idx = %d\n", queue->next_cdesc_idx);
+	pr_debug(" end_cdesc_ptr = %p\n", queue->end_cdesc_ptr);
+	pr_debug(" comp_head_idx = %d\n", queue->comp_head_idx);
+	pr_debug(" comp_head_ptr = %p\n", queue->comp_head_ptr);
+	pr_debug(" pkt_crnt_descs = %d\n", queue->pkt_crnt_descs);
+	pr_debug(" comp_ring_id = %d\n", queue->comp_ring_id);
+	pr_debug(" desc_phy_base = 0x%016" PRIx64 "\n", (uint64_t)queue->desc_phy_base);
+	pr_debug(" cdesc_phy_base = 0x%016" PRIx64 "\n",
 			(uint64_t)queue->cdesc_phy_base);
-	al_dbg(" flags = 0x%08x\n", queue->flags);
-	al_dbg(" size = %d\n", queue->size);
-	al_dbg(" status = %d\n", queue->status);
-	al_dbg(" udma = %p\n", queue->udma);
-	al_dbg(" qid = %d\n", queue->qid);
+	pr_debug(" flags = 0x%08x\n", queue->flags);
+	pr_debug(" size = %d\n", queue->size);
+	pr_debug(" status = %d\n", queue->status);
+	pr_debug(" udma = %p\n", queue->udma);
+	pr_debug(" qid = %d\n", queue->qid);
 }
 
 void al_udma_ring_print(struct al_udma *udma, uint32_t qid,
@@ -459,18 +459,18 @@ void al_udma_ring_print(struct al_udma *udma, uint32_t qid,
 		base_ptr = (uint8_t *)queue->desc_base_ptr;
 		desc_size = sizeof(union al_udma_desc);
 		if (base_ptr)
-			al_dbg("Q[%d] submission ring pointers:\n", qid);
+			pr_debug("Q[%d] submission ring pointers:\n", qid);
 		else {
-			al_dbg("Q[%d] submission ring is not allocated\n", qid);
+			pr_debug("Q[%d] submission ring is not allocated\n", qid);
 			return;
 		}
 	} else {
 		base_ptr = (uint8_t *)queue->cdesc_base_ptr;
 		desc_size = queue->cdesc_size;
 		if (base_ptr)
-			al_dbg("Q[%d] completion ring pointers:\n", qid);
+			pr_debug("Q[%d] completion ring pointers:\n", qid);
 		else {
-			al_dbg("Q[%d] completion ring is not allocated\n", qid);
+			pr_debug("Q[%d] completion ring is not allocated\n", qid);
 			return;
 		}
 	}
@@ -478,7 +478,7 @@ void al_udma_ring_print(struct al_udma *udma, uint32_t qid,
 	for (i = 0; i < queue->size; i++) {
 		uint32_t *curr_addr = (uint32_t *)(base_ptr + i * desc_size);
 		if (desc_size == 16)
-			al_dbg("[%04d](%p): %08x %08x %08x %08x\n",
+			pr_debug("[%04d](%p): %08x %08x %08x %08x\n",
 					i,
 					curr_addr,
 					(uint32_t)*curr_addr,
@@ -486,13 +486,13 @@ void al_udma_ring_print(struct al_udma *udma, uint32_t qid,
 					(uint32_t)*(curr_addr+2),
 					(uint32_t)*(curr_addr+3));
 		else if (desc_size == 8)
-			al_dbg("[%04d](%p): %08x %08x\n",
+			pr_debug("[%04d](%p): %08x %08x\n",
 					i,
 					curr_addr,
 					(uint32_t)*curr_addr,
 					(uint32_t)*(curr_addr+1));
 		else if (desc_size == 4)
-			al_dbg("[%04d](%p): %08x\n",
+			pr_debug("[%04d](%p): %08x\n",
 					i,
 					curr_addr,
 					(uint32_t)*curr_addr);
@@ -524,23 +524,23 @@ void al_udma_ring_descs_around_comp_print(struct al_udma *udma, uint32_t qid,
 		base_ptr = (uint8_t *)queue->desc_base_ptr;
 		desc_size = sizeof(union al_udma_desc);
 		if (base_ptr)
-			al_info("Q[%d] submission ring around comp head pointers:\n", qid);
+			pr_info("Q[%d] submission ring around comp head pointers:\n", qid);
 		else {
-			al_warn("Q[%d] submission ring is not allocated\n", qid);
+			pr_warn("Q[%d] submission ring is not allocated\n", qid);
 			return;
 		}
 	} else {
 		base_ptr = (uint8_t *)queue->cdesc_base_ptr;
 		desc_size = queue->cdesc_size;
 		if (base_ptr)
-			al_info("Q[%d] completion ring pre comp header pointers:\n", qid);
+			pr_info("Q[%d] completion ring pre comp header pointers:\n", qid);
 		else {
-			al_warn("Q[%d] completion ring is not allocated\n", qid);
+			pr_warn("Q[%d] completion ring is not allocated\n", qid);
 			return;
 		}
 	}
 
-	al_info("desc_size: %d\n", desc_size);
+	pr_info("desc_size: %d\n", desc_size);
 	al_assert((desc_size == 16) || (desc_size == 8) || (desc_size == 4));
 
 	crhp = al_reg_read32(&queue->q_regs->rings.crhp);
@@ -552,20 +552,20 @@ void al_udma_ring_descs_around_comp_print(struct al_udma *udma, uint32_t qid,
 	if (rtype == AL_RING_SUBMISSION) {
 		drtp = al_reg_read32(&queue->q_regs->rings.drhp);
 		num_of_descs_to_print = (drtp - pre_next_to_complete_idx) & queue->size_mask;
-		al_info("drtp: 0x%08x\n", drtp);
+		pr_info("drtp: 0x%08x\n", drtp);
 	} else {
 		num_of_descs_to_print = pre_next_to_complete_num + 1;
 	}
 
-	al_info("crhp: 0x%08x\n", crhp);
-	al_info("ring_size: 0x%08x\n", queue->size);
+	pr_info("crhp: 0x%08x\n", crhp);
+	pr_info("ring_size: 0x%08x\n", queue->size);
 
 	end_idx = pre_next_to_complete_idx + num_of_descs_to_print;
 	for (i = pre_next_to_complete_idx; i <= end_idx; i++) {
 		uint32_t *curr_addr = (uint32_t *)(base_ptr + (i & queue->size_mask) * desc_size);
 
 		if (desc_size == 16)
-			al_info("[%04d](%p): %08x %08x %08x %08x\n",
+			pr_info("[%04d](%p): %08x %08x %08x %08x\n",
 					(i & queue->size_mask),
 					curr_addr,
 					(uint32_t)*curr_addr,
@@ -573,13 +573,13 @@ void al_udma_ring_descs_around_comp_print(struct al_udma *udma, uint32_t qid,
 					(uint32_t)*(curr_addr+2),
 					(uint32_t)*(curr_addr+3));
 		else if (desc_size == 8)
-			al_info("[%04d](%p): %08x %08x\n",
+			pr_info("[%04d](%p): %08x %08x\n",
 					(i & queue->size_mask),
 					curr_addr,
 					(uint32_t)*curr_addr,
 					(uint32_t)*(curr_addr+1));
 		else if (desc_size == 4)
-			al_info("[%04d](%p): %08x\n",
+			pr_info("[%04d](%p): %08x\n",
 					(i & queue->size_mask),
 					curr_addr,
 					(uint32_t)*curr_addr);

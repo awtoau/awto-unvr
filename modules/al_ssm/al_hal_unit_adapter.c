@@ -178,14 +178,14 @@ void al_unit_adapter_perf_params_print(
 
 	al_unit_adapter_rob_cfg_get(unit_adapter, &rob_cfg);
 
-	al_print("- Error tracking: %s\n",
+	pr_info("- Error tracking: %s\n",
 		al_unit_adapter_error_track_is_enabled(unit_adapter) ?
 		"enabled" : "disabled");
-	al_print("- rd_rob_en = %s\n", rob_cfg.rd_rob_en ? "enabled" : "disabled");
-	al_print("- rd_rob_force_in_order = %s\n",
+	pr_info("- rd_rob_en = %s\n", rob_cfg.rd_rob_en ? "enabled" : "disabled");
+	pr_info("- rd_rob_force_in_order = %s\n",
 		rob_cfg.rd_rob_force_in_order ? "enabled" : "disabled");
-	al_print("- wr_rob_en = %s\n", rob_cfg.wr_rob_en ? "enabled" : "disabled");
-	al_print("- wr_rob_force_in_order = %s\n",
+	pr_info("- wr_rob_en = %s\n", rob_cfg.wr_rob_en ? "enabled" : "disabled");
+	pr_info("- wr_rob_force_in_order = %s\n",
 		rob_cfg.wr_rob_force_in_order ? "enabled" : "disabled");
 }
 
@@ -674,20 +674,20 @@ void al_unit_adapter_err_attr_print(struct al_unit_adapter *unit_adapter, al_boo
 	else
 		al_unit_adapter_axi_master_wr_err_attr_get_and_clear(unit_adapter, &err_attr);
 
-	al_print("Error Attributes Type: %s\n", is_read ? "READ" : "WRITE");
+	pr_info("Error Attributes Type: %s\n", is_read ? "READ" : "WRITE");
 	if (is_read)
-		al_print("- read_parity_error = %s\n",
+		pr_info("- read_parity_error = %s\n",
 			 err_attr.read_parity_error ? "True" : "False");
-	al_print("- error_blocked = %s\n", err_attr.error_blocked  ? "True" : "False");
-	al_print("- completion_timeout = %s\n", err_attr.completion_timeout ? "True" : "False");
-	al_print("- completion_error = %s\n", err_attr.completion_error ? "True" : "False");
-	al_print("- address_timeout = %s\n", err_attr.address_timeout ? "True" : "False");
-	al_print("- error_master_id = 0x%x\n", err_attr.error_master_id);
-	al_print("- error_completion_status = 0x%x\n",  err_attr.error_completion_status);
+	pr_info("- error_blocked = %s\n", err_attr.error_blocked  ? "True" : "False");
+	pr_info("- completion_timeout = %s\n", err_attr.completion_timeout ? "True" : "False");
+	pr_info("- completion_error = %s\n", err_attr.completion_error ? "True" : "False");
+	pr_info("- address_timeout = %s\n", err_attr.address_timeout ? "True" : "False");
+	pr_info("- error_master_id = 0x%x\n", err_attr.error_master_id);
+	pr_info("- error_completion_status = 0x%x\n",  err_attr.error_completion_status);
 
 	/* Address latching is not available on Alpine V3 - will print 0 */
 	error_address = (((uint64_t)err_attr.error_address_latch_hi << 32) |
 			 err_attr.error_address_latch_lo);
-	al_print("-  (Not valid on Alpine V3) error_address = 0x%016" PRIx64 "\n", error_address);
+	pr_info("-  (Not valid on Alpine V3) error_address = 0x%016" PRIx64 "\n", error_address);
 }
 /** @} */

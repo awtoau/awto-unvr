@@ -306,7 +306,7 @@ int al_udma_m2s_packet_size_cfg_set(struct al_udma *udma,
 	al_assert(udma->type == UDMA_TX);
 
 	if (conf->max_pkt_size > max_supported_size) {
-		al_err("udma [%s]: requested max_pkt_size (0x%x) exceeds the"
+		pr_err("udma [%s]: requested max_pkt_size (0x%x) exceeds the"
 			"supported limit (0x%x)\n", udma->name,
 			 conf->max_pkt_size, max_supported_size);
 		return -EINVAL;
@@ -355,7 +355,7 @@ int al_udma_m2s_pref_set(struct al_udma *udma,
 	else if (conf->sch_mode == STRICT)
 		reg &= ~UDMA_M2S_RD_DESC_PREF_CFG_2_PREF_FORCE_RR;
 	else {
-		al_err("udma [%s]: requested descriptor preferch arbiter "
+		pr_err("udma [%s]: requested descriptor preferch arbiter "
 			"mode (%d) is invalid\n", udma->name, conf->sch_mode);
 		return -EINVAL;
 	}
@@ -504,7 +504,7 @@ int al_udma_s2m_full_line_write_set(struct al_udma *udma, al_bool enable)
 
 	if (enable == AL_TRUE) {
 		val = UDMA_S2M_WR_DATA_CFG_2_FULL_LINE_MODE;
-		al_info("udma [%s]: full line write enabled\n", udma->name);
+		pr_info("udma [%s]: full line write enabled\n", udma->name);
 	}
 
 	al_reg_write32_masked(&udma->udma_regs->s2m.s2m_wr.data_cfg_2,
@@ -531,7 +531,7 @@ int al_udma_s2m_pref_set(struct al_udma *udma,
 	else if (conf->sch_mode == STRICT)
 		reg &= ~UDMA_S2M_RD_DESC_PREF_CFG_2_PREF_FORCE_RR;
 	else {
-		al_err("udma [%s]: requested descriptor preferch arbiter "
+		pr_err("udma [%s]: requested descriptor preferch arbiter "
 			"mode (%d) is invalid\n", udma->name, conf->sch_mode);
 		return -EINVAL;
 	}
@@ -840,7 +840,7 @@ int al_udma_m2s_strm_rlimit_act(struct al_udma *udma,
 	    &udma->udma_regs->m2s.m2s_stream_rate_limiter.rlimit;
 
 	if (al_udma_common_rlimit_act(rlimit_regs, act) == -EINVAL) {
-		al_err("udma [%s]: udma stream rate limit invalid action "
+		pr_err("udma [%s]: udma stream rate limit invalid action "
 			"(%d)\n", udma->name, act);
 		return -EINVAL;
 	}
@@ -862,7 +862,7 @@ int al_udma_m2s_q_rlimit_act(struct al_udma_q *udma_q,
 	struct udma_rlimit_common *rlimit_regs = &udma_q->q_regs->m2s_q.rlimit;
 
 	if (al_udma_common_rlimit_act(rlimit_regs, act) == -EINVAL) {
-		al_err("udma [%s %d]: udma stream rate limit invalid action "
+		pr_err("udma [%s %d]: udma stream rate limit invalid action "
 				"(%d)\n",
 				udma_q->udma->name, udma_q->qid, act);
 		return -EINVAL;
@@ -932,7 +932,7 @@ int al_udma_m2s_comp_timeouts_set(struct al_udma *udma,
 	else if (conf->sch_mode == STRICT)
 		reg &= ~UDMA_M2S_COMP_CFG_1C_FORCE_RR;
 	else {
-		al_err("udma [%s]: requested completion descriptor preferch "
+		pr_err("udma [%s]: requested completion descriptor preferch "
 				"arbiter mode (%d) is invalid\n",
 				udma->name, conf->sch_mode);
 		return -EINVAL;
@@ -1008,7 +1008,7 @@ int al_udma_s2m_no_desc_cfg_set(struct al_udma *udma, al_bool drop_packet, al_bo
 	reg = al_reg_read32(&udma->udma_regs->s2m.s2m_wr.data_cfg_2);
 
 	if ((drop_packet == AL_TRUE) && (wait_for_desc_timeout == 0)) {
-		al_err("udam [%s]: setting timeout to 0 will cause the udma "
+		pr_err("udam [%s]: setting timeout to 0 will cause the udma "
 			"to wait forever instead of dropping the packet\n", udma->name);
 		return -EINVAL;
 	}
@@ -1104,7 +1104,7 @@ int al_udma_s2m_compl_desc_burst_config(struct al_udma *udma, uint16_t
 		burst_size)
 {
 	if ((burst_size != 64) && (burst_size != 128) && (burst_size != 256)) {
-		al_err("%s: invalid burst_size value (%d)\n", __func__,
+		pr_err("%s: invalid burst_size value (%d)\n", __func__,
 				burst_size);
 		return -EINVAL;
 	}

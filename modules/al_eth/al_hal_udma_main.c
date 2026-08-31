@@ -230,7 +230,7 @@ int al_udma_init(struct al_udma *udma, struct al_udma_params *udma_params)
 	al_assert(udma);
 
 	if (udma_params->num_of_queues > DMA_MAX_Q) {
-		al_err("udma: invalid num_of_queues parameter\n");
+		pr_err("udma: invalid num_of_queues parameter\n");
 		return -EINVAL;
 	}
 
@@ -256,7 +256,7 @@ int al_udma_init(struct al_udma *udma, struct al_udma_params *udma_params)
 	}
 	/* initialize configuration registers to correct values */
 	al_udma_set_defaults(udma);
-	al_dbg("udma [%s] initialized. base %p\n", udma->name,
+	pr_debug("udma [%s] initialized. base %p\n", udma->name,
 		udma->udma_regs);
 	return 0;
 }
@@ -273,27 +273,27 @@ int al_udma_q_init(struct al_udma *udma, uint32_t qid,
 	al_assert(q_params);
 
 	if (qid >= udma->num_of_queues) {
-		al_err("udma: invalid queue id (%d)\n", qid);
+		pr_err("udma: invalid queue id (%d)\n", qid);
 		return -EINVAL;
 	}
 
 	if (udma->udma_q[qid].status == AL_QUEUE_ENABLED) {
-		al_err("udma: queue (%d) already enabled!\n", qid);
+		pr_err("udma: queue (%d) already enabled!\n", qid);
 		return -EIO;
 	}
 
 	if (q_params->size < AL_UDMA_MIN_Q_SIZE) {
-		al_err("udma: queue (%d) size too small\n", qid);
+		pr_err("udma: queue (%d) size too small\n", qid);
 		return -EINVAL;
 	}
 
 	if (q_params->size > AL_UDMA_MAX_Q_SIZE) {
-		al_err("udma: queue (%d) size too large\n", qid);
+		pr_err("udma: queue (%d) size too large\n", qid);
 		return -EINVAL;
 	}
 
 	if (q_params->size & (q_params->size - 1)) {
-		al_err("udma: queue (%d) size (%d) must be power of 2\n",
+		pr_err("udma: queue (%d) size (%d) must be power of 2\n",
 			 q_params->size, qid);
 		return -EINVAL;
 	}
@@ -342,14 +342,14 @@ int al_udma_q_init(struct al_udma *udma, uint32_t qid,
 	/* enable the q */
 	al_udma_q_enable(udma_q, 1);
 
-	al_dbg("udma [%s %d]: %s q init. size 0x%x\n"
+	pr_debug("udma [%s %d]: %s q init. size 0x%x\n"
 			"  desc ring info: phys base 0x%" PRIx64 " virt base %p)\n",
 			udma_q->udma->name, udma_q->qid,
 			udma->type == UDMA_TX ? "Tx" : "Rx",
 			q_params->size,
 			q_params->desc_phy_base,
 			q_params->desc_base);
-	al_dbg("  cdesc ring info: phys base 0x%" PRIx64 " virt base %p entry size 0x%x\n",
+	pr_debug("  cdesc ring info: phys base 0x%" PRIx64 " virt base %p entry size 0x%x\n",
 			q_params->cdesc_phy_base,
 			q_params->cdesc_base,
 			q_params->cdesc_size);
@@ -390,7 +390,7 @@ int al_udma_q_reset(struct al_udma_q *udma_q)
 	}
 
 	if (!remaining_time) {
-		al_err("udma [%s %d]: %s timeout waiting for prefetch and "
+		pr_err("udma [%s %d]: %s timeout waiting for prefetch and "
 			"scheduler disable\n", udma_q->udma->name, udma_q->qid,
 			__func__);
 		return -ETIME;
@@ -413,7 +413,7 @@ int al_udma_q_reset(struct al_udma_q *udma_q)
 	};
 
 	if (!remaining_time) {
-		al_err("udma [%s %d]: %s timeout waiting for dcp==crhp. dcp = 0x%x, crhp = 0x%x\n",
+		pr_err("udma [%s %d]: %s timeout waiting for dcp==crhp. dcp = 0x%x, crhp = 0x%x\n",
 			udma_q->udma->name, udma_q->qid, __func__, dcp, crhp);
 		return -ETIME;
 	}
@@ -440,7 +440,7 @@ int al_udma_q_handle_get(struct al_udma *udma, uint32_t qid,
 	al_assert(q_handle);
 
 	if (unlikely(qid >= udma->num_of_queues)) {
-		al_err("udma [%s]: invalid queue id (%d)\n", udma->name, qid);
+		pr_err("udma [%s]: invalid queue id (%d)\n", udma->name, qid);
 		return -EINVAL;
 	}
 	*q_handle = &udma->udma_q[qid];
@@ -456,10 +456,10 @@ int al_udma_state_set(struct al_udma *udma, enum al_udma_state state)
 
 	al_assert(udma != NULL);
 	if (state == udma->state)
-		al_dbg("udma [%s]: requested state identical to "
+		pr_debug("udma [%s]: requested state identical to "
 			"current state (%d)\n", udma->name, state);
 
-	al_dbg("udma [%s]: change state from (%s) to (%s)\n",
+	pr_debug("udma [%s]: change state from (%s) to (%s)\n",
 		 udma->name, al_udma_states_name[udma->state],
 		 al_udma_states_name[state]);
 
@@ -475,18 +475,18 @@ int al_udma_state_set(struct al_udma *udma, enum al_udma_state state)
 		reg |= UDMA_M2S_CHANGE_STATE_ABORT;
 		break;
 	default:
-		al_err("udma: invalid state (%d)\n", state);
+		pr_err("udma: invalid state (%d)\n", state);
 		return -EINVAL;
 	}
 
 	if (udma->type == UDMA_TX) {
 		al_reg_write32(&udma->udma_regs->m2s.m2s.change_state, reg);
-		al_dbg("UDMA TX [%s]: wrote 0x%x to change_state, readback state=0x%x\n",
+		pr_debug("UDMA TX [%s]: wrote 0x%x to change_state, readback state=0x%x\n",
 			udma->name, reg,
 			al_reg_read32(&udma->udma_regs->m2s.m2s.state));
 	} else {
 		al_reg_write32(&udma->udma_regs->s2m.s2m.change_state, reg);
-		al_dbg("UDMA RX [%s]: wrote 0x%x to change_state, readback state=0x%x\n",
+		pr_debug("UDMA RX [%s]: wrote 0x%x to change_state, readback state=0x%x\n",
 			udma->name, reg,
 			al_reg_read32(&udma->udma_regs->s2m.s2m.state));
 	}
@@ -594,7 +594,7 @@ uint32_t al_udma_cdesc_packet_get(
 	udma_q->pkt_crnt_descs = 0;
 	udma_q->comp_head_ptr = al_cdesc_next_update(udma_q, curr);
 
-	al_dbg("udma [%s %d]: packet completed. first desc %p (ixd 0x%x)"
+	pr_debug("udma [%s %d]: packet completed. first desc %p (ixd 0x%x)"
 		 " descs %d\n", udma_q->udma->name, udma_q->qid, *cdesc,
 		 udma_q->next_cdesc_idx, count);
 

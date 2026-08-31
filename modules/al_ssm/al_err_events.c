@@ -16,7 +16,7 @@ int al_err_events_module_collect(struct al_err_events_module *module,
 	al_assert(collect != AL_ERR_EVENTS_COLLECT_DEFAULT);
 
 	if (!module->enabled) {
-		al_err("%s: ERROR module %s is not enabled\n",
+		pr_err("%s: ERROR module %s is not enabled\n",
 			__func__,
 			module->name);
 		return -EINVAL;

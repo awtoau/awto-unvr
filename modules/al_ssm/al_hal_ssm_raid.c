@@ -681,7 +681,7 @@ int al_raid_dma_prepare(
 	al_assert(rc == 0); /* assert valid rx q handle */
 
 	if (unlikely(al_udma_available_get(rx_udma_q) < rx_descs)) {
-		al_dbg("raid [%s]: rx q has not enough free descriptors\n",
+		pr_debug("raid [%s]: rx q has not enough free descriptors\n",
 			 raid_dma->m2m_udma.name);
 		return -ENOSPC;
 	}
@@ -705,7 +705,7 @@ int al_raid_dma_prepare(
 
 		/* check again */
 		if (unlikely(al_udma_available_get(tx_udma_q) < tx_descs)) {
-			al_dbg("raid [%s]: tx q has not enough free "
+			pr_debug("raid [%s]: tx q has not enough free "
 				"descriptors\n",
 				raid_dma->m2m_udma.name);
 			return -ENOSPC;
@@ -781,7 +781,7 @@ int al_raid_dma_completion(
 	*comp_status = swap32_from_le(cdesc->al_desc_comp_rx.ctrl_meta) &
 		RX_COMP_STATUS_MASK;
 
-	al_dbg(
+	pr_debug(
 		"raid [%s %d]: packet completed. "
 		"count %d status desc %p meta %x\n",
 		raid_dma->m2m_udma.name, qid, cdesc_count, cdesc,

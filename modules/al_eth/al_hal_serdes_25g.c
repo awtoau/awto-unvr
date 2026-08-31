@@ -50,7 +50,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #else
 static void al_serdes_hssp_stub_func(void)
 {
-	al_err("%s: not implemented service called!\n", __func__);
+	pr_err("%s: not implemented service called!\n", __func__);
 }
 
 #define AL_SRDS_ADV_SRVC(func)			((typeof(func) *)al_serdes_hssp_stub_func)
@@ -97,7 +97,7 @@ static int al_serdes_25g_reg_read(
 		(struct al_serdes_c_regs __iomem *)obj->regs_base;
 	uint32_t addr = 0;
 
-	al_dbg("%s(%p, %d, %d, %u)\n", __func__, obj, page, type, offset);
+	pr_debug("%s(%p, %d, %d, %u)\n", __func__, obj, page, type, offset);
 
 	al_assert(obj);
 	al_assert(data);
@@ -114,14 +114,14 @@ static int al_serdes_25g_reg_read(
 		addr = (SERDES_25G_LANE_BASE + (page * SERDES_25G_LANE_SIZE) + offset);
 		break;
 	default:
-		al_err("%s: wrong serdes type %d\n", __func__, type);
+		pr_err("%s: wrong serdes type %d\n", __func__, type);
 		return -1;
 	}
 
 	al_reg_write32(&regs_base->gen.reg_addr, addr);
 	*data = al_reg_read32(&regs_base->gen.reg_data);
 
-	al_dbg("%s: return(%u)\n", __func__, *data);
+	pr_debug("%s: return(%u)\n", __func__, *data);
 
 	return 0;
 }
@@ -137,7 +137,7 @@ static int al_serdes_25g_reg_write(
 		(struct al_serdes_c_regs __iomem *)obj->regs_base;
 	uint32_t addr = 0;
 
-	al_dbg("%s(%p, %d, %d, %u)\n", __func__, obj, page, type, offset);
+	pr_debug("%s(%p, %d, %d, %u)\n", __func__, obj, page, type, offset);
 
 	al_assert(obj);
 
@@ -153,14 +153,14 @@ static int al_serdes_25g_reg_write(
 		addr = (SERDES_25G_LANE_BASE + (page * SERDES_25G_LANE_SIZE) + offset);
 		break;
 	default:
-		al_err("%s: wrong serdes type %d\n", __func__, type);
+		pr_err("%s: wrong serdes type %d\n", __func__, type);
 		return -1;
 	}
 
 	al_reg_write32(&regs_base->gen.reg_addr, addr);
 	al_reg_write32(&regs_base->gen.reg_data, (data | SERDES_C_GEN_REG_DATA_STRB_MASK));
 
-	al_dbg("%s: write(%u)\n", __func__, data);
+	pr_debug("%s: write(%u)\n", __func__, data);
 
 	return 0;
 }
@@ -382,7 +382,7 @@ static int al_serdes_25g_mailbox_send_cmd(
 	uint32_t timeout = SERDES_25G_MB_TIMEOUT;
 
 	if (data_len > AL_SERDES_MB_MAX_DATA_LEN) {
-		al_err("Cannot send command, data too long\n");
+		pr_err("Cannot send command, data too long\n");
 		return -1;
 	}
 
@@ -394,7 +394,7 @@ static int al_serdes_25g_mailbox_send_cmd(
 			break;
 
 		if (timeout == 0) {
-			al_err("%s: timeout occurred waiting to CMD_FLAG\n", __func__);
+			pr_err("%s: timeout occurred waiting to CMD_FLAG\n", __func__);
 			return -1;
 		}
 
@@ -431,7 +431,7 @@ static int al_serdes_25g_mailbox_recv_rsp(
 			break;
 
 		if (timeout == 0) {
-			al_err("%s: timeout occurred waiting to RSP_FLAG\n", __func__);
+			pr_err("%s: timeout occurred waiting to RSP_FLAG\n", __func__);
 			*data_len = 0;
 			return -1;
 		}
@@ -501,7 +501,7 @@ static void al_serdes_25g_bist_rx_enable(
 					0x1);
 			break;
 		default:
-			al_err("%s: Wrong serdes lane %d\n", __func__, lane);
+			pr_err("%s: Wrong serdes lane %d\n", __func__, lane);
 			return;
 		}
 
@@ -585,7 +585,7 @@ static void al_serdes_25g_bist_pattern_select(
 		break;
 	case AL_SRDS_BIST_PATTERN_CLK1010:
 	default:
-		al_err("%s: invalid pattern (%d)\n", __func__, pattern);
+		pr_err("%s: invalid pattern (%d)\n", __func__, pattern);
 		al_assert(0);
 	}
 
@@ -653,7 +653,7 @@ static void al_serdes_25g_bist_tx_enable(
 					0x1);
 			break;
 		default:
-			al_err("%s: Wrong serdes lane %d\n", __func__, lane);
+			pr_err("%s: Wrong serdes lane %d\n", __func__, lane);
 				return;
 		}
 	} else {
@@ -689,7 +689,7 @@ static void al_serdes_25g_bist_rx_status(
 		SERDES_25G_LANE_RX_BIST_STATUS_STATE_SHIFT,
 		&status);
 	if (ret) {
-		al_err("%s: Error on reading status state\n", __func__);
+		pr_err("%s: Error on reading status state\n", __func__);
 		return;
 	}
 
@@ -709,7 +709,7 @@ static void al_serdes_25g_bist_rx_status(
 		SERDES_25G_LANE_RX_BIST_BER_STATUS0_BIT_ERROR_COUNT_7_0_SHIFT,
 		&err1);
 	if (ret) {
-		al_err("%s: Error on reading error 1\n", __func__);
+		pr_err("%s: Error on reading error 1\n", __func__);
 		return;
 	}
 
@@ -721,7 +721,7 @@ static void al_serdes_25g_bist_rx_status(
 		SERDES_25G_LANE_RX_BIST_BER_STATUS1_BIT_ERROR_COUNT_15_8_SHIFT,
 		&err2);
 	if (ret) {
-		al_err("%s: Error on reading error 2\n", __func__);
+		pr_err("%s: Error on reading error 2\n", __func__);
 		return;
 	}
 
@@ -733,7 +733,7 @@ static void al_serdes_25g_bist_rx_status(
 		SERDES_25G_LANE_RX_BIST_BER_STATUS2_BIT_ERROR_COUNT_23_16_SHIFT,
 		&err3);
 	if (ret) {
-		al_err("%s: Error on reading error 3\n", __func__);
+		pr_err("%s: Error on reading error 3\n", __func__);
 		return;
 	}
 
@@ -809,7 +809,7 @@ static int al_serdes_25g_eye_diag_run(
 				8);
 
 	if (rc) {
-		al_err("%s: Failed to send command %d to mailbox.\n",
+		pr_err("%s: Failed to send command %d to mailbox.\n",
 			__func__, SERDES_MB_CMD_SWING_CFG);
 		return rc;
 	}
@@ -821,7 +821,7 @@ static int al_serdes_25g_eye_diag_run(
 				&data_len);
 
 	if ((rc) || (rsp_code != SERDES_MB_RSP_CODE_0)) {
-		al_err("%s: Failed to send command %d to mailbox. rsp_code %d\n",
+		pr_err("%s: Failed to send command %d to mailbox. rsp_code %d\n",
 			__func__, SERDES_MB_CMD_SWING_CFG, rsp_code);
 
 		return -ETIME;
@@ -843,7 +843,7 @@ static int al_serdes_25g_eye_diag_run(
 				6);
 
 	if (rc) {
-		al_err("%s: Failed to send command %d to mailbox.\n",
+		pr_err("%s: Failed to send command %d to mailbox.\n",
 			__func__, SERDES_MB_CMD_SAMPLES_COUNT);
 		return rc;
 	}
@@ -855,7 +855,7 @@ static int al_serdes_25g_eye_diag_run(
 				&data_len);
 
 	if ((rc) || (rsp_code != SERDES_MB_RSP_CODE_0)) {
-		al_err("%s: Failed to send command %d to mailbox. rsp_code %d\n",
+		pr_err("%s: Failed to send command %d to mailbox. rsp_code %d\n",
 			__func__, SERDES_MB_CMD_SAMPLES_COUNT, rsp_code);
 
 		return -ETIME;
@@ -879,7 +879,7 @@ static int al_serdes_25g_eye_diag_run(
 				&data_len);
 
 		if ((rc != 0) || (rsp_code > SERDES_MB_RSP_CODE_2)) {
-			al_err("%s: command %d return failure. rsp_code %d\n",
+			pr_err("%s: command %d return failure. rsp_code %d\n",
 			__func__, SERDES_MB_CMD_START_MEASURE, rsp_code);
 
 			return -ETIME;
@@ -926,7 +926,7 @@ static int al_serdes_25g_eye_diag_run(
 						data,
 						&data_len);
 			if ((rc) || (rsp_code == SERDES_MB_RSP_CODE_0)) {
-				al_err("%s: Parsed enough samples but f/w is still sending more\n",
+				pr_err("%s: Parsed enough samples but f/w is still sending more\n",
 					__func__);
 
 				return -EIO;
@@ -936,7 +936,7 @@ static int al_serdes_25g_eye_diag_run(
 	}
 
 	if (samples_left > 0) {
-		al_err("%s: Still need more samples but f/w has stopped sending them!?!?!?\n",
+		pr_err("%s: Still need more samples but f/w has stopped sending them!?!?!?\n",
 			__func__);
 
 		return -EIO;
@@ -986,7 +986,7 @@ static int al_serdes_25g_calc_eye_size(
 					  sizeof(uint64_t)));
 
 	if (rc) {
-		al_err("%s: failed to run eye_diag\n", __func__);
+		pr_err("%s: failed to run eye_diag\n", __func__);
 		return rc;
 	}
 
@@ -1014,7 +1014,7 @@ static int al_serdes_25g_calc_eye_size(
 					  sizeof(uint64_t)));
 
 	if (rc) {
-		al_err("%s: failed to run eye_diag\n", __func__);
+		pr_err("%s: failed to run eye_diag\n", __func__);
 		return rc;
 	}
 
@@ -1084,7 +1084,7 @@ static void al_serdes_25g_tx_advanced_params_set(struct al_serdes_grp_obj	*obj,
 			break;
 
 		if (timeout == 0) {
-			al_err("%s: timeout occurred waiting to FW ack\n", __func__);
+			pr_err("%s: timeout occurred waiting to FW ack\n", __func__);
 			break;
 		}
 
@@ -1142,7 +1142,7 @@ static al_bool al_serdes_25g_cdr_is_locked(
 				SERDES_25G_LANE_CDR_RXCLK_DLPF_STATUS5_LOCKED_SHIFT,
 				&reg);
 	if (ret) {
-		al_err("%s: Error on reading CDR lock\n", __func__);
+		pr_err("%s: Error on reading CDR lock\n", __func__);
 		return AL_FALSE;
 	}
 
@@ -1164,7 +1164,7 @@ static al_bool al_serdes_25g_rx_valid(
 				SERDES_25G_LANE_TOP_LN_STAT_CTRL0_RXVALID_SHIFT,
 				&reg);
 	if (ret) {
-		al_err("%s: Error on reading RX valid\n", __func__);
+		pr_err("%s: Error on reading RX valid\n", __func__);
 		return AL_FALSE;
 	}
 
@@ -1254,7 +1254,7 @@ static int al_serdes_25g_rx_equalization(
 			timeout--;
 
 			if (timeout == 0) {
-				al_err("%s: Timeout waiting for serdes ready\n", __func__);
+				pr_err("%s: Timeout waiting for serdes ready\n", __func__);
 				status = -ETIME;
 				retries--;
 				break;
@@ -1276,7 +1276,7 @@ static int al_serdes_25g_rx_equalization(
 			timeout--;
 
 			if (timeout == 0) {
-				al_err("%s: TO waiting for lane ready (%x)\n", __func__, reg_val);
+				pr_err("%s: TO waiting for lane ready (%x)\n", __func__, reg_val);
 				status = -ETIME;
 				retries--;
 				break;
@@ -1290,7 +1290,7 @@ static int al_serdes_25g_rx_equalization(
 	}
 
 	if (retries == 0) {
-		al_err("%s: Failed to run equalization\n", __func__);
+		pr_err("%s: Failed to run equalization\n", __func__);
 		status = -ETIME;
 	}
 
@@ -1371,7 +1371,7 @@ static int al_serdes_25g_gcfsm2_read(
 				SERDES_25G_LANE_GCFSM2_READ_SHADOW_DATA_STATUS0_ADDR,
 				&data_low);
 		if (ret) {
-			al_err("%s: Error on reading data low\n", __func__);
+			pr_err("%s: Error on reading data low\n", __func__);
 			return ret;
 		}
 
@@ -1383,13 +1383,13 @@ static int al_serdes_25g_gcfsm2_read(
 				SERDES_25G_LANE_GCFSM2_READ_SHADOW_DATA_STATUS1_11_8_SHIFT,
 				&data_high);
 		if (ret) {
-			al_err("%s: Error on reading data high\n", __func__);
+			pr_err("%s: Error on reading data high\n", __func__);
 			return ret;
 		}
 
 		*data = (data_high << 8) | data_low;
 	} else {
-		al_err("%s: TO waiting for GCFSM2 req to complete (%x)\n", __func__, offset);
+		pr_err("%s: TO waiting for GCFSM2 req to complete (%x)\n", __func__, offset);
 		status = -ETIME;
 	}
 
@@ -1513,7 +1513,7 @@ static int al_serdes_25g_rx_leq_fsm_op(
 			SERDES_25G_LANE_LEQ_REFCLK_LEQ_FSM_STATUS0_LEQ_FSM_STATUS_ERROR2_SHIFT;
 
 		if (err1 || err2) {
-			al_err("%s: error in RX LEQ FSM req, err status 1=0x%x, err status 2=0x%x\n",
+			pr_err("%s: error in RX LEQ FSM req, err status 1=0x%x, err status 2=0x%x\n",
 					__func__, err1, err2);
 			status = -EIO;
 		}
@@ -1535,7 +1535,7 @@ static int al_serdes_25g_rx_leq_fsm_op(
 				SERDES_25G_LANE_LEQ_REFCLK_LEQ_FSM_CTRL0_LEQ_FSM_CMD_REQ_SHIFT,
 				0);
 	} else {
-		al_err("%s: TO waiting for RX LEQ FSM req to complete (opcode %x, target %x, val %x)\n",
+		pr_err("%s: TO waiting for RX LEQ FSM req to complete (opcode %x, target %x, val %x)\n",
 				__func__, opcode, target, val);
 		status = -ETIME;
 	}
@@ -1636,7 +1636,7 @@ static void al_serdes_25g_rx_advanced_params_get(
 	rc = al_serdes_25g_rx_leq_fsm_op(obj, lane, AL_SERDES_25G_RX_LEQ_FSM_OPCODE_READ,
 			AL_SERDES_25G_RX_LEQ_FSM_TARGET_PLE_ATT, 0, &value, &err);
 	if (rc || err) {
-		al_err("%s: al_serdes_25g_rx_leq_fsm_op failed to read att, rc %d, err %d\n",
+		pr_err("%s: al_serdes_25g_rx_leq_fsm_op failed to read att, rc %d, err %d\n",
 				__func__, rc, err);
 		return;
 	}
@@ -1645,7 +1645,7 @@ static void al_serdes_25g_rx_advanced_params_get(
 	rc = al_serdes_25g_rx_leq_fsm_op(obj, lane, AL_SERDES_25G_RX_LEQ_FSM_OPCODE_READ,
 			AL_SERDES_25G_RX_LEQ_FSM_TARGET_GN_APG, 0, &value, &err);
 	if (rc || err) {
-		al_err("%s: al_serdes_25g_rx_leq_fsm_op failed to read apg, rc %d, err %d\n",
+		pr_err("%s: al_serdes_25g_rx_leq_fsm_op failed to read apg, rc %d, err %d\n",
 				__func__, rc, err);
 		return;
 	}
@@ -1654,7 +1654,7 @@ static void al_serdes_25g_rx_advanced_params_get(
 	rc = al_serdes_25g_rx_leq_fsm_op(obj, lane, AL_SERDES_25G_RX_LEQ_FSM_OPCODE_READ,
 			AL_SERDES_25G_RX_LEQ_FSM_TARGET_EQ_LFG, 0, &value, &err);
 	if (rc || err) {
-		al_err("%s: al_serdes_25g_rx_leq_fsm_op failed to read lfg, rc %d, err %d\n",
+		pr_err("%s: al_serdes_25g_rx_leq_fsm_op failed to read lfg, rc %d, err %d\n",
 				__func__, rc, err);
 		return;
 	}
@@ -1663,7 +1663,7 @@ static void al_serdes_25g_rx_advanced_params_get(
 	rc = al_serdes_25g_rx_leq_fsm_op(obj, lane, AL_SERDES_25G_RX_LEQ_FSM_OPCODE_READ,
 			AL_SERDES_25G_RX_LEQ_FSM_TARGET_HFG_SQL, 0, &value, &err);
 	if (rc || err) {
-		al_err("%s: al_serdes_25g_rx_leq_fsm_op failed to read hfg, rc %d, err %d\n",
+		pr_err("%s: al_serdes_25g_rx_leq_fsm_op failed to read hfg, rc %d, err %d\n",
 				__func__, rc, err);
 		return;
 	}
@@ -1672,7 +1672,7 @@ static void al_serdes_25g_rx_advanced_params_get(
 	rc = al_serdes_25g_rx_leq_fsm_op(obj, lane, AL_SERDES_25G_RX_LEQ_FSM_OPCODE_READ,
 			AL_SERDES_25G_RX_LEQ_FSM_TARGET_EQ_MBG, 0, &value, &err);
 	if (rc || err) {
-		al_err("%s: al_serdes_25g_rx_leq_fsm_op failed to read mbg, rc %d, err %d\n",
+		pr_err("%s: al_serdes_25g_rx_leq_fsm_op failed to read mbg, rc %d, err %d\n",
 				__func__, rc, err);
 		return;
 	}
@@ -1681,7 +1681,7 @@ static void al_serdes_25g_rx_advanced_params_get(
 	rc = al_serdes_25g_rx_leq_fsm_op(obj, lane, AL_SERDES_25G_RX_LEQ_FSM_OPCODE_READ,
 			AL_SERDES_25G_RX_LEQ_FSM_TARGET_EQ_MBF, 0, &value, &err);
 	if (rc || err) {
-		al_err("%s: al_serdes_25g_rx_leq_fsm_op failed to read mbf, rc %d, err %d\n",
+		pr_err("%s: al_serdes_25g_rx_leq_fsm_op failed to read mbf, rc %d, err %d\n",
 				__func__, rc, err);
 		return;
 	}
@@ -1746,7 +1746,7 @@ static void al_serdes_25g_tx_diag_info_get(
 			AL_SERDES_25G_TX_DIAG_GCFSM2_DCD_TRIM_ADDR,
 			&val16);
 	if (rc) {
-		al_err("%s: al_serdes_25g_gcfsm2_read failed to read dcd_trim, rc %d\n",
+		pr_err("%s: al_serdes_25g_gcfsm2_read failed to read dcd_trim, rc %d\n",
 				__func__, rc);
 		return;
 	}
@@ -1765,7 +1765,7 @@ static void al_serdes_25g_tx_diag_info_get(
 			AL_SERDES_25G_TX_DIAG_GCFSM2_CLK_DELAY_ADDR,
 			&val16);
 	if (rc) {
-		al_err("%s: al_serdes_25g_gcfsm2_read failed to read clk_delay, rc %d\n",
+		pr_err("%s: al_serdes_25g_gcfsm2_read failed to read clk_delay, rc %d\n",
 				__func__, rc);
 		return;
 	}
@@ -1893,7 +1893,7 @@ static void al_serdes_25g_rx_diag_info_get(
 			AL_SERDES_25G_RX_DIAG_GCFSM2_LEQ_GAINSTAGE_ADDR,
 			&val16);
 	if (rc) {
-		al_err("%s: al_serdes_25g_gcfsm2_read failed to read leq_gainstage, rc %d\n",
+		pr_err("%s: al_serdes_25g_gcfsm2_read failed to read leq_gainstage, rc %d\n",
 				__func__, rc);
 		return;
 	}
@@ -1907,7 +1907,7 @@ static void al_serdes_25g_rx_diag_info_get(
 				AL_SERDES_25G_RX_DIAG_GCFSM2_LEQ_EQ_ADDR + i,
 				&val16);
 		if (rc) {
-			al_err("%s: al_serdes_25g_gcfsm2_read failed to read leq_eq %d, rc %d\n",
+			pr_err("%s: al_serdes_25g_gcfsm2_read failed to read leq_eq %d, rc %d\n",
 					__func__, i, rc);
 			return;
 		}
@@ -1940,7 +1940,7 @@ static void al_serdes_25g_rx_diag_info_get(
 			AL_SERDES_25G_RX_DIAG_GCFSM2_SUMMER_EVEN_ADDR,
 			&val16);
 	if (rc) {
-		al_err("%s: al_serdes_25g_gcfsm2_read failed to read summer_even_offset, rc %d\n",
+		pr_err("%s: al_serdes_25g_gcfsm2_read failed to read summer_even_offset, rc %d\n",
 				__func__, rc);
 		return;
 	}
@@ -1953,7 +1953,7 @@ static void al_serdes_25g_rx_diag_info_get(
 			AL_SERDES_25G_RX_DIAG_GCFSM2_SUMMER_ODD_ADDR,
 			&val16);
 	if (rc) {
-		al_err("%s: al_serdes_25g_gcfsm2_read failed to read summer_odd_offset, rc %d\n",
+		pr_err("%s: al_serdes_25g_gcfsm2_read failed to read summer_odd_offset, rc %d\n",
 				__func__, rc);
 		return;
 	}
@@ -1966,7 +1966,7 @@ static void al_serdes_25g_rx_diag_info_get(
 			AL_SERDES_25G_RX_DIAG_GCFSM2_VSCAN_EVEN_ADDR,
 			&val16);
 	if (rc) {
-		al_err("%s: al_serdes_25g_gcfsm2_read failed to read vscan_even_offset, rc %d\n",
+		pr_err("%s: al_serdes_25g_gcfsm2_read failed to read vscan_even_offset, rc %d\n",
 				__func__, rc);
 		return;
 	}
@@ -1979,7 +1979,7 @@ static void al_serdes_25g_rx_diag_info_get(
 			AL_SERDES_25G_RX_DIAG_GCFSM2_VSCAN_ODD_ADDR,
 			&val16);
 	if (rc) {
-		al_err("%s: al_serdes_25g_gcfsm2_read failed to read vscan_odd_offset, rc %d\n",
+		pr_err("%s: al_serdes_25g_gcfsm2_read failed to read vscan_odd_offset, rc %d\n",
 				__func__, rc);
 		return;
 	}
@@ -2087,7 +2087,7 @@ static void al_serdes_25g_rx_diag_info_get(
 			AL_SERDES_25G_RX_DIAG_GCFSM2_CDR_VCO_FR_ADDR,
 			&val16);
 	if (rc) {
-		al_err("%s: al_serdes_25g_gcfsm2_read failed to read cdr_vco_fr, rc %d\n",
+		pr_err("%s: al_serdes_25g_gcfsm2_read failed to read cdr_vco_fr, rc %d\n",
 				__func__, rc);
 		return;
 	}
@@ -2319,7 +2319,7 @@ static void al_serdes_25g_single_iteration_dosc_set(struct al_serdes_grp_obj *ob
 				SERDES_25G_CMU_PLL_FCAL_CMD_REQ_SHIFT,
 				0);
 	} else {
-		al_err("%s: timeout waiting for pll fcal cmd ack\n", __func__);
+		pr_err("%s: timeout waiting for pll fcal cmd ack\n", __func__);
 	}
 
 	al_serdes_25g_pll_loop(obj, AL_FALSE);
@@ -2380,7 +2380,7 @@ static al_bool al_serdes_25g_set_dosc(struct al_serdes_grp_obj *obj, int val, al
 	if (do_convert)
 		dosc = dosc_convert(val);
 
-	al_dbg("%s val = %d dosc = %d\n", __func__, val, dosc);
+	pr_debug("%s val = %d dosc = %d\n", __func__, val, dosc);
 
 	al_serdes_25g_pll_loop(obj, AL_TRUE);
 
@@ -2515,22 +2515,22 @@ static void al_serdes_25g_tx_pll_wa_find_window_edge(struct al_serdes_grp_obj *o
 		dosc += direction;
 		if (!al_serdes_25g_set_dosc(obj, dosc, AL_TRUE)) {
 			edge_count++;
-			al_dbg("%s: dosc [l]%d [r]%d: unlocked\n",
+			pr_debug("%s: dosc [l]%d [r]%d: unlocked\n",
 					__func__, dosc, dosc_convert(dosc));
 		} else {
 			if (edge_count > 0)
-				al_warn("%s: dosc [l]%d [r]%d: hole\n",
+				pr_warn("%s: dosc [l]%d [r]%d: hole\n",
 						__func__, dosc - direction,
 						dosc_convert(dosc - direction));
 			edge_count = 0;
-			al_dbg("%s: dosc [l]%d [r]%d: locked\n",
+			pr_debug("%s: dosc [l]%d [r]%d: locked\n",
 					__func__, dosc, dosc_convert(dosc));
 		}
 	} while ((dosc <= AL_SERDES_DOSC_MAX_VAL) &&
 			(dosc >= AL_SERDES_DOSC_MIN_VAL) &&
 			(edge_count < AL_SERDES_25G_WINDOW_EDGE_THRESH));
 
-	al_dbg("%s: edge detected, [l]%d [r]%d\n",
+	pr_debug("%s: edge detected, [l]%d [r]%d\n",
 			__func__, dosc - (direction * edge_count),
 			dosc_convert(dosc - (direction * edge_count)));
 	*window_edge = dosc - (direction * edge_count);
@@ -2563,7 +2563,7 @@ static al_bool al_serdes_25g_tx_pll_wa_find_window(struct al_serdes_grp_obj *obj
 	}
 
 	if (is_inside) {
-		al_dbg("%s: init [l]%d [r]%d inside window\n", __func__, dosc_init,
+		pr_debug("%s: init [l]%d [r]%d inside window\n", __func__, dosc_init,
 				dosc_convert(dosc_init));
 
 		al_serdes_25g_tx_pll_wa_find_window_edge(obj, dosc_init, 1, window_end);
@@ -2579,7 +2579,7 @@ static al_bool al_serdes_25g_tx_pll_wa_find_window(struct al_serdes_grp_obj *obj
 		int iteration = 0;
 		int dosc = dosc_init;
 
-		al_warn("%s: init [l]%d [r]%d outside window, searching for valid window\n",
+		pr_warn("%s: init [l]%d [r]%d outside window, searching for valid window\n",
 				__func__, dosc, dosc_convert(dosc_init));
 
 		while (1) {
@@ -2662,7 +2662,7 @@ static int al_serdes_25g_tx_pll_wa(struct al_serdes_grp_obj *obj,
 	}
 
 	if (!obj->temperature_get_cb) {
-		al_err("can't apply tx pll WA without temp read\n");
+		pr_err("can't apply tx pll WA without temp read\n");
 		return -EIO;
 	}
 
@@ -2676,7 +2676,7 @@ static int al_serdes_25g_tx_pll_wa(struct al_serdes_grp_obj *obj,
 	}
 
 	temperature = obj->temperature_get_cb();
-	al_dbg("%s: temperature for tx WA %d\n", __func__, temperature);
+	pr_debug("%s: temperature for tx WA %d\n", __func__, temperature);
 
 	if (status)
 		status->temperature = temperature;
@@ -2687,7 +2687,7 @@ static int al_serdes_25g_tx_pll_wa(struct al_serdes_grp_obj *obj,
 	}
 
 	if (range_idx >= AL_ARR_SIZE(tx_pll_wa)) {
-		al_err("%s: error: invalid temperature range, temperature %d!\n",
+		pr_err("%s: error: invalid temperature range, temperature %d!\n",
 				__func__, temperature);
 		return -EIO;
 	}
@@ -2699,7 +2699,7 @@ static int al_serdes_25g_tx_pll_wa(struct al_serdes_grp_obj *obj,
 		status->dosc_window_available = window_avail;
 
 	if (!window_avail) {
-		al_err("%s: error: no valid dosc window available!\n", __func__);
+		pr_err("%s: error: no valid dosc window available!\n", __func__);
 		return -EIO;
 	}
 
@@ -2714,7 +2714,7 @@ static int al_serdes_25g_tx_pll_wa(struct al_serdes_grp_obj *obj,
 	if (tx_pll_wa[range_idx].direction == 1) {
 		dosc_target = dosc_window_end - tx_pll_wa[range_idx].step;
 		if (dosc_target < AL_SERDES_DOSC_MIN_VAL) {
-			al_warn("%s: dosc_target [l]%d [r]%d lower than min, setting to min %d\n",
+			pr_warn("%s: dosc_target [l]%d [r]%d lower than min, setting to min %d\n",
 					__func__, dosc_target, dosc_convert(dosc_target),
 					AL_SERDES_DOSC_MIN_VAL);
 			dosc_target = AL_SERDES_DOSC_MIN_VAL;
@@ -2722,7 +2722,7 @@ static int al_serdes_25g_tx_pll_wa(struct al_serdes_grp_obj *obj,
 	} else {
 		dosc_target = dosc_window_start + tx_pll_wa[range_idx].step;
 		if (dosc_target > AL_SERDES_DOSC_MAX_VAL) {
-			al_warn("%s: dosc_target [l]%d [r]%d is higher than max, setting to max %d\n",
+			pr_warn("%s: dosc_target [l]%d [r]%d is higher than max, setting to max %d\n",
 					__func__, dosc_target, dosc_convert(dosc_target),
 					AL_SERDES_DOSC_MAX_VAL);
 			dosc_target = AL_SERDES_DOSC_MAX_VAL;
@@ -2731,7 +2731,7 @@ static int al_serdes_25g_tx_pll_wa(struct al_serdes_grp_obj *obj,
 
 	if ((dosc_target < dosc_window_start) || (dosc_target > dosc_window_end)) {
 		/* windows is small - go to center of the window */
-		al_warn("%s: stepped outside of window go to center [l]%d [r]%d->[l]%d [r]%d\n",
+		pr_warn("%s: stepped outside of window go to center [l]%d [r]%d->[l]%d [r]%d\n",
 				__func__, dosc_target, dosc_convert(dosc_target),
 				dosc_window_center, dosc_convert(dosc_window_center));
 		dosc_target = dosc_window_center;
@@ -2739,7 +2739,7 @@ static int al_serdes_25g_tx_pll_wa(struct al_serdes_grp_obj *obj,
 
 	locked = al_serdes_25g_set_dosc(obj, dosc_target, AL_TRUE);
 	while (!locked && (dosc_target != dosc_window_center)) {
-		al_warn("%s: dosc_target inside the window, but pll is unlocked! stepping towards center of window\n",
+		pr_warn("%s: dosc_target inside the window, but pll is unlocked! stepping towards center of window\n",
 				__func__);
 
 		if (dosc_target < dosc_window_center)
@@ -2751,7 +2751,7 @@ static int al_serdes_25g_tx_pll_wa(struct al_serdes_grp_obj *obj,
 
 	if (!locked) {
 		dosc_target = dosc_init;
-		al_warn("%s: pll is unlocked, returning to dosc_init value!\n", __func__);
+		pr_warn("%s: pll is unlocked, returning to dosc_init value!\n", __func__);
 		locked = al_serdes_25g_set_dosc(obj, dosc_target, AL_TRUE);
 	}
 
@@ -2761,13 +2761,13 @@ static int al_serdes_25g_tx_pll_wa(struct al_serdes_grp_obj *obj,
 	}
 
 	if (!locked) {
-		al_err("%s: failed to lock PLL\n", __func__);
+		pr_err("%s: failed to lock PLL\n", __func__);
 		return -EIO;
 	}
 
-	al_info("%s: temperature %d, swing_init %d, swing_adjusted %d\n",
+	pr_info("%s: temperature %d, swing_init %d, swing_adjusted %d\n",
 			__func__, temperature, swing_init, swing_adjusted);
-	al_info("%s: dosc_init %d, dosc_target %d, window_start %d, window_end %d\n",
+	pr_info("%s: dosc_init %d, dosc_target %d, window_start %d, window_end %d\n",
 			__func__, dosc_convert(dosc_init), dosc_convert(dosc_target),
 			dosc_convert(dosc_window_start), dosc_convert(dosc_window_end));
 
@@ -2985,14 +2985,14 @@ static int al_serdes_25g_fw_init_status_group_common_check(struct al_serdes_25g_
 {
 
 	if (fw_init_status->top_error != 0)
-		al_err("%s: Got FW error! TOP error code %x\n", __func__,
+		pr_err("%s: Got FW error! TOP error code %x\n", __func__,
 		       fw_init_status->top_error);
 
 	if ((fw_init_status->cm_error != 0) || (fw_init_status->cm_critical_error != 0)) {
-		al_err("%s: Got FW error! CM error code %x\n", __func__, fw_init_status->cm_error);
+		pr_err("%s: Got FW error! CM error code %x\n", __func__, fw_init_status->cm_error);
 
 		if (fw_init_status->cm_critical_error != 0) {
-			al_err("%s: FW CM error is critical (%d)!!\n",
+			pr_err("%s: FW CM error is critical (%d)!!\n",
 				__func__, fw_init_status->cm_critical_error);
 
 			return -EIO;
@@ -3007,11 +3007,11 @@ static int al_serdes_25g_fw_init_status_lane_check(struct al_serdes_25g_fw_init_
 {
 	if ((fw_init_status->lane_error[lane] != 0) ||
 				(fw_init_status->lane_critical_error[lane] != 0)) {
-		al_err("%s: Got FW error! lane %d error code %x\n",
+		pr_err("%s: Got FW error! lane %d error code %x\n",
 		       __func__, lane, fw_init_status->lane_error[lane]);
 
 		if (fw_init_status->lane_critical_error[lane] != 0) {
-			al_err("%s: FW lane %d error is critical (%d)!!\n",
+			pr_err("%s: FW lane %d error is critical (%d)!!\n",
 			       __func__, lane, fw_init_status->lane_critical_error[lane]);
 
 			return -EIO;
@@ -3054,7 +3054,7 @@ static int al_serdes_25g_group_cfg(struct al_serdes_grp_obj *obj,
 				AL_SERDES_25G_INIT_TIMEOUT);
 
 	if (rc) {
-		al_err("%s: Got timeout waiting for serdes CM0 and LN0/LN1 to enter PD_READY\n",
+		pr_err("%s: Got timeout waiting for serdes CM0 and LN0/LN1 to enter PD_READY\n",
 		       __func__);
 		return rc;
 	}
@@ -3108,7 +3108,7 @@ static int al_serdes_25g_group_cfg(struct al_serdes_grp_obj *obj,
 			AL_SERDES_25G_INIT_TIMEOUT);
 
 	if (rc) {
-		al_err("%s: Got timeout waiting for serdes CM0 Status to become ok\n", __func__);
+		pr_err("%s: Got timeout waiting for serdes CM0 Status to become ok\n", __func__);
 		return rc;
 	}
 
@@ -3151,7 +3151,7 @@ static int al_serdes_25g_group_cfg(struct al_serdes_grp_obj *obj,
 
 	rc = al_serdes_25g_tx_pll_wa(obj, params->tx_pll_wa_status);
 	if (rc) {
-		al_err("%s: failed to apply tx pll wa\n", __func__);
+		pr_err("%s: failed to apply tx pll wa\n", __func__);
 		return rc;
 	}
 
@@ -3170,7 +3170,7 @@ static int al_serdes_25g_group_cfg(struct al_serdes_grp_obj *obj,
 					AL_SERDES_25G_INIT_TIMEOUT);
 
 		if (rc) {
-			al_err("%s: Got timeout waiting for LN%d status to become ok\n",
+			pr_err("%s: Got timeout waiting for LN%d status to become ok\n",
 			       __func__, lane);
 			return rc;
 		}
@@ -3210,7 +3210,7 @@ static int al_serdes_25g_group_cfg(struct al_serdes_grp_obj *obj,
 			return rc;
 	}
 
-	al_info("Serdes25G power up OK (%s mode)\n", (mode_25g) ? "25G" : "10G");
+	pr_info("Serdes25G power up OK (%s mode)\n", (mode_25g) ? "25G" : "10G");
 
 	return 0;
 }
@@ -3279,7 +3279,7 @@ static int al_serdes_25g_group_cfg_mode_adv(struct al_serdes_grp_obj	*obj,
 {
 	if ((params->group_mode != AL_SRDS_CFG_KR) &&
 		(params->group_mode != AL_SRDS_CFG_ETH_25G)) {
-		al_err("%s: Unsupported group mode %u\n", __func__, params->group_mode);
+		pr_err("%s: Unsupported group mode %u\n", __func__, params->group_mode);
 		return -EINVAL;
 	}
 
@@ -3337,12 +3337,12 @@ static int al_serdes_25g_mode_get(struct al_serdes_grp_obj *obj,
 		*serdes_group_mode = AL_SRDS_CFG_KR;
 		break;
 	default:
-		al_err("%s: Unable to determine the serdes_group_mode (read 0x%x)\n", __func__,
+		pr_err("%s: Unable to determine the serdes_group_mode (read 0x%x)\n", __func__,
 			serdes_25g_speed);
 		return -EIO;
 	}
 
-	al_dbg("%s: serdes_group_mode is %d\n", __func__, *serdes_group_mode);
+	pr_debug("%s: serdes_group_mode is %d\n", __func__, *serdes_group_mode);
 
 	return 0;
 }
@@ -3353,7 +3353,7 @@ int al_serdes_25g_handle_init(
 	void __iomem			*serdes_regs_base,
 	struct al_serdes_grp_obj	*obj)
 {
-	al_dbg(
+	pr_debug(
 		"%s(%p, %p)\n",
 		__func__,
 		serdes_regs_base,

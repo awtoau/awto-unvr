@@ -332,7 +332,7 @@ static int al_udma_handle_init_aux(struct al_udma *udma, struct al_udma_params *
 		udma->num_of_queues = udma_params->num_of_queues;
 
 	if (udma->num_of_queues > udma->num_of_queues_max) {
-		al_err("udma: invalid num_of_queues parameter\n");
+		pr_err("udma: invalid num_of_queues parameter\n");
 		return -EINVAL;
 	}
 
@@ -420,7 +420,7 @@ void al_udma_perf_params_print(
 
 	err = al_udma_m2s_pref_get(m2s_udma, &m2s_conf);
 	if (err) {
-		al_err("%s: al_udma_handle_init failed!\n", __func__);
+		pr_err("%s: al_udma_handle_init failed!\n", __func__);
 		return;
 	}
 
@@ -437,7 +437,7 @@ void al_udma_perf_params_print(
 
 	err = al_udma_s2m_pref_get(s2m_udma, &s2m_conf);
 	if (err) {
-		al_err("%s: al_udma_handle_init failed!\n", __func__);
+		pr_err("%s: al_udma_handle_init failed!\n", __func__);
 		return;
 	}
 
@@ -454,32 +454,32 @@ void al_udma_perf_params_print(
 		UDMA_AXI_S2M_OSTAND_CFG_WR_MAX_COMP_REQ_MASK,
 		UDMA_AXI_S2M_OSTAND_CFG_WR_MAX_COMP_REQ_SHIFT);
 
-	al_print("- M2S\n");
-	al_print("  * outstanding reads:\n");
-	al_print("    > ostand_max_data_read = %u\n", m2s_ostand_max_data_read);
-	al_print("    > ostand_max_desc_read = %u\n", m2s_ostand_max_desc_read);
-	al_print("  * outstanding writes:\n");
-	al_print("    > ostand_max_comp_req = %u\n", m2s_ostand_max_comp_req);
-	al_print("  * prefetch:\n");
-	al_print("    > desc_fifo_depth = %u\n", m2s_conf.desc_fifo_depth);
-	al_print("    > max_desc_per_packet = %u\n", m2s_conf.max_desc_per_packet);
-	al_print("    > pref_thr = %u\n", m2s_conf.pref_thr);
-	al_print("    > min_burst_above_thr = %u\n", m2s_conf.min_burst_above_thr);
-	al_print("    > min_burst_below_thr = %u\n", m2s_conf.min_burst_below_thr);
-	al_print("    > max_pkt_limit = %u\n", m2s_conf.max_pkt_limit);
-	al_print("    > data_fifo_depth = %u\n", m2s_conf.data_fifo_depth);
+	pr_info("- M2S\n");
+	pr_info("  * outstanding reads:\n");
+	pr_info("    > ostand_max_data_read = %u\n", m2s_ostand_max_data_read);
+	pr_info("    > ostand_max_desc_read = %u\n", m2s_ostand_max_desc_read);
+	pr_info("  * outstanding writes:\n");
+	pr_info("    > ostand_max_comp_req = %u\n", m2s_ostand_max_comp_req);
+	pr_info("  * prefetch:\n");
+	pr_info("    > desc_fifo_depth = %u\n", m2s_conf.desc_fifo_depth);
+	pr_info("    > max_desc_per_packet = %u\n", m2s_conf.max_desc_per_packet);
+	pr_info("    > pref_thr = %u\n", m2s_conf.pref_thr);
+	pr_info("    > min_burst_above_thr = %u\n", m2s_conf.min_burst_above_thr);
+	pr_info("    > min_burst_below_thr = %u\n", m2s_conf.min_burst_below_thr);
+	pr_info("    > max_pkt_limit = %u\n", m2s_conf.max_pkt_limit);
+	pr_info("    > data_fifo_depth = %u\n", m2s_conf.data_fifo_depth);
 
-	al_print("- S2M\n");
-	al_print("  * outstanding reads:\n");
-	al_print("    > ostand_max_desc_read = %u\n", s2m_ostand_max_desc_read);
-	al_print("  * outstanding writes:\n");
-	al_print("    > ostand_max_data_req = %u\n", s2m_ostand_max_data_req);
-	al_print("    > ostand_max_comp_req = %u\n", s2m_ostand_max_comp_req);
-	al_print("  * prefetch:\n");
-	al_print("    > desc_fifo_depth = %u\n", s2m_conf.desc_fifo_depth);
-	al_print("    > pref_thr = %u\n", s2m_conf.pref_thr);
-	al_print("    > min_burst_above_thr = %u\n", s2m_conf.min_burst_above_thr);
-	al_print("    > min_burst_below_thr = %u\n", s2m_conf.min_burst_below_thr);
+	pr_info("- S2M\n");
+	pr_info("  * outstanding reads:\n");
+	pr_info("    > ostand_max_desc_read = %u\n", s2m_ostand_max_desc_read);
+	pr_info("  * outstanding writes:\n");
+	pr_info("    > ostand_max_data_req = %u\n", s2m_ostand_max_data_req);
+	pr_info("    > ostand_max_comp_req = %u\n", s2m_ostand_max_comp_req);
+	pr_info("  * prefetch:\n");
+	pr_info("    > desc_fifo_depth = %u\n", s2m_conf.desc_fifo_depth);
+	pr_info("    > pref_thr = %u\n", s2m_conf.pref_thr);
+	pr_info("    > min_burst_above_thr = %u\n", s2m_conf.min_burst_above_thr);
+	pr_info("    > min_burst_below_thr = %u\n", s2m_conf.min_burst_below_thr);
 
 	for (i = 0; i < al_udma_num_queues_get(s2m_udma); i++) {
 		struct al_udma_q *s2m_udma_q;
@@ -487,24 +487,24 @@ void al_udma_perf_params_print(
 
 		err = al_udma_q_handle_get(s2m_udma, i, &s2m_udma_q);
 		if (err) {
-			al_err("%s: al_udma_q_handle_get failed!\n", __func__);
+			pr_err("%s: al_udma_q_handle_get failed!\n", __func__);
 			return;
 		}
 
 		if (!al_udma_q_is_enabled(s2m_udma_q)) {
-			al_print("  * Queue %u: Disabled\n", i);
+			pr_info("  * Queue %u: Disabled\n", i);
 			continue;
 		}
 
 		al_udma_s2m_q_comp_get(s2m_udma_q, &comp_conf);
 
-		al_print("  * Queue %u\n", i);
-		al_print("    > dis_comp_coal = %s\n",
+		pr_info("  * Queue %u\n", i);
+		pr_info("    > dis_comp_coal = %s\n",
 			comp_conf.dis_comp_coal ? "enabled" : "disabled");
-		al_print("    > en_comp_ring_update = %s\n",
+		pr_info("    > en_comp_ring_update = %s\n",
 			comp_conf.en_comp_ring_update ? "enabled" : "disabled");
-		al_print("    > comp_timer = %u\n", comp_conf.comp_timer);
-		al_print("    > q_qos = %u\n", comp_conf.q_qos);
+		pr_info("    > comp_timer = %u\n", comp_conf.comp_timer);
+		pr_info("    > q_qos = %u\n", comp_conf.q_qos);
 	}
 }
 
@@ -540,7 +540,7 @@ int al_udma_init(struct al_udma *udma, struct al_udma_params *udma_params)
 	else
 		al_udma_iofic_s2m_error_ints_unmask(udma	);
 
-	al_dbg("udma [%s] initialized. base %p\n", udma->name,
+	pr_debug("udma [%s] initialized. base %p\n", udma->name,
 		udma->udma_regs);
 	return 0;
 }
@@ -558,7 +558,7 @@ int al_udma_q_reset_all(struct al_udma *udma)
 
 		err = al_udma_q_handle_get(udma, i, &q);
 		if (err) {
-			al_err("%s: al_udma_q_handle_get failed(%u)!\n", __func__, i);
+			pr_err("%s: al_udma_q_handle_get failed(%u)!\n", __func__, i);
 			return err;
 		}
 
@@ -567,7 +567,7 @@ int al_udma_q_reset_all(struct al_udma *udma)
 
 		err = al_udma_q_reset(q);
 		if (err) {
-			al_err("%s: al_udma_q_reset failed(%u)!\n", __func__, i);
+			pr_err("%s: al_udma_q_reset failed(%u)!\n", __func__, i);
 			return err;
 		}
 	}
@@ -587,29 +587,29 @@ int al_udma_q_init(struct al_udma *udma, uint32_t qid,
 	al_assert(q_params);
 
 	if (qid >= udma->num_of_queues) {
-		al_err("udma: invalid queue id (%d)\n", qid);
+		pr_err("udma: invalid queue id (%d)\n", qid);
 		return -EINVAL;
 	}
 
 	if (udma->udma_q[qid].status == AL_QUEUE_ENABLED) {
-		al_err("udma: queue (%d) already enabled!\n", qid);
+		pr_err("udma: queue (%d) already enabled!\n", qid);
 		return -EIO;
 	}
 
 	if (q_params->size < AL_UDMA_MIN_Q_SIZE) {
-		al_err("udma: queue (%d) size (%d) too small\n",
+		pr_err("udma: queue (%d) size (%d) too small\n",
 			qid, q_params->size);
 		return -EINVAL;
 	}
 
 	if (q_params->size > AL_UDMA_MAX_Q_SIZE) {
-		al_err("udma: queue (%d) size (%d) too large\n",
+		pr_err("udma: queue (%d) size (%d) too large\n",
 			qid, q_params->size);
 		return -EINVAL;
 	}
 
 	if (q_params->size & (q_params->size - 1)) {
-		al_err("udma: queue (%d) size (%d) must be power of 2\n",
+		pr_err("udma: queue (%d) size (%d) must be power of 2\n",
 			 qid, q_params->size);
 		return -EINVAL;
 	}
@@ -650,14 +650,14 @@ int al_udma_q_init(struct al_udma *udma, uint32_t qid,
 	/* enable the q */
 	al_udma_q_enable(udma_q, 1);
 
-	al_dbg("udma [%s %d]: %s q init. size 0x%x\n"
+	pr_debug("udma [%s %d]: %s q init. size 0x%x\n"
 			"  desc ring info: phys base 0x%" PRIx64 " virt base %p\n",
 			udma_q->udma->name, udma_q->qid,
 			udma->type == UDMA_TX ? "Tx" : "Rx",
 			q_params->size,
 			q_params->desc_phy_base,
 			q_params->desc_base);
-	al_dbg("  cdesc ring info: phys base 0x%" PRIx64 " virt base %p entry size 0x%x\n",
+	pr_debug("  cdesc ring info: phys base 0x%" PRIx64 " virt base %p entry size 0x%x\n",
 			q_params->cdesc_phy_base,
 			q_params->cdesc_base,
 			q_params->cdesc_size);
@@ -708,7 +708,7 @@ int al_udma_q_pause(struct al_udma_q *udma_q)
 	}
 
 	if (!remaining_time) {
-		al_err("udma [%s %d]: %s timeout waiting for prefetch and "
+		pr_err("udma [%s %d]: %s timeout waiting for prefetch and "
 			"scheduler disable\n", udma_q->udma->name, udma_q->qid,
 			__func__);
 		return -ETIME;
@@ -731,7 +731,7 @@ int al_udma_q_pause(struct al_udma_q *udma_q)
 	};
 
 	if (!remaining_time) {
-		al_err("udma [%s %d]: %s timeout waiting for dcp==crhp\n",
+		pr_err("udma [%s %d]: %s timeout waiting for dcp==crhp\n",
 			udma_q->udma->name, udma_q->qid, __func__);
 		return -ETIME;
 	}
@@ -785,7 +785,7 @@ int al_udma_q_handle_get(struct al_udma *udma, uint32_t qid,
 	al_assert(q_handle);
 
 	if (unlikely(qid >= udma->num_of_queues)) {
-		al_err("udma [%s]: invalid queue id (%d)\n", udma->name, qid);
+		pr_err("udma [%s]: invalid queue id (%d)\n", udma->name, qid);
 		return -EINVAL;
 	}
 	*q_handle = &udma->udma_q[qid];
@@ -801,10 +801,10 @@ int al_udma_state_set(struct al_udma *udma, enum al_udma_state state)
 
 	al_assert(udma != NULL);
 	if (state == udma->state)
-		al_dbg("udma [%s]: requested state identical to "
+		pr_debug("udma [%s]: requested state identical to "
 			"current state (%d)\n", udma->name, state);
 
-	al_dbg("udma [%s]: change state from (%s) to (%s)\n",
+	pr_debug("udma [%s]: change state from (%s) to (%s)\n",
 		 udma->name, al_udma_states_name[udma->state],
 		 al_udma_states_name[state]);
 
@@ -820,7 +820,7 @@ int al_udma_state_set(struct al_udma *udma, enum al_udma_state state)
 		reg |= UDMA_M2S_CHANGE_STATE_ABORT;
 		break;
 	default:
-		al_err("udma: invalid state (%d)\n", state);
+		pr_err("udma: invalid state (%d)\n", state);
 		return -EINVAL;
 	}
 
@@ -929,7 +929,7 @@ static al_bool al_udma_s2m_stream_status_get(struct al_udma *udma)
 
 		rc = al_udma_q_handle_get(udma, i, &dma_q);
 		if (rc != 0)
-			al_err("%s : Failed at al_udma_q_handle_get (rc = %d)\n", __func__, rc);
+			pr_err("%s : Failed at al_udma_q_handle_get (rc = %d)\n", __func__, rc);
 
 		if (!al_udma_q_is_enabled(dma_q))
 			continue;
@@ -947,7 +947,7 @@ static al_bool al_udma_s2m_stream_status_get(struct al_udma *udma)
 	}
 
 	if (queue_stream_status_valid && (queue_stream_status != stream_status)) {
-		al_warn("%s: Bad configurations, stream & queue stream interface status are"
+		pr_warn("%s: Bad configurations, stream & queue stream interface status are"
 			" different! assuming strem is enabled\n",
 			__func__);
 		/** Need both interfaces disabled to stop stream */
@@ -1057,7 +1057,7 @@ int al_udma_state_set_wait(struct al_udma *dma, enum al_udma_state new_state, al
 
 	rc = al_udma_state_set(dma, new_state);
 	if (rc != 0) {
-		al_warn("[%s] warn: failed to change state, error %d\n", dma->name, rc);
+		pr_warn("[%s] warn: failed to change state, error %d\n", dma->name, rc);
 		return rc;
 	}
 
@@ -1070,7 +1070,7 @@ int al_udma_state_set_wait(struct al_udma *dma, enum al_udma_state new_state, al
 			break;
 		al_udelay(1);
 		if (count-- == 0) {
-			al_warn("[%s] warn: dma state didn't change to %s\n",
+			pr_warn("[%s] warn: dma state didn't change to %s\n",
 				 dma->name, al_udma_states_name[new_state]);
 			return -ETIMEDOUT;
 		}
@@ -1187,7 +1187,7 @@ done:
 	udma_q->pkt_crnt_descs = 0;
 	udma_q->comp_head_ptr = al_cdesc_next_update(udma_q, curr);
 
-	al_dbg("udma [%s %d]: packet completed. first desc %p (ixd 0x%x)"
+	pr_debug("udma [%s %d]: packet completed. first desc %p (ixd 0x%x)"
 		 " descs %d\n", udma_q->udma->name, udma_q->qid, *cdesc,
 		 udma_q->next_cdesc_idx, count);
 

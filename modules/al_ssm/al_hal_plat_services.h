@@ -103,42 +103,6 @@ extern "C" {
 #endif
 
 /**
- * print message
- *
- * @param type of message
- * @param format
- */
-#define al_print(fmt, ...) 		printk(KERN_INFO fmt, ##__VA_ARGS__)
-
-/**
- * print error message
- *
- * @param format
- */
-#define al_err(...)			pr_err(__VA_ARGS__)
-
-/**
- * print warning message
- *
- * @param format
- */
-#define al_warn(...)			pr_info(__VA_ARGS__)
-
-/**
- * print info message
- *
- * @param format
- */
-#define al_info(...)			pr_info(__VA_ARGS__)
-
-/**
- * print debug message
- *
- * @param format
- */
-#define al_dbg(...)			pr_debug(__VA_ARGS__)
-
-/**
  * Assertion
  *
  * @param condition

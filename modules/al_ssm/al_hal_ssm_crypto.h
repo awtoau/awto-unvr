@@ -58,7 +58,7 @@ extern "C" {
 #define CRYPTO_DEBUG
 
 #ifdef CRYPTO_DEBUG
-#define al_debug al_dbg
+#define al_debug pr_debug
 #else
 #define al_debug(...)
 #endif

@@ -71,7 +71,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #else
 static void al_serdes_hssp_stub_func(void)
 {
-	al_err("%s: not implemented service called!\n", __func__);
+	pr_err("%s: not implemented service called!\n", __func__);
 }
 
 #define AL_SRDS_ADV_SRVC(func)			((typeof(func) *)al_serdes_hssp_stub_func)
@@ -172,7 +172,7 @@ static int al_serdes_reg_read(
 {
 	int status = 0;
 
-	al_dbg(
+	pr_debug(
 		"%s(%p, %d, %d, %u)\n",
 		__func__,
 		obj,
@@ -193,7 +193,7 @@ static int al_serdes_reg_read(
 		type,
 		offset);
 
-	al_dbg(
+	pr_debug(
 		"%s: return(%u)\n",
 		__func__,
 		*data);
@@ -212,7 +212,7 @@ static int al_serdes_reg_write(
 {
 	int status = 0;
 
-	al_dbg(
+	pr_debug(
 		"%s(%p, %d, %d, %u, %u)\n",
 		__func__,
 		obj,
@@ -296,7 +296,7 @@ static void al_serdes_bist_overrides_enable(
 		tx_rate_val = SERDES_IREG_FLD_PCSTX_DIVRATE_VAL_1_1;
 		break;
 	default:
-		al_err("%s: invalid rate (%d)\n",  __func__, rate);
+		pr_err("%s: invalid rate (%d)\n",  __func__, rate);
 		al_assert(0);
 		rx_rate_val = SERDES_IREG_FLD_PCSRX_DIVRATE_VAL_1_1;
 		tx_rate_val = SERDES_IREG_FLD_PCSTX_DIVRATE_VAL_1_1;
@@ -461,7 +461,7 @@ static void al_serdes_rx_rate_change(
 		rx_rate_val = SERDES_IREG_FLD_PCSRX_DIVRATE_VAL_1_1;
 		break;
 	default:
-		al_err("%s: invalid rate (%d)\n",  __func__, rate);
+		pr_err("%s: invalid rate (%d)\n",  __func__, rate);
 		rx_rate_val = SERDES_IREG_FLD_PCSRX_DIVRATE_VAL_1_1;
 		break;
 	}
@@ -502,7 +502,7 @@ static void al_serdes_group_pm_set(
 		pm_val = SERDES_IREG_FLD_CMNPCSPSTATE_SYNTH_VAL_P0;
 		break;
 	default:
-		al_err("%s: invalid power mode (%d)\n",  __func__, pm);
+		pr_err("%s: invalid power mode (%d)\n",  __func__, pm);
 		al_assert(0);
 		pm_val = SERDES_IREG_FLD_CMNPCSPSTATE_SYNTH_VAL_P0;
 	}
@@ -676,7 +676,7 @@ static void al_serdes_lane_pm_set(
 		rx_pm_val = SERDES_IREG_FLD_LANEPCSPSTATE_RX_VAL_P0;
 		break;
 	default:
-		al_err("%s: invalid rx power mode (%d)\n",  __func__, rx_pm);
+		pr_err("%s: invalid rx power mode (%d)\n",  __func__, rx_pm);
 		al_assert(0);
 		rx_pm_val = SERDES_IREG_FLD_LANEPCSPSTATE_RX_VAL_P0;
 	}
@@ -698,7 +698,7 @@ static void al_serdes_lane_pm_set(
 		tx_pm_val = SERDES_IREG_FLD_LANEPCSPSTATE_TX_VAL_P0;
 		break;
 	default:
-		al_err("%s: invalid tx power mode (%d)\n",  __func__, tx_pm);
+		pr_err("%s: invalid tx power mode (%d)\n",  __func__, tx_pm);
 		al_assert(0);
 		tx_pm_val = SERDES_IREG_FLD_LANEPCSPSTATE_TX_VAL_P0;
 	}
@@ -830,7 +830,7 @@ static void al_serdes_loopback_control(
 			SERDES_IREG_FLD_LB_CDRCLK2TXEN;
 		break;
 	default:
-		al_err("%s: invalid mode (%d)\n",  __func__, mode);
+		pr_err("%s: invalid mode (%d)\n",  __func__, mode);
 		al_assert(0);
 	}
 
@@ -874,7 +874,7 @@ static void al_serdes_bist_pattern_select(
 		val = SERDES_IREG_FLD_CMNPCSBIST_MODESEL_VAL_CLK1010;
 		break;
 	default:
-		al_err("%s: invalid pattern (%d)\n", __func__, pattern);
+		pr_err("%s: invalid pattern (%d)\n", __func__, pattern);
 		al_assert(0);
 	}
 
@@ -1097,7 +1097,7 @@ static void _al_serdes_lane_rx_rate_change_sw_flow_dis(
 	 * (RSTPDOVR_RX_OVREN)
 	 */
 	if (lane_sw_flow_enabled) {
-		al_dbg("%s(%d): actually disabling\n", __func__, lane);
+		pr_debug("%s(%d): actually disabling\n", __func__, lane);
 		al_serdes_grp_reg_masked_write(obj, (enum al_serdes_reg_page)lane,
 			AL_SRDS_REG_TYPE_PMA, 205, 0x80, 0x00);
 	}
@@ -1184,7 +1184,7 @@ static void _al_serdes_lane_rx_rate_change_sw_flow_en_cond(
 	 */
 	if (lane_sw_flow_almost_enabled && !group_reset_enabled && !lane_reset_enabled &&
 		!group_pd_enabled && !lane_pd_enabled) {
-		al_dbg("%s(%d): actually enabling\n", __func__, lane);
+		pr_debug("%s(%d): actually enabling\n", __func__, lane);
 
 		al_serdes_ns_delay(500);
 		al_serdes_grp_reg_masked_write(obj, (enum al_serdes_reg_page)lane,
@@ -1232,7 +1232,7 @@ static int al_serdes_eye_measure_run(
 	}
 
 	if (i == timeout) {
-		al_err("%s: measure eye failed on timeout\n", __func__);
+		pr_err("%s: measure eye failed on timeout\n", __func__);
 		return -ETIMEDOUT;
 	}
 
@@ -1468,7 +1468,7 @@ static int al_serdes_eye_diag_sample(
 		AL_SERDES_HSSP_UDELAY(1);
 	}
 	if (i == timeout) {
-		al_err("%s: eye diagram sampling timed out!\n", __func__);
+		pr_err("%s: eye diagram sampling timed out!\n", __func__);
 		return -ETIMEDOUT;
 	}
 	/* TBD - this is the original location, should we move it before timeout check? */
@@ -1562,7 +1562,7 @@ static al_bool al_serdes_tx_deemph_inc(
 
 	al_serdes_tx_deemph_get(obj, lane, &c0, &c1, &c_1);
 
-	al_dbg("%s: current txdeemph: c0 = 0x%x c1 = 0x%x c-1 = 0x%x\n",
+	pr_debug("%s: current txdeemph: c0 = 0x%x c1 = 0x%x c-1 = 0x%x\n",
 		__func__, c0, c1, c_1);
 
 	switch (param) {
@@ -1593,13 +1593,13 @@ static al_bool al_serdes_tx_deemph_inc(
 	}
 
 	if ((c0 + c1 + c_1) > AL_SERDES_TX_DEEMPH_SUM_MAX) {
-		al_dbg("%s: sum of all tx de-emphasis over the max limit\n",
+		pr_debug("%s: sum of all tx de-emphasis over the max limit\n",
 			__func__);
 
 		return AL_FALSE;
 	}
 
-	al_dbg("%s: new txdeemph: c0 = 0x%x c1 = 0x%x c-1 = 0x%x\n",
+	pr_debug("%s: new txdeemph: c0 = 0x%x c1 = 0x%x c-1 = 0x%x\n",
 		__func__, c0, c1, c_1);
 
 	al_serdes_tx_deemph_set(obj, lane, c0, c1, c_1);
@@ -1619,7 +1619,7 @@ static al_bool al_serdes_tx_deemph_dec(
 
 	al_serdes_tx_deemph_get(obj, lane, &c0, &c1, &c_1);
 
-	al_dbg("%s: current txdeemph: c0 = 0x%x c1 = 0x%x c-1 = 0x%x\n",
+	pr_debug("%s: current txdeemph: c0 = 0x%x c1 = 0x%x c-1 = 0x%x\n",
 		__func__, c0, c1, c_1);
 
 	switch (param) {
@@ -1649,7 +1649,7 @@ static al_bool al_serdes_tx_deemph_dec(
 		break;
 	}
 
-	al_dbg("%s: new txdeemph: c0 = 0x%x c1 = 0x%x c-1 = 0x%x\n",
+	pr_debug("%s: new txdeemph: c0 = 0x%x c1 = 0x%x c-1 = 0x%x\n",
 		__func__, c0, c1, c_1);
 
 	al_serdes_tx_deemph_set(obj, lane, c0, c1, c_1);
@@ -1671,7 +1671,7 @@ static void al_serdes_tx_deemph_preset(
 
 	c_1 = AL_SERDES_TX_DEEMPH_C_MINUS_PRESET;
 
-	al_dbg("preset: new txdeemph: c0 = 0x%x c1 = 0x%x c-1 = 0x%x\n",
+	pr_debug("preset: new txdeemph: c0 = 0x%x c1 = 0x%x c-1 = 0x%x\n",
 		c0, c1, c_1);
 
 	al_serdes_tx_deemph_set(obj, lane, c0, c1, c_1);
@@ -2819,7 +2819,7 @@ static int al_serdes_rx_equalization(
 	}
 
 	if (!done) {
-		al_err("%s: Timeout!\n", __func__);
+		pr_err("%s: Timeout!\n", __func__);
 		return -1;
 	}
 
@@ -3048,12 +3048,12 @@ static int al_serdes_calc_eye_size(
 	}
 
 	if (status & SERDES_IREG_FLD_RXCALEYEDIAGFSM_ERR) {
-		al_err("%s: eye measure error!\n", __func__);
+		pr_err("%s: eye measure error!\n", __func__);
 		return -1;
 	}
 
 	if (!(status & SERDES_IREG_FLD_RXCALEYEDIAGFSM_DONE)) {
-		al_err("%s: eye measure timeout!\n", __func__);
+		pr_err("%s: eye measure timeout!\n", __func__);
 		return -1;
 	}
 
@@ -3139,12 +3139,12 @@ static int al_serdes_calc_eye_size(
 	}
 
 	if (status & SERDES_IREG_FLD_RXCALEYEDIAGFSM_ERR) {
-		al_err("%s: eye measure error!\n", __func__);
+		pr_err("%s: eye measure error!\n", __func__);
 		return -1;
 	}
 
 	if (!(status & SERDES_IREG_FLD_RXCALEYEDIAGFSM_DONE)) {
-		al_err("%s: eye measure timeout!\n", __func__);
+		pr_err("%s: eye measure timeout!\n", __func__);
 		return -1;
 	}
 
@@ -3317,7 +3317,7 @@ static void al_serdes_hssp_mode_class_get(struct al_serdes_grp_obj *obj,
 				lane_mode_class[i] = AL_SRDS_MODE_CLASS_UNKNOWN;
 
 			if ((i > 0) && (lane_mode_class[i] != lane_mode_class[i-1])) {
-				al_err("%s: Inconsistent mode_class configuration between different lanes of the serdes\n",
+				pr_err("%s: Inconsistent mode_class configuration between different lanes of the serdes\n",
 				__func__);
 				*serdes_group_mode_class = AL_SRDS_MODE_CLASS_UNKNOWN;
 				break;
@@ -3327,7 +3327,7 @@ static void al_serdes_hssp_mode_class_get(struct al_serdes_grp_obj *obj,
 		*serdes_group_mode_class = lane_mode_class[0];
 	}
 
-	al_dbg("%s: serdes_group_mode_class is %d\n", __func__, *serdes_group_mode_class);
+	pr_debug("%s: serdes_group_mode_class is %d\n", __func__, *serdes_group_mode_class);
 }
 
 static int al_serdes_hssp_serdes_mode_get(struct al_serdes_grp_obj *obj,
@@ -3354,20 +3354,20 @@ static int al_serdes_hssp_serdes_mode_get(struct al_serdes_grp_obj *obj,
 			lane_mode[i] = AL_SRDS_CFG_SGMII_2_5G;
 			break;
 		default:
-			al_err("%s: Unable to determine the serdes_group_mode of lane %d (read 0x%x)\n",
+			pr_err("%s: Unable to determine the serdes_group_mode of lane %d (read 0x%x)\n",
 				__func__, i, serdes_10g_speed);
 			return -EIO;
 		}
 
 		if ((i > 0) && (lane_mode[i] != lane_mode[i-1])) {
-			al_err("%s: Inconsistent speed configuration between different lanes of the serdes\n",
+			pr_err("%s: Inconsistent speed configuration between different lanes of the serdes\n",
 				__func__);
 			return -EIO;
 		}
 	}
 
 	*serdes_group_mode = lane_mode[0];
-	al_dbg("%s: serdes_group_mode is %d\n", __func__, *serdes_group_mode);
+	pr_debug("%s: serdes_group_mode is %d\n", __func__, *serdes_group_mode);
 
 
 	return 0;
@@ -3379,7 +3379,7 @@ int al_serdes_hssp_handle_init(
 	void __iomem			*serdes_regs_base,
 	struct al_serdes_grp_obj	*obj)
 {
-	al_dbg(
+	pr_debug(
 		"%s(%p, %p)\n",
 		__func__,
 		serdes_regs_base,

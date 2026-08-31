@@ -271,13 +271,13 @@ static uint16_t al_eth_an_lt_reg_read(
 			val = al_reg_read32(&adapter->mac_regs_base->gen_v3.an_lt_3_data);
 			break;
 		default:
-			al_err("%s: Unknown Lane %d\n", __func__, lane);
+			pr_err("%s: Unknown Lane %d\n", __func__, lane);
 			return 0;
 		}
 	}
 
 
-	al_dbg("[%s]: %s - (%s) lane %d, reg %d, val 0x%x\n", adapter->name, __func__,
+	pr_debug("[%s]: %s - (%s) lane %d, reg %d, val 0x%x\n", adapter->name, __func__,
 	       (an_lt == AL_ETH_AN_REGS) ? "AN" : "LT", lane, reg_addr, val);
 
 	return (uint16_t)val;
@@ -352,13 +352,13 @@ static void al_eth_an_lt_reg_write(
 				       val);
 			break;
 		default:
-			al_err("%s: Unknown Lane %d\n", __func__, lane);
+			pr_err("%s: Unknown Lane %d\n", __func__, lane);
 			return;
 		}
 	}
 
 
-	al_dbg("[%s]: %s - (%s) lane %d, reg %d, val 0x%x\n", adapter->name, __func__,
+	pr_debug("[%s]: %s - (%s) lane %d, reg %d, val 0x%x\n", adapter->name, __func__,
 	       (an_lt == AL_ETH_AN_REGS) ? "AN" : "LT", lane, reg_addr, val);
 }
 
@@ -468,7 +468,7 @@ static void al_eth_an_lt_unit_config(struct al_hal_eth_adapter *adapter)
 
 		break;
 	default:
-		al_err("%s: Unknown mac_mode\n", __func__);
+		pr_err("%s: Unknown mac_mode\n", __func__);
 		return;
 	}
 
@@ -658,25 +658,25 @@ static int al_eth_kr_an_validate_adv(struct al_hal_eth_adapter *adapter,
 		return 0;
 
 	if (an_adv->selector_field != 1) {
-		al_err("[%s]: %s failed on selector_field (%d)\n",
+		pr_err("[%s]: %s failed on selector_field (%d)\n",
 			adapter->name, __func__, an_adv->selector_field);
 		return -EINVAL;
 	}
 
 	if (an_adv->capability & AL_BIT(2)) {
-		al_err("[%s]: %s failed on capability bit 2 (%d)\n",
+		pr_err("[%s]: %s failed on capability bit 2 (%d)\n",
 			adapter->name, __func__, an_adv->capability);
 		return -EINVAL;
 	}
 
 	if (an_adv->remote_fault) {
-		al_err("[%s]: %s failed on remote_fault (%d)\n",
+		pr_err("[%s]: %s failed on remote_fault (%d)\n",
 			adapter->name, __func__, an_adv->remote_fault);
 		return -EINVAL;
 	}
 
 	if (an_adv->acknowledge) {
-		al_err("[%s]: %s failed on acknowledge (%d)\n",
+		pr_err("[%s]: %s failed on acknowledge (%d)\n",
 			adapter->name, __func__, an_adv->acknowledge);
 		return -EINVAL;
 	}
@@ -889,7 +889,7 @@ int al_eth_kr_an_init(struct al_hal_eth_adapter *adapter,
 	/* clear status */
 	al_eth_an_lt_reg_read(adapter, AL_ETH_KR_AN_STATUS, AL_ETH_AN_REGS, AL_ETH_AN__LT_LANE_0);
 
-	al_dbg("[%s]: autonegotiation initialized successfully\n", adapter->name);
+	pr_debug("[%s]: autonegotiation initialized successfully\n", adapter->name);
 	return 0;
 }
 
@@ -900,7 +900,7 @@ int al_eth_kr_an_start(struct al_hal_eth_adapter *adapter,
 {
 	uint16_t control = AL_ETH_KR_AN_CONTROL_ENABLE | AL_ETH_KR_AN_CONTROL_RESTART;
 
-	al_dbg("Eth [%s]: enable autonegotiation. lt_en %s\n",
+	pr_debug("Eth [%s]: enable autonegotiation. lt_en %s\n",
 		adapter->name, (lt_enable == AL_TRUE) ? "yes" : "no");
 
 	al_eth_an_lt_reg_write(adapter, AL_ETH_KR_PMD_CONTROL, AL_ETH_LT_REGS,
@@ -937,7 +937,7 @@ void al_eth_kr_an_status_check(struct al_hal_eth_adapter *adapter,
 
 	if ((reg & AL_ETH_KR_AN_STATUS_CHECK_MASK) !=
 				AL_ETH_KR_AN_STATUS_CHECK_NO_ERROR) {
-		al_err("[%s]: %s AN_STATUS (0x%x) indicated error\n",
+		pr_err("[%s]: %s AN_STATUS (0x%x) indicated error\n",
 			adapter->name, __func__, reg);
 
 		*error = AL_TRUE;
@@ -959,7 +959,7 @@ void al_eth_kr_an_status_check(struct al_hal_eth_adapter *adapter,
 void al_eth_kr_lt_restart(struct al_hal_eth_adapter *adapter,
 			  enum al_eth_an_lt_lane lane)
 {
-	al_dbg("[%s]: KR LT Restart Link Training.\n", adapter->name);
+	pr_debug("[%s]: KR LT Restart Link Training.\n", adapter->name);
 
 	al_eth_an_lt_reg_write(adapter, AL_ETH_KR_PMD_CONTROL, AL_ETH_LT_REGS,
 			       lane, (AL_BIT(AL_ETH_KR_PMD_CONTROL_ENABLE) |
@@ -969,7 +969,7 @@ void al_eth_kr_lt_restart(struct al_hal_eth_adapter *adapter,
 void al_eth_kr_lt_stop(struct al_hal_eth_adapter *adapter,
 		       enum al_eth_an_lt_lane lane)
 {
-	al_dbg("[%s]: KR LT Stop Link Training.\n", adapter->name);
+	pr_debug("[%s]: KR LT Stop Link Training.\n", adapter->name);
 
 	al_eth_an_lt_reg_write(adapter, AL_ETH_KR_PMD_CONTROL, AL_ETH_LT_REGS,
 			       lane, AL_BIT(AL_ETH_KR_PMD_CONTROL_RESTART));
@@ -978,7 +978,7 @@ void al_eth_kr_lt_stop(struct al_hal_eth_adapter *adapter,
 void al_eth_kr_lt_initialize(struct al_hal_eth_adapter *adapter,
 			     enum al_eth_an_lt_lane lane)
 {
-	al_dbg("[%s]: KR LT Initialize.\n", adapter->name);
+	pr_debug("[%s]: KR LT Initialize.\n", adapter->name);
 
 	/* Reset LT state machine */
 	al_eth_kr_lt_stop(adapter, lane);
@@ -1006,7 +1006,7 @@ al_bool al_eth_kr_lt_frame_lock_wait(struct al_hal_eth_adapter *adapter,
 		reg = al_eth_an_lt_reg_read(adapter, AL_ETH_KR_PMD_STATUS, AL_ETH_LT_REGS, lane);
 
 		if (AL_REG_BIT_GET(reg, AL_ETH_KR_PMD_STATUS_FAILURE_SHIFT)) {
-			al_info("[%s]: Failed on Training Failure."
+			pr_info("[%s]: Failed on Training Failure."
 			       " loops %d PMD STATUS 0x%04x\n",
 			       adapter->name, loop, reg);
 
@@ -1014,7 +1014,7 @@ al_bool al_eth_kr_lt_frame_lock_wait(struct al_hal_eth_adapter *adapter,
 		}
 		if (AL_REG_BIT_GET(reg,
 			AL_ETH_KR_PMD_STATUS_RECEIVER_FRAME_LOCK_SHIFT)) {
-			al_dbg("[%s]: Frame lock received."
+			pr_debug("[%s]: Frame lock received."
 			       " loops %d PMD STATUS 0x%04x\n",
 			       adapter->name, loop, reg);
 
@@ -1022,7 +1022,7 @@ al_bool al_eth_kr_lt_frame_lock_wait(struct al_hal_eth_adapter *adapter,
 		}
 		al_udelay(1);
 	}
-	al_info("[%s]: Failed on timeout. PMD STATUS 0x%04x\n",
+	pr_info("[%s]: Failed on timeout. PMD STATUS 0x%04x\n",
 			adapter->name, reg);
 
 	return AL_FALSE;

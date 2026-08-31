@@ -53,7 +53,7 @@ int al_ssm_dma_init(
 	struct al_m2m_udma_params m2m_params;
 	int rc;
 
-	al_dbg("ssm [%s]: initialize DMA\n", params->name);
+	pr_debug("ssm [%s]: initialize DMA\n", params->name);
 
 	ssm_dma->rev_id = params->rev_id;
 	ssm_dma->ssm_max_src_descs = AL_SSM_MAX_SRC_DESCS;
@@ -67,7 +67,7 @@ int al_ssm_dma_init(
 
 	rc = al_m2m_udma_init(&ssm_dma->m2m_udma, &m2m_params);
 	if (rc != 0) {
-		al_err("failed to initialize udma, error %d\n", rc);
+		pr_err("failed to initialize udma, error %d\n", rc);
 		return rc;
 	}
 
@@ -84,7 +84,7 @@ int al_ssm_dma_q_init(struct al_ssm_dma		*ssm_dma,
 {
 	int rc;
 
-	al_dbg("ssm [%s]: Initialize queue %d\n",
+	pr_debug("ssm [%s]: Initialize queue %d\n",
 		 ssm_dma->m2m_udma.name, qid);
 
 	tx_params->adapter_rev_id = ssm_dma->rev_id;
@@ -92,7 +92,7 @@ int al_ssm_dma_q_init(struct al_ssm_dma		*ssm_dma,
 
 	rc = al_m2m_udma_q_init(&ssm_dma->m2m_udma, qid, tx_params, rx_params);
 	if (rc != 0)
-		al_err("ssm [%s]: failed to initialize q %d, error %d\n",
+		pr_err("ssm [%s]: failed to initialize q %d, error %d\n",
 			 ssm_dma->m2m_udma.name, qid, rc);
 	else
 		ssm_dma->q_types[qid] = q_type;
@@ -110,7 +110,7 @@ int al_ssm_dma_state_set(
 
 	rc = al_m2m_udma_state_set(&ssm_dma->m2m_udma, dma_state);
 	if (rc != 0)
-		al_err("ssm [%s]: failed to change state, error %d\n",
+		pr_err("ssm [%s]: failed to change state, error %d\n",
 			 ssm_dma->m2m_udma.name, rc);
 	return rc;
 }

@@ -63,7 +63,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define CRC_MEMCPY_DEBUG
 
 #ifdef CRC_MEMCPY_DEBUG
-#define al_debug al_dbg
+#define al_debug pr_debug
 #else
 #define al_debug(...)
 #endif
@@ -71,7 +71,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifdef CRC_MEMCPY_DEBUG
 static void al_print_desc(union al_udma_desc *desc)
 {
-	al_dbg("crc_memcpy: Desc: %08x %08x %08x %08x\n",
+	pr_debug("crc_memcpy: Desc: %08x %08x %08x %08x\n",
 			desc->tx_meta.len_ctrl, desc->tx_meta.meta_ctrl,
 			desc->tx_meta.meta1, desc->tx_meta.meta2);
 }
@@ -80,70 +80,70 @@ static
 void al_print_crc_xaction(struct al_crc_transaction *xaction) {
 	unsigned int i;
 
-	al_dbg("crc_memcpy: CRC Transaction debug\n");
-	al_dbg(" CRC TYPE: ");
+	pr_debug("crc_memcpy: CRC Transaction debug\n");
+	pr_debug(" CRC TYPE: ");
 	switch (xaction->crcsum_type) {
 		case(AL_CRC_CHECKSUM_NULL):
-			al_dbg(" NULL\n");
+			pr_debug(" NULL\n");
 					break;
 		case(AL_CRC_CHECKSUM_CRC32):
-			al_dbg(" CRC32\n");
+			pr_debug(" CRC32\n");
 			break;
 		case(AL_CRC_CHECKSUM_CRC32C):
-			al_dbg(" CRC32C\n");
+			pr_debug(" CRC32C\n");
 			break;
 		case(AL_CRC_CHECKSUM_CKSM16):
-			al_dbg(" CKSM16\n");
+			pr_debug(" CKSM16\n");
 			break;
 		case(AL_CRC_CHECKSUM_CKSM32):
-			al_dbg(" CKSM32\n");
+			pr_debug(" CKSM32\n");
 			break;
 		case(AL_CRC_CHECKSUM_CRC16):
-			al_dbg(" CRC16\n");
+			pr_debug(" CRC16\n");
 			break;
 		case(AL_CRC_CHECKSUM_CKSM32A):
-			al_dbg(" CKSM32 Adler\n");
+			pr_debug(" CKSM32 Adler\n");
 			break;
 		case(AL_CRC_CHECKSUM_CRC8):
-			al_dbg(" CRC8\n");
+			pr_debug(" CRC8\n");
 			break;
 		case(AL_CRC_CHECKSUM_CRC8N):
-			al_dbg(" CRC8N\n");
+			pr_debug(" CRC8N\n");
 			break;
 		case(AL_CRC_CHECKSUM_CKSM8):
-			al_dbg(" CKSM8\n");
+			pr_debug(" CKSM8\n");
 			break;
 	}
-	al_dbg(" Flags %d\n", xaction->flags);
+	pr_debug(" Flags %d\n", xaction->flags);
 
-	al_dbg("-SRC num of buffers  %d\n",
+	pr_debug("-SRC num of buffers  %d\n",
 			xaction->src.num);
 	for (i = 0 ; i < xaction->src.num; i++)
-		al_dbg(" addr 0x%016" PRIx64 " len %d\n",
+		pr_debug(" addr 0x%016" PRIx64 " len %d\n",
 			xaction->src.bufs[i].addr,
 			xaction->src.bufs[i].len);
 
-	al_dbg("-DST num of buffers  %d\n",
+	pr_debug("-DST num of buffers  %d\n",
 			xaction->dst.num);
 	for (i = 0 ; i < xaction->dst.num; i++)
-		al_dbg(" addr 0x%016" PRIx64 " len %d\n",
+		pr_debug(" addr 0x%016" PRIx64 " len %d\n",
 			xaction->dst.bufs[i].addr,
 			xaction->dst.bufs[i].len);
 
-	al_dbg(" CRC IV IN size: %d, addr 0x%016" PRIx64 "\n",
+	pr_debug(" CRC IV IN size: %d, addr 0x%016" PRIx64 "\n",
 			xaction->crc_iv_in.len,
 			xaction->crc_iv_in.addr);
-	al_dbg(" Cached CRC index %d\n", xaction->cached_crc_indx);
-	al_dbg(" Save CRC IV in cache: %d\n", xaction->st_crc_iv);
-	al_dbg(" Store CRC Out in cache: %d\n", xaction->st_crc_out);
-	al_dbg(" CRC Expected size: %d, addr 0x%016" PRIx64 "\n",
+	pr_debug(" Cached CRC index %d\n", xaction->cached_crc_indx);
+	pr_debug(" Save CRC IV in cache: %d\n", xaction->st_crc_iv);
+	pr_debug(" Store CRC Out in cache: %d\n", xaction->st_crc_out);
+	pr_debug(" CRC Expected size: %d, addr 0x%016" PRIx64 "\n",
 			xaction->crc_expected.len,
 			xaction->crc_expected.addr);
-	al_dbg(" CRC OUT size: %d, addr 0x%016" PRIx64 "\n",
+	pr_debug(" CRC OUT size: %d, addr 0x%016" PRIx64 "\n",
 			xaction->crc_out.len,
 			xaction->crc_out.addr);
-	al_dbg(" SWAP flags %x\n", xaction->swap_flags);
-	al_dbg(" XOR Valid: %d XOR in: %x XOR out: %x\n",
+	pr_debug(" SWAP flags %x\n", xaction->swap_flags);
+	pr_debug(" XOR Valid: %d XOR in: %x XOR out: %x\n",
 			xaction->xor_valid, xaction->in_xor, xaction->res_xor);
 
 
@@ -545,7 +545,7 @@ int al_memcpy_prepare(struct al_ssm_dma *dma, uint32_t qid,
 	rc = al_udma_q_handle_get(&dma->m2m_udma.rx_udma, qid, &rx_udma_q);
 	al_assert(!rc);
 	if (unlikely(al_udma_available_get(rx_udma_q) < rx_descs)) {
-		al_dbg("memcpy[%s]:rx q has no enough free desc\n",
+		pr_debug("memcpy[%s]:rx q has no enough free desc\n",
 			 dma->m2m_udma.name);
 		return -ENOSPC;
 	}
@@ -564,7 +564,7 @@ int al_memcpy_prepare(struct al_ssm_dma *dma, uint32_t qid,
 		/* check again */
 		if (unlikely(al_udma_available_get(tx_udma_q) < tx_descs
 				+ AL_CRC_MEMCPY_DESC_RES)) {
-			al_err("memcpy[%s]:tx q has no enough free desc\n",
+			pr_err("memcpy[%s]:tx q has no enough free desc\n",
 				 dma->m2m_udma.name);
 			return -ENOSPC;
 		}
@@ -623,7 +623,7 @@ int al_crc_csum_prepare(struct al_ssm_dma *dma, uint32_t qid,
 		if (unlikely(al_udma_available_get(tx_udma_q) < tx_descs
 				+ AL_CRC_MEMCPY_DESC_RES)) {
 
-			al_dbg("crc_csum[%s]:tx q has no enough free desc\n",
+			pr_debug("crc_csum[%s]:tx q has no enough free desc\n",
 				 dma->m2m_udma.name);
 			return -ENOSPC;
 		}
@@ -639,7 +639,7 @@ int al_crc_csum_prepare(struct al_ssm_dma *dma, uint32_t qid,
 	/* valid CRC/CSUM rx q handle */
 	al_assert(!rc);
 	if (unlikely(al_udma_available_get(rx_udma_q) < rx_descs)) {
-		al_dbg("crc_csum[%s]:rx q has no enough free desc\n",
+		pr_debug("crc_csum[%s]:rx q has no enough free desc\n",
 			 dma->m2m_udma.name);
 		return -ENOSPC;
 	}

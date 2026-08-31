@@ -535,7 +535,7 @@ static int al_udma_state_set_wait(struct al_udma *dma, enum al_udma_state new_st
 
 	rc = al_udma_state_set(dma, new_state);
 	if (rc != 0) {
-		al_warn("[%s] warn: failed to change state, error %d\n", dma->name, rc);
+		pr_warn("[%s] warn: failed to change state, error %d\n", dma->name, rc);
 		return rc;
 	}
 
@@ -548,7 +548,7 @@ static int al_udma_state_set_wait(struct al_udma *dma, enum al_udma_state new_st
 			break;
 		al_udelay(1);
 		if (count-- == 0) {
-			al_warn("[%s] warn: dma state didn't change to %s\n",
+			pr_warn("[%s] warn: dma state didn't change to %s\n",
 				 dma->name, al_udma_states_name[new_state]);
 			return -ETIMEDOUT;
 		}
@@ -604,7 +604,7 @@ static void al_eth_epe_init(struct al_hal_eth_adapter *adapter)
 	int idx;
 
 	if (adapter->enable_rx_parser == 0) {
-		al_dbg("eth [%s]: disable rx parser\n", adapter->name);
+		pr_debug("eth [%s]: disable rx parser\n", adapter->name);
 
 		al_reg_write32(&adapter->ec_regs_base->epe[0].res_def, 0x08000000);
 		al_reg_write32(&adapter->ec_regs_base->epe[0].res_in, 0x7);
@@ -614,7 +614,7 @@ static void al_eth_epe_init(struct al_hal_eth_adapter *adapter)
 
 		return;
 	}
-	al_dbg("eth [%s]: enable rx parser\n", adapter->name);
+	pr_debug("eth [%s]: enable rx parser\n", adapter->name);
 	for (idx = 0; idx < AL_ETH_EPE_ENTRIES_NUM; idx++)
 		al_eth_epe_entry_set(adapter, idx, &al_eth_epe_p_regs[idx], &al_eth_epe_control_table[idx]);
 
@@ -651,7 +651,7 @@ static uint32_t al_eth_40g_mac_reg_read(
 	al_reg_write32(&adapter->mac_regs_base->gen_v3.mac_40g_ll_addr, reg_addr);
 	val = al_reg_read32(&adapter->mac_regs_base->gen_v3.mac_40g_ll_data);
 
-	al_dbg("[%s]: %s - reg %d. val 0x%x\n",
+	pr_debug("[%s]: %s - reg %d. val 0x%x\n",
 	       adapter->name, __func__, reg_addr, val);
 
 	return val;
@@ -674,7 +674,7 @@ static void al_eth_40g_mac_reg_write(
 	al_reg_write32(&adapter->mac_regs_base->gen_v3.mac_40g_ll_addr, reg_addr);
 	al_reg_write32(&adapter->mac_regs_base->gen_v3.mac_40g_ll_data, reg_data);
 
-	al_dbg("[%s]: %s - reg %d. val 0x%x\n",
+	pr_debug("[%s]: %s - reg %d. val 0x%x\n",
 	       adapter->name, __func__, reg_addr, reg_data);
 }
 
@@ -696,7 +696,7 @@ static uint32_t al_eth_40g_pcs_reg_read(
 	al_reg_write32(&adapter->mac_regs_base->gen_v3.pcs_40g_ll_addr, reg_addr);
 	val = al_reg_read32(&adapter->mac_regs_base->gen_v3.pcs_40g_ll_data);
 
-	al_dbg("[%s]: %s - reg %d. val 0x%x\n",
+	pr_debug("[%s]: %s - reg %d. val 0x%x\n",
 	       adapter->name, __func__, reg_addr, val);
 
 	return val;
@@ -719,7 +719,7 @@ static void al_eth_40g_pcs_reg_write(
 	al_reg_write32(&adapter->mac_regs_base->gen_v3.pcs_40g_ll_addr, reg_addr);
 	al_reg_write32(&adapter->mac_regs_base->gen_v3.pcs_40g_ll_data, reg_data);
 
-	al_dbg("[%s]: %s - reg %d. val 0x%x\n",
+	pr_debug("[%s]: %s - reg %d. val 0x%x\n",
 	       adapter->name, __func__, reg_addr, reg_data);
 }
 
@@ -741,7 +741,7 @@ static uint16_t al_eth_kr_pcs_reg_read(
 	al_reg_write32(&adapter->mac_regs_base->kr.pcs_addr, reg_addr);
 	val = (uint16_t)al_reg_read32(&adapter->mac_regs_base->kr.pcs_data);
 
-	al_dbg("[%s]: %s - reg %d. val 0x%x\n",
+	pr_debug("[%s]: %s - reg %d. val 0x%x\n",
 	       adapter->name, __func__, reg_addr, val);
 
 	return val;
@@ -764,7 +764,7 @@ static void al_eth_kr_pcs_reg_write(
 	al_reg_write32(&adapter->mac_regs_base->kr.pcs_addr, reg_addr);
 	al_reg_write32(&adapter->mac_regs_base->kr.pcs_data, reg_data);
 
-	al_dbg("[%s]: %s - reg %d. val 0x%x\n",
+	pr_debug("[%s]: %s - reg %d. val 0x%x\n",
 	       adapter->name, __func__, reg_addr, reg_data);
 }
 
@@ -882,11 +882,11 @@ int al_eth_adapter_init(struct al_hal_eth_adapter *adapter, struct al_eth_adapte
 	uint32_t reg;
 	int rc;
 
-	al_dbg("eth [%s]: initialize controller's UDMA. id = %d\n", params->name, params->udma_id);
-	al_dbg("eth [%s]: UDMA base regs: %p\n", params->name, params->udma_regs_base);
-	al_dbg("eth [%s]: EC base regs: %p\n", params->name, params->ec_regs_base);
-	al_dbg("eth [%s]: MAC base regs: %p\n", params->name, params->mac_regs_base);
-	al_dbg("eth [%s]: enable_rx_parser: %x\n", params->name, params->enable_rx_parser);
+	pr_debug("eth [%s]: initialize controller's UDMA. id = %d\n", params->name, params->udma_id);
+	pr_debug("eth [%s]: UDMA base regs: %p\n", params->name, params->udma_regs_base);
+	pr_debug("eth [%s]: EC base regs: %p\n", params->name, params->ec_regs_base);
+	pr_debug("eth [%s]: MAC base regs: %p\n", params->name, params->mac_regs_base);
+	pr_debug("eth [%s]: enable_rx_parser: %x\n", params->name, params->enable_rx_parser);
 
 	adapter->name = params->name;
 	adapter->rev_id = params->rev_id;
@@ -909,13 +909,13 @@ int al_eth_adapter_init(struct al_hal_eth_adapter *adapter, struct al_eth_adapte
 	rc = al_udma_init(&adapter->tx_udma, &udma_params);
 
 	if (rc != 0) {
-		al_err("failed to initialize %s, error %d\n",
+		pr_err("failed to initialize %s, error %d\n",
 			 udma_params.name, rc);
 		return rc;
 	}
 	rc = al_udma_state_set_wait(&adapter->tx_udma, UDMA_NORMAL);
 	if (rc != 0) {
-		al_err("[%s]: failed to change state, error %d\n",
+		pr_err("[%s]: failed to change state, error %d\n",
 			 udma_params.name, rc);
 		return rc;
 	}
@@ -927,18 +927,18 @@ int al_eth_adapter_init(struct al_hal_eth_adapter *adapter, struct al_eth_adapte
 	rc = al_udma_init(&adapter->rx_udma, &udma_params);
 
 	if (rc != 0) {
-		al_err("failed to initialize %s, error %d\n",
+		pr_err("failed to initialize %s, error %d\n",
 			 udma_params.name, rc);
 		return rc;
 	}
 
 	rc = al_udma_state_set_wait(&adapter->rx_udma, UDMA_NORMAL);
 	if (rc != 0) {
-		al_err("[%s]: failed to change state, error %d\n",
+		pr_err("[%s]: failed to change state, error %d\n",
 			 udma_params.name, rc);
 		return rc;
 	}
-	al_dbg("eth [%s]: controller's UDMA successfully initialized\n",
+	pr_debug("eth [%s]: controller's UDMA successfully initialized\n",
 		 params->name);
 
 	/* set max packet size to 1M (for TSO) */
@@ -1093,7 +1093,7 @@ int al_eth_adapter_init(struct al_hal_eth_adapter *adapter, struct al_eth_adapte
 int al_eth_ec_mac_ints_config(struct al_hal_eth_adapter *adapter)
 {
 
-	al_dbg("eth [%s]: enable ethernet and mac interrupts\n", adapter->name);
+	pr_debug("eth [%s]: enable ethernet and mac interrupts\n", adapter->name);
 
 	// only udma 0 allowed to init ec
 	if (adapter->udma_id != 0)
@@ -1140,7 +1140,7 @@ int al_eth_ec_mac_ints_config(struct al_hal_eth_adapter *adapter)
 int al_eth_ec_mac_isr(struct al_hal_eth_adapter *adapter)
 {
 	uint32_t cause;
-	al_dbg("[%s]: ethernet interrupts handler\n", adapter->name);
+	pr_debug("[%s]: ethernet interrupts handler\n", adapter->name);
 
 	// only udma 0 allowed to init ec
 	if (adapter->udma_id != 0)
@@ -1148,27 +1148,27 @@ int al_eth_ec_mac_isr(struct al_hal_eth_adapter *adapter)
 
 	/* read ec cause */
 	cause = al_iofic_read_cause(adapter->ec_ints_base, AL_INT_GROUP_A);
-	al_dbg("[%s]: ethernet group A cause 0x%08x\n", adapter->name, cause);
+	pr_debug("[%s]: ethernet group A cause 0x%08x\n", adapter->name, cause);
 	if (cause & 1)
 	{
 		cause = al_iofic_read_cause(adapter->mac_ints_base, AL_INT_GROUP_A);
-		al_dbg("[%s]: mac group A cause 0x%08x\n", adapter->name, cause);
+		pr_debug("[%s]: mac group A cause 0x%08x\n", adapter->name, cause);
 
 		cause = al_iofic_read_cause(adapter->mac_ints_base, AL_INT_GROUP_B);
-		al_dbg("[%s]: mac group B cause 0x%08x\n", adapter->name, cause);
+		pr_debug("[%s]: mac group B cause 0x%08x\n", adapter->name, cause);
 
 		cause = al_iofic_read_cause(adapter->mac_ints_base, AL_INT_GROUP_C);
-		al_dbg("[%s]: mac group C cause 0x%08x\n", adapter->name, cause);
+		pr_debug("[%s]: mac group C cause 0x%08x\n", adapter->name, cause);
 
 		cause = al_iofic_read_cause(adapter->mac_ints_base, AL_INT_GROUP_D);
-		al_dbg("[%s]: mac group D cause 0x%08x\n", adapter->name, cause);
+		pr_debug("[%s]: mac group D cause 0x%08x\n", adapter->name, cause);
 	}
 	cause = al_iofic_read_cause(adapter->ec_ints_base, AL_INT_GROUP_B);
-	al_dbg("[%s]: ethernet group B cause 0x%08x\n", adapter->name, cause);
+	pr_debug("[%s]: ethernet group B cause 0x%08x\n", adapter->name, cause);
 	cause = al_iofic_read_cause(adapter->ec_ints_base, AL_INT_GROUP_C);
-	al_dbg("[%s]: ethernet group C cause 0x%08x\n", adapter->name, cause);
+	pr_debug("[%s]: ethernet group C cause 0x%08x\n", adapter->name, cause);
 	cause = al_iofic_read_cause(adapter->ec_ints_base, AL_INT_GROUP_D);
-	al_dbg("[%s]: ethernet group D cause 0x%08x\n", adapter->name, cause);
+	pr_debug("[%s]: ethernet group D cause 0x%08x\n", adapter->name, cause);
 
 	return 0;
 }
@@ -1180,34 +1180,34 @@ int al_eth_adapter_stop(struct al_hal_eth_adapter *adapter)
 {
 	int rc;
 
-	al_dbg("eth [%s]: stop controller's UDMA\n", adapter->name);
+	pr_debug("eth [%s]: stop controller's UDMA\n", adapter->name);
 
 	/* disable Tx dma*/
 	rc = al_udma_state_set_wait(&adapter->tx_udma, UDMA_DISABLE);
 	if (rc != 0) {
-		al_warn("[%s] warn: failed to change state, error %d\n",
+		pr_warn("[%s] warn: failed to change state, error %d\n",
 			 adapter->tx_udma.name, rc);
 		return rc;
 	}
 
-	al_dbg("eth [%s]: controller's TX UDMA stopped\n",
+	pr_debug("eth [%s]: controller's TX UDMA stopped\n",
 		 adapter->name);
 	/* disable Rx dma*/
 	rc = al_udma_state_set_wait(&adapter->rx_udma, UDMA_DISABLE);
 	if (rc != 0) {
-		al_warn("[%s] warn: failed to change state, error %d\n",
+		pr_warn("[%s] warn: failed to change state, error %d\n",
 			 adapter->rx_udma.name, rc);
 		return rc;
 	}
 
-	al_dbg("eth [%s]: controller's RX UDMA stopped\n",
+	pr_debug("eth [%s]: controller's RX UDMA stopped\n",
 		 adapter->name);
 	return 0;
 }
 
 int al_eth_adapter_reset(struct al_hal_eth_adapter *adapter)
 {
-	al_dbg("eth [%s]: reset controller's UDMA\n", adapter->name);
+	pr_debug("eth [%s]: reset controller's UDMA\n", adapter->name);
 
 	return -EPERM;
 }
@@ -1222,7 +1222,7 @@ int al_eth_queue_config(struct al_hal_eth_adapter *adapter, enum al_udma_type ty
 	struct al_udma *udma;
 	int rc;
 
-	al_dbg("eth [%s]: config UDMA %s queue %d\n", adapter->name,
+	pr_debug("eth [%s]: config UDMA %s queue %d\n", adapter->name,
 		 type == UDMA_TX ? "Tx" : "Rx", qid);
 
 	if (type == UDMA_TX) {
@@ -1629,13 +1629,13 @@ int al_eth_mac_config(struct al_hal_eth_adapter *adapter, enum al_eth_mac_mode m
 
 		al_udelay(AL_ETH_KR_PCS_RESET_DELAY);
 
-		al_dbg("%s: Performed reset of KR_PCS (via pcs internal register)\n", __func__);
+		pr_debug("%s: Performed reset of KR_PCS (via pcs internal register)\n", __func__);
 
 		/* We reset the gearbox tx channel to make the flow more robust. This helps to
 		 * prevent cases where the retimer will fail to lock on the tx channel.
 		 */
 		al_eth_gearbox_reset(adapter, AL_TRUE, AL_FALSE);
-		al_dbg("%s: Performed gearbox reset of TX channel for %s\n",
+		pr_debug("%s: Performed gearbox reset of TX channel for %s\n",
 			__func__, adapter->name);
 
 		break;
@@ -1915,11 +1915,11 @@ int al_eth_mac_config(struct al_hal_eth_adapter *adapter, enum al_eth_mac_mode m
 
 
 	default:
-		al_err("Eth: unsupported MAC mode %d\n", mode);
+		pr_err("Eth: unsupported MAC mode %d\n", mode);
 		return -EPERM;
 	}
 	adapter->mac_mode = mode;
-	al_info("configured MAC to %s mode\n", al_eth_mac_mode_str(mode));
+	pr_info("configured MAC to %s mode\n", al_eth_mac_mode_str(mode));
 
 	return 0;
 }
@@ -2004,7 +2004,7 @@ void al_eth_gearbox_reset(struct al_hal_eth_adapter *adapter, al_bool tx_reset, 
 			ETH_MAC_GEN_V3_EXT_SERDES_CTRL_LANE_1_RX_25_GS_SW_RESET);
 	}
 
-	al_dbg("%s: perform gearbox reset (Tx %d, Rx %d) \n", __func__, tx_reset, rx_reset);
+	pr_debug("%s: perform gearbox reset (Tx %d, Rx %d) \n", __func__, tx_reset, rx_reset);
 	al_reg_write32(&adapter->mac_regs_base->gen_v3.ext_serdes_ctrl, reg);
 
 	al_udelay(10);
@@ -2091,7 +2091,7 @@ int al_eth_capabilities_get(struct al_hal_eth_adapter *adapter, struct al_eth_ca
 			caps->pfc = AL_TRUE;
 			break;
 		default:
-		al_err("Eth: unsupported MAC mode %d\n", adapter->mac_mode);
+		pr_err("Eth: unsupported MAC mode %d\n", adapter->mac_mode);
 		return -EPERM;
 	}
 	return 0;
@@ -2244,7 +2244,7 @@ int al_eth_mac_link_config(struct al_hal_eth_adapter *adapter,
 {
 	if ((!AL_ETH_IS_1G_MAC(adapter->mac_mode)) &&
 		(adapter->mac_mode != AL_ETH_MAC_MODE_SGMII_2_5G)) {
-		al_err("eth [%s]: this function not supported in this mac mode.\n",
+		pr_err("eth [%s]: this function not supported in this mac mode.\n",
 			       adapter->name);
 		return -EINVAL;
 	}
@@ -2254,18 +2254,18 @@ int al_eth_mac_link_config(struct al_hal_eth_adapter *adapter,
 		 * an_enable is not relevant to RGMII mode.
 		 * in AN mode speed and duplex aren't relevant.
 		 */
-		al_info("eth [%s]: set auto negotiation to enable\n", adapter->name);
+		pr_info("eth [%s]: set auto negotiation to enable\n", adapter->name);
 	} else {
-		al_info("eth [%s]: set link speed to %dMbps. %s duplex.\n", adapter->name,
+		pr_info("eth [%s]: set link speed to %dMbps. %s duplex.\n", adapter->name,
 			speed, full_duplex == AL_TRUE ? "full" : "half");
 
 		if ((speed != 10) && (speed != 100) && (speed != 1000)) {
-			al_err("eth [%s]: bad speed parameter (%d).\n",
+			pr_err("eth [%s]: bad speed parameter (%d).\n",
 				       adapter->name, speed);
 			return -EINVAL;
 		}
 		if ((speed == 1000) && (full_duplex == AL_FALSE)) {
-			al_err("eth [%s]: half duplex in 1Gbps is not supported.\n",
+			pr_err("eth [%s]: half duplex in 1Gbps is not supported.\n",
 				       adapter->name);
 			return -EINVAL;
 		}
@@ -2291,7 +2291,7 @@ int al_eth_mac_loopback_config(struct al_hal_eth_adapter *adapter, int enable)
 {
 	const char *state = (enable) ? "enable" : "disable";
 
-	al_dbg("eth [%s]: loopback %s\n", adapter->name, state);
+	pr_debug("eth [%s]: loopback %s\n", adapter->name, state);
 	if (AL_ETH_IS_1G_MAC(adapter->mac_mode)) {
 		uint32_t reg;
 		reg = al_reg_read32(&adapter->mac_regs_base->mac_1g.cmd_cfg);
@@ -2322,7 +2322,7 @@ int al_eth_mac_loopback_config(struct al_hal_eth_adapter *adapter, int enable)
 			reg &= ~AL_BIT(14);
 		al_eth_40g_pcs_reg_write(adapter, ETH_MAC_GEN_V3_PCS_40G_CONTROL_STATUS_ADDR, reg);
 	} else {
-		al_err("Eth: mac loopback not supported in this mode %d\n", adapter->mac_mode);
+		pr_err("Eth: mac loopback not supported in this mode %d\n", adapter->mac_mode);
 		return -EPERM;
 	}
 	return 0;
@@ -2330,7 +2330,7 @@ int al_eth_mac_loopback_config(struct al_hal_eth_adapter *adapter, int enable)
 
 int al_eth_mac_tx_flush_config(struct al_hal_eth_adapter *adapter, int enable)
 {
-	al_dbg("eth [%s]: tx_flush %s\n", adapter->name, enable ? "enable" : "disable");
+	pr_debug("eth [%s]: tx_flush %s\n", adapter->name, enable ? "enable" : "disable");
 
 	if (AL_ETH_IS_10G_MAC(adapter->mac_mode) || AL_ETH_IS_25G_MAC(adapter->mac_mode)) {
 		if (enable)
@@ -2352,7 +2352,7 @@ int al_eth_mac_tx_flush_config(struct al_hal_eth_adapter *adapter, int enable)
 		al_eth_40g_mac_reg_write(adapter, ETH_MAC_GEN_V3_MAC_40G_COMMAND_CONFIG_ADDR,
 					reg);
 	} else {
-		al_err("eth [%s]: tx flush not supported in this mode %d\n", adapter->name,
+		pr_err("eth [%s]: tx flush not supported in this mode %d\n", adapter->name,
 		       adapter->mac_mode);
 		return -EINVAL;
 	}
@@ -2386,11 +2386,11 @@ int al_eth_mdio_config(
 	unsigned int ref_clk_freq_khz;
 	uint32_t val;
 
-	al_dbg("eth [%s]: mdio config: interface %s. type %s. shared: %s\n", adapter->name, if_name, type_name, shared_name);
+	pr_debug("eth [%s]: mdio config: interface %s. type %s. shared: %s\n", adapter->name, if_name, type_name, shared_name);
 	adapter->shared_mdio_if = shared_mdio_if;
 
 	val = al_reg_read32(&adapter->mac_regs_base->gen.cfg);
-	al_dbg("eth [%s]: mdio config: 10G mac \n", adapter->name);
+	pr_debug("eth [%s]: mdio config: 10G mac \n", adapter->name);
 
 	switch(mdio_if)
 	{
@@ -2421,7 +2421,7 @@ int al_eth_mdio_config(
 		/* set clock div to get 'mdio_clk_freq_khz' */
 		switch (ref_clk_freq) {
 		default:
-			al_err("eth [%s]: %s: invalid reference clock frequency"
+			pr_err("eth [%s]: %s: invalid reference clock frequency"
 				" (%d)\n",
 				adapter->name, __func__, ref_clk_freq);
 			/* fallthrough */
@@ -2451,7 +2451,7 @@ int al_eth_mdio_config(
 		al_reg_write32(&adapter->mac_regs_base->mac_10g.mdio_cfg_status, val);
 	}else{
 		if(mdio_type != AL_ETH_MDIO_TYPE_CLAUSE_22) {
-			al_err("eth [%s] mdio type not supported for this interface\n",
+			pr_err("eth [%s] mdio type not supported for this interface\n",
 				 adapter->name);
 			return -EINVAL;
 		}
@@ -2488,13 +2488,13 @@ static int al_eth_mdio_10g_mac_wait_busy(struct al_hal_eth_adapter *adapter)
 		mdio_cfg_status = al_reg_read32(&adapter->mac_regs_base->mac_10g.mdio_cfg_status);
 /*
 		if (mdio_cfg_status & AL_BIT(1)){ //error
-			al_err(" %s mdio read failed on error. phy_addr 0x%x reg 0x%x\n",
+			pr_err(" %s mdio read failed on error. phy_addr 0x%x reg 0x%x\n",
 				udma_params.name, phy_addr, reg);
 			return -EIO;
 		}*/
 		if (mdio_cfg_status & AL_BIT(0)){
 			if (count > 0)
-				al_dbg("eth [%s] mdio: still busy!\n", adapter->name);
+				pr_debug("eth [%s] mdio: still busy!\n", adapter->name);
 		}else{
 			return 0;
 		}
@@ -2516,7 +2516,7 @@ static int al_eth_mdio_10g_mac_type22(
 	//wait if the HW is busy
 	rc = al_eth_mdio_10g_mac_wait_busy(adapter);
 	if (rc) {
-		al_err(" eth [%s] mdio %s failed. HW is busy\n", adapter->name, op);
+		pr_err(" eth [%s] mdio %s failed. HW is busy\n", adapter->name, op);
 		return rc;
 	}
 
@@ -2535,14 +2535,14 @@ static int al_eth_mdio_10g_mac_type22(
 	//wait for the busy to clear
 	rc = al_eth_mdio_10g_mac_wait_busy(adapter);
 	if (rc != 0) {
-		al_err(" %s mdio %s failed on timeout\n", adapter->name, op);
+		pr_err(" %s mdio %s failed on timeout\n", adapter->name, op);
 		return -ETIMEDOUT;
 	}
 
 	mdio_cfg_status = al_reg_read32(&adapter->mac_regs_base->mac_10g.mdio_cfg_status);
 
 	if (mdio_cfg_status & AL_BIT(1)){ //error
-		al_err(" %s mdio %s failed on error. phy_addr 0x%x reg 0x%x\n",
+		pr_err(" %s mdio %s failed on error. phy_addr 0x%x reg 0x%x\n",
 			adapter->name, op, phy_addr, reg);
 			return -EIO;
 	}
@@ -2564,7 +2564,7 @@ static int al_eth_mdio_10g_mac_type45(
 	//wait if the HW is busy
 	rc = al_eth_mdio_10g_mac_wait_busy(adapter);
 	if (rc) {
-		al_err(" %s mdio %s failed. HW is busy\n", adapter->name, op);
+		pr_err(" %s mdio %s failed. HW is busy\n", adapter->name, op);
 		return rc;
 	}
 	// set command register
@@ -2578,7 +2578,7 @@ static int al_eth_mdio_10g_mac_type45(
 	//wait for the busy to clear
 	rc = al_eth_mdio_10g_mac_wait_busy(adapter);
 	if (rc) {
-		al_err(" %s mdio %s (address frame) failed on timeout\n", adapter->name, op);
+		pr_err(" %s mdio %s (address frame) failed on timeout\n", adapter->name, op);
 		return rc;
 	}
 
@@ -2596,14 +2596,14 @@ static int al_eth_mdio_10g_mac_type45(
 	//wait for the busy to clear
 	rc = al_eth_mdio_10g_mac_wait_busy(adapter);
 	if (rc) {
-		al_err(" %s mdio %s failed on timeout\n", adapter->name, op);
+		pr_err(" %s mdio %s failed on timeout\n", adapter->name, op);
 		return rc;
 	}
 
 	mdio_cfg_status = al_reg_read32(&adapter->mac_regs_base->mac_10g.mdio_cfg_status);
 
 	if (mdio_cfg_status & AL_BIT(1)){ //error
-		al_err(" %s mdio %s failed on error. port 0x%x, device 0x%x reg 0x%x\n",
+		pr_err(" %s mdio %s failed on error. port 0x%x, device 0x%x reg 0x%x\n",
 			adapter->name, op, port_addr, device, reg);
 			return -EIO;
 	}
@@ -2633,19 +2633,19 @@ static int al_eth_mdio_lock(struct al_hal_eth_adapter *adapter)
 		mdio_ctrl_1 = al_reg_read32(&adapter->mac_regs_base->gen.mdio_ctrl_1);
 /*
 		if (mdio_cfg_status & AL_BIT(1)){ //error
-			al_err(" %s mdio read failed on error. phy_addr 0x%x reg 0x%x\n",
+			pr_err(" %s mdio read failed on error. phy_addr 0x%x reg 0x%x\n",
 				udma_params.name, phy_addr, reg);
 			return -EIO;
 		}*/
 		if (mdio_ctrl_1 & AL_BIT(0)){
 			if (count > 0)
-				al_dbg("eth %s mdio interface still busy!\n", adapter->name);
+				pr_debug("eth %s mdio interface still busy!\n", adapter->name);
 		}else{
 			return 0;
 		}
 		al_udelay(AL_ETH_MDIO_DELAY_PERIOD);
 	}while(count++ < (AL_ETH_MDIO_DELAY_COUNT * 4));
-	al_err(" %s mdio failed to take ownership. MDIO info reg: 0x%08x\n",
+	pr_err(" %s mdio failed to take ownership. MDIO info reg: 0x%08x\n",
 		adapter->name, al_reg_read32(&adapter->mac_regs_base->gen.mdio_1));
 
 	return -ETIMEDOUT;
@@ -2701,14 +2701,14 @@ int al_eth_mdio_read(struct al_hal_eth_adapter *adapter, uint32_t phy_addr, uint
 			rc = al_eth_mdio_10g_mac_type45(adapter, 1, phy_addr, device, reg, val);
 
 	al_eth_mdio_free(adapter);
-	al_dbg("eth mdio read: phy_addr %x, device %x, reg %x val %x\n", phy_addr, device, reg, *val);
+	pr_debug("eth mdio read: phy_addr %x, device %x, reg %x val %x\n", phy_addr, device, reg, *val);
 	return rc;
 }
 
 int al_eth_mdio_write(struct al_hal_eth_adapter *adapter, uint32_t phy_addr, uint32_t device, uint32_t reg, uint16_t val)
 {
 	int rc;
-	al_dbg("eth mdio write: phy_addr %x, device %x, reg %x, val %x\n", phy_addr, device, reg, val);
+	pr_debug("eth mdio write: phy_addr %x, device %x, reg %x, val %x\n", phy_addr, device, reg, val);
 	rc = al_eth_mdio_lock(adapter);
 	/* interface ownership taken */
 	if (rc)
@@ -2729,11 +2729,11 @@ int al_eth_mdio_write(struct al_hal_eth_adapter *adapter, uint32_t phy_addr, uin
 static void al_dump_tx_desc(union al_udma_desc *tx_desc)
 {
 	uint32_t *ptr = (uint32_t *)tx_desc;
-	al_dbg("eth tx desc:\n");
-	al_dbg("0x%08x\n", *(ptr++));
-	al_dbg("0x%08x\n", *(ptr++));
-	al_dbg("0x%08x\n", *(ptr++));
-	al_dbg("0x%08x\n", *(ptr++));
+	pr_debug("eth tx desc:\n");
+	pr_debug("0x%08x\n", *(ptr++));
+	pr_debug("0x%08x\n", *(ptr++));
+	pr_debug("0x%08x\n", *(ptr++));
+	pr_debug("0x%08x\n", *(ptr++));
 }
 
 static void
@@ -2756,7 +2756,7 @@ al_dump_tx_pkt(struct al_udma_q *tx_dma_q, struct al_eth_pkt *pkt)
 	uint32_t total_len = 0;
 	int i;
 
-	al_dbg("[%s %d]: flags: %s %s %s %s %s %s\n", tx_dma_q->udma->name, tx_dma_q->qid,
+	pr_debug("[%s %d]: flags: %s %s %s %s %s %s\n", tx_dma_q->udma->name, tx_dma_q->qid,
 			tso, l3_csum, l4_csum, fcs, ptp, tunnel_mode);
 
 	switch (pkt->l3_proto_idx) {
@@ -2795,7 +2795,7 @@ al_dump_tx_pkt(struct al_udma_q *tx_dma_q, struct al_eth_pkt *pkt)
 		break;
 	}
 
-	al_dbg("[%s %d]: L3 proto: %d (%s). L4 proto: %d (%s). Outer_L3 proto: %d (%s). vlan source count %d. mod add %d. mod del %d\n",
+	pr_debug("[%s %d]: L3 proto: %d (%s). L4 proto: %d (%s). Outer_L3 proto: %d (%s). vlan source count %d. mod add %d. mod del %d\n",
 			tx_dma_q->udma->name, tx_dma_q->qid, pkt->l3_proto_idx,
 			l3_proto_name, pkt->l4_proto_idx, l4_proto_name,
 			pkt->outer_l3_proto_idx, outer_l3_proto_name,
@@ -2806,29 +2806,29 @@ al_dump_tx_pkt(struct al_udma_q *tx_dma_q, struct al_eth_pkt *pkt)
 		const char * store = pkt->meta->store ? "Yes" : "No";
 		const char *ptp_val = (pkt->flags & AL_ETH_TX_FLAGS_TS) ? "Yes" : "No";
 
-		al_dbg("[%s %d]: tx pkt with meta data. words valid %x\n",
+		pr_debug("[%s %d]: tx pkt with meta data. words valid %x\n",
 			tx_dma_q->udma->name, tx_dma_q->qid,
 			pkt->meta->words_valid);
-		al_dbg("[%s %d]: meta: store to cache %s. l3 hdr len %d. l3 hdr offset %d. "
+		pr_debug("[%s %d]: meta: store to cache %s. l3 hdr len %d. l3 hdr offset %d. "
 			"l4 hdr len %d. mss val %d ts_index %d ts_val:%s\n"
 			, tx_dma_q->udma->name, tx_dma_q->qid, store,
 			pkt->meta->l3_header_len, pkt->meta->l3_header_offset,
 			pkt->meta->l4_header_len, pkt->meta->mss_val,
 			pkt->meta->ts_index, ptp_val);
-		al_dbg("outer_l3_hdr_offset %d. outer_l3_len %d.\n",
+		pr_debug("outer_l3_hdr_offset %d. outer_l3_len %d.\n",
 			pkt->meta->outer_l3_offset, pkt->meta->outer_l3_len);
 	}
 
-	al_dbg("[%s %d]: num of bufs: %d\n", tx_dma_q->udma->name, tx_dma_q->qid,
+	pr_debug("[%s %d]: num of bufs: %d\n", tx_dma_q->udma->name, tx_dma_q->qid,
 		pkt->num_of_bufs);
 	for (i = 0; i < pkt->num_of_bufs; i++) {
-		al_dbg("eth [%s %d]: buf[%d]: len 0x%08x."
+		pr_debug("eth [%s %d]: buf[%d]: len 0x%08x."
 				" address 0x%016" PRIx64 "\n",
 				tx_dma_q->udma->name, tx_dma_q->qid,
 				i, pkt->bufs[i].len, pkt->bufs[i].addr);
 		total_len += pkt->bufs[i].len;
 	}
-	al_dbg("[%s %d]: total len: 0x%08x\n", tx_dma_q->udma->name, tx_dma_q->qid, total_len);
+	pr_debug("[%s %d]: total len: 0x%08x\n", tx_dma_q->udma->name, tx_dma_q->qid, total_len);
 
 }
 
@@ -2848,7 +2848,7 @@ int al_eth_tx_pkt_prepare(struct al_udma_q *tx_dma_q, struct al_eth_pkt *pkt)
 	uint32_t ring_id;
 	int buf_idx;
 
-	al_dbg("[%s %d]: new tx pkt\n", tx_dma_q->udma->name, tx_dma_q->qid);
+	pr_debug("[%s %d]: new tx pkt\n", tx_dma_q->udma->name, tx_dma_q->qid);
 
 	al_dump_tx_pkt(tx_dma_q, pkt);
 
@@ -2860,14 +2860,14 @@ int al_eth_tx_pkt_prepare(struct al_udma_q *tx_dma_q, struct al_eth_pkt *pkt)
 	al_assert((pkt->ext_meta_data == NULL) || (tx_dma_q->adapter_rev_id > AL_ETH_REV_ID_2));
 
 	tx_descs += al_eth_ext_metadata_needed_descs(pkt->ext_meta_data);
-	al_dbg("[%s %d]: %d Descriptors: ext_meta (%d). meta (%d). buffer (%d)\n",
+	pr_debug("[%s %d]: %d Descriptors: ext_meta (%d). meta (%d). buffer (%d)\n",
 			tx_dma_q->udma->name, tx_dma_q->qid, tx_descs,
 			al_eth_ext_metadata_needed_descs(pkt->ext_meta_data),
 			(pkt->meta != NULL), pkt->num_of_bufs);
 #endif
 
 	if (unlikely(al_udma_available_get(tx_dma_q) < tx_descs)) {
-		al_dbg("[%s %d]: failed to allocate (%d) descriptors\n",
+		pr_debug("[%s %d]: failed to allocate (%d) descriptors\n",
 			 tx_dma_q->udma->name, tx_dma_q->qid, tx_descs);
 		return 0;
 	}
@@ -3022,7 +3022,7 @@ int al_eth_tx_pkt_prepare(struct al_udma_q *tx_dma_q, struct al_eth_pkt *pkt)
 		al_dump_tx_desc(tx_desc);
 	}
 
-	al_dbg("[%s %d]: pkt descriptors written into the tx queue. descs num (%d)\n",
+	pr_debug("[%s %d]: pkt descriptors written into the tx queue. descs num (%d)\n",
 		tx_dma_q->udma->name, tx_dma_q->qid, tx_descs);
 
 	return tx_descs;
@@ -3040,12 +3040,18 @@ void al_eth_tx_dma_action(struct al_udma_q *tx_dma_q, uint32_t tx_descs)
  */
 int al_eth_comp_tx_get(struct al_udma_q *tx_dma_q)
 {
-	int rc;
+	/* al_udma_cdesc_get_all() itself returns uint32_t - keep it unsigned
+	 * here too, rather than narrowing through a signed `int` before the
+	 * caller (which stores it into an unsigned total) ever sees it. Only
+	 * the function's own return type stays `int` for API compatibility;
+	 * al_eth_tx_poll() now sanity-bounds the value it receives.
+	 */
+	uint32_t rc;
 
 	rc = al_udma_cdesc_get_all(tx_dma_q, NULL);
 	if (rc != 0) {
 		al_udma_cdesc_ack(tx_dma_q, rc);
-		al_dbg("[%s %d]: tx completion: descs (%d)\n",
+		pr_debug("[%s %d]: tx completion: descs (%d)\n",
 			 tx_dma_q->udma->name, tx_dma_q->qid, rc);
 	}
 
@@ -3181,11 +3187,11 @@ int al_eth_rx_buffer_add(struct al_udma_q *rx_dma_q,
 	uint32_t flags_len = flags & ~AL_ETH_RX_FLAGS_TGTID_MASK;
 	union al_udma_desc *rx_desc;
 
-	al_dbg("[%s %d]: add rx buffer.\n", rx_dma_q->udma->name, rx_dma_q->qid);
+	pr_debug("[%s %d]: add rx buffer.\n", rx_dma_q->udma->name, rx_dma_q->qid);
 
 #if 1
 	if (unlikely(al_udma_available_get(rx_dma_q) < 1)) {
-		al_dbg("[%s]: rx q (%d) has no enough free descriptor\n",
+		pr_debug("[%s]: rx q (%d) has no enough free descriptor\n",
 			 rx_dma_q->udma->name, rx_dma_q->qid);
 		return -ENOSPC;
 	}
@@ -3215,7 +3221,7 @@ int al_eth_rx_buffer_add(struct al_udma_q *rx_dma_q,
  */
 void al_eth_rx_buffer_action(struct al_udma_q *rx_dma_q, uint32_t descs_num)
 {
-	al_dbg("[%s]: update the rx engine tail pointer: queue %d. descs %d\n",
+	pr_debug("[%s]: update the rx engine tail pointer: queue %d. descs %d\n",
 		 rx_dma_q->udma->name, rx_dma_q->qid, descs_num);
 
 	/* add rx descriptor */
@@ -3239,7 +3245,7 @@ uint32_t al_eth_pkt_rx(struct al_udma_q *rx_dma_q,
 
 	al_assert(rc <= AL_ETH_PKT_MAX_BUFS);
 
-	al_dbg("[%s]: fetch rx packet: queue %d.\n",
+	pr_debug("[%s]: fetch rx packet: queue %d.\n",
 		 rx_dma_q->udma->name, rx_dma_q->qid);
 
 	pkt->rx_header_len = 0;
@@ -3683,7 +3689,7 @@ int al_eth_filter_config(struct al_hal_eth_adapter *adapter, struct al_eth_filte
 	al_assert(params); /* valid params pointer */
 
 	if (params->filters & ~(AL_ETH_RFW_FILTER_SUPPORTED(adapter->rev_id))) {
-		al_err("[%s]: unsupported filter options (0x%08x)\n", adapter->name, params->filters);
+		pr_err("[%s]: unsupported filter options (0x%08x)\n", adapter->name, params->filters);
 		return -EINVAL;
 	}
 
@@ -3721,7 +3727,7 @@ int al_eth_filter_override_config(struct al_hal_eth_adapter *adapter,
 	al_assert(params); /* valid params pointer */
 
 	if (params->filters & ~(AL_ETH_RFW_FILTER_SUPPORTED(adapter->rev_id))) {
-		al_err("[%s]: unsupported override filter options (0x%08x)\n", adapter->name, params->filters);
+		pr_err("[%s]: unsupported override filter options (0x%08x)\n", adapter->name, params->filters);
 		return -EINVAL;
 	}
 
@@ -3757,7 +3763,7 @@ int al_eth_flow_control_config(struct al_hal_eth_adapter *adapter, struct al_eth
 
 	switch(params->type){
 	case AL_ETH_FLOW_CONTROL_TYPE_LINK_PAUSE:
-		al_dbg("[%s]: config flow control to link pause mode.\n", adapter->name);
+		pr_debug("[%s]: config flow control to link pause mode.\n", adapter->name);
 
 		/* config the mac */
 		if (AL_ETH_IS_1G_MAC(adapter->mac_mode)) {
@@ -3826,7 +3832,7 @@ int al_eth_flow_control_config(struct al_hal_eth_adapter *adapter, struct al_eth
 		}
 	break;
 	case AL_ETH_FLOW_CONTROL_TYPE_PFC:
-		al_dbg("[%s]: config flow control to PFC mode.\n", adapter->name);
+		pr_debug("[%s]: config flow control to PFC mode.\n", adapter->name);
 		al_assert(!AL_ETH_IS_1G_MAC(adapter->mac_mode)); /* pfc not available for RGMII mode */;
 
 		for (i = 0; i < 4; i++) {
@@ -3922,7 +3928,7 @@ int al_eth_flow_control_config(struct al_hal_eth_adapter *adapter, struct al_eth
 
 	break;
 	default:
-		al_err("[%s]: unsupported flow control type %d\n", adapter->name, params->type);
+		pr_err("[%s]: unsupported flow control type %d\n", adapter->name, params->type);
 		return -EINVAL;
 
 	}
@@ -3931,7 +3937,7 @@ int al_eth_flow_control_config(struct al_hal_eth_adapter *adapter, struct al_eth
 
 int al_eth_vlan_mod_config(struct al_hal_eth_adapter *adapter, uint8_t udma_id, uint16_t udma_etype, uint16_t vlan1_data, uint16_t vlan2_data)
 {
-	al_dbg("[%s]: config vlan modification registers. udma id %d.\n", adapter->name, udma_id);
+	pr_debug("[%s]: config vlan modification registers. udma id %d.\n", adapter->name, udma_id);
 
 	al_reg_write32(&adapter->ec_regs_base->tpm_sel[udma_id].etype, udma_etype);
 	al_reg_write32(&adapter->ec_regs_base->tpm_udma[udma_id].vlan_data, vlan1_data | (vlan2_data << 16));
@@ -3943,7 +3949,7 @@ int al_eth_eee_get(struct al_hal_eth_adapter *adapter, struct al_eth_eee_params 
 {
 	uint32_t reg;
 
-	al_dbg("[%s]: getting eee.\n", adapter->name);
+	pr_debug("[%s]: getting eee.\n", adapter->name);
 
 	reg = al_reg_read32(&adapter->ec_regs_base->eee.cfg_e);
 	params->enable = (reg & EC_EEE_CFG_E_ENABLE) ? AL_TRUE : AL_FALSE;
@@ -3959,10 +3965,10 @@ int al_eth_eee_get(struct al_hal_eth_adapter *adapter, struct al_eth_eee_params 
 int al_eth_eee_config(struct al_hal_eth_adapter *adapter, struct al_eth_eee_params *params)
 {
 	uint32_t reg;
-	al_dbg("[%s]: config eee.\n", adapter->name);
+	pr_debug("[%s]: config eee.\n", adapter->name);
 
 	if (params->enable == 0) {
-		al_dbg("[%s]: disable eee.\n", adapter->name);
+		pr_debug("[%s]: disable eee.\n", adapter->name);
 		al_reg_write32(&adapter->ec_regs_base->eee.cfg_e, 0);
 		return 0;
 	}
@@ -4245,7 +4251,7 @@ int al_eth_pth_pulse_out_config(struct al_hal_eth_adapter *adapter,
 	uint32_t reg;
 
 	if (params->index >= AL_ETH_PTH_PULSE_OUT_NUM) {
-		al_err("eth [%s] PTH out pulse index out of range\n",
+		pr_err("eth [%s] PTH out pulse index out of range\n",
 				 adapter->name);
 		return -EINVAL;
 	}
@@ -4379,7 +4385,7 @@ int al_eth_link_status_get(struct al_hal_eth_adapter *adapter,
 		return -EPERM;
 	}
 
-	al_dbg("[%s]: mac %s port. link_status: %s.\n", adapter->name,
+	pr_debug("[%s]: mac %s port. link_status: %s.\n", adapter->name,
 		al_eth_mac_mode_str(adapter->mac_mode),
 		(status->link_up == AL_TRUE) ? "LINK_UP" : "LINK_DOWN");
 
@@ -5297,23 +5303,23 @@ int al_eth_tx_protocol_detect_table_entry_set(struct al_hal_eth_adapter *adapter
 	al_reg_write32(&adapter->ec_regs_base->tfw_v3.tx_gpd_cam_addr, idx);
 	al_reg_write32(&adapter->ec_regs_base->tfw_v3.tx_gpd_cam_ctrl,
 			(uint32_t)((tx_gpd_entry->tx_gpd_cam_ctrl) << AL_ETH_TX_GPD_CAM_CTRL_VALID_SHIFT));
-	al_dbg("al_eth_tx_generic_crc_entry_set, line [%d], tx_gpd_cam_ctrl: %#x\n",
+	pr_debug("al_eth_tx_generic_crc_entry_set, line [%d], tx_gpd_cam_ctrl: %#x\n",
 		idx, tx_gpd_entry->tx_gpd_cam_ctrl);
 	al_reg_write32(&adapter->ec_regs_base->tfw_v3.tx_gpd_cam_mask_2,
 			(uint32_t)(gpd_mask >> AL_ETH_TX_GPD_CAM_MASK_2_SHIFT));
-	al_dbg("al_eth_tx_generic_crc_entry_set, line [%d], tx_gpd_cam_mask_2: %#x\n",
+	pr_debug("al_eth_tx_generic_crc_entry_set, line [%d], tx_gpd_cam_mask_2: %#x\n",
 		idx, (uint32_t)(gpd_mask >> AL_ETH_TX_GPD_CAM_MASK_2_SHIFT));
 	al_reg_write32(&adapter->ec_regs_base->tfw_v3.tx_gpd_cam_mask_1,
 			(uint32_t)(gpd_mask));
-	al_dbg("al_eth_tx_generic_crc_entry_set, line [%d], tx_gpd_cam_mask_1: %#x\n",
+	pr_debug("al_eth_tx_generic_crc_entry_set, line [%d], tx_gpd_cam_mask_1: %#x\n",
 		idx, (uint32_t)(gpd_mask));
 	al_reg_write32(&adapter->ec_regs_base->tfw_v3.tx_gpd_cam_data_2,
 			(uint32_t)(gpd_data >> AL_ETH_TX_GPD_CAM_DATA_2_SHIFT));
-	al_dbg("al_eth_tx_generic_crc_entry_set, line [%d], tx_gpd_cam_data_2: %#x\n",
+	pr_debug("al_eth_tx_generic_crc_entry_set, line [%d], tx_gpd_cam_data_2: %#x\n",
 		idx, (uint32_t)(gpd_data >> AL_ETH_TX_GPD_CAM_DATA_2_SHIFT));
 	al_reg_write32(&adapter->ec_regs_base->tfw_v3.tx_gpd_cam_data_1,
 			(uint32_t)(gpd_data));
-	al_dbg("al_eth_tx_generic_crc_entry_set, line [%d], tx_gpd_cam_data_1: %#x\n",
+	pr_debug("al_eth_tx_generic_crc_entry_set, line [%d], tx_gpd_cam_data_1: %#x\n",
 		idx, (uint32_t)(gpd_data));
 	return 0;
 }
@@ -5345,7 +5351,7 @@ int al_eth_tx_generic_crc_table_entry_set(struct al_hal_eth_adapter *adapter, ui
 		AL_ETH_TX_GCP_HEAD_CALC_SHIFT;
 	gcp_table_gen |= (tx_gcp_entry->mask_polarity & AL_ETH_TX_GCP_MASK_POLARITY_MASK) <<
 		AL_ETH_TX_GCP_MASK_POLARITY_SHIFT;
-	al_dbg("al_eth_tx_generic_crc_entry_set, line [%d], gcp_table_gen: %#x\n",
+	pr_debug("al_eth_tx_generic_crc_entry_set, line [%d], gcp_table_gen: %#x\n",
 		idx, gcp_table_gen);
 
 	tx_alu_opcode  = (tx_gcp_entry->tx_alu_opcode_1 & AL_ETH_TX_GCP_OPCODE_1_MASK) <<
@@ -6109,7 +6115,7 @@ int al_eth_tx_generic_crc_table_init_ex(struct al_hal_eth_adapter *adapter,
 	al_assert((adapter->rev_id > AL_ETH_REV_ID_2));
 	al_assert(num_entries <= AL_ETH_TX_GENERIC_CRC_ENTRIES_NUM);
 
-	al_dbg("eth [%s]: enable tx_generic_crc\n", adapter->name);
+	pr_debug("eth [%s]: enable tx_generic_crc\n", adapter->name);
 	al_reg_write32(&adapter->ec_regs_base->tfw_v3.tx_gcp_legacy, 0x0);
 	al_reg_write32(&adapter->ec_regs_base->tfw_v3.crc_csum_replace, 0x0);
 	for (idx = 0; idx < num_entries; idx++)
@@ -6194,7 +6200,7 @@ int al_eth_rx_generic_crc_table_init_ex(struct al_hal_eth_adapter *adapter,
 	al_assert((adapter->rev_id > AL_ETH_REV_ID_2));
 	al_assert(num_entries <= AL_ETH_RX_PROTOCOL_DETECT_ENTRIES_NUM);
 
-	al_dbg("eth [%s]: enable rx_generic_crc\n", adapter->name);
+	pr_debug("eth [%s]: enable rx_generic_crc\n", adapter->name);
 
 	for (idx = 0; idx < num_entries; idx++)
 		al_eth_rx_generic_crc_table_entry_set(adapter, idx, &entries[idx]);
@@ -6296,7 +6302,7 @@ void al_eth_ec_error_ints_masks_get(unsigned int eth_rev_id,
 		*ec_c_mask = 0;
 		*ec_d_mask = 0;
 
-		al_err("%s: unknown eth rev ID: %d\n", __func__, eth_rev_id);
+		pr_err("%s: unknown eth rev ID: %d\n", __func__, eth_rev_id);
 		al_assert(0);
 	}
 
@@ -6384,7 +6390,7 @@ void al_eth_mac_error_ints_masks_get(unsigned int eth_rev_id,
 		*mac_c_mask = 0;
 		*mac_d_mask = 0;
 
-		al_err("%s: unknown eth rev ID: %d\n", __func__, eth_rev_id);
+		pr_err("%s: unknown eth rev ID: %d\n", __func__, eth_rev_id);
 		al_assert(0);
 	}
 }

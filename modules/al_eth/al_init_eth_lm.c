@@ -377,9 +377,9 @@ static struct al_eth_lm_retimer retimer[] = {
 #define lm_debug(...)				\
 	do {					\
 		if (lm_context->debug)		\
-			al_warn(__VA_ARGS__);	\
+			pr_warn(__VA_ARGS__);	\
 		else				\
-			al_dbg(__VA_ARGS__);	\
+			pr_debug(__VA_ARGS__);	\
 	} while (0)
 
 #define TIMED_OUT(current_time, start_time, timeout_val)	\
@@ -493,7 +493,7 @@ static int al_eth_sfp_detect(struct al_eth_lm_context	*lm_context,
 		lm_context->da_len = lm_context->default_dac_len;
 		if ((lm_context->mode != *new_mode) &&
 			(lm_context->mode == AL_ETH_LM_MODE_DISCONNECTED))
-			al_warn("%s: unknown SFP inserted. eeprom content: 10G compliance 0x%x, 1G compliance 0x%x, sfp+cable 0x%x. default to %s\n",
+			pr_warn("%s: unknown SFP inserted. eeprom content: 10G compliance 0x%x, 1G compliance 0x%x, sfp+cable 0x%x. default to %s\n",
 				__func__, sfp_10g, sfp_1g, sfp_cable_tech,
 				al_eth_lm_mode_convert_to_str(lm_context->default_mode));
 	}
@@ -501,7 +501,7 @@ static int al_eth_sfp_detect(struct al_eth_lm_context	*lm_context,
 	if ((lm_context->sfp_detect_force_mode) && (*new_mode != AL_ETH_LM_MODE_DISCONNECTED) &&
 	    (*new_mode != lm_context->default_mode)) {
 			if (lm_context->mode == AL_ETH_LM_MODE_DISCONNECTED)
-				al_warn("%s: Force mode to default (%s). mode based of the SFP EEPROM %s\n",
+				pr_warn("%s: Force mode to default (%s). mode based of the SFP EEPROM %s\n",
 				__func__, al_eth_lm_mode_convert_to_str(lm_context->default_mode),
 				al_eth_lm_mode_convert_to_str(*new_mode));
 
@@ -560,7 +560,7 @@ static int al_eth_qsfp_detect(struct al_eth_lm_context	*lm_context,
 		lm_context->da_len = lm_context->default_dac_len;
 		if ((lm_context->mode != *new_mode) &&
 			(lm_context->mode == AL_ETH_LM_MODE_DISCONNECTED))
-			al_warn("%s: unknown QSFP inserted. eeprom content: 10G compliance 0x%x."
+			pr_warn("%s: unknown QSFP inserted. eeprom content: 10G compliance 0x%x."
 			" default to %s\n",
 			__func__, qsfp_comp_code,
 			al_eth_lm_mode_convert_to_str(lm_context->default_mode));
@@ -626,7 +626,7 @@ static int al_eth_module_detect(struct al_eth_lm_context	*lm_context,
 			if (use_gpio_present) {
 				sfp_present = lm_context->gpio_get(lm_context->gpio_present);
 				if (sfp_present == SFP_PRESENT) {
-					al_warn("%s: SFP present, but i2c read from SFP failed. Force mode to default (%s).\n",
+					pr_warn("%s: SFP present, but i2c read from SFP failed. Force mode to default (%s).\n",
 						__func__, al_eth_lm_mode_convert_to_str(
 						lm_context->default_mode));
 					*new_mode = lm_context->default_mode;
@@ -744,7 +744,7 @@ void al_eth_serdes_static_tx_params_set(struct al_eth_lm_context *lm_context)
 		lm_context->tx_params_override.override = AL_TRUE;
 
 		if (!(lm_context->serdes_obj->tx_advanced_params_set)) {
-			al_err("tx_advanced_params_set is not supported for this serdes group\n");
+			pr_err("tx_advanced_params_set is not supported for this serdes group\n");
 			return;
 		}
 
@@ -757,7 +757,7 @@ void al_eth_serdes_static_tx_params_set(struct al_eth_lm_context *lm_context)
 		lm_context->tx_param_dirty = 0;
 
 		if (!(lm_context->serdes_obj->tx_advanced_params_set)) {
-			al_err("tx_advanced_params_set is not supported for this serdes group\n");
+			pr_err("tx_advanced_params_set is not supported for this serdes group\n");
 			return;
 		}
 
@@ -791,7 +791,7 @@ void al_eth_serdes_static_rx_params_set(struct al_eth_lm_context *lm_context)
 		lm_context->rx_params_override.override = AL_TRUE;
 
 		if (!(lm_context->serdes_obj->rx_advanced_params_set)) {
-			al_err("rx_advanced_params_set is not supported for this serdes group\n");
+			pr_err("rx_advanced_params_set is not supported for this serdes group\n");
 			return;
 		}
 
@@ -804,7 +804,7 @@ void al_eth_serdes_static_rx_params_set(struct al_eth_lm_context *lm_context)
 		lm_context->rx_param_dirty = 0;
 
 		if (!(lm_context->serdes_obj->rx_advanced_params_set)) {
-			al_err("rx_advanced_params_set is not supported for this serdes group\n");
+			pr_err("rx_advanced_params_set is not supported for this serdes group\n");
 			return;
 		}
 
@@ -854,7 +854,7 @@ static int al_eth_rx_equal_run(struct al_eth_lm_context	*lm_context)
 					lm_context->lane);
 
 		if (test_score < 0) {
-			al_warn("serdes rx equalization failed on error\n");
+			pr_warn("serdes rx equalization failed on error\n");
 			return test_score;
 		}
 
@@ -888,7 +888,7 @@ static int al_eth_rx_equal_run(struct al_eth_lm_context	*lm_context)
 						lm_context->lane);
 
 		if (test_score < 0) {
-			al_warn("serdes rx equalization failed on error\n");
+			pr_warn("serdes rx equalization failed on error\n");
 			return test_score;
 		}
 
@@ -954,7 +954,7 @@ static int al_eth_lm_retimer_br210_config(struct al_eth_lm_context	*lm_context)
 				   boost);
 
 	if (rc) {
-		al_err("%s: Error occurred (%d) while writing retimer configuration (bus-id %x i2c-addr %x)\n",
+		pr_err("%s: Error occurred (%d) while writing retimer configuration (bus-id %x i2c-addr %x)\n",
 		       __func__, rc, lm_context->retimer_bus_id, lm_context->retimer_i2c_addr);
 		return rc;
 	}
@@ -991,9 +991,9 @@ static int al_eth_lm_retimer_br410_config(struct al_eth_lm_context	*lm_context)
 		retimer_params =
 			al_eth_retimer_params[lm_context->da_len][lm_context->retimer_type];
 	else {
-		al_err("%s: Unsupported cable length (%dm) for retimer_type %d on this board!\n",
+		pr_err("%s: Unsupported cable length (%dm) for retimer_type %d on this board!\n",
 			__func__, lm_context->da_len, lm_context->retimer_type);
-		al_err("Currently only 1m and 3m cables are supported\n");
+		pr_err("Currently only 1m and 3m cables are supported\n");
 		return -EIO;
 	}
 
@@ -1005,9 +1005,9 @@ static int al_eth_lm_retimer_br410_config(struct al_eth_lm_context	*lm_context)
 			al_eth_retimer_params[3][lm_context->retimer_type];
 
 	if ((lm_context->da_len != 1) || (lm_context->da_len != 3)) {
-		al_warn("%s: Uncalibrated cable length (%dm) for retimer_type %d on this board is being used! Link might not be optimal.\n",
+		pr_warn("%s: Uncalibrated cable length (%dm) for retimer_type %d on this board is being used! Link might not be optimal.\n",
 			__func__, lm_context->da_len, lm_context->retimer_type);
-		al_warn("Retimer params have been calibrated for 1m and 3m cables only\n");
+		pr_warn("Retimer params have been calibrated for 1m and 3m cables only\n");
 	}
 
 	lm_debug("%s: Configuring eq_boost for retimer_type %d in channel %d (addr 0x%x) to 0x%x\n",
@@ -1021,7 +1021,7 @@ static int al_eth_lm_retimer_br410_config(struct al_eth_lm_context	*lm_context)
 				   retimer_params.eq_boost);
 
 	if (rc) {
-		al_err("%s: Error occurred (%d) while writing to eq_boost to retimer (bus-id %x i2c-addr %x)\n",
+		pr_err("%s: Error occurred (%d) while writing to eq_boost to retimer (bus-id %x i2c-addr %x)\n",
 		       __func__, rc, lm_context->retimer_bus_id, lm_context->retimer_i2c_addr);
 		return rc;
 	}
@@ -1034,7 +1034,7 @@ static int al_eth_lm_retimer_br410_config(struct al_eth_lm_context	*lm_context)
 				  &reg);
 
 	if (rc) {
-		al_err("%s: Error occurred (%d) while reading de_emphasis control reg from retimer (bus-id 0x%x i2c-addr 0x%x internal_reg 0x%x)\n",
+		pr_err("%s: Error occurred (%d) while reading de_emphasis control reg from retimer (bus-id 0x%x i2c-addr 0x%x internal_reg 0x%x)\n",
 			__func__, rc, lm_context->retimer_bus_id, lm_context->retimer_i2c_addr,
 			RETIMER_BR410_DE_EMPHASIS_CTRL_REG);
 		return rc;
@@ -1056,7 +1056,7 @@ static int al_eth_lm_retimer_br410_config(struct al_eth_lm_context	*lm_context)
 				  reg);
 
 	if (rc) {
-		al_err("%s: Error occurred (%d) while writing to de_emphasis control reg of retimer (bus-id 0x%x i2c-addr 0x%x internal_reg 0x%x)\n",
+		pr_err("%s: Error occurred (%d) while writing to de_emphasis control reg of retimer (bus-id 0x%x i2c-addr 0x%x internal_reg 0x%x)\n",
 			__func__, rc, lm_context->retimer_bus_id, lm_context->retimer_i2c_addr,
 			RETIMER_BR410_DE_EMPHASIS_CTRL_REG);
 		return rc;
@@ -1070,7 +1070,7 @@ static int al_eth_lm_retimer_br410_config(struct al_eth_lm_context	*lm_context)
 				  &reg);
 
 	if (rc) {
-		al_err("%s: Error occurred (%d) while reading Vod control reg from retimer (bus-id 0x%x i2c-addr 0x%x internal_reg 0x%x)\n",
+		pr_err("%s: Error occurred (%d) while reading Vod control reg from retimer (bus-id 0x%x i2c-addr 0x%x internal_reg 0x%x)\n",
 			__func__, rc, lm_context->retimer_bus_id, lm_context->retimer_i2c_addr,
 			RETIMER_BR410_DRIVER_VOD_CTRL_REG);
 		return rc;
@@ -1096,7 +1096,7 @@ static int al_eth_lm_retimer_br410_config(struct al_eth_lm_context	*lm_context)
 				  reg);
 
 		if (rc) {
-			al_err("%s: Error occurred (%d) while writing to Vod control reg in retimer (bus-id 0x%x i2c-addr 0x%x internal_reg 0x%x)\n",
+			pr_err("%s: Error occurred (%d) while writing to Vod control reg in retimer (bus-id 0x%x i2c-addr 0x%x internal_reg 0x%x)\n",
 				__func__, rc, lm_context->retimer_bus_id,
 				lm_context->retimer_i2c_addr,
 				RETIMER_BR410_DRIVER_VOD_CTRL_REG);
@@ -1223,7 +1223,7 @@ static int al_eth_lm_retimer_ds25_channel_config(struct al_eth_lm_context	*lm_co
 	return 0;
 
 config_error:
-	al_err("%s: failed to access to the retimer\n", __func__);
+	pr_err("%s: failed to access to the retimer\n", __func__);
 
 	return rc;
 }
@@ -1257,7 +1257,7 @@ static int al_eth_lm_retimer_ds25_cdr_reset(struct al_eth_lm_context *lm_context
 	return 0;
 
 config_error:
-	al_err("%s: failed to access to the retimer\n", __func__);
+	pr_err("%s: failed to access to the retimer\n", __func__);
 
 	return rc;
 }
@@ -1287,7 +1287,7 @@ static al_bool al_eth_lm_retimer_ds25_signal_detect(struct al_eth_lm_context *lm
 	return AL_FALSE;
 
 config_error:
-	al_err("%s: failed to access to the retimer\n", __func__);
+	pr_err("%s: failed to access to the retimer\n", __func__);
 
 	return AL_FALSE;
 }
@@ -1317,7 +1317,7 @@ static al_bool al_eth_lm_retimer_ds25_cdr_lock(struct al_eth_lm_context *lm_cont
 	return AL_FALSE;
 
 config_error:
-	al_err("%s: failed to access to the retimer\n", __func__);
+	pr_err("%s: failed to access to the retimer\n", __func__);
 
 	return AL_FALSE;
 }
@@ -1358,7 +1358,7 @@ static enum speed_detection al_eth_lm_retimer_ds25_speed_get(
 	return SPEED_DETECTION_25G;
 
 i2c_error:
-	al_err("%s: failed to access to the retimer\n", __func__);
+	pr_err("%s: failed to access to the retimer\n", __func__);
 
 	return SPEED_DETECTION_25G;
 }
@@ -1401,14 +1401,14 @@ static int al_eth_lm_wait_for_lock_step(struct al_eth_lm_context	*lm_context,
 
 		break;
 	default:
-		al_err("%s: Reached undefined state: %d\n", __func__,
+		pr_err("%s: Reached undefined state: %d\n", __func__,
 		       retimer_data->wfl_state);
 		retimer_data->wfl_state =
 			LM_STEP_RETIMER_WAIT_FOR_LOCK_INIT;
 		return 0;
 	}
 
-	al_dbg("%s: wfl_state:%d:, lock:%d, current_time:%d, start_time:%d\n",
+	pr_debug("%s: wfl_state:%d:, lock:%d, current_time:%d, start_time:%d\n",
 		 __func__, retimer_data->wfl_state, *lock,
 		 current_time, lm_context->step_data.start_time);
 
@@ -1465,7 +1465,7 @@ static al_bool al_eth_lm_retimer_signal_lock_check_step(struct al_eth_lm_context
 
 		break;
 	default:
-		al_err("%s: Reached undefined state: %d\n", __func__,
+		pr_err("%s: Reached undefined state: %d\n", __func__,
 		       lm_context->step_data.retimer_data.slc_state);
 	}
 
@@ -1563,7 +1563,7 @@ static int al_eth_lm_retimer_25g_rx_adaptation_step(struct al_eth_lm_context *lm
 			break;
 
 		if (!lock) {
-			al_dbg("%s: no signal detected on retimer Rx channel (%d)\n",
+			pr_debug("%s: no signal detected on retimer Rx channel (%d)\n",
 				 __func__,  lm_context->retimer_channel);
 
 			return -EIO;
@@ -1578,7 +1578,7 @@ static int al_eth_lm_retimer_25g_rx_adaptation_step(struct al_eth_lm_context *lm
 	case LM_STEP_RETIMER_RX_ADAPTATION_SERDES_LOCK_DELAY:
 		current_time = lm_context->get_msec();
 
-		al_dbg("%s: In SERDES_LOCK_DELAY. current_time:%d, start_time:%d, waiting delay:%d\n",
+		pr_debug("%s: In SERDES_LOCK_DELAY. current_time:%d, start_time:%d, waiting delay:%d\n",
 			 __func__, current_time, lm_context->step_data.start_time,
 			 AL_ETH_LM_SERDES_WAIT_FOR_LOCK);
 
@@ -1591,7 +1591,7 @@ static int al_eth_lm_retimer_25g_rx_adaptation_step(struct al_eth_lm_context *lm
 		}
 		break;
 	default:
-		al_err("%s: Reached undefined state: %d\n", __func__,
+		pr_err("%s: Reached undefined state: %d\n", __func__,
 		       lm_context->step_data.retimer_data.rx_adap_state);
 		return -EINVAL;
 	}
@@ -1622,7 +1622,7 @@ static int al_eth_lm_check_for_link(struct al_eth_lm_context *lm_context, al_boo
 			lm_debug("%s: Failed to establish link\n", __func__);
 		else
         {
-			al_err("%s: Failed to establish link\n", __func__);
+			pr_err("%s: Failed to establish link\n", __func__);
         }
 		ret = -1;
 	} else {
@@ -1688,7 +1688,7 @@ static void al_eth_lm_auto_fec_init(struct al_eth_lm_context	*lm_context)
 	lm_context->auto_fec_wait_to_toggle = lm_context->auto_fec_initial_timeout;
 	al_eth_fec_enable(lm_context->adapter, AL_TRUE);
 
-	al_info("%s: Auto-FEC mode enabled. FEC state initialized to be Enabled\n",
+	pr_info("%s: Auto-FEC mode enabled. FEC state initialized to be Enabled\n",
 		__func__);
 	lm_context->fec_state_last_time_toggled = lm_context->get_msec();
 	lm_debug("Initial sys_time (msec): %u, Initial timeout: %u, Toggle timeout: %u\n",
@@ -1718,7 +1718,7 @@ static void al_eth_lm_fec_config(struct al_eth_lm_context	*lm_context)
 
 #define LM_STEP_CHANGE_STATE(state, new_state)							\
 	do {											\
-		al_dbg("%s: CHANGING STATE from %d to %s(%d)\n", __func__, (state), (#new_state),\
+		pr_debug("%s: CHANGING STATE from %d to %s(%d)\n", __func__, (state), (#new_state),\
 			(new_state));								\
 		(state) = (new_state);								\
 	} while (0)										\
@@ -1877,7 +1877,7 @@ int al_eth_lm_link_detection_step(struct al_eth_lm_context	*lm_context,
 			if (lm_context->sfp_detection) {
 				rc = al_eth_module_detect(lm_context, new_mode);
 				if (rc) {
-					al_err("module_detection failed!\n");
+					pr_err("module_detection failed!\n");
 					goto exit_error;
 				}
 
@@ -1905,7 +1905,7 @@ int al_eth_lm_link_detection_step(struct al_eth_lm_context	*lm_context,
 				al_eth_serdes_static_tx_params_set(lm_context);
 
 				if (retimer[lm_context->retimer_type].config(lm_context)) {
-					al_info("%s: failed to configure the retimer\n", __func__);
+					pr_info("%s: failed to configure the retimer\n", __func__);
 					rc = -EIO;
 					goto exit_error;
 				}
@@ -1915,7 +1915,7 @@ int al_eth_lm_link_detection_step(struct al_eth_lm_context	*lm_context,
 
 			if (lm_context->speed_detection) {
 				if (retimer[lm_context->retimer_type].speed_get == NULL) {
-					al_info("Speed detection not supported in the retimer\n");
+					pr_info("Speed detection not supported in the retimer\n");
 					rc = -EOPNOTSUPP;
 					goto exit_error;
 				}
@@ -1938,7 +1938,7 @@ int al_eth_lm_link_detection_step(struct al_eth_lm_context	*lm_context,
 	case LM_STEP_DETECTION_RETIMER_RX_ADAPT_WAIT:
 		ret = retimer[lm_context->retimer_type].rx_adaptation(lm_context);
 
-		al_dbg("%s: post rx_adaptation. ret:%d\n", __func__, ret);
+		pr_debug("%s: post rx_adaptation. ret:%d\n", __func__, ret);
 
 		if (ret == -EINPROGRESS)
 			break;
@@ -1948,7 +1948,7 @@ int al_eth_lm_link_detection_step(struct al_eth_lm_context	*lm_context,
 		fallthrough;
 	case LM_STEP_DETECTION_RETIMER_RX_ADAPT_POST:
 		if (ret) {
-			al_dbg("%s: Rx channel is not locked\n", __func__);
+			pr_debug("%s: Rx channel is not locked\n", __func__);
 		} else {
 			int speed = 0;
 
@@ -1981,7 +1981,7 @@ int al_eth_lm_link_detection_step(struct al_eth_lm_context	*lm_context,
 		fallthrough;
 	case LM_STEP_DETECTION_FINAL:
 		if (*old_mode != *new_mode) {
-			al_info("%s: New SFP mode detected %s -> %s\n",
+			pr_info("%s: New SFP mode detected %s -> %s\n",
 				__func__, al_eth_lm_mode_convert_to_str(*old_mode),
 				al_eth_lm_mode_convert_to_str(*new_mode));
 
@@ -2001,7 +2001,7 @@ int al_eth_lm_link_detection_step(struct al_eth_lm_context	*lm_context,
 					data.speed = AL_ETH_LM_LED_CONFIG_25G;
 					break;
 				default:
-					al_err("%s: unknown LM mode!\n", __func__);
+					pr_err("%s: unknown LM mode!\n", __func__);
 				};
 
 				lm_context->led_config(lm_context->i2c_context, &data);
@@ -2011,7 +2011,7 @@ int al_eth_lm_link_detection_step(struct al_eth_lm_context	*lm_context,
 		LM_STEP_CHANGE_STATE(lm_context->step_data.detection_state, LM_STEP_DETECTION_INIT);
 		return 0;
 	default:
-		al_err("%s: Undefined lm_step_destection_state: %d\n", __func__,
+		pr_err("%s: Undefined lm_step_destection_state: %d\n", __func__,
 		       lm_context->step_data.detection_state);
 		rc = -EINVAL;
 		goto exit_error;
@@ -2111,14 +2111,14 @@ int al_eth_lm_link_establish_step(struct al_eth_lm_context	*lm_context,
 							AL_FALSE,
 							&lock);
 
-		al_dbg("%s: post signal_lock_check_step. rc:%d, lock:%d\n",
+		pr_debug("%s: post signal_lock_check_step. rc:%d, lock:%d\n",
 		       __func__, rc, lock);
 
 		if (rc == -EINPROGRESS)
 			break;
 
 		if (!lock) {
-			al_info("%s: Failed to lock tx channel\n", __func__);
+			pr_info("%s: Failed to lock tx channel\n", __func__);
 			rc = -EIO;
 			goto exit_error;
 		}
@@ -2140,7 +2140,7 @@ int al_eth_lm_link_establish_step(struct al_eth_lm_context	*lm_context,
 	case LM_STEP_ESTABLISH_RETIMER_RX_ADAPT_WAIT:
 		ret = retimer[lm_context->retimer_type].rx_adaptation(lm_context);
 
-		al_dbg("%s: post rx_adaptation. ret:%d\n", __func__, ret);
+		pr_debug("%s: post rx_adaptation. ret:%d\n", __func__, ret);
 
 		if (ret == -EINPROGRESS) {
 			*link_up = AL_FALSE;
@@ -2148,7 +2148,7 @@ int al_eth_lm_link_establish_step(struct al_eth_lm_context	*lm_context,
 		}
 
 		if (ret) {
-			al_dbg("%s: retimer rx is not ready\n", __func__);
+			pr_debug("%s: retimer rx is not ready\n", __func__);
 			*link_up = AL_FALSE;
 
 			rc = ret;
@@ -2193,7 +2193,7 @@ int al_eth_lm_link_establish_step(struct al_eth_lm_context	*lm_context,
 	case LM_STEP_ESTABLISH_RETIMER_EXISTS_LINK_STATUS_DELAY:
 		current_time = lm_context->get_msec();
 
-		al_dbg("%s: step_state:%d, current_time:%d, start_time:%d, waiting delay: %d\n",
+		pr_debug("%s: step_state:%d, current_time:%d, start_time:%d, waiting delay: %d\n",
 		       __func__, lm_context->step_data.establish_state, current_time,
 		       lm_context->step_data.start_time,
 		       AL_ETH_LM_RETIMER_LINK_STATUS_DELAY);
@@ -2261,14 +2261,14 @@ int al_eth_lm_link_establish_step(struct al_eth_lm_context	*lm_context,
 						fec_enabled_bool = AL_TRUE;
 						break;
 					default:
-						al_err("%s: Invalid Auto FEC state value: %d\n",
+						pr_err("%s: Invalid Auto FEC state value: %d\n",
 						       __func__, lm_context->auto_fec_state);
 						rc = -EINVAL;
 						goto exit_error;
 					}
 					al_eth_fec_enable(lm_context->adapter,
 							  fec_enabled_bool);
-					al_info("%s: Auto FEC state is %s\n", __func__,
+					pr_info("%s: Auto FEC state is %s\n", __func__,
 						fec_enabled_bool ? "Enabled" : "Disabled");
 				}
 			}
@@ -2292,7 +2292,7 @@ int al_eth_lm_link_establish_step(struct al_eth_lm_context	*lm_context,
 			lm_context->tx_param_dirty = 1;
 
 			if (ret == 0) {
-				al_info("%s: link training finished successfully\n", __func__);
+				pr_info("%s: link training finished successfully\n", __func__);
 				lm_context->link_training_failures = 0;
 				ret = al_eth_lm_check_for_link(lm_context, link_up);
 
@@ -2352,7 +2352,7 @@ int al_eth_lm_link_establish_step(struct al_eth_lm_context	*lm_context,
 		rc = -1;
 		goto exit_error;
 	default:
-		al_err("%s: Undefined lm_step_establish_state: %d\n", __func__,
+		pr_err("%s: Undefined lm_step_establish_state: %d\n", __func__,
 		       lm_context->step_data.establish_state);
 		*link_up = AL_FALSE;
 		rc = -EINVAL;
@@ -2367,7 +2367,7 @@ exit_done:
 
 exit_error:
 	LM_STEP_CHANGE_STATE(lm_context->step_data.establish_state, LM_STEP_ESTABLISH_INIT);
-	al_dbg("%s: Exiting with error %d\n", __func__, rc);
+	pr_debug("%s: Exiting with error %d\n", __func__, rc);
 	return rc;
 }
 
@@ -2495,7 +2495,7 @@ int al_eth_lm_link_check(struct al_eth_lm_context *lm_context,
 
 	rc = al_eth_link_status_get(lm_context->adapter, &status);
 	if (rc) {
-		al_err("%s: Error getting link status from MAC\n", __func__);
+		pr_err("%s: Error getting link status from MAC\n", __func__);
 		return rc;
 	}
 
@@ -2506,11 +2506,11 @@ int al_eth_lm_link_check(struct al_eth_lm_context *lm_context,
 	else if (status.link_up)
 		*link_state = AL_ETH_LM_LINK_UP;
 	else {
-		al_err("%s: Invalid link state!\n", __func__);
+		pr_err("%s: Invalid link state!\n", __func__);
 		return -EIO;
 	}
 
-	al_dbg("%s: link_state is %s\n", __func__,
+	pr_debug("%s: link_state is %s\n", __func__,
 		((*link_state == AL_ETH_LM_LINK_DOWN) ? "DOWN" :
 		((*link_state == AL_ETH_LM_LINK_DOWN_RF) ? "DOWN_RF" :
 		((*link_state == AL_ETH_LM_LINK_UP) ? "UP" : "UNKNOWN"))));

@@ -91,12 +91,12 @@ static int al_ssm_dma_init_aux(
 		if (params->unit_adapter && (!params->func_num) && (!params->skip_adapter_init))
 			al_unit_adapter_init(params->unit_adapter);
 		else if (!params->unit_adapter)
-			al_warn("%s: non optimal adapter configuration\n", __func__);
+			pr_warn("%s: non optimal adapter configuration\n", __func__);
 
 		/* initialize the udma  */
 		rc =  al_m2m_udma_init(&ssm_dma->m2m_udma, &m2m_params);
 		if (rc != 0)
-			al_err("failed to initialize udma, error %d\n", rc);
+			pr_err("failed to initialize udma, error %d\n", rc);
 
 		/* unmask S2M no descriptor timeout error.
 		 * this error is not opened in al_udma_init
@@ -143,7 +143,7 @@ static int al_ssm_dma_init_aux(
 		/* initialize the udma  */
 		rc =  al_m2m_udma_handle_init(&ssm_dma->m2m_udma, &m2m_params);
 		if (rc != 0)
-			al_err("failed to initialize udma handle, error %d\n", rc);
+			pr_err("failed to initialize udma handle, error %d\n", rc);
 
 		return rc;
 	}
@@ -155,7 +155,7 @@ int al_ssm_dma_init(
 	struct al_ssm_dma		*ssm_dma,
 	struct al_ssm_dma_params	*params)
 {
-	al_dbg("ssm [%s]: initialize DMA\n", params->name);
+	pr_debug("ssm [%s]: initialize DMA\n", params->name);
 
 	return al_ssm_dma_init_aux(ssm_dma, params, AL_TRUE);
 }
@@ -166,7 +166,7 @@ int al_ssm_dma_handle_init(
 	struct al_ssm_dma		*ssm_dma,
 	struct al_ssm_dma_params	*params)
 {
-	al_dbg("ssm [%s]: initialize DMA handle\n", params->name);
+	pr_debug("ssm [%s]: initialize DMA handle\n", params->name);
 
 	return al_ssm_dma_init_aux(ssm_dma, params, AL_FALSE);
 }
@@ -181,7 +181,7 @@ int al_ssm_dma_q_init(struct al_ssm_dma		*ssm_dma,
 {
 	int rc;
 
-	al_dbg("ssm [%s]: Initialize queue %d\n",
+	pr_debug("ssm [%s]: Initialize queue %d\n",
 		 ssm_dma->m2m_udma.name, qid);
 
 	tx_params->adapter_rev_id = ssm_dma->rev_id;
@@ -189,7 +189,7 @@ int al_ssm_dma_q_init(struct al_ssm_dma		*ssm_dma,
 
 	rc = al_m2m_udma_q_init(&ssm_dma->m2m_udma, qid, tx_params, rx_params);
 	if (rc != 0)
-		al_err("ssm [%s]: failed to initialize q %d, error %d\n",
+		pr_err("ssm [%s]: failed to initialize q %d, error %d\n",
 			 ssm_dma->m2m_udma.name, qid, rc);
 	else
 		ssm_dma->q_types[qid] = q_type;
@@ -207,7 +207,7 @@ int al_ssm_dma_state_set(
 
 	rc =  al_m2m_udma_state_set(&ssm_dma->m2m_udma, dma_state);
 	if (rc != 0)
-		al_err("ssm [%s]: failed to change state, error %d\n",
+		pr_err("ssm [%s]: failed to change state, error %d\n",
 			 ssm_dma->m2m_udma.name, rc);
 	return rc;
 }
@@ -359,7 +359,7 @@ void al_ssm_unit_regs_info_get(void *bars[6],
 					AL_RAID_V1_CRC_REGS_BASE_OFFSET(crc_idx);
 		break;
 	default:
-		al_err("%s: unknown device ID %d\n", __func__, dev_id);
+		pr_err("%s: unknown device ID %d\n", __func__, dev_id);
 		al_assert(0);
 	}
 }
