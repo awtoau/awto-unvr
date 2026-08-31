@@ -2493,7 +2493,13 @@ static void al_eth_reset_task(struct work_struct *work)
 	/*restart interface*/
 	rtnl_lock();
 	al_eth_down(adapter);
-	al_eth_up(adapter);
+	{
+		int rc = al_eth_up(adapter);
+
+		if (rc)
+			netdev_err(adapter->netdev, "%s: reset failed to bring interface back up (rc %d)\n",
+				   __func__, rc);
+	}
 	rtnl_unlock();
 }
 
@@ -5126,6 +5132,10 @@ static void al_eth_set_rx_mode(struct net_device *netdev)
 				AL_ETH_MAC_TABLE_UNICAST_MAX_COUNT) {
 				/* In this case there are more addresses then
 				 * entries in the mac table - set promiscuous */
+				netdev_warn(netdev,
+					    "%s: %d unicast addresses requested, only %d mac table entries available - falling back to promiscuous\n",
+					    __func__, netdev_uc_count(netdev),
+					    AL_ETH_MAC_TABLE_UNICAST_MAX_COUNT);
 				al_eth_mac_table_promiscuous_set(adapter, true, 1 << adapter->udma_num);
 				return;
 			}
@@ -5543,6 +5553,10 @@ al_eth_remove(struct pci_dev *pdev)
 	struct al_eth_adapter *adapter = pci_get_drvdata(pdev);
 	struct net_device *dev = adapter->netdev;
 
+	/* Rare, significant lifecycle event (module unload / device unbind) -
+	 * probe() logs the symmetric "found" case, this shouldn't be silent. */
+	netdev_info(adapter->netdev, "%s: removing\n", __func__);
+
 	if (al_eth_hw_stop(adapter))
 		dev_err(&pdev->dev, "%s: hw_stop failed\n", __func__);
 
@@ -5595,6 +5609,8 @@ static int al_eth_resume(struct pci_dev *pdev)
 
 	netif_device_attach(netdev);
 
+	netdev_info(netdev, "%s: resumed from D%d\n", __func__, pdev->current_state);
+
 	return 0;
 }
 
@@ -5618,7 +5634,11 @@ static int al_eth_wol_config(struct al_eth_adapter *adapter)
 	}
 
 	if (wol.int_mask != 0) {
-		al_eth_wol_enable(&adapter->hal_adapter, &wol);
+		int rc = al_eth_wol_enable(&adapter->hal_adapter, &wol);
+
+		if (rc)
+			netdev_err(adapter->netdev, "%s: failed to enable WoL (rc %d)\n",
+				   __func__, rc);
 		return 1;
 	}
 
@@ -5629,9 +5649,17 @@ static int al_eth_suspend(struct pci_dev *pdev, pm_message_t state)
 {
 	struct al_eth_adapter *adapter = pci_get_drvdata(pdev);
 
+	/* Rare, slow-path transition with real behavioral consequences (WoL
+	 * armed vs. full power-down) - worth a plain visible log line so an
+	 * unexpected branch here (e.g. wol_config silently returning 0 when
+	 * WoL was expected) shows up in dmesg instead of being silent. */
 	if (al_eth_wol_config(adapter)) {
+		netdev_info(adapter->netdev, "%s: WoL armed (wol=0x%x), suspending to D3 standby\n",
+			    __func__, adapter->wol);
 		pci_prepare_to_sleep(pdev);
 	} else {
+		netdev_info(adapter->netdev, "%s: no WoL requested, powering down to D3hot\n",
+			    __func__);
 		pci_wake_from_d3(pdev, false);
 		pci_set_power_state(pdev, PCI_D3hot);
 	}
@@ -5655,12 +5683,26 @@ static struct pci_driver al_eth_pci_driver = {
 
 static int __init al_eth_init(void)
 {
-	alpine_serdes_grp_objs_init();
-	return pci_register_driver(&al_eth_pci_driver);
+	int rc;
+
+	pr_info("%s: loading\n", DRV_MODULE_NAME);
+
+	rc = alpine_serdes_grp_objs_init();
+	if (rc) {
+		pr_err("%s: failed to init serdes group objects (rc %d)\n", DRV_MODULE_NAME, rc);
+		return rc;
+	}
+
+	rc = pci_register_driver(&al_eth_pci_driver);
+	if (rc)
+		pr_err("%s: failed to register pci driver (rc %d)\n", DRV_MODULE_NAME, rc);
+
+	return rc;
 }
 
 static void __exit al_eth_cleanup(void)
 {
+	pr_info("%s: unloading\n", DRV_MODULE_NAME);
 	pci_unregister_driver(&al_eth_pci_driver);
 }
 
