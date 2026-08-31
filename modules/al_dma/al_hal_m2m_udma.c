@@ -71,7 +71,11 @@ int al_m2m_udma_init(struct al_m2m_udma *m2m_udma,
 		       dma_params.name, rc);
 		return rc;
 	}
-	al_udma_m2s_max_descs_set(&m2m_udma->tx_udma, params->max_m2s_descs_per_pkt);
+	rc = al_udma_m2s_max_descs_set(&m2m_udma->tx_udma, params->max_m2s_descs_per_pkt);
+	if (rc != 0) {
+		pr_err("failed to set tx dma max descs per pkt, error %d\n", rc);
+		return rc;
+	}
 
 	/* initialize rx udma component */
 	dma_params.udma_regs_base = (struct unit_regs __iomem *)m2m_udma->udma_regs_base;
@@ -85,7 +89,11 @@ int al_m2m_udma_init(struct al_m2m_udma *m2m_udma,
 		       dma_params.name, rc);
 		return rc;
 	}
-	al_udma_s2m_max_descs_set(&m2m_udma->rx_udma, params->max_s2m_descs_per_pkt);
+	rc = al_udma_s2m_max_descs_set(&m2m_udma->rx_udma, params->max_s2m_descs_per_pkt);
+	if (rc != 0) {
+		pr_err("failed to set rx dma max descs per pkt, error %d\n", rc);
+		return rc;
+	}
 
 	return 0;
 }
