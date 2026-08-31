@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 """Production kernel: Fedora 44 aarch64 config + our Alpine V2 patches, no UEFI.
 
-Builds AWTO_KERNEL_SRC (our Alpine patches already integrated by
-build-linux-ea16.py) with **Fedora's own aarch64 kernel config** as the
-base, so every systemd/fs/net symbol is correct by construction. Booted by
-U-Boot (no UEFI/GRUB) via root=PARTUUID, no embedded initramfs.
+Builds AWTO_KERNEL_SRC (our Alpine board support - DTS, pcie-al-internal.c,
+the pcie-al.c DBI fix, unvr_defconfig - is committed directly into the
+kernel tree's own git history, not applied by a script) with **Fedora's
+own aarch64 kernel config** as the base, so every systemd/fs/net symbol is
+correct by construction. Booted by U-Boot (no UEFI/GRUB) via root=PARTUUID,
+no embedded initramfs.
 
-Prereq: run build-linux-ea16.py first (integrates the patches into the tree)
-and have tmp/fedora-kernel/fedora-aarch64.config extracted.
+Prereq: have tmp/fedora-kernel/fedora-aarch64.config extracted.
 
 Out: build-out-fedora/ (uImage-unvr-ea16-<VER>-fedora, dtb, config, modroot/).
 Deploy modroot/lib/modules/<kv> -> the Fedora rootfs /lib/modules; boot the uImage.
@@ -373,21 +374,6 @@ def kver():
     return pathlib.Path(path).read_text().strip()
 
 
-def adapt_sgpo(mpath):
-    """7.1 gpio_chip.set returns int (same fix as build-linux-ea16.py)."""
-    f = os.path.join(mpath, "al_sgpo.c")
-    t = pathlib.Path(f).read_text()
-    t = t.replace(
-        "static void al_sgpo_set(struct gpio_chip *gc, unsigned int offset, int value)\n{",
-        "static int al_sgpo_set(struct gpio_chip *gc, unsigned int offset, int value)\n{",
-    )
-    t = t.replace(
-        "\tif (group >= sgpo->num_groups)\n\t\treturn;\n\n\tspin_lock_irqsave(&sgpo->lock, flags);\n\n\twritel(value ? (1 << bit) : 0,\n\t       al_sgpo_group_reg(sgpo, group, GRP_VEC(1 << bit)));\n\n\tspin_unlock_irqrestore(&sgpo->lock, flags);\n}",
-        "\tif (group >= sgpo->num_groups)\n\t\treturn -EINVAL;\n\n\tspin_lock_irqsave(&sgpo->lock, flags);\n\n\twritel(value ? (1 << bit) : 0,\n\t       al_sgpo_group_reg(sgpo, group, GRP_VEC(1 << bit)));\n\n\tspin_unlock_irqrestore(&sgpo->lock, flags);\n\n\treturn 0;\n}",
-    )
-    pathlib.Path(f).write_text(t)
-
-
 def stage_dts():
     """Copy the repo-tracked DTS + DTSI into the kernel tree so the build ALWAYS
     compiles the tracked source. Previously only build-linux-ea16.py staged the
@@ -471,8 +457,6 @@ def build():
     def build_oot(m, mpath, ko_name, make_vars=()):
         # imported source-of-truth: repo modules/ (carries iofic + crypto fixes).
         shutil.copytree(os.path.join(REPO, "modules", m), mpath)
-        if m == "al_sgpo":
-            adapt_sgpo(mpath)
         run(
             [
                 "make",
