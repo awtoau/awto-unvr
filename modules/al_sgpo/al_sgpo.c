@@ -178,7 +178,7 @@ static int al_sgpo_direction_output(struct gpio_chip *gc, unsigned int offset,
 	return 0;
 }
 
-static void al_sgpo_set(struct gpio_chip *gc, unsigned int offset, int value)
+static int al_sgpo_set(struct gpio_chip *gc, unsigned int offset, int value)
 {
 	struct al_sgpo *sgpo = gpiochip_get_data(gc);
 	unsigned int group = offset / AL_SGPO_PINS_PER_GROUP;
@@ -186,7 +186,7 @@ static void al_sgpo_set(struct gpio_chip *gc, unsigned int offset, int value)
 	unsigned long flags;
 
 	if (group >= sgpo->num_groups)
-		return;
+		return -EINVAL;
 
 	spin_lock_irqsave(&sgpo->lock, flags);
 
@@ -194,6 +194,8 @@ static void al_sgpo_set(struct gpio_chip *gc, unsigned int offset, int value)
 	       al_sgpo_group_reg(sgpo, group, GRP_VEC(1 << bit)));
 
 	spin_unlock_irqrestore(&sgpo->lock, flags);
+
+	return 0;
 }
 
 static int al_sgpo_get(struct gpio_chip *gc, unsigned int offset)
