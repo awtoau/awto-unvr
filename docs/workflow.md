@@ -627,7 +627,8 @@ Live state: [project-status.md](project-status.md). What landed:
 
 - **Netboot proven, then kernel port** — `bootcmdtftp` + `bootunsign` exercised; the
   stock uImage booted, then **6.12.103 → 6.18.44 LTS → 7.1.8** all netboot-verified
-  full-platform. [linux-71-build.md](linux-71-build.md), [porting-roadmap.md](porting-roadmap.md).
+  full-platform (since continued onto mainline HEAD directly - see
+  [build.md](build.md) for current status). [porting-roadmap.md](porting-roadmap.md).
 - **Fedora 44 boots standalone on woomera** — NAND kernel (@`0x1300000`) + SSD rootfs,
   no host / netboot / UEFI / GRUB / dracut (U-Boot can't read SATA).
   [fedora-on-ssd.md](fedora-on-ssd.md). #40 closed.

@@ -21,10 +21,10 @@ snoop all slots, WD82PURZ ×2 @6G on ata5/7, **Samsung SSD 850 EVO on ata3 now
 IDs cleanly** (misclassified on 6.12/6.18), eth0(1G)+eth1(10G SFP) bound, al_ssm
 AES-XTS/CBC + al_dma 4ch, xHCI SuperSpeed. Forward-port from 6.18 needed **zero
 new API deltas** (the three 6.18 adaptations persist byte-for-byte). See
-[linux-71-build.md](linux-71-build.md#netboot-verified-on-hardware--2026-08-16).
+`linux-71-build.md` (removed, see debris/scripts/ for the retired build script).
 
 **6.18.44** also verified (LTS deploy branch); same full platform. See
-[linux-6.18-build.md](linux-6.18-build.md#netboot-verified-on-hardware--2026-08-16).
+`linux-6.18-build.md` (removed, see debris/scripts/ for the retired build script).
 
 Netboot gotchas (both baked into `scripts/netboot.py`): U-Boot has a ~50s
 prompt watchdog (catch+netboot must be atomic); `panic=15` in bootargs so a
@@ -32,7 +32,7 @@ console/host drop can't strand the box at an init-kill panic.
 
 First Linux boot on our hardware is **done**: cross-built **Linux 6.12.103** for the
 ea16 board, netbooted via existing U-Boot (tftp `uImage`+DTB, `bootm`, unsigned).
-Build: [linux-6.12-build.md](linux-6.12-build.md); `scripts/build-linux-612-ea16.py`
+Build: `linux-6.12-build.md` (removed, see debris/scripts/ for the retired build script); `scripts/build-linux-612-ea16.py`
 + `scripts/build-initramfs-ea16.py`; artifacts in
 `/mnt/2tb/unvr-port-refs/build-out/` (Image, uImage, ea16 DTB, initramfs, modules,
 config).
@@ -64,7 +64,7 @@ mapped to current reality. Detail lives in the phases/issues linked; do not rest
 | 1 Recovery + HW facts | **DONE** | Boot logs, all MTD backups, EEPROM/board-ID decoded, TFTP netboot proven, live inventory captured. [identity-partitions.md](identity-partitions.md), [hw-reference/](hw-reference/20260816-104601/), [hardware.md](hardware.md) |
 | 2 Driver ancestry (register DB) | **IN-PROGRESS** | Ethernet ancestry ticketed (live #5); patch inventory (live #7). General register-DB + structural-compare **tooling not ticketed → new #31** |
 | 3 Minimum 6.18 boot | **IN-PROGRESS** | 6.12 boot proves the method; 6.18 not yet built. Reuse scripts. Live #6 |
-| 4 Device Tree | **IN-PROGRESS** | ea16 DTS adapted from port's ea1a ([linux-6.12-build.md](linux-6.12-build.md)); clean dtsi/board split TODO. Live #12,#16,#17 |
+| 4 Device Tree | **IN-PROGRESS** | ea16 DTS adapted from port's ea1a; clean dtsi/board split TODO. Live #12,#16,#17 |
 | 5 PCIe glue | **TODO** | Blocks SATA/USB/eth (all PCIe EPs). Live #9 (phase), #18 (patch) |
 | 6 Storage/peripherals | **PARTIAL** | Mainline blocks confirmed live (AHCI, SPI-NOR, DW i2c, adt7475, pca953x, s35390a, sp805); gated on Stage 5. Compat-confirm live #14 |
 | 7 Ethernet | **TODO** | `al_eth.ko` builds, not loaded. Ancestry #5 → decision #8 → driver #19 → phylink/PCS #20. Shared-MDIO covered by #20 |

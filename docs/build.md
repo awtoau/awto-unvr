@@ -72,6 +72,7 @@ removes generated files, never touches tracked/uncommitted source.
 - [bootloader.md](bootloader.md) / [boot-flow.md](boot-flow.md) - what actually boots what, independent of which kernel you built.
 
 The 6.12/6.18/7.1 per-version delta docs (`linux-6.12-build.md`,
-`linux-6.18-build.md`, `linux-71-build.md`) describe the now-retired scripts
-in `debris/scripts/` - historical record of the forward-port work, not a
-live build guide. This doc is the current, accurate index.
+`linux-6.18-build.md`, `linux-71-build.md`) that used to describe those
+retired scripts have themselves been removed - the scripts' history is
+still in `debris/scripts/`, but there's no separate doc for it. This doc
+is the current, accurate index.
