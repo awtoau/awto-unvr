@@ -1604,19 +1604,26 @@ static int al_eth_lm_check_for_link(struct al_eth_lm_context *lm_context, al_boo
 	struct al_eth_link_status status;
 	int ret = 0;
 
-	al_eth_link_status_clear(lm_context->adapter);
-	al_eth_link_status_get(lm_context->adapter, &status);
+	if (al_eth_link_status_clear(lm_context->adapter))
+		lm_debug("%s: failed to clear link status latch\n", __func__);
+	if (al_eth_link_status_get(lm_context->adapter, &status)) {
+		pr_err("%s: failed to read link status\n", __func__);
+		*link_up = AL_FALSE;
+		return -EIO;
+	}
 
 	if (status.link_up == AL_TRUE) {
 		lm_debug("%s: >>>> Link state DOWN ==> UP\n", __func__);
-		al_eth_led_set(lm_context->adapter, AL_TRUE);
+		if (al_eth_led_set(lm_context->adapter, AL_TRUE))
+			lm_debug("%s: failed to set link LED\n", __func__);
 		lm_context->link_state = AL_ETH_LM_LINK_UP;
 		*link_up = AL_TRUE;
 
 		return 0;
 	} else if (status.local_fault) {
 		lm_context->link_state = AL_ETH_LM_LINK_DOWN;
-		al_eth_led_set(lm_context->adapter, AL_FALSE);
+		if (al_eth_led_set(lm_context->adapter, AL_FALSE))
+			lm_debug("%s: failed to set link LED\n", __func__);
 
 		if ((lm_context->mode == AL_ETH_LM_MODE_25G) && lm_context->auto_fec_enable)
 			lm_debug("%s: Failed to establish link\n", __func__);
@@ -1628,7 +1635,8 @@ static int al_eth_lm_check_for_link(struct al_eth_lm_context *lm_context, al_boo
 	} else {
 		lm_debug("%s: >>>> Link state DOWN ==> DOWN_RF\n", __func__);
 		lm_context->link_state = AL_ETH_LM_LINK_DOWN_RF;
-		al_eth_led_set(lm_context->adapter, AL_FALSE);
+		if (al_eth_led_set(lm_context->adapter, AL_FALSE))
+			lm_debug("%s: failed to set link LED\n", __func__);
 
 		ret = 0;
 	}
@@ -1643,13 +1651,17 @@ static int al_eth_lm_link_state_check_for_detection(struct al_eth_lm_context *lm
 {
 	switch (lm_context->link_state) {
 	case AL_ETH_LM_LINK_UP:
-		al_eth_link_status_get(lm_context->adapter, status);
+		if (al_eth_link_status_get(lm_context->adapter, status)) {
+			pr_err("%s: failed to read link status\n", __func__);
+			return -EIO;
+		}
 
 		if (status->link_up) {
 			if (link_fault)
 				*link_fault = AL_FALSE;
 
-			al_eth_led_set(lm_context->adapter, AL_TRUE);
+			if (al_eth_led_set(lm_context->adapter, AL_TRUE))
+				lm_debug("%s: failed to set link LED\n", __func__);
 
 			return 0;
 		} else if (status->local_fault) {
@@ -1662,7 +1674,10 @@ static int al_eth_lm_link_state_check_for_detection(struct al_eth_lm_context *lm
 
 		break;
 	case AL_ETH_LM_LINK_DOWN_RF:
-		al_eth_link_status_get(lm_context->adapter, status);
+		if (al_eth_link_status_get(lm_context->adapter, status)) {
+			pr_err("%s: failed to read link status\n", __func__);
+			return -EIO;
+		}
 
 		if (status->local_fault) {
 			lm_debug("%s: >>>> Link state DOWN_RF ==> DOWN\n", __func__);
@@ -1686,7 +1701,8 @@ static void al_eth_lm_auto_fec_init(struct al_eth_lm_context	*lm_context)
 {
 	lm_context->auto_fec_state = AL_ETH_LM_AUTO_FEC_INIT_ENABLED;
 	lm_context->auto_fec_wait_to_toggle = lm_context->auto_fec_initial_timeout;
-	al_eth_fec_enable(lm_context->adapter, AL_TRUE);
+	if (al_eth_fec_enable(lm_context->adapter, AL_TRUE))
+		pr_err("%s: failed to enable FEC\n", __func__);
 
 	pr_info("%s: Auto-FEC mode enabled. FEC state initialized to be Enabled\n",
 		__func__);
@@ -1708,11 +1724,13 @@ static void al_eth_lm_fec_config(struct al_eth_lm_context	*lm_context)
 			/* manual control of fec for 25G */
 			lm_debug("%s: manual fec enabled %d\n", __func__,
 				 lm_context->local_adv.fec_capability);
-			al_eth_fec_enable(lm_context->adapter,
-					  lm_context->local_adv.fec_capability);
+			if (al_eth_fec_enable(lm_context->adapter,
+					  lm_context->local_adv.fec_capability))
+				pr_err("%s: failed to configure FEC\n", __func__);
 		}
 	} else {
-		al_eth_fec_enable(lm_context->adapter, AL_FALSE);
+		if (al_eth_fec_enable(lm_context->adapter, AL_FALSE))
+			pr_err("%s: failed to disable FEC\n", __func__);
 	}
 }
 
@@ -1871,7 +1889,8 @@ int al_eth_lm_link_detection_step(struct al_eth_lm_context	*lm_context,
 			return 0;
 
 
-		al_eth_led_set(lm_context->adapter, AL_FALSE);
+		if (al_eth_led_set(lm_context->adapter, AL_FALSE))
+			lm_debug("%s: failed to set link LED\n", __func__);
 
 		if (lm_context->link_state == AL_ETH_LM_LINK_DOWN) {
 			if (lm_context->sfp_detection) {
@@ -2266,8 +2285,9 @@ int al_eth_lm_link_establish_step(struct al_eth_lm_context	*lm_context,
 						rc = -EINVAL;
 						goto exit_error;
 					}
-					al_eth_fec_enable(lm_context->adapter,
-							  fec_enabled_bool);
+					if (al_eth_fec_enable(lm_context->adapter,
+							  fec_enabled_bool))
+						pr_err("%s: failed to configure FEC\n", __func__);
 					pr_info("%s: Auto FEC state is %s\n", __func__,
 						fec_enabled_bool ? "Enabled" : "Disabled");
 				}

@@ -634,7 +634,7 @@ struct al_eth_adapter_params{
  *
  * @return 0 on success. otherwise on failure.
  */
-int al_eth_adapter_init(struct al_hal_eth_adapter *adapter, struct al_eth_adapter_params *params);
+__must_check int al_eth_adapter_init(struct al_hal_eth_adapter *adapter, struct al_eth_adapter_params *params);
 
 /**
  * stop the DMA of the ethernet adapter
@@ -643,9 +643,9 @@ int al_eth_adapter_init(struct al_hal_eth_adapter *adapter, struct al_eth_adapte
  *
  * @return 0 on success. otherwise on failure.
  */
-int al_eth_adapter_stop(struct al_hal_eth_adapter *adapter);
+__must_check int al_eth_adapter_stop(struct al_hal_eth_adapter *adapter);
 
-int al_eth_adapter_reset(struct al_hal_eth_adapter *adapter);
+__must_check int al_eth_adapter_reset(struct al_hal_eth_adapter *adapter);
 
 /**
  * enable the ec and mac interrupts
@@ -654,7 +654,7 @@ int al_eth_adapter_reset(struct al_hal_eth_adapter *adapter);
  *
  * @return 0 on success. otherwise on failure.
  */
-int al_eth_ec_mac_ints_config(struct al_hal_eth_adapter *adapter);
+__must_check int al_eth_ec_mac_ints_config(struct al_hal_eth_adapter *adapter);
 
 /**
  * ec and mac interrupt service routine
@@ -664,7 +664,7 @@ int al_eth_ec_mac_ints_config(struct al_hal_eth_adapter *adapter);
  *
  * @return 0 on success. otherwise on failure.
  */
-int al_eth_ec_mac_isr(struct al_hal_eth_adapter *adapter);
+__must_check int al_eth_ec_mac_isr(struct al_hal_eth_adapter *adapter);
 
 /* Q management */
 /**
@@ -677,7 +677,7 @@ int al_eth_ec_mac_isr(struct al_hal_eth_adapter *adapter);
  *
  * @return 0 on success. otherwise on failure.
  */
-int al_eth_queue_config(struct al_hal_eth_adapter *adapter, enum al_udma_type type, uint32_t qid,
+__must_check int al_eth_queue_config(struct al_hal_eth_adapter *adapter, enum al_udma_type type, uint32_t qid,
 			struct al_udma_q_params *q_params);
 
 
@@ -690,7 +690,7 @@ int al_eth_queue_config(struct al_hal_eth_adapter *adapter, enum al_udma_type ty
  *
  * @return -EPERM (not implemented yet).
  */
-int al_eth_queue_enable(struct al_hal_eth_adapter *adapter, enum al_udma_type type, uint32_t qid);
+__must_check int al_eth_queue_enable(struct al_hal_eth_adapter *adapter, enum al_udma_type type, uint32_t qid);
 
 /**
  * disable a queue
@@ -700,7 +700,7 @@ int al_eth_queue_enable(struct al_hal_eth_adapter *adapter, enum al_udma_type ty
  *
  * @return -EPERM (not implemented yet).
  */
-int al_eth_queue_disable(struct al_hal_eth_adapter *adapter, enum al_udma_type type, uint32_t qid);
+__must_check int al_eth_queue_disable(struct al_hal_eth_adapter *adapter, enum al_udma_type type, uint32_t qid);
 
 /* MAC layer */
 
@@ -713,7 +713,7 @@ int al_eth_queue_disable(struct al_hal_eth_adapter *adapter, enum al_udma_type t
  *
  * @return 0 on success. negative errno on failure.
  */
-int al_eth_mac_config(struct al_hal_eth_adapter *adapter, enum al_eth_mac_mode mode);
+__must_check int al_eth_mac_config(struct al_hal_eth_adapter *adapter, enum al_eth_mac_mode mode);
 
 /**
  * stop the mac tx and rx paths.
@@ -721,7 +721,7 @@ int al_eth_mac_config(struct al_hal_eth_adapter *adapter, enum al_eth_mac_mode m
  *
  * @return 0 on success. negative error on failure.
  */
-int al_eth_mac_stop(struct al_hal_eth_adapter *adapter);
+__must_check int al_eth_mac_stop(struct al_hal_eth_adapter *adapter);
 
 /**
  * start the mac tx and rx paths.
@@ -729,7 +729,7 @@ int al_eth_mac_stop(struct al_hal_eth_adapter *adapter);
  *
  * @return 0 on success. negative error on failure.
  */
-int al_eth_mac_start(struct al_hal_eth_adapter *adapter);
+__must_check int al_eth_mac_start(struct al_hal_eth_adapter *adapter);
 
 /**
  * Perform gearbox reset for tx lanes And/Or Rx lanes.
@@ -751,7 +751,7 @@ void al_eth_gearbox_reset(struct al_hal_eth_adapter *adapter, al_bool tx_reset, 
  *
  * @return 0 on success. negative error on failure.
  */
-int al_eth_fec_enable(struct al_hal_eth_adapter *adapter, al_bool enable);
+__must_check int al_eth_fec_enable(struct al_hal_eth_adapter *adapter, al_bool enable);
 
 /**
  * Check if forward error correction (FEC) is enabled
@@ -760,7 +760,7 @@ int al_eth_fec_enable(struct al_hal_eth_adapter *adapter, al_bool enable);
  *
  * @return AL_TRUE if FEC is enabled and AL_FALSE otherwise
  */
-al_bool al_eth_fec_is_enabled(struct al_hal_eth_adapter *adapter);
+__must_check al_bool al_eth_fec_is_enabled(struct al_hal_eth_adapter *adapter);
 
 /**
  * Get forward error correction (FEC) statistics
@@ -771,7 +771,7 @@ al_bool al_eth_fec_is_enabled(struct al_hal_eth_adapter *adapter);
  *
  * @return 0 on success. negative error on failure.
  */
-int al_eth_fec_stats_get(struct al_hal_eth_adapter *adapter,
+__must_check int al_eth_fec_stats_get(struct al_hal_eth_adapter *adapter,
 			uint32_t *corrected, uint32_t *uncorrectable);
 
 /**
@@ -782,7 +782,7 @@ int al_eth_fec_stats_get(struct al_hal_eth_adapter *adapter,
  *
  * @return 0 on success. negative errno on failure.
  */
-int al_eth_capabilities_get(struct al_hal_eth_adapter *adapter, struct al_eth_capabilities *caps);
+__must_check int al_eth_capabilities_get(struct al_hal_eth_adapter *adapter, struct al_eth_capabilities *caps);
 
 /**
  * update link auto negotiation speed and duplex mode
@@ -801,7 +801,7 @@ int al_eth_capabilities_get(struct al_hal_eth_adapter *adapter, struct al_eth_ca
  *
  * @return 0 on success. otherwise on failure.
  */
-int al_eth_mac_link_config(struct al_hal_eth_adapter *adapter,
+__must_check int al_eth_mac_link_config(struct al_hal_eth_adapter *adapter,
 			   al_bool force_1000_base_x,
 			   al_bool an_enable,
 			   uint32_t speed,
@@ -814,7 +814,7 @@ int al_eth_mac_link_config(struct al_hal_eth_adapter *adapter,
  *
  * @return 0 on success. otherwise on failure.
  */
-int al_eth_mac_loopback_config(struct al_hal_eth_adapter *adapter, int enable);
+__must_check int al_eth_mac_loopback_config(struct al_hal_eth_adapter *adapter, int enable);
 
 /**
  * configure minimum and maximum rx packet length
@@ -825,7 +825,7 @@ int al_eth_mac_loopback_config(struct al_hal_eth_adapter *adapter, int enable);
  * both length limits in bytes and it includes the MAC Layer header and FCS.
  * @return 0 on success, otherwise on failure.
  */
-int al_eth_rx_pkt_limit_config(struct al_hal_eth_adapter *adapter, uint32_t min_rx_len, uint32_t max_rx_len);
+__must_check int al_eth_rx_pkt_limit_config(struct al_hal_eth_adapter *adapter, uint32_t min_rx_len, uint32_t max_rx_len);
 
 /**
  * Enable/Disable Tx flush
@@ -836,7 +836,7 @@ int al_eth_rx_pkt_limit_config(struct al_hal_eth_adapter *adapter, uint32_t min_
  *
  * @return 0 on success. otherwise on failure.
  */
-int al_eth_mac_tx_flush_config(struct al_hal_eth_adapter *adapter, int enable);
+__must_check int al_eth_mac_tx_flush_config(struct al_hal_eth_adapter *adapter, int enable);
 
 
 /* MDIO */
@@ -861,7 +861,7 @@ enum al_eth_ref_clk_freq {
  *
  * @return 0 on success, otherwise on failure.
  */
-int al_eth_mdio_config(struct al_hal_eth_adapter *adapter,
+__must_check int al_eth_mdio_config(struct al_hal_eth_adapter *adapter,
 		       enum al_eth_mdio_type mdio_type,
 		       al_bool shared_mdio_if,
 		       enum al_eth_ref_clk_freq ref_clk_freq,
@@ -879,7 +879,7 @@ int al_eth_mdio_config(struct al_hal_eth_adapter *adapter,
  *
  * @return 0 on success, negative errno on failure
  */
-int al_eth_mdio_read(struct al_hal_eth_adapter *adapter, uint32_t phy_addr,
+__must_check int al_eth_mdio_read(struct al_hal_eth_adapter *adapter, uint32_t phy_addr,
 		     uint32_t device, uint32_t reg, uint16_t *val);
 
 /**
@@ -894,7 +894,7 @@ int al_eth_mdio_read(struct al_hal_eth_adapter *adapter, uint32_t phy_addr,
  *
  * @return 0 on success, negative errno on failure
  */
-int al_eth_mdio_write(struct al_hal_eth_adapter *adapter, uint32_t phy_addr,
+__must_check int al_eth_mdio_write(struct al_hal_eth_adapter *adapter, uint32_t phy_addr,
 		      uint32_t device, uint32_t reg, uint16_t val);
 
 /* TX */
@@ -929,7 +929,7 @@ static INLINE uint32_t al_eth_tx_available_get(struct al_hal_eth_adapter *adapte
  * @return number of descriptors used for this packet, 0 if no free
  * room in the descriptors ring
  */
-int al_eth_tx_pkt_prepare(struct al_udma_q *tx_dma_q, struct al_eth_pkt *pkt);
+__must_check int al_eth_tx_pkt_prepare(struct al_udma_q *tx_dma_q, struct al_eth_pkt *pkt);
 
 
 /**
@@ -951,7 +951,7 @@ void al_eth_tx_dma_action(struct al_udma_q *tx_dma_q, uint32_t tx_descs);
  *
  * @return number of completed tx descriptors.
  */
-int al_eth_comp_tx_get(struct al_udma_q *tx_dma_q);
+__must_check int al_eth_comp_tx_get(struct al_udma_q *tx_dma_q);
 
 /**
  * configure a TSO MSS val
@@ -964,7 +964,7 @@ int al_eth_comp_tx_get(struct al_udma_q *tx_dma_q);
  *
  * @return 0 on success. otherwise on failure.
  */
-int al_eth_tso_mss_config(struct al_hal_eth_adapter *adapter, uint8_t idx, uint32_t mss_val);
+__must_check int al_eth_tso_mss_config(struct al_hal_eth_adapter *adapter, uint8_t idx, uint32_t mss_val);
 
 /* RX */
 /**
@@ -1008,7 +1008,7 @@ void al_eth_rx_desc_config(
  *
  * return 0 on success. otherwise on failure.
  */
-int al_eth_rx_header_split_config(struct al_hal_eth_adapter *adapter, al_bool enable, uint32_t header_len);
+__must_check int al_eth_rx_header_split_config(struct al_hal_eth_adapter *adapter, al_bool enable, uint32_t header_len);
 
 /**
  * enable / disable header split in the udma queue.
@@ -1021,7 +1021,7 @@ int al_eth_rx_header_split_config(struct al_hal_eth_adapter *adapter, al_bool en
  *
  * return 0 on success.
  */
-int al_eth_rx_header_split_force_len_config(struct al_hal_eth_adapter *adapter,
+__must_check int al_eth_rx_header_split_force_len_config(struct al_hal_eth_adapter *adapter,
 					al_bool enable,
 					uint32_t qid,
 					uint32_t header_len);
@@ -1037,7 +1037,7 @@ int al_eth_rx_header_split_force_len_config(struct al_hal_eth_adapter *adapter,
  *
  * @return 0 on success. otherwise on failure.
  */
-int al_eth_rx_buffer_add(struct al_udma_q *rx_dma_q,
+__must_check int al_eth_rx_buffer_add(struct al_udma_q *rx_dma_q,
 			      struct al_buf *buf, uint32_t flags,
 			      struct al_buf *header_buf);
 
@@ -1088,12 +1088,12 @@ struct al_eth_epe_control_entry {
  *
  * @return 0 on success. otherwise on failure.
  */
-int al_eth_rx_parser_entry_update(struct al_hal_eth_adapter *adapter, uint32_t idx,
+__must_check int al_eth_rx_parser_entry_update(struct al_hal_eth_adapter *adapter, uint32_t idx,
 		struct al_eth_epe_p_reg_entry *reg_entry,
 		struct al_eth_epe_control_entry *control_entry);
 
 /* Flow Steering and filtering */
-int al_eth_thash_table_set(struct al_hal_eth_adapter *adapter, uint32_t idx, uint8_t udma, uint32_t queue);
+__must_check int al_eth_thash_table_set(struct al_hal_eth_adapter *adapter, uint32_t idx, uint8_t udma, uint32_t queue);
 
 /* FSM table bits */
 /** FSM table has 7 bits input address:
@@ -1133,7 +1133,7 @@ int al_eth_thash_table_set(struct al_hal_eth_adapter *adapter, uint32_t idx, uin
 #define AL_ETH_FSM_DATA_DEFAULT_UDMA_SHIFT	3
 
 /* set fsm table entry */
-int al_eth_fsm_table_set(struct al_hal_eth_adapter *adapter, uint32_t idx, uint32_t entry);
+__must_check int al_eth_fsm_table_set(struct al_hal_eth_adapter *adapter, uint32_t idx, uint32_t entry);
 
 enum AL_ETH_FWD_CTRL_IDX_VLAN_TABLE_OUT {
 	AL_ETH_FWD_CTRL_IDX_VLAN_TABLE_OUT_0 = 0,
@@ -1264,7 +1264,7 @@ struct al_eth_fwd_ctrl_table_entry {
  *
  * @return 0 on success. otherwise on failure.
  */
-int al_eth_ctrl_table_def_set(struct al_hal_eth_adapter *adapter,
+__must_check int al_eth_ctrl_table_def_set(struct al_hal_eth_adapter *adapter,
 			      al_bool use_table,
 			      struct al_eth_fwd_ctrl_table_entry *entry);
 
@@ -1277,12 +1277,12 @@ int al_eth_ctrl_table_def_set(struct al_hal_eth_adapter *adapter,
  *
  * @return 0 on success. otherwise on failure.
  */
-int al_eth_ctrl_table_set(struct al_hal_eth_adapter *adapter,
+__must_check int al_eth_ctrl_table_set(struct al_hal_eth_adapter *adapter,
 			  struct al_eth_fwd_ctrl_table_index *index,
 			  struct al_eth_fwd_ctrl_table_entry *entry);
 
-int al_eth_ctrl_table_raw_set(struct al_hal_eth_adapter *adapter, uint32_t idx, uint32_t entry);
-int al_eth_ctrl_table_def_raw_set(struct al_hal_eth_adapter *adapter, uint32_t val);
+__must_check int al_eth_ctrl_table_raw_set(struct al_hal_eth_adapter *adapter, uint32_t idx, uint32_t entry);
+__must_check int al_eth_ctrl_table_def_raw_set(struct al_hal_eth_adapter *adapter, uint32_t val);
 
 /**
  * Configure hash key initial registers
@@ -1295,7 +1295,7 @@ int al_eth_ctrl_table_def_raw_set(struct al_hal_eth_adapter *adapter, uint32_t v
  *
  * @return 0 on success. otherwise on failure.
  */
-int al_eth_hash_key_set(struct al_hal_eth_adapter *adapter, uint32_t idx, uint32_t val);
+__must_check int al_eth_hash_key_set(struct al_hal_eth_adapter *adapter, uint32_t idx, uint32_t val);
 
 struct al_eth_fwd_mac_table_entry {
 	uint8_t		addr[6]; /**< byte 0 is the first byte seen on the wire */
@@ -1319,15 +1319,15 @@ struct al_eth_fwd_mac_table_entry {
  *
  * @return 0 on success. otherwise on failure.
  */
-int al_eth_fwd_mac_table_set(struct al_hal_eth_adapter *adapter, uint32_t idx,
+__must_check int al_eth_fwd_mac_table_set(struct al_hal_eth_adapter *adapter, uint32_t idx,
 				struct al_eth_fwd_mac_table_entry *entry);
 
-int al_eth_fwd_mac_addr_raw_set(struct al_hal_eth_adapter *adapter, uint32_t idx,
+__must_check int al_eth_fwd_mac_addr_raw_set(struct al_hal_eth_adapter *adapter, uint32_t idx,
 				uint32_t addr_lo, uint32_t addr_hi, uint32_t mask_lo, uint32_t mask_hi);
-int al_eth_fwd_mac_ctrl_raw_set(struct al_hal_eth_adapter *adapter, uint32_t idx, uint32_t ctrl);
+__must_check int al_eth_fwd_mac_ctrl_raw_set(struct al_hal_eth_adapter *adapter, uint32_t idx, uint32_t ctrl);
 
-int al_eth_mac_addr_store(void * __iomem ec_base, uint32_t idx, uint8_t *addr);
-int al_eth_mac_addr_read(void * __iomem ec_base, uint32_t idx, uint8_t *addr);
+__must_check int al_eth_mac_addr_store(void * __iomem ec_base, uint32_t idx, uint8_t *addr);
+__must_check int al_eth_mac_addr_read(void * __iomem ec_base, uint32_t idx, uint8_t *addr);
 
 /**
  * Configure pbits table entry
@@ -1340,7 +1340,7 @@ int al_eth_mac_addr_read(void * __iomem ec_base, uint32_t idx, uint8_t *addr);
  *
  * @return 0 on success. otherwise on failure.
  */
-int al_eth_fwd_pbits_table_set(struct al_hal_eth_adapter *adapter, uint32_t idx, uint8_t prio);
+__must_check int al_eth_fwd_pbits_table_set(struct al_hal_eth_adapter *adapter, uint32_t idx, uint8_t prio);
 
 /**
  * Configure priority table entry
@@ -1353,7 +1353,7 @@ int al_eth_fwd_pbits_table_set(struct al_hal_eth_adapter *adapter, uint32_t idx,
  *
  * @return 0 on success. otherwise on failure.
  */
-int al_eth_fwd_priority_table_set(struct al_hal_eth_adapter *adapter, uint8_t prio, uint8_t qid);
+__must_check int al_eth_fwd_priority_table_set(struct al_hal_eth_adapter *adapter, uint8_t prio, uint8_t qid);
 
 /**
  * Configure DSCP table entry
@@ -1366,7 +1366,7 @@ int al_eth_fwd_priority_table_set(struct al_hal_eth_adapter *adapter, uint8_t pr
  *
  * @return 0 on success. otherwise on failure.
  */
-int al_eth_fwd_dscp_table_set(struct al_hal_eth_adapter *adapter, uint32_t idx, uint8_t prio);
+__must_check int al_eth_fwd_dscp_table_set(struct al_hal_eth_adapter *adapter, uint32_t idx, uint8_t prio);
 
 /**
  * Configure TC table entry
@@ -1379,7 +1379,7 @@ int al_eth_fwd_dscp_table_set(struct al_hal_eth_adapter *adapter, uint32_t idx, 
  *
  * @return 0 on success. otherwise on failure.
  */
-int al_eth_fwd_tc_table_set(struct al_hal_eth_adapter *adapter, uint32_t idx, uint8_t prio);
+__must_check int al_eth_fwd_tc_table_set(struct al_hal_eth_adapter *adapter, uint32_t idx, uint8_t prio);
 
 /**
  * Configure MAC HASH table entry
@@ -1392,7 +1392,7 @@ int al_eth_fwd_tc_table_set(struct al_hal_eth_adapter *adapter, uint32_t idx, ui
  *
  * @return 0 on success. otherwise on failure.
  */
-int al_eth_fwd_mhash_table_set(struct al_hal_eth_adapter *adapter, uint32_t idx, uint8_t udma_mask, uint8_t qid);
+__must_check int al_eth_fwd_mhash_table_set(struct al_hal_eth_adapter *adapter, uint32_t idx, uint8_t udma_mask, uint8_t qid);
 
 struct al_eth_fwd_vid_table_entry {
 	uint8_t	control:1; /**< used as input for the control table */
@@ -1413,7 +1413,7 @@ struct al_eth_fwd_vid_table_entry {
  *
  * @return 0 on success. otherwise on failure.
  */
-int al_eth_fwd_vid_config_set(struct al_hal_eth_adapter *adapter, al_bool use_table,
+__must_check int al_eth_fwd_vid_config_set(struct al_hal_eth_adapter *adapter, al_bool use_table,
 			      struct al_eth_fwd_vid_table_entry *default_entry,
 			      uint32_t default_vlan);
 /**
@@ -1426,7 +1426,7 @@ int al_eth_fwd_vid_config_set(struct al_hal_eth_adapter *adapter, al_bool use_ta
  *
  * @return 0 on success. otherwise on failure.
  */
-int al_eth_fwd_vid_table_set(struct al_hal_eth_adapter *adapter, uint32_t idx,
+__must_check int al_eth_fwd_vid_table_set(struct al_hal_eth_adapter *adapter, uint32_t idx,
 			     struct al_eth_fwd_vid_table_entry *entry);
 
 
@@ -1442,7 +1442,7 @@ int al_eth_fwd_vid_table_set(struct al_hal_eth_adapter *adapter, uint32_t idx,
  *
  * @return 0 on success. otherwise on failure.
  */
-int al_eth_fwd_default_udma_config(struct al_hal_eth_adapter *adapter, uint32_t idx,
+__must_check int al_eth_fwd_default_udma_config(struct al_hal_eth_adapter *adapter, uint32_t idx,
 				   uint8_t udma_mask);
 
 /**
@@ -1457,7 +1457,7 @@ int al_eth_fwd_default_udma_config(struct al_hal_eth_adapter *adapter, uint32_t 
  *
  * @return 0 on success. otherwise on failure.
  */
-int al_eth_fwd_default_queue_config(struct al_hal_eth_adapter *adapter, uint32_t idx,
+__must_check int al_eth_fwd_default_queue_config(struct al_hal_eth_adapter *adapter, uint32_t idx,
 				   uint8_t qid);
 
 /**
@@ -1472,7 +1472,7 @@ int al_eth_fwd_default_queue_config(struct al_hal_eth_adapter *adapter, uint32_t
  *
  * @return 0 on success. otherwise on failure.
  */
-int al_eth_fwd_default_priority_config(struct al_hal_eth_adapter *adapter, uint32_t idx,
+__must_check int al_eth_fwd_default_priority_config(struct al_hal_eth_adapter *adapter, uint32_t idx,
 				   uint8_t prio);
 
 
@@ -1526,7 +1526,7 @@ struct al_eth_filter_override_params {
  *
  * @return 0 on success. otherwise on failure.
  */
-int al_eth_filter_config(struct al_hal_eth_adapter *adapter, struct al_eth_filter_params *params);
+__must_check int al_eth_filter_config(struct al_hal_eth_adapter *adapter, struct al_eth_filter_params *params);
 
 /**
  * Configure the receive override filters
@@ -1539,18 +1539,18 @@ int al_eth_filter_config(struct al_hal_eth_adapter *adapter, struct al_eth_filte
  *
  * @return 0 on success. otherwise on failure.
  */
-int al_eth_filter_override_config(struct al_hal_eth_adapter *adapter,
+__must_check int al_eth_filter_override_config(struct al_hal_eth_adapter *adapter,
 				  struct al_eth_filter_override_params *params);
 
 
-int al_eth_switching_config_set(struct al_hal_eth_adapter *adapter, uint8_t udma_id, uint8_t forward_all_to_mac, uint8_t enable_int_switching,
+__must_check int al_eth_switching_config_set(struct al_hal_eth_adapter *adapter, uint8_t udma_id, uint8_t forward_all_to_mac, uint8_t enable_int_switching,
 					enum al_eth_tx_switch_vid_sel_type vid_sel_type,
 					enum al_eth_tx_switch_dec_type uc_dec,
 					enum al_eth_tx_switch_dec_type mc_dec,
 					enum al_eth_tx_switch_dec_type bc_dec);
-int al_eth_switching_default_bitmap_set(struct al_hal_eth_adapter *adapter, uint8_t udma_id, uint8_t udma_uc_bitmask,
+__must_check int al_eth_switching_default_bitmap_set(struct al_hal_eth_adapter *adapter, uint8_t udma_id, uint8_t udma_uc_bitmask,
 						uint8_t udma_mc_bitmask,uint8_t udma_bc_bitmask);
-int al_eth_flow_control_config(struct al_hal_eth_adapter *adapter, struct al_eth_flow_control_params *params);
+__must_check int al_eth_flow_control_config(struct al_hal_eth_adapter *adapter, struct al_eth_flow_control_params *params);
 
 struct al_eth_eee_params{
 	uint8_t enable;
@@ -1567,7 +1567,7 @@ struct al_eth_eee_params{
  *
  * @return return 0 on success. otherwise on failure.
  */
-int al_eth_eee_config(struct al_hal_eth_adapter *adapter, struct al_eth_eee_params *params);
+__must_check int al_eth_eee_config(struct al_hal_eth_adapter *adapter, struct al_eth_eee_params *params);
 
 /**
  * get EEE configuration
@@ -1576,9 +1576,9 @@ int al_eth_eee_config(struct al_hal_eth_adapter *adapter, struct al_eth_eee_para
  *
  * @return return 0 on success. otherwise on failure.
  */
-int al_eth_eee_get(struct al_hal_eth_adapter *adapter, struct al_eth_eee_params *params);
+__must_check int al_eth_eee_get(struct al_hal_eth_adapter *adapter, struct al_eth_eee_params *params);
 
-int al_eth_vlan_mod_config(struct al_hal_eth_adapter *adapter, uint8_t udma_id, uint16_t udma_etype, uint16_t vlan1_data, uint16_t vlan2_data);
+__must_check int al_eth_vlan_mod_config(struct al_hal_eth_adapter *adapter, uint8_t udma_id, uint16_t udma_etype, uint16_t vlan1_data, uint16_t vlan2_data);
 
 /* Timestamp
  * This is a generic time-stamp mechanism that can be used as generic to
@@ -1603,7 +1603,7 @@ int al_eth_vlan_mod_config(struct al_hal_eth_adapter *adapter, uint8_t udma_id, 
  * @param adapter pointer to the private structure.
  * @return 0 on success. otherwise on failure.
  */
-int al_eth_ts_init(struct al_hal_eth_adapter *adapter);
+__must_check int al_eth_ts_init(struct al_hal_eth_adapter *adapter);
 
 /* Timestamp data path APIs */
 
@@ -1634,7 +1634,7 @@ int al_eth_ts_init(struct al_hal_eth_adapter *adapter);
  * @return -EAGAIN if the sample was not updated yet. 0 when the sample
  * was updated and no errors found.
  */
-int al_eth_tx_ts_val_get(struct al_hal_eth_adapter *adapter, uint8_t ts_index,
+__must_check int al_eth_tx_ts_val_get(struct al_hal_eth_adapter *adapter, uint8_t ts_index,
 			 uint32_t *timestamp);
 
 /* Timestamp PTH (PTP Timestamp Handler) control and times management */
@@ -1654,7 +1654,7 @@ struct al_eth_pth_time {
  * @param systime pointer to structure where the time will be stored.
  * @return 0 on success. otherwise on failure.
  */
-int al_eth_pth_systime_read(struct al_hal_eth_adapter *adapter,
+__must_check int al_eth_pth_systime_read(struct al_hal_eth_adapter *adapter,
 			    struct al_eth_pth_time *systime);
 
 /**
@@ -1665,7 +1665,7 @@ int al_eth_pth_systime_read(struct al_hal_eth_adapter *adapter,
  * @param clk_period the clock period in femto seconds.
  * @return 0 on success. otherwise on failure.
  */
-int al_eth_pth_clk_period_write(struct al_hal_eth_adapter *adapter,
+__must_check int al_eth_pth_clk_period_write(struct al_hal_eth_adapter *adapter,
 				uint64_t clk_period);
 
 /**< enum for methods when updating systime using triggers */
@@ -1702,7 +1702,7 @@ struct al_eth_pth_int_update_params {
  * @param params the configuration of the internal update.
  * @return 0 on success. otherwise on failure.
  */
-int al_eth_pth_int_update_config(struct al_hal_eth_adapter *adapter,
+__must_check int al_eth_pth_int_update_config(struct al_hal_eth_adapter *adapter,
 				 struct al_eth_pth_int_update_params *params);
 
 /**
@@ -1715,7 +1715,7 @@ int al_eth_pth_int_update_config(struct al_hal_eth_adapter *adapter,
  * @param time the internal update time value
  * @return 0 on success. otherwise on failure.
  */
-int al_eth_pth_int_update_time_set(struct al_hal_eth_adapter *adapter,
+__must_check int al_eth_pth_int_update_time_set(struct al_hal_eth_adapter *adapter,
 				   struct al_eth_pth_time *time);
 
 /**< parameters for external trigger update */
@@ -1735,7 +1735,7 @@ struct al_eth_pth_ext_update_params {
  * @param params the configuration of the external update.
  * @return 0 on success. otherwise on failure.
  */
-int al_eth_pth_ext_update_config(struct al_hal_eth_adapter *adapter,
+__must_check int al_eth_pth_ext_update_config(struct al_hal_eth_adapter *adapter,
 				 struct al_eth_pth_ext_update_params *params);
 
 /**
@@ -1747,7 +1747,7 @@ int al_eth_pth_ext_update_config(struct al_hal_eth_adapter *adapter,
  * @param time the external update time value
  * @return 0 on success. otherwise on failure.
  */
-int al_eth_pth_ext_update_time_set(struct al_hal_eth_adapter *adapter,
+__must_check int al_eth_pth_ext_update_time_set(struct al_hal_eth_adapter *adapter,
 				   struct al_eth_pth_time *time);
 /**
  * set the read compensation delay
@@ -1759,7 +1759,7 @@ int al_eth_pth_ext_update_time_set(struct al_hal_eth_adapter *adapter,
  * @param subseconds the read latency delay in femto seconds.
  * @return 0 on success. otherwise on failure.
  */
-int al_eth_pth_read_compensation_set(struct al_hal_eth_adapter *adapter,
+__must_check int al_eth_pth_read_compensation_set(struct al_hal_eth_adapter *adapter,
 				     uint64_t subseconds);
 /**
  * set the internal write compensation delay
@@ -1771,7 +1771,7 @@ int al_eth_pth_read_compensation_set(struct al_hal_eth_adapter *adapter,
  * @param subseconds the write latency delay in femto seconds.
  * @return 0 on success. otherwise on failure.
  */
-int al_eth_pth_int_write_compensation_set(struct al_hal_eth_adapter *adapter,
+__must_check int al_eth_pth_int_write_compensation_set(struct al_hal_eth_adapter *adapter,
 					  uint64_t subseconds);
 
 /**
@@ -1784,7 +1784,7 @@ int al_eth_pth_int_write_compensation_set(struct al_hal_eth_adapter *adapter,
  * @param subseconds the write latency delay in femto seconds.
  * @return 0 on success. otherwise on failure.
  */
-int al_eth_pth_ext_write_compensation_set(struct al_hal_eth_adapter *adapter,
+__must_check int al_eth_pth_ext_write_compensation_set(struct al_hal_eth_adapter *adapter,
 					  uint64_t subseconds);
 
 /**
@@ -1798,7 +1798,7 @@ int al_eth_pth_ext_write_compensation_set(struct al_hal_eth_adapter *adapter,
  * @param subseconds the sync latency delay in femto seconds.
  * @return 0 on success. otherwise on failure.
  */
-int al_eth_pth_sync_compensation_set(struct al_hal_eth_adapter *adapter,
+__must_check int al_eth_pth_sync_compensation_set(struct al_hal_eth_adapter *adapter,
 				     uint64_t subseconds);
 
 #define AL_ETH_PTH_PULSE_OUT_NUM	8
@@ -1828,7 +1828,7 @@ struct al_eth_pth_pulse_out_params {
  * @param params output pulse configuration.
  * @return 0 on success. otherwise on failure.
  */
-int al_eth_pth_pulse_out_config(struct al_hal_eth_adapter *adapter,
+__must_check int al_eth_pth_pulse_out_config(struct al_hal_eth_adapter *adapter,
 				struct al_eth_pth_pulse_out_params *params);
 
 /* link */
@@ -1849,7 +1849,7 @@ struct al_eth_link_status {
  *
  * @return return 0 on success. otherwise on failure.
  */
-int al_eth_link_status_get(struct al_hal_eth_adapter *adapter,
+__must_check int al_eth_link_status_get(struct al_hal_eth_adapter *adapter,
 			   struct al_eth_link_status *status);
 
 /**
@@ -1861,7 +1861,7 @@ int al_eth_link_status_get(struct al_hal_eth_adapter *adapter,
  *
  * @return return 0 if supported.
  */
-int al_eth_link_status_clear(struct al_hal_eth_adapter *adapter);
+__must_check int al_eth_link_status_clear(struct al_hal_eth_adapter *adapter);
 
 /**
  * Set LEDs to represent link status.
@@ -1874,7 +1874,7 @@ int al_eth_link_status_clear(struct al_hal_eth_adapter *adapter);
  *	  on inactive link
  * @return return 0 on success. otherwise on failure.
  */
-int al_eth_led_set(struct al_hal_eth_adapter *adapter, al_bool link_is_up);
+__must_check int al_eth_led_set(struct al_hal_eth_adapter *adapter, al_bool link_is_up);
 
 /* get statistics */
 
@@ -1963,7 +1963,7 @@ struct al_eth_mac_stats{
  *
  * @return return 0 on success. otherwise on failure.
  */
-int al_eth_mac_stats_get(struct al_hal_eth_adapter *adapter, struct al_eth_mac_stats *stats);
+__must_check int al_eth_mac_stats_get(struct al_hal_eth_adapter *adapter, struct al_eth_mac_stats *stats);
 
 struct al_eth_ec_stats{
 	/* Rx Frequency adjust FIFO input  packets */
@@ -2052,7 +2052,7 @@ struct al_eth_ec_stats{
  *
  * @return return 0 on success. otherwise on failure.
  */
-int al_eth_ec_stats_get(struct al_hal_eth_adapter *adapter, struct al_eth_ec_stats *stats);
+__must_check int al_eth_ec_stats_get(struct al_hal_eth_adapter *adapter, struct al_eth_ec_stats *stats);
 
 struct al_eth_ec_stat_udma{
 	/* Rx forwarding output packet counter */
@@ -2114,7 +2114,7 @@ struct al_eth_ec_stat_udma{
  *
  * @return return 0 on success. otherwise on failure.
  */
-int al_eth_ec_stat_udma_get(struct al_hal_eth_adapter *adapter, uint8_t idx, struct al_eth_ec_stat_udma *stats);
+__must_check int al_eth_ec_stat_udma_get(struct al_hal_eth_adapter *adapter, uint8_t idx, struct al_eth_ec_stat_udma *stats);
 
 /* trafic control */
 
@@ -2130,7 +2130,7 @@ int al_eth_ec_stat_udma_get(struct al_hal_eth_adapter *adapter, uint8_t idx, str
  *
  * @return 0.
  */
-int al_eth_flr_rmn(int (* pci_read_config_u32)(void *handle, int where, uint32_t *val),
+__must_check int al_eth_flr_rmn(int (* pci_read_config_u32)(void *handle, int where, uint32_t *val),
 		   int (* pci_write_config_u32)(void *handle, int where, uint32_t val),
 		   void *handle,
 		   void __iomem	*mac_base);
@@ -2149,7 +2149,7 @@ int al_eth_flr_rmn(int (* pci_read_config_u32)(void *handle, int where, uint32_t
  *
  * @return 0.
  */
-int al_eth_flr_rmn_restore_params(int (* pci_read_config_u32)(void *handle, int where, uint32_t *val),
+__must_check int al_eth_flr_rmn_restore_params(int (* pci_read_config_u32)(void *handle, int where, uint32_t *val),
 		int (* pci_write_config_u32)(void *handle, int where, uint32_t val),
 		void *handle,
 		void __iomem	*mac_base,
@@ -2267,7 +2267,7 @@ struct al_eth_board_params {
  *
  * @return 0 on success. otherwise on failure.
  */
-int al_eth_board_params_set(void * __iomem mac_base, struct al_eth_board_params *params);
+__must_check int al_eth_board_params_set(void * __iomem mac_base, struct al_eth_board_params *params);
 
 /**
  * get board parameter of the eth port
@@ -2279,7 +2279,7 @@ int al_eth_board_params_set(void * __iomem mac_base, struct al_eth_board_params 
  *
  * @return 0 on success. otherwise on failure.
  */
-int al_eth_board_params_get(void * __iomem mac_base, struct al_eth_board_params *params);
+__must_check int al_eth_board_params_get(void * __iomem mac_base, struct al_eth_board_params *params);
 
 /*
  * Wake-On-Lan (WoL)
@@ -2364,7 +2364,7 @@ struct al_eth_wol_params {
  *
  * @return 0 on success. otherwise on failure.
  */
-int al_eth_wol_enable(
+__must_check int al_eth_wol_enable(
 		struct al_hal_eth_adapter *adapter,
 		struct al_eth_wol_params *wol);
 
@@ -2375,7 +2375,7 @@ int al_eth_wol_enable(
  *
  * @return 0 on success. otherwise on failure.
  */
-int al_eth_wol_disable(
+__must_check int al_eth_wol_disable(
 		struct al_hal_eth_adapter *adapter);
 
 /**
@@ -2390,7 +2390,7 @@ int al_eth_wol_disable(
  *
  * @return 0 on success. otherwise on failure.
  */
-int al_eth_tx_fwd_vid_table_set(struct al_hal_eth_adapter *adapter, uint32_t idx, uint8_t udma_mask, al_bool fwd_to_mac);
+__must_check int al_eth_tx_fwd_vid_table_set(struct al_hal_eth_adapter *adapter, uint32_t idx, uint8_t udma_mask, al_bool fwd_to_mac);
 
 /** Tx Generic protocol detect Cam compare table entry  */
 struct al_eth_tx_gpd_cam_entry {
@@ -2529,7 +2529,7 @@ struct al_eth_tx_crc_chksum_replace_cmd_for_protocol_num_entry {
  * @return 0 on success. otherwise on failure.
  *
  */
-int al_eth_tx_protocol_detect_table_entry_set(struct al_hal_eth_adapter *adapter, uint32_t idx,
+__must_check int al_eth_tx_protocol_detect_table_entry_set(struct al_hal_eth_adapter *adapter, uint32_t idx,
 		struct al_eth_tx_gpd_cam_entry *tx_gpd_entry);
 
 /**
@@ -2542,7 +2542,7 @@ int al_eth_tx_protocol_detect_table_entry_set(struct al_hal_eth_adapter *adapter
  * @return 0 on success. otherwise on failure.
  *
  */
-int al_eth_tx_generic_crc_table_entry_set(struct al_hal_eth_adapter *adapter, uint32_t idx,
+__must_check int al_eth_tx_generic_crc_table_entry_set(struct al_hal_eth_adapter *adapter, uint32_t idx,
 		struct al_eth_tx_gcp_table_entry *tx_gcp_entry);
 
 /**
@@ -2555,7 +2555,7 @@ int al_eth_tx_generic_crc_table_entry_set(struct al_hal_eth_adapter *adapter, ui
  * @return 0 on success. otherwise on failure.
  *
  */
-int al_eth_tx_crc_chksum_replace_cmd_entry_set(struct al_hal_eth_adapter *adapter, uint32_t idx,
+__must_check int al_eth_tx_crc_chksum_replace_cmd_entry_set(struct al_hal_eth_adapter *adapter, uint32_t idx,
 		struct al_eth_tx_crc_chksum_replace_cmd_for_protocol_num_entry *tx_replace_entry);
 
 /**
@@ -2568,7 +2568,7 @@ int al_eth_tx_crc_chksum_replace_cmd_entry_set(struct al_hal_eth_adapter *adapte
  * @return 0 on success. otherwise on failure.
  *
  */
-int al_eth_rx_protocol_detect_table_entry_set(struct al_hal_eth_adapter *adapter, uint32_t idx,
+__must_check int al_eth_rx_protocol_detect_table_entry_set(struct al_hal_eth_adapter *adapter, uint32_t idx,
 		struct al_eth_rx_gpd_cam_entry *rx_gpd_entry);
 
 /**
@@ -2581,7 +2581,7 @@ int al_eth_rx_protocol_detect_table_entry_set(struct al_hal_eth_adapter *adapter
  * @return 0 on success. otherwise on failure.
  *
  */
-int al_eth_rx_generic_crc_table_entry_set(struct al_hal_eth_adapter *adapter, uint32_t idx,
+__must_check int al_eth_rx_generic_crc_table_entry_set(struct al_hal_eth_adapter *adapter, uint32_t idx,
 		struct al_eth_rx_gcp_table_entry *rx_gcp_entry);
 
 /**
@@ -2590,7 +2590,7 @@ int al_eth_rx_generic_crc_table_entry_set(struct al_hal_eth_adapter *adapter, ui
  * @param adapter pointer to the private structure
  *
  */
-int al_eth_tx_protocol_detect_table_init(struct al_hal_eth_adapter *adapter);
+__must_check int al_eth_tx_protocol_detect_table_init(struct al_hal_eth_adapter *adapter);
 
 /**
  * Configure user tx_gpd_table and regs
@@ -2600,7 +2600,7 @@ int al_eth_tx_protocol_detect_table_init(struct al_hal_eth_adapter *adapter);
  * @param num_entries number of the table entries
  *
  */
-int al_eth_tx_protocol_detect_table_init_ex(struct al_hal_eth_adapter *adapter,
+__must_check int al_eth_tx_protocol_detect_table_init_ex(struct al_hal_eth_adapter *adapter,
 					    struct al_eth_tx_gpd_cam_entry *entries,
 					    unsigned int num_entries);
 
@@ -2610,7 +2610,7 @@ int al_eth_tx_protocol_detect_table_init_ex(struct al_hal_eth_adapter *adapter,
  * @param adapter pointer to the private structure
  *
  */
-int al_eth_tx_crc_chksum_replace_cmd_init(struct al_hal_eth_adapter *adapter);
+__must_check int al_eth_tx_crc_chksum_replace_cmd_init(struct al_hal_eth_adapter *adapter);
 
 /**
  * Configure crc_chksum_replace_cmd_table
@@ -2620,7 +2620,7 @@ int al_eth_tx_crc_chksum_replace_cmd_init(struct al_hal_eth_adapter *adapter);
  * @param num_entries number of the table entries
  *
  */
-int al_eth_tx_crc_chksum_replace_cmd_init_ex(struct al_hal_eth_adapter *adapter,
+__must_check int al_eth_tx_crc_chksum_replace_cmd_init_ex(struct al_hal_eth_adapter *adapter,
 			struct al_eth_tx_crc_chksum_replace_cmd_for_protocol_num_entry *entries,
 			unsigned int num_entries);
 
@@ -2630,7 +2630,7 @@ int al_eth_tx_crc_chksum_replace_cmd_init_ex(struct al_hal_eth_adapter *adapter,
  * @param adapter pointer to the private structure
  *
  */
-int al_eth_tx_generic_crc_table_init(struct al_hal_eth_adapter *adapter);
+__must_check int al_eth_tx_generic_crc_table_init(struct al_hal_eth_adapter *adapter);
 
 /**
  * Configure user tx_gcp_table and regs
@@ -2640,7 +2640,7 @@ int al_eth_tx_generic_crc_table_init(struct al_hal_eth_adapter *adapter);
  * @param num_entries number of the table entries
  *
  */
-int al_eth_tx_generic_crc_table_init_ex(struct al_hal_eth_adapter *adapter,
+__must_check int al_eth_tx_generic_crc_table_init_ex(struct al_hal_eth_adapter *adapter,
 					struct al_eth_tx_gcp_table_entry *entries,
 					unsigned int num_entries);
 
@@ -2650,7 +2650,7 @@ int al_eth_tx_generic_crc_table_init_ex(struct al_hal_eth_adapter *adapter,
  * @param adapter pointer to the private structure
  *
  */
-int al_eth_rx_protocol_detect_table_init(struct al_hal_eth_adapter *adapter);
+__must_check int al_eth_rx_protocol_detect_table_init(struct al_hal_eth_adapter *adapter);
 
 /**
  * Configure user rx_gpd_table and regs
@@ -2660,7 +2660,7 @@ int al_eth_rx_protocol_detect_table_init(struct al_hal_eth_adapter *adapter);
  * @param num_entries number of the table entries
  *
  */
-int al_eth_rx_protocol_detect_table_init_ex(struct al_hal_eth_adapter *adapter,
+__must_check int al_eth_rx_protocol_detect_table_init_ex(struct al_hal_eth_adapter *adapter,
 					    struct al_eth_rx_gpd_cam_entry *entries,
 					    unsigned int num_entries);
 
@@ -2670,7 +2670,7 @@ int al_eth_rx_protocol_detect_table_init_ex(struct al_hal_eth_adapter *adapter,
  * @param adapter pointer to the private structure
  *
  */
-int al_eth_rx_generic_crc_table_init(struct al_hal_eth_adapter *adapter);
+__must_check int al_eth_rx_generic_crc_table_init(struct al_hal_eth_adapter *adapter);
 
 /**
  * Configure user rx_gcp_table and regs
@@ -2680,7 +2680,7 @@ int al_eth_rx_generic_crc_table_init(struct al_hal_eth_adapter *adapter);
  * @param num_entries number of the table entries
  *
  */
-int al_eth_rx_generic_crc_table_init_ex(struct al_hal_eth_adapter *adapter,
+__must_check int al_eth_rx_generic_crc_table_init_ex(struct al_hal_eth_adapter *adapter,
 					struct al_eth_rx_gcp_table_entry *entries,
 					unsigned int num_entries);
 

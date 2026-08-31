@@ -1049,34 +1049,59 @@ int al_eth_adapter_init(struct al_hal_eth_adapter *adapter, struct al_eth_adapte
 	 */
 	if (adapter->rev_id <= AL_ETH_REV_ID_3) {
 		/* init MHASH table */
-		for (i = 0; i < AL_ETH_FWD_MAC_HASH_NUM; i++)
-			al_eth_fwd_mhash_table_set(adapter, i, 0x0, 0);
+		for (i = 0; i < AL_ETH_FWD_MAC_HASH_NUM; i++) {
+			rc = al_eth_fwd_mhash_table_set(adapter, i, 0x0, 0);
+			if (rc)
+				pr_err("eth [%s]: failed to init mhash table entry %d (rc %d)\n",
+				       adapter->name, i, rc);
+		}
 
 		/* init THASH table */
-		for (i = 0; i < AL_ETH_RX_THASH_TABLE_SIZE; i++)
-			al_eth_thash_table_set(adapter, i, 0, 0);
+		for (i = 0; i < AL_ETH_RX_THASH_TABLE_SIZE; i++) {
+			rc = al_eth_thash_table_set(adapter, i, 0, 0);
+			if (rc)
+				pr_err("eth [%s]: failed to init thash table entry %d (rc %d)\n",
+				       adapter->name, i, rc);
+		}
 
 		/* init vlan table */
 		for (i = 0; i < AL_ETH_FWD_VID_TABLE_NUM; i++) {
 			struct al_eth_fwd_vid_table_entry entry = { 0 };
 
-			al_eth_fwd_vid_table_set(adapter, i, &entry);
+			rc = al_eth_fwd_vid_table_set(adapter, i, &entry);
+			if (rc)
+				pr_err("eth [%s]: failed to init vlan table entry %d (rc %d)\n",
+				       adapter->name, i, rc);
 		}
 
 		/* init control table */
-		for (i = 0; i < AL_ETH_RX_CTRL_TABLE_SIZE; i++)
-			al_eth_ctrl_table_raw_set(adapter, i, 0);
+		for (i = 0; i < AL_ETH_RX_CTRL_TABLE_SIZE; i++) {
+			rc = al_eth_ctrl_table_raw_set(adapter, i, 0);
+			if (rc)
+				pr_err("eth [%s]: failed to init control table entry %d (rc %d)\n",
+				       adapter->name, i, rc);
+		}
 
 		/* init tx fwd vlan table */
-		for (i = 0; i < AL_ETH_FWD_VID_TABLE_NUM; i++)
-			al_eth_tx_fwd_vid_table_set(adapter, i, 0, AL_FALSE);
+		for (i = 0; i < AL_ETH_FWD_VID_TABLE_NUM; i++) {
+			rc = al_eth_tx_fwd_vid_table_set(adapter, i, 0, AL_FALSE);
+			if (rc)
+				pr_err("eth [%s]: failed to init tx fwd vlan table entry %d (rc %d)\n",
+				       adapter->name, i, rc);
+		}
 
 		if (adapter->rev_id == AL_ETH_REV_ID_3) {
 			/* init TFW GCP table */
-			al_eth_tx_generic_crc_table_init(adapter);
+			rc = al_eth_tx_generic_crc_table_init(adapter);
+			if (rc)
+				pr_err("eth [%s]: failed to init tx generic crc table (rc %d)\n",
+				       adapter->name, rc);
 
 			/* init RFW GCP table */
-			al_eth_rx_generic_crc_table_init(adapter);
+			rc = al_eth_rx_generic_crc_table_init(adapter);
+			if (rc)
+				pr_err("eth [%s]: failed to init rx generic crc table (rc %d)\n",
+				       adapter->name, rc);
 		}
 	}
 
@@ -4834,18 +4859,27 @@ int al_eth_flr_rmn_restore_params(int (* pci_read_config_u32)(void *handle, int 
 	struct al_eth_board_params params = { .media_type = 0 };
 	uint8_t mac_addr[6];
 	int rc;
+	int save_rc;
 
 	/* not implemented yet */
 	if (mac_addresses_num > 1)
 		return -EPERM;
 
-	/* save board params so we restore it after reset */
-	al_eth_board_params_get(mac_base, &params);
-	al_eth_mac_addr_read(ec_base, 0, mac_addr);
+	/* save board params so we restore it after reset - skip the restore
+	 * below if the save failed, rather than writing back an
+	 * incompletely-initialized `params`. */
+	save_rc = al_eth_board_params_get(mac_base, &params);
+	if (save_rc)
+		pr_err("%s: failed to save board params before FLR (rc %d) - will skip restore\n",
+		       __func__, save_rc);
+	if (al_eth_mac_addr_read(ec_base, 0, mac_addr))
+		pr_err("%s: failed to save mac address before FLR\n", __func__);
 
 	rc = al_eth_flr_rmn(pci_read_config_u32, pci_write_config_u32, handle, mac_base);
-	al_eth_board_params_set(mac_base, &params);
-	al_eth_mac_addr_store(ec_base, 0, mac_addr);
+	if (!save_rc && al_eth_board_params_set(mac_base, &params))
+		pr_err("%s: failed to restore board params after FLR\n", __func__);
+	if (al_eth_mac_addr_store(ec_base, 0, mac_addr))
+		pr_err("%s: failed to restore mac address after FLR\n", __func__);
 
 	return rc;
 }
@@ -6091,13 +6125,22 @@ int al_eth_tx_protocol_detect_table_init_ex(struct al_hal_eth_adapter *adapter,
 					    unsigned int num_entries)
 {
 	unsigned int idx;
+	int rc = 0;
+
 	al_assert((adapter->rev_id > AL_ETH_REV_ID_2));
 	al_assert(num_entries <= AL_ETH_TX_GENERIC_CRC_ENTRIES_NUM);
 
-	for (idx = 0; idx < num_entries; idx++)
-		al_eth_tx_protocol_detect_table_entry_set(adapter, idx, &entries[idx]);
+	for (idx = 0; idx < num_entries; idx++) {
+		int entry_rc = al_eth_tx_protocol_detect_table_entry_set(adapter, idx,
+									   &entries[idx]);
+		if (entry_rc) {
+			pr_err("eth [%s]: failed to set tx protocol detect entry %u (rc %d)\n",
+			       adapter->name, idx, entry_rc);
+			rc = entry_rc;
+		}
+	}
 
-	return 0;
+	return rc;
 }
 
 int al_eth_tx_protocol_detect_table_init(struct al_hal_eth_adapter *adapter)
@@ -6112,16 +6155,25 @@ int al_eth_tx_generic_crc_table_init_ex(struct al_hal_eth_adapter *adapter,
 					unsigned int num_entries)
 {
 	unsigned int idx;
+	int rc = 0;
+
 	al_assert((adapter->rev_id > AL_ETH_REV_ID_2));
 	al_assert(num_entries <= AL_ETH_TX_GENERIC_CRC_ENTRIES_NUM);
 
 	pr_debug("eth [%s]: enable tx_generic_crc\n", adapter->name);
 	al_reg_write32(&adapter->ec_regs_base->tfw_v3.tx_gcp_legacy, 0x0);
 	al_reg_write32(&adapter->ec_regs_base->tfw_v3.crc_csum_replace, 0x0);
-	for (idx = 0; idx < num_entries; idx++)
-		al_eth_tx_generic_crc_table_entry_set(adapter, idx, &entries[idx]);
+	for (idx = 0; idx < num_entries; idx++) {
+		int entry_rc = al_eth_tx_generic_crc_table_entry_set(adapter, idx, &entries[idx]);
 
-	return 0;
+		if (entry_rc) {
+			pr_err("eth [%s]: failed to set tx generic crc entry %u (rc %d)\n",
+			       adapter->name, idx, entry_rc);
+			rc = entry_rc;
+		}
+	}
+
+	return rc;
 }
 
 int al_eth_tx_generic_crc_table_init(struct al_hal_eth_adapter *adapter)
@@ -6136,13 +6188,22 @@ int al_eth_tx_crc_chksum_replace_cmd_init_ex(struct al_hal_eth_adapter *adapter,
 			unsigned int num_entries)
 {
 	unsigned int idx;
+	int rc = 0;
+
 	al_assert((adapter->rev_id > AL_ETH_REV_ID_2));
 	al_assert(num_entries <= AL_ETH_TX_GENERIC_CRC_ENTRIES_NUM);
 
-	for (idx = 0; idx < num_entries; idx++)
-		al_eth_tx_crc_chksum_replace_cmd_entry_set(adapter, idx, &entries[idx]);
+	for (idx = 0; idx < num_entries; idx++) {
+		int entry_rc = al_eth_tx_crc_chksum_replace_cmd_entry_set(adapter, idx,
+									    &entries[idx]);
+		if (entry_rc) {
+			pr_err("eth [%s]: failed to set tx crc chksum replace cmd entry %u (rc %d)\n",
+			       adapter->name, idx, entry_rc);
+			rc = entry_rc;
+		}
+	}
 
-	return 0;
+	return rc;
 }
 
 int al_eth_tx_crc_chksum_replace_cmd_init(struct al_hal_eth_adapter *adapter)
@@ -6157,6 +6218,7 @@ int al_eth_rx_protocol_detect_table_init_ex(struct al_hal_eth_adapter *adapter,
 					    unsigned int num_entries)
 {
 	unsigned int idx;
+	int rc;
 
 	al_assert((adapter->rev_id > AL_ETH_REV_ID_2));
 	al_assert(num_entries <= AL_ETH_RX_PROTOCOL_DETECT_ENTRIES_NUM);
@@ -6178,10 +6240,18 @@ int al_eth_rx_protocol_detect_table_init_ex(struct al_hal_eth_adapter *adapter,
 	al_reg_write32(&adapter->ec_regs_base->rfw_v3.gpd_p8,
 			AL_ETH_RX_GPD_PARSE_RESULT_OUTER_L4_DST_PORT_LSB);
 
-	for (idx = 0; idx < num_entries; idx++)
-		al_eth_rx_protocol_detect_table_entry_set(adapter, idx, &entries[idx]);
+	rc = 0;
+	for (idx = 0; idx < num_entries; idx++) {
+		int entry_rc = al_eth_rx_protocol_detect_table_entry_set(adapter, idx,
+									   &entries[idx]);
+		if (entry_rc) {
+			pr_err("eth [%s]: failed to set rx protocol detect entry %u (rc %d)\n",
+			       adapter->name, idx, entry_rc);
+			rc = entry_rc;
+		}
+	}
 
-	return 0;
+	return rc;
 }
 
 int al_eth_rx_protocol_detect_table_init(struct al_hal_eth_adapter *adapter)
@@ -6196,17 +6266,25 @@ int al_eth_rx_generic_crc_table_init_ex(struct al_hal_eth_adapter *adapter,
 					unsigned int num_entries)
 {
 	unsigned int idx;
+	int rc = 0;
 
 	al_assert((adapter->rev_id > AL_ETH_REV_ID_2));
 	al_assert(num_entries <= AL_ETH_RX_PROTOCOL_DETECT_ENTRIES_NUM);
 
 	pr_debug("eth [%s]: enable rx_generic_crc\n", adapter->name);
 
-	for (idx = 0; idx < num_entries; idx++)
-		al_eth_rx_generic_crc_table_entry_set(adapter, idx, &entries[idx]);
+	for (idx = 0; idx < num_entries; idx++) {
+		int entry_rc = al_eth_rx_generic_crc_table_entry_set(adapter, idx, &entries[idx]);
+
+		if (entry_rc) {
+			pr_err("eth [%s]: failed to set rx generic crc entry %u (rc %d)\n",
+			       adapter->name, idx, entry_rc);
+			rc = entry_rc;
+		}
+	}
 
 	al_eth_rx_generic_crc_table_enable(adapter, AL_TRUE);
-	return 0;
+	return rc;
 }
 
 int al_eth_rx_generic_crc_table_init(struct al_hal_eth_adapter *adapter)
