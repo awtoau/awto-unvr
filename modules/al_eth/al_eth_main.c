@@ -49,11 +49,7 @@
 #include "al_hal_eth.h"
 #include "al_hal_serdes_25g.h"
 #include "al_init_eth_lm.h"
-#ifdef CONFIG_ARCH_ALPINE
 #include "alpine_serdes.h"
-#else
-#include "al_hal_serdes_hssp.h"
-#endif
 
 #include "al_eth.h"
 #include "al_eth_phylink.h"
@@ -357,9 +353,7 @@ initial_moderation_table[AL_ETH_INTR_MAX_NUM_OF_LEVELS] = {
 };
 
 /** Forward declarations */
-#ifdef CONFIG_ARCH_ALPINE
 static void al_eth_serdes_mode_set(struct al_eth_adapter *adapter);
-#endif
 static void al_eth_down(struct al_eth_adapter *adapter);
 static int al_eth_up(struct al_eth_adapter *adapter);
 
@@ -448,7 +442,9 @@ al_eth_fsm_table_init(struct al_eth_adapter *adapter)
 			val = (0 << AL_ETH_FSM_DATA_DEFAULT_Q_SHIFT |
 				((1 << adapter->udma_num) << AL_ETH_FSM_DATA_DEFAULT_UDMA_SHIFT));
 		}
-		al_eth_fsm_table_set(&adapter->hal_adapter, i, val);
+		if (al_eth_fsm_table_set(&adapter->hal_adapter, i, val))
+			netdev_err(adapter->netdev, "%s: failed to set fsm table entry %d\n",
+				   __func__, i);
 	}
 }
 
@@ -456,13 +452,14 @@ al_eth_fsm_table_init(struct al_eth_adapter *adapter)
  * MAC tables
  */
 
-static void al_eth_mac_table_unicast_add(
+static int al_eth_mac_table_unicast_add(
 	struct al_eth_adapter *adapter,
 	uint8_t idx,
 	uint8_t *addr,
 	uint8_t udma_mask)
 {
 	struct al_eth_fwd_mac_table_entry entry = { { 0 } };
+	int rc;
 
 	memcpy(entry.addr, adapter->mac_addr, sizeof(adapter->mac_addr));
 
@@ -475,15 +472,20 @@ static void al_eth_mac_table_unicast_add(
 	netdev_dbg(adapter->netdev, "%s: [%d]: addr "MAC_ADDR_STR" mask "MAC_ADDR_STR"\n",
 		__func__, idx, MAC_ADDR(entry.addr), MAC_ADDR(entry.mask));
 
-	al_eth_fwd_mac_table_set(&adapter->hal_adapter, idx, &entry);
+	rc = al_eth_fwd_mac_table_set(&adapter->hal_adapter, idx, &entry);
+	if (rc)
+		netdev_err(adapter->netdev, "%s: failed to set mac table entry %d\n",
+			   __func__, idx);
+	return rc;
 }
 
-static void al_eth_mac_table_broadcast_add(
+static int al_eth_mac_table_broadcast_add(
 	struct al_eth_adapter	*adapter,
 	uint8_t idx,
 	uint8_t udma_mask)
 {
 	struct al_eth_fwd_mac_table_entry entry = { { 0 } };
+	int rc;
 
 	memset(entry.addr, 0xff, sizeof(entry.addr));
 	memset(entry.mask, 0xff, sizeof(entry.mask));
@@ -496,15 +498,20 @@ static void al_eth_mac_table_broadcast_add(
 	netdev_dbg(adapter->netdev, "%s: [%d]: addr "MAC_ADDR_STR" mask "MAC_ADDR_STR"\n",
 		__func__, idx, MAC_ADDR(entry.addr), MAC_ADDR(entry.mask));
 
-	al_eth_fwd_mac_table_set(&adapter->hal_adapter, idx, &entry);
+	rc = al_eth_fwd_mac_table_set(&adapter->hal_adapter, idx, &entry);
+	if (rc)
+		netdev_err(adapter->netdev, "%s: failed to set mac table entry %d\n",
+			   __func__, idx);
+	return rc;
 }
 
-static void al_eth_mac_table_all_multicast_add(
+static int al_eth_mac_table_all_multicast_add(
 	struct al_eth_adapter *adapter,
 	uint8_t idx,
 	uint8_t udma_mask)
 {
 	struct al_eth_fwd_mac_table_entry entry = { { 0 } };
+	int rc;
 
 	memset(entry.addr, 0x00, sizeof(entry.addr));
 	memset(entry.mask, 0x00, sizeof(entry.mask));
@@ -519,15 +526,20 @@ static void al_eth_mac_table_all_multicast_add(
 	netdev_dbg(adapter->netdev, "%s: [%d]: addr "MAC_ADDR_STR" mask "MAC_ADDR_STR"\n",
 		__func__, idx, MAC_ADDR(entry.addr), MAC_ADDR(entry.mask));
 
-	al_eth_fwd_mac_table_set(&adapter->hal_adapter, idx, &entry);
+	rc = al_eth_fwd_mac_table_set(&adapter->hal_adapter, idx, &entry);
+	if (rc)
+		netdev_err(adapter->netdev, "%s: failed to set mac table entry %d\n",
+			   __func__, idx);
+	return rc;
 }
 
-static void al_eth_mac_table_promiscuous_set(
+static int al_eth_mac_table_promiscuous_set(
 	struct al_eth_adapter *adapter,
 	al_bool promiscuous,
 	uint8_t udma_mask)
 {
 	struct al_eth_fwd_mac_table_entry entry = { { 0 } };
+	int rc;
 
 	memset(entry.addr, 0x00, sizeof(entry.addr));
 	memset(entry.mask, 0x00, sizeof(entry.mask));
@@ -540,20 +552,28 @@ static void al_eth_mac_table_promiscuous_set(
 	netdev_dbg(adapter->netdev, "%s: %s promiscuous mode\n",
 		__func__, (promiscuous) ? "enter" : "exit");
 
-	al_eth_fwd_mac_table_set(&adapter->hal_adapter,
+	rc = al_eth_fwd_mac_table_set(&adapter->hal_adapter,
 		 AL_ETH_MAC_TABLE_DROP_IDX,
 		 &entry);
+	if (rc)
+		netdev_err(adapter->netdev, "%s: failed to set mac table drop entry\n", __func__);
+	return rc;
 }
 
-static void al_eth_mac_table_entry_clear(
+static int al_eth_mac_table_entry_clear(
 	struct al_eth_adapter *adapter,
 	uint8_t idx)
 {
 	struct al_eth_fwd_mac_table_entry entry = { { 0 } };
+	int rc;
 
 	netdev_dbg(adapter->netdev, "%s: clear entry %d\n", __func__, idx);
 
-	al_eth_fwd_mac_table_set(&adapter->hal_adapter, idx, &entry);
+	rc = al_eth_fwd_mac_table_set(&adapter->hal_adapter, idx, &entry);
+	if (rc)
+		netdev_err(adapter->netdev, "%s: failed to clear mac table entry %d\n",
+			   __func__, idx);
+	return rc;
 }
 
 static int al_eth_get_serdes_25g_speed(struct al_eth_adapter *adapter, uint *speed)
@@ -806,7 +826,9 @@ static int al_eth_board_params_init(struct al_eth_adapter *adapter)
 			return -EPERM;
 	}
 
-	al_eth_mac_addr_read(adapter->ec_base, 0, adapter->mac_addr);
+	if (al_eth_mac_addr_read(adapter->ec_base, 0, adapter->mac_addr))
+		dev_err(&adapter->pdev->dev, "%s: failed to read mac address from board\n",
+			__func__);
 
 	return 0;
 }
@@ -847,7 +869,8 @@ al_eth_flow_ctrl_config(struct al_eth_adapter *adapter)
 	for (i = 0; i < AL_ETH_FWD_PRIO_TABLE_NUM; i++)
 		flow_ctrl_params->prio_q_map[adapter->udma_num][i] =  1 << (i >> 1);
 
-	al_eth_flow_control_config(&adapter->hal_adapter, flow_ctrl_params);
+	if (al_eth_flow_control_config(&adapter->hal_adapter, flow_ctrl_params))
+		netdev_err(adapter->netdev, "%s: failed to configure flow control\n", __func__);
 
 	return 0;
 }
@@ -1026,12 +1049,7 @@ static int al_eth_hw_init(struct al_eth_adapter *adapter)
 
 	netdev_dbg(adapter->netdev, "mdio config\n");
 	if (adapter->phy_if == AL_ETH_BOARD_PHY_IF_XMDIO) {
-#ifndef CONFIG_ARCH_ALPINE
-		/** Host driver doesnt support xmdio */
-		return -EOPNOTSUPP;
-#else
 		mdio_type = AL_ETH_MDIO_TYPE_CLAUSE_45;
-#endif
 	} else
 		mdio_type = AL_ETH_MDIO_TYPE_CLAUSE_22;
 
@@ -1051,14 +1069,27 @@ static int al_eth_hw_init(struct al_eth_adapter *adapter)
 
 static int al_eth_hw_stop(struct al_eth_adapter *adapter)
 {
-	al_eth_mac_stop(&adapter->hal_adapter);
+	/* Best-effort teardown - a table-set failure here shouldn't abort
+	 * hw_stop (we're shutting down regardless), but the caller should
+	 * still be able to tell something didn't go cleanly. Each helper
+	 * already logs its own failure via netdev_err, so this only
+	 * aggregates - no double-logging. */
+	int rc = 0;
+
+	if (al_eth_mac_stop(&adapter->hal_adapter)) {
+		netdev_err(adapter->netdev, "%s: failed to stop mac\n", __func__);
+		rc = -EIO;
+	}
 
 	if (adapter->udma_num != 0) {
 		/* if NIC mode, steer all packets to udma 0*/
-		al_eth_mac_table_unicast_add(adapter, AL_ETH_MAC_TABLE_UNICAST_IDX_BASE,
-			adapter->mac_addr, 1);
-		al_eth_mac_table_broadcast_add(adapter, AL_ETH_MAC_TABLE_BROADCAST_IDX, 1);
-		al_eth_mac_table_promiscuous_set(adapter, true, 1);
+		if (al_eth_mac_table_unicast_add(adapter, AL_ETH_MAC_TABLE_UNICAST_IDX_BASE,
+			adapter->mac_addr, 1))
+			rc = -EIO;
+		if (al_eth_mac_table_broadcast_add(adapter, AL_ETH_MAC_TABLE_BROADCAST_IDX, 1))
+			rc = -EIO;
+		if (al_eth_mac_table_promiscuous_set(adapter, true, 1))
+			rc = -EIO;
 	}
 
 	/* wait till pending rx packets written and UDMA becomes idle,
@@ -1067,13 +1098,16 @@ static int al_eth_hw_stop(struct al_eth_adapter *adapter)
 	 */
 	udelay(100);
     al_eth_udma_queues_reset_all(adapter);
-    al_eth_adapter_stop(&adapter->hal_adapter);
+    if (al_eth_adapter_stop(&adapter->hal_adapter)) {
+	    netdev_err(adapter->netdev, "%s: failed to stop adapter\n", __func__);
+	    rc = -EIO;
+    }
 	adapter->flags |= AL_ETH_FLAG_RESET_REQUESTED;
 
 	/* disable flow ctrl to avoid pause packets*/
 	al_eth_flow_ctrl_disable(adapter);
 
-	return 0;
+	return rc;
 }
 
 static int al_eth_change_mtu(struct net_device *dev, int new_mtu)
@@ -1920,11 +1954,15 @@ al_eth_config_rx_fwd(struct al_eth_adapter *adapter)
 
 	/* let priority be equal to pbits */
 	for (i = 0; i < AL_ETH_FWD_PBITS_TABLE_NUM; i++)
-		al_eth_fwd_pbits_table_set(&adapter->hal_adapter, i, i);
+		if (al_eth_fwd_pbits_table_set(&adapter->hal_adapter, i, i))
+			netdev_err(adapter->netdev, "%s: failed to set pbits table entry %d\n",
+				   __func__, i);
 
 	/* map priority to queue index, queue id = priority/2 */
 	for (i = 0; i < AL_ETH_FWD_PRIO_TABLE_NUM; i++)
-		al_eth_fwd_priority_table_set(&adapter->hal_adapter, i, i >> 1);
+		if (al_eth_fwd_priority_table_set(&adapter->hal_adapter, i, i >> 1))
+			netdev_err(adapter->netdev, "%s: failed to set priority table entry %d\n",
+				   __func__, i);
 
 	entry.prio_sel = AL_ETH_CTRL_TABLE_PRIO_SEL_VAL_0;
 	entry.queue_sel_1 = AL_ETH_CTRL_TABLE_QUEUE_SEL_1_THASH_TABLE;
@@ -1932,7 +1970,8 @@ al_eth_config_rx_fwd(struct al_eth_adapter *adapter)
 	entry.udma_sel = AL_ETH_CTRL_TABLE_UDMA_SEL_MAC_TABLE;
 	entry.filter = AL_FALSE;
 
-	al_eth_ctrl_table_def_set(&adapter->hal_adapter, AL_FALSE, &entry);
+	if (al_eth_ctrl_table_def_set(&adapter->hal_adapter, AL_FALSE, &entry))
+		netdev_err(adapter->netdev, "%s: failed to set default ctrl table entry\n", __func__);
 
 	/*
 	 * By default set the mac table to forward all unicast packets to our
@@ -1948,11 +1987,16 @@ al_eth_config_rx_fwd(struct al_eth_adapter *adapter)
 			 sizeof(adapter->toeplitz_hash_key));
 
 	for (i = 0; i < AL_ETH_RX_HASH_KEY_NUM; i++)
-		al_eth_hash_key_set(&adapter->hal_adapter, i,
-				    htonl(adapter->toeplitz_hash_key[i]));
+		if (al_eth_hash_key_set(&adapter->hal_adapter, i,
+				    htonl(adapter->toeplitz_hash_key[i])))
+			netdev_err(adapter->netdev, "%s: failed to set hash key entry %d\n",
+				   __func__, i);
 
 	for (i = 0; i < AL_ETH_RX_RSS_TABLE_SIZE; i++)
-		al_eth_thash_table_set(&adapter->hal_adapter, i, adapter->udma_num, adapter->rss_ind_tbl[i]);
+		if (al_eth_thash_table_set(&adapter->hal_adapter, i, adapter->udma_num,
+					    adapter->rss_ind_tbl[i]))
+			netdev_err(adapter->netdev, "%s: failed to set rss table entry %d\n",
+				   __func__, i);
 
 	al_eth_fsm_table_init(adapter);
 }
@@ -2015,7 +2059,7 @@ static int al_mdio_read_c45(struct mii_bus *bp, int mii_id, int dev, int reg)
 	int timeout = MDIO_TIMEOUT_MSEC;
 
 	while (timeout > 0) {
-		al_dbg("%s [c45]: dev %x reg %x val %x\n",
+		pr_debug("%s [c45]: dev %x reg %x val %x\n",
 			__func__, dev, reg, value);
 		rc = al_eth_mdio_read(&adapter->hal_adapter, adapter->phy_addr,
 			dev, reg, &value);
@@ -2044,7 +2088,7 @@ al_mdio_write_c45(struct mii_bus *bp, int mii_id, int dev, int reg, u16 val)
 	int timeout = MDIO_TIMEOUT_MSEC;
 
 	while (timeout > 0) {
-		al_dbg("%s [c45]: device %x reg %x val %x\n",
+		pr_debug("%s [c45]: device %x reg %x val %x\n",
 			__func__, dev, reg, val);
 		rc = al_eth_mdio_write(&adapter->hal_adapter, adapter->phy_addr,
 			dev, reg, val);
@@ -2283,17 +2327,12 @@ static void al_eth_adjust_link(struct net_device *dev)
 			if (adapter->mac_mode != mac_mode_needed) {
 				al_eth_down(adapter);
 				adapter->mac_mode = mac_mode_needed;
-#ifdef CONFIG_ARCH_ALPINE
 				if (link_config->active_speed > 1000)
 					al_eth_serdes_mode_set(adapter);
 				else {
 					al_eth_serdes_mode_set(adapter);
 					force_1000_base_x = true;
 				}
-#else
-				if (link_config->active_speed <= 1000)
-					force_1000_base_x = true;
-#endif /** CONFIG_ARCH_ALPINE */
 				al_eth_up(adapter);
 			}
 
@@ -2471,17 +2510,32 @@ al_eth_function_reset(struct al_eth_adapter *adapter)
 		return 0;
 	}
 
-	/* save board params so we restore it after reset */
-	al_eth_board_params_get(adapter->mac_base, &params);
-	al_eth_mac_addr_read(adapter->ec_base, 0, adapter->mac_addr);
+	/* save board params so we restore it after reset. `params` is an
+	 * uninitialized stack local - if the get fails partway, restoring it
+	 * post-reset would write garbage stack data into hardware board-param
+	 * registers, which is worse than not restoring at all. */
+	{
+		int save_rc = al_eth_board_params_get(adapter->mac_base, &params);
+		if (save_rc)
+			netdev_err(adapter->netdev,
+				   "%s: failed to save board params before FLR (rc %d) - will skip restore\n",
+				   __func__, save_rc);
+		if (al_eth_mac_addr_read(adapter->ec_base, 0, adapter->mac_addr))
+			netdev_err(adapter->netdev, "%s: failed to save mac address before FLR\n",
+				   __func__);
 
-	rc = al_eth_flr_rmn(&al_eth_read_pci_config,
-		&al_eth_write_pci_config,
-		adapter->pdev, adapter->mac_base);
+		rc = al_eth_flr_rmn(&al_eth_read_pci_config,
+			&al_eth_write_pci_config,
+			adapter->pdev, adapter->mac_base);
 
-	/* restore params */
-	al_eth_board_params_set(adapter->mac_base, &params);
-	al_eth_mac_addr_store(adapter->ec_base, 0, adapter->mac_addr);
+		/* restore params - only if the save above actually succeeded */
+		if (!save_rc && al_eth_board_params_set(adapter->mac_base, &params))
+			netdev_err(adapter->netdev, "%s: failed to restore board params after FLR\n",
+				   __func__);
+		if (al_eth_mac_addr_store(adapter->ec_base, 0, adapter->mac_addr))
+			netdev_err(adapter->netdev, "%s: failed to restore mac address after FLR\n",
+				   __func__);
+	}
 	return rc;
 }
 
@@ -2513,7 +2567,7 @@ al_eth_hal_adapter_init(struct al_eth_adapter *adapter)
 	rc = al_udma_init(&hal_adapter->tx_udma, &udma_params);
 
 	if (rc != 0) {
-		al_err("failed to initialize %s, error %d\n",
+		pr_err("failed to initialize %s, error %d\n",
 			 udma_params.name, rc);
 		return rc;
 	}
@@ -2525,7 +2579,7 @@ al_eth_hal_adapter_init(struct al_eth_adapter *adapter)
 	rc = al_udma_init(&hal_adapter->rx_udma, &udma_params);
 
 	if (rc != 0) {
-		al_err("failed to initialize %s, error %d\n",
+		pr_err("failed to initialize %s, error %d\n",
 			 udma_params.name, rc);
 		return rc;
 	}
@@ -3168,6 +3222,21 @@ al_eth_tx_poll(struct napi_struct *napi, int budget)
 	u16 next_to_clean;
 	int tx_pkt = 0;
 	total_done = al_eth_comp_tx_get(tx_ring->dma_q);
+	/* al_eth_comp_tx_get() returns int while wrapping a uint32_t HAL
+	 * value (al_udma_cdesc_get_all()) - a value with the top bit set
+	 * would come back negative and silently become huge here via the
+	 * int->unsigned assignment. Ring size is a small fixed constant
+	 * (AL_ETH_DEFAULT_TX_SW_DESCS); a real completion count can never
+	 * legitimately approach it, so treat anything absurd as corruption
+	 * and refuse to run the free/unmap loop on it rather than walking
+	 * off into buffers that are still in flight.
+	 */
+	if (unlikely(total_done > AL_ETH_DEFAULT_TX_SW_DESCS)) {
+		netdev_err(adapter->netdev,
+			   "q %d: al_eth_comp_tx_get returned an out-of-range completion count %u (ring size %u) - dropping it, not processing\n",
+			   qid, total_done, AL_ETH_DEFAULT_TX_SW_DESCS);
+		total_done = 0;
+	}
 	dev_dbg(&adapter->pdev->dev, "tx_poll: q %d total completed descs %x\n",
 		qid, total_done);
 	next_to_clean = tx_ring->next_to_clean;
@@ -3470,7 +3539,10 @@ static void al_eth_restore_ethtool_params(struct al_eth_adapter *adapter)
 	al_eth_set_coalesce(adapter, tx_usecs, rx_usecs);
 
 	for (i = 0; i < AL_ETH_RX_RSS_TABLE_SIZE; i++)
-		al_eth_thash_table_set(&adapter->hal_adapter, i, adapter->udma_num, adapter->rss_ind_tbl[i]);
+		if (al_eth_thash_table_set(&adapter->hal_adapter, i, adapter->udma_num,
+					    adapter->rss_ind_tbl[i]))
+			netdev_err(adapter->netdev, "%s: failed to set rss table entry %d\n",
+				   __func__, i);
 }
 
 static void al_eth_up_complete(struct al_eth_adapter *adapter)
@@ -3566,7 +3638,11 @@ err_setup_rx:
 err_setup_tx:
 	al_eth_free_irq(adapter);
 err_setup_int:
-	al_eth_hw_stop(adapter);
+	/* `rc` already holds the original failure that triggered this
+	 * unwind - don't clobber it with a secondary cleanup-path failure,
+	 * just make sure it's not silent. */
+	if (al_eth_hw_stop(adapter))
+		netdev_err(adapter->netdev, "%s: hw_stop also failed during error cleanup\n", __func__);
 err_hw_init_open:
 	al_eth_function_reset(adapter);
 
@@ -3599,7 +3675,10 @@ al_eth_flow_steer(struct net_device *netdev, const struct sk_buff *skb,
 	rc = flow_id & (AL_ETH_RX_THASH_TABLE_SIZE - 1);
 
 	adapter->rss_ind_tbl[rc] = rxq_index;
-	al_eth_thash_table_set(&adapter->hal_adapter, rc, adapter->udma_num, rxq_index);
+	/* `rc` doubles as this function's eventual return value (the filter
+	 * id) below - don't clobber it with the HAL call's own status. */
+	if (al_eth_thash_table_set(&adapter->hal_adapter, rc, adapter->udma_num, rxq_index))
+		netdev_err(adapter->netdev, "%s: failed to set rss table entry %d\n", __func__, rc);
 	if (skb->protocol == htons(ETH_P_IP)) {
 		int nhoff = skb_network_offset(skb);
 		const struct iphdr *ip = (const struct iphdr *)(skb->data + nhoff);
@@ -3632,7 +3711,6 @@ static int al_set_features(struct net_device *dev,
 
 /************************ Link management ************************/
 
-#if defined(CONFIG_ARCH_ALPINE)
 static void al_eth_lm_led_config_init_single(unsigned int gpio, const char *name)
 {
 	int err;
@@ -3730,7 +3808,6 @@ static int al_eth_serdes_init(struct al_eth_adapter *adapter)
 
 	return 0;
 }
-#endif /** CONFIG_ARCH_ALPINE */
 
 static void al_eth_down(struct al_eth_adapter *adapter)
 {
@@ -3744,7 +3821,8 @@ static void al_eth_down(struct al_eth_adapter *adapter)
 	al_eth_napi_disable_all(adapter);
 	netif_tx_disable(adapter->netdev);
 	al_eth_free_irq(adapter);
-	al_eth_hw_stop(adapter);
+	if (al_eth_hw_stop(adapter))
+		netdev_err(adapter->netdev, "%s: hw_stop failed\n", __func__);
 	al_eth_del_napi(adapter);
 
 	al_eth_free_all_tx_bufs(adapter);
@@ -3858,9 +3936,6 @@ static int al_eth_open(struct net_device *netdev)
 {
 	struct al_eth_adapter		*adapter = netdev_priv(netdev);
 	int				rc;
-#ifndef CONFIG_ARCH_ALPINE
-	unsigned long delay;
-#endif
 
 	netdev_dbg(adapter->netdev, "%s\n", __func__);
 	netif_carrier_off(netdev);
@@ -3874,9 +3949,7 @@ static int al_eth_open(struct net_device *netdev)
 	if (rc)
 		return rc;
 
-#ifdef CONFIG_ARCH_ALPINE
 	al_eth_serdes_init(adapter);
-#endif
 
 	adapter->last_establish_failed = false;
 
@@ -4351,7 +4424,9 @@ static int al_eth_set_rxfh(struct net_device *netdev,
 
 	for (i = 0; i < AL_ETH_RX_RSS_TABLE_SIZE; i++) {
 		adapter->rss_ind_tbl[i] = rxfh->indir[i];
-		al_eth_thash_table_set(&adapter->hal_adapter, i, adapter->udma_num, rxfh->indir[i]);
+		if (al_eth_thash_table_set(&adapter->hal_adapter, i, adapter->udma_num, rxfh->indir[i]))
+			netdev_err(adapter->netdev, "%s: failed to set rss table entry %d\n",
+				   __func__, i);
 	}
 
 	return 0;
@@ -4881,7 +4956,18 @@ al_eth_tx_csum(struct al_eth_ring *tx_ring, struct al_eth_tx_buffer *tx_info,
 		meta->l3_header_len = skb_network_header_len(skb);
 		meta->l3_header_offset = skb_network_offset(skb) -
 			(VLAN_HLEN * hal_pkt->source_vlan_count);
-		meta->l4_header_len = tcp_hdr(skb)->doff; /* this param needed only for TSO */
+		/* tcp_hdr(skb)->doff is only meaningful for TCP - UDP's header
+		 * is a fixed 8 bytes with no doff-like field at all, so
+		 * reading it there was reinterpreting bytes 4 bytes INTO the
+		 * UDP payload as a TCP data-offset nibble (found live: this
+		 * fed a payload-content-dependent garbage value straight into
+		 * the HW descriptor's L4-checksum meta bits for every UDP
+		 * packet under checksum offload - see #121). Only TCP needs
+		 * this field (per the original comment, and per its only
+		 * consumer, TSO, which is TCP-only in this driver).
+		 */
+		meta->l4_header_len = (l4_protocol == IPPROTO_TCP) ?
+			tcp_hdr(skb)->doff : 0;
 		meta->mss_idx_sel = 0; /* TODO: check how to select MSS */
 		meta->mss_val = skb_shinfo(skb)->gso_size;
 		hal_pkt->meta = meta;
@@ -4913,6 +4999,28 @@ al_eth_start_xmit(struct sk_buff *skb, struct net_device *dev)
 	qid = skb_get_queue_mapping(skb);
 	tx_ring = &adapter->tx_ring[qid];
 	txq = netdev_get_tx_queue(dev, qid);
+
+	/* Bail out BEFORE any bookkeeping/DMA-mapping work starts if the ring
+	 * doesn't have room for this packet's worst case (MAX_SKB_FRAGS + 1
+	 * buffers + a meta descriptor - the same bound used below to decide
+	 * when to stop future producers). Without this check,
+	 * al_eth_tx_pkt_prepare() can internally decide there isn't room and
+	 * return 0 (see al_hal_eth_main.c) *after* this function has already
+	 * committed the skb to the ring's software bookkeeping
+	 * (tx_buffer_info[], next_to_use, netdev_tx_sent_queue) - the
+	 * previously-unchecked return value. al_eth_tx_poll()'s completion
+	 * loop treats tx_descs==0 as instantly satisfied (0 > total_done is
+	 * never true for an unsigned total_done), so it frees the skb as
+	 * "sent" even though no descriptor was ever written to hardware -
+	 * silent packet loss with nothing in dmesg or any ethtool -S counter.
+	 * Checking up front avoids needing to unwind that partial commit.
+	 */
+	if (unlikely(al_udma_available_get(tx_ring->dma_q) < (MAX_SKB_FRAGS + 2))) {
+		net_warn_ratelimited("%s: qid %d tx ring full, stopping queue\n",
+				     adapter->netdev->name, qid);
+		netif_tx_stop_queue(txq);
+		return NETDEV_TX_BUSY;
+	}
 
 	/* Need to pad the frame to ETH minimal, since MAC padding isn't zeroed
 	 * when packet size is <60 and not 4-byte aligned
@@ -4978,11 +5086,19 @@ al_eth_start_xmit(struct sk_buff *skb, struct net_device *dev)
 	tx_ring->tx_stats.bytes += skb->len;
 	u64_stats_update_end(&tx_ring->syncp);
 
-	/*smp_wmb();*/ /* commit the item before incrementing the head */
+	smp_wmb(); /* commit the item before incrementing the head */
 	tx_ring->next_to_use = AL_ETH_TX_RING_IDX_NEXT(tx_ring, next_to_use);
 
 	/* prepare the packet's descriptors to dma engine */
 	tx_info->tx_descs = al_eth_tx_pkt_prepare(tx_ring->dma_q, hal_pkt);
+	/* Should be unreachable given the ring-space check at function entry
+	 * (single producer per queue, netif_tx_lock held) - if this still
+	 * fires, the entry check's accounting has diverged from
+	 * al_eth_tx_pkt_prepare()'s own view of available descriptors, which
+	 * is itself a bug worth knowing about loudly rather than silently
+	 * completing a packet that was never given to hardware.
+	 */
+	WARN_ON_ONCE(tx_info->tx_descs == 0);
 
 	/* stop the queue when no more space available, the packet can have up
 	 * to MAX_SKB_FRAGS + 1 buffers and a meta descriptor */
@@ -5169,7 +5285,12 @@ static void al_eth_dbg_check_tail(struct net_device *netdev, const char *checkpo
 		al_eth_dbg_snap_qmo = netdev->queue_mgmt_ops;
 		al_eth_dbg_snap_rol = netdev->request_ops_lock;
 	} else {
-		pr_err("al_eth #131 DIAG: qmo/rol clean after '%s'\n", checkpoint);
+		/* Routine, expected outcome at nearly every checkpoint on
+		 * every boot - was pr_err(), which buried the real anomaly
+		 * branch above under dozens of fake "error"-level lines per
+		 * boot in any severity-filtered dmesg view. This is a status
+		 * confirmation, not a problem report. */
+		pr_info("al_eth #131 DIAG: qmo/rol clean after '%s'\n", checkpoint);
 	}
 }
 
