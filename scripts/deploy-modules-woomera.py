@@ -167,8 +167,11 @@ def main():
         login(s)
 
         rc, out = sh(s, "uname -r", label="kernel")
-        kv = re.search(r"(\d+\.\d+\.\d+\S*)", out)
-        kv = kv.group(1) if kv else "7.1.8-dirty"
+        kv_match = re.search(r"(\d+\.\d+\.\d+\S*)", out)
+        if not kv_match:
+            log(f"ABORT: couldn't parse kernel version from `uname -r` output: {out!r}")
+            raise SystemExit(6)
+        kv = kv_match.group(1)
         log(f"  device kver: {kv}")
 
         # reachability
