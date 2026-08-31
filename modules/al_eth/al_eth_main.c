@@ -3848,6 +3848,9 @@ static void al_eth_lm_static_init(struct al_eth_adapter *adapter)
 	params.get_msec = al_eth_systime_msec_get;
 
 	al_eth_lm_init(&adapter->lm_context, &params);
+	/* lm_debug()'s pr_warn promotion had zero callers anywhere - wire it
+	 * to the existing `debug` param instead of leaving it unreachable. */
+	al_eth_lm_debug_mode_set(&adapter->lm_context, debug > 0);
 }
 
 #define AQUANTIA_AQR105_ID			0x3a1b4a2
