@@ -45,8 +45,12 @@ _log_lines: list[str] = []
 
 
 def log(msg: str) -> None:
+    # No flush=True here - this can run in a tight loop draining a burst of
+    # confirmed losses, and a flush syscall per line is exactly the kind of
+    # per-event cost that risks falling behind the sender (see SO_RCVBUF
+    # comment above). Buffered is fine; flush_log() persists to file anyway.
     line = f"{time.strftime('%Y-%m-%dT%H:%M:%S%z')}  {msg}"
-    print(line, flush=True)
+    print(line)
     _log_lines.append(line)
 
 
@@ -81,9 +85,20 @@ def run_recv(args: argparse.Namespace) -> int:
     still unfilled - see module docstring for why that's a safe threshold
     on this LAN."""
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    # Request the largest receive buffer this host's net.core.rmem_max allows
+    # (4MB here) - a Python recvfrom() loop can't always drain a max-rate
+    # sender fast enough per-packet, and a too-small kernel UDP buffer drops
+    # packets BEFORE this script ever sees them, which looks identical to
+    # real loss on the box's TX path. Confirmed via `netstat -su` showing
+    # nonzero "receive buffer errors" on this host during earlier runs -
+    # this is a real confound, not a hypothetical one.
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 4 * 1024 * 1024)
+    actual_rcvbuf = sock.getsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF)
     sock.bind((args.bind_ip, args.port))
     sock.settimeout(0.2)
     recv_bufsize = 9200  # covers up to jumbo-frame payload sizes
+    log(f"SO_RCVBUF requested 4194304, kernel gave {actual_rcvbuf} "
+        f"(reported value is 2x the real allocation - normal Linux behavior)")
 
     start = time.monotonic()
     last_rx = start
@@ -92,14 +107,37 @@ def run_recv(args: argparse.Namespace) -> int:
     ooo: dict[int, float] = {}  # seq -> monotonic arrival time, for seq > expected
     grace_s = args.grace_ms / 1000.0
     idle_timeout_s = 5.0  # stream considered finished after this much silence
+    lost: list[tuple[int, float]] = []  # (seq, elapsed_s when confirmed lost)
+    stop_on_first = args.stop_on_first_gap
 
-    def check_gap() -> tuple[int, list[int]] | None:
-        if not ooo:
-            return None
-        earliest = min(ooo.values())
-        if time.monotonic() - earliest > grace_s:
-            return expected, sorted(ooo.keys())[:10]
-        return None
+    def confirm_losses() -> None:
+        """expected's grace period may have elapsed - and once it's marked
+        lost and skipped, the NEW expected might already be timed out too
+        (a burst of consecutive losses). Drain all of them in one pass so a
+        cluster of losses is recorded individually, not merged into one."""
+        nonlocal expected
+        while ooo:
+            earliest = min(ooo.values())
+            if time.monotonic() - earliest <= grace_s:
+                break
+            elapsed = time.monotonic() - start
+            lost.append((expected, elapsed))
+            log(f"  LOST: seq {expected} at {elapsed:.3f}s "
+                f"({received_count} received so far)")
+            expected += 1
+            while expected in ooo:
+                del ooo[expected]
+                expected += 1
+
+    # Checking confirm_losses() (an O(pending-gaps) scan) on every single
+    # packet adds real per-packet CPU cost in the hot receive loop - at
+    # max sender rate that cost is exactly what risks falling behind and
+    # causing the kernel to drop packets itself (the SO_RCVBUF confound
+    # above). grace_s is generously long (default 50ms) relative to how
+    # often a syscall-bound recv loop iterates, so checking every 128
+    # packets instead of every 1 loses no real precision.
+    CHECK_EVERY = 128
+    since_check = 0
 
     while True:
         try:
@@ -110,6 +148,7 @@ def run_recv(args: argparse.Namespace) -> int:
                 continue
             (seq,) = HEADER.unpack_from(data)
             received_count += 1
+            since_check += 1
             if expected is None:
                 expected = seq
             if seq == expected:
@@ -121,26 +160,38 @@ def run_recv(args: argparse.Namespace) -> int:
                 ooo[seq] = now
             # seq < expected: a late arrival for something already resolved -
             # ignore, it's not a gap (something eventually filled it).
+            if since_check < CHECK_EVERY:
+                continue
+            since_check = 0
         except socket.timeout:
             now = time.monotonic()
             if expected is not None and now - last_rx > idle_timeout_s:
+                confirm_losses()
                 break
 
-        gap = check_gap()
-        if gap is not None:
-            missing, arrived_after = gap
-            elapsed = time.monotonic() - start
-            log(f"GAP CONFIRMED: seq {missing} never arrived "
-                f"(grace {args.grace_ms}ms elapsed since a later packet did)")
-            log(f"  packets after the gap that DID arrive (first 10): {arrived_after}")
-            log(f"  received {received_count} packets cleanly before this, "
-                f"{elapsed:.3f}s into the run")
+        confirm_losses()
+        if stop_on_first and lost:
+            missing, elapsed = lost[0]
+            log(f"GAP CONFIRMED (stopping on first, per --stop-on-first-gap): "
+                f"seq {missing} never arrived")
             flush_log()
             print(f"RESULT=GAP missing_seq={missing} received_before={received_count} "
                   f"elapsed_s={elapsed:.3f}")
             return 1
 
     elapsed = time.monotonic() - start
+    if lost:
+        seqs = [s for s, _ in lost]
+        times = [f"{t:.3f}" for _, t in lost]
+        log(f"{len(lost)} packet(s) confirmed lost: seqs={seqs}")
+        log(f"  at times(s)={times}")
+        log(f"  received {received_count} total, expected pointer reached "
+            f"{expected}, run lasted {elapsed:.3f}s")
+        flush_log()
+        print(f"RESULT=GAP count={len(lost)} first_seq={seqs[0]} first_elapsed_s={times[0]} "
+              f"last_seq={seqs[-1]} last_elapsed_s={times[-1]} received={received_count}")
+        return 1
+
     log(f"no gap detected: received {received_count} packets, "
         f"expected pointer reached {expected}, {elapsed:.3f}s, "
         f"idle {idle_timeout_s}s ended the run")
@@ -155,11 +206,13 @@ def run_orchestrate(args: argparse.Namespace) -> int:
         f"{args.port}, {args.duration}s, grace {args.grace_ms}ms, "
         f"payload {args.payload_size}B")
 
+    recv_cmd = [sys.executable, __file__, "--mode", "recv",
+                "--bind-ip", args.bind_ip, "--port", str(args.port),
+                "--grace-ms", str(args.grace_ms)]
+    if args.stop_on_first_gap:
+        recv_cmd.append("--stop-on-first-gap")
     recv_proc = subprocess.Popen(
-        [sys.executable, __file__, "--mode", "recv",
-         "--bind-ip", args.bind_ip, "--port", str(args.port),
-         "--grace-ms", str(args.grace_ms)],
-        stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
+        recv_cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
     )
     time.sleep(0.3)  # let the receiver's bind() land before traffic starts
 
@@ -217,6 +270,10 @@ def main() -> int:
     ap.add_argument("--payload-size", type=int, default=DEFAULT_PAYLOAD_SIZE,
                      help="UDP payload bytes per packet, header included "
                           "(min 8 for the sequence number)")
+    ap.add_argument("--stop-on-first-gap", action="store_true",
+                     help="exit immediately on the first confirmed loss "
+                          "instead of running the full --duration and "
+                          "reporting every loss (default: report all)")
     args = ap.parse_args()
 
     if args.payload_size < HEADER.size:
