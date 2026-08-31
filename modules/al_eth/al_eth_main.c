@@ -4351,7 +4351,7 @@ static int al_eth_set_rxfh(struct net_device *netdev,
 	for (i = 0; i < AL_ETH_RX_RSS_TABLE_SIZE; i++) {
 		adapter->rss_ind_tbl[i] = rxfh->indir[i];
 		if (al_eth_thash_table_set(&adapter->hal_adapter, i, adapter->udma_num, rxfh->indir[i]))
-			netdev_err(adapter->netdev, "%s: failed to set rss table entry %d\n",
+			netdev_err(adapter->netdev, "%s: failed to set rss table entry %zu\n",
 				   __func__, i);
 	}
 
