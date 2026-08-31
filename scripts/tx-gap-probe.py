@@ -64,6 +64,17 @@ def run_send(args: argparse.Namespace) -> int:
     """Sender: fire sequence-numbered UDP packets at max rate for
     --duration seconds, then print a machine-readable summary line."""
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    if args.src_iface:
+        # SO_BINDTODEVICE, not just a source-address bind: binding only the
+        # address does NOT force the egress interface when there's a single
+        # route to the destination (confirmed live - a src-ip-only bind sent
+        # 0 packets out the intended interface, all traffic still went out
+        # the route table's preferred NIC). This is the exact "wrong NIC"
+        # bug class #121 already found once in test-eth.py.
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_BINDTODEVICE,
+                         args.src_iface.encode() + b"\0")
+    if args.src_ip:
+        sock.bind((args.src_ip, 0))
     filler = b"\0" * (args.payload_size - HEADER.size)
     dest = (args.host, args.port)
     seq = 0
@@ -221,6 +232,10 @@ def run_orchestrate(args: argparse.Namespace) -> int:
         f"python3 - --mode send --host {args.bind_ip} --port {args.port} "
         f"--duration {args.duration} --payload-size {args.payload_size}"
     )
+    if args.src_ip:
+        send_cmd += f" --src-ip {args.src_ip}"
+    if args.src_iface:
+        send_cmd += f" --src-iface {args.src_iface}"
     ssh = subprocess.run(
         ["ssh", "-o", f"ConnectTimeout={SSH_CONNECT_TIMEOUT}",
          "-o", "StrictHostKeyChecking=accept-new",
@@ -261,6 +276,14 @@ def main() -> int:
     ap.add_argument("--bind-ip", help="local IP to receive on (10G-capable NIC)")
     ap.add_argument("--bind-iface", default="", help="local interface (informational)")
     ap.add_argument("--host", help="send mode: destination IP (the receiver)")
+    ap.add_argument("--src-ip", help="send mode: source IP to bind (cosmetic - "
+                     "sets the packet's source address; use --src-iface to "
+                     "actually control which NIC it egresses)")
+    ap.add_argument("--src-iface", help="send mode: box-side interface name "
+                     "(e.g. enp0s1) to force egress through via "
+                     "SO_BINDTODEVICE - required when the box has multiple "
+                     "NICs on the same subnet as the receiver, since routing "
+                     "alone picks one NIC regardless of source-address bind")
     ap.add_argument("--port", type=int, default=5604)
     ap.add_argument("--duration", type=int, default=20,
                      help="seconds of sending at max rate")
