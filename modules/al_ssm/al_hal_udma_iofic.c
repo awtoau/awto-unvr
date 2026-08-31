@@ -49,53 +49,91 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 static int al_udma_main_iofic_config(struct al_iofic_regs __iomem *base,
 				    enum al_iofic_mode mode)
 {
+	int rc = 0;
+
 	switch (mode) {
 	case AL_IOFIC_MODE_LEGACY:
-		al_iofic_config(base, AL_INT_GROUP_A,
+		if (al_iofic_config(base, AL_INT_GROUP_A,
 				INT_CONTROL_GRP_SET_ON_POSEDGE |
 				INT_CONTROL_GRP_MASK_MSI_X |
-				INT_CONTROL_GRP_CLEAR_ON_READ);
-		al_iofic_config(base, AL_INT_GROUP_B,
+				INT_CONTROL_GRP_CLEAR_ON_READ)) {
+			pr_err("%s: al_iofic_config failed (group A, mode legacy)\n", __func__);
+			rc = -EIO;
+		}
+		if (al_iofic_config(base, AL_INT_GROUP_B,
 				INT_CONTROL_GRP_CLEAR_ON_READ |
-				INT_CONTROL_GRP_MASK_MSI_X);
-		al_iofic_config(base, AL_INT_GROUP_C,
+				INT_CONTROL_GRP_MASK_MSI_X)) {
+			pr_err("%s: al_iofic_config failed (group B, mode legacy)\n", __func__);
+			rc = -EIO;
+		}
+		if (al_iofic_config(base, AL_INT_GROUP_C,
 				INT_CONTROL_GRP_CLEAR_ON_READ |
-				INT_CONTROL_GRP_MASK_MSI_X);
-		al_iofic_config(base, AL_INT_GROUP_D,
+				INT_CONTROL_GRP_MASK_MSI_X)) {
+			pr_err("%s: al_iofic_config failed (group C, mode legacy)\n", __func__);
+			rc = -EIO;
+		}
+		if (al_iofic_config(base, AL_INT_GROUP_D,
 				INT_CONTROL_GRP_SET_ON_POSEDGE |
-				INT_CONTROL_GRP_MASK_MSI_X);
+				INT_CONTROL_GRP_MASK_MSI_X)) {
+			pr_err("%s: al_iofic_config failed (group D, mode legacy)\n", __func__);
+			rc = -EIO;
+		}
 		break;
 	case AL_IOFIC_MODE_MSIX_PER_Q:
-		al_iofic_config(base, AL_INT_GROUP_A,
+		if (al_iofic_config(base, AL_INT_GROUP_A,
 				INT_CONTROL_GRP_SET_ON_POSEDGE |
 				INT_CONTROL_GRP_AUTO_MASK |
-				INT_CONTROL_GRP_AUTO_CLEAR);
-		al_iofic_config(base, AL_INT_GROUP_B,
+				INT_CONTROL_GRP_AUTO_CLEAR)) {
+			pr_err("%s: al_iofic_config failed (group A, mode msix-per-q)\n", __func__);
+			rc = -EIO;
+		}
+		if (al_iofic_config(base, AL_INT_GROUP_B,
 				INT_CONTROL_GRP_AUTO_CLEAR |
 				INT_CONTROL_GRP_AUTO_MASK |
-				INT_CONTROL_GRP_CLEAR_ON_READ);
-		al_iofic_config(base, AL_INT_GROUP_C,
+				INT_CONTROL_GRP_CLEAR_ON_READ)) {
+			pr_err("%s: al_iofic_config failed (group B, mode msix-per-q)\n", __func__);
+			rc = -EIO;
+		}
+		if (al_iofic_config(base, AL_INT_GROUP_C,
 				INT_CONTROL_GRP_AUTO_CLEAR |
 				INT_CONTROL_GRP_AUTO_MASK |
-				INT_CONTROL_GRP_CLEAR_ON_READ);
-		al_iofic_config(base, AL_INT_GROUP_D,
+				INT_CONTROL_GRP_CLEAR_ON_READ)) {
+			pr_err("%s: al_iofic_config failed (group C, mode msix-per-q)\n", __func__);
+			rc = -EIO;
+		}
+		if (al_iofic_config(base, AL_INT_GROUP_D,
 				INT_CONTROL_GRP_SET_ON_POSEDGE |
-				INT_CONTROL_GRP_MASK_MSI_X);
+				INT_CONTROL_GRP_MASK_MSI_X)) {
+			pr_err("%s: al_iofic_config failed (group D, mode msix-per-q)\n", __func__);
+			rc = -EIO;
+		}
 		break;
 	case AL_IOFIC_MODE_MSIX_PER_GROUP:
-		al_iofic_config(base, AL_INT_GROUP_A,
+		if (al_iofic_config(base, AL_INT_GROUP_A,
 				INT_CONTROL_GRP_SET_ON_POSEDGE |
 				INT_CONTROL_GRP_AUTO_CLEAR |
-				INT_CONTROL_GRP_AUTO_MASK);
-		al_iofic_config(base, AL_INT_GROUP_B,
+				INT_CONTROL_GRP_AUTO_MASK)) {
+			pr_err("%s: al_iofic_config failed (group A, mode msix-per-group)\n", __func__);
+			rc = -EIO;
+		}
+		if (al_iofic_config(base, AL_INT_GROUP_B,
 				INT_CONTROL_GRP_CLEAR_ON_READ |
-				INT_CONTROL_GRP_MASK_MSI_X);
-		al_iofic_config(base, AL_INT_GROUP_C,
+				INT_CONTROL_GRP_MASK_MSI_X)) {
+			pr_err("%s: al_iofic_config failed (group B, mode msix-per-group)\n", __func__);
+			rc = -EIO;
+		}
+		if (al_iofic_config(base, AL_INT_GROUP_C,
 				INT_CONTROL_GRP_CLEAR_ON_READ |
-				INT_CONTROL_GRP_MASK_MSI_X);
-		al_iofic_config(base, AL_INT_GROUP_D,
+				INT_CONTROL_GRP_MASK_MSI_X)) {
+			pr_err("%s: al_iofic_config failed (group C, mode msix-per-group)\n", __func__);
+			rc = -EIO;
+		}
+		if (al_iofic_config(base, AL_INT_GROUP_D,
 				INT_CONTROL_GRP_SET_ON_POSEDGE |
-				INT_CONTROL_GRP_MASK_MSI_X);
+				INT_CONTROL_GRP_MASK_MSI_X)) {
+			pr_err("%s: al_iofic_config failed (group D, mode msix-per-group)\n", __func__);
+			rc = -EIO;
+		}
 		break;
 	default:
 		pr_err("%s: invalid mode (%d)\n", __func__, mode);
@@ -103,7 +141,7 @@ static int al_udma_main_iofic_config(struct al_iofic_regs __iomem *base,
 	}
 
 	pr_debug("%s: base.%p mode %d\n", __func__, base, mode);
-	return 0;
+	return rc;
 }
 
 /*
@@ -209,19 +247,21 @@ void al_udma_iofic_m2s_error_ints_unmask(
 		primary_grp_mask |= AL_INT_UDMA_V4_GROUP_D_2ND_IOFIC_GROUP_C;
 
 	/* config IOFIC */
-	al_iofic_config(
+	if (al_iofic_config(
 			al_udma_iofic_reg_base_get_adv(udma,
 						   AL_UDMA_IOFIC_LEVEL_SECONDARY),
 			AL_INT_GROUP_A,
 			INT_CONTROL_GRP_SET_ON_POSEDGE |
-			INT_CONTROL_GRP_MASK_MSI_X);
+			INT_CONTROL_GRP_MASK_MSI_X))
+		pr_err("%s: al_iofic_config failed (secondary, group A)\n", __func__);
 
-	al_iofic_config(
+	if (al_iofic_config(
 			al_udma_iofic_reg_base_get_adv(udma,
 						   AL_UDMA_IOFIC_LEVEL_PRIMARY),
 			AL_INT_GROUP_D,
 			INT_CONTROL_GRP_SET_ON_POSEDGE |
-			INT_CONTROL_GRP_MASK_MSI_X);
+			INT_CONTROL_GRP_MASK_MSI_X))
+		pr_err("%s: al_iofic_config failed (primary, group D)\n", __func__);
 
 	/**
 	 * Addressing RMN: 10743
@@ -280,19 +320,21 @@ void al_udma_iofic_s2m_error_ints_unmask(
 		AL_UDMA_IOFIC_2ND_GROUP_B_ERROR_INTS;
 
 	/* config IOFIC */
-	al_iofic_config(
+	if (al_iofic_config(
 			al_udma_iofic_reg_base_get_adv(udma,
 						   AL_UDMA_IOFIC_LEVEL_SECONDARY),
 			AL_INT_GROUP_B,
 			INT_CONTROL_GRP_SET_ON_POSEDGE |
-			INT_CONTROL_GRP_MASK_MSI_X);
+			INT_CONTROL_GRP_MASK_MSI_X))
+		pr_err("%s: al_iofic_config failed (secondary, group B)\n", __func__);
 
-	al_iofic_config(
+	if (al_iofic_config(
 			al_udma_iofic_reg_base_get_adv(udma,
 						   AL_UDMA_IOFIC_LEVEL_PRIMARY),
 			AL_INT_GROUP_D,
 			INT_CONTROL_GRP_SET_ON_POSEDGE |
-			INT_CONTROL_GRP_MASK_MSI_X);
+			INT_CONTROL_GRP_MASK_MSI_X))
+		pr_err("%s: al_iofic_config failed (primary, group D)\n", __func__);
 
 	/* abort on these interrupts */
 	al_iofic_abort_mask_clear(
