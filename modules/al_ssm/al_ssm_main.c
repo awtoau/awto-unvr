@@ -834,7 +834,8 @@ err_destroy_wq:
 err_free_channel:
 	al_ssm_free_channel(dev);
 err_dma_disable:
-	al_ssm_dma_state_set(&dev->ssm_dma, UDMA_DISABLE);
+	if (al_ssm_dma_state_set(&dev->ssm_dma, UDMA_DISABLE))
+		dev_err(&pdev->dev, "failed to disable DMA during probe unwind\n");
 err_unmap_bar4:
 	pci_iounmap(pdev, dev->bar4);
 err_unmap_bar0:
@@ -879,14 +880,15 @@ static void al_ssm_pci_remove(struct pci_dev *pdev)
 		struct al_udma_q *tx_q = al_ssm_dma_tx_queue_handle_get(&dev->ssm_dma, 0);
 		struct al_udma_q *rx_q = al_ssm_dma_rx_queue_handle_get(&dev->ssm_dma, 0);
 
-		if (tx_q)
-			al_udma_q_reset(tx_q);
-		if (rx_q)
-			al_udma_q_reset(rx_q);
+		if (tx_q && al_udma_q_reset(tx_q))
+			dev_err(&pdev->dev, "failed to reset tx queue on remove\n");
+		if (rx_q && al_udma_q_reset(rx_q))
+			dev_err(&pdev->dev, "failed to reset rx queue on remove\n");
 	}
 
 	al_ssm_free_channel(dev);
-	al_ssm_dma_state_set(&dev->ssm_dma, UDMA_DISABLE);
+	if (al_ssm_dma_state_set(&dev->ssm_dma, UDMA_DISABLE))
+		dev_err(&pdev->dev, "failed to disable DMA on remove\n");
 	if (dev->bar4) pci_iounmap(pdev, dev->bar4);
 	if (dev->bar0) pci_iounmap(pdev, dev->bar0);
 	pci_release_regions(pdev);
