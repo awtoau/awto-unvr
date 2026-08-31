@@ -28,9 +28,11 @@ real build-breaking landmine (`skb_tx_hash()`, see below).
   1G port needs the former, the phylink-based 10G port tolerates the latter
   but the 1G port doesn't.
 - **`kcompat.h`**: header comment falsely claimed "targeting ONLY Linux
-  6.12 LTS" - the file is actually shared across all 4 kernel targets this
-  project builds (6.12, 6.18, 7.1-ea16, 7.1-fedora, see `docs/build.md`),
-  and has zero actual `LINUX_VERSION_CODE` branching. Comment corrected.
+  6.12 LTS" - the file is actually shared across every build variant this
+  project produces (see `docs/build.md`), and has zero actual
+  `LINUX_VERSION_CODE` branching. Comment corrected (since updated again
+  when the project moved from pinned kernel versions to tracking mainline
+  HEAD directly).
 - **`scripts/bench-all.py`**: crypto (AF_ALG) benchmark's `accept()` loop
   had no bound at all (a documented, deliberate trade-off - `settimeout()`
   on that socket breaks `accept()` itself after ~128 calls, a real kernel

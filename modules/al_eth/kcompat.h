@@ -1,10 +1,10 @@
 /*
  * kcompat.h - compatibility header for al_eth driver
  *
- * Minimal kcompat header for the range of kernels this project currently
- * builds al_eth against (6.12 through 7.1 - see scripts/build-linux-*.py).
- * No version branching below: every symbol here has been stable since long
- * before 6.12, so there's nothing to gate on LINUX_VERSION_CODE. All
+ * Minimal kcompat header - this project tracks mainline HEAD directly
+ * (see scripts/build-linux-fedora.py), with 6.12 as the floor this shim
+ * assumes. No version branching below: every symbol here has been stable
+ * since long before 6.12, so there's nothing to gate on LINUX_VERSION_CODE. All
  * backwards compatibility code for pre-6.12 kernels has been removed.
  *
  * Copyright (c) 2016 Amazon.com, Inc.
