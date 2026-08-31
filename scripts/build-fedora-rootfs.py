@@ -2,7 +2,7 @@
 """Build a Fedora aarch64 rootfs for the UNVR (ea16), bootable by OUR U-Boot+kernel.
 
 The "hack": Fedora arm64 normally boots UEFI -> shim -> GRUB -> dracut. We have
-none of those. This rootfs is booted directly by the stock U-Boot + our 7.1.8
+none of those. This rootfs is booted directly by the stock U-Boot + our
 kernel with root=/dev/sdaN, no initramfs (kernel has AHCI+ext4 built-in), no
 bootloader of its own. So this script produces ONLY a configured userland tar;
 kernel + modules + boot config are applied separately.
@@ -28,7 +28,7 @@ Choices baked in (all overridable later in the tar):
 - systemd-resolved disabled (#124) - it fights NetworkManager over
   /etc/resolv.conf otherwise, spinning forever on Permission denied.
 - root password set (default 'unvr', CHANGE IT) + sshd permitrootlogin yes.
-- our 7.1.8 kernel modules copied into /lib/modules by the deploy step, not here.
+- our kernel modules copied into /lib/modules by the deploy step, not here.
 """
 
 from __future__ import annotations
@@ -50,7 +50,7 @@ ARCH = "aarch64"
 # @core group (with weak deps, the Fedora default) as the base, then add only
 # the NAS/admin extras. Deviations from stock live in CONFIG_SH and are the ONLY
 # ones (SELinux/firewall/abrt off, serial console, ssh root) - all requested.
-# No kernel/GRUB/dracut - we boot it ourselves (our U-Boot + 7.1.8 kernel).
+# No kernel/GRUB/dracut - we boot it ourselves (our U-Boot + kernel).
 CORE_GROUP = "core"
 EXTRAS = [
     "openssh-server",
@@ -353,7 +353,7 @@ def main() -> int:
     log(f"DONE: {out} ({size_mb:.0f} MB) sha256={sha[:16]}...")
     log(
         "Next: enhanced initramfs -> format sdaN ext4 (label unvr-root) -> "
-        "rsync this tar's contents -> add 7.1.8 modules -> U-Boot env -> saveenv"
+        "rsync this tar's contents -> add kernel modules -> U-Boot env -> saveenv"
     )
     return 0
 
