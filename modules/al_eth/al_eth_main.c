@@ -5685,24 +5685,26 @@ static int __init al_eth_init(void)
 {
 	int rc;
 
-	pr_info("%s: loading\n", DRV_MODULE_NAME);
+	/* pr_fmt() already prefixes every pr_* call in this file with
+	 * KBUILD_MODNAME - no need to also print DRV_MODULE_NAME here. */
+	pr_info("loading\n");
 
 	rc = alpine_serdes_grp_objs_init();
 	if (rc) {
-		pr_err("%s: failed to init serdes group objects (rc %d)\n", DRV_MODULE_NAME, rc);
+		pr_err("failed to init serdes group objects (rc %d)\n", rc);
 		return rc;
 	}
 
 	rc = pci_register_driver(&al_eth_pci_driver);
 	if (rc)
-		pr_err("%s: failed to register pci driver (rc %d)\n", DRV_MODULE_NAME, rc);
+		pr_err("failed to register pci driver (rc %d)\n", rc);
 
 	return rc;
 }
 
 static void __exit al_eth_cleanup(void)
 {
-	pr_info("%s: unloading\n", DRV_MODULE_NAME);
+	pr_info("unloading\n");
 	pci_unregister_driver(&al_eth_pci_driver);
 }
 
