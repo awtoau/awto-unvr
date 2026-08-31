@@ -5,16 +5,18 @@ index; each linked doc covers the version-specific deltas in depth.
 
 ## Inventory
 
-Kernel target is `/mnt/2tb/unvr-port-refs/linux-v7.3-fresh` (real version
-`7.2.0-13187-g66498c75b4f8`, a pre-7.3 snapshot - directory name predates
-knowing that). Migrated from 7.1.8 2026-08-30; the 6.12/6.18/7.1-specific
-scripts (`build-linux-612-ea16.py`, `build-linux-618-ea16.py`, the old
+Kernel target is `/mnt/2tb/unvr-port-refs/linux-v7.3-fresh`, tracking
+`torvalds/linux` mainline directly (this repo's own methodology: pull
+forward, port whatever breaks). Board support (DTS, `pcie-al-internal.c`,
+the `pcie-al.c` DBI fix, `unvr_defconfig`) lives as real commits in that
+tree's own git history - not as patches applied by any script here. The
+6.12/6.18/7.1-specific scripts (`build-linux-612-ea16.py`, `build-linux-618-ea16.py`, the old
 `build-linux-71-ea16.py`/`build-linux-71-fedora.py`) are retired to
 `debris/scripts/` - not runnable via `dev.py`, kept for history only.
 
 | # | What | dev.py | Script | Output |
 |---|------|--------|--------|--------|
-| 1 | Netboot/initramfs | `build-ea16` | `build-linux-ea16.py` | `build-out-ea16/` (`AWTO_KERNEL_OUT`) |
+| 1 | Netboot installer (bare-disk bootstrap for `deploy-fedora-rootfs`) | `build-ea16` | `build-linux-ea16.py` | `build-out-ea16/` (`AWTO_KERNEL_OUT`) |
 | 2 | Fedora rootfs (**daily driver**) | `build-fedora` | `build-linux-fedora.py` | `build-out-fedora/` |
 | 2a | ↳ same script, full-debug variant (KASAN, UBSAN, DMA_API_DEBUG, lockdep, panic-on-lockup) | `AWTO_KASAN_BUILD=1 build-fedora` | (same) | `build-out-fedora-kasan/` |
 | 3 | On-box native (no cross-compile) | *(none)* | `build-on-box.py` | `/lib/modules/<kver>/updates/` on the box |
