@@ -173,8 +173,11 @@ static void al_dma_issue_pending(struct dma_chan *c)
 	while (ch->tail != ch->head) {
 		desc = &ch->sw_ring[ch->tail];
 		if (desc->tx_descs_count > 0) {
-			al_raid_dma_action(&dev->hal_dma, ch->idx,
-					   desc->tx_descs_count);
+			int rc = al_raid_dma_action(&dev->hal_dma, ch->idx,
+						     desc->tx_descs_count);
+			if (rc)
+				pr_err("al_dma: failed to trigger dma action on ch %d (rc %d)\n",
+				       ch->idx, rc);
 			submitted++;
 		}
 		ch->tail = (ch->tail + 1) % ch->sw_ring_count;
@@ -896,7 +899,12 @@ static void al_dma_pci_remove(struct pci_dev *pdev)
 		tasklet_kill(&aldev->channels[i].cleanup_task);
 
 	/* Set DMA to disable state */
-	al_ssm_dma_state_set(&aldev->hal_dma, UDMA_DISABLE);
+	{
+		int rc = al_ssm_dma_state_set(&aldev->hal_dma, UDMA_DISABLE);
+
+		if (rc)
+			dev_err(&pdev->dev, "al_dma: failed to disable dma state (rc %d)\n", rc);
+	}
 
 	pci_iounmap(pdev, aldev->app_regs);
 	pci_iounmap(pdev, aldev->udma_regs);
