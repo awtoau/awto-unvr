@@ -474,8 +474,8 @@ static int al_eth_mac_table_unicast_add(
 
 	rc = al_eth_fwd_mac_table_set(&adapter->hal_adapter, idx, &entry);
 	if (rc)
-		netdev_err(adapter->netdev, "%s: failed to set mac table entry %d\n",
-			   __func__, idx);
+		netdev_err(adapter->netdev, "%s: failed to set mac table entry %d (rc %d)\n",
+			   __func__, idx, rc);
 	return rc;
 }
 
@@ -500,8 +500,8 @@ static int al_eth_mac_table_broadcast_add(
 
 	rc = al_eth_fwd_mac_table_set(&adapter->hal_adapter, idx, &entry);
 	if (rc)
-		netdev_err(adapter->netdev, "%s: failed to set mac table entry %d\n",
-			   __func__, idx);
+		netdev_err(adapter->netdev, "%s: failed to set mac table entry %d (rc %d)\n",
+			   __func__, idx, rc);
 	return rc;
 }
 
@@ -528,8 +528,8 @@ static int al_eth_mac_table_all_multicast_add(
 
 	rc = al_eth_fwd_mac_table_set(&adapter->hal_adapter, idx, &entry);
 	if (rc)
-		netdev_err(adapter->netdev, "%s: failed to set mac table entry %d\n",
-			   __func__, idx);
+		netdev_err(adapter->netdev, "%s: failed to set mac table entry %d (rc %d)\n",
+			   __func__, idx, rc);
 	return rc;
 }
 
@@ -556,7 +556,8 @@ static int al_eth_mac_table_promiscuous_set(
 		 AL_ETH_MAC_TABLE_DROP_IDX,
 		 &entry);
 	if (rc)
-		netdev_err(adapter->netdev, "%s: failed to set mac table drop entry\n", __func__);
+		netdev_err(adapter->netdev, "%s: failed to set mac table drop entry (rc %d)\n",
+			   __func__, rc);
 	return rc;
 }
 
@@ -571,8 +572,8 @@ static int al_eth_mac_table_entry_clear(
 
 	rc = al_eth_fwd_mac_table_set(&adapter->hal_adapter, idx, &entry);
 	if (rc)
-		netdev_err(adapter->netdev, "%s: failed to clear mac table entry %d\n",
-			   __func__, idx);
+		netdev_err(adapter->netdev, "%s: failed to clear mac table entry %d (rc %d)\n",
+			   __func__, idx, rc);
 	return rc;
 }
 
@@ -608,6 +609,8 @@ static int al_eth_get_serdes_25g_speed(struct al_eth_adapter *adapter, uint *spe
 
 static int al_eth_board_params_init(struct al_eth_adapter *adapter)
 {
+	int rc;
+
 	if (adapter->board_type == ALPINE_NIC) {
 		adapter->mac_mode = AL_ETH_MAC_MODE_10GbE_Serial;
 		adapter->sfp_detection_needed = false;
@@ -826,9 +829,10 @@ static int al_eth_board_params_init(struct al_eth_adapter *adapter)
 			return -EPERM;
 	}
 
-	if (al_eth_mac_addr_read(adapter->ec_base, 0, adapter->mac_addr))
-		dev_err(&adapter->pdev->dev, "%s: failed to read mac address from board\n",
-			__func__);
+	rc = al_eth_mac_addr_read(adapter->ec_base, 0, adapter->mac_addr);
+	if (rc)
+		dev_err(&adapter->pdev->dev, "%s: failed to read mac address from board (rc %d)\n",
+			__func__, rc);
 
 	return 0;
 }
@@ -850,6 +854,7 @@ al_eth_flow_ctrl_config(struct al_eth_adapter *adapter)
 	struct al_eth_flow_control_params *flow_ctrl_params;
 	uint8_t active = adapter->link_config.flow_ctrl_active;
 	int i;
+	int rc;
 
 	flow_ctrl_params = &adapter->flow_ctrl_params;
 	memset(flow_ctrl_params, 0, sizeof(*flow_ctrl_params));
@@ -869,10 +874,12 @@ al_eth_flow_ctrl_config(struct al_eth_adapter *adapter)
 	for (i = 0; i < AL_ETH_FWD_PRIO_TABLE_NUM; i++)
 		flow_ctrl_params->prio_q_map[adapter->udma_num][i] =  1 << (i >> 1);
 
-	if (al_eth_flow_control_config(&adapter->hal_adapter, flow_ctrl_params))
-		netdev_err(adapter->netdev, "%s: failed to configure flow control\n", __func__);
+	rc = al_eth_flow_control_config(&adapter->hal_adapter, flow_ctrl_params);
+	if (rc)
+		netdev_err(adapter->netdev, "%s: failed to configure flow control (rc %d)\n",
+			   __func__, rc);
 
-	return 0;
+	return rc;
 }
 
 static void
@@ -943,11 +950,13 @@ static int al_eth_hw_init_adapter(struct al_eth_adapter *adapter)
 
 	rc = al_eth_adapter_init(&adapter->hal_adapter, params);
 	if (rc)
-		netdev_err(adapter->netdev, "%s failed at hal init!\n", __func__);
+		netdev_err(adapter->netdev, "%s failed at hal init! (rc %d)\n", __func__, rc);
 
-	/* AXI snoop is now configured by the kernel PCI quirk
-	 * (quirk_al_alpine_snoop_enable) for ALL internal PCI devices.
-	 * No per-driver snoop setup needed. */
+	/* Verified, not assumed: the PCI quirk this used to name doesn't
+	 * exist in this kernel tree. Actually set via DTS `dma-coherent`;
+	 * this reads the real per-device flag back. See #188. */
+	netdev_info(adapter->netdev, "%s: DMA coherent: %s\n", __func__,
+		    dev_dma_coherent(&adapter->pdev->dev) ? "yes" : "no");
 
 	if (IS_NIC(adapter->board_type)) {
 		/* in pcie NIC mode, force eth UDMA to access PCIE0 using the tgtid */
@@ -1023,7 +1032,8 @@ static int al_eth_hw_init(struct al_eth_adapter *adapter)
 
 		rc = al_eth_mac_config(&adapter->hal_adapter, adapter->mac_mode);
 		if (rc < 0) {
-			netdev_err(adapter->netdev, "%s failed to configure mac!\n", __func__);
+			netdev_err(adapter->netdev, "%s failed to configure mac! (rc %d)\n",
+				   __func__, rc);
 			return rc;
 		}
 	} else
@@ -1055,7 +1065,7 @@ static int al_eth_hw_init(struct al_eth_adapter *adapter)
 		AL_TRUE/*shared_mdio_if*/,
 		adapter->ref_clk_freq, adapter->mdio_freq);
 	if (rc) {
-		netdev_err(adapter->netdev, "%s failed at mdio config!\n", __func__);
+		netdev_err(adapter->netdev, "%s failed at mdio config! (rc %d)\n", __func__, rc);
 		return rc;
 	}
 
@@ -1073,9 +1083,11 @@ static int al_eth_hw_stop(struct al_eth_adapter *adapter)
 	 * already logs its own failure via netdev_err, so this only
 	 * aggregates - no double-logging. */
 	int rc = 0;
+	int sub_rc;
 
-	if (al_eth_mac_stop(&adapter->hal_adapter)) {
-		netdev_err(adapter->netdev, "%s: failed to stop mac\n", __func__);
+	sub_rc = al_eth_mac_stop(&adapter->hal_adapter);
+	if (sub_rc) {
+		netdev_err(adapter->netdev, "%s: failed to stop mac (rc %d)\n", __func__, sub_rc);
 		rc = -EIO;
 	}
 
@@ -1096,8 +1108,9 @@ static int al_eth_hw_stop(struct al_eth_adapter *adapter)
 	 */
 	udelay(100);
     al_eth_udma_queues_reset_all(adapter);
-    if (al_eth_adapter_stop(&adapter->hal_adapter)) {
-	    netdev_err(adapter->netdev, "%s: failed to stop adapter\n", __func__);
+    sub_rc = al_eth_adapter_stop(&adapter->hal_adapter);
+    if (sub_rc) {
+	    netdev_err(adapter->netdev, "%s: failed to stop adapter (rc %d)\n", __func__, sub_rc);
 	    rc = -EIO;
     }
 	adapter->flags |= AL_ETH_FLAG_RESET_REQUESTED;
@@ -1112,6 +1125,7 @@ static int al_eth_change_mtu(struct net_device *dev, int new_mtu)
 {
 	struct al_eth_adapter *adapter = netdev_priv(dev);
 	int max_frame = new_mtu + ETH_HLEN + ETH_FCS_LEN + VLAN_HLEN;
+	int rc;
 
 	if ((new_mtu < AL_ETH_MIN_MTU) || (new_mtu > AL_ETH_MAX_MTU)) {
 		netdev_err(dev, "Invalid MTU setting\n");
@@ -1119,8 +1133,13 @@ static int al_eth_change_mtu(struct net_device *dev, int new_mtu)
 	}
 
 	netdev_dbg(adapter->netdev, "changing MTU from %d to %d\n", dev->mtu, new_mtu);
-	al_eth_rx_pkt_limit_config(&adapter->hal_adapter,
+	rc = al_eth_rx_pkt_limit_config(&adapter->hal_adapter,
 		AL_ETH_MIN_FRAME_LEN, max_frame);
+	if (rc) {
+		netdev_err(adapter->netdev, "%s: failed to configure rx pkt limits (rc %d)\n",
+			   __func__, rc);
+		return rc;
+	}
 
 	/* dev->mtu is set by the network stack after ndo_change_mtu returns 0 */
 	WRITE_ONCE(dev->mtu, new_mtu);
@@ -3525,8 +3544,10 @@ static void al_eth_restore_ethtool_params(struct al_eth_adapter *adapter)
 				   __func__, i);
 }
 
-static void al_eth_up_complete(struct al_eth_adapter *adapter)
+static int al_eth_up_complete(struct al_eth_adapter *adapter)
 {
+	int rc;
+
 	al_eth_configure_int_mode(adapter);
 
 	/*config rx fwd*/
@@ -3558,7 +3579,10 @@ static void al_eth_up_complete(struct al_eth_adapter *adapter)
 	al_eth_restore_ethtool_params(adapter);
 
 	/* enable the mac tx and rx paths */
-	al_eth_mac_start(&adapter->hal_adapter);
+	rc = al_eth_mac_start(&adapter->hal_adapter);
+	if (rc)
+		netdev_err(adapter->netdev, "%s: failed to start mac\n", __func__);
+	return rc;
 }
 
 static int al_eth_up(struct al_eth_adapter *adapter)
@@ -3596,7 +3620,9 @@ static int al_eth_up(struct al_eth_adapter *adapter)
 	if (rc)
 		goto err_req_irq;
 
-	al_eth_up_complete(adapter);
+	rc = al_eth_up_complete(adapter);
+	if (rc)
+		goto err_req_irq;
 
 	adapter->up = true;
 
@@ -4092,7 +4118,11 @@ static void al_eth_get_stats64(struct net_device *netdev,
 	if (!adapter->up)
 		return;
 
-	al_eth_mac_stats_get(&adapter->hal_adapter, mac_stats);
+	/* .ndo_get_stats64 is void per the kernel's own net_device_ops
+	 * contract - can't propagate a failure upward, only log it. Rate
+	 * limited since this can be polled frequently (ethtool/ip -s link). */
+	if (al_eth_mac_stats_get(&adapter->hal_adapter, mac_stats))
+		net_err_ratelimited("%s: failed to read mac stats\n", adapter->netdev->name);
 
 	stats->rx_packets = mac_stats->aFramesReceivedOK; /* including pause frames */
 	stats->tx_packets = mac_stats->aFramesTransmittedOK; /* including pause frames */
