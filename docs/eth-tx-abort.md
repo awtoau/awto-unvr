@@ -127,8 +127,8 @@ register, independent of any queue register. The two operations don't interact a
 register level, so this ordering difference is very unlikely to matter — flagged, not
 fixed (not tested live by swapping the order; hardware time ran out this session).
 
-**Kernel PCIe host-bridge quirk (`kernel-patches/0001-...patch`, git-tracked, confirmed
-wired into the build via `scripts/build-linux-71-ea16.py` — verified, unlike the
+**Kernel PCIe host-bridge quirk (`pcie-al-internal.c`, now a commit in the kernel
+tree's own git history rather than an applied patch file — verified, unlike the
 untracked-file gap in #129) does nothing beyond SMCC snoop + APP_CONTROL.** Read in
 full (298 lines): `al_pcie_internal_notifier()` does exactly 3 register writes (SMCC
 sub-master 0, SMCC sub-masters 1-3 for slot<=5, APP_CONTROL) reverse-engineered from

@@ -49,7 +49,7 @@ survey, and the ccr2004/board-param findings. Read that for the *conclusions*; t
 - `u-boot-v2026.07/` — mainline U-Boot our port overlays.
 
 ## Fedora's real kernel patch — checked, confirmed irrelevant to us
-Our `build-linux-71-fedora.py` only takes Fedora's `.config` as a config starting point; it never
+Our `build-linux-fedora.py` only takes Fedora's `.config` as a config starting point; it never
 applies Fedora's own kernel patch. Checked whether that's actually a gap (2026-08-28, fetched
 `patch-7.3-redhat.patch` from `src.fedoraproject.org/rpms/kernel`, rawhide branch, 77 files /
 +2676/-113 lines) — **it isn't**. Breakdown:

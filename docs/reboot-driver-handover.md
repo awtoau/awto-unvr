@@ -81,7 +81,7 @@ as before (hang) — no worse than today; recover with `reboot-to-uboot.tcl` or 
 ## Make it permanent
 
 Once proven, add `al_reboot` to the OOT list in
-`scripts/build-linux-71-fedora.py` (the `for m in ("al_eth","al_dma","al_ssm","al_sgpo")`
+`scripts/build-linux-fedora.py` (the `for m in ("al_eth","al_dma","al_ssm","al_sgpo","al_thermal")`
 loop → add `"al_reboot"`), so it ships in the module tree and autoloads. Then a NAND
 reflash carries it. (Or build it in via `CONFIG_POWER_RESET_ALPINE` if we import the
 source into the kernel tree.)

@@ -27,7 +27,7 @@ Our bring-up uImage **embeds an initramfs** (`CONFIG_INITRAMFS_SOURCE`) whose
 - **Installer kernel** = bring-up uImage with the *enhanced* initramfs
   (`e2fsprogs`+`rsync`+`util-linux`, already added to `build-initramfs-ea16.py`).
   Used once to format + rsync the rootfs onto the SSD.
-- **Production kernel** (`scripts/build-linux-71-fedora.py`) = **Fedora 44's own
+- **Production kernel** (`scripts/build-linux-fedora.py`) = **Fedora 44's own
   aarch64 kernel config** + our Alpine patches, `CONFIG_INITRAMFS_SOURCE=""` (no
   embedded initramfs → runs `/sbin/init`/systemd from the real root). Using
   Fedora's config (not our lean one) means every systemd/fs/net symbol is correct
@@ -85,7 +85,7 @@ Prereq done: **SanDisk USB unplugged** → SSD enumerates as `/dev/sda` (sda1 =
 2. `mkfs.ext4 -L unvr-root /dev/sda2` → PARTUUID `dcdc291e-9956-48cd-9d7c-48219877881a`.
 3. Streamed the rootfs onto it: host `python3 -m http.server` + device
    `wget -O - http://host:8080/fedora-rootfs-ea16.tar | tar -x -C /mnt/root`.
-4. Built the **production kernel** = Fedora config + our patches (`build-linux-71-fedora.py`),
+4. Built the **production kernel** = Fedora config + our patches (`build-linux-fedora.py`),
    `INITRAMFS_SOURCE=""`. 56 MB Image → **gzip uImage 18.5 MB** (`mkuimage.py --gzip`).
 5. Deployed modules: `rsync` the full `modroot/lib/modules/7.1.8-dirty` (429 MB,
    already `depmod`'d, al_* PCI aliases present) into the rootfs `/lib/modules/`.
@@ -109,7 +109,7 @@ root on the SSD. Verified logged in:
 Build/deploy facts:
 - SSD = `/dev/sda` (USB removed). `sda2` ext4 label `unvr-root`,
   **PARTUUID=`dcdc291e-9956-48cd-9d7c-48219877881a`**.
-- Production kernel: `scripts/build-linux-71-fedora.py` → `build-out-71-fedora/`
+- Production kernel: `scripts/build-linux-fedora.py` → `build-out-fedora/`
   (Image, uImage, dtb, `modroot/` full module tree, all al_* OOT built).
 - Bootargs: `console=ttyS0,115200 root=PARTUUID=dcdc291e-… rootfstype=ext4 rw
   rootwait selinux=0 panic=15`.

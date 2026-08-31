@@ -211,10 +211,11 @@ File: `dts/alpine-v2-ubnt-unvr-ea16.dts`.
 - Imported copies carry the fixes as tracked source: iofic UBSAN (Bug 1) in the
   three `al_hal_iofic_regs.h` + `al_hal_udma_iofic_regs.h`; al_ssm crypto (Bug 2)
   in `al_ssm/al_ssm_main.c`.
-- Build scripts (`build-linux-71-fedora.py`, `build-linux-71-ea16.py`,
-  `build-linux-618-ea16.py`) copy each OOT module FROM `modules/` (like the DTS).
-  al_sgpo's 7.1 `gpio_chip.set`-returns-int fix stays a build-time adaptation
-  (`adapt_sgpo`/`adapt_module`, idempotent str-replace); imported al_sgpo.c is pristine.
+- Build scripts (`build-linux-fedora.py`, `build-linux-ea16.py`) copy each OOT
+  module FROM `modules/` (like the DTS). al_sgpo's `gpio_chip.set`-returns-int
+  fix is applied directly to the tracked source now, not as a build-time
+  adaptation - the old `adapt_sgpo`/`adapt_module` str-replace functions were
+  removed once the source itself was fixed.
 - PORT tree `linux-alpine-v2/modules/<m>` replaced with symlinks -> `modules/<m>`,
   so no consumer reads a stale copy and drift can't recur. rtl8370mb left in PORT
   (no build compiles it; not imported).
