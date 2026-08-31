@@ -24,6 +24,7 @@ Out: /mnt/2tb/unvr-port-refs/build-out-ea16/
 
 import os
 import pathlib
+import re
 import shutil
 import struct
 import subprocess
@@ -106,10 +107,13 @@ def prep_initramfs():
     if os.path.exists(libmod):
         shutil.rmtree(libmod)
     # refresh the cosmetic banner (module loading itself is $(uname -r)-driven).
+    # Matches whatever version the reused initramfs skeleton was last stamped
+    # with (this was an enumerated list of stale hardcoded strings - drifted
+    # every kernel migration since it was written) and replaces it with the
+    # actual VER this build is for.
     init = os.path.join(dst, "init")
     it = pathlib.Path(init).read_text()
-    for old in ("Linux 6.12 first boot", "Linux 6.18 first boot"):
-        it = it.replace(old, "Linux 7.1 first boot")
+    it = re.sub(r"Linux \S+ first boot", f"Linux {VER} first boot", it)
     pathlib.Path(init).write_text(it)
     # devnode list (real /dev/console for PID1 controlling tty).
     shutil.copy(
