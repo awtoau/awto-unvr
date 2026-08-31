@@ -1,6 +1,9 @@
 # UNVR repurpose — project status (2026-08-17)
 
 Single-glance current state. Detail lives in the linked docs/issues; this is the map.
+**Kernel/build status below is dated - see [build.md](build.md) for the current,
+accurate pipeline map and kernel version (this repo tracks `torvalds/linux`
+mainline directly, not a pinned "latest stable" release).**
 Device: Ubiquiti UNVR → custom Linux/NAS. Annapurna Alpine V2 / AL-324, quad
 Cortex-A57 aarch64, 4 GiB, sysid **0xea16**. Host name for the box: **woomera**.
 
@@ -17,19 +20,21 @@ Cortex-A57 aarch64, 4 GiB, sysid **0xea16**. Host name for the box: **woomera**.
 - **Boot chain fully reversed** — ROM→S2→al_boot(stage2/3 CVOS HAL)→U-Boot→kernel.
   Canonical: [nor-boot-chain.md](nor-boot-chain.md), [preboot-decompile.md](preboot-decompile.md).
 - **Firmware ladder** to 5.1.25 (stock). [firmware-5.1.25.md](firmware-5.1.25.md).
-- **Kernel port, 3 versions, all netboot-verified full-platform**:
-  6.12.103 → 6.18.44 LTS → **7.1.8 (latest stable)**. Each: 8 internal-PCIe
-  devices, 2×8TB SATA @6G + Samsung SSD, eth0 (1G) + eth1 (10G SFP), al_ssm
-  crypto, al_dma 4ch, xHCI SuperSpeed. 6.18→7.1 = **zero new API deltas**.
-  [linux-71-build.md](linux-71-build.md), [porting-roadmap.md](porting-roadmap.md).
-  All build variants (which script/kernel-ver/output for what purpose,
-  including the Fedora daily-driver + its KASAN twin + on-box native +
-  awto-uboot): [build.md](build.md).
-- **Patch series published** — `kernel-patches/` (6 patches, base 6.18.44, apply
-  clean to 6.12/6.18/7.1).
+- **Kernel port, netboot-verified full-platform, now tracking mainline HEAD
+  directly** (pull forward, port whatever breaks - not pinned to a release):
+  8 internal-PCIe devices, 2×8TB SATA @6G + Samsung SSD, eth0 (1G) + eth1
+  (10G SFP), al_ssm crypto, al_dma 4ch, xHCI SuperSpeed.
+  [porting-roadmap.md](porting-roadmap.md). All build variants (which
+  script/kernel-ver/output for what purpose, including the Fedora
+  daily-driver + its KASAN twin + on-box native + awto-uboot): [build.md](build.md).
+- **Board support is real commits in the kernel tree's own git history**
+  (DTS, `pcie-al-internal.c`, the `pcie-al.c` DBI fix, `unvr_defconfig`) -
+  the old `kernel-patches/` series was inert (applied by nothing) and has
+  been removed.
 - **Tooling**: `scripts/netboot.py`, `scripts/flash-nand.py` (standalone-boot flash,
-  verified), `scripts/build-linux-{612,618,71}-ea16.py`,
-  `scripts/build-linux-71-fedora.py`, `scripts/build-fedora-rootfs.py`,
+  verified), `scripts/build-linux-ea16.py` (netboot installer),
+  `scripts/build-linux-fedora.py` (daily-driver + KASAN variant),
+  `scripts/build-fedora-rootfs.py`,
   `./dev.py ram-boot-deploy` (RAM-boot test without flashing NAND).
 - **Hardware fully catalogued** (this session):
   - **Master BOM** — [components.md](components.md): every part/connector/test-point
