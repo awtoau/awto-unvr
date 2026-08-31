@@ -50,56 +50,94 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 static int al_udma_main_iofic_config(struct al_iofic_regs __iomem *base,
 				    enum al_iofic_mode mode)
 {
+	int rc = 0;
+
 	switch (mode) {
 	case AL_IOFIC_MODE_LEGACY:
-		al_iofic_config(base, AL_INT_GROUP_A,
+		if (al_iofic_config(base, AL_INT_GROUP_A,
 				INT_CONTROL_GRP_SET_ON_POSEDGE |
 				INT_CONTROL_GRP_MASK_MSI_X |
-				INT_CONTROL_GRP_CLEAR_ON_READ);
-		al_iofic_config(base, AL_INT_GROUP_B,
+				INT_CONTROL_GRP_CLEAR_ON_READ)) {
+			pr_err("%s: al_iofic_config failed\n", __func__);
+			rc = -EIO;
+		}
+		if (al_iofic_config(base, AL_INT_GROUP_B,
 				INT_CONTROL_GRP_CLEAR_ON_READ |
-				INT_CONTROL_GRP_MASK_MSI_X);
-		al_iofic_config(base, AL_INT_GROUP_C,
+				INT_CONTROL_GRP_MASK_MSI_X)) {
+			pr_err("%s: al_iofic_config failed\n", __func__);
+			rc = -EIO;
+		}
+		if (al_iofic_config(base, AL_INT_GROUP_C,
 				INT_CONTROL_GRP_CLEAR_ON_READ |
-				INT_CONTROL_GRP_MASK_MSI_X);
-		al_iofic_config(base, AL_INT_GROUP_D,
+				INT_CONTROL_GRP_MASK_MSI_X)) {
+			pr_err("%s: al_iofic_config failed\n", __func__);
+			rc = -EIO;
+		}
+		if (al_iofic_config(base, AL_INT_GROUP_D,
 				INT_CONTROL_GRP_SET_ON_POSEDGE |
 				INT_CONTROL_GRP_MASK_MSI_X |
-				INT_CONTROL_GRP_CLEAR_ON_READ);
+				INT_CONTROL_GRP_CLEAR_ON_READ)) {
+			pr_err("%s: al_iofic_config failed\n", __func__);
+			rc = -EIO;
+		}
 		break;
 	case AL_IOFIC_MODE_MSIX_PER_Q:
-		al_iofic_config(base, AL_INT_GROUP_A,
+		if (al_iofic_config(base, AL_INT_GROUP_A,
 				INT_CONTROL_GRP_SET_ON_POSEDGE |
 				INT_CONTROL_GRP_AUTO_MASK |
-				INT_CONTROL_GRP_AUTO_CLEAR);
-		al_iofic_config(base, AL_INT_GROUP_B,
+				INT_CONTROL_GRP_AUTO_CLEAR)) {
+			pr_err("%s: al_iofic_config failed\n", __func__);
+			rc = -EIO;
+		}
+		if (al_iofic_config(base, AL_INT_GROUP_B,
 				INT_CONTROL_GRP_AUTO_CLEAR |
 				INT_CONTROL_GRP_AUTO_MASK |
-				INT_CONTROL_GRP_CLEAR_ON_READ);
-		al_iofic_config(base, AL_INT_GROUP_C,
+				INT_CONTROL_GRP_CLEAR_ON_READ)) {
+			pr_err("%s: al_iofic_config failed\n", __func__);
+			rc = -EIO;
+		}
+		if (al_iofic_config(base, AL_INT_GROUP_C,
 				INT_CONTROL_GRP_AUTO_CLEAR |
 				INT_CONTROL_GRP_AUTO_MASK |
-				INT_CONTROL_GRP_CLEAR_ON_READ);
-		al_iofic_config(base, AL_INT_GROUP_D,
+				INT_CONTROL_GRP_CLEAR_ON_READ)) {
+			pr_err("%s: al_iofic_config failed\n", __func__);
+			rc = -EIO;
+		}
+		if (al_iofic_config(base, AL_INT_GROUP_D,
 				INT_CONTROL_GRP_SET_ON_POSEDGE |
 				INT_CONTROL_GRP_CLEAR_ON_READ |
-				INT_CONTROL_GRP_MASK_MSI_X);
+				INT_CONTROL_GRP_MASK_MSI_X)) {
+			pr_err("%s: al_iofic_config failed\n", __func__);
+			rc = -EIO;
+		}
 		break;
 	case AL_IOFIC_MODE_MSIX_PER_GROUP:
-		al_iofic_config(base, AL_INT_GROUP_A,
+		if (al_iofic_config(base, AL_INT_GROUP_A,
 				INT_CONTROL_GRP_SET_ON_POSEDGE |
 				INT_CONTROL_GRP_AUTO_CLEAR |
-				INT_CONTROL_GRP_AUTO_MASK);
-		al_iofic_config(base, AL_INT_GROUP_B,
+				INT_CONTROL_GRP_AUTO_MASK)) {
+			pr_err("%s: al_iofic_config failed\n", __func__);
+			rc = -EIO;
+		}
+		if (al_iofic_config(base, AL_INT_GROUP_B,
 				INT_CONTROL_GRP_CLEAR_ON_READ |
-				INT_CONTROL_GRP_MASK_MSI_X);
-		al_iofic_config(base, AL_INT_GROUP_C,
+				INT_CONTROL_GRP_MASK_MSI_X)) {
+			pr_err("%s: al_iofic_config failed\n", __func__);
+			rc = -EIO;
+		}
+		if (al_iofic_config(base, AL_INT_GROUP_C,
 				INT_CONTROL_GRP_CLEAR_ON_READ |
-				INT_CONTROL_GRP_MASK_MSI_X);
-		al_iofic_config(base, AL_INT_GROUP_D,
+				INT_CONTROL_GRP_MASK_MSI_X)) {
+			pr_err("%s: al_iofic_config failed\n", __func__);
+			rc = -EIO;
+		}
+		if (al_iofic_config(base, AL_INT_GROUP_D,
 				INT_CONTROL_GRP_SET_ON_POSEDGE |
 				INT_CONTROL_GRP_CLEAR_ON_READ |
-				INT_CONTROL_GRP_MASK_MSI_X);
+				INT_CONTROL_GRP_MASK_MSI_X)) {
+			pr_err("%s: al_iofic_config failed\n", __func__);
+			rc = -EIO;
+		}
 		break;
 	default:
 		pr_err("%s: invalid mode (%d)\n", __func__, mode);
@@ -107,9 +145,8 @@ static int al_udma_main_iofic_config(struct al_iofic_regs __iomem *base,
 	}
 
 	pr_debug("%s: base.%p mode %d\n", __func__, base, mode);
-	return 0;
+	return rc;
 }
-
 /*
  * configure the UDMA interrupt registers, interrupts are kept masked
  */
