@@ -329,60 +329,60 @@ void al_udma_stats_get(struct al_udma *udma);
 
 /* Misc configurations */
 /* Configure AXI configuration */
-int al_udma_axi_set(struct udma_gen_axi *axi_regs,
+__must_check int al_udma_axi_set(struct udma_gen_axi *axi_regs,
 		    struct al_udma_axi_conf *axi);
 
 /* Configure UDMA AXI M2S configuration */
-int al_udma_m2s_axi_set(struct al_udma *udma,
+__must_check int al_udma_m2s_axi_set(struct al_udma *udma,
 			struct al_udma_m2s_axi_conf *axi_m2s);
 
 /* Configure UDMA AXI S2M configuration */
-int al_udma_s2m_axi_set(struct al_udma *udma,
+__must_check int al_udma_s2m_axi_set(struct al_udma *udma,
 			struct al_udma_s2m_axi_conf *axi_s2m);
 
 /* Configure M2S packet len */
-int al_udma_m2s_packet_size_cfg_set(struct al_udma *udma,
+__must_check int al_udma_m2s_packet_size_cfg_set(struct al_udma *udma,
 				    struct al_udma_m2s_pkt_len_conf *conf);
 
 /* Configure M2S UDMA descriptor prefetch */
-int al_udma_m2s_pref_set(struct al_udma *udma,
+__must_check int al_udma_m2s_pref_set(struct al_udma *udma,
 			 struct al_udma_m2s_desc_pref_conf *conf);
-int al_udma_m2s_pref_get(struct al_udma *udma,
+__must_check int al_udma_m2s_pref_get(struct al_udma *udma,
 			 struct al_udma_m2s_desc_pref_conf *conf);
 
 /* set m2s packet's max descriptors (including meta descriptors) */
 #define AL_UDMA_M2S_MAX_ALLOWED_DESCS_PER_PACKET	31
-int al_udma_m2s_max_descs_set(struct al_udma *udma, uint8_t max_descs);
+__must_check int al_udma_m2s_max_descs_set(struct al_udma *udma, uint8_t max_descs);
 
 /* set s2m packets' max descriptors */
 #define AL_UDMA_S2M_MAX_ALLOWED_DESCS_PER_PACKET	31
-int al_udma_s2m_max_descs_set(struct al_udma *udma, uint8_t max_descs);
+__must_check int al_udma_s2m_max_descs_set(struct al_udma *udma, uint8_t max_descs);
 
 
 /* Configure S2M UDMA descriptor prefetch */
-int al_udma_s2m_pref_set(struct al_udma *udma,
+__must_check int al_udma_s2m_pref_set(struct al_udma *udma,
 			 struct al_udma_s2m_desc_pref_conf *conf);
 
 /* Configure S2M UDMA data write */
-int al_udma_s2m_data_write_set(struct al_udma *udma,
+__must_check int al_udma_s2m_data_write_set(struct al_udma *udma,
 			       struct al_udma_s2m_data_write_conf *conf);
 
 /* Configure the s2m full line write feature */
-int al_udma_s2m_full_line_write_set(struct al_udma *umda, al_bool enable);
+__must_check int al_udma_s2m_full_line_write_set(struct al_udma *umda, al_bool enable);
 
 /* Configure S2M UDMA completion */
-int al_udma_s2m_completion_set(struct al_udma *udma,
+__must_check int al_udma_s2m_completion_set(struct al_udma *udma,
 			       struct al_udma_s2m_completion_conf *conf);
 
 /* Configure the M2S UDMA scheduling mode */
-int al_udma_m2s_sc_set(struct al_udma *udma,
+__must_check int al_udma_m2s_sc_set(struct al_udma *udma,
 		       struct al_udma_m2s_dwrr_conf *sched);
 
 /* Configure the M2S UDMA Q scheduling mode */
-int al_udma_m2s_q_sc_set(struct al_udma_q *udma_q,
+__must_check int al_udma_m2s_q_sc_set(struct al_udma_q *udma_q,
 			 struct al_udma_m2s_q_dwrr_conf *conf);
-int al_udma_m2s_q_sc_pause(struct al_udma_q *udma_q, al_bool set);
-int al_udma_m2s_q_sc_reset(struct al_udma_q *udma_q);
+__must_check int al_udma_m2s_q_sc_pause(struct al_udma_q *udma_q, al_bool set);
+__must_check int al_udma_m2s_q_sc_reset(struct al_udma_q *udma_q);
 
 /** M2S Rate Limitation Parameter Setting */
 void al_udma_m2s_rlimit_params_set(
@@ -395,9 +395,9 @@ void al_udma_m2s_rlimit_enable_set(
 	al_bool		en);
 
 /* M2S UDMA completion and application timeouts */
-int al_udma_m2s_comp_timeouts_set(struct al_udma *udma,
+__must_check int al_udma_m2s_comp_timeouts_set(struct al_udma *udma,
 				  struct al_udma_m2s_comp_timeouts *conf);
-int al_udma_m2s_comp_timeouts_get(struct al_udma *udma,
+__must_check int al_udma_m2s_comp_timeouts_get(struct al_udma *udma,
 				  struct al_udma_m2s_comp_timeouts *conf);
 
 /* UDMA get revision */
@@ -434,7 +434,7 @@ static INLINE unsigned int al_udma_get_revision(struct unit_regs __iomem *unit_r
  *
  * @return 0 if no error found.
  */
-int al_udma_s2m_no_desc_cfg_set(struct al_udma *udma, al_bool drop_packet, al_bool gen_interrupt, uint32_t wait_for_desc_timeout);
+__must_check int al_udma_s2m_no_desc_cfg_set(struct al_udma *udma, al_bool drop_packet, al_bool gen_interrupt, uint32_t wait_for_desc_timeout);
 
 /**
  * S2M UDMA configure a queue's completion update
@@ -447,7 +447,7 @@ int al_udma_s2m_no_desc_cfg_set(struct al_udma *udma, al_bool drop_packet, al_bo
  *
  * @return 0 if no error found.
  */
-int al_udma_s2m_q_compl_updade_config(struct al_udma_q *udma_q, al_bool enable);
+__must_check int al_udma_s2m_q_compl_updade_config(struct al_udma_q *udma_q, al_bool enable);
 
 /**
  * S2M UDMA configure a queue's completion descriptors coalescing
@@ -458,7 +458,7 @@ int al_udma_s2m_q_compl_updade_config(struct al_udma_q *udma_q, al_bool enable);
  *
  * @return 0 if no error found.
  */
-int al_udma_s2m_q_compl_coal_config(struct al_udma_q *udma_q, al_bool enable, uint32_t coal_timeout);
+__must_check int al_udma_s2m_q_compl_coal_config(struct al_udma_q *udma_q, al_bool enable, uint32_t coal_timeout);
 
 /**
  * S2M UDMA configure completion descriptors write burst parameters
@@ -467,7 +467,7 @@ int al_udma_s2m_q_compl_coal_config(struct al_udma_q *udma_q, al_bool enable, ui
  * @param burst_size completion descriptors write burst size in bytes.
  *
  * @return 0 if no error found.
- */int al_udma_s2m_compl_desc_burst_config(struct al_udma *udma, uint16_t
+ */__must_check int al_udma_s2m_compl_desc_burst_config(struct al_udma *udma, uint16_t
 		 burst_size);
 
 /**
@@ -480,13 +480,13 @@ int al_udma_s2m_q_compl_coal_config(struct al_udma_q *udma_q, al_bool enable, ui
  *
  * @return 0 if no error found.
  */
-int al_udma_s2m_q_compl_hdr_split_config(struct al_udma_q *udma_q,
+__must_check int al_udma_s2m_q_compl_hdr_split_config(struct al_udma_q *udma_q,
 					 al_bool enable,
 					 al_bool force_hdr_split,
 					 uint32_t hdr_len);
 
 /* S2M UDMA per queue completion configuration */
-int al_udma_s2m_q_comp_set(struct al_udma_q *udma_q,
+__must_check int al_udma_s2m_q_comp_set(struct al_udma_q *udma_q,
 			   struct al_udma_s2m_q_comp_conf *conf);
 
 /** UDMA Target-ID control configuration per queue */

@@ -83,7 +83,7 @@ struct al_m2m_udma_params {
  *
  * @return 0 on success. -EINVAL otherwise.
  */
-int al_m2m_udma_init(struct al_m2m_udma *m2m_udma,
+__must_check int al_m2m_udma_init(struct al_m2m_udma *m2m_udma,
 		     struct al_m2m_udma_params *params);
 
 /**
@@ -98,7 +98,7 @@ int al_m2m_udma_init(struct al_m2m_udma *m2m_udma,
  *	   -EINVAL if the qid is out of range
  *	   -EIO if queue was already initialized
  */
-int al_m2m_udma_q_init(struct al_m2m_udma *m2m_udma, uint32_t qid,
+__must_check int al_m2m_udma_q_init(struct al_m2m_udma *m2m_udma, uint32_t qid,
 		       struct al_udma_q_params *tx_params,
 		       struct al_udma_q_params *rx_params);
 
@@ -110,7 +110,7 @@ int al_m2m_udma_q_init(struct al_m2m_udma *m2m_udma, uint32_t qid,
  *
  * @return 0
  */
-int al_m2m_udma_state_set(struct al_m2m_udma *dma,
+__must_check int al_m2m_udma_state_set(struct al_m2m_udma *dma,
 			  enum al_udma_state udma_state);
 
 /**
@@ -122,7 +122,7 @@ int al_m2m_udma_state_set(struct al_m2m_udma *dma,
  *
  * @return 0
  */
-int al_m2m_udma_handle_get(struct al_m2m_udma *m2m_udma,
+__must_check int al_m2m_udma_handle_get(struct al_m2m_udma *m2m_udma,
 			   enum al_udma_type type,
 			   struct al_udma **udma);
 

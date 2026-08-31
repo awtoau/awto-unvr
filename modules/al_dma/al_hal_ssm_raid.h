@@ -132,15 +132,15 @@ void al_raid_init(
 	void __iomem		*app_regs);
 
 /* prepare raid transaction */
-int al_raid_dma_prepare(struct al_ssm_dma *raid_dma, uint32_t qid,
+__must_check int al_raid_dma_prepare(struct al_ssm_dma *raid_dma, uint32_t qid,
 			struct al_raid_transaction *xaction);
 
 /* add previously prepared transaction to engine */
-int al_raid_dma_action(struct al_ssm_dma *raid_dma, uint32_t qid,
+__must_check int al_raid_dma_action(struct al_ssm_dma *raid_dma, uint32_t qid,
 		       uint32_t tx_descs);
 
 /* get new completed transaction */
-int al_raid_dma_completion(struct al_ssm_dma *raid_dma, uint32_t qid,
+__must_check int al_raid_dma_completion(struct al_ssm_dma *raid_dma, uint32_t qid,
 			   uint32_t *comp_status);
 
 /* *INDENT-OFF* */

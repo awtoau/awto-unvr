@@ -553,7 +553,7 @@ enum al_udma_iofic_level {
  *
  * @return 0 on success. -EINVAL otherwise.
  */
-int al_udma_iofic_config(struct unit_regs __iomem *regs,
+__must_check int al_udma_iofic_config(struct unit_regs __iomem *regs,
 			enum al_iofic_mode mode,
 			uint32_t	m2s_errors_disable,
 			uint32_t	m2s_aborts_disable,
