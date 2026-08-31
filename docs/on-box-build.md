@@ -5,18 +5,28 @@ on the dev host + rsyncing modules over. Faster iteration once network is
 stable (1G confirmed working), avoids toolchain drift between cross/native
 compilers.
 
-## One-time setup (already done as of 2026-08-20, redo if the box is reflashed)
+## One-time setup (redo whenever the box's running kernel changes, or after a reflash)
+
+`build-on-box.py` auto-detects the staged tree (globs `/root/src/linux-v*`,
+excluding the `linux-alpine-v2` community reference clone) rather than
+hardcoding a version - it previously pointed at a hardcoded `linux-v7.1.8`
+that went stale and silently broke at the next kernel migration. The
+detection itself doesn't remove the need for the setup below: it still
+fails loudly (missing `.config`/`Module.symvers`, or a vermagic mismatch
+against the running kernel) if this hasn't been done for the *current*
+kernel.
 
 - Build tools: `dnf install -y gcc make git rsync bc flex bison openssl-devel
   elfutils-libelf-devel ncurses-devel perl dwarves`
-- Kernel source tree at `/root/src/linux-v7.1.8` (rsynced from the dev host's
-  `/mnt/2tb/unvr-port-refs/linux-v7.1.8`, 28GB - includes `.git`, `.config`,
-  `Module.symvers`).
-- **`git config --global --add safe.directory /root/src/linux-v7.1.8`** -
+- Kernel source tree at `/root/src/linux-v<ver>` (rsynced from the dev host's
+  matching `/mnt/2tb/unvr-port-refs/linux-v<ver>-*` tree, ~28GB - must include
+  `.git`, `.config`, `Module.symvers` from a build that matches the box's
+  currently running kernel exactly).
+- **`git config --global --add safe.directory /root/src/linux-v<ver>`** -
   required. Without it, git's ownership-safety check silently blocks
   `scripts/setlocalversion`'s dirty-tree detection when building as root over
   files owned by a different UID, and the built module's vermagic comes out
-  as `7.1.8` instead of `7.1.8-dirty` (matching the running kernel) - `insmod`
+  missing the `-dirty` suffix the running kernel actually has - `insmod`
   then correctly refuses to load it.
 - Repo at `/root/awto-unvr` (rsync of `git ls-files`, kept in sync by
   `scripts/build-on-box.py`).
@@ -29,7 +39,7 @@ compilers.
 ./scripts/build-on-box.py --reload   # ...then live rmmod+insmod (see warning below)
 ```
 
-Default mode installs to `/lib/modules/7.1.8-dirty/updates/al_eth.ko` and runs
+Default mode installs to `/lib/modules/$(uname -r)/updates/al_eth.ko` and runs
 `depmod` - takes effect on the next `modprobe`/reboot, does NOT touch the
 currently loaded module. Vermagic is checked and the run aborts if it doesn't
 match the running kernel, rather than risking a mismatched module.

@@ -1,7 +1,15 @@
 #!/usr/bin/env python3
-"""Build modules/al_eth natively on woomera itself, against the kernel source
-tree already staged at /root/src/linux-v7.1.8 and the repo synced to
-/root/awto-unvr (see docs/on-box-build.md for one-time setup).
+"""Build modules/al_eth natively on woomera itself, against whichever kernel
+source tree is staged under /root/src/linux-v* (see docs/on-box-build.md for
+the one-time setup) and the repo synced to /root/awto-unvr.
+
+The staged tree is auto-detected each run (glob /root/src/linux-v*, minus
+the community reference clone at linux-alpine-v2) rather than hardcoded -
+a hardcoded version string here has gone stale at every kernel migration so
+far (this script pointed at a deleted linux-v7.1.8 as of 2026-08-31). The
+existing vermagic check below is the real safety net if the detected tree
+doesn't match the box's running kernel; override with --kdir if more than
+one real candidate is ever staged at once.
 
 Default action is BUILD + INSTALL ONLY (make modules_install + depmod) - the
 new .ko lands in /lib/modules/<kver>/ but does NOT replace the currently
@@ -27,9 +35,36 @@ from pathlib import Path
 
 DEFAULT_ROOT_PASSWORD = "unvr"  # documented default, see docs/fedora-on-ssd.md
 LOG = Path("tmp/logs/build-on-box.log")
-KDIR = "/root/src/linux-v7.1.8"
 REPO_REMOTE = "/root/awto-unvr"
 MODDIR = f"{REPO_REMOTE}/modules/al_eth"
+
+
+def detect_kdir(host: str, password: str) -> str:
+    """Find the staged kernel source tree under /root/src/ on the box.
+    linux-alpine-v2 is the community reference clone, not a buildable tree
+    for our config - excluded. Fails loudly on 0 or >1 candidates rather
+    than guessing, since a wrong KDIR here silently builds against the
+    wrong kernel (caught downstream by the vermagic check, but only after
+    wasting a full build)."""
+    result = subprocess.run(
+        ssh_cmd(host, password)
+        + ["ls -d /root/src/linux-v* 2>/dev/null | grep -v /linux-alpine-v2$"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    candidates = [line for line in result.stdout.splitlines() if line.strip()]
+    if len(candidates) == 1:
+        return candidates[0]
+    if not candidates:
+        sys.exit(
+            "FATAL: no /root/src/linux-v* tree found on the box - stage one "
+            "first (see docs/on-box-build.md) or pass --kdir explicitly"
+        )
+    sys.exit(
+        f"FATAL: {len(candidates)} candidate kernel trees found under "
+        f"/root/src/ ({', '.join(candidates)}) - pass --kdir to disambiguate"
+    )
 
 
 def locate_woomera() -> str:
@@ -82,6 +117,11 @@ def main() -> int:
     )
     ap.add_argument("--password", default=DEFAULT_ROOT_PASSWORD)
     ap.add_argument(
+        "--kdir",
+        help="kernel source tree on the box to build against (default: "
+        "auto-detect the single /root/src/linux-v* tree)",
+    )
+    ap.add_argument(
         "--no-sync", action="store_true", help="skip rsyncing the repo before building"
     )
     ap.add_argument(
@@ -94,6 +134,9 @@ def main() -> int:
 
     host = args.host or locate_woomera()
     print(f"# woomera at {host}", file=sys.stderr)
+
+    kdir = args.kdir or detect_kdir(host, args.password)
+    print(f"# kernel source: {kdir}", file=sys.stderr)
 
     LOG.parent.mkdir(parents=True, exist_ok=True)
     stamp = datetime.datetime.now().astimezone().isoformat(timespec="seconds")
@@ -144,10 +187,10 @@ def main() -> int:
 
         build_script = (
             f"set -e\n"
-            f"cd {KDIR} && make modules_prepare 2>&1 | tail -5\n"
+            f"cd {kdir} && make modules_prepare 2>&1 | tail -5\n"
             f"cd {MODDIR}\n"
             f"rm -f *.o *.ko .*.cmd modules.order Module.symvers 2>/dev/null || true\n"
-            f"make -C {KDIR} M={MODDIR} modules 2>&1 | tail -30\n"
+            f"make -C {kdir} M={MODDIR} modules 2>&1 | tail -30\n"
             f'echo "--- vermagic ---"\n'
             f"modinfo {MODDIR}/al_eth.ko | grep vermagic\n"
             f'RUNNING="$(uname -r)"\n'
@@ -156,7 +199,7 @@ def main() -> int:
             f'  echo "ABORT: vermagic $BUILT does not match running kernel $RUNNING"\n'
             f"  exit 1\n"
             f"fi\n"
-            f"make -C {KDIR} M={MODDIR} modules_install 2>&1 | tail -10\n"
+            f"make -C {kdir} M={MODDIR} modules_install 2>&1 | tail -10\n"
             f'depmod -a "$RUNNING"\n'
             f'echo "installed to /lib/modules/$RUNNING - takes effect on next modprobe/reboot"\n'
         )
