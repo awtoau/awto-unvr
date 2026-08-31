@@ -25,6 +25,9 @@
 #include <linux/mdio.h>
 #include <linux/mii.h>
 #include <linux/phy.h>
+#ifndef CONFIG_PHYLIB
+#error "al_eth requires CONFIG_PHYLIB - the 1G port's PHY (Qualcomm AR8031/AR8033) needs it unconditionally, not an optional fallback"
+#endif
 #include <linux/netdevice.h>
 #include <linux/etherdevice.h>
 #include <linux/skbuff.h>
@@ -34,9 +37,7 @@
 #include <linux/ethtool.h>
 #include <linux/if.h>
 #include <linux/if_vlan.h>
-#if defined(CONFIG_RFS_ACCEL) || defined(CONFIG_ARCH_ALPINE)
 #include <linux/cpu_rmap.h>
-#endif
 #include <net/ip.h>
 #include <net/tcp.h>
 #include <net/checksum.h>
@@ -892,7 +893,6 @@ al_eth_flow_ctrl_disable(struct al_eth_adapter *adapter)
 	al_eth_flow_ctrl_config(adapter);
 }
 
-#ifdef CONFIG_PHYLIB
 static uint8_t al_eth_flow_ctrl_mutual_cap_get(struct al_eth_adapter *adapter)
 {
 	struct phy_device *phydev = adapter->phydev;
@@ -919,7 +919,6 @@ static uint8_t al_eth_flow_ctrl_mutual_cap_get(struct al_eth_adapter *adapter)
 
 	return new_flow_ctrl;
 }
-#endif /* CONFIG_PHYLIB */
 
 
 static int al_eth_hw_init_adapter(struct al_eth_adapter *adapter)
@@ -1610,23 +1609,11 @@ static void al_eth_disable_int_sync(struct al_eth_adapter *adapter)
 	if (!netif_running(adapter->netdev))
 		return;
 
-/** TODO - is just checking SRIOV enough? perhaps if we wish to use al_eth on EVP + SRIOV this */
-/** will ruin it */
-#if defined(CONFIG_AL_ETH_SRIOV) && !defined(CONFIG_ARCH_ALPINE)
-	if (adapter->pdev->is_physfn) {
-		/* disable forwarding interrupts from eth through pci end point*/
-		if (IS_NIC(adapter->board_type)) {
-			netdev_dbg(adapter->netdev, "disable int forwarding\n");
-			writel(0, adapter->internal_pcie_base + 0x1800000 + 0x1210);
-		}
-
-#else
 	/* Disable forwarding interrupts from eth through pci end point*/
 	if (IS_NIC(adapter->board_type)) {
 		netdev_dbg(adapter->netdev, "disable int forwarding\n");
 		writel(0, adapter->internal_pcie_base + 0x1800000 + 0x1210);
 	}
-#endif
 
 	/* Mask hw interrupts */
 	al_eth_interrupts_mask(adapter);
@@ -2000,7 +1987,6 @@ al_eth_config_rx_fwd(struct al_eth_adapter *adapter)
 	al_eth_fsm_table_init(adapter);
 }
 
-#ifdef CONFIG_PHYLIB
 /* MDIO */
 
 /* Clause 22 MDIO read — for standard 1GbE PHYs (e.g. Marvell 88E1512) */
@@ -2422,11 +2408,9 @@ static int al_eth_phy_init(struct al_eth_adapter *adapter)
 
 	return 0;
 }
-#endif /* CONFIG_PHYLIB */
 
 static int al_eth_ioctl(struct net_device *netdev, struct ifreq *ifr, int cmd)
 {
-#if defined(CONFIG_PHYLIB)
 	struct al_eth_adapter *adapter = netdev_priv(netdev);
 	struct mii_ioctl_data *mdio = if_mii(ifr);
 	struct phy_device *phydev;
@@ -2444,9 +2428,6 @@ static int al_eth_ioctl(struct net_device *netdev, struct ifreq *ifr, int cmd)
 	}
 
 	return -EOPNOTSUPP;
-#else
-	return -EOPNOTSUPP;
-#endif
 }
 
 static void al_eth_tx_timeout(struct net_device *dev, unsigned int txqueue)
@@ -3913,22 +3894,18 @@ static int al_eth_open(struct net_device *netdev)
 				netdev_warn(adapter->netdev, "failed to register PHY fixup\n");
 		}
 
-#ifdef CONFIG_PHYLIB
 		rc = al_eth_mdiobus_setup(adapter);
 		if (rc) {
 			netdev_err(netdev, "failed at mdiobus setup!\n");
 			al_eth_down(adapter);
 			return rc;
 		}
-#endif
 	}
 
-#ifdef CONFIG_PHYLIB
 	if (adapter->mdio_bus) {
 		rc = al_eth_phy_init(adapter);
 		return rc;
 	}
-#endif
 
 	u64_stats_update_begin(&adapter->syncp);
 	adapter->dev_stats.interface_up++;
@@ -3965,14 +3942,12 @@ static int al_eth_close(struct net_device *netdev)
 	if (adapter->plink)
 		al_eth_phylink_stop(adapter);
 
-#ifdef CONFIG_PHYLIB
 	/** Stop PHY & MDIO BUS */
 	if (adapter->phydev) {
 		phy_stop(adapter->phydev);
 		phy_disconnect(adapter->phydev);
 		al_eth_mdiobus_teardown(adapter);
 	}
-#endif
 
 	if (adapter->up)
 		al_eth_down(adapter);
@@ -3998,12 +3973,8 @@ al_eth_get_link_ksettings(struct net_device *netdev,
 	if (adapter->plink)
 		return al_eth_phylink_ksettings_get(adapter, cmd);
 
-#ifdef CONFIG_PHYLIB
-	struct phy_device *phydev = adapter->phydev;
-
-	if (phydev)
+	if (adapter->phydev)
 		return phy_ethtool_get_link_ksettings(netdev, cmd);
-#endif
 
 	rc = al_eth_board_params_get(adapter->mac_base, &params);
 	if (rc) {
@@ -4035,12 +4006,8 @@ al_eth_set_link_ksettings(struct net_device *netdev,
 	int rc = 0;
 	if (adapter->plink)
 		return al_eth_phylink_ksettings_set(adapter, cmd);
-#if defined(CONFIG_PHYLIB)
-	struct phy_device *phydev = adapter->phydev;
-
-	if (phydev)
+	if (adapter->phydev)
 		return phy_ethtool_set_link_ksettings(netdev, cmd);
-#endif
 
 	/* in case no phy exist set only mac parameters */
 	adapter->link_config.active_speed = cmd->base.speed;
@@ -4097,18 +4064,12 @@ static int al_eth_nway_reset(struct net_device *netdev)
 {
 	struct al_eth_adapter *adapter = netdev_priv(netdev);
 
-#if defined(CONFIG_ARCH_ALPINE)
 	if (adapter->plink)
 		return al_eth_phylink_nway_reset(adapter);
-#endif
-#if defined(CONFIG_PHYLIB)
 	if (!adapter->phydev)
 		return -ENODEV;
 
 	return phy_start_aneg(adapter->phydev);
-#else
-	return -ENODEV;
-#endif
 }
 
 static u32 al_eth_get_msglevel(struct net_device *netdev)
@@ -4201,9 +4162,7 @@ al_eth_set_pauseparam(struct net_device *netdev,
 {
 	struct al_eth_adapter *adapter = netdev_priv(netdev);
 	struct al_eth_link_config *link_config = &adapter->link_config;
-#ifdef CONFIG_PHYLIB
 	uint32_t newadv;
-#endif
 
 	/* auto negotiation and receive pause are currently not supported */
 	if (pause->autoneg == AUTONEG_ENABLE)
@@ -4217,7 +4176,6 @@ al_eth_set_pauseparam(struct net_device *netdev,
 	if (pause->tx_pause)
 		link_config->flow_ctrl_supported |= AL_ETH_FLOW_CTRL_TX_PAUSE;
 
-#ifdef CONFIG_PHYLIB
 	if (pause->tx_pause & pause->rx_pause)
 		newadv = ADVERTISED_Pause;
 	else if (pause->rx_pause)
@@ -4263,12 +4221,10 @@ al_eth_set_pauseparam(struct net_device *netdev,
 		}
 	} else {
 		link_config->flow_ctrl_active = link_config->flow_ctrl_supported;
-		al_eth_flow_ctrl_config(adapter);
+		if (al_eth_flow_ctrl_config(adapter))
+			netdev_err(adapter->netdev, "%s: failed to configure flow control\n",
+				   __func__);
 	}
-#else
-	link_config->flow_ctrl_active = link_config->flow_ctrl_supported;
-	al_eth_flow_ctrl_config(adapter);
-#endif
 	return 0;
 }
 
@@ -4443,11 +4399,16 @@ static int al_eth_get_eee(struct net_device *netdev,
 {
 	struct al_eth_adapter *adapter = netdev_priv(netdev);
 	struct al_eth_eee_params params;
+	int rc;
 
 	if (!adapter->phy_exist)
 		return -EOPNOTSUPP;
 
-	al_eth_eee_get(&adapter->hal_adapter, &params);
+	rc = al_eth_eee_get(&adapter->hal_adapter, &params);
+	if (rc) {
+		netdev_err(adapter->netdev, "%s: failed to get EEE params\n", __func__);
+		return rc;
+	}
 
 	edata->eee_enabled = params.enable;
 	edata->tx_lpi_timer = params.tx_eee_timer;
@@ -4461,6 +4422,7 @@ static int al_eth_set_eee(struct net_device *netdev,
 	struct al_eth_adapter *adapter = netdev_priv(netdev);
 	struct al_eth_eee_params params;
 	struct phy_device *phydev;
+	int rc;
 
 	if (!adapter->phy_exist)
 		return -EOPNOTSUPP;
@@ -4473,7 +4435,11 @@ static int al_eth_set_eee(struct net_device *netdev,
 	params.tx_eee_timer = edata->tx_lpi_timer;
 	params.min_interval = 10;
 
-	al_eth_eee_config(&adapter->hal_adapter, &params);
+	rc = al_eth_eee_config(&adapter->hal_adapter, &params);
+	if (rc) {
+		netdev_err(adapter->netdev, "%s: failed to configure EEE\n", __func__);
+		return rc;
+	}
 
 	return phy_ethtool_set_eee(phydev, edata);
 }
@@ -5203,9 +5169,7 @@ al_eth_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 	u16 dev_id;
 	u8 rev_id;
 	int i;
-#if defined(CONFIG_ARCH_ALPINE)
 	bool use_phylink;
-#endif
 
 	int rc;
 
@@ -5225,16 +5189,8 @@ al_eth_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 		rc = pcim_iomap_regions(pdev, (1 << 0) | (1 << 2) | (1 << 4), DRV_MODULE_NAME);
 	else {
 		int bar;
-#if defined(CONFIG_AL_ETH_SRIOV) && !defined(CONFIG_ARCH_ALPINE)
-		if (!pdev->is_physfn)
-			bar = 0;
-		else
-			bar = board_info[ent->driver_data].bar;
-		dev_dbg(&pdev->dev, "bar is %d phys dev is %d\n", bar, pdev->is_physfn);
-#else
 		bar = board_info[ent->driver_data].bar;
 		dev_dbg(&pdev->dev, "bar is %d\n", bar);
-#endif
 		rc = pcim_iomap_regions(pdev, (1 << bar), DRV_MODULE_NAME);
 	}
 	if (rc) {
@@ -5298,10 +5254,6 @@ al_eth_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 		u16 adapter_pci_cmd;
 
 		int bar = board_info[ent->driver_data].bar;
-#if defined(CONFIG_AL_ETH_SRIOV) && !defined(CONFIG_ARCH_ALPINE)
-		if (!pdev->is_physfn)
-			bar = 0;
-#endif
 
 		if (adapter->board_type == ALPINE_NIC_V2_25_DUAL) {
 			if (PCI_FUNC(pdev->devfn) == 1)
@@ -5387,51 +5339,30 @@ al_eth_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 
 	snprintf(adapter->name, AL_ETH_NAME_MAX_LEN, "al_eth_%d", adapter->id_number);
 
-#ifndef CONFIG_ARCH_ALPINE
-	/** Init serdes handle if board_params need to determine speed on the fly */
-	switch (adapter->board_type) {
-	case ALPINE_NIC:
-	case ALPINE_NIC_V2_10:
-		adapter->serdes_obj = kzalloc(sizeof(struct al_serdes_grp_obj), GFP_KERNEL);
-		al_serdes_hssp_handle_init(adapter->serdes_base, adapter->serdes_obj);
-		break;
-	case ALPINE_NIC_V2_25:
-	case ALPINE_NIC_V2_25_DUAL:
-		adapter->serdes_obj = kzalloc(sizeof(struct al_serdes_grp_obj), GFP_KERNEL);
-		al_serdes_25g_handle_init(adapter->serdes_base + AL_ETH_SERDES_25G_OFFSET,
-			adapter->serdes_obj);
-		break;
-	default:
-		break;
-	}
-#endif
 	al_eth_dbg_check_tail(netdev, "before al_eth_board_params_init");
 	rc = al_eth_board_params_init(adapter);
 	if (rc)
 		goto err_hw_init;
 	al_eth_dbg_check_tail(netdev, "after al_eth_board_params_init");
 
-#if defined(CONFIG_ARCH_ALPINE)
-	/* 10G SFP+ port: mainline phylink + sfp.c own link management instead
-	 * of the (now retired) vendor group-LM. AUTO_DETECT_AUTO_SPEED media
-	 * leaves mac_mode unset - the vendor LM used to fill it in after SFP
-	 * detection; phylink's PCS only advertises 10GBASE-R, so force it
-	 * here instead. eth1 (RGMII, phy_exist=true) is untouched - phylib.
+	/* 10G SFP+ port: mainline phylink + sfp.c own link management, not
+	 * the retired vendor group-LM. AUTO_DETECT_AUTO_SPEED media leaves
+	 * mac_mode unset; phylink's PCS only advertises 10GBASE-R, so force
+	 * it here. eth1 (RGMII, phy_exist=true) is untouched - phylib.
 	 * docs: debris/code/al_eth-phylink-wip/eth-10g-phylink.md */
 	use_phylink = adapter->use_lm && adapter->sfp_detection_needed &&
 		      adapter->max_speed == AL_ETH_LM_MAX_SPEED_10G;
 	if (use_phylink)
 		adapter->mac_mode = AL_ETH_MAC_MODE_10GbE_Serial;
-#endif
 
 	/** Perform HW stop to clean garbage left-overs from PXE / Uboot driver */
 	al_eth_hal_adapter_init(adapter);
 	al_eth_dbg_check_tail(netdev, "after al_eth_hal_adapter_init");
 	adapter->hal_adapter.mac_mode = adapter->mac_mode;
-	al_eth_hw_stop(adapter);
+	if (al_eth_hw_stop(adapter))
+		dev_err(&pdev->dev, "%s: hw_stop failed\n", __func__);
 	al_eth_dbg_check_tail(netdev, "after al_eth_hw_stop");
 
-#if defined(CONFIG_ARCH_ALPINE)
 	if (use_phylink) {
 		rc = al_eth_serdes_init(adapter);
 		if (rc)
@@ -5444,7 +5375,6 @@ al_eth_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 			goto err_hw_init;
 	}
 	al_eth_dbg_check_tail(netdev, "after phylink/serdes/lm setup block");
-#endif
 
 	al_eth_function_reset(adapter);
 	al_eth_dbg_check_tail(netdev, "after al_eth_function_reset");
@@ -5535,18 +5465,6 @@ al_eth_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 		(long)pci_resource_start(pdev, 0), netdev->dev_addr);
 
 adapters_found++;
-#if defined(CONFIG_AL_ETH_SRIOV) && !defined(CONFIG_ARCH_ALPINE)
-	if (pdev->is_physfn) {
-		int err = 0;
-		dev_info(&pdev->dev, "disable sriov");
-		pci_disable_sriov(pdev);
-
-		dev_info(&pdev->dev, "enable sriov, vfs: %d", 1);
-		err = pci_enable_sriov(pdev, 1);
-		if (err)
-			dev_info(&pdev->dev, "pci_enable_sriov() failed. err=%d\n", err);
-	}
-#endif
 	return 0;
 err_register:
 err_hw_init:
@@ -5567,27 +5485,15 @@ al_eth_remove(struct pci_dev *pdev)
 	struct al_eth_adapter *adapter = pci_get_drvdata(pdev);
 	struct net_device *dev = adapter->netdev;
 
-	al_eth_hw_stop(adapter);
+	if (al_eth_hw_stop(adapter))
+		dev_err(&pdev->dev, "%s: hw_stop failed\n", __func__);
 
 	unregister_netdev(dev);
 
-#if defined(CONFIG_ARCH_ALPINE)
 	al_eth_phylink_teardown(adapter);
-#endif
 
 	al_eth_sysfs_terminate(&pdev->dev);
-#ifndef CONFIG_ARCH_ALPINE
-	if (IS_NIC(adapter->board_type))
-		kfree_sensitive(adapter->serdes_obj);
-#endif
 	free_netdev(dev);
-
-#if defined(CONFIG_AL_ETH_SRIOV) && !defined(CONFIG_ARCH_ALPINE)
-	if (pdev->is_physfn) {
-		dev_info(&pdev->dev, "disable sriov");
-		pci_disable_sriov(pdev);
-	}
-#endif
 
 	pci_set_drvdata(pdev, NULL);
 	/* No explicit pci_disable_device() here: probe used pcim_enable_device()
@@ -5622,21 +5528,8 @@ static int al_eth_resume(struct pci_dev *pdev)
 
 	pci_wake_from_d3(pdev, false);
 
-#if defined(CONFIG_AL_ETH_SRIOV) && !defined(CONFIG_ARCH_ALPINE)
-	if (pdev->is_physfn) {
-	   int err = 0;
-	   dev_info(&pdev->dev, "disable sriov");
-	   pci_disable_sriov(pdev);
-
-	   dev_info(&pdev->dev, "enable sriov, vfs: %d", 1);
-	   err = pci_enable_sriov(pdev, 1);
-	   if (err) {
-		   dev_info(&pdev->dev, "pci_enable_sriov() failed. err=%d\n", err);
-	   }
-	}
-#endif
-
-	al_eth_wol_disable(&adapter->hal_adapter);
+	if (al_eth_wol_disable(&adapter->hal_adapter))
+		dev_err(&pdev->dev, "%s: failed to disable WoL\n", __func__);
 
 	netif_device_attach(netdev);
 
