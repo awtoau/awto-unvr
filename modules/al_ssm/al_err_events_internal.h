@@ -171,7 +171,7 @@ void al_err_events_common_module_post_init(struct al_err_events_module *module);
  *
  * @return AL_TRUE if test passed, AL_FALSE otherwise
  */
-al_bool al_err_events_common_module_test(struct al_err_events_module *module);
+__must_check al_bool al_err_events_common_module_test(struct al_err_events_module *module);
 
 /*
  * clear module statistics
@@ -201,7 +201,7 @@ void al_err_events_common_module_print(struct al_err_events_module *module);
  *
  * @return 0 on success, errno otherwise
  */
-int al_err_events_common_module_iofic_collect(struct al_err_events_module *module,
+__must_check int al_err_events_common_module_iofic_collect(struct al_err_events_module *module,
 						 enum al_err_events_collect collect,
 						 unsigned int iofic_id,
 						 unsigned int iofic_group);
@@ -215,7 +215,7 @@ int al_err_events_common_module_iofic_collect(struct al_err_events_module *modul
  *
  * @return error mask
  */
-uint32_t al_err_events_common_group_mask_get(struct al_err_events_module *module,
+__must_check uint32_t al_err_events_common_group_mask_get(struct al_err_events_module *module,
 						unsigned int iofic_id,
 						unsigned int iofic_group);
 

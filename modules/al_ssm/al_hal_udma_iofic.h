@@ -656,7 +656,7 @@ struct al_udma_iofic_cfg {
  * @return 0 on success. -EINVAL otherwise.
  */
 #define AL_UDMA_IOFIC_HAS_CONFIG_EX
-int al_udma_iofic_config_ex(
+__must_check int al_udma_iofic_config_ex(
 	struct al_udma			*udma,
 	const struct al_udma_iofic_cfg	*cfg);
 
@@ -710,7 +710,7 @@ static INLINE void __iomem *al_udma_iofic_reg_base_get_adv(
  * @returns	0 - invalid, 1 - valid
  *
  */
-static INLINE int al_udma_iofic_level_and_group_valid(
+__must_check static INLINE int al_udma_iofic_level_and_group_valid(
 	struct al_udma			*udma,
 	enum al_udma_iofic_level	level,
 	int				group)
@@ -781,7 +781,7 @@ static INLINE void al_udma_iofic_mask_adv(
  * @param group the interrupt group ('AL_INT_GROUP_*')
  */
 #define AL_UDMA_IOFIC_HAS_READ_CAUSE_ADV
-static INLINE uint32_t al_udma_iofic_read_cause_adv(
+__must_check static INLINE uint32_t al_udma_iofic_read_cause_adv(
 	struct al_udma			*udma,
 	enum al_udma_iofic_level	level,
 	int				group)
@@ -820,7 +820,7 @@ static INLINE void al_udma_iofic_clear_cause_adv(
  * @param mask mask bitwise of bits to be cleared, set bits will be cleared.
  */
 #define AL_UDMA_IOFIC_HAS_READ_AND_CLEAR_CAUSE_ADV
-static INLINE uint32_t al_udma_iofic_read_and_clear_cause_adv(
+__must_check static INLINE uint32_t al_udma_iofic_read_and_clear_cause_adv(
 	struct al_udma			*udma,
 	enum al_udma_iofic_level	level,
 	int				group,
@@ -874,7 +874,7 @@ void al_udma_iofic_s2m_error_ints_unmask(
  * @return external application bit
  */
 #define AL_UDMA_IOFIC_HAS_GET_EXT_APP_BIT
-uint32_t al_udma_iofic_get_ext_app_bit(struct al_udma *udma);
+__must_check uint32_t al_udma_iofic_get_ext_app_bit(struct al_udma *udma);
 
 /**
  * unmask UDMA external application bit
@@ -892,7 +892,7 @@ void al_udma_iofic_unmask_ext_app(struct al_udma *udma, al_bool clear);
  *
  * @return interrupt bit
  */
-uint32_t al_udma_iofic_sec_level_int_get(struct al_udma *udma, unsigned int group);
+__must_check uint32_t al_udma_iofic_sec_level_int_get(struct al_udma *udma, unsigned int group);
 
 #endif
 /** @} end of UDMA group */

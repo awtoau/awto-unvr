@@ -154,7 +154,7 @@ struct al_ssm_unit_regs_info {
  *
  * @return 0 on success.
  */
-int al_ssm_dma_handle_init(struct al_ssm_dma *ssm_dma, struct al_ssm_dma_params	*params);
+__must_check int al_ssm_dma_handle_init(struct al_ssm_dma *ssm_dma, struct al_ssm_dma_params	*params);
 
 /**
  * Initialize DMA for SSM operations
@@ -164,7 +164,7 @@ int al_ssm_dma_handle_init(struct al_ssm_dma *ssm_dma, struct al_ssm_dma_params	
  *
  * @return 0 on success.
  */
-int al_ssm_dma_init(struct al_ssm_dma *ssm_dma, struct al_ssm_dma_params *params);
+__must_check int al_ssm_dma_init(struct al_ssm_dma *ssm_dma, struct al_ssm_dma_params *params);
 
 /**
  * Initialize the m2s(tx) and s2m(rx) components of the queue
@@ -179,7 +179,7 @@ int al_ssm_dma_init(struct al_ssm_dma *ssm_dma, struct al_ssm_dma_params *params
  *	   -EINVAL if the qid is out of range
  *	   -EIO if queue was already initialized
  */
-int al_ssm_dma_q_init(struct al_ssm_dma		*ssm_dma,
+__must_check int al_ssm_dma_q_init(struct al_ssm_dma		*ssm_dma,
 		      uint32_t			qid,
 		      struct al_udma_q_params	*tx_params,
 		      struct al_udma_q_params	*rx_params,
@@ -193,7 +193,7 @@ int al_ssm_dma_q_init(struct al_ssm_dma		*ssm_dma,
  *
  * @return 0
  */
-int al_ssm_dma_state_set(struct al_ssm_dma *ssm_dma, enum al_udma_state dma_state);
+__must_check int al_ssm_dma_state_set(struct al_ssm_dma *ssm_dma, enum al_udma_state dma_state);
 
 /**
  * Get udma handle of the tx or rx udma, this handle can be used to call misc
@@ -205,7 +205,7 @@ int al_ssm_dma_state_set(struct al_ssm_dma *ssm_dma, enum al_udma_state dma_stat
  *
  * @return 0
  */
-int al_ssm_dma_handle_get(struct al_ssm_dma *ssm_dma,
+__must_check int al_ssm_dma_handle_get(struct al_ssm_dma *ssm_dma,
 			  enum al_udma_type type,
 			  struct al_udma **udma);
 
@@ -270,7 +270,7 @@ struct al_udma_q *al_ssm_dma_rx_queue_handle_get(struct al_ssm_dma *ssm_dma,
  * @return 0 if no error found.
  *	   -EINVAL if quid is out of range
  */
-int al_ssm_dma_action(struct al_ssm_dma *ssm_dma, uint32_t qid, int tx_descs);
+__must_check int al_ssm_dma_action(struct al_ssm_dma *ssm_dma, uint32_t qid, int tx_descs);
 
 /**
  * Get SSM unit registers addresses

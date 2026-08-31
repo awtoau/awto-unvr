@@ -228,7 +228,7 @@ struct al_crc_transaction {
  * @return 0 if no error found.
  *	   <0 otherwise.
  */
-int al_memcpy_prepare(struct al_ssm_dma *dma, uint32_t qid,
+__must_check int al_memcpy_prepare(struct al_ssm_dma *dma, uint32_t qid,
 			     struct al_memcpy_transaction *xaction);
 
 /**
@@ -257,7 +257,7 @@ int al_memcpy_prepare(struct al_ssm_dma *dma, uint32_t qid,
  * @return 0 if no error found.
  *	   -ENOSPC if no space available.
  */
-int al_crc_csum_prepare(struct al_ssm_dma *dma, uint32_t qid,
+__must_check int al_crc_csum_prepare(struct al_ssm_dma *dma, uint32_t qid,
 			       struct al_crc_transaction *xaction);
 
 /**
@@ -275,7 +275,7 @@ int al_crc_csum_prepare(struct al_ssm_dma *dma, uint32_t qid,
  * @return 0 if no error found.
  *	   -EINVAL if quid is out of range
  */
-int al_crc_memcpy_dma_action(struct al_ssm_dma *dma, uint32_t qid,
+__must_check int al_crc_memcpy_dma_action(struct al_ssm_dma *dma, uint32_t qid,
 			 int tx_descs);
 
 /**
@@ -300,7 +300,7 @@ int al_crc_memcpy_dma_action(struct al_ssm_dma *dma, uint32_t qid,
  *
  * @return the number of completed transactions.
  */
-int al_crc_memcpy_dma_completion(struct al_ssm_dma *dma,
+__must_check int al_crc_memcpy_dma_completion(struct al_ssm_dma *dma,
 			     uint32_t qid,
 			     uint32_t *comp_status);
 

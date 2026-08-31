@@ -190,7 +190,7 @@ struct al_err_events_ssm_crc_data {
  *
  * @return 0 on success, errno otherwise
  */
-int al_err_events_ssm_crypto_init(struct al_err_events_handle *handle,
+__must_check int al_err_events_ssm_crypto_init(struct al_err_events_handle *handle,
 				  struct al_err_events_ssm_crypto_data *data,
 				  struct al_err_events_ssm_app_init_params *params);
 
@@ -203,7 +203,7 @@ int al_err_events_ssm_crypto_init(struct al_err_events_handle *handle,
  *
  * @return 0 on success, errno otherwise
  */
-int al_err_events_ssm_raid_init(struct al_err_events_handle *handle,
+__must_check int al_err_events_ssm_raid_init(struct al_err_events_handle *handle,
 				struct al_err_events_ssm_raid_data *data,
 				struct al_err_events_ssm_app_init_params *params);
 
@@ -216,7 +216,7 @@ int al_err_events_ssm_raid_init(struct al_err_events_handle *handle,
  *
  * @return 0 on success, errno otherwise
  */
-int al_err_events_ssm_crc_init(struct al_err_events_handle *handle,
+__must_check int al_err_events_ssm_crc_init(struct al_err_events_handle *handle,
 			       struct al_err_events_ssm_crc_data *data,
 			       struct al_err_events_ssm_app_init_params *params);
 

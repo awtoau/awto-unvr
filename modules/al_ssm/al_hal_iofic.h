@@ -83,7 +83,7 @@ extern "C" {
  *
  * @return 0 on success. -EINVAL otherwise.
  */
-int al_iofic_config(void __iomem *regs_base, int group,
+__must_check int al_iofic_config(void __iomem *regs_base, int group,
 		   uint32_t flags);
 
 /**
@@ -93,7 +93,7 @@ int al_iofic_config(void __iomem *regs_base, int group,
  * @param group the interrupt group
  * @return the value of the control register.
  */
-uint32_t al_iofic_control_flags_get(void __iomem *regs_base, int group);
+__must_check uint32_t al_iofic_control_flags_get(void __iomem *regs_base, int group);
 
 /**
  * configure the moderation timer resolution for a given group
@@ -107,7 +107,7 @@ uint32_t al_iofic_control_flags_get(void __iomem *regs_base, int group);
  *
  * @return 0 on success. -EINVAL otherwise.
  */
-int al_iofic_moder_res_config(void __iomem *regs_base, int group,
+__must_check int al_iofic_moder_res_config(void __iomem *regs_base, int group,
 			     uint8_t resolution);
 
 /**
@@ -119,7 +119,7 @@ int al_iofic_moder_res_config(void __iomem *regs_base, int group,
  *
  * @return 0 on success. -EINVAL otherwise.
  */
-int al_iofic_legacy_moder_interval_config(void __iomem *regs_base, int group,
+__must_check int al_iofic_legacy_moder_interval_config(void __iomem *regs_base, int group,
 					 uint8_t interval);
 
 /**
@@ -132,7 +132,7 @@ int al_iofic_legacy_moder_interval_config(void __iomem *regs_base, int group,
  *
  * @return 0 on success. -EINVAL otherwise.
  */
-int al_iofic_msix_moder_interval_config(void __iomem *regs_base, int group,
+__must_check int al_iofic_msix_moder_interval_config(void __iomem *regs_base, int group,
 				       uint8_t vector, uint8_t interval);
 
 /**
@@ -146,7 +146,7 @@ int al_iofic_msix_moder_interval_config(void __iomem *regs_base, int group,
 *
 * @return 0 on success. -EINVAL otherwise.
 */
-int al_iofic_msix_tgtid_attributes_config(void __iomem *regs_base, int group,
+__must_check int al_iofic_msix_tgtid_attributes_config(void __iomem *regs_base, int group,
 				       uint8_t vector, uint32_t tgtid, uint8_t tgtid_en);
 
 /**
@@ -191,7 +191,7 @@ void al_iofic_mask(void __iomem *regs_base, int group, uint32_t mask);
  * @param regs_base pointer to unit registers
  * @param group the interrupt group
  */
-uint32_t al_iofic_read_mask(void __iomem *regs_base, int group);
+__must_check uint32_t al_iofic_read_mask(void __iomem *regs_base, int group);
 
 /**
  * read interrupt cause register for a given group
@@ -199,7 +199,7 @@ uint32_t al_iofic_read_mask(void __iomem *regs_base, int group);
  * @param regs_base pointer to unit registers
  * @param group the interrupt group
  */
-uint32_t al_iofic_read_cause(void __iomem *regs_base, int group);
+__must_check uint32_t al_iofic_read_cause(void __iomem *regs_base, int group);
 
 /**
  * clear bits in the interrupt cause register for a given group
@@ -217,7 +217,7 @@ void al_iofic_clear_cause(void __iomem *regs_base, int group, uint32_t mask);
  * @param group the interrupt group
  * @param mask bitwise of bits to be cleared, set bits will be cleared.
  */
-uint32_t al_iofic_read_and_clear_cause(void __iomem *regs_base, int group, uint32_t mask);
+__must_check uint32_t al_iofic_read_and_clear_cause(void __iomem *regs_base, int group, uint32_t mask);
 
 /**
  * set the cause register for a given group
@@ -246,7 +246,7 @@ void al_iofic_abort_mask(void __iomem *regs_base, int group, uint32_t mask);
  * @param group the interrupt group
  * @return the abort mask.
  */
-uint32_t al_iofic_abort_mask_read(void __iomem *regs_base, int group);
+__must_check uint32_t al_iofic_abort_mask_read(void __iomem *regs_base, int group);
 
 /**
  * set specific interrupts in the abort mask for a given group

@@ -246,7 +246,7 @@ struct al_unit_adapter_rob_cfg {
  * @return	0 if finished successfully
  *		<0 if an error occurred
  */
-int al_unit_adapter_handle_init(
+__must_check int al_unit_adapter_handle_init(
 	struct al_unit_adapter *unit_adapter,
 	enum al_unit_adapter_type type,
 	void __iomem *unit_adapter_regs_base,
@@ -273,7 +273,7 @@ void al_unit_adapter_perf_params_print(
  * @return	AL_TRUE if BME status is enabled,
  *		AL_FALSE otherwise
  */
-al_bool al_unit_adapter_bme_get(
+__must_check al_bool al_unit_adapter_bme_get(
 	struct al_unit_adapter	*unit_adapter);
 
 /**
@@ -334,7 +334,7 @@ void al_unit_adapter_error_track_enable(
  * @return	AL_TRUE if errors tracking is enabled,
  *		AL_FALSE otherwise
  */
-al_bool al_unit_adapter_error_track_is_enabled(
+__must_check al_bool al_unit_adapter_error_track_is_enabled(
 	struct al_unit_adapter	*unit_adapter);
 
 /**
@@ -434,7 +434,7 @@ void al_unit_adapter_axi_master_rd_err_attr_get_and_clear(
  *		The unit_adapter instance
  * @return	parity status
  */
-uint32_t al_unit_adapter_app_parity_status_get_and_clear(
+__must_check uint32_t al_unit_adapter_app_parity_status_get_and_clear(
 	struct al_unit_adapter *unit_adapter);
 
 /**

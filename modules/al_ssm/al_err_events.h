@@ -281,7 +281,7 @@ void al_err_events_module_clear(struct al_err_events_module *module);
  *
  * @return 0 on success, errno otherwise
  */
-int al_err_events_module_collect(struct al_err_events_module *module,
+__must_check int al_err_events_module_collect(struct al_err_events_module *module,
 				 enum al_err_events_collect collect);
 
 /*
@@ -304,7 +304,7 @@ void al_err_events_module_print(struct al_err_events_module *module);
  *
  * @return AL_TRUE if test passed, AL_FALSE otherwise
  */
-al_bool al_err_events_module_test(struct al_err_events_module *module);
+__must_check al_bool al_err_events_module_test(struct al_err_events_module *module);
 
 /*
  * Mask module interrupts
@@ -326,7 +326,7 @@ void al_err_events_module_ints_mask(struct al_err_events_module *module);
  *
  * @return 0 on success, errno otherwise
  */
-int al_err_events_handle_init(struct al_err_events_handle *handle,
+__must_check int al_err_events_handle_init(struct al_err_events_handle *handle,
 			      struct al_err_events_handle_init_params *init);
 
 /*
@@ -337,7 +337,7 @@ int al_err_events_handle_init(struct al_err_events_handle *handle,
  *
  * @return 0 on success, errno otherwise
  */
-int al_err_events_handle_collect(struct al_err_events_handle *handle,
+__must_check int al_err_events_handle_collect(struct al_err_events_handle *handle,
 				 enum al_err_events_collect collect);
 
 /*
@@ -351,7 +351,7 @@ int al_err_events_handle_collect(struct al_err_events_handle *handle,
  *
  * @return AL_TRUE if test passed, AL_FALSE otherwise
  */
-al_bool al_err_events_handle_test(struct al_err_events_handle *handle);
+__must_check al_bool al_err_events_handle_test(struct al_err_events_handle *handle);
 
 /*
  * clear handle statistics
