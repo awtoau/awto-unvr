@@ -827,7 +827,8 @@ void al_raid_error_ints_unmask(uint8_t rev_id,
 	void *iofic_regs_base;
 	uint32_t ext_app_bit;
 
-	al_udma_handle_init(&udma, &udma_params);
+	if (al_udma_handle_init(&udma, &udma_params))
+		pr_err("%s: al_udma_handle_init failed\n", __func__);
 
 	al_raid_error_ints_mask_get(rev_id,
 				    &a_mask,
@@ -837,20 +838,22 @@ void al_raid_error_ints_unmask(uint8_t rev_id,
 
 	iofic_regs_base = (uint8_t *)raid_regs_base + AL_RAID_APP_IOFIC_OFFSET;
 
-	al_iofic_config(iofic_regs_base,
+	if (al_iofic_config(iofic_regs_base,
 			AL_INT_GROUP_A,
-			INT_CONTROL_GRP_MASK_MSI_X);
+			INT_CONTROL_GRP_MASK_MSI_X))
+		pr_err("%s: al_iofic_config failed (group A)\n", __func__);
 
 	al_iofic_unmask(iofic_regs_base,
 			AL_INT_GROUP_A,
 			a_mask);
 
-	al_iofic_config(
+	if (al_iofic_config(
 			al_udma_iofic_reg_base_get_adv(&udma,
 				AL_UDMA_IOFIC_LEVEL_PRIMARY),
 			AL_INT_GROUP_D,
 			INT_CONTROL_GRP_SET_ON_POSEDGE |
-			INT_CONTROL_GRP_MASK_MSI_X);
+			INT_CONTROL_GRP_MASK_MSI_X))
+		pr_err("%s: al_iofic_config failed (primary, group D)\n", __func__);
 
 	ext_app_bit = al_udma_iofic_get_ext_app_bit(&udma);
 
