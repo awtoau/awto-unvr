@@ -112,7 +112,8 @@ static void al_udma_set_defaults(struct al_udma *udma)
 		al_reg_write32(&udma->udma_regs->m2s.m2s_comp.cfg_application_ack, 0);
 
 		/* set max packet size to maximum */
-		al_udma_m2s_packet_size_cfg_set(udma, &conf);
+		if (al_udma_m2s_packet_size_cfg_set(udma, &conf))
+			pr_err("%s: failed to set m2s packet size cfg\n", __func__);
 
 		/* Set addr_hi selectors */
 		if (rev_id == AL_UDMA_REV_ID_4) {
