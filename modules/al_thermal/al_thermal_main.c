@@ -153,6 +153,10 @@ static int al_thermal_probe(struct platform_device *pdev)
 	}
 
 	pbs_reg_base = of_iomap(np, 0);
+	if (!pbs_reg_base) {
+		pr_err("%s: failed to map PBS registers\n", __func__);
+		return -ENOMEM;
+	}
 
 	al_dev = devm_kzalloc(&pdev->dev, sizeof(*al_dev), GFP_KERNEL);
 	if (!al_dev) {
