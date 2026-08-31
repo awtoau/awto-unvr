@@ -421,19 +421,17 @@ def main() -> int:
         # no benefit - this small archive extracts well within the plain
         # 1.5s read window console-send uses when --expect is omitted.
         # Extract to a scratch dir first, not straight into /lib/modules/{kver} -
-        # this Fedora rootfs has no `tar` (found live tonight: extraction silently
-        # no-op'd after an earlier `rm -rf` had already deleted the previous,
-        # working tree, losing it for nothing). python3 is a hard dependency of
-        # this rootfs (systemd/dnf need it) so `python3 -m tarfile` is the one
+        # this Fedora rootfs has no `tar`. python3 is a hard dependency of this
+        # rootfs (systemd/dnf need it), so `python3 -m tarfile` is the one
         # extractor guaranteed present. Only rm+swap the real target after the
-        # scratch extraction is confirmed to contain what we expect.
+        # scratch extraction is confirmed to contain what we expect - a failed
+        # extraction must never destroy a working module tree.
         # --filter fully_trusted: PEP 706's default `data` filter refuses any
         # absolute-target symlink and aborts the WHOLE extraction on the first
-        # one - found live tonight via modroot's own standard
-        # /lib/modules/<kver>/build -> <host kbuild path> symlink. This is a
-        # fully-trusted, self-generated archive (both ends are this script),
-        # not third-party content, so the safety filter has nothing to guard
-        # against here.
+        # one, and modroot's own standard /lib/modules/<kver>/build -> <host
+        # kbuild path> symlink is exactly that. This is a fully-trusted,
+        # self-generated archive (both ends are this script), not third-party
+        # content, so the safety filter has nothing to guard against here.
         run_devpy(
             "rm -rf /root/rbd-modules-new && mkdir -p /root/rbd-modules-new && "
             "python3 -m tarfile -e /root/rbd-modules.tar.gz /root/rbd-modules-new "
@@ -441,10 +439,10 @@ def main() -> int:
         )
         # `ls` output is alphabetically sorted, so matching on ANY of the
         # names via OR (dev.py's --expect returns on the FIRST alternative
-        # found) cut this off mid-stream at the first name tonight, before
-        # the rest of the genuinely-complete listing had even arrived.
-        # Matching on just the alphabetically-LAST expected name instead
-        # only satisfies once the whole listing has streamed through.
+        # found) would cut this off mid-stream at the first name, before the
+        # rest of a genuinely-complete listing arrives. Matching on just the
+        # alphabetically-LAST expected name only satisfies once the whole
+        # listing has streamed through.
         ls_out = run_devpy(
             "--expect",
             f"{expected_kos[-1]}|No such file",

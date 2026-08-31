@@ -353,6 +353,8 @@ initial_moderation_table[AL_ETH_INTR_MAX_NUM_OF_LEVELS] = {
 static void al_eth_serdes_mode_set(struct al_eth_adapter *adapter);
 static void al_eth_down(struct al_eth_adapter *adapter);
 static int al_eth_up(struct al_eth_adapter *adapter);
+static int al_eth_aq_phy_fixup(struct phy_device *phydev);
+#define AQUANTIA_AQR105_ID			0x3a1b4a2
 
 struct al_udma *al_eth_udma_get(struct al_eth_adapter *adapter, int tx)
 {
@@ -3848,33 +3850,9 @@ static void al_eth_lm_static_init(struct al_eth_adapter *adapter)
 	params.get_msec = al_eth_systime_msec_get;
 
 	al_eth_lm_init(&adapter->lm_context, &params);
-	/* lm_debug()'s pr_warn promotion had zero callers anywhere - wire it
-	 * to the existing `debug` param instead of leaving it unreachable. */
+	/* lm_debug()'s pr_warn promotion needs this wired up, or it's
+	 * unreachable; ties it to the existing `debug` param. */
 	al_eth_lm_debug_mode_set(&adapter->lm_context, debug > 0);
-}
-
-#define AQUANTIA_AQR105_ID			0x3a1b4a2
-
-static int al_eth_aq_phy_fixup(struct phy_device *phydev)
-{
-	int temp = 0;
-
-	temp = phy_read_mmd(phydev, 7, 0x20);
-	temp &= ~(1 << 12);
-
-	phy_write_mmd(phydev, 7, 0x20, temp);
-
-	temp = phy_read_mmd(phydev, 7, 0xc400);
-	temp |= ((1 << 15) | (1 << 11) | (1 << 10));
-	phy_write_mmd(phydev, 7, 0xc400, temp);
-
-	temp = phy_read_mmd(phydev, 7, 0);
-	temp |= (1 << 9);
-	temp &= ~(1 << 15);
-
-	phy_write_mmd(phydev, 7, 0, temp);
-
-	return 0;
 }
 
 /**
@@ -3919,12 +3897,10 @@ static int al_eth_open(struct net_device *netdev)
 		if (rc)
 			return rc;
 
-#if defined(CONFIG_ARCH_ALPINE)
 		if (adapter->plink) {
 			al_eth_lm_led_config_init(adapter);
 			al_eth_phylink_start(adapter);
 		}
-#endif
 	} else {
 		rc = al_eth_up(adapter);
 		if (rc)
@@ -3986,10 +3962,8 @@ static int al_eth_close(struct net_device *netdev)
 
 	cancel_work_sync(&adapter->reset_task);
 
-#if defined(CONFIG_ARCH_ALPINE)
 	if (adapter->plink)
 		al_eth_phylink_stop(adapter);
-#endif
 
 #ifdef CONFIG_PHYLIB
 	/** Stop PHY & MDIO BUS */
@@ -4007,10 +3981,8 @@ static int al_eth_close(struct net_device *netdev)
 	adapter->dev_stats.interface_down++;
 	u64_stats_update_end(&adapter->syncp);
 
-#if defined(CONFIG_ARCH_ALPINE)
 	if (adapter->plink)
 		al_eth_lm_led_config_terminate(adapter);
-#endif
 
 	return 0;
 }
@@ -4023,10 +3995,8 @@ al_eth_get_link_ksettings(struct net_device *netdev,
 	struct al_eth_board_params params;
 	int rc;
 
-#if defined(CONFIG_ARCH_ALPINE)
 	if (adapter->plink)
 		return al_eth_phylink_ksettings_get(adapter, cmd);
-#endif
 
 #ifdef CONFIG_PHYLIB
 	struct phy_device *phydev = adapter->phydev;
@@ -4063,10 +4033,8 @@ al_eth_set_link_ksettings(struct net_device *netdev,
 {
 	struct al_eth_adapter *adapter = netdev_priv(netdev);
 	int rc = 0;
-#if defined(CONFIG_ARCH_ALPINE)
 	if (adapter->plink)
 		return al_eth_phylink_ksettings_set(adapter, cmd);
-#endif
 #if defined(CONFIG_PHYLIB)
 	struct phy_device *phydev = adapter->phydev;
 
@@ -4445,7 +4413,31 @@ static int al_eth_set_channels(struct net_device *netdev,
 	return 0;
 }
 
-#if defined(CONFIG_PHYLIB) || defined(CONFIG_ARCH_ALPINE)
+/* Chip-erratum workaround for a specific third-party PHY, unrelated to the
+ * Alpine SoC's own serdes/phylink code - grouped here with the other
+ * PHY-level ethtool ops rather than near al_eth_open()'s one call site. */
+static int al_eth_aq_phy_fixup(struct phy_device *phydev)
+{
+	int temp = 0;
+
+	temp = phy_read_mmd(phydev, 7, 0x20);
+	temp &= ~(1 << 12);
+
+	phy_write_mmd(phydev, 7, 0x20, temp);
+
+	temp = phy_read_mmd(phydev, 7, 0xc400);
+	temp |= ((1 << 15) | (1 << 11) | (1 << 10));
+	phy_write_mmd(phydev, 7, 0xc400, temp);
+
+	temp = phy_read_mmd(phydev, 7, 0);
+	temp |= (1 << 9);
+	temp &= ~(1 << 15);
+
+	phy_write_mmd(phydev, 7, 0, temp);
+
+	return 0;
+}
+
 static int al_eth_get_eee(struct net_device *netdev,
 			  struct ethtool_keee *edata)
 {
@@ -4485,21 +4477,7 @@ static int al_eth_set_eee(struct net_device *netdev,
 
 	return phy_ethtool_set_eee(phydev, edata);
 }
-#else /* defined(CONFIG_PHYLIB) || defined(CONFIG_ARCH_ALPINE) */
-static int al_eth_get_eee(struct net_device *netdev,
-			  struct ethtool_keee *edata)
-{
-	return -EOPNOTSUPP;
-}
 
-static int al_eth_set_eee(struct net_device *netdev,
-			  struct ethtool_keee *edata)
-{
-	return -EOPNOTSUPP;
-}
-#endif /* defined(CONFIG_PHYLIB) || defined(CONFIG_ARCH_ALPINE) */
-
-#if defined(CONFIG_PHYLIB) || defined(CONFIG_ARCH_ALPINE)
 static void al_eth_get_wol(struct net_device *netdev,
 			   struct ethtool_wolinfo *wol)
 {
@@ -4533,40 +4511,13 @@ static int al_eth_set_wol(struct net_device *netdev, struct ethtool_wolinfo *wol
 	if ((adapter) && (adapter->phy_exist) && (adapter->mdio_bus)) {
 		phydev = phy_find_first(adapter->mdio_bus);
 		if (phydev)
-        {
-            return phy_ethtool_set_wol(phydev, wol);
-        }
+			return phy_ethtool_set_wol(phydev, wol);
 	}
 
 	device_set_wakeup_enable(&adapter->pdev->dev, adapter->wol);
 
 	return 0;
 }
-#else /* defined(CONFIG_PHYLIB) || defined(CONFIG_ARCH_ALPINE) */
-static void al_eth_get_wol(struct net_device *netdev,
-			   struct ethtool_wolinfo *wol)
-{
-	struct al_eth_adapter *adapter = netdev_priv(netdev);
-
-	wol->wolopts = adapter->wol;
-
-	wol->supported |= WAKE_UCAST | WAKE_MCAST | WAKE_BCAST;
-}
-
-static int al_eth_set_wol(struct net_device *netdev, struct ethtool_wolinfo *wol)
-{
-	struct al_eth_adapter *adapter = netdev_priv(netdev);
-
-	if (wol->wolopts & (WAKE_ARP | WAKE_MAGICSECURE))
-		return -EOPNOTSUPP;
-
-	adapter->wol = wol->wolopts;
-
-	device_set_wakeup_enable(&adapter->pdev->dev, adapter->wol);
-
-	return 0;
-}
-#endif /* defined(CONFIG_PHYLIB) || defined(CONFIG_ARCH_ALPINE) */
 
 
 /****************** ETHTOOL_STATS BEGIN ******************/
@@ -5085,14 +5036,11 @@ static u16 al_eth_select_queue(struct net_device *dev, struct sk_buff *skb,
 		pr_debug("sel_rec_qid=%d\n", qid);
 	}
 	else {
-		/* Was smp_processor_id() under CONFIG_ARCH_ALPINE - re-picks
-		 * per packet, not per-flow, scrambling wire order under core
-		 * migration. netdev_pick_tx() (exported, net/core/dev.c) is
-		 * the modern stable-per-flow/XPS-aware replacement; the old
-		 * skb_tx_hash() call is core-internal in this kernel. See
-		 * #121, docs/kernel-boot-fixes.md. */
+		/* netdev_pick_tx() picks per-flow (stable, XPS-aware), unlike
+		 * per-CPU selection which scrambles wire order under core
+		 * migration. See #121. */
 		qid = netdev_pick_tx(dev, skb, sb_dev);
-		pr_debug("sel_smp_qid=%d\n", qid);
+		pr_debug("sel_qid=%d\n", qid);
 	}
 	return qid;
 }
