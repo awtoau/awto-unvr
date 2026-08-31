@@ -1956,18 +1956,25 @@ al_eth_config_rx_fwd(struct al_eth_adapter *adapter)
 {
 	struct al_eth_fwd_ctrl_table_entry entry;
 	int i;
+	int rc;
 
 	/* let priority be equal to pbits */
-	for (i = 0; i < AL_ETH_FWD_PBITS_TABLE_NUM; i++)
-		if (al_eth_fwd_pbits_table_set(&adapter->hal_adapter, i, i))
-			netdev_err(adapter->netdev, "%s: failed to set pbits table entry %d\n",
-				   __func__, i);
+	for (i = 0; i < AL_ETH_FWD_PBITS_TABLE_NUM; i++) {
+		rc = al_eth_fwd_pbits_table_set(&adapter->hal_adapter, i, i);
+		if (rc)
+			netdev_err(adapter->netdev,
+				   "%s: failed to set pbits table entry %d (rc %d)\n",
+				   __func__, i, rc);
+	}
 
 	/* map priority to queue index, queue id = priority/2 */
-	for (i = 0; i < AL_ETH_FWD_PRIO_TABLE_NUM; i++)
-		if (al_eth_fwd_priority_table_set(&adapter->hal_adapter, i, i >> 1))
-			netdev_err(adapter->netdev, "%s: failed to set priority table entry %d\n",
-				   __func__, i);
+	for (i = 0; i < AL_ETH_FWD_PRIO_TABLE_NUM; i++) {
+		rc = al_eth_fwd_priority_table_set(&adapter->hal_adapter, i, i >> 1);
+		if (rc)
+			netdev_err(adapter->netdev,
+				   "%s: failed to set priority table entry %d (rc %d)\n",
+				   __func__, i, rc);
+	}
 
 	entry.prio_sel = AL_ETH_CTRL_TABLE_PRIO_SEL_VAL_0;
 	entry.queue_sel_1 = AL_ETH_CTRL_TABLE_QUEUE_SEL_1_THASH_TABLE;
@@ -1975,8 +1982,10 @@ al_eth_config_rx_fwd(struct al_eth_adapter *adapter)
 	entry.udma_sel = AL_ETH_CTRL_TABLE_UDMA_SEL_MAC_TABLE;
 	entry.filter = AL_FALSE;
 
-	if (al_eth_ctrl_table_def_set(&adapter->hal_adapter, AL_FALSE, &entry))
-		netdev_err(adapter->netdev, "%s: failed to set default ctrl table entry\n", __func__);
+	rc = al_eth_ctrl_table_def_set(&adapter->hal_adapter, AL_FALSE, &entry);
+	if (rc)
+		netdev_err(adapter->netdev, "%s: failed to set default ctrl table entry (rc %d)\n",
+			   __func__, rc);
 
 	/*
 	 * By default set the mac table to forward all unicast packets to our
@@ -2515,25 +2524,35 @@ al_eth_function_reset(struct al_eth_adapter *adapter)
 	 * registers, which is worse than not restoring at all. */
 	{
 		int save_rc = al_eth_board_params_get(adapter->mac_base, &params);
+		int sub_rc;
+
 		if (save_rc)
 			netdev_err(adapter->netdev,
 				   "%s: failed to save board params before FLR (rc %d) - will skip restore\n",
 				   __func__, save_rc);
-		if (al_eth_mac_addr_read(adapter->ec_base, 0, adapter->mac_addr))
-			netdev_err(adapter->netdev, "%s: failed to save mac address before FLR\n",
-				   __func__);
+		sub_rc = al_eth_mac_addr_read(adapter->ec_base, 0, adapter->mac_addr);
+		if (sub_rc)
+			netdev_err(adapter->netdev,
+				   "%s: failed to save mac address before FLR (rc %d)\n",
+				   __func__, sub_rc);
 
 		rc = al_eth_flr_rmn(&al_eth_read_pci_config,
 			&al_eth_write_pci_config,
 			adapter->pdev, adapter->mac_base);
 
 		/* restore params - only if the save above actually succeeded */
-		if (!save_rc && al_eth_board_params_set(adapter->mac_base, &params))
-			netdev_err(adapter->netdev, "%s: failed to restore board params after FLR\n",
-				   __func__);
-		if (al_eth_mac_addr_store(adapter->ec_base, 0, adapter->mac_addr))
-			netdev_err(adapter->netdev, "%s: failed to restore mac address after FLR\n",
-				   __func__);
+		if (!save_rc) {
+			sub_rc = al_eth_board_params_set(adapter->mac_base, &params);
+			if (sub_rc)
+				netdev_err(adapter->netdev,
+					   "%s: failed to restore board params after FLR (rc %d)\n",
+					   __func__, sub_rc);
+		}
+		sub_rc = al_eth_mac_addr_store(adapter->ec_base, 0, adapter->mac_addr);
+		if (sub_rc)
+			netdev_err(adapter->netdev,
+				   "%s: failed to restore mac address after FLR (rc %d)\n",
+				   __func__, sub_rc);
 	}
 	return rc;
 }
@@ -3581,7 +3600,7 @@ static int al_eth_up_complete(struct al_eth_adapter *adapter)
 	/* enable the mac tx and rx paths */
 	rc = al_eth_mac_start(&adapter->hal_adapter);
 	if (rc)
-		netdev_err(adapter->netdev, "%s: failed to start mac\n", __func__);
+		netdev_err(adapter->netdev, "%s: failed to start mac (rc %d)\n", __func__, rc);
 	return rc;
 }
 
@@ -3602,7 +3621,8 @@ static int al_eth_up(struct al_eth_adapter *adapter)
 
 	rc = al_eth_setup_int_mode(adapter, disable_msi);
 	if (rc) {
-		dev_err(&adapter->pdev->dev, "%s failed at setup interrupt mode!\n", __func__);
+		dev_err(&adapter->pdev->dev, "%s failed at setup interrupt mode! (rc %d)\n",
+			__func__, rc);
 		goto err_setup_int;
 	}
 
@@ -3917,12 +3937,13 @@ static int al_eth_open(struct net_device *netdev)
 			rc = phy_register_fixup_for_uid(AQUANTIA_AQR105_ID, 0xffffffff,
 							al_eth_aq_phy_fixup);
 			if (rc)
-				netdev_warn(adapter->netdev, "failed to register PHY fixup\n");
+				netdev_warn(adapter->netdev, "failed to register PHY fixup (rc %d)\n",
+					    rc);
 		}
 
 		rc = al_eth_mdiobus_setup(adapter);
 		if (rc) {
-			netdev_err(netdev, "failed at mdiobus setup!\n");
+			netdev_err(netdev, "failed at mdiobus setup! (rc %d)\n", rc);
 			al_eth_down(adapter);
 			return rc;
 		}
@@ -4115,14 +4136,18 @@ static void al_eth_get_stats64(struct net_device *netdev,
 {
 	struct al_eth_adapter *adapter = netdev_priv(netdev);
 	struct al_eth_mac_stats *mac_stats = &adapter->mac_stats;
+	int rc;
+
 	if (!adapter->up)
 		return;
 
 	/* .ndo_get_stats64 is void per the kernel's own net_device_ops
 	 * contract - can't propagate a failure upward, only log it. Rate
 	 * limited since this can be polled frequently (ethtool/ip -s link). */
-	if (al_eth_mac_stats_get(&adapter->hal_adapter, mac_stats))
-		net_err_ratelimited("%s: failed to read mac stats\n", adapter->netdev->name);
+	rc = al_eth_mac_stats_get(&adapter->hal_adapter, mac_stats);
+	if (rc)
+		net_err_ratelimited("%s: failed to read mac stats (rc %d)\n",
+				     adapter->netdev->name, rc);
 
 	stats->rx_packets = mac_stats->aFramesReceivedOK; /* including pause frames */
 	stats->tx_packets = mac_stats->aFramesTransmittedOK; /* including pause frames */
@@ -4250,10 +4275,13 @@ al_eth_set_pauseparam(struct net_device *netdev,
 				return phy_start_aneg(phydev);
 		}
 	} else {
+		int cfg_rc;
+
 		link_config->flow_ctrl_active = link_config->flow_ctrl_supported;
-		if (al_eth_flow_ctrl_config(adapter))
-			netdev_err(adapter->netdev, "%s: failed to configure flow control\n",
-				   __func__);
+		cfg_rc = al_eth_flow_ctrl_config(adapter);
+		if (cfg_rc)
+			netdev_err(adapter->netdev, "%s: failed to configure flow control (rc %d)\n",
+				   __func__, cfg_rc);
 	}
 	return 0;
 }
@@ -4436,7 +4464,7 @@ static int al_eth_get_eee(struct net_device *netdev,
 
 	rc = al_eth_eee_get(&adapter->hal_adapter, &params);
 	if (rc) {
-		netdev_err(adapter->netdev, "%s: failed to get EEE params\n", __func__);
+		netdev_err(adapter->netdev, "%s: failed to get EEE params (rc %d)\n", __func__, rc);
 		return rc;
 	}
 
@@ -4467,7 +4495,7 @@ static int al_eth_set_eee(struct net_device *netdev,
 
 	rc = al_eth_eee_config(&adapter->hal_adapter, &params);
 	if (rc) {
-		netdev_err(adapter->netdev, "%s: failed to configure EEE\n", __func__);
+		netdev_err(adapter->netdev, "%s: failed to configure EEE (rc %d)\n", __func__, rc);
 		return rc;
 	}
 
@@ -5558,8 +5586,12 @@ static int al_eth_resume(struct pci_dev *pdev)
 
 	pci_wake_from_d3(pdev, false);
 
-	if (al_eth_wol_disable(&adapter->hal_adapter))
-		dev_err(&pdev->dev, "%s: failed to disable WoL\n", __func__);
+	{
+		int wol_rc = al_eth_wol_disable(&adapter->hal_adapter);
+
+		if (wol_rc)
+			dev_err(&pdev->dev, "%s: failed to disable WoL (rc %d)\n", __func__, wol_rc);
+	}
 
 	netif_device_attach(netdev);
 

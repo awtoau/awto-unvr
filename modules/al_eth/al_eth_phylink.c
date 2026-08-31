@@ -163,9 +163,13 @@ static void al_eth_pcs_get_state(struct phylink_pcs *pcs, unsigned int neg_mode,
 	 * previous module/cable state cannot pin the link down for good. The
 	 * vendor LM cached this in lm_context->link_state and needed a full
 	 * driver reload to clear it (#98). */
-	if (al_eth_link_status_clear(&adapter->hal_adapter))
-		net_warn_ratelimited("%s: failed to clear link status latch\n",
-				      adapter->netdev->name);
+	{
+		int rc = al_eth_link_status_clear(&adapter->hal_adapter);
+
+		if (rc)
+			net_warn_ratelimited("%s: failed to clear link status latch (rc %d)\n",
+					      adapter->netdev->name, rc);
+	}
 
 	if (al_eth_link_status_get(&adapter->hal_adapter, &status))
 		return;
@@ -231,8 +235,13 @@ static void al_eth_plink_mac_link_up(struct phylink_config *config,
 	adapter->link_config.active_duplex = duplex;
 	adapter->last_link = true;
 
-	if (al_eth_led_set(&adapter->hal_adapter, AL_TRUE))
-		netdev_warn(adapter->netdev, "%s: failed to set link LED\n", __func__);
+	{
+		int rc = al_eth_led_set(&adapter->hal_adapter, AL_TRUE);
+
+		if (rc)
+			netdev_warn(adapter->netdev, "%s: failed to set link LED (rc %d)\n",
+				    __func__, rc);
+	}
 	al_eth_link_leds_set(adapter, speed);
 
 	netdev_info(adapter->netdev, "link up, %d Mb/s %s duplex\n", speed,
@@ -247,8 +256,13 @@ static void al_eth_plink_mac_link_down(struct phylink_config *config,
 
 	adapter->last_link = false;
 
-	if (al_eth_led_set(&adapter->hal_adapter, AL_FALSE))
-		netdev_warn(adapter->netdev, "%s: failed to set link LED\n", __func__);
+	{
+		int rc = al_eth_led_set(&adapter->hal_adapter, AL_FALSE);
+
+		if (rc)
+			netdev_warn(adapter->netdev, "%s: failed to set link LED (rc %d)\n",
+				    __func__, rc);
+	}
 	al_eth_link_leds_set(adapter, 0);
 
 	netdev_info(adapter->netdev, "link down\n");
