@@ -21,15 +21,18 @@ Each bisect candidate is a RAW upstream commit with none of our board
 support - those are 4 commits layered on top of our actual HEAD, not part
 of upstream history - so each step cherry-picks them on before building.
 
-Boots an INITRAMFS-embedded kernel (busybox shell over the serial console),
-not the Fedora rootfs on disk: this test only needs console + USB/xHCI
-working (both on the "external" PCIe controller - the pcie-al.c DBI fix),
-not AHCI/SATA (the "internal" bus - pcie-al-internal.c). Avoiding a
-disk-rootfs dependency means a candidate that happens to break AHCI
-unrelated to this bug can't produce a false SKIP. No SSH/network needed -
-entirely over the console, matching build-linux-ea16.py's own pattern
-(reused here as a subprocess, then r8152.ko/mii.ko are added into the
-built initramfs before the final image/cpio regeneration).
+Boots the FULL FEDORA ROOTFS on disk (via ram-boot-deploy.py), not an
+initramfs. An earlier initramfs-based design (console+USB only, no
+AHCI/disk dependency) was tried first for speed, but #190's own comment
+thread shows why it doesn't work as a bisect oracle: the same commit that
+crashes 6/6 times on the Fedora boot came back clean across 5 retries in
+the lightweight initramfs boot, even with USB enumeration confirmed
+genuine both times. That points to an environmental/timing difference
+(a much heavier concurrent Fedora boot vs. a near-idle initramfs boot)
+that the initramfs path can't reproduce - so it can't be trusted not to
+report a false GOOD on an actually-bad commit, which would poison the
+bisect. The Fedora-rootfs path costs a real disk boot per candidate but
+has the only actual reproduction record (6/6).
 
 Usage (run once to set up, then let git bisect drive this script):
     cd /mnt/2tb/unvr-port-refs/linux-v7.3-fresh
@@ -44,43 +47,39 @@ whatever commit SRC is currently checked out to):
 from __future__ import annotations
 
 import argparse
-import importlib.util
 import os
 import shutil
-import struct
 import subprocess
 import sys
 import time
-import zlib
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO / "scripts"))
-from _net import detect_server_ip  # noqa: E402
-from _power import power_cycle_verified  # noqa: E402
-
-# ram-boot-deploy.py already has the proven tftpd-embed + tftp_and_verify +
-# catch-uboot-race logic (see docs/build.md: single deploy concept, no
-# duplicate reimplementations) - reused directly via importlib since its
-# filename has dashes and can't be a plain `import` target. It imports
-# _repo, which refuses direct `python3 scripts/foo.py` invocation unless
-# AWTO_VIA_DEVPY or AWTO_ALLOW_DIRECT_SCRIPT is set - this script (driven by
-# `git bisect run`, which needs a bare argv and can't go through dev.py's
+# build-linux-fedora.py and _repo import each need the direct-invocation
+# guard bypassed (see _repo.py's _enforce_via_devpy) - this script (driven
+# by `git bisect run`, which needs a bare argv and can't go through dev.py's
 # subcommand dispatch) is itself always a direct invocation, so it opts in
-# for this in-process reuse rather than spawning ram-boot-deploy.py as a
-# naive subprocess.
+# for itself and every subprocess it spawns.
 os.environ.setdefault("AWTO_ALLOW_DIRECT_SCRIPT", "1")
-_rbd_spec = importlib.util.spec_from_file_location(
-    "_ram_boot_deploy", REPO / "scripts/ram-boot-deploy.py")
-_rbd = importlib.util.module_from_spec(_rbd_spec)
-_rbd_spec.loader.exec_module(_rbd)
+from _repo import kernel_build_out, kernel_build_ver  # noqa: E402
+from _console import connect as console_connect  # noqa: E402
+from _console import login as console_login  # noqa: E402
+from _console import sh as console_sh  # noqa: E402
+
 SRC = Path(os.environ.get("AWTO_KERNEL_SRC", "/mnt/2tb/unvr-port-refs/linux-v7.3-fresh"))
-EA16_OUT = Path("/mnt/2tb/unvr-port-refs/build-out-ea16")
-KOUT = EA16_OUT / "kbuild"
+# MUST be the KASAN variant: all 6 original crash reproductions tonight were
+# on AWTO_KASAN_BUILD=1 kernels. The bug is a torn/racy pointer read - without
+# KASAN's shadow-memory instrumentation to catch it, a garbage-but-plausible
+# pointer read can silently "succeed" instead of oopsing. Confirmed live:
+# the plain (non-KASAN) build ran clean (0/3) on the exact commit that
+# crashed 6/6 on KASAN builds.
+FEDORA_OUT = kernel_build_out(kasan=True)
+FEDORA_KOUT = FEDORA_OUT / "kbuild"
+VER = kernel_build_ver()
 LOG = REPO / "tmp/logs/bisect-r8152-workqueue.log"
-NPROC = os.cpu_count() or 4
-CROSS = "aarch64-linux-gnu-"
-ENV = dict(os.environ, ARCH="arm64", CROSS_COMPILE=CROSS)
+ENV = dict(os.environ, ARCH="arm64", CROSS_COMPILE="aarch64-linux-gnu-",
+           AWTO_ALLOW_DIRECT_SCRIPT="1", AWTO_VIA_DEVPY="1", AWTO_KASAN_BUILD="1")
 
 BOARD_COMMITS = ["3a8d7a1aed24", "2c9316496bad", "ff8d1c237ea6", "ae48f7150404"]
 DTS_NAME = "alpine-v2-ubnt-unvr-ea16"
@@ -88,10 +87,24 @@ DTS_NAME = "alpine-v2-ubnt-unvr-ea16"
 # Exit codes git-bisect run understands: 0 = good, 1-124/126-127 = bad, 125 = skip.
 GOOD, BAD, SKIP = 0, 1, 125
 
-BUILD_TIMEOUT_S = 600  # see bisect-r8152-workqueue.py history: full-tree build ~200-260s tonight, 2x margin
-DEPLOY_TIMEOUT_S = 280  # bootm -> shell banner: ~39s bootm->"Starting kernel" (ram-boot-deploy.py's
-# own measured figure for a similar-sized image) + initramfs unpack/init - 2x+ margin;
-# tftp itself is NOT covered by this (tftp_and_verify has its own internal 90s bound)
+# Real measured build-linux-fedora.py TOTAL time with a warm ccache: 208s
+# (tmp/logs/bisect-fedora-timing-test.log). That run benefited from
+# tonight's extensive prior Fedora builds keeping ccache hot; a bisect
+# candidate further from cache-warm state (a big refactor commit) will
+# cost more, plus this script's own separate r8152/mii module build on
+# top - budget ~6x that measured figure, not the measured figure itself.
+BUILD_TIMEOUT_S = 1200
+# ram-boot-deploy.py's own internal wait-for-boot bound is 310s (its own
+# comment: ~39s bootm->"Starting kernel" for a similar-sized image, plus
+# margin) - this wraps the WHOLE subprocess (power-cycle + catch-uboot +
+# 2 tftp transfers + boot + wait-for-login), so budget generously above
+# that rather than re-deriving each sub-step's cost here.
+DEPLOY_TIMEOUT_S = 500
+
+R8152_ATTEMPTS = 3  # the original crash reproduced on the FIRST insmod after
+# a fresh boot, 6/6 times - this isn't chasing a missed race like the
+# initramfs retry loop was, just cheap extra confidence once we've already
+# paid for a full disk boot.
 
 _log_lines: list[str] = []
 
@@ -123,19 +136,6 @@ def run(cmd: list[str], cwd: Path | None = None, timeout: float = 60,
     return p
 
 
-def console_send(expect: str, cmd: str, timeout: float) -> tuple[bool, str]:
-    try:
-        p = subprocess.run(
-            [sys.executable, "./dev.py", "console-send", "--expect", expect,
-             "--timeout", str(timeout), cmd],
-            cwd=REPO, capture_output=True, text=True, timeout=timeout + 10,
-        )
-    except subprocess.TimeoutExpired:
-        return False, "(console-send itself timed out)"
-    out = p.stdout + p.stderr
-    return ("<<MATCHED:" in out), out
-
-
 def prep_board_commits(commit: str) -> bool:
     run(["git", "checkout", "-f", commit], cwd=SRC, timeout=30)
     run(["git", "clean", "-fdx", "--", "arch/arm64/boot/dts/amazon",
@@ -150,212 +150,102 @@ def prep_board_commits(commit: str) -> bool:
 
 
 def kver() -> str:
-    return subprocess.check_output(
-        ["make", "-s", "-C", str(SRC), f"O={KOUT}", "kernelrelease"], env=ENV,
-    ).decode().strip()
+    """Read what kbuild itself wrote, not a separate `make kernelrelease`
+    invocation - build-linux-fedora.py's own kver() docs a real, caught-live
+    staleness bug in the latter (a KASAN run followed by a plain run can
+    keep printing the previous run's release string)."""
+    path = FEDORA_KOUT / "include/config/kernel.release"
+    if not path.exists():
+        raise FileNotFoundError(f"{path} missing - build before calling kver()")
+    return path.read_text().strip()
 
 
-def build_ea16_with_r8152() -> str | None:
-    """Runs build-linux-ea16.py's own pipeline (proven initramfs-embedded
-    netboot build), then injects r8152.ko/mii.ko into the initramfs and
-    regenerates the image. Returns the kernel release, or None on failure
-    (candidate should be SKIPped)."""
+def build_fedora_with_r8152() -> str | None:
+    """Runs build-linux-fedora.py's own pipeline, then explicitly re-enables
+    r8152/mii and builds them separately. build-linux-fedora.py's configure()
+    runs `localmodconfig` against a real lsmod snapshot from the box
+    (scripts/woomera-lsmod-known-good.txt) BEFORE r8152 was ever tested -
+    confirmed live: the resulting .config has `# CONFIG_USB_RTL8152 is not
+    set` despite the raw Fedora config shipping it as =m, so the normal
+    modules_install step never installs it. Returns the kernel release, or
+    None on failure (candidate -> SKIP)."""
     try:
-        run([sys.executable, "scripts/build-linux-ea16.py"], cwd=REPO,
+        run([sys.executable, "scripts/build-linux-fedora.py"], cwd=REPO,
             env=dict(ENV, AWTO_KERNEL_SRC=str(SRC)), timeout=BUILD_TIMEOUT_S)
     except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
-        log("build-linux-ea16.py failed/timed out - skipping this candidate")
+        log("build-linux-fedora.py failed/timed out - skipping this candidate")
         return None
 
     kv = kver()
-    cfg = KOUT / ".config"
+    uimage = FEDORA_OUT / f"uImage-unvr-ea16-{VER}-fedora"
+    dtb = FEDORA_OUT / f"{DTS_NAME}-{VER}.dtb"
+    modroot = FEDORA_OUT / "modroot"
+    if not (uimage.exists() and dtb.exists()):
+        log(f"expected build outputs missing (uimage={uimage.exists()}, "
+            f"dtb={dtb.exists()}) - skipping")
+        return None
+
+    cfg = FEDORA_KOUT / ".config"
     run([str(SRC / "scripts/config"), "--file", str(cfg),
-         "--module", "USB_RTL8152", "--module", "CRYPTO_LIB_SHA256",
-         "--module", "MII", "--enable", "PHYLIB"], timeout=30)
-    run(["make", "-C", str(SRC), f"O={KOUT}", "olddefconfig"], env=ENV, timeout=60)
+         "--module", "USB_RTL8152", "--module", "MII"], timeout=30)
+    run(["make", "-C", str(SRC), f"O={FEDORA_KOUT}", "olddefconfig"], env=ENV, timeout=60)
     try:
-        run(["make", "-C", str(SRC), f"O={KOUT}", f"-j{NPROC}", "modules"],
+        run(["make", "-C", str(SRC), f"O={FEDORA_KOUT}", f"-j{os.cpu_count() or 4}", "modules"],
             env=ENV, timeout=BUILD_TIMEOUT_S)
     except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
         log("r8152 module build failed - skipping this candidate")
         return None
 
-    extra = EA16_OUT / f"initramfs-root/lib/modules/{kv}/extra"
-    extra.mkdir(parents=True, exist_ok=True)
-    r8152_ko = KOUT / "drivers/net/usb/r8152.ko"
-    mii_ko = KOUT / "drivers/net/mii.ko"
+    r8152_ko = FEDORA_KOUT / "drivers/net/usb/r8152.ko"
+    mii_ko = FEDORA_KOUT / "drivers/net/mii.ko"
     if not r8152_ko.exists() or not mii_ko.exists():
         log("r8152.ko/mii.ko missing after build - skipping")
         return None
+    extra = modroot / f"lib/modules/{kv}/extra"
+    extra.mkdir(parents=True, exist_ok=True)
     shutil.copy(r8152_ko, extra / "r8152.ko")
     shutil.copy(mii_ko, extra / "mii.ko")
-
-    # A single insmod-at-boot probe isn't enough: the #190 comment thread
-    # documents a clean (no-crash) boot at a commit functionally identical
-    # to one that crashed 6/6 times on the Fedora build - the leading
-    # hypothesis (a torn/racy per-cpu pointer read, matching the already-
-    # applied sibling fix 1d125f0e6cbd's bug class) is plausibly timing-
-    # dependent on when secondary CPUs populate wq->cpu_pwq relative to
-    # when USB enumerates r8152, so one probe can miss the race. Re-probe
-    # R8152_ATTEMPTS times in one boot (rmmod+insmod - the USB core re-
-    # binds an already-attached device synchronously inside insmod's
-    # driver registration, no physical replug/wait needed) rather than
-    # paying a full rebuild+reboot per attempt. The oops kills the
-    # insmod subshell, not the whole init script (confirmed pattern all
-    # night: "note: insmod[N] exited with irqs disabled", not a full
-    # panic) - so the loop keeps going and the "serial shell" banner is
-    # still a reliable "boot completed" signal; dmesg is the actual
-    # verdict, checked once after all attempts.
-    R8152_ATTEMPTS = 5
-    init_path = EA16_OUT / "initramfs-root/init"
-    init_text = init_path.read_text()
-    # Anchor on the WHOLE al_* loop, not just its opening line, and insert
-    # the retry block AFTER it - not before. First attempt put r8152 first
-    # via raw insmod (no modprobe overhead) immediately after mounting
-    # /dev, and it completed suspiciously fast with zero USB output: xHCI
-    # (external PCIe) hadn't enumerated the physical adapter yet, so
-    # rtl8152_probe_once() - and the crash inside it - never ran at all.
-    # The al_* loop's own PCI/hardware init work takes real wall-clock
-    # time, which is what gave USB enumeration room to happen in the
-    # ORIGINAL single-probe test that did see real USB/r8152 activity.
-    marker = (
-        'for m in al_dma al_ssm al_eth al_sgpo; do\n'
-        '    modprobe $m 2>/dev/null || insmod /lib/modules/$KVER/extra/$m.ko 2>/dev/null \\\n'
-        '        && echo "loaded $m" || echo "FAILED $m"\n'
-        'done\n'
-    )
-    if marker not in init_text:
-        log("init script's al_* modprobe loop marker not found - skipping")
-        return None
-    retry_block = (
-        f'echo "--- r8152 retry probe ({R8152_ATTEMPTS} attempts) ---"\n'
-        f'insmod /lib/modules/{kv}/extra/mii.ko 2>&1\n'
-        f'for i in $(seq 1 {R8152_ATTEMPTS}); do\n'
-        f'  insmod /lib/modules/{kv}/extra/r8152.ko 2>&1\n'
-        f'  echo "r8152 attempt $i insmod rc=$?"\n'
-        f'  rmmod r8152 2>&1\n'
-        f'done\n'
-    )
-    init_text = init_text.replace(marker, marker + retry_block, 1)
-    init_path.write_text(init_text)
-
-    # Regenerate the embedded-initramfs Image (picks up the newly-added
-    # modules dir) and re-wrap the uImage - same two steps
-    # build-linux-ea16.py's own main() does after build_oot_modules().
-    try:
-        run(["make", "-C", str(SRC), f"O={KOUT}", f"-j{NPROC}", "Image", "dtbs"],
-            env=ENV, timeout=BUILD_TIMEOUT_S)
-    except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
-        log("final Image rebuild failed - skipping")
-        return None
     return kv
 
 
-def mkuimage(image_path: Path, out_path: Path) -> None:
-    IH_MAGIC, IH_OS_LINUX, IH_ARCH_ARM64, IH_TYPE_KERNEL, IH_COMP_NONE = (
-        0x27051956, 5, 22, 2, 0)
-    LOAD_ADDR = ENTRY_ADDR = 0x08000000
-    data = image_path.read_bytes()
-    dcrc = zlib.crc32(data) & 0xFFFFFFFF
-    nm = b"bisect-r8152"[:31].ljust(32, b"\0")
-
-    def hdr(hc: int) -> bytes:
-        return struct.pack(">IIIIIIIBBBB32s", IH_MAGIC, hc, int(time.time()),
-                            len(data), LOAD_ADDR, ENTRY_ADDR, dcrc, IH_OS_LINUX,
-                            IH_ARCH_ARM64, IH_TYPE_KERNEL, IH_COMP_NONE, nm)
-
-    h = hdr(zlib.crc32(hdr(0)) & 0xFFFFFFFF)
-    out_path.write_bytes(h + data)
-
-
-# The initramfs init script's own distinctive line, printed right before it
-# execs the interactive shell (confirmed by reading build-out/initramfs-
-# root/init in full) - the ONE reliable "boot reached the end" signal for
-# this image, since there's no getty/login process to produce a login
-# prompt. This lands whether or not r8152 crashed: an oops kills the
-# insmod/modprobe subshell, not the whole init script (confirmed pattern:
-# "note: insmod[N] exited with irqs disabled", not a full panic) - so
-# reaching this banner means "finished booting", and dmesg is the actual
-# pass/fail verdict, checked separately below.
-SHELL_BANNER = "serial shell on ttyS0"
-
-
 def deploy_and_test(kv: str) -> int:
-    """Netboot the self-contained initramfs kernel directly (r8152/mii are
-    already baked into its own modprobe loop - see build_ea16_with_r8152),
-    reach the post-boot shell over the console, then check dmesg for the
-    crash signature. Reuses ram-boot-deploy.py's proven tftpd-embed +
-    catch-uboot-race + tftp_and_verify (single deploy concept, not a second
-    hand-rolled reimplementation of the same delicate boot race)."""
-    image = KOUT / "arch/arm64/boot/Image"
-    dtb = KOUT / f"arch/arm64/boot/dts/amazon/{DTS_NAME}.dtb"
-    if not image.exists() or not dtb.exists():
-        log(f"Image or DTB missing ({image}, {dtb}) - skipping")
-        return SKIP
-    uimage = EA16_OUT / "uImage-bisect"
-    mkuimage(image, uimage)
-
-    _rbd.ensure_tftpd()
-    server_ip = detect_server_ip()
-    log(f"tftp server IP (auto-detected): {server_ip}")
-
-    log("starting catch-uboot.py to win the autoboot race")
-    catch = subprocess.Popen(
-        [sys.executable, "scripts/catch-uboot.py", "--seconds", "60"], cwd=REPO)
+    """Deploy via ram-boot-deploy.py (power-cycle, catch-uboot race, tftp,
+    boot, wait for login - all handled internally, single deploy concept,
+    not a second hand-rolled reimplementation), then probe r8152 over the
+    console and check dmesg for the crash signature."""
+    uimage = FEDORA_OUT / f"uImage-unvr-ea16-{VER}-fedora"
+    dtb = FEDORA_OUT / f"{DTS_NAME}-{VER}.dtb"
+    modroot = FEDORA_OUT / "modroot"
     try:
-        power_cycle_verified(log=log)
-    except Exception:
-        catch.kill()
-        log("power-cycle failed - skipping")
-        return SKIP
-    try:
-        rc = catch.wait(timeout=70)
-    except subprocess.TimeoutExpired:
-        catch.kill()
-        log("catch-uboot.py hung waiting for the U-Boot prompt - skipping")
-        return SKIP
-    if rc != 0:
-        log("catch-uboot.py did not reach the U-Boot prompt (autoboot won) - skipping")
-        return SKIP
-    log("U-Boot prompt reached, autoboot stopped")
-
-    try:
-        _rbd.run_devpy("--expect", "ALPINE_UBNT_NAS_ALL>", "--timeout", "8",
-                        f"setenv ipaddr {_rbd.IPADDR}")
-        _rbd.run_devpy("--expect", "ALPINE_UBNT_NAS_ALL>", "--timeout", "8",
-                        f"setenv serverip {server_ip}")
-        _rbd.tftp_and_verify(uimage, _rbd.KERNEL_ADDR)
-        _rbd.tftp_and_verify(dtb, _rbd.DTB_ADDR)
-    except (RuntimeError, subprocess.TimeoutExpired) as e:
-        log(f"tftp staging failed: {e} - skipping")
+        run([sys.executable, "scripts/ram-boot-deploy.py",
+             "--kernel", str(uimage), "--dtb", str(dtb),
+             "--modules-dir", str(modroot)],
+            cwd=REPO, env=ENV, timeout=DEPLOY_TIMEOUT_S)
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
+        log("ram-boot-deploy.py failed/timed out - skipping this candidate")
         return SKIP
 
-    ok, out = console_send(f"{SHELL_BANNER}|Kernel panic",
-                            f"bootm {_rbd.KERNEL_ADDR} - {_rbd.DTB_ADDR}",
-                            DEPLOY_TIMEOUT_S)
-    if "Kernel panic" in out:
-        log("kernel itself panicked before reaching the shell - "
-            "genuinely unbootable, not just unrelated-to-r8152 -> SKIP")
-        return SKIP
-    if not ok or SHELL_BANNER not in out:
-        log("never reached the init script's shell banner -> SKIP")
-        return SKIP
-
-    matched, dmesg_out = console_send(
-        "BISECT_DMESG_DONE",
-        "dmesg | grep -Eic 'Internal error|Unable to handle kernel' ; "
-        "echo BISECT_DMESG_DONE",
-        15,
+    s = console_connect()
+    console_login(s)
+    rc, out = console_sh(
+        s,
+        "rmmod r8152 2>/dev/null; rmmod mii 2>/dev/null; "
+        f"for i in $(seq 1 {R8152_ATTEMPTS}); do "
+        "modprobe r8152 2>&1; echo attempt $i insmod rc=$?; rmmod r8152 2>&1; "
+        "done",
+        timeout=60,
     )
-    if not matched:
-        log("shell reached but dmesg check never returned (hung/crashed post-boot) -> BAD")
+    if rc is None:
+        log(f"r8152 probe loop never returned (box likely crashed hard) -> BAD\n{out}")
         return BAD
-    crash_count = 0
-    for line in dmesg_out.splitlines():
-        line = line.strip()
-        if line.isdigit():
-            crash_count = int(line)
-            break
+
+    rc, out = console_sh(
+        s, "dmesg | grep -Eic 'Internal error|Unable to handle kernel'", timeout=15,
+    )
+    if rc is None:
+        log("dmesg check never returned (hung/crashed post-probe) -> BAD")
+        return BAD
+    crash_count = int(out.strip().splitlines()[-1]) if out.strip() else 0
     if crash_count > 0:
         log(f"CRASH detected ({crash_count} matching dmesg lines) -> BAD")
         return BAD
@@ -372,7 +262,7 @@ def run_once() -> int:
         flush_log()
         return SKIP
 
-    kv = build_ea16_with_r8152()
+    kv = build_fedora_with_r8152()
     if kv is None:
         flush_log()
         return SKIP
