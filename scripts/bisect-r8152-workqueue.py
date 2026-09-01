@@ -190,23 +190,53 @@ def build_ea16_with_r8152() -> str | None:
     shutil.copy(r8152_ko, extra / "r8152.ko")
     shutil.copy(mii_ko, extra / "mii.ko")
 
-    # Load r8152 during the init script's own modprobe loop, same as the
-    # al_* modules - the crash (if this candidate has it) happens
-    # automatically during boot, before the "serial shell" banner. That
-    # banner is what we wait for below, regardless of whether r8152
-    # crashed: the oops kills the modprobe subshell, not the whole init
-    # script (confirmed pattern all night - "note: insmod[N] exited with
-    # irqs disabled", not a full panic), so the banner is a reliable
-    # "boot completed" signal either way; dmesg is the actual verdict.
+    # A single insmod-at-boot probe isn't enough: the #190 comment thread
+    # documents a clean (no-crash) boot at a commit functionally identical
+    # to one that crashed 6/6 times on the Fedora build - the leading
+    # hypothesis (a torn/racy per-cpu pointer read, matching the already-
+    # applied sibling fix 1d125f0e6cbd's bug class) is plausibly timing-
+    # dependent on when secondary CPUs populate wq->cpu_pwq relative to
+    # when USB enumerates r8152, so one probe can miss the race. Re-probe
+    # R8152_ATTEMPTS times in one boot (rmmod+insmod - the USB core re-
+    # binds an already-attached device synchronously inside insmod's
+    # driver registration, no physical replug/wait needed) rather than
+    # paying a full rebuild+reboot per attempt. The oops kills the
+    # insmod subshell, not the whole init script (confirmed pattern all
+    # night: "note: insmod[N] exited with irqs disabled", not a full
+    # panic) - so the loop keeps going and the "serial shell" banner is
+    # still a reliable "boot completed" signal; dmesg is the actual
+    # verdict, checked once after all attempts.
+    R8152_ATTEMPTS = 5
     init_path = EA16_OUT / "initramfs-root/init"
     init_text = init_path.read_text()
-    marker = 'for m in al_dma al_ssm al_eth al_sgpo; do'
-    if marker not in init_text:
-        log("init script's modprobe loop marker not found - skipping")
-        return None
-    init_text = init_text.replace(
-        marker, 'for m in mii r8152 al_dma al_ssm al_eth al_sgpo; do', 1,
+    # Anchor on the WHOLE al_* loop, not just its opening line, and insert
+    # the retry block AFTER it - not before. First attempt put r8152 first
+    # via raw insmod (no modprobe overhead) immediately after mounting
+    # /dev, and it completed suspiciously fast with zero USB output: xHCI
+    # (external PCIe) hadn't enumerated the physical adapter yet, so
+    # rtl8152_probe_once() - and the crash inside it - never ran at all.
+    # The al_* loop's own PCI/hardware init work takes real wall-clock
+    # time, which is what gave USB enumeration room to happen in the
+    # ORIGINAL single-probe test that did see real USB/r8152 activity.
+    marker = (
+        'for m in al_dma al_ssm al_eth al_sgpo; do\n'
+        '    modprobe $m 2>/dev/null || insmod /lib/modules/$KVER/extra/$m.ko 2>/dev/null \\\n'
+        '        && echo "loaded $m" || echo "FAILED $m"\n'
+        'done\n'
     )
+    if marker not in init_text:
+        log("init script's al_* modprobe loop marker not found - skipping")
+        return None
+    retry_block = (
+        f'echo "--- r8152 retry probe ({R8152_ATTEMPTS} attempts) ---"\n'
+        f'insmod /lib/modules/{kv}/extra/mii.ko 2>&1\n'
+        f'for i in $(seq 1 {R8152_ATTEMPTS}); do\n'
+        f'  insmod /lib/modules/{kv}/extra/r8152.ko 2>&1\n'
+        f'  echo "r8152 attempt $i insmod rc=$?"\n'
+        f'  rmmod r8152 2>&1\n'
+        f'done\n'
+    )
+    init_text = init_text.replace(marker, marker + retry_block, 1)
     init_path.write_text(init_text)
 
     # Regenerate the embedded-initramfs Image (picks up the newly-added
