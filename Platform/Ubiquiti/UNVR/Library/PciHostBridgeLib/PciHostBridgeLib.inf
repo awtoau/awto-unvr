@@ -1,0 +1,28 @@
+## @file
+#  PciHostBridgeLib for the Ubiquiti UNVR's internal PCIe (Alpine V2).
+#
+#  Copyright (c) 2026, Awto / Daniel Tyrrell. All rights reserved.
+#
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+##
+
+[Defines]
+  INF_VERSION                    = 0x0001001b
+  BASE_NAME                      = PciHostBridgeLib
+  FILE_GUID                      = 5383b11a-b212-4f47-8cda-6bdd9b6380a2
+  MODULE_TYPE                    = DXE_DRIVER
+  VERSION_STRING                 = 1.0
+  LIBRARY_CLASS                  = PciHostBridgeLib|DXE_DRIVER
+
+[Sources]
+  PciHostBridgeLib.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+
+[LibraryClasses]
+  BaseLib
+  DebugLib
+  DevicePathLib

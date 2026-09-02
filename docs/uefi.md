@@ -345,6 +345,62 @@ they bite the next phase too:
   same glue the Linux port needs ([porting-roadmap.md](porting-roadmap.md) §Phase 4).
 - Gates USB/SATA/eth (all PCIe EPs).
 
+**Status (2026-09-03): internal PCIe done, verified live.** Scoped
+deliberately to internal-only first (flat ECAM, no link/PHY concept at
+all - no risk of repeating issue #140's link-retrain stall); external
+PCIe0 (ASM1042A xHCI) is a separate follow-up, see below.
+
+- **`Platform/Ubiquiti/UNVR/Library/PciHostBridgeLib/`**: adapted
+  directly from `imbushuo/ccr2004-uefi`'s own working `PciHostBridgeLib`
+  (same SoC family, same internal-PCIe layout - bus 0-0, ECAM
+  `0xFBC00000` already set as `PcdPciExpressBaseAddress` since P0, MMIO
+  window `0xFE000000-0xFEFFFFFF`, no I/O space). Values cross-checked
+  against `docs/hardware.md`'s register table - identical.
+- **`Platform/Ubiquiti/UNVR/Drivers/AlPcieSnoopFixDxe/`**: a `DXE_DRIVER`
+  with `[Depex] gEfiPciEnumerationCompleteProtocolGuid`, walking
+  `gEfiPciIoProtocolGuid` handles post-enumeration and writing the same
+  SMCC (`cfg 0x110` + `0x20`×{1,2,3} for slot≤5, `SNOOP_OVR|SNOOP_EN` =
+  `0x3`) and `APP_CONTROL` (`cfg 0x220` low-16 = `0x3ff`) registers
+  `al_pcie_snoop_fix()`/`al_snoop_one()` in our U-Boot fork
+  (`board/annapurna/alpine/alpine.c`) already applies every boot -
+  register-for-register match, see issue #74. Deliberately excludes
+  `1c36:0001`/`0002` (al_eth), mirroring U-Boot's own exclusion (applying
+  this fixup to al_eth broke UDMA TX and persisted across a warm reset,
+  #74/#90).
+- Added `ArmPkg/Drivers/ArmPciCpuIo2Dxe`, `MdeModulePkg/Bus/Pci/
+  PciHostBridgeDxe`, `MdeModulePkg/Bus/Pci/PciBusDxe` to the component
+  list (CpuIo2/PciHostBridgeDxe/PciBusDxe standard trio) - no PCD
+  overrides needed beyond what P0 already set.
+- **Confirmed live, first attempt**: `AlPcieSnoopFix: applied to 4
+  internal PCIe device(s)` in the boot log, then the Shell's own `pci`
+  command independently confirms all 6 internal devices enumerated
+  correctly with the right vendor/device/class:
+  ```
+  00/00/01/00  1C36:0001  Ethernet controller       (al_eth  - excluded)
+  00/00/02/00  1C36:0002  Ethernet controller       (al_eth  - excluded)
+  00/00/04/00  1C36:0022  Encrypt/Decrypt           (al_ssm  - fixed)
+  00/00/05/00  1C36:0022  RAID controller           (al_dma  - fixed)
+  00/00/08/00  1C36:0031  Serial ATA controller     (AHCI 0  - fixed)
+  00/00/09/00  1C36:0031  Serial ATA controller     (AHCI 1  - fixed)
+  ```
+  4 fixed + 2 excluded = 6 total, exactly matching U-Boot's own current
+  (post-#90-fix) behavior on this hardware.
+- **External PCIe0 (ASM1042A xHCI) - deliberately not attempted yet.**
+  Per issue #140, the link is already trained by *vendor* U-Boot before
+  our chain ever runs, and retraining an already-linked port from
+  register writes alone (no PERST# pulse) reliably stalls it - so this
+  needs the same "check LTSSM, leave training alone if already L0, only
+  apply the config-space fixup" pattern U-Boot's
+  `al_pcie_ext0_port_config_fixup()` uses, not a naive second
+  `PciHostBridgeLib` root bridge. Next session's starting point if
+  picked up: multi-segment `PciSegmentInfoLib` (segment 0 = internal
+  `0xfbc00000`, segment 1 = external ECAM `0xfb600000`), plus a second
+  `AlPcieSnoopFixDxe`-style driver applying `CFG_TARGET_BUS`
+  (`0xfd800030 = 0xff`), AXI snoop on `MASTER_ARCTL`/`MASTER_AWCTL`
+  (`0xfd800014`/`0xfd800018`, bits 26-27), RC-mode `COMMAND`
+  (`0xfd810004 = 0x7`), before `PciBusDxe` enumerates that segment - all
+  register values already recovered in issue #140.
+
 ### P2 — SATA
 
 - 2× AHCI EPs behind internal PCIe (`1c36:0031`, abar `0xfe154000` / `0xfe158000`,

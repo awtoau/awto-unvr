@@ -1,0 +1,37 @@
+## @file
+#  Applies the Alpine internal-PCIe AXI-snoop/APP_CONTROL fixup after
+#  PCI enumeration completes. See AlPcieSnoopFixDxe.c and docs/uefi.md.
+#
+#  Copyright (c) 2026, Awto / Daniel Tyrrell. All rights reserved.
+#
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+##
+
+[Defines]
+  INF_VERSION                    = 0x0001001b
+  BASE_NAME                      = AlPcieSnoopFixDxe
+  FILE_GUID                      = 021e3861-a2bb-4141-965d-654857aa229a
+  MODULE_TYPE                    = DXE_DRIVER
+  VERSION_STRING                 = 1.0
+  ENTRY_POINT                    = AlPcieSnoopFixEntry
+
+[Sources]
+  AlPcieSnoopFixDxe.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+
+[LibraryClasses]
+  UefiDriverEntryPoint
+  UefiBootServicesTableLib
+  MemoryAllocationLib
+  DebugLib
+
+[Protocols]
+  gEfiPciIoProtocolGuid                   ## CONSUMES
+  gEfiPciEnumerationCompleteProtocolGuid  ## CONSUMES
+
+[Depex]
+  gEfiPciEnumerationCompleteProtocolGuid

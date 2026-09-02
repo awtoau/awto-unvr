@@ -1,7 +1,7 @@
 ## @file
 #  Flash description for the Ubiquiti UNVR.
 #
-#  PeilessSec -> DXE Core directly (no PEI phase). P0 scope only - see
+#  PeilessSec -> DXE Core directly (no PEI phase). P0+P1 scope - see
 #  Unvr.dsc and docs/uefi.md.
 #
 #  Copyright (c) 2026, Awto / Daniel Tyrrell. All rights reserved.
@@ -91,6 +91,12 @@ WRITE_STATUS       = TRUE
 
   # Unicode Collation (required by Shell)
   INF MdeModulePkg/Universal/Disk/UnicodeCollation/EnglishDxe/EnglishDxe.inf
+
+  # PCI (P1 - internal PCIe only, see Unvr.dsc)
+  INF ArmPkg/Drivers/ArmPciCpuIo2Dxe/ArmPciCpuIo2Dxe.inf
+  INF MdeModulePkg/Bus/Pci/PciHostBridgeDxe/PciHostBridgeDxe.inf
+  INF MdeModulePkg/Bus/Pci/PciBusDxe/PciBusDxe.inf
+  INF Platform/Ubiquiti/UNVR/Drivers/AlPcieSnoopFixDxe/AlPcieSnoopFixDxe.inf
 
   # Boot Manager Menu - see Unvr.dsc for the note on why this is kept
   # in despite its own menu not being able to reach Shell.inf

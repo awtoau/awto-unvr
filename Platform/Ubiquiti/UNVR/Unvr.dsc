@@ -2,11 +2,12 @@
 #  Platform description for the Ubiquiti UNVR (Annapurna Labs Alpine V2,
 #  4x Cortex-A57, ARMv8-A, sysid 0xea16).
 #
-#  P0 scope only (docs/uefi.md): UART console, ARM generic timer, GIC-v3,
-#  DXE core + boot services, UEFI Shell over serial. No PCIe/USB/SATA/
-#  network/DT-install yet - those are P1-P4. Adapted from
-#  imbushuo/ccr2004-uefi (same SoC family, PeilessSec PEI-less boot flow)
-#  with everything past P0 scope stripped out.
+#  P0 (docs/uefi.md): UART console, ARM generic timer, GIC-v3, DXE core +
+#  boot services, UEFI Shell over serial. P1: internal PCIe only (bus
+#  enumeration + AXI-snoop/APP_CONTROL fixup) - external PCIe0/USB/SATA/
+#  network/DT-install are still P1.5-P4. Adapted from imbushuo/
+#  ccr2004-uefi (same SoC family, PeilessSec PEI-less boot flow, same
+#  internal-PCIe layout) with everything past current scope stripped out.
 #
 #  Copyright (c) 2026, Awto / Daniel Tyrrell. All rights reserved.
 #
@@ -78,6 +79,9 @@
 
   # Platform
   ArmPlatformLib|Platform/Ubiquiti/UNVR/Library/PlatformLib/PlatformLib.inf
+
+  # PCI host bridge (P1 - internal PCIe only, docs/uefi.md)
+  PciHostBridgeLib|Platform/Ubiquiti/UNVR/Library/PciHostBridgeLib/PciHostBridgeLib.inf
 
   # Null stubs
   PerformanceLib|MdePkg/Library/BasePerformanceLibNull/BasePerformanceLibNull.inf
@@ -272,7 +276,7 @@
   gEfiMdePkgTokenSpaceGuid.PcdDebugPrintErrorLevel|0x800000CF
 
   # Firmware version string
-  gEfiMdeModulePkgTokenSpaceGuid.PcdFirmwareVersionString|L"UNVR EDK2 P0"
+  gEfiMdeModulePkgTokenSpaceGuid.PcdFirmwareVersionString|L"UNVR EDK2 P1"
 
   # Emulated variable store (RAM-backed, no flash at P0)
   gEfiMdeModulePkgTokenSpaceGuid.PcdEmuVariableNvModeEnable|TRUE
@@ -287,8 +291,9 @@
   # RNG: see RngLib note above
   gEfiMdePkgTokenSpaceGuid.PcdEnforceSecureRngAlgorithms|FALSE
 
-  # PCI Express ECAM base (Alpine V2 internal PCIe) - PciLib needs this
-  # PCD to resolve even with no PCI host bridge driver running at P0
+  # PCI Express ECAM base (Alpine V2 internal PCIe, bus 0 only, flat
+  # ECAM - no link/PHY/LTSSM concept, see docs/uefi.md P1). External
+  # PCIe0 (0xfd800000/0xfb600000, ASM1042A xHCI) is out of scope for P1.
   gEfiMdePkgTokenSpaceGuid.PcdPciExpressBaseAddress|0xFBC00000
   gEfiMdePkgTokenSpaceGuid.PcdPciExpressBaseSize|0x100000
 
@@ -364,6 +369,15 @@
   # Unicode Collation (required by Shell)
   #
   MdeModulePkg/Universal/Disk/UnicodeCollation/EnglishDxe/EnglishDxe.inf
+
+  #
+  # PCI (P1 - internal PCIe only, docs/uefi.md). ArmPciCpuIo2Dxe supplies
+  # CpuIo2, a PciHostBridgeDxe dependency even with no I/O space routed.
+  #
+  ArmPkg/Drivers/ArmPciCpuIo2Dxe/ArmPciCpuIo2Dxe.inf
+  MdeModulePkg/Bus/Pci/PciHostBridgeDxe/PciHostBridgeDxe.inf
+  MdeModulePkg/Bus/Pci/PciBusDxe/PciBusDxe.inf
+  Platform/Ubiquiti/UNVR/Drivers/AlPcieSnoopFixDxe/AlPcieSnoopFixDxe.inf
 
   # Boot Manager Menu. NOTE (2026-09-02, see docs/uefi.md): this app's
   # own interactive menu auto-enumerates generic "non-block boot
