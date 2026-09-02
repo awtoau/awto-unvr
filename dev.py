@@ -939,6 +939,15 @@ def cmd_build_uefi_p0(extra: list[str]) -> int:
 
 
 @command(
+    "docs/uefi.md §5's dry chainload probe: tftp+crc32-verify+`go` the P0 "
+    "UNVR.fd, watch for the UEFI Shell prompt (scripts/uefi-chainload-probe.py)",
+    kind="action",
+)
+def cmd_uefi_chainload_probe(extra: list[str]) -> int:
+    return _run_script("scripts/uefi-chainload-probe.py", extra)
+
+
+@command(
     "send a serial BREAK (+ optional Magic SysRq letter) to the UNVR's "
     "console, e.g. to grab a live blocked-task dump during a hang that "
     "console-send can't reach - tio's socket mode doesn't relay ctrl-t "

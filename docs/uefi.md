@@ -168,11 +168,52 @@ Each phase boots and is reverted by power-cycle (RAM payload, no flash write).
   once the actual chainload probe runs (§5's dry-probe, owner-only).
 - **No PCIe/USB/SATA/net yet** — Shell over serial only.
 
-**Status (2026-09-02): the FD builds.** `./dev.py build-uefi-p0` produces
-a real `UNVR.fd` (`Platform/Ubiquiti/UNVR/`, adapted from
-`imbushuo/ccr2004-uefi` - same SoC family, `PeilessSec` PEI-less flow).
-Not yet chainloaded on the actual unit (§5's dry-probe is owner-run only).
-Real fixes found getting there, in case they bite the next phase too:
+**Status (2026-09-02): chainloaded successfully on real hardware -
+EDK2 runs.** `./dev.py uefi-chainload-probe` (docs/uefi.md §5's dry
+probe) tftp'd `UNVR.fd`, crc32-verified it, and `go 0x20000000`'d into
+it. First attempt ever, and it worked past everything §2/§6 flagged as
+unconfirmed:
+
+```
+## Starting application at 0x20000000 ...
+SEC: UNVR ArmPlatformInitialize (P0 - no board init needed)
+UEFI firmware (version UNVR EDK2 P0 built at 08:30:30 on Sep  2 2026)
+Tianocore/EDK2 firmware version UNVR EDK2 P0
+Press ESCAPE for boot options ...
+[Bds] Unable to boot!
+Please select boot device:
+  UEFI Non-Block Boot Device
+  UEFI Non-Block Boot Device 2
+```
+
+- **Entry EL was correct** (or at least compatible) - PeilessSec's own
+  platform hook ran and printed, closing the §6 "entry EL unconfirmed"
+  risk without needing to add a `CurrentEL` print first.
+- **UART, ARM generic timer, GIC-v3, DRAM map all correct** - DXE Core
+  loaded, ran, and reached BDS console output on the real serial link.
+- **Reached the interactive Boot Manager Menu** ("Please select boot
+  device") - not a hang, not a crash. Confirmed still-alive-and-
+  responsive twice more: selecting either listed option, and pressing
+  ESC, all produce sensible (if not yet successful) responses rather
+  than silence.
+- **Remaining blocker, newly found**: selecting *either* boot device
+  option (and ESC) hits the same assert every time -
+  `ASSERT [HiiDatabase] Database.c(3599/3626): Status == ...  (Status =
+  Not Found)`, then (when actually launching a boot option, as opposed
+  to re-entering the menu) `ASSERT [BootManagerMenuApp]
+  BmDriverHealth.c(553)`. Both non-fatal in this DEBUG build (execution
+  continues, loops back to the menu) but nothing actually boots yet.
+  Likely cause: P0's minimal component list is missing an HII-related
+  driver/registration `BmDriverHealth`'s health-check path expects to
+  find (no real driver-health protocol instances exist yet, which is
+  correct for P0, but the generic BDS code doesn't appear to handle the
+  empty case as gracefully as expected). Not yet root-caused - next
+  session's starting point. A RELEASE build (compiles out `ASSERT`) is
+  the fastest way to check whether the underlying boot attempt would
+  otherwise succeed, before actually fixing the HII gap.
+
+Real fixes found getting the FD to build in the first place, in case
+they bite the next phase too:
 
 - **`ArmLib` moved from `ArmPkg` to `MdePkg`** upstream since the
   reference/doc were written (`MdePkg/Library/ArmLib/ArmBaseLib.inf`,
