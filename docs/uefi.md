@@ -196,21 +196,51 @@ Please select boot device:
   responsive twice more: selecting either listed option, and pressing
   ESC, all produce sensible (if not yet successful) responses rather
   than silence.
-- **Remaining blocker, newly found**: selecting *either* boot device
-  option (and ESC) hits the same assert every time -
-  `ASSERT [HiiDatabase] Database.c(3599/3626): Status == ...  (Status =
-  Not Found)`, then (when actually launching a boot option, as opposed
-  to re-entering the menu) `ASSERT [BootManagerMenuApp]
-  BmDriverHealth.c(553)`. Both non-fatal in this DEBUG build (execution
-  continues, loops back to the menu) but nothing actually boots yet.
-  Likely cause: P0's minimal component list is missing an HII-related
-  driver/registration `BmDriverHealth`'s health-check path expects to
-  find (no real driver-health protocol instances exist yet, which is
-  correct for P0, but the generic BDS code doesn't appear to handle the
-  empty case as gracefully as expected). Not yet root-caused - next
-  session's starting point. A RELEASE build (compiles out `ASSERT`) is
-  the fastest way to check whether the underlying boot attempt would
-  otherwise succeed, before actually fixing the HII gap.
+- **`BmDriverHealth.c(553)` assert: root-caused and fixed.**
+  `BmRepairAllControllers()` (in `UefiBootManagerLib`, linked into
+  `BdsDxe` - no formal `[Depex]`, so this wasn't visible as a protocol
+  dependency) unconditionally looks up `gEfiFormBrowser2ProtocolGuid`
+  unless `PcdDriverHealthConfigureForm` is `ZeroGuid` - documented in
+  the source itself as the intended way to disable the check. P0 has no
+  `SetupBrowserDxe`/`FormBrowser2` at all (no Setup UI), so the lookup
+  failed "Not Found" on every boot attempt. Set
+  `PcdDriverHealthConfigureForm` to `ZeroGuid` in `Unvr.dsc` - confirmed
+  live, this assert no longer fires.
+  - Tried the RELEASE-build route first (`./dev.py build-uefi-p0
+    --target RELEASE`) - **did not help**: `PcdDebugPropertyMask`
+    (baked in as `0x07`, a `PcdsFixedAtBuild` value) controls `ASSERT()`
+    behavior, not the DEBUG/RELEASE build target. Same assert, same
+    output, either way.
+  - **A tempting wrong turn, worth recording**: also tried dropping
+    `HiiDatabaseDxe` from the component list entirely, on the theory
+    that an empty HII database was the root cause of *both* remaining
+    asserts. This was wrong and made things strictly worse - it turned
+    the benign, loop-back-to-menu `Database.c` assert into a genuine
+    `Synchronous Exception` (`DxeMain.c(578)`: "Bds Arch Protocol not
+    present!!" - `BdsDxe`/`UefiBootManagerLib`'s C code calls HII
+    functions directly regardless of DEPEX). Reverted; `HiiDatabaseDxe`
+    stays in the component list.
+- **`Database.c(3599/3626)` assert: still open.** Confirmed to be a
+  genuinely separate issue from the one above (fixing
+  `PcdDriverHealthConfigureForm` didn't touch this one - still fires,
+  still non-fatal, still loops back to the menu). Root cause understood:
+  `HiiGetDatabaseInfo()`'s `ReadyToBoot` callback expects
+  `HiiExportPackageLists()` to return `EFI_BUFFER_TOO_SMALL` (the normal
+  "ask for size first" pattern) but gets `EFI_NOT_FOUND` because the HII
+  database is genuinely empty - nothing in P0's component list registers
+  any HII package. Removing the *consumer* (`HiiDatabaseDxe`) was the
+  wrong fix (see above); the real fix is adding a minimal HII package
+  *provider*, not yet done.
+- **Selecting either menu option now, post-fix**: option 1
+  (confirmed = `BootManagerMenuApp` itself) loops back to the menu
+  cleanly, no assert. Option 2 also loops back to the menu with **no
+  assert and no visible output at all** between two back-to-back screen
+  clears - not yet clear whether this is `Shell.inf` launching and
+  exiting silently, or a second `BootManagerMenuApp`-shaped registration
+  (`FvSimpleFileSystemDxe` may be presenting the FV itself as a second
+  generic boot source). Not yet root-caused - next session's starting
+  point, likely needs a debug print inside `Shell.inf`'s own entry point
+  or a serial capture with tighter timing than a human keypress allows.
 
 Real fixes found getting the FD to build in the first place, in case
 they bite the next phase too:

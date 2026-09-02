@@ -19,7 +19,9 @@ Usage:
 
 from __future__ import annotations
 
+import argparse
 import os
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -70,6 +72,15 @@ def ensure_edk2() -> None:
 
 
 def main() -> int:
+    ap = argparse.ArgumentParser(description=__doc__,
+                                  formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--target", choices=["DEBUG", "RELEASE", "NOOPT"], default="DEBUG",
+                     help="EDK2 build target - RELEASE compiles out ASSERT() "
+                          "(docs/uefi.md P0 status: useful for checking whether "
+                          "an ASSERT-only failure is masking an otherwise-working "
+                          "boot path)")
+    args = ap.parse_args()
+
     ensure_edk2()
 
     env = dict(os.environ)
@@ -92,17 +103,17 @@ def main() -> int:
         (r"TARGET_ARCH.*", "TARGET_ARCH           = AARCH64"),
         (r"TOOL_CHAIN_TAG.*", "TOOL_CHAIN_TAG        = GCC"),
     ):
-        import re
         text = re.sub(r"^" + old, new, text, flags=re.MULTILINE)
     target_txt.write_text(text)
 
-    log("building Platform/Ubiquiti/UNVR/Unvr.dsc (P0)")
+    log(f"building Platform/Ubiquiti/UNVR/Unvr.dsc (P0, target={args.target})")
     build_cmd = (
-        f"cd {EDK2_OUT} && source ./edksetup.sh BaseTools >/dev/null && build"
+        f"cd {EDK2_OUT} && source ./edksetup.sh BaseTools >/dev/null && "
+        f"build -b {args.target}"
     )
     run(["bash", "-c", build_cmd], env=env, timeout=300)
 
-    fd = EDK2_OUT / "Build/UNVR/DEBUG_GCC/FV/UNVR.fd"
+    fd = EDK2_OUT / f"Build/UNVR/{args.target}_GCC/FV/UNVR.fd"
     if not fd.exists():
         raise SystemExit(f"FATAL: build reported success but {fd} is missing")
     log(f"DONE: {fd} ({fd.stat().st_size} bytes)")

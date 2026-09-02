@@ -175,6 +175,14 @@
   # lib's other two static asserts without an override.
   gEfiMdePkgTokenSpaceGuid.PcdDefaultTerminalType|4
 
+  # UefiBootManagerLib's BmRepairAllControllers() looks up
+  # gEfiFormBrowser2ProtocolGuid unconditionally unless this is
+  # ZeroGuid (BmDriverHealth.c's own documented escape hatch) - we have
+  # no SetupBrowserDxe/FormBrowser2 in this P0 component list at all
+  # (no Setup UI), so the lookup fails "Not Found" and asserts every
+  # boot attempt. Confirmed live 2026-09-02, see docs/uefi.md.
+  gEfiMdeModulePkgTokenSpaceGuid.PcdDriverHealthConfigureForm|{0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}
+
 ################################################################################
 #
 # Phase-specific library overrides

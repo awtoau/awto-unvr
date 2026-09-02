@@ -40,8 +40,7 @@ _rbd_spec = importlib.util.spec_from_file_location(
 _rbd = importlib.util.module_from_spec(_rbd_spec)
 _rbd_spec.loader.exec_module(_rbd)
 
-DEFAULT_FD = Path(
-    "/mnt/2tb/unvr-port-refs/edk2/Build/UNVR/DEBUG_GCC/FV/UNVR.fd")
+EDK2_OUT = Path("/mnt/2tb/unvr-port-refs/edk2")
 FD_ADDR = "0x20000000"
 # EDK2's own banner text before the shell prompt (standard UEFI Shell
 # startup banner) - "UEFI Shell" is present regardless of shell version.
@@ -66,11 +65,17 @@ PROBE_TIMEOUT_S = 60
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                   formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--fd", type=Path, default=DEFAULT_FD)
+    ap.add_argument("--target", choices=["DEBUG", "RELEASE", "NOOPT"], default="DEBUG",
+                     help="must match the --target used with ./dev.py build-uefi-p0")
+    ap.add_argument("--fd", type=Path, default=None,
+                     help="override the FD path directly instead of deriving it from --target")
     args = ap.parse_args()
+    if args.fd is None:
+        args.fd = EDK2_OUT / f"Build/UNVR/{args.target}_GCC/FV/UNVR.fd"
 
     if not args.fd.exists():
-        print(f"FATAL: {args.fd} missing - run ./dev.py build-uefi-p0 first")
+        print(f"FATAL: {args.fd} missing - run "
+              f"'./dev.py build-uefi-p0 --target {args.target}' first")
         return 1
     local_crc = zlib.crc32(args.fd.read_bytes()) & 0xFFFFFFFF
     print(f"UNVR.fd: {args.fd} ({args.fd.stat().st_size} bytes, "
