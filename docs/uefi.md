@@ -236,23 +236,46 @@ Please select boot device:
   `gEfiHiiDatabaseProtocolGuid AND gEfiHiiConfigRoutingProtocolGuid`.
   Confirmed live 2026-09-02: **both asserts gone, box reaches the boot
   menu completely cleanly.**
-- **Selecting either menu option, post-fix**: option 1
-  (confirmed = `BootManagerMenuApp` itself) loops back to the menu
-  cleanly. Option 2 (presumed `Shell.inf`, by elimination - the only
-  other `UEFI_APPLICATION` in the component list) also loops back with
-  no visible shell output, but **narrowed further**: two screen-clears
-  are visible in sequence, and the first one matches `Shell.c`'s own
-  `UefiMain()` - `gST->ConOut->ClearScreen()` is genuinely its first
-  substantive action, and only its *second* clear (a few statements
-  later, `PcdShellSupportLevel`/global-struct setup) is unaccounted for.
-  So Shell.inf **does start running** and gets past its first checks;
-  something after that (before any print statement - `Shell.c`'s own
-  init has none between `ClearScreen()` and the first real output) fails
-  silently and returns. Next session's starting point: trace `Shell.c`'s
-  `UefiMain()` further (its `[Protocols]`/library init calls -
-  `gEfiShellProtocolGuid` installation, environment/mapping setup are
-  the likely candidates) or add a temporary debug print to bisect where
-  exactly it stops.
+- **The interactive menu's own 2 entries are NOT the real boot
+  options - root-caused.** Earlier guess (Shell.c's `UefiMain()` runs
+  partway then fails silently) was **wrong** - confirmed with a
+  temporary `DEBUG_ERROR` print at the very top of `UefiMain()`: it
+  never fires when selecting either menu entry. Widening
+  `PcdDebugPrintErrorLevel` to include `DEBUG_LOAD`/`DEBUG_INFO`
+  (`0x800000CF`, kept in `Unvr.dsc` going forward - genuinely useful)
+  revealed the real story: `BootManagerMenuApp`'s own interactive menu
+  auto-enumerates generic "non-block boot devices" from whatever's
+  currently connected, which for us is just the raw memory-mapped FV
+  region (`MemoryMapped(0xB,0x20000000,0x207FFFFF)`) - selecting either
+  entry logs `[Bds] Expand MemoryMapped(...) -> <null string>`: there is
+  no specific file identified in that path, so it can never resolve to
+  anything bootable. Neither entry was ever going to reach `Shell.inf`.
+  - **The real, correctly-configured boot options are Boot0000/
+    Boot0001 in NVRAM** (dumped at every boot: `Boot0000:
+    BootManagerMenuApp`, `Boot0001: UEFI Shell`), each with a proper
+    `FvFile(GUID)` device path - confirmed `Boot0000` resolves and loads
+    correctly (`[Bds] Expand MemoryMapped(...)/FvFile(EEC25BDC-...) ->
+    MemoryMapped(...)/FvFile(EEC25BDC-...)`, `Loading driver at
+    0x...BootManagerMenuApp.efi`). BDS's own automatic pre-menu phase
+    already tries these directly, in order - it's the interactive menu
+    (triggered only because `Boot0000` = the menu app itself) that never
+    gets to `Boot0001`.
+  - **Tried dropping `BootManagerMenuApp` entirely** so BDS's automatic
+    phase would fall through past a (still-failing) `Boot0000` straight
+    to `Boot0001` (Shell) - **the box hung instead**: `PlatformRecovery0000`
+    fails the same way (`\EFI\BOOT\BOOTAA64.EFI -> <null string>`), then
+    `"BootManagerMenu FFS section can not be found, skip its boot option
+    registration"`, then nothing - no crash, no further log output,
+    unresponsive to input. Recovered with a power-cycle (RAM payload,
+    never touched flash - the doc's own safety guarantee held). Reverted;
+    `BootManagerMenuApp` stays in the component list, confirmed back to
+    the known-good clean-menu state afterward.
+  - **Next session's starting point**: reaching `Boot0001` (Shell)
+    needs the NVRAM `BootNext`/`BootOrder` variables actually set to it
+    (or a custom `PlatformBootManagerLib` that skips the raw-device menu
+    and tries `Boot0001` directly) - not a component-list change. The
+    hang above suggests `PlatformRecovery`'s own failure path also needs
+    a look before removing `BootManagerMenuApp` is safe.
 
 Real fixes found getting the FD to build in the first place, in case
 they bite the next phase too:

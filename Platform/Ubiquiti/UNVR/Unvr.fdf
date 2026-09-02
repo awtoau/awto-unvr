@@ -92,7 +92,8 @@ WRITE_STATUS       = TRUE
   # Unicode Collation (required by Shell)
   INF MdeModulePkg/Universal/Disk/UnicodeCollation/EnglishDxe/EnglishDxe.inf
 
-  # Boot Manager Menu (fallback when no boot option is configured)
+  # Boot Manager Menu - see Unvr.dsc for the note on why this is kept
+  # in despite its own menu not being able to reach Shell.inf
   INF MdeModulePkg/Application/BootManagerMenuApp/BootManagerMenuApp.inf
 
   # FV as filesystem

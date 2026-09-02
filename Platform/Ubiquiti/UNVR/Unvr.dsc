@@ -269,7 +269,7 @@
 
   # Debug
   gEfiMdePkgTokenSpaceGuid.PcdDebugPropertyMask|0x07
-  gEfiMdePkgTokenSpaceGuid.PcdDebugPrintErrorLevel|0x80000002
+  gEfiMdePkgTokenSpaceGuid.PcdDebugPrintErrorLevel|0x800000CF
 
   # Firmware version string
   gEfiMdeModulePkgTokenSpaceGuid.PcdFirmwareVersionString|L"UNVR EDK2 P0"
@@ -365,11 +365,21 @@
   #
   MdeModulePkg/Universal/Disk/UnicodeCollation/EnglishDxe/EnglishDxe.inf
 
-  #
-  # Boot Manager Menu (fallback if BdsDxe finds no boot option - P0 has
-  # no disk/network boot options configured at all, so this is the
-  # realistic path to a shell, alongside Shell.inf itself below)
-  #
+  # Boot Manager Menu. NOTE (2026-09-02, see docs/uefi.md): this app's
+  # own interactive menu auto-enumerates generic "non-block boot
+  # devices" pointing at the raw memory-mapped FV region with no
+  # specific file - "Expand ... -> <null string>", can never resolve to
+  # anything bootable. The REAL, correctly-configured boot options are
+  # Boot0000/Boot0001 in NVRAM (this app + Shell.inf, each with a proper
+  # FvFile(GUID) device path) - reaching Shell needs those, not this
+  # app's own menu. Tried dropping this component entirely so BDS's
+  # automatic phase would fall through to Boot0001 (Shell) - the box
+  # HUNG instead (PlatformRecovery0000 fails, "BootManagerMenu FFS
+  # section can not be found, skip its boot option registration", then
+  # nothing - no crash, no further output, unresponsive). Reverted.
+  # Kept in, still non-ideal (P0 status: reaches a clean menu, not the
+  # shell) - next session needs a proper NVRAM BootNext/BootOrder set to
+  # Boot0001, not a component-list change.
   MdeModulePkg/Application/BootManagerMenuApp/BootManagerMenuApp.inf
 
   #
