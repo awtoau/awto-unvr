@@ -54,6 +54,57 @@ async def cycle():
 asyncio.run(cycle())
 """
 
+_POWER_SET_SCRIPT_TEMPLATE = """
+import asyncio
+from aioesphomeapi import APIClient
+
+async def set_state(state):
+    cli = APIClient('so-th-1.local', 6053, None)
+    await cli.connect(login=True)
+    ents, _ = await cli.list_entities_services()
+    relay = next(e for e in ents if type(e).__name__ == 'SwitchInfo')
+    cli.switch_command(relay.key, state)
+    await asyncio.sleep(1)
+    await cli.disconnect()
+
+async def get_state():
+    cli = APIClient('so-th-1.local', 6053, None)
+    await cli.connect(login=True)
+    ents, _ = await cli.list_entities_services()
+    relay = next(e for e in ents if type(e).__name__ == 'SwitchInfo')
+    states = []
+    cli.subscribe_states(states.append)
+    await asyncio.sleep(2)
+    await cli.disconnect()
+    return next((s.state for s in states if s.key == relay.key), None)
+
+async def set_and_verify():
+    await set_state({state!r})
+    st = await get_state()
+    print('FINAL_STATE:', st)
+
+asyncio.run(set_and_verify())
+"""
+
+
+def power_set_verified(state: bool, log=print) -> None:
+    """Turn the outlet on or off, VERIFYING the resulting state - same
+    verify-don't-trust discipline as power_cycle_verified(). For a plain
+    on/off (not a full cycle), e.g. holding the box off while someone
+    reseats a cable."""
+    log(f"power: setting {'ON' if state else 'OFF'} via so-th-1")
+    r = subprocess.run(
+        [AWTO_TERMINAL_PY, "-c", _POWER_SET_SCRIPT_TEMPLATE.format(state=state)],
+        cwd=AWTO_TERMINAL_REPO,
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+    out = r.stdout + r.stderr
+    if f"FINAL_STATE: {state}" not in out:
+        raise RuntimeError(f"power set to {state} did not take, output:\n{out}")
+    log(f"power: verified {'ON' if state else 'OFF'}")
+
 
 def power_cycle_verified(log=print) -> None:
     """Cut and restore power via the Sonoff TH outlet, VERIFYING the final
