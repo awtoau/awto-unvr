@@ -1,0 +1,19 @@
+## @file
+#  Ubiquiti UNVR platform package declaration.
+#
+#  Copyright (c) 2026, Awto / Daniel Tyrrell. All rights reserved.
+#
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+##
+
+[Defines]
+  DEC_SPECIFICATION              = 0x00010005
+  PACKAGE_NAME                   = UNVR
+  PACKAGE_GUID                   = 3e7a9c1d-6b4f-4a82-9d1e-8c5f2b6a3e40
+  PACKAGE_VERSION                = 0.1
+
+[Includes]
+
+[Guids]
+  gUnvrTokenSpaceGuid = { 0x3e7a9c1d, 0x6b4f, 0x4a82, { 0x9d, 0x1e, 0x8c, 0x5f, 0x2b, 0x6a, 0x3e, 0x40 } }

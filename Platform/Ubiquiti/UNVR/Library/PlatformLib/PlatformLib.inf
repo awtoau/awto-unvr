@@ -1,0 +1,44 @@
+## @file
+#  ArmPlatformLib implementation for the Ubiquiti UNVR.
+#
+#  Copyright (c) 2026, Awto / Daniel Tyrrell. All rights reserved.
+#
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+##
+
+[Defines]
+  INF_VERSION                    = 1.30
+  BASE_NAME                      = PlatformLib
+  FILE_GUID                      = 8f1c6d4a-2b3e-4a91-9c7d-5e8f2a1b6c4d
+  MODULE_TYPE                    = BASE
+  VERSION_STRING                 = 1.0
+  LIBRARY_CLASS                  = ArmPlatformLib
+
+[Sources.common]
+  PlatformLib.c
+  PlatformLibMem.c
+
+[Sources.AArch64]
+  AArch64/PlatformHelper.S
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+  ArmPkg/ArmPkg.dec
+  ArmPlatformPkg/ArmPlatformPkg.dec
+
+[LibraryClasses]
+  ArmLib
+  DebugLib
+  IoLib
+  MemoryAllocationLib
+  SerialPortLib
+  TimerLib
+
+[Ppis]
+  gArmMpCoreInfoPpiGuid
+
+[FixedPcd]
+  gArmTokenSpaceGuid.PcdArmPrimaryCoreMask
+  gArmTokenSpaceGuid.PcdArmPrimaryCore

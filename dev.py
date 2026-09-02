@@ -930,6 +930,15 @@ def cmd_uboot_bench_check(extra: list[str]) -> int:
 
 
 @command(
+    "build the UNVR P0 EDK2 firmware volume (scripts/build-uefi-p0.py, "
+    "docs/uefi.md) - software only, no hardware contact",
+    kind="action",
+)
+def cmd_build_uefi_p0(extra: list[str]) -> int:
+    return _run_script("scripts/build-uefi-p0.py", extra)
+
+
+@command(
     "send a serial BREAK (+ optional Magic SysRq letter) to the UNVR's "
     "console, e.g. to grab a live blocked-task dump during a hang that "
     "console-send can't reach - tio's socket mode doesn't relay ctrl-t "

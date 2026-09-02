@@ -160,11 +160,51 @@ Each phase boots and is reverted by power-cycle (RAM payload, no flash write).
 
 - Build `Platform/Ubiquiti/UNVR/Unvr.dsc` PrePi FD.
 - Bring-up order inside EDK2: **UART console** → **ARM generic timer** → **RAM/HOB
-  map** → **GIC-v3** → **DT install** → **EFI DXE core + boot services** → EFI shell.
+  map** → **GIC-v3** → **EFI DXE core + boot services** → EFI shell. (DT
+  install deferred to P4 - nothing at P0 consumes it; see status below.)
 - Entry: `tftpboot 0x20000000 UNVR.fd; go 0x20000000` (or `bootm` firmware image).
 - Success = EDK2 banner + UEFI Shell prompt on `ttyS0` at 115200.
-- Confirms: entry EL, UART, timer, DRAM map, DT hand-off — closes the §2 PARTIALs.
+- Confirms: entry EL, UART, timer, DRAM map — the software side closes
+  once the actual chainload probe runs (§5's dry-probe, owner-only).
 - **No PCIe/USB/SATA/net yet** — Shell over serial only.
+
+**Status (2026-09-02): the FD builds.** `./dev.py build-uefi-p0` produces
+a real `UNVR.fd` (`Platform/Ubiquiti/UNVR/`, adapted from
+`imbushuo/ccr2004-uefi` - same SoC family, `PeilessSec` PEI-less flow).
+Not yet chainloaded on the actual unit (§5's dry-probe is owner-run only).
+Real fixes found getting there, in case they bite the next phase too:
+
+- **`ArmLib` moved from `ArmPkg` to `MdePkg`** upstream since the
+  reference/doc were written (`MdePkg/Library/ArmLib/ArmBaseLib.inf`,
+  confirmed against `edk2-stable202608` and cross-checked against
+  ArmVirtPkg's own DSC, which is actively maintained).
+- **`CpuExceptionHandlerLib`** is now the unified
+  `UefiCpuPkg/Library/CpuExceptionHandlerLib/DxeCpuExceptionHandlerLib.inf`
+  - no separate `DefaultExceptionHandlerLib` needed anymore.
+- **No `PcdArmArchTimerFreqInHz` or `PcdArmPsciMethod` PCD exists** in
+  this edk2 - `ArmArchTimerLib` reads `CNTFRQ_EL0` directly at runtime
+  (so the live DT's 58333312 Hz just works, no override needed), and
+  `ArmMonitorLib`'s `PcdMonitorConduitHvc` defaults to FALSE (=SMC, what
+  we want) - neither PCD needed an entry in `Unvr.dsc`.
+- **`PciLib`/`PciExpressLib`/`PciSegmentLib` still needed even with no
+  PCIe driver running** - `BaseSerialPortLib16550` has an (unused, since
+  we set `PcdSerialUseMmio=TRUE`) PCI-config-space code path that must
+  still resolve statically at link time.
+- **`gEfiMdePkgTokenSpaceGuid.PcdDefaultTerminalType` must be `4`
+  (TTYTERM)** - `ArmPkg/Library/PlatformBootManagerLib`'s `PlatformBm.c`
+  has a build-time `STATIC_ASSERT` on this; it's the generic, board-
+  agnostic ARM boot-manager lib (falls back to the internal shell with no
+  boot option configured, which is exactly P0's need), reused as-is
+  rather than writing our own for P0.
+- **Pin to a stable edk2 tag, not tip.** An earlier attempt against
+  tianocore/edk2's dev tip hit the same `ArmLib` move mid-refactor -
+  `edk2-stable202608` (latest stable as of this session) is what actually
+  works; `scripts/build-uefi-p0.py` clones that tag specifically.
+- Small submodules needed (not the network/crypto/TPM ones - no
+  components in P0 pull those in): `BaseTools/Source/C/BrotliCompress/
+  brotli`, `MdePkg/Library/MipiSysTLib/mipisyst`, `MdeModulePkg/Library/
+  BrotliCustomDecompressLib/brotli`, `SecurityPkg/DeviceSecurity/SpdmLib/
+  libspdm` - all pulled in by `scripts/build-uefi-p0.py` automatically.
 
 ### P1 — PCIe
 
