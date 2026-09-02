@@ -386,20 +386,19 @@ PCIe0 (ASM1042A xHCI) is a separate follow-up, see below.
   4 fixed + 2 excluded = 6 total, exactly matching U-Boot's own current
   (post-#90-fix) behavior on this hardware.
 - **External PCIe0 (ASM1042A xHCI) - deliberately not attempted yet.**
-  Per issue #140, the link is already trained by *vendor* U-Boot before
-  our chain ever runs, and retraining an already-linked port from
-  register writes alone (no PERST# pulse) reliably stalls it - so this
-  needs the same "check LTSSM, leave training alone if already L0, only
-  apply the config-space fixup" pattern U-Boot's
-  `al_pcie_ext0_port_config_fixup()` uses, not a naive second
-  `PciHostBridgeLib` root bridge. Next session's starting point if
-  picked up: multi-segment `PciSegmentInfoLib` (segment 0 = internal
-  `0xfbc00000`, segment 1 = external ECAM `0xfb600000`), plus a second
-  `AlPcieSnoopFixDxe`-style driver applying `CFG_TARGET_BUS`
-  (`0xfd800030 = 0xff`), AXI snoop on `MASTER_ARCTL`/`MASTER_AWCTL`
-  (`0xfd800014`/`0xfd800018`, bits 26-27), RC-mode `COMMAND`
-  (`0xfd810004 = 0x7`), before `PciBusDxe` enumerates that segment - all
-  register values already recovered in issue #140.
+  Silicon gotcha, not EDK2-specific: see [hardware.md](hardware.md)
+  §"Silicon gotcha - never retrain an already-linked external PCIe
+  port" (issue #140) - the link is already trained by vendor U-Boot
+  before our chain runs, and retraining it via register writes alone
+  reliably stalls it. Next session's starting point if picked up:
+  multi-segment `PciSegmentInfoLib` (segment 0 = internal `0xfbc00000`,
+  segment 1 = external ECAM `0xfb600000`), plus a second
+  `AlPcieSnoopFixDxe`-style driver that reads LTSSM first and, if
+  already linked, only applies `CFG_TARGET_BUS` (`0xfd800030 = 0xff`),
+  AXI snoop on `MASTER_ARCTL`/`MASTER_AWCTL` (`0xfd800014`/
+  `0xfd800018`, bits 26-27), and RC-mode `COMMAND` (`0xfd810004 = 0x7`)
+  before `PciBusDxe` enumerates that segment - all register values
+  already recovered in issue #140.
 
 ### P2 — SATA
 

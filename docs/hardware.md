@@ -306,6 +306,31 @@ a separate MMIO peripheral.
 | pcie_ext0_win | `0xfb600000` | 0x100000 | external0 cfg/window (ext1/2/3 → fb700000/fb800000/fb900000) |
 | pcie_ext0_mem | `0xc0010000` | 0x7ff0000 | external0 mem BAR space; **xHCI `1b21:1142` @`0xc0010000`** (0001:00:00.0) |
 
+**Silicon gotcha — never retrain an already-linked external PCIe port.**
+Confirmed on this chip (issue #140, 30+ rounds): by the time any of our
+own code runs, *vendor* U-Boot's own `board_init` has already trained
+`pcie_ext0` (`PCIE_0: Link up. Speed 5GT/s Width x1`, confirmed live via
+`md.l 0xfd802080` = LTSSM debug reg = `0x11`/L0 at the very first stock
+prompt, before any `usb` command runs). Disabling+re-enabling the local
+DWC core and retraining (register writes only, no electrical PERST#
+pulse) does **not** reset the remote ASM1042A — it just stalls the link
+at `POLL_ACTIVE` and never recovers.
+- **Rule for every bootloader stage** (U-Boot `al_pcie_ext0_bringup()`,
+  and any future EDK2 external-PCIe work): read LTSSM state
+  (`controller_base+0x2080`, bits `[8:3]`) first. If `>= L0 (0x11)`,
+  skip link-training entirely — only apply the config-space fixup
+  (`CFG_TARGET_BUS`, AXI snoop, RC-mode `COMMAND`, DBI-base offset; see
+  `al_pcie_ext0_port_config_fixup()` in `board/annapurna/alpine/
+  alpine.c`). Only run the full cold-bring-up sequence if LTSSM is
+  genuinely below L0.
+- **No known safe way to force a cold retrain from software yet** — that
+  would need an actual PERST#-equivalent electrical reset of the
+  ASM1042A, not just local DWC-core register writes. Until that's
+  worked out, "already trained, leave it alone" is the only safe path;
+  do not add code that unconditionally disables/re-enables this link.
+- Internal PCIe (`pcie_int_ecam`) is unaffected — it's flat ECAM with no
+  link/PHY/LTSSM concept at all, nothing to retrain.
+
 ### Integrated-EP IO fabric (eth / dma / sata), under the internal-PCIe window
 
 HAL: eth `drivers/eth/al_hal_eth_*_regs.h`; udma `include/udma/al_hal_udma_regs.h`;
