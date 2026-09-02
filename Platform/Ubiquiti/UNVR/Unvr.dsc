@@ -350,6 +350,7 @@
   MdeModulePkg/Universal/PCD/Dxe/Pcd.inf
   MdeModulePkg/Universal/DevicePathDxe/DevicePathDxe.inf
   MdeModulePkg/Universal/HiiDatabaseDxe/HiiDatabaseDxe.inf
+  Platform/Ubiquiti/UNVR/Drivers/MinimalHiiDxe/MinimalHiiDxe.inf
 
   #
   # Serial console

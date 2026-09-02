@@ -81,6 +81,7 @@ WRITE_STATUS       = TRUE
   INF MdeModulePkg/Universal/PCD/Dxe/Pcd.inf
   INF MdeModulePkg/Universal/DevicePathDxe/DevicePathDxe.inf
   INF MdeModulePkg/Universal/HiiDatabaseDxe/HiiDatabaseDxe.inf
+  INF Platform/Ubiquiti/UNVR/Drivers/MinimalHiiDxe/MinimalHiiDxe.inf
 
   # Serial console
   INF MdeModulePkg/Universal/SerialDxe/SerialDxe.inf

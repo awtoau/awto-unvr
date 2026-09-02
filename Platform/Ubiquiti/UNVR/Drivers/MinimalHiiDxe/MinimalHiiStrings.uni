@@ -1,0 +1,13 @@
+// /** @file
+// String definitions for MinimalHiiDxe.
+//
+// Copyright (c) 2026, Awto / Daniel Tyrrell. All rights reserved.
+// SPDX-License-Identifier: BSD-2-Clause-Patent
+//
+// **/
+
+/=#
+
+#langdef   en-US "English"
+
+#string STR_UNVR_MINIMAL_HII  #language    en-US    "UNVR P0"

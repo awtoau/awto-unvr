@@ -220,27 +220,39 @@ Please select boot device:
     present!!" - `BdsDxe`/`UefiBootManagerLib`'s C code calls HII
     functions directly regardless of DEPEX). Reverted; `HiiDatabaseDxe`
     stays in the component list.
-- **`Database.c(3599/3626)` assert: still open.** Confirmed to be a
+- **`Database.c(3599/3626)` assert: fixed.** Confirmed to be a
   genuinely separate issue from the one above (fixing
-  `PcdDriverHealthConfigureForm` didn't touch this one - still fires,
-  still non-fatal, still loops back to the menu). Root cause understood:
+  `PcdDriverHealthConfigureForm` alone didn't touch it). Root cause:
   `HiiGetDatabaseInfo()`'s `ReadyToBoot` callback expects
   `HiiExportPackageLists()` to return `EFI_BUFFER_TOO_SMALL` (the normal
-  "ask for size first" pattern) but gets `EFI_NOT_FOUND` because the HII
-  database is genuinely empty - nothing in P0's component list registers
-  any HII package. Removing the *consumer* (`HiiDatabaseDxe`) was the
-  wrong fix (see above); the real fix is adding a minimal HII package
-  *provider*, not yet done.
-- **Selecting either menu option now, post-fix**: option 1
+  "ask for size first" pattern) but got `EFI_NOT_FOUND` because the HII
+  database was genuinely empty - nothing in P0's component list
+  registered any HII package. Removing the *consumer* (`HiiDatabaseDxe`)
+  was the wrong fix (see above); added a minimal HII package *provider*
+  instead: `Platform/Ubiquiti/UNVR/Drivers/MinimalHiiDxe/` (`DXE_DRIVER`,
+  not an application - those only register once actually launched as a
+  boot option, which is after `ReadyToBoot` already fired), registers
+  one trivial string via `HiiAddPackages()`, `[Depex]` on
+  `gEfiHiiDatabaseProtocolGuid AND gEfiHiiConfigRoutingProtocolGuid`.
+  Confirmed live 2026-09-02: **both asserts gone, box reaches the boot
+  menu completely cleanly.**
+- **Selecting either menu option, post-fix**: option 1
   (confirmed = `BootManagerMenuApp` itself) loops back to the menu
-  cleanly, no assert. Option 2 also loops back to the menu with **no
-  assert and no visible output at all** between two back-to-back screen
-  clears - not yet clear whether this is `Shell.inf` launching and
-  exiting silently, or a second `BootManagerMenuApp`-shaped registration
-  (`FvSimpleFileSystemDxe` may be presenting the FV itself as a second
-  generic boot source). Not yet root-caused - next session's starting
-  point, likely needs a debug print inside `Shell.inf`'s own entry point
-  or a serial capture with tighter timing than a human keypress allows.
+  cleanly. Option 2 (presumed `Shell.inf`, by elimination - the only
+  other `UEFI_APPLICATION` in the component list) also loops back with
+  no visible shell output, but **narrowed further**: two screen-clears
+  are visible in sequence, and the first one matches `Shell.c`'s own
+  `UefiMain()` - `gST->ConOut->ClearScreen()` is genuinely its first
+  substantive action, and only its *second* clear (a few statements
+  later, `PcdShellSupportLevel`/global-struct setup) is unaccounted for.
+  So Shell.inf **does start running** and gets past its first checks;
+  something after that (before any print statement - `Shell.c`'s own
+  init has none between `ClearScreen()` and the first real output) fails
+  silently and returns. Next session's starting point: trace `Shell.c`'s
+  `UefiMain()` further (its `[Protocols]`/library init calls -
+  `gEfiShellProtocolGuid` installation, environment/mapping setup are
+  the likely candidates) or add a temporary debug print to bisect where
+  exactly it stops.
 
 Real fixes found getting the FD to build in the first place, in case
 they bite the next phase too:
