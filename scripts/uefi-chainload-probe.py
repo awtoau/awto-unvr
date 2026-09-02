@@ -2,21 +2,34 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 # Copyright (C) 2026 Awto / Daniel Tyrrell
 """docs/uefi.md §5's dry chainload probe: tftp the P0 UNVR.fd into RAM,
-CRC-verify it, then `go` to it - watch for the EDK2 banner / UEFI Shell
-prompt on ttyS0.
+CRC-verify it, `go` to it, then race the 's' hotkey to launch Boot0001
+(UEFI Shell) directly - watch for the real Shell prompt on ttyS0.
 
 RAM payload only, never touches flash (docs/uefi.md §1) - if EDK2 hangs
 or crashes, a power-cycle always returns the box to its normal stock
-boot, nothing is at risk beyond that. Entry EL is unconfirmed (docs/
-uefi.md §6), so this genuinely might not work first try; that's exactly
-what this step exists to find out.
+boot, nothing is at risk beyond that.
+
+Why the 's' hotkey race, not just watching the boot menu: confirmed live
+2026-09-02 that Boot0000 (BootManagerMenuApp) is what BDS's automatic
+phase tries first and succeeds at, landing on ITS OWN interactive menu -
+whose 2 entries are a separate, generic device enumeration that can
+never resolve to anything bootable (see docs/uefi.md). The real path to
+Boot0001 (UEFI Shell) is the hotkey ArmPkg's PlatformBootManagerLib
+registers for it (Key.UnicodeChar = 's'), live during BdsDxe's ~3s
+BdsWait window (PcdPlatformBootTimeOut) - confirmed by spamming 's'
+throughout early boot and catching "[Bds]Hotkey for Boot0001 pressed -
+Success" in the trace. A single console-send round trip is too slow to
+land inside that window (tftp+crc32 alone eat several seconds), so this
+sends `go` directly over a raw socket and starts spamming 's'
+immediately, rather than going through dev.py console-send's blocking
+subprocess wrapper for that step.
 
 Reuses the proven catch-uboot.py-race + power_cycle_verified +
 ensure_tftpd/tftp_and_verify pattern (ram-boot-deploy.py), rather than a
-new hand-rolled reimplementation.
+new hand-rolled reimplementation, for everything up to the `go` jump.
 
 Usage:
-    ./dev.py uefi-chainload-probe [--fd PATH]
+    ./dev.py uefi-chainload-probe [--fd PATH] [--no-hotkey]
 """
 
 from __future__ import annotations
@@ -26,6 +39,7 @@ import importlib.util
 import os
 import subprocess
 import sys
+import time
 import zlib
 from pathlib import Path
 
@@ -34,6 +48,7 @@ sys.path.insert(0, str(REPO / "scripts"))
 os.environ.setdefault("AWTO_ALLOW_DIRECT_SCRIPT", "1")
 from _net import detect_server_ip  # noqa: E402
 from _power import power_cycle_verified  # noqa: E402
+import _console  # noqa: E402
 
 _rbd_spec = importlib.util.spec_from_file_location(
     "_ram_boot_deploy", REPO / "scripts/ram-boot-deploy.py")
@@ -42,23 +57,27 @@ _rbd_spec.loader.exec_module(_rbd)
 
 EDK2_OUT = Path("/mnt/2tb/unvr-port-refs/edk2")
 FD_ADDR = "0x20000000"
-# EDK2's own banner text before the shell prompt (standard UEFI Shell
-# startup banner) - "UEFI Shell" is present regardless of shell version.
-# "Kernel panic"/"Synchronous Exception"/"Data Abort" catch a hard crash
-# so the script doesn't just sit out the full timeout on those.
-#
-# Confirmed live (2026-09-02, first attempt ever): P0 reaches BDS's
-# "Please select boot device" menu (Tianocore/EDK2 banner printed,
-# "Press ESCAPE for boot options" seen) - NOT a direct Shell launch, so
-# that's the real P0 success signal, not "UEFI Shell" text (which only
-# appears after a boot option actually launches - it currently doesn't,
-# see docs/uefi.md's HiiDatabase/BmDriverHealth note).
-SUCCESS_PATTERN = "Please select boot device|UEFI Shell|Shell>"
+
+# "UEFI Interactive Shell" only ever appears once Shell.efi genuinely
+# launches and runs - unlike "UEFI Shell"/"Shell>" text, which also
+# appears (as a false-positive match) in BDS's own boot-options-dump
+# debug trace ("Boot0001: UEFI Shell") before anything has launched.
+SUCCESS_PATTERN = "UEFI Interactive Shell"
 CRASH_PATTERN = "Synchronous Exception|Data Abort|Instruction Abort|Kernel panic"
-# No prior data point for "how long EDK2 P0 takes to reach a shell" -
-# this is the FIRST real boot attempt. Budget generously (2x a normal
-# Linux boot's ballpark) since a hang is recoverable (power-cycle) and a
-# timeout that's too short would abort a genuinely-still-booting probe.
+
+# Confirmed live: BdsDxe's own boot timeout (PcdPlatformBootTimeOut=3 in
+# Unvr.dsc) opens the hotkey window; "[Bds]BdsWait(3)/(2)/(1)" spans
+# ~3s. Spam for 8s (2.5x+ margin) to absorb any slower boot on a colder
+# ccache / different candidate, then stop - holding 's' down forever
+# would just get typed into the shell once reached.
+HOTKEY_SPAM_S = 8.0
+HOTKEY_INTERVAL_S = 0.15
+
+# No prior data point before tonight for "how long EDK2 P0 takes to
+# reach a shell" - now that it's confirmed reachable, budget generously
+# above the observed run (a fresh boot + hotkey race takes low tens of
+# seconds) since a hang is recoverable (power-cycle) and a timeout
+# that's too short would abort a genuinely-still-booting probe.
 PROBE_TIMEOUT_S = 60
 
 
@@ -69,6 +88,9 @@ def main() -> int:
                      help="must match the --target used with ./dev.py build-uefi-p0")
     ap.add_argument("--fd", type=Path, default=None,
                      help="override the FD path directly instead of deriving it from --target")
+    ap.add_argument("--no-hotkey", action="store_true",
+                     help="don't race the 's' hotkey - just watch BDS's automatic "
+                          "phase land on Boot0000's own menu (the pre-hotkey-fix behavior)")
     args = ap.parse_args()
     if args.fd is None:
         args.fd = EDK2_OUT / f"Build/UNVR/{args.target}_GCC/FV/UNVR.fd"
@@ -119,20 +141,35 @@ def main() -> int:
     print(f"crc32 verified: 0x{local_crc:08x} matches\n")
 
     print(f"=== go {FD_ADDR} - transferring control to EDK2 SEC ===")
-    p = subprocess.run(
-        [sys.executable, "./dev.py", "console-send", "--expect",
-         f"{SUCCESS_PATTERN}|{CRASH_PATTERN}", "--timeout", str(PROBE_TIMEOUT_S),
-         f"go {FD_ADDR}"],
-        cwd=REPO, capture_output=True, text=True, timeout=PROBE_TIMEOUT_S + 15,
-    )
-    out = p.stdout + p.stderr
-    print(out)
+    s = _console.connect()
+    s.sendall(f"go {FD_ADDR}\r".encode())
 
-    if any(pat in out for pat in CRASH_PATTERN.split("|")):
-        print("\nRESULT: EDK2 crashed (exception/abort) before reaching the shell.")
+    start = time.monotonic()
+    buf = b""
+    last_key_send = -1.0
+    while time.monotonic() - start < PROBE_TIMEOUT_S:
+        try:
+            d = s.recv(4096)
+            if d:
+                buf += d
+        except TimeoutError:
+            pass
+        now = time.monotonic() - start
+        if (not args.no_hotkey) and now < HOTKEY_SPAM_S and now - last_key_send > HOTKEY_INTERVAL_S:
+            s.sendall(b"s")
+            last_key_send = now
+        text = buf.decode(errors="replace")
+        if SUCCESS_PATTERN in text or any(p in text for p in CRASH_PATTERN.split("|")):
+            break
+
+    text = buf.decode(errors="replace")
+    print(text[-4000:])
+
+    if any(p in text for p in CRASH_PATTERN.split("|")):
+        print("\nRESULT: EDK2 crashed (exception/abort).")
         return 1
-    if "<<MATCHED:" in out and any(pat in out for pat in SUCCESS_PATTERN.split("|")):
-        print("\nRESULT: SUCCESS - reached the UEFI Shell prompt.")
+    if SUCCESS_PATTERN in text:
+        print("\nRESULT: SUCCESS - reached the real UEFI Interactive Shell prompt.")
         return 0
     print(f"\nRESULT: no response within {PROBE_TIMEOUT_S}s - likely hung. "
           "Power-cycle (./dev.py power-cycle) to return to normal boot; "

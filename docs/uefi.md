@@ -168,11 +168,13 @@ Each phase boots and is reverted by power-cycle (RAM payload, no flash write).
   once the actual chainload probe runs (§5's dry-probe, owner-only).
 - **No PCIe/USB/SATA/net yet** — Shell over serial only.
 
-**Status (2026-09-02): chainloaded successfully on real hardware -
-EDK2 runs.** `./dev.py uefi-chainload-probe` (docs/uefi.md §5's dry
-probe) tftp'd `UNVR.fd`, crc32-verified it, and `go 0x20000000`'d into
-it. First attempt ever, and it worked past everything §2/§6 flagged as
-unconfirmed:
+**Status (2026-09-02): P0 fully achieved - UEFI Interactive Shell
+running and responsive on real hardware.** `./dev.py uefi-chainload-probe`
+(docs/uefi.md §5's dry probe) tftp'd `UNVR.fd`, crc32-verified it, and
+`go 0x20000000`'d into it. First attempt ever, and it worked past
+everything §2/§6 flagged as unconfirmed. The doc's own original success
+criterion ("EDK2 banner + UEFI Shell prompt on `ttyS0` at 115200") is
+met - see the hotkey fix below for the final piece.
 
 ```
 ## Starting application at 0x20000000 ...
@@ -270,12 +272,34 @@ Please select boot device:
     never touched flash - the doc's own safety guarantee held). Reverted;
     `BootManagerMenuApp` stays in the component list, confirmed back to
     the known-good clean-menu state afterward.
-  - **Next session's starting point**: reaching `Boot0001` (Shell)
-    needs the NVRAM `BootNext`/`BootOrder` variables actually set to it
-    (or a custom `PlatformBootManagerLib` that skips the raw-device menu
-    and tries `Boot0001` directly) - not a component-list change. The
-    hang above suggests `PlatformRecovery`'s own failure path also needs
-    a look before removing `BootManagerMenuApp` is safe.
+- **Reaching `Boot0001` (Shell): solved via the 's' hotkey, not a
+  component-list or NVRAM change.** `ArmPkg/Library/
+  PlatformBootManagerLib` (the generic lib P0 reuses, see above) already
+  registers a hotkey for `Boot0001` - `Key.UnicodeChar = 's'` - live
+  during `BdsDxe`'s ~3s `BdsWait` countdown
+  (`PcdPlatformBootTimeOut`). Spamming 's' during that window makes BDS
+  boot `Boot0001` directly, bypassing `BootManagerMenuApp`'s broken menu
+  entirely - confirmed live: `[Bds]BmHotkeyCallback: 0000:0073` →
+  `[Bds]Hotkey for Boot0001 pressed - Success` → `[Bds]Booting UEFI
+  Shell` → `Loading driver at ...Shell.efi` → full `UEFI Interactive
+  Shell` banner with an `FS0:` mapping table and a live `Shell>` prompt.
+  Verified genuinely interactive (not just banner text) by running `ver`
+  in a follow-up connection: `UEFI Interactive Shell v2.2 / EDK II /
+  UEFI v2.70 (EDK II, 0x00010000)`.
+  - `scripts/uefi-chainload-probe.py` now does this itself: sends `go`
+    over a raw console socket (not `dev.py console-send`'s blocking
+    subprocess wrapper - too slow to land inside the ~3s window once
+    tftp+crc32 overhead is accounted for) and spams `s` for the first 8s
+    while reading continuously, watching for the literal string `UEFI
+    Interactive Shell` as the success signal (not `UEFI Shell`/`Shell>`
+    substrings - those also appear, as a false positive, in BDS's own
+    boot-options-dump trace before anything has actually launched).
+    `--no-hotkey` skips the spam to reproduce the old "lands on
+    Boot0000's own menu" behavior if ever needed for comparison.
+  - This is now unattended and reproducible: `./dev.py
+    uefi-chainload-probe` runs power-cycle → catch U-Boot → tftp → crc32
+    → `go` + hotkey race → Shell detection → exits 0 end to end, no
+    manual intervention.
 
 Real fixes found getting the FD to build in the first place, in case
 they bite the next phase too:
