@@ -921,6 +921,15 @@ def cmd_power_cycle(extra: list[str]) -> int:
 
 
 @command(
+    "power-cycle, catch the U-Boot prompt, run read-only bench diagnostics "
+    "(scripts/uboot-bench-check.py) - no writes, no chainload jump",
+    kind="action",
+)
+def cmd_uboot_bench_check(extra: list[str]) -> int:
+    return _run_script("scripts/uboot-bench-check.py", extra)
+
+
+@command(
     "send a serial BREAK (+ optional Magic SysRq letter) to the UNVR's "
     "console, e.g. to grab a live blocked-task dump during a hang that "
     "console-send can't reach - tio's socket mode doesn't relay ctrl-t "

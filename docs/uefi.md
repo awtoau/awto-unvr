@@ -199,24 +199,39 @@ Each phase boots and is reverted by power-cycle (RAM payload, no flash write).
 
 ---
 
-## 5. Exact next bench step (owner runs — do NOT run here)
+## 5. Bench step results (2026-09-02, `./dev.py uboot-bench-check`)
 
-At the U-Boot prompt (Esc Esc within ~2 s of power-on; `ALPINE_UBNT_NAS_ALL>`),
-run these to confirm chainload capability and entry state. **Read-only, no writes.**
+Read-only U-Boot queries, run via `scripts/uboot-bench-check.py` (power-cycle +
+catch-uboot.py race, then `version`/`help`/`help bootm`/`printenv`/`bdinfo`/
+`help go` — no writes, no chainload jump).
+
+- **`version` is absent** — `Unknown command 'version' - try 'help'`. Doc
+  previously expected this to work; it doesn't on this build. No build-date
+  string obtained this way; not blocking.
+- **`go`, `bootm` confirmed present**; `bootefi`, `booti`, `fatload` confirmed
+  absent from `help`'s full command list — matches the binary-string analysis
+  in §1.
+- **DRAM banks (`bdinfo`)**: 4 banks, each 1 GiB — `0x0`, `0x40000000`,
+  `0x80000000` (contiguous, = the doc's "DRAM0 0x0/0xC0000000" 3 GiB region)
+  and `0x200000000` (= the doc's "DRAM1" 1 GiB region). Reconciles exactly
+  with §3's PCD table — no change needed there.
+- **`relocaddr = 0x03F1E000`** — U-Boot relocates itself to ~66 MiB, well
+  clear of the chosen EDK2 FD base `0x20000000` (512 MiB). Closes the §6
+  "FD load base collision" risk.
+- **`bootcmd`** confirms the live NAND boot flow: kernel read from
+  `0x1300000` (4-byte length prefix at `0x300000` via the partition-offset
+  dance), dtb from `0x2800000`, `bootm 0x02000000 - 0x04078000` — matches
+  [nand-boot-layout-recovery] (memory).
+
+Entry EL is still unconfirmed (needs EDK2's own boot log, not a U-Boot
+command — see §6). Next: the dry chainload probe below, once a P0 FD exists.
 
 ```
-version                 # confirm 2015.07-alpine_db-2.21-HAL, build date
-help                    # full command list; confirm go / bootm present
-help bootm              # confirm 'standalone'/'firmware' image handling
-printenv                # bootcmd, bootfrom(=bootnand), loadaddr(0x08000000), loadaddr_dt
-bdinfo                  # DRAM banks, relocaddr (where U-Boot moved to — avoid it)
-help go                 # confirm 'go' jump-to-address
+setenv ipaddr <unit>; setenv serverip <host>
+tftpboot 0x20000000 UNVR.fd     # host serves it via scripts/tftpd.py
+crc32 0x20000000 ${filesize}    # verify against host crc32 before jumping
+go 0x20000000                   # transfer control to EDK2 SEC
 ```
-
-Expected: `go`, `bootm` present; `bootefi`, `booti`, `fatload` **absent**
-(already proven in the binary — this is bench confirmation).
-
-Then a **dry chainload probe** (still no flash write) once an EDK2 FD is built:
 
 ```
 setenv ipaddr <unit>; setenv serverip <host>
@@ -237,10 +252,8 @@ to run at EL2.
 - **Entry EL unconfirmed.** Chain hands Linux EL2; whether `go`/`bootm` enters EDK2
   at EL2 or EL1 is not read on bench. EDK2 must match. Mitigation: print `CurrentEL`
   in the P0 SEC log; rebuild for the observed EL. (§2 #5, §5.)
-- **FD load base collision.** U-Boot relocates itself to top of DRAM at start-up
-  (`bdinfo relocaddr`). `0x20000000` is chosen clear of TEXT_BASE `0x1100000`,
-  loadaddr `0x08000000`, loadaddr_dt `0x04078000` — but confirm against `relocaddr`
-  before committing.
+- ~~FD load base collision~~ — resolved. `relocaddr = 0x03F1E000` (§5,
+  confirmed on bench), well clear of `0x20000000`.
 - **Arch-timer frequency conflict.** U-Boot config hardcodes `COUNTER_FREQUENCY
   50000000` ([bootloader.md](bootloader.md)) but the **live DT says 58 333 312 Hz**
   and Linux runs at 58.33 MHz. Trust the DT / read `CNTFRQ_EL0` at runtime; a wrong
