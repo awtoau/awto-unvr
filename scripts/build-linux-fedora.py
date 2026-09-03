@@ -535,7 +535,11 @@ def build():
             log(f"FATAL: {copied} missing right after copying it", "ERROR")
             sys.exit(1)
 
-    for m in ("al_eth", "al_dma", "al_ssm", "al_sgpo", "al_thermal"):
+    # al_reboot is what makes `reboot` work at all on this SoC (#51): PSCI 0.2
+    # claims SYSTEM_RESET at notifier priority 129 but AL-324's firmware does
+    # not implement it, so without our SP805 handler loaded the box just hangs
+    # at "Restarting system". It was written but never added here.
+    for m in ("al_eth", "al_dma", "al_ssm", "al_sgpo", "al_thermal", "al_reboot"):
         mpath = os.path.join(OUT, m)
         if os.path.exists(mpath):
             shutil.rmtree(mpath)
