@@ -201,6 +201,65 @@
 		 */
 
 		/*
+		 * al_eth board params. Node names, property names and values are a
+		 * VERBATIM copy of stock's own /soc/board-cfg/ethernet
+		 * (tmp/uboot-dtbs/dtb00-0x081048-26358B.dts, sysid ea16), so the two
+		 * are diffable and our parser mirrors stock's board.c 1:1.
+		 *
+		 * These are the ONLY source of the MAC scratchpad registers Linux's
+		 * al_eth reads at probe; without them it fails with "board info not
+		 * available" and there is no ethernet at all. Written per port by
+		 * al_eth_bp_seed() (drivers/net/al_eth/al_eth_boardparams.c).
+		 *
+		 * Reproduced as stock has it, including the DAC/optic contradiction
+		 * on port2 (dac + force-1000base-x on a port with an SR optic) —
+		 * matching behaviour first, see #200. Stock's leds/ subnode is not
+		 * carried: board-params reg 3 holds only gpio_spd_10g/25g, and this
+		 * board defines neither (it has leds/sfp_1g only), so reg 3 is 0
+		 * either way.
+		 */
+		board-cfg {
+			ethernet {
+				port1 {
+					status = "enabled";
+					mode = "rgmii";
+
+					ext_phy {
+						phy_mgmt_if = "mdc-mdio";
+						phy-addr = <0x04>;
+						mdc-mdio-freq = "1.0Mhz";
+						auto-neg-mode = "out-of-band";
+					};
+				};
+
+				port2 {
+					status = "enabled";
+					mode = "auto-detect-auto-speed";
+					i2c-id = <0x02>;
+					serdes-grp = <0x03>;
+					serdes-lane = <0x00>;
+
+					10g-serial {
+						dac = "enabled";
+						dac-length = <0x03>;
+						auto-neg = "disabled";
+						link-training = "disabled";
+						fec = "disabled";
+						force-1000base-x = "enabled";
+					};
+
+					retimer {
+						exist = "disabled";
+						type = "br410";
+						i2c-bus = <0x01>;
+						i2c-addr = <0x56>;
+						channel = "B";
+					};
+				};
+			};
+		};
+
+		/*
 		 * Internal PCIe host — an ECAM-compatible window at 0xfbc00000
 		 * fronting the SoC's integrated PCI endpoints (bus 0 only): 2×
 		 * AHCI SATA (1c36:0031, class AHCI 1.0), eth, crypto, DMA. We use

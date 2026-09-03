@@ -39,6 +39,8 @@
 #include <al_hal_eth.h>
 #include <al_hal_udma.h>
 
+#include "al_eth_boardparams.h"
+
 /*
  * al_eth is a PCI-enumerated endpoint on the internal PCIe (bus 0), NOT a
  * platform/DT device - the bare eth0..3 nodes at 0xfc000000+ in the live DT are
@@ -685,6 +687,10 @@ static int al_eth_dm_probe(struct udevice *dev)
 			priv->udma_regs, priv->ec_regs, priv->mac_regs);
 		return -EINVAL;
 	}
+
+	/* Hand the board params to Linux via the MAC scratchpad. Stock U-Boot
+	 * does this too; without it Linux al_eth fails probe outright. */
+	al_eth_bp_seed(1, priv->mac_regs);
 
 	/* PHY on the internal MDIO bus - confirmed hardware-of-record: RGMII,
 	 * AR8031/8033 (at803x) @ addr 4. No DT node backs this PCI endpoint. */

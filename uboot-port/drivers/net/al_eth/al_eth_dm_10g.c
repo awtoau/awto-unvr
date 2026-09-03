@@ -47,6 +47,8 @@
 #include <al_hal_eth.h>
 #include <al_hal_udma.h>
 
+#include "al_eth_boardparams.h"
+
 /* eth2 = the "advanced" al_eth function on the internal PCIe (vendor 0x1c36 dev
  * 0x0002). Same three-BAR layout as eth1 (UDMA=BAR0, EC=BAR4, MAC=BAR2). */
 #define AL_ETH_PCI_VENDOR	0x1c36
@@ -575,6 +577,10 @@ static int al_eth_10g_probe(struct udevice *dev)
 			priv->udma_regs, priv->ec_regs, priv->mac_regs);
 		return -EINVAL;
 	}
+
+	/* Hand the board params to Linux via the MAC scratchpad. Stock U-Boot
+	 * does this too; without it Linux al_eth fails probe outright. */
+	al_eth_bp_seed(2, priv->mac_regs);
 
 	/* al_udma-visible memory MUST be low DRAM (master can't reach U-Boot's ~3GB
 	 * heap - mirrors al_eth_dm.c's al_eth_dma_low_alloc; own 0x02100000 window). */
