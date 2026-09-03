@@ -1,0 +1,16 @@
+[package]
+name = "serdes-tune"
+version = "0.1.0"
+edition = "2021"
+
+# No external crates, same rationale as tools/uboot-diag: std only, so the tool
+# cross-builds for aarch64-unknown-linux-musl offline and needs no registry.
+# Arg parsing is ~120 lines in src/args.rs; clap would be the only dependency
+# and would buy nothing this tool needs.
+[[bin]]
+name = "serdes-tune"
+path = "src/main.rs"
+
+[profile.release]
+strip = true
+opt-level = "z"

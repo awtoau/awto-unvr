@@ -6,6 +6,10 @@ answering "how *should* the tap value be chosen?" (#207).
 Scope: Alpine V2 / AL-324, HSSP SerDes group D lane 0, 10GBASE-SR via
 FS SFP-10GSR-85. Related: #121 #193 #195 #196 #199 #200 #207 #209.
 
+Tooling: `tools/serdes-tune/` (Rust) implements the userspace methods below —
+SFF-8472 decode, the pcs/ec/udp-loss/throughput metrics, and the sweep.
+`scripts/serdes-tx-sweep.py` is the earlier Python sweep (tcp / udp-loss only).
+
 ---
 
 ## 1. The mechanism
