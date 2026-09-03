@@ -1560,9 +1560,12 @@ static int al_eth_configure_int_mode(struct al_eth_adapter *adapter)
 	}
 
 	if (adapter->board_type != ALPINE_INTEGRATED) {
+		/* was m2s_errors/s2m_aborts twice, leaving m2s_aborts and
+		 * s2m_errors unset - copy-paste, fixed per vendor v3.5.3 (#204).
+		 * Dead code on this board: both ports are ALPINE_INTEGRATED. */
 		m2s_errors_disable |= 0x3f << 25;
-		m2s_errors_disable |= 0x3f << 25;
-		s2m_aborts_disable |= 0x3f << 25;
+		m2s_aborts_disable |= 0x3f << 25;
+		s2m_errors_disable |= 0x3f << 25;
 		s2m_aborts_disable |= 0x3f << 25;
 	}
 
