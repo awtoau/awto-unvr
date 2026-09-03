@@ -1,5 +1,6 @@
 ## @file
-#  PciHostBridgeLib for the Ubiquiti UNVR's internal PCIe (Alpine V2).
+#  PciHostBridgeLib for the Ubiquiti UNVR: internal + external PCIe0
+#  (Alpine V2). See PciHostBridgeLib.c.
 #
 #  Copyright (c) 2026, Awto / Daniel Tyrrell. All rights reserved.
 #
@@ -26,3 +27,4 @@
   BaseLib
   DebugLib
   DevicePathLib
+  IoLib

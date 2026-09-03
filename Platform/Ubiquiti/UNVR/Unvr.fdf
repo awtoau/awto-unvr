@@ -92,11 +92,16 @@ WRITE_STATUS       = TRUE
   # Unicode Collation (required by Shell)
   INF MdeModulePkg/Universal/Disk/UnicodeCollation/EnglishDxe/EnglishDxe.inf
 
-  # PCI (P1 - internal PCIe only, see Unvr.dsc)
+  # PCI (internal P1 + external PCIe0 P1.5, see Unvr.dsc)
   INF ArmPkg/Drivers/ArmPciCpuIo2Dxe/ArmPciCpuIo2Dxe.inf
   INF MdeModulePkg/Bus/Pci/PciHostBridgeDxe/PciHostBridgeDxe.inf
   INF MdeModulePkg/Bus/Pci/PciBusDxe/PciBusDxe.inf
   INF Platform/Ubiquiti/UNVR/Drivers/AlPcieSnoopFixDxe/AlPcieSnoopFixDxe.inf
+
+  # USB (P1.5 - external PCIe0 xHCI, see Unvr.dsc)
+  INF MdeModulePkg/Bus/Pci/XhciDxe/XhciDxe.inf
+  INF MdeModulePkg/Bus/Usb/UsbBusDxe/UsbBusDxe.inf
+  INF MdeModulePkg/Bus/Usb/UsbMassStorageDxe/UsbMassStorageDxe.inf
 
   # Boot Manager Menu - see Unvr.dsc for the note on why this is kept
   # in despite its own menu not being able to reach Shell.inf

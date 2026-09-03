@@ -57,13 +57,22 @@
   SerialPortLib|MdeModulePkg/Library/BaseSerialPortLib16550/BaseSerialPortLib16550.inf
   PlatformHookLib|MdeModulePkg/Library/BasePlatformHookLibNull/BasePlatformHookLibNull.inf
 
-  # PciLib: BaseSerialPortLib16550 has an (unused at P0 - we set
+  # PciLib: BaseSerialPortLib16550 has an (unused - we set
   # PcdSerialUseMmio=TRUE) PCI-config-space code path that still needs
-  # this to resolve statically. No PCI host bridge driver runs at P0;
-  # these are just raw read/write primitives, harmless unlinked-in.
+  # this to resolve statically; segment-0-only (BasePciLibPciExpress),
+  # harmless unlinked-in. Real PCI access (both segments) goes through
+  # PciSegmentLib below, not this.
   PciLib|MdePkg/Library/BasePciLibPciExpress/BasePciLibPciExpress.inf
   PciExpressLib|MdePkg/Library/BasePciExpressLib/BasePciExpressLib.inf
-  PciSegmentLib|MdePkg/Library/BasePciSegmentLibPci/BasePciSegmentLibPci.inf
+
+  # PciSegmentLib: multi-segment (P1.5 - internal + external PCIe0, two
+  # separate ECAM windows, see Library/PciSegmentInfoLib). Both are
+  # flat single-bus ECAM (no bus-shift address bits at all - a separate
+  # register windows the target bus instead, see docs/hardware.md), so
+  # the standard segment-info-driven library works unmodified; no
+  # custom PciSegmentLib needed.
+  PciSegmentInfoLib|Platform/Ubiquiti/UNVR/Library/PciSegmentInfoLib/PciSegmentInfoLib.inf
+  PciSegmentLib|MdePkg/Library/PciSegmentLibSegmentInfo/BasePciSegmentLibSegmentInfo.inf
 
   # ARM libraries (ArmLib moved from ArmPkg to MdePkg upstream since the
   # CCR2004 reference/docs/uefi.md were written - confirmed by cross-
@@ -371,13 +380,25 @@
   MdeModulePkg/Universal/Disk/UnicodeCollation/EnglishDxe/EnglishDxe.inf
 
   #
-  # PCI (P1 - internal PCIe only, docs/uefi.md). ArmPciCpuIo2Dxe supplies
-  # CpuIo2, a PciHostBridgeDxe dependency even with no I/O space routed.
+  # PCI (internal P1 + external PCIe0 P1.5, docs/uefi.md). ArmPciCpuIo2Dxe
+  # supplies CpuIo2, a PciHostBridgeDxe dependency even with no I/O space
+  # routed.
   #
   ArmPkg/Drivers/ArmPciCpuIo2Dxe/ArmPciCpuIo2Dxe.inf
   MdeModulePkg/Bus/Pci/PciHostBridgeDxe/PciHostBridgeDxe.inf
   MdeModulePkg/Bus/Pci/PciBusDxe/PciBusDxe.inf
   Platform/Ubiquiti/UNVR/Drivers/AlPcieSnoopFixDxe/AlPcieSnoopFixDxe.inf
+
+  #
+  # USB (P1.5 - external PCIe0 xHCI, ASM1042A). Independent differential
+  # test of issue #140's still-open U-Boot xHCI SLOT_ID bug: EDK2's XHCI
+  # driver is a completely separate codebase from U-Boot's - if it hits
+  # the same failure on the same hardware, that's strong evidence the
+  # bug is silicon/coherency-level, not specific to U-Boot's driver.
+  #
+  MdeModulePkg/Bus/Pci/XhciDxe/XhciDxe.inf
+  MdeModulePkg/Bus/Usb/UsbBusDxe/UsbBusDxe.inf
+  MdeModulePkg/Bus/Usb/UsbMassStorageDxe/UsbMassStorageDxe.inf
 
   # Boot Manager Menu. NOTE (2026-09-02, see docs/uefi.md): this app's
   # own interactive menu auto-enumerates generic "non-block boot

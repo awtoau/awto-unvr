@@ -9,10 +9,20 @@
   matching the doc's simplification - not a bug, this is just merging
   adjacent banks the way the doc's own PCD table already does.
 
-  P0 has no PCIe/USB/SATA/net, so the whole SoC device band
-  (0xf0000000..0xff000000, covering GIC/PBS/UART/ECAM/integrated-EP MMIO)
-  is one Device-nGnRnE region rather than the finer-grained split the doc
-  lists for later phases - "simpler for P0; tighten later" per §3.
+  The whole SoC device band (0xf0000000..0xff000000, covering GIC/PBS/
+  UART/ECAM/integrated-EP MMIO) is one Device-nGnRnE region rather than
+  the finer-grained split the doc lists for later phases - "simpler for
+  P0; tighten later" per §3.
+
+  External PCIe0's MMIO/BAR window (0xC0010000-0xC7FFFFFF, docs/
+  hardware.md's pcie_ext0_mem) sits BELOW the SoC device band, in the
+  gap right above DRAM0's end (0xC0000000) - genuinely unmapped by any
+  other region here, so it needs its own entry. Confirmed the hard way
+  (2026-09-03, P1.5): without this, PciBusDxe's BAR assignment/probe hit
+  an SError (CpuExceptionHandlerLib.c ASSERT) accessing 0xC0100000 -
+  ARM's fault, not the PCIe bridge/silicon (see docs/hardware.md's
+  "never retrain" gotcha for the actual silicon-level PCIe caveat; this
+  one was purely a missing MMU descriptor).
 
   Copyright (c) 2026, Awto / Daniel Tyrrell. All rights reserved.
 
@@ -30,8 +40,10 @@
 #define UNVR_DRAM1_SIZE   0x0040000000ULL  // 1 GiB
 #define UNVR_DEVICE_BASE  0x00F0000000ULL
 #define UNVR_DEVICE_SIZE  0x000F000000ULL  // 0xf0000000..0xff000000
+#define UNVR_PCIE_EXT0_MEM_BASE  0x00C0010000ULL
+#define UNVR_PCIE_EXT0_MEM_SIZE  0x0007FF0000ULL  // 0xc0010000..0xc7ffffff
 
-#define MAX_VIRTUAL_MEMORY_MAP_DESCRIPTORS  4
+#define MAX_VIRTUAL_MEMORY_MAP_DESCRIPTORS  5
 
 /**
   Return the Virtual Memory Map of the platform.
@@ -76,6 +88,13 @@ ArmPlatformGetVirtualMemoryMap (
   VirtualMemoryTable[Index].PhysicalBase = UNVR_DEVICE_BASE;
   VirtualMemoryTable[Index].VirtualBase  = UNVR_DEVICE_BASE;
   VirtualMemoryTable[Index].Length       = UNVR_DEVICE_SIZE;
+  VirtualMemoryTable[Index].Attributes   = ARM_MEMORY_REGION_ATTRIBUTE_DEVICE;
+  Index++;
+
+  // External PCIe0 MMIO/BAR window (ASM1042A xHCI) - see file header
+  VirtualMemoryTable[Index].PhysicalBase = UNVR_PCIE_EXT0_MEM_BASE;
+  VirtualMemoryTable[Index].VirtualBase  = UNVR_PCIE_EXT0_MEM_BASE;
+  VirtualMemoryTable[Index].Length       = UNVR_PCIE_EXT0_MEM_SIZE;
   VirtualMemoryTable[Index].Attributes   = ARM_MEMORY_REGION_ATTRIBUTE_DEVICE;
   Index++;
 

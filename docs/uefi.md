@@ -385,20 +385,76 @@ PCIe0 (ASM1042A xHCI) is a separate follow-up, see below.
   ```
   4 fixed + 2 excluded = 6 total, exactly matching U-Boot's own current
   (post-#90-fix) behavior on this hardware.
-- **External PCIe0 (ASM1042A xHCI) - deliberately not attempted yet.**
-  Silicon gotcha, not EDK2-specific: see [hardware.md](hardware.md)
-  §"Silicon gotcha - never retrain an already-linked external PCIe
-  port" (issue #140) - the link is already trained by vendor U-Boot
-  before our chain runs, and retraining it via register writes alone
-  reliably stalls it. Next session's starting point if picked up:
-  multi-segment `PciSegmentInfoLib` (segment 0 = internal `0xfbc00000`,
-  segment 1 = external ECAM `0xfb600000`), plus a second
-  `AlPcieSnoopFixDxe`-style driver that reads LTSSM first and, if
-  already linked, only applies `CFG_TARGET_BUS` (`0xfd800030 = 0xff`),
-  AXI snoop on `MASTER_ARCTL`/`MASTER_AWCTL` (`0xfd800014`/
-  `0xfd800018`, bits 26-27), and RC-mode `COMMAND` (`0xfd810004 = 0x7`)
-  before `PciBusDxe` enumerates that segment - all register values
-  already recovered in issue #140.
+### P1.5 — external PCIe0 (ASM1042A xHCI) - in progress, real crash found
+
+Motivation beyond completeness: EDK2's `XhciDxe` is a fully independent
+codebase from U-Boot's own xHCI driver (`uboot-port/drivers/usb/host/
+xhci.c`) - issue #140's U-Boot-side investigation has been stuck for a
+long time on `Cannot allocate device context to get SLOT_ID`, unresolved
+after dozens of rounds. Standing up a second, independent driver against
+the *same* hardware is a differential test: if it also fails hard, that's
+real evidence the bug is silicon/coherency-level, not specific to
+U-Boot's implementation.
+
+**Built this (2026-09-03), following docs/hardware.md's "never retrain
+an already-linked port" rule throughout:**
+- `Library/PciSegmentInfoLib/` - two ECAM segments (segment 0 = internal
+  `0xfbc00000`, segment 1 = external `0xfb600000`), both genuinely flat
+  single-bus ECAM (no bus-shift bits in the address at all - see
+  `docs/hardware.md`), so the stock `MdePkg/Library/
+  PciSegmentLibSegmentInfo/BasePciSegmentLibSegmentInfo.inf` works
+  unmodified - no custom PciSegmentLib needed for *this* part.
+- `PciHostBridgeLib` extended: reads LTSSM (`0xfd802080` bits `[8:3]`)
+  before adding the external root bridge at all - if `< L0`, the segment
+  is simply never presented to `PciBusDxe` (no cold bring-up attempted,
+  ever). If already linked (confirmed live: `LTSSM 0x11` = L0), applies
+  `AlPcieExt0PortConfigFixup()` - `CFG_TARGET_BUS`/AXI-snoop/RC-mode
+  `COMMAND`, register-for-register identical to `alpine.c`'s
+  `al_pcie_ext0_port_config_fixup()` - deliberately *without*
+  `axi_slave_err_resp` (see below).
+- `PlatformLibMem.c`: added the missing MMU region for external PCIe0's
+  MMIO/BAR window (`0xC0010000-0xC7FFFFFF`) - it sits in the gap between
+  DRAM0's end and the SoC device band, wasn't covered by any existing
+  descriptor.
+- Added `XhciDxe`/`UsbBusDxe`/`UsbMassStorageDxe` to the component list.
+
+**Result: a real, reproducible hard crash - SError inside `XhciDxe.efi`
+itself** (`XhcReadCapReg8`, `MdeModulePkg/Bus/Pci/XhciDxe/XhciReg.c:48`
+- the very first xHCI capability-register read), not a graceful
+timeout. Root cause, from the full boot trace: **the ASM1042A
+(`1B21:1142`) aliases across multiple devfns on the external segment**
+(`PciBus: Discovered PCI @ [00|00|00]` through `[00|09|00]`, all
+identical VID/DID) - the exact "same device on every devfn" symptom
+issue #140 spent many rounds on for U-Boot. `PciBusDxe` has no
+protection against this (it isn't a DWC-aware driver), so it treats each
+alias as a separate real device, assigns each a BAR, and `XhciDxe`
+binds to more than one - at least one of which gets a BAR that doesn't
+correspond to real hardware, faulting on first touch.
+
+**Leading hypothesis for the actual fix, not yet implemented**: every
+mainline DesignWare PCIe host driver (`pcie-designware-host.c`'s
+`dw_pcie_rd_other_conf()`) has a built-in guard - config-space accesses
+to any devfn other than 0 on the root complex's own bus are answered in
+software as "no device," never actually issued to hardware. EDK2's
+generic `PciSegmentLibSegmentInfo` has no equivalent. Fixing this
+properly needs a small custom `PciSegmentLib` for segment 1 that
+returns "not present" for `Device != 0 || Function != 0` on bus 0,
+mirroring that exact, well-precedented pattern, rather than the stock
+address-computing library used today.
+
+**Also confirmed working, worth keeping regardless of the alias fix**:
+LTSSM-gated root bridge addition, the config-space fixup, and the
+missing-MMU-region fix are all real, verified-necessary pieces - none of
+that is suspect, only the devfn-aliasing gap is.
+
+**Also confirmed NOT to help**: enabling `axi_slave_err_resp` (matching
+alpine.c) turns a failed downstream access into an immediate SError
+instead of a normal `0xFFFFFFFF` "no device" response - tried first,
+made the crash *less* informative (identical crash address regardless),
+left disabled.
+
+Box power-cycled clean after every crash (RAM-payload only, docs/uefi.md
+§1's safety guarantee held throughout - never touched flash).
 
 ### P2 — SATA
 

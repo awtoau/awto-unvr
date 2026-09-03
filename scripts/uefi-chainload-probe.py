@@ -163,7 +163,7 @@ def main() -> int:
             break
 
     text = buf.decode(errors="replace")
-    print(text[-4000:])
+    print(text)
 
     if any(p in text for p in CRASH_PATTERN.split("|")):
         print("\nRESULT: EDK2 crashed (exception/abort).")

@@ -1,0 +1,23 @@
+## @file
+#  PciSegmentInfoLib for the Ubiquiti UNVR - two flat, single-bus ECAM
+#  segments (internal + external PCIe0). See PciSegmentInfoLib.c.
+#
+#  Copyright (c) 2026, Awto / Daniel Tyrrell. All rights reserved.
+#
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+##
+
+[Defines]
+  INF_VERSION                    = 0x0001001b
+  BASE_NAME                      = PciSegmentInfoLib
+  FILE_GUID                      = 26511663-dfb3-4b8f-9aac-809c63e146f6
+  MODULE_TYPE                    = BASE
+  VERSION_STRING                 = 1.0
+  LIBRARY_CLASS                  = PciSegmentInfoLib
+
+[Sources]
+  PciSegmentInfoLib.c
+
+[Packages]
+  MdePkg/MdePkg.dec
