@@ -67,6 +67,13 @@ ETH_PAIRS = (
     {"box_iface": "enp0s2", "dev_iface": "enp7s0", "label": "10G", "port": 5603},
 )
 
+# Dev-host NICs available to pair against USB-attached box interfaces, which
+# are discovered at run time (below) rather than hardcoded: their names encode
+# the USB topology (enP1p1s0u1u1, ...) and change if the dock is replugged
+# into a different port or hub chain.
+USB_ETH_DEV_IFACES = ("enp6s0f0", "enp6s0f1")
+USB_ETH_BASE_PORT = 5604
+
 CRYPTO_ALG = "xts(aes)"
 
 SATA_DEVICES = ("sdb", "sdc", "sdd", "sde")
@@ -248,8 +255,51 @@ def bench_eth_pair(host: str, password: str, pair: dict, duration: int, report: 
     )
 
 
+def discover_usb_eth_pairs(host: str, password: str, report: Report) -> list[dict]:
+    """USB-attached ethernet interfaces on the box, as bench pairs.
+
+    Matched by driver (r8152/cdc_ether/cdc_ncm/asix/ax88179_178a) rather than
+    by name: the names encode USB topology and change on a replug. Returns []
+    when nothing is attached, so a run without the dock still works.
+    """
+    listing = run_remote(
+        host,
+        password,
+        "for d in /sys/class/net/*/device/driver; do "
+        "  i=${d%/device/driver}; i=${i#/sys/class/net/}; "
+        "  echo \"$i $(basename $(readlink -f $d))\"; "
+        "done 2>/dev/null",
+    )
+    usb_drivers = {"r8152", "cdc_ether", "cdc_ncm", "asix", "ax88179_178a", "usbnet"}
+    found = []
+    for line in (listing or "").splitlines():
+        parts = line.split()
+        if len(parts) == 2 and parts[1] in usb_drivers:
+            found.append(parts[0])
+    found.sort()
+
+    pairs = []
+    for idx, iface in enumerate(found):
+        if idx >= len(USB_ETH_DEV_IFACES):
+            report.add(
+                f"eth usb {iface}", False,
+                f"no dev-host NIC left to pair against (have "
+                f"{len(USB_ETH_DEV_IFACES)}: {', '.join(USB_ETH_DEV_IFACES)})",
+            )
+            continue
+        pairs.append({
+            "box_iface": iface,
+            "dev_iface": USB_ETH_DEV_IFACES[idx],
+            "label": f"USB{idx + 1}",
+            "port": USB_ETH_BASE_PORT + idx,
+        })
+    return pairs
+
+
 def bench_ethernet(host: str, password: str, duration: int, report: Report) -> None:
     for pair in ETH_PAIRS:
+        bench_eth_pair(host, password, pair, duration, report)
+    for pair in discover_usb_eth_pairs(host, password, report):
         bench_eth_pair(host, password, pair, duration, report)
 
 
