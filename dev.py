@@ -1121,11 +1121,41 @@ def cmd_chainload(extra: list[str]) -> int:
     return cmd_console_tcl(["-e", script])
 
 
+def _probe_awto_nas(timeout_s: float = 4.0) -> bool:
+    """Quick, non-disruptive check: is the console already sitting at our
+    own awto-nas# prompt right now? Used so uboot-test can pick warm vs
+    cold automatically instead of the caller having to know/remember the
+    box's current state (the actual point of "one command that works
+    every time" - see dev.py's uboot-test docstring)."""
+    scripts_dir = str(REPO / "scripts")
+    if scripts_dir not in sys.path:
+        sys.path.insert(0, scripts_dir)
+    import _console
+
+    try:
+        s = _console.connect()
+    except FileNotFoundError:
+        return False
+    s.sendall(b"\r")
+    buf = b""
+    end = time.monotonic() + timeout_s
+    while time.monotonic() < end:
+        try:
+            d = s.recv(4096)
+            if d:
+                buf += d
+        except TimeoutError:
+            continue
+        if b"awto-nas#" in buf:
+            return True
+    return False
+
+
 @command(
-    "put the FRESH build on the box + stop at awto-nas# for hands-on testing: "
-    "SP805-reset -> catch stock -> tftp -> go (scripts/uboot-test.tcl). "
-    "--cold: box isn't already at awto-nas# - power-cycle first, skip the "
-    "SP805 warm-reset precondition",
+    "put the FRESH build on the box + stop at awto-nas# for hands-on testing, "
+    "from ANY starting box state: SP805-reset -> catch stock -> tftp -> go "
+    "(scripts/uboot-test.tcl). Auto-detects warm (already at awto-nas#) vs "
+    "cold (power-cycle first) - pass --cold/--warm to force one explicitly.",
     kind="action",
 )
 def cmd_uboot_test(_extra: list[str]) -> int:
@@ -1135,7 +1165,14 @@ def cmd_uboot_test(_extra: list[str]) -> int:
             "ERROR",
         )
         return 1
-    cold = "--cold" in _extra
+    if "--cold" in _extra:
+        cold = True
+    elif "--warm" in _extra:
+        cold = False
+    else:
+        at_prompt = _probe_awto_nas()
+        cold = not at_prompt
+        log(f"uboot-test: auto-detected {'COLD (not at awto-nas#)' if cold else 'WARM (already at awto-nas#)'}")
     TFTP_ROOT.mkdir(parents=True, exist_ok=True)
     shutil.copy2(UBOOT_BIN, CHAINLOAD_BIN)
     log(f"staged {CHAINLOAD_BIN.relative_to(REPO)} ({UBOOT_BIN.stat().st_size} bytes)")
