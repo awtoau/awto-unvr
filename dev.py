@@ -1354,6 +1354,113 @@ def cmd_flash(extra: list[str]) -> int:
     return _run_script("scripts/flash-nand.py", extra)
 
 
+def _probe_fedora_shell(timeout_s: float = 8.0) -> bool:
+    """Is the box currently at a usable Fedora shell (login prompt or an
+    already-logged-in root shell)? Used by deploy-fedora to decide whether
+    it needs to boot the box first - same reasoning as _probe_awto_nas()."""
+    scripts_dir = str(REPO / "scripts")
+    if scripts_dir not in sys.path:
+        sys.path.insert(0, scripts_dir)
+    import _console
+
+    # `uname -s`, not `echo <marker>`: U-Boot has its own `echo` builtin, so a
+    # marker-echo probe returns a false positive at the awto-nas# prompt and
+    # deploy-fedora then skips booting the box and fails confusingly later
+    # (hit live 2026-09-03). U-Boot has no `uname`, so requiring "Linux" in
+    # the output distinguishes a real Linux shell from a bootloader prompt.
+    try:
+        s = _console.connect()
+        _console.login(s)
+        rc, out = _console.sh(s, "uname -s", timeout=timeout_s)
+    except Exception:
+        return False
+    return "Linux" in (out or "")
+
+
+@command(
+    "ONE-SHOT Fedora deploy, any starting box state: publish (tftp artifacts + "
+    "module sync) -> reset to U-Boot -> flash NAND -> boot -> VERIFY the box "
+    "actually came up running the kernel just flashed. Fails loudly rather "
+    "than leaving a half-deployed box (#165)",
+    kind="action",
+)
+def cmd_deploy_fedora(extra: list[str]) -> int:
+    # #105/#161/#165 are all the same shape: a two-phase deploy where one
+    # phase ran and the other silently didn't, leaving NAND's kernel and the
+    # deployed module tree from different builds. publish-fedora and flash
+    # stay available separately, but the default path is this - one command,
+    # ending in a real check that the box boots what was just built, which
+    # is the step none of those incidents had.
+    scripts_dir = str(REPO / "scripts")
+    if scripts_dir not in sys.path:
+        sys.path.insert(0, scripts_dir)
+    # _fedora_deploy imports _repo, whose _enforce_via_devpy() guard fires on
+    # import. dev.py only sets AWTO_VIA_DEVPY for the children it spawns, not
+    # for its own process - but we ARE dev.py, which is exactly what that
+    # guard exists to permit (it's there to stop bare `python3 scripts/x.py`).
+    os.environ.setdefault("AWTO_VIA_DEVPY", "1")
+    import _console
+    from _fedora_deploy import KVER
+
+    log(f"deploy-fedora: target kernel {KVER}")
+
+    # publish-fedora needs a live Fedora (module rsync over SSH). The box
+    # could be anywhere right now - U-Boot, EDK2, powered down, mid-boot -
+    # so get it to Fedora first rather than failing and making the caller
+    # do it, which is the whole point of this being one command.
+    if not _probe_fedora_shell():
+        log("deploy-fedora: box is not at a Fedora shell - power-cycling to boot it")
+        rc = cmd_power_cycle([])
+        if rc != 0:
+            log("deploy-fedora: power-cycle failed", "ERROR")
+            return rc
+        rc = cmd_wait_for_boot([])
+        if rc != 0:
+            log("deploy-fedora: box did not reach a Fedora login", "ERROR")
+            return rc
+        if not _probe_fedora_shell():
+            log("deploy-fedora: still no Fedora shell after boot", "ERROR")
+            return 1
+
+    rc = cmd_publish_fedora(extra)
+    if rc != 0:
+        log("deploy-fedora: publish failed - NOT flashing (box left on its "
+            "current kernel, which is the safe outcome)", "ERROR")
+        return rc
+
+    log("deploy-fedora: resetting to U-Boot (SP805 watchdog, no power-cycle)")
+    rc = cmd_console_tcl(["scripts/reboot-to-uboot.tcl"])
+    if rc != 0:
+        log("deploy-fedora: could not reach the U-Boot prompt - NOT flashing", "ERROR")
+        return rc
+
+    rc = cmd_flash(extra)
+    if rc != 0:
+        log("deploy-fedora: FLASH FAILED - NAND may hold the previous kernel "
+            "while the module tree on disk is now the new one. Re-run this "
+            "command; do not leave the box in this state (#165)", "ERROR")
+        return rc
+
+    log("deploy-fedora: booting the freshly-flashed kernel")
+    rc = cmd_boot_verify([])
+    if rc != 0:
+        log("deploy-fedora: box did not reach a Fedora login after flashing", "ERROR")
+        return rc
+
+    # The check none of #105/#161/#165 had: confirm the RUNNING kernel is
+    # the one just flashed, not whatever NAND happened to still hold.
+    s = _console.connect()
+    _console.login(s)
+    _, running = _console.sh(s, "uname -r", timeout=15)
+    running = running.strip().splitlines()[-1].strip() if running.strip() else ""
+    if running != KVER:
+        log(f"deploy-fedora: MISMATCH - flashed {KVER} but box is running "
+            f"{running!r}. NAND did not take, or it booted something else.", "ERROR")
+        return 1
+    log(f"deploy-fedora: verified - box is running {running}, the kernel just flashed")
+    return 0
+
+
 @command(
     "netboot: catch U-Boot, tftp kernel+DTB, bootm in one session (scripts/netboot.py)",
     args="--tag <7.1|6.18> [opts]",
