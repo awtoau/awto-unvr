@@ -427,3 +427,43 @@ the static tables are **never applied**. Full write-up in #199.
 - The `serdes_tx_*` sysfs attributes are **writable upstream** and routed through
   `al_eth_lm_static_parameters_override()` — the API we found had zero call sites
   and repaired in `3a1fdb1`.
+
+### 12.6 Platform / PCIe / boot survey — 2026-09-03
+
+Second sweep, same day, covering the non-al_eth defects. Additions to the
+reference set:
+
+| source | why |
+|---|---|
+| [openwrt/openwrt PR #24057](https://github.com/openwrt/openwrt/pull/24057) | **newest public Annapurna HAL port** — forward-ported to 6.18, 100 files, incl. `al_hal_udma_*.c`, `al_hal_ssm.c`, `drivers/crypto/al/`. Alpine **V1**, so no DTS/bring-up transfer, but HAL-level code is relevant to #90/#182 |
+| [KalGuinn/buffalo-terastation](https://github.com/KalGuinn/buffalo-terastation) | Alpine **V2 arm64** (TeraStation TS51220) — 2427-line hand-annotated DTS decompiled from vendor DTBs, with the internal-PCIe map and `unit-adapter-eth-port3` reg-names |
+| `linux-qnap-tsx32x/drivers/ata/ahci_alpine.c` | 212-line standalone `pci_driver`, per-port MSI-X. **The file to port for #92.** Locally mirrored at `/mnt/2tb/unvr-port-refs/linux-qnap-tsx32x/` |
+| FreeBSD `sys/arm/annapurna/alpine/alpine_pci.c` | independent driver for `annapurna-labs,alpine-internal-pcie` |
+| UNVR 1.3.35 GPL `linux-arm64-unvr-4.1.37-ubnt/drivers/crypto/al/` | **8 files absent from the 4.19 drop** — the interrupt-driven al_ssm (MSI-X + tasklet). Root-cause material for #182 |
+
+**Confirmed negative: no maintained modern-kernel Alpine V2 port exists publicly**
+other than the 6.12 bcyang/filefly tree (last touched 2026-05) and ours. Codeberg
+is a GitHub mirror plus one commit (UNAS Pro 8). QNAP's `wip-nic` / `old-6.0.6`
+branches are *older* than its default. **Zero GitHub issues or PRs exist on any of
+these topics outside `awtoau/awto-unvr`.**
+
+Key mechanisms established (details on the issues):
+
+- **#55** — every Alpine tree declares `pci@fbc00000` identically with
+  `interrupt-map` covering **devfn 8/9 only**; all hit the same `-EINVAL`.
+  Upstream downgraded only `-ENOENT` (`f1aa54840657`); `-EINVAL` is known-open
+  (Herring / Sadhasivam, j721e thread 2024). Our `dev->pin = 0` quirk is a
+  **no-op** — `pci_assign_irq()` re-reads the pin from hardware (#206).
+- **#92** — mainline's `board_ahci_al` still forces `AHCI_HFLAG_NO_MSI`, putting
+  all four ports on one INTx. Three vendor trees use per-port MSI-X via the
+  adapter IOFIC. Fixing #92 removes SATA's INTx dependency and makes
+  `map_irq = NULL` a free fix for #55 — **sequence #92 before #55**.
+- **#51** — `psci_sys_reset_nb` priority **129** beats `RESTART_PRIO_DEFAULT`
+  **128**. Harmless today (our Linux DTS has no psci node) but the **UEFI DTS
+  does** (`unvr.dts:25`, `arm,psci-0.2`), so the UEFI boot path will resurrect it.
+- **#138** — `0x110` = `AL_ADAPTER_SMCC`, `0x240` = `GENERIC_CONTROL_19` (AXI
+  read/write re-order buffer, untouched by any kernel). The adapter has its own
+  error latches at `0x1B0`/`0x1B4`/`0x1B8`/`0x1C0-0x1CC`/`0x1D0` — the SError
+  source is **readable**, not a guess.
+- **#182** — our al_ssm is poll-only with **zero `request_irq`**; the genuine
+  vendor driver is MSI-X + tasklet. The poll-only design is ours, not theirs.
