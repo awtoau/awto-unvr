@@ -151,13 +151,45 @@ def configure():
             "--set-str",
             "INITRAMFS_SOURCE",
             "",
-            # drop build-complexity we don't need: BTF (needs matching pahole),
-            # module signing (our OOT al_* are unsigned), Fedora key/cert requirements,
-            # and full debuginfo (huge/slow). None affect booting Fedora.
+            # Drop BTF only (needs a matching pahole), module signing (our OOT
+            # al_* are unsigned) and Fedora's key/cert requirements.
+            # FULL DWARF IS KEPT DELIBERATELY - this is a debug/dev kernel and
+            # KASAN/kprobe/kgdb work is worth far more than the seconds it
+            # costs (measured: 11-16s incremental). Do not "fix" this by
+            # disabling DEBUG_INFO. Owner decision, #214.
             "--disable",
             "DEBUG_INFO_BTF",
             "--disable",
             "DEBUG_INFO_BTF_MODULES",
+            # Richer debuginfo + gdb helpers (lx-dmesg, lx-lsmod, ...).
+            "--enable",
+            "DEBUG_INFO_DWARF5",
+            "--enable",
+            "GDB_SCRIPTS",
+            # kdb frontend, so a halted kernel is usable over the serial
+            # console without a gdb host attached. KGDB/KGDB_SERIAL_CONSOLE
+            # are already on.
+            "--enable",
+            "KGDB_KDB",
+            # Deadlock and stall detection, each aimed at an open bug:
+            #   PROVE_LOCKING (lockdep)  - would have caught #171's rtnl
+            #                              self-deadlock automatically
+            #   WQ_WATCHDOG              - workqueue stalls (#184, #182)
+            #   DEBUG_ATOMIC_SLEEP       - sleeping in atomic context
+            #   DEBUG_OBJECTS_*          - work/timer use-after-free (#186)
+            # These cost runtime, which is the trade this kernel exists to make.
+            "--enable",
+            "PROVE_LOCKING",
+            "--enable",
+            "WQ_WATCHDOG",
+            "--enable",
+            "DEBUG_ATOMIC_SLEEP",
+            "--enable",
+            "DEBUG_OBJECTS",
+            "--enable",
+            "DEBUG_OBJECTS_WORK",
+            "--enable",
+            "DEBUG_OBJECTS_TIMERS",
             "--disable",
             "MODULE_SIG",
             "--disable",
@@ -246,6 +278,12 @@ def configure():
             "USB_STORAGE",
             "--enable",
             "USB_UAS",
+            # #92: per-port MSI-X for the two Alpine AHCI controllers instead
+            # of board_ahci_al's one shared INTx. Needs
+            # patches/ahci-alpine-per-port-msix.patch applied in the kernel
+            # tree; the =y check below is what makes a missing patch loud.
+            "--enable",
+            "AHCI_ALPINE",
             # USB-attached ethernet (the dock's ports: RTL8153 0bda:8153 and
             # Lenovo ThinkPad Lan 17ef:a359, both r8152-family; CDC_ETHER/NCM
             # cover the standard-class ones). localmodconfig above drops these
@@ -348,6 +386,11 @@ def configure():
         # finding out from a box with no USB network interfaces again.
         "CONFIG_USB_RTL8152=m",
         "CONFIG_USB_USBNET=m",
+        # #212: al_ssm/al_dma devlink health reporters. NET_DEVLINK has no
+        # Kconfig prompt (select-only) and an OOT module cannot select it -
+        # ARCH_ALPINE does it instead (arch/arm64/Kconfig.platforms, in the
+        # kernel tree's own history). Both .ko's fail to load without it.
+        "CONFIG_NET_DEVLINK=y",
     ):
         if sym not in dotcfg:
             log(f"FATAL: {sym} not set after olddefconfig")
@@ -406,6 +449,16 @@ def configure():
                 f"FATAL: {sym} not built in (=y) after olddefconfig - #157 fix regressed"
             )
             sys.exit(1)
+    # Same no-initramfs reasoning as above: root is on SATA, so the driver that
+    # owns the port must be =y. scripts/config --enable silently no-ops on an
+    # unknown symbol, so an unapplied patch shows up here rather than as a
+    # quietly-still-on-INTx kernel.
+    if "CONFIG_AHCI_ALPINE=y" not in dotcfg:
+        log(
+            "FATAL: CONFIG_AHCI_ALPINE not built in (=y) - apply "
+            "patches/ahci-alpine-per-port-msix.patch in AWTO_KERNEL_SRC (#92)"
+        )
+        sys.exit(1)
     log(
         "configured: Fedora base + ARCH_ALPINE + PCIE_AL_INTERNAL + phylink/sfp confirmed"
     )
