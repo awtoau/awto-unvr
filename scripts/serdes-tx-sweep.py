@@ -42,6 +42,7 @@ from __future__ import annotations
 import argparse
 import os
 import re
+import subprocess
 import sys
 import time
 from pathlib import Path
@@ -71,6 +72,21 @@ TX_PARAMS = (
 # applied to a live link. 6s covers observed 10G re-link time with margin.
 LINK_SETTLE_S = 6
 
+# Receiver-side physical-layer error counters on the dev host's NIC. Names vary
+# by driver; mlx4_en exposes rx_crc_errors, mlx5 adds rx_symbol_err_phy and
+# rx_corrected_bits_phy. Unknown names are simply absent and contribute nothing.
+FAR_END_ERROR_COUNTERS = {
+    "rx_crc_errors",
+    "rx_errors",
+    "rx_frame_errors",
+    "rx_length_errors",
+    "rx_over_errors",
+    "rx_symbol_err_phy",
+    "rx_crc_errors_phy",
+    "rx_corrected_bits_phy",
+    "rx_err_lane_0_phy",
+}
+
 
 def sh(s, cmd, timeout=30):
     return _console.sh(s, cmd, timeout=timeout)[1]
@@ -91,6 +107,69 @@ def read_params(s) -> dict[str, str]:
         v = marked(s, f"cat {SYSFS_DIR}/serdes_tx_{p} 2>/dev/null")
         vals[p] = v.strip()
     return vals
+
+
+def far_end_rx_errors(iface: str) -> int | None:
+    """Sum this host's physical-layer RX error counters - a CONTROL, not the metric.
+
+    Topology is box -> TP-Link switch -> this host, so these counters measure the
+    SECOND hop (switch -> host), not the link being tuned. They cannot see the
+    box's transmit quality: a store-and-forward switch DROPS bad-CRC frames
+    rather than forwarding them, so corruption on hop 1 arrives here as missing
+    frames, not as errors.
+
+    Their job is to prove hop 2 is clean, so UDP loss can be attributed to hop 1.
+    Non-zero here invalidates the measurement rather than informing it.
+
+    Returns None if no counter could be read - a missing counter must not read as
+    "zero errors".
+    """
+    try:
+        out = subprocess.run(
+            ["ethtool", "-S", iface],
+            capture_output=True,
+            text=True,
+            timeout=15,
+            check=False,
+        ).stdout
+    except (OSError, subprocess.SubprocessError):
+        return None
+
+    total = 0
+    seen = False
+    for line in out.splitlines():
+        m = re.match(r"\s*(\S+):\s+(\d+)\s*$", line)
+        if not m:
+            continue
+        name, val = m.group(1), int(m.group(2))
+        if name in FAR_END_ERROR_COUNTERS:
+            total += val
+            seen = True
+    return total if seen else None
+
+
+def measure_udp_loss(s, server_ip: str, duration: int, mbit: int) -> tuple[float, int]:
+    """Offer a FIXED UDP rate and return (loss_percent, datagrams_lost).
+
+    Better than throughput as a tuning metric. TCP throughput saturates at line
+    rate, so c_plus_1 4/5/6/7 all read 9.42 Gbit/s and cannot be ranked. Offering
+    a fixed rate well below line rate means the link is never the bottleneck, so
+    any loss is corruption rather than congestion - and loss scales with the bit
+    error rate instead of clipping.
+
+    Still indirect: it counts frames the switch discarded for bad CRC, not the
+    eye itself. It ranks settings; it does not characterise them (#207).
+    """
+    out = sh(
+        s,
+        f"iperf3 -c {server_ip} -p {IPERF_PORT} -u -b {mbit}M -t {duration} "
+        f"-B {BOX_IP}%{BOX_IFACE} 2>&1 | grep -E '%\\)'",
+        timeout=duration + 35,
+    )
+    m = re.search(r"(\d+)/\s*(\d+)\s+\(([\d.]+)%\)", out)
+    if not m:
+        return (-1.0, -1)
+    return (float(m.group(3)), int(m.group(1)))
 
 
 def measure_tx(s, server_ip: str, duration: int) -> tuple[float, int]:
@@ -121,6 +200,27 @@ def main() -> int:
         help="comma-separated values to try (decimal; written as hex)",
     )
     ap.add_argument("--duration", type=int, default=6, help="iperf3 seconds per point")
+    ap.add_argument(
+        "--metric",
+        default="tcp",
+        choices=("tcp", "udp-loss"),
+        help="tcp = throughput+retransmits (SATURATES at line rate, cannot rank "
+        "settings that all reach 9.42 Gbit/s). udp-loss = fixed offered rate, "
+        "report loss %% - does not saturate, so it ranks them.",
+    )
+    ap.add_argument(
+        "--udp-mbit",
+        type=int,
+        default=2000,
+        help="offered rate for --metric udp-loss, well under line rate so any "
+        "loss is corruption rather than congestion",
+    )
+    ap.add_argument(
+        "--control-iface",
+        default="",
+        help="local NIC to sanity-check: its RX errors must stay 0, proving the "
+        "hop we are NOT tuning is clean (see far_end_rx_errors)",
+    )
     args = ap.parse_args()
 
     values = [int(v.strip()) for v in args.values.split(",") if v.strip()]
@@ -141,8 +241,20 @@ def main() -> int:
             )
             return 1
 
-        base_mbps, base_retr = measure_tx(s, server_ip, args.duration)
-        print(f"{'value':>6}  {'Mbit/s':>9}  {'retrans':>8}   note")
+        def measure(s):
+            if args.metric == "udp-loss":
+                loss, lost = measure_udp_loss(
+                    s, server_ip, args.duration, args.udp_mbit
+                )
+                return (loss, lost)
+            return measure_tx(s, server_ip, args.duration)
+
+        ctrl0 = far_end_rx_errors(args.control_iface) if args.control_iface else None
+
+        base_mbps, base_retr = measure(s)
+        unit = "loss %" if args.metric == "udp-loss" else "Mbit/s"
+        cnt = "lost" if args.metric == "udp-loss" else "retrans"
+        print(f"{'value':>6}  {unit:>9}  {cnt:>8}   note")
         print(
             f"{original[args.param]:>6}  {base_mbps:>9.1f}  {base_retr:>8}   (baseline, unchanged)"
         )
@@ -157,7 +269,7 @@ def main() -> int:
             sh(s, f"ip link set {BOX_IFACE} up", timeout=20)
             time.sleep(LINK_SETTLE_S)
             readback = marked(s, f"cat {SYSFS_DIR}/serdes_tx_{args.param}")
-            mbps, retr = measure_tx(s, server_ip, args.duration)
+            mbps, retr = measure(s)
             note = "" if readback == str(v) else f"READBACK MISMATCH ({readback!r})"
             print(f"{v:>6}  {mbps:>9.1f}  {retr:>8}   {note}")
             results.append((v, mbps, retr))
@@ -171,6 +283,15 @@ def main() -> int:
         sh(s, f"ip link set {BOX_IFACE} up", timeout=20)
         time.sleep(LINK_SETTLE_S)
         print(f"\nrestored serdes_tx_{args.param}={original[args.param]}")
+
+        if ctrl0 is not None:
+            ctrl1 = far_end_rx_errors(args.control_iface)
+            if ctrl1 is not None and ctrl1 != ctrl0:
+                print(
+                    f"WARNING: {args.control_iface} RX errors moved "
+                    f"{ctrl0} -> {ctrl1}. The hop that should be clean is not, so "
+                    f"these results are not attributable to the link under test."
+                )
 
         if results:
             best = max(results, key=lambda r: r[1])
