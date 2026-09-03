@@ -197,3 +197,51 @@ A private hardware register is a poor interface: invisible in DT, unverifiable,
 bootloader-specific, undefined cold. Mainline's mechanism for exactly this is
 device tree, and U-Boot's `ft_board_setup()` fixups exist to do it. Recorded in
 #207 as the direction; not a prerequisite for #216.
+
+---
+
+## 9. What each bootloader touches in flash
+
+Asked while planning #216: does either bootloader use other MTD regions for
+parameters, a DTB, or anything else? **Both touch NOR only, three regions
+between them.**
+
+| partition | chip | stock U-Boot | awto-uboot |
+|---|---|---|---|
+| mtd0 `u-boot` | NOR | runs from it | — |
+| mtd1/2 `u-boot env` + redundant | NOR | **read + write** (bootcmd, `eth1addr`) | — |
+| mtd3 `Factory` | NOR | untouched (`0xFF`) | **read + write — our env**, `CONFIG_ENV_OFFSET=0x1E0000` |
+| mtd4 `EEPROM` | NOR | **read** — identity, MAC, board config ID | **read — MAC only** |
+| mtd5 `recovery kernel` | NOR | read on recovery | — |
+| mtd6 `config`, mtd7 `cksum` | NOR | untouched | — |
+| mtd8-11 (all NAND) | NAND | reads kernel | **cannot — no NAND driver** |
+
+### awto-uboot's two accesses
+
+- **Env in `Factory`** — `CONFIG_ENV_IS_IN_SPI_FLASH=y`. Read every boot, written
+  by `saveenv`. A saved env **overrides** compiled `CONFIG_BOOTARGS` /
+  `CONFIG_BOOTCOMMAND` (#158) — after changing either, run
+  `env default -a; saveenv` or the old values silently win.
+- **MAC from `EEPROM`** — a raw SPI read, bypassing the partition table:
+  `spi_flash_read_dm(flash, AL_ETH_MAC_ROM_10G_OFF, ARP_HLEN, enetaddr)`.
+  1G at the base offset, 10G at `+6`. Read-only.
+  (`al_eth_dm.c:619`, `al_eth_dm_10g.c:527`)
+
+### No device tree is read from flash
+
+- **awto-uboot's DTB is compiled into the binary**
+  (`arch/arm/dts/awto-alpine-v2-unvr-uboot.dts`, staged at build time).
+- **Stock's five `board-cfg` DTBs live inside its own image in mtd0**, selected by
+  sysid - that is what was carved to `tmp/uboot-dtbs/`.
+
+So the only DT-shaped data crossing the bootloader/Linux boundary is the
+board-params scratch registers described above - registers, not flash.
+
+### Consequences for #216
+
+- **awto-uboot cannot touch NAND at all.** Writing it to NAND `0x1300000` needs
+  stock's `nand write` as a one-time provisioning step; after that awto-uboot
+  never reads or writes NAND.
+- **mtd6 and mtd7 are genuinely free** (stock ignores both; mtd6 is Linux-only
+  ext4 for `/tmp/.config`) if a bootloader-visible NOR scratch area is ever
+  wanted that is not the env.
