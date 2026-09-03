@@ -708,14 +708,14 @@ static struct al_serdes_adv_rx_params rx_params_br410 = {
 	.high_freq_agc_boost	= 0x4,
 };
 
-/* c_plus_1 (first post-cursor tap) was 0x2: under-equalised TX, root cause
- * of #121. 0x4 reaches line rate; amp is fine at its default.
+/* c_plus_1 (first post-cursor tap) was 0x2: under-equalised TX, root cause of
+ * #121. Clean window is 4-7; 0x5 centres it rather than sitting on the cliff.
  * Sweep + measurements: issue #121, scripts/serdes-tx-sweep.py. */
 static struct al_serdes_adv_tx_params optic_tx_params = {
 	.override		= AL_TRUE,
 	.amp			= 0x1,
 	.total_driver_units	= 0x13,
-	.c_plus_1		= 0x4,
+	.c_plus_1		= 0x5,
 	.c_plus_2		= 0,
 	.c_minus_1		= 0,
 	.slew_rate		= 0,

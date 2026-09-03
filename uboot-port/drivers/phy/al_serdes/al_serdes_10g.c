@@ -67,15 +67,16 @@
  * values (optic_tx_params / optic_rx_params). Applied in al_serdes_10g_init()
  * via obj.tx_advanced_params_set()/rx_advanced_params_set() (#111).
  *
- * c_plus_1 is 0x4, not the vendor's 0x2: the vendor "optic" table is really the
- * direct-attach copper one and under-equalises a real optic. Measured under
- * Linux on this board, see #121. Untested in U-Boot - no throughput path here.
+ * c_plus_1 is 0x5, not the vendor's 0x2: the vendor "optic" table is really the
+ * direct-attach copper one and under-equalises a real optic. Clean window is
+ * 4-7, so 0x5 centres it. Measured under Linux on this board, see #121.
+ * Untested in U-Boot - no throughput path here.
  */
 static struct al_serdes_adv_tx_params optic_tx_params = {
 	.override		= AL_TRUE,
 	.amp			= 0x1,
 	.total_driver_units	= 0x13,
-	.c_plus_1		= 0x4,
+	.c_plus_1		= 0x5,
 	.c_plus_2		= 0,
 	.c_minus_1		= 0,
 	.slew_rate		= 0,
