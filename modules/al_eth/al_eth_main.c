@@ -2504,13 +2504,33 @@ static int al_eth_write_pci_config(void *handle, int where, uint32_t val)
 	return 0;
 }
 
+/* al_eth_close() holds rtnl and waits for this work via cancel_work_sync(), so a
+ * plain rtnl_lock() here deadlocks. Poll for the lock and give up if a close is
+ * in progress - the close is about to tear the interface down anyway (#171). */
+#define AL_ETH_RTNL_LOCK_CHECK_PERIOD_MS	1
+
+static int al_eth_rtnl_lock_w_flags_check(struct al_eth_adapter *adapter)
+{
+	while (!rtnl_trylock()) {
+		if (adapter->flags & AL_ETH_FLAG_CLOSE_ONGOING)
+			return -ESHUTDOWN;
+		msleep(AL_ETH_RTNL_LOCK_CHECK_PERIOD_MS);
+	}
+
+	return 0;
+}
+
 static void al_eth_reset_task(struct work_struct *work)
 {
 	struct al_eth_adapter *adapter;
 	adapter = container_of(work, struct al_eth_adapter, reset_task);
 	netdev_err(adapter->netdev, "%s restarting interface\n", __func__);
 	/*restart interface*/
-	rtnl_lock();
+	if (al_eth_rtnl_lock_w_flags_check(adapter) < 0) {
+		netdev_info(adapter->netdev, "%s: close in progress, skipping reset\n",
+			    __func__);
+		return;
+	}
 	al_eth_down(adapter);
 	{
 		int rc = al_eth_up(adapter);
@@ -4013,6 +4033,9 @@ static int al_eth_close(struct net_device *netdev)
 
 	netdev_dbg(adapter->netdev, "%s\n", __func__);
 
+	/* Must be set BEFORE the cancel_work_sync() it releases (#171). */
+	adapter->flags |= AL_ETH_FLAG_CLOSE_ONGOING;
+
 	cancel_work_sync(&adapter->reset_task);
 
 	if (adapter->plink)
@@ -4034,6 +4057,8 @@ static int al_eth_close(struct net_device *netdev)
 
 	if (adapter->plink)
 		al_eth_lm_led_config_terminate(adapter);
+
+	adapter->flags &= ~AL_ETH_FLAG_CLOSE_ONGOING;
 
 	return 0;
 }

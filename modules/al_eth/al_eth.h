@@ -326,6 +326,9 @@ struct al_eth_adapter {
 #define AL_ETH_FLAG_SRIOV_CAPABLE		(u32)(1 << 5)
 #define AL_ETH_FLAG_SRIOV_ENABLED		(u32)(1 << 6)
 #define AL_ETH_FLAG_RESET_REQUESTED		(u32)(1 << 7)
+/* Set across al_eth_close()'s cancel_work_sync() so a reset_task spinning on
+ * rtnl_trylock() can bail out instead of deadlocking against it (#171). */
+#define AL_ETH_FLAG_CLOSE_ONGOING		(u32)(1 << 8)
 
 	struct al_hal_eth_adapter hal_adapter;
 
