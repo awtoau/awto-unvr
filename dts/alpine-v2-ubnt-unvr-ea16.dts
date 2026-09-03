@@ -503,6 +503,10 @@
 			mdio-freq-khz = <1000>;
 			auto-neg-mode = "out-of-band";
 			status = "okay";
+			/* NOR "EEPROM" base MAC - the authority al_eth checks the
+			 * bootloader-programmed EC value against. */
+			nvmem-cells = <&mac_base>;
+			nvmem-cell-names = "mac-address";
 		};
 
 		eth2: ethernet@fc200000 {
@@ -524,6 +528,11 @@
 			 * (al_eth_phylink.c), not by compatible/reg. */
 			managed = "in-band-status";
 			sfp = <&sfp0>;
+			/* NOR "EEPROM" 10G MAC @0x6. Factory value is the base MAC
+			 * with the LAA bit set (76:..), NOT base+1 - confirmed in
+			 * every stock NOR dump (#89). */
+			nvmem-cells = <&mac_10g>;
+			nvmem-cell-names = "mac-address";
 		};
 
 		eth3: ethernet@fc300000 {
@@ -708,10 +717,24 @@
 				 * key @0xe004. ubnthal reads it; our U-Boot reads the MAC (#89).
 				 * The real EEPROM chip is the 24C64 @ i2c 0x57 (DDR blob).
 				 */
-				partition@1f0000 {
+				/* compatible "nvmem-cells" makes this partition an nvmem
+				 * provider, so al_eth can compare the stored MACs against
+				 * what the bootloader programmed into the EC (#89). */
+				eeprom: partition@1f0000 {
+					compatible = "nvmem-cells";
 					reg = <0x1f0000 0x10000>;
 					label = "EEPROM";
 					read-only;
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					mac_base: mac-base@0 {
+						reg = <0x0 0x6>;
+					};
+
+					mac_10g: mac-10g@6 {
+						reg = <0x6 0x6>;
+					};
 				};
 
 				/* STOCK U-Boot loads this on a recovery boot (recovery_mem_read

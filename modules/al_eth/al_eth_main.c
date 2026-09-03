@@ -46,6 +46,9 @@
 #include <linux/i2c.h>
 #include <linux/u64_stats_sync.h>
 #include <linux/gpio.h>
+#include <linux/of.h>
+#include <linux/of_net.h>
+#include <linux/nvmem-consumer.h>
 
 #include "al_hal_eth.h"
 #include "al_hal_serdes_25g.h"
@@ -607,10 +610,145 @@ static int al_eth_get_serdes_25g_speed(struct al_eth_adapter *adapter, uint *spe
 	return 0;
 }
 
-static int al_eth_board_params_init(struct al_eth_adapter *adapter)
+/*
+ * al_eth binds by PCI ID, so the PCI core leaves of_node NULL. Match the DT
+ * node on port-id == PCI slot, same rule as al_eth_phylink.c (which is
+ * compiled out without CONFIG_PHYLINK, hence the second copy).
+ */
+static struct device_node *al_eth_mac_of_node(struct pci_dev *pdev)
 {
+	struct device_node *np = NULL;
+	u32 port_id;
+
+	for_each_compatible_node(np, NULL, "annapurna-labs,al-eth") {
+		if (!of_device_is_available(np))
+			continue;
+		if (of_property_read_u32(np, "port-id", &port_id))
+			continue;
+		if (port_id == PCI_SLOT(pdev->devfn))
+			return np;
+	}
+
+	return NULL;
+}
+
+/*
+ * Read the NOR "EEPROM" MAC (nvmem cell "mac-address" on the DT node) - the
+ * authority. Explicit DT mac-address/local-mac-address wins if present.
+ */
+static int al_eth_mac_addr_nor(struct device_node *np, u8 *addr,
+			       const char **src)
+{
+	static const char * const dt_props[] = {
+		"mac-address", "local-mac-address",
+	};
+	struct nvmem_cell *cell;
+	size_t len;
+	void *buf;
+	int i;
+
+	/* of_get_mac_address() would fall back to nvmem internally; read the
+	 * properties directly so the two sources stay distinguishable. */
+	for (i = 0; i < ARRAY_SIZE(dt_props); i++) {
+		if (of_property_read_u8_array(np, dt_props[i], addr, ETH_ALEN))
+			continue;
+		if (!is_valid_ether_addr(addr))
+			continue;
+		*src = dt_props[i];
+		return 0;
+	}
+
+	cell = of_nvmem_cell_get(np, "mac-address");
+	if (IS_ERR(cell))
+		return PTR_ERR(cell);
+
+	buf = nvmem_cell_read(cell, &len);
+	nvmem_cell_put(cell);
+	if (IS_ERR(buf))
+		return PTR_ERR(buf);
+
+	if (len != ETH_ALEN) {
+		kfree(buf);
+		return -EINVAL;
+	}
+
+	ether_addr_copy(addr, buf);
+	kfree(buf);
+	*src = "NOR EEPROM 0x1f0000";
+
+	return is_valid_ether_addr(addr) ? 0 : -EINVAL;
+}
+
+/*
+ * Compare every MAC source and use the authority (NOR). A wrong-but-valid MAC
+ * passes is_valid_ether_addr() and every other check we have, so only this
+ * comparison catches it - log all sources on every boot (#89).
+ */
+static int al_eth_mac_addr_resolve(struct al_eth_adapter *adapter)
+{
+	struct device *dev = &adapter->pdev->dev;
+	u8 nor_addr[ETH_ALEN], ec_addr[ETH_ALEN];
+	const char *nor_src = NULL;
+	struct device_node *np;
+	bool have_nor = false;
+	bool have_ec = false;
 	int rc;
 
+	rc = al_eth_mac_addr_read(adapter->ec_base, 0, ec_addr);
+	if (rc)
+		dev_err(dev, "bootloader programmed no MAC into the EC forwarding table (rc %d)\n",
+			rc);
+	else if (!is_valid_ether_addr(ec_addr))
+		dev_err(dev, "bootloader programmed an invalid MAC %pM into the EC\n",
+			ec_addr);
+	else
+		have_ec = true;
+
+	np = al_eth_mac_of_node(adapter->pdev);
+	if (!np) {
+		dev_warn(dev, "no DT node for PCI slot %u - cannot check the MAC against NOR\n",
+			 PCI_SLOT(adapter->pdev->devfn));
+	} else {
+		rc = al_eth_mac_addr_nor(np, nor_addr, &nor_src);
+		of_node_put(np);
+		if (!rc) {
+			have_nor = true;
+		} else if (rc == -EPROBE_DEFER) {
+			/* MTD is a module and may load after us. Defer rather
+			 * than skip - a skipped check is how #89 stayed silent. */
+			dev_info(dev, "NOR nvmem provider not up yet - deferring probe to verify the MAC\n");
+			return -EPROBE_DEFER;
+		} else {
+			dev_warn(dev, "no usable MAC from DT/NOR nvmem (%d) - MAC unverified\n",
+				 rc);
+		}
+	}
+
+	if (have_ec)
+		dev_info(dev, "MAC from EC forwarding table (bootloader): %pM\n",
+			 ec_addr);
+	if (have_nor)
+		dev_info(dev, "MAC from %s (authority): %pM\n", nor_src, nor_addr);
+
+	if (have_nor && have_ec && !ether_addr_equal(nor_addr, ec_addr))
+		dev_err(dev,
+			"MAC mismatch - %s gives %pM, bootloader programmed %pM - using %pM\n",
+			nor_src, nor_addr, ec_addr, nor_addr);
+
+	/* NOR is the authority; EC only when NOR is unreadable. Leaving
+	 * mac_addr zeroed makes al_eth_probe() fall to a random MAC. */
+	if (have_nor)
+		ether_addr_copy(adapter->mac_addr, nor_addr);
+	else if (have_ec)
+		ether_addr_copy(adapter->mac_addr, ec_addr);
+	else
+		eth_zero_addr(adapter->mac_addr);
+
+	return 0;
+}
+
+static int al_eth_board_params_init(struct al_eth_adapter *adapter)
+{
 	if (adapter->board_type == ALPINE_NIC) {
 		adapter->mac_mode = AL_ETH_MAC_MODE_10GbE_Serial;
 		adapter->sfp_detection_needed = false;
@@ -841,12 +979,7 @@ static int al_eth_board_params_init(struct al_eth_adapter *adapter)
 			return -EPERM;
 	}
 
-	rc = al_eth_mac_addr_read(adapter->ec_base, 0, adapter->mac_addr);
-	if (rc)
-		dev_err(&adapter->pdev->dev, "%s: failed to read mac address from board (rc %d)\n",
-			__func__, rc);
-
-	return 0;
+	return al_eth_mac_addr_resolve(adapter);
 }
 
 static inline void
@@ -5589,6 +5722,11 @@ al_eth_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 	if (!is_valid_ether_addr(adapter->mac_addr)) {
 		eth_hw_addr_random(netdev);
 		memcpy(adapter->mac_addr, netdev->dev_addr, ETH_ALEN);
+		dev_err(&adapter->pdev->dev,
+			"no MAC from NOR EEPROM, DT or the EC forwarding table - INVENTED a random one (%pM)\n",
+			adapter->mac_addr);
+		dev_err(&adapter->pdev->dev,
+			"this MAC changes on every boot; DHCP reservations and MAC ACLs will not work\n");
 	} else {
 		eth_hw_addr_set(netdev, adapter->mac_addr);
 	}

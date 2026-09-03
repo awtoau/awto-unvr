@@ -3598,6 +3598,14 @@ int al_eth_mac_addr_read(void * __iomem ec_base, uint32_t idx, uint8_t *addr)
 	addr[2] = (addr_lo >> 24) & 0xff;
 	addr[1] = addr_hi & 0xff;
 	addr[0] = (addr_hi >> 8) & 0xff;
+
+	/* All-zeros = FWD MAC entry never written; all-ones = unbacked read.
+	 * Both mean "no bootloader value here", not a MAC. */
+	if (!addr_lo && !addr_hi)
+		return -ENOENT;
+	if (addr_lo == 0xffffffff && addr_hi == 0xffff)
+		return -EIO;
+
 	return 0;
 }
 
