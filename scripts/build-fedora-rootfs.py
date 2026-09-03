@@ -213,7 +213,7 @@ def sudo_run(*cmd: str, **kw) -> subprocess.CompletedProcess:
     return run("sudo", "-n", *cmd, **kw)
 
 
-def verify_not_container_flavored(root: pathlib.Path) -> None:
+def verify_not_container_flavored(root: Path) -> None:
     """Fail loudly, before packaging/deploying anything, if this build ever
     regresses to a container-flavored rootfs (#114, #150, #164) - dnf's
     @core weak-dep resolution has silently pulled in fedora-release-container
@@ -237,7 +237,7 @@ def verify_not_container_flavored(root: pathlib.Path) -> None:
         log(f"FATAL: {os_release} mentions 'container': {text}", "ERROR")
         sys.exit(1)
     for marker in (".containerenv", ".dockerenv"):
-        for rel in (pathlib.Path("run") / marker, pathlib.Path(marker)):
+        for rel in (Path("run") / marker, Path(marker)):
             p = root / rel
             if p.exists():
                 log(f"FATAL: container marker file present in installroot: {p} "
