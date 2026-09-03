@@ -355,7 +355,15 @@ static int al_eth_10g_dma_init(struct udevice *dev)
 		al_eth_cache_inval(priv->rx_buf[i], PKTSIZE_ALIGN);
 	al_eth_cache_flush(priv->desc_block, AL_ETH_DESC_BLOCK_SIZE);
 
-	al_eth_mac_start(&priv->adapter);
+	err = al_eth_mac_start(&priv->adapter);
+	if (err) {
+		/* Was ignored: the MAC's TX/RX enable can fail (-ENOSYS for a
+		 * missing mac_start_stop_adv, or the vtable's own error) and the
+		 * UDMA was then kicked at a MAC that never enabled its transmit
+		 * path - descriptors consumed, no completion ever posted. */
+		dev_err(dev, "al_eth_mac_start failed: %d\n", err);
+		return err;
+	}
 
 	return 0;
 }

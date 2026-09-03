@@ -428,19 +428,54 @@ static int i2c_xfer_init(struct i2c_regs *i2c_base, uchar chip, uint addr,
 	return 0;
 }
 
+/*
+ * The DesignWare controller reports NAK / arbitration-loss / abort ONLY via
+ * IC_TX_ABRT + ic_tx_abrt_source. Neither was referenced anywhere in this
+ * driver, so an aborted transfer either spun to I2C_BYTE_TO and returned
+ * -ETIMEDOUT, or - for writes, where the TX FIFO drains regardless -
+ * returned SUCCESS with nothing having reached the wire, leaving the abort
+ * flag latched to poison the next transfer. That is why the #78/#86 "SDA
+ * held low, whole pld bus wedged" diagnostics could never distinguish
+ * "bus wedged" from "device NAK" from "transfer fine".
+ *
+ * Returns -EREMOTEIO on abort, and always clears the latch.
+ */
+static int i2c_check_tx_abrt(struct i2c_regs *i2c_base)
+{
+	u32 abrt_source;
+
+	if (!(readl(&i2c_base->ic_raw_intr_stat) & IC_TX_ABRT))
+		return 0;
+
+	abrt_source = readl(&i2c_base->ic_tx_abrt_source);
+	readl(&i2c_base->ic_clr_tx_abrt);	/* clear the latch */
+	printf("i2c: transfer aborted, ic_tx_abrt_source=0x%08x\n", abrt_source);
+
+	return -EREMOTEIO;
+}
+
 static int i2c_xfer_finish(struct i2c_regs *i2c_base)
 {
 	ulong start_stop_det = get_timer(0);
 	int ret;
+	int abrt;
 
 	while (1) {
 		if ((readl(&i2c_base->ic_raw_intr_stat) & IC_STOP_DET)) {
 			readl(&i2c_base->ic_clr_stop_det);
 			break;
 		} else if (get_timer(start_stop_det) > I2C_STOPDET_TO) {
+			/* Was a silent break into the SUCCESS path. */
+			printf("i2c: timed out waiting for STOP_DET\n");
 			break;
 		}
 	}
+
+	/* Check BEFORE i2c_wait_for_bb() - an abort is the more specific
+	 * diagnosis and would otherwise surface as a generic bus-busy. */
+	abrt = i2c_check_tx_abrt(i2c_base);
+	if (abrt)
+		return abrt;
 
 	ret = i2c_wait_for_bb(i2c_base);
 	if (ret) {
@@ -516,6 +551,9 @@ static int __dw_i2c_read(struct i2c_regs *i2c_base, u8 dev, uint addr,
 			start_time_rx = get_timer(0);
 			active = 0;
 		} else if (get_timer(start_time_rx) > I2C_BYTE_TO) {
+			/* The write path logs its timeout; this one was silent,
+			 * making every RTC/fan/mux read failure invisible. */
+			printf("Timed out. i2c read Failed\n");
 			return -ETIMEDOUT;
 		}
 	}

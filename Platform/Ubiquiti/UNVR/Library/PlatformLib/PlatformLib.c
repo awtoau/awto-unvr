@@ -81,7 +81,11 @@ ArmPlatformInitialize (
   IN  UINTN  MpId
   )
 {
-  SerialPortWrite ((UINT8 *)"SEC: UNVR ArmPlatformInitialize (P0 - no board init needed)\n\r", 63);
+  //
+  // Length must match the literal exactly: it was 63 for a 61-byte
+  // string, reading 2 bytes past the NUL every boot.
+  //
+  SerialPortWrite ((UINT8 *)"SEC: UNVR ArmPlatformInitialize (P0 - no board init needed)\n\r", 61);
   return RETURN_SUCCESS;
 }
 

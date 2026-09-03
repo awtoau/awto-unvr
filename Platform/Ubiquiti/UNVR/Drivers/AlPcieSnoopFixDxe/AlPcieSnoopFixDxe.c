@@ -32,27 +32,53 @@
 #define AL_ETH_DEVICE_1  0x0002
 
 STATIC
-VOID
+EFI_STATUS
 AlSnoopOneDevice (
   IN EFI_PCI_IO_PROTOCOL  *PciIo,
   IN UINTN                Device
   )
 {
-  UINT32  Value;
-  UINTN   Index;
+  EFI_STATUS  Status;
+  UINT32      Value;
+  UINTN       Index;
 
-  PciIo->Pci.Read (PciIo, EfiPciIoWidthUint32, AL_ADAPTER_SMCC, 1, &Value);
+  //
+  // Every one of these config accesses used to be issued with its status
+  // discarded, and `Value` is an uninitialised local - so a failed read
+  // meant writing STACK GARBAGE into the SMCC snoop / APP_CONTROL
+  // coherency registers, silently. That is the exact misconfiguration
+  // this driver exists to prevent. Check all of them.
+  //
+  Status = PciIo->Pci.Read (PciIo, EfiPciIoWidthUint32, AL_ADAPTER_SMCC, 1, &Value);
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
   Value |= AL_ADAPTER_SMCC_SNOOP_BITS;
-  PciIo->Pci.Write (PciIo, EfiPciIoWidthUint32, AL_ADAPTER_SMCC, 1, &Value);
+  Status = PciIo->Pci.Write (PciIo, EfiPciIoWidthUint32, AL_ADAPTER_SMCC, 1, &Value);
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
   if (Device <= AL_INTERNAL_SLOT_THRESHOLD) {
     for (Index = 1; Index < AL_ADAPTER_SMCC_NUM_SUBMASTERS; Index++) {
-      PciIo->Pci.Write (PciIo, EfiPciIoWidthUint32, AL_ADAPTER_SMCC + Index * AL_ADAPTER_SMCC_BUNDLE_SIZE, 1, &Value);
+      Status = PciIo->Pci.Write (
+                          PciIo, EfiPciIoWidthUint32,
+                          AL_ADAPTER_SMCC + Index * AL_ADAPTER_SMCC_BUNDLE_SIZE,
+                          1, &Value);
+      if (EFI_ERROR (Status)) {
+        return Status;
+      }
     }
   }
 
-  PciIo->Pci.Read (PciIo, EfiPciIoWidthUint32, AL_ADAPTER_APP_CONTROL, 1, &Value);
+  Status = PciIo->Pci.Read (PciIo, EfiPciIoWidthUint32, AL_ADAPTER_APP_CONTROL, 1, &Value);
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
   Value = (Value & 0xffff0000) | AL_ADAPTER_APP_CONTROL_LO16;
-  PciIo->Pci.Write (PciIo, EfiPciIoWidthUint32, AL_ADAPTER_APP_CONTROL, 1, &Value);
+  return PciIo->Pci.Write (PciIo, EfiPciIoWidthUint32, AL_ADAPTER_APP_CONTROL, 1, &Value);
 }
 
 EFI_STATUS
@@ -90,7 +116,14 @@ AlPcieSnoopFixEntry (
       continue;
     }
 
-    PciIo->Pci.Read (PciIo, EfiPciIoWidthUint32, PCI_VENDOR_ID_OFFSET, 1, &VendorDevice);
+    Status = PciIo->Pci.Read (PciIo, EfiPciIoWidthUint32, PCI_VENDOR_ID_OFFSET, 1, &VendorDevice);
+    if (EFI_ERROR (Status)) {
+      // Unchecked, this matched on uninitialised stack and could apply the
+      // fixup to an unrelated device.
+      DEBUG ((DEBUG_WARN, "AlPcieSnoopFix: vendor read failed on %d/%d/%d (%r) - skipping\n",
+              (UINT32)Bus, (UINT32)Device, (UINT32)Function, Status));
+      continue;
+    }
     VendorId = (UINT16)VendorDevice;
     DeviceId = (UINT16)(VendorDevice >> 16);
     if (VendorId != PCI_VENDOR_ID_ANNAPURNA_LABS) {
@@ -100,7 +133,13 @@ AlPcieSnoopFixEntry (
       continue;
     }
 
-    AlSnoopOneDevice (PciIo, Device);
+    Status = AlSnoopOneDevice (PciIo, Device);
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR, "AlPcieSnoopFix: FAILED on %d/%d/%d (%r) - this device's "
+              "DMA may not be cache-coherent\n",
+              (UINT32)Bus, (UINT32)Device, (UINT32)Function, Status));
+      continue;
+    }
     Fixed++;
   }
 

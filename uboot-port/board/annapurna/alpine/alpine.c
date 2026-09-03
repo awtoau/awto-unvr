@@ -694,7 +694,13 @@ int board_init(void)
 	       AL_CPUS_SECURE, AL_DBG_ALL);
 
 	/* External PCIe0 HAL bring-up, before any PCI/USB enumeration (#140). */
-	al_pcie_ext0_bringup();
+	/* Was dropped here while the `pciebringup` command at the other call
+	 * site checks it - so the wrong-DEVICE_REV_ID bail-out was invisible on
+	 * the boot path and board_init() carried on to CCU enable and usb start
+	 * as though external PCIe0 were configured (#140). Not fatal: the box
+	 * must still boot without external PCIe, so warn loudly and continue. */
+	if (al_pcie_ext0_bringup())
+		printf("al-pcie-ext0: bring-up FAILED - external PCIe/USB unavailable\n");
 
 	/*
 	 * CCU cluster-snoop coherency (#97's fixup, applied here too - #140):
