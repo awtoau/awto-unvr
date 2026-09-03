@@ -429,7 +429,10 @@ int al_udma_m2s_pref_get(struct al_udma *udma,
 			UDMA_M2S_RD_DESC_PREF_CFG_1_FIFO_DEPTH_SHIFT);
 
 	reg = al_reg_read32(&udma->udma_regs->m2s.m2s_rd.desc_pref_cfg_2);
-	if (reg & UDMA_M2S_RD_DESC_PREF_CFG_2_MAX_DESC_PER_PKT_MASK)
+	/* was MAX_DESC_PER_PKT_MASK - the descriptor-count field, not the
+	 * scheduling mode, so sch_mode read back garbage. PREF_FORCE_RR is the
+	 * round-robin bit, per the newer Annapurna HAL (#90). */
+	if (reg & UDMA_M2S_RD_DESC_PREF_CFG_2_PREF_FORCE_RR)
 		conf->sch_mode = SRR;
 	else
 		conf->sch_mode = STRICT;
