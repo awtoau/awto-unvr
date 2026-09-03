@@ -86,9 +86,6 @@ static inline enum dma_status dma_cookie_status(struct dma_chan *chan,
 #include "al_dma_drv.h"
 #include "al_hal_udma_iofic.h"
 
-#define DRV_NAME		"al_dma"
-#define DRV_VERSION		"1.0.0-k6.12"
-
 /* Real completion descriptor stride on real silicon (vendor al_dma.h:
  * AL_DMA_RAID_RX_CDESC_SIZE, 16 only under the emulator-only
  * CONFIG_ALPINE_VP_WA) - NOT sizeof(union al_udma_cdesc)=4, which only
@@ -175,9 +172,14 @@ static void al_dma_issue_pending(struct dma_chan *c)
 		if (desc->tx_descs_count > 0) {
 			int rc = al_raid_dma_action(&dev->hal_dma, ch->idx,
 						     desc->tx_descs_count);
-			if (rc)
+			if (rc) {
 				pr_err("al_dma: failed to trigger dma action on ch %d (rc %d)\n",
 				       ch->idx, rc);
+				atomic64_inc(&dev->stat_errors);
+				al_dma_fault(dev, AL_DMA_FAULT_SUBMIT);
+			} else {
+				atomic64_inc(&dev->stat_submitted);
+			}
 			submitted++;
 		}
 		ch->tail = (ch->tail + 1) % ch->sw_ring_count;
@@ -197,6 +199,8 @@ static void al_dma_cleanup_tasklet(struct tasklet_struct *t)
 	int ret;
 	unsigned long flags;
 
+	atomic64_inc(&dev->stat_poll_cycles);
+
 	/* Each al_raid_dma_completion() call pops one hardware completion,
 	 * mapping 1:1 to the oldest still-submitted descriptor (ring order
 	 * guarantees FIFO completion). */
@@ -212,10 +216,14 @@ static void al_dma_cleanup_tasklet(struct tasklet_struct *t)
 			 * in this kernel, smp_rmb() is the modern equivalent. */
 			smp_rmb();
 
-			if (comp_status)
+			atomic64_inc(&dev->stat_completed);
+			if (comp_status) {
 				dev_warn(&dev->pdev->dev,
 					 "DMA chan %d completion error: 0x%x\n",
 					 ch->idx, comp_status);
+				atomic64_inc(&dev->stat_errors);
+				al_dma_fault(dev, AL_DMA_FAULT_COMPLETION);
+			}
 
 			spin_lock_irqsave(&ch->lock, flags);
 			if (ch->completed == ch->tail) {
@@ -227,12 +235,15 @@ static void al_dma_cleanup_tasklet(struct tasklet_struct *t)
 				dev_warn(&dev->pdev->dev,
 					 "DMA chan %d spurious completion\n",
 					 ch->idx);
+				atomic64_inc(&dev->stat_errors);
+				al_dma_fault(dev, AL_DMA_FAULT_SPURIOUS);
 				break;
 			}
 			desc = &ch->sw_ring[ch->completed];
 			ch->completed = (ch->completed + 1) % ch->sw_ring_count;
 			ch->stall_start = 0;
 			ch->stall_reported = false;
+			ch->last_completion = jiffies;
 			spin_unlock_irqrestore(&ch->lock, flags);
 
 			dma_cookie_complete(&desc->txd);
@@ -258,14 +269,16 @@ static void al_dma_cleanup_tasklet(struct tasklet_struct *t)
 	if (ch->completed != ch->tail) {
 		if (ch->stall_start == 0)
 			ch->stall_start = jiffies;
-		if (time_after(jiffies, ch->stall_start + msecs_to_jiffies(50))) {
+		if (time_after(jiffies, ch->stall_start + msecs_to_jiffies(AL_DMA_STALL_MS))) {
 			if (!ch->stall_reported) {
 				dev_warn(&dev->pdev->dev,
 					 "DMA chan %d: descriptor(s) never completed "
-					 "after 50ms (completed=%d tail=%d) - giving "
+					 "after %dms (completed=%d tail=%d) - giving "
 					 "up polling, not spinning forever\n",
-					 ch->idx, ch->completed, ch->tail);
+					 ch->idx, AL_DMA_STALL_MS,
+					 ch->completed, ch->tail);
 				ch->stall_reported = true;
+				al_dma_fault(dev, AL_DMA_FAULT_STALL);
 			}
 		} else {
 			tasklet_schedule(&ch->cleanup_task);
@@ -283,13 +296,15 @@ static int al_dma_alloc_chan_resources(struct dma_chan *c)
 	struct al_dma_device *dev = ch->device;
 	struct al_udma_q_params tx_params, rx_params;
 	int ring_size;
-	int rc;
+	int rc = 0;	/* stays 0 on the alloc-failure paths below */
 
 	ring_size = 1 << ring_alloc_order;
 	ch->sw_ring_count = ring_size;
 	ch->sw_ring = kcalloc(ring_size, sizeof(*ch->sw_ring), GFP_KERNEL);
-	if (!ch->sw_ring)
+	if (!ch->sw_ring) {
+		al_dma_fault(dev, AL_DMA_FAULT_DMA_ALLOC);
 		return -ENOMEM;
+	}
 
 	/* Allocate TX submission ring */
 	ch->tx_ring = dma_alloc_coherent(&dev->pdev->dev,
@@ -336,6 +351,7 @@ static int al_dma_alloc_chan_resources(struct dma_chan *c)
 	if (rc) {
 		dev_err(&dev->pdev->dev,
 			"Failed to init DMA queue %d: %d\n", ch->idx, rc);
+		al_dma_fault(dev, AL_DMA_FAULT_QUEUE_INIT);
 		goto err_q_init;
 	}
 
@@ -363,6 +379,7 @@ static int al_dma_alloc_chan_resources(struct dma_chan *c)
 	ch->completed = 0;
 	ch->stall_start = 0;
 	ch->stall_reported = false;
+	ch->last_completion = jiffies;
 
 	/* dma_cookie_init removed in 6.12 — handled automatically */
 
@@ -386,6 +403,8 @@ err_rx_ring:
 err_tx_ring:
 	kfree(ch->sw_ring);
 	ch->sw_ring = NULL;
+	if (rc == 0)
+		al_dma_fault(dev, AL_DMA_FAULT_DMA_ALLOC);
 	return -ENOMEM;
 }
 
@@ -474,6 +493,8 @@ al_dma_prep_dma_memcpy(struct dma_chan *c, dma_addr_t dest,
 		/* Undo sw_desc allocation */
 		ch->head = (ch->head - 1 + ch->sw_ring_count) % ch->sw_ring_count;
 		spin_unlock_irqrestore(&ch->lock, irqflags);
+		atomic64_inc(&dev->stat_errors);
+		al_dma_fault(dev, AL_DMA_FAULT_SUBMIT);
 		return NULL;
 	}
 
@@ -561,6 +582,8 @@ al_dma_prep_dma_xor(struct dma_chan *c, dma_addr_t dest,
 	if (rc) {
 		ch->head = (ch->head - 1 + ch->sw_ring_count) % ch->sw_ring_count;
 		spin_unlock_irqrestore(&ch->lock, irqflags);
+		atomic64_inc(&dev->stat_errors);
+		al_dma_fault(dev, AL_DMA_FAULT_SUBMIT);
 		kfree(src_bufs);
 		kfree(src_blocks);
 		return NULL;
@@ -685,6 +708,8 @@ al_dma_prep_dma_pq(struct dma_chan *c, dma_addr_t *dst,
 	if (rc) {
 		ch->head = (ch->head - 1 + ch->sw_ring_count) % ch->sw_ring_count;
 		spin_unlock_irqrestore(&ch->lock, irqflags);
+		atomic64_inc(&dev->stat_errors);
+		al_dma_fault(dev, AL_DMA_FAULT_SUBMIT);
 		goto err_free;
 	}
 
@@ -859,10 +884,16 @@ static int al_dma_pci_probe(struct pci_dev *pdev,
 		list_add_tail(&ch->chan.device_node, &dma->channels);
 	}
 
+	rc = al_dma_devlink_init(aldev);
+	if (rc) {
+		dev_err(&pdev->dev, "Failed to init devlink: %d\n", rc);
+		goto err_unmap_app;
+	}
+
 	rc = dma_async_device_register(dma);
 	if (rc) {
 		dev_err(&pdev->dev, "Failed to register DMA device: %d\n", rc);
-		goto err_unmap_app;
+		goto err_devlink;
 	}
 
 	rc = al_dma_sysfs_init(aldev);
@@ -875,6 +906,8 @@ static int al_dma_pci_probe(struct pci_dev *pdev,
 
 	return 0;
 
+err_devlink:
+	al_dma_devlink_fini(aldev);
 err_unmap_app:
 	pci_iounmap(pdev, aldev->app_regs);
 err_unmap_udma:
@@ -899,6 +932,9 @@ static void al_dma_pci_remove(struct pci_dev *pdev)
 
 	for (i = 0; i < aldev->num_channels; i++)
 		tasklet_kill(&aldev->channels[i].cleanup_task);
+
+	/* After this no fault can still be in flight to a live reporter. */
+	al_dma_devlink_fini(aldev);
 
 	/* Set DMA to disable state */
 	{

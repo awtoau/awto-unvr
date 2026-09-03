@@ -14,7 +14,7 @@
 static ssize_t al_dma_version_show(struct device *dev,
 				   struct device_attribute *attr, char *buf)
 {
-	return sysfs_emit(buf, "1.0.0-k6.12\n");
+	return sysfs_emit(buf, DRV_VERSION "\n");
 }
 
 static ssize_t al_dma_channels_show(struct device *dev,

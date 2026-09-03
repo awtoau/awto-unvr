@@ -17,7 +17,8 @@ obj-m := al_dma.o
 # Object files that make up the module
 # Driver core
 al_dma-y := al_dma_drv.o \
-            al_dma_sysfs.o
+            al_dma_sysfs.o \
+            al_dma_devlink.o
 
 # HAL: SSM (Security/Storage/Memory) layer
 al_dma-y += al_hal_ssm.o \

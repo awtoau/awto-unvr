@@ -17,6 +17,7 @@ obj-m := al_ssm.o
 # Object files that make up the module
 # -- Linux PCI driver + crypto framework glue --
 al_ssm-y := al_ssm_main.o
+al_ssm-y += al_ssm_devlink.o
 
 # -- HAL: SSM (Security Services Module) --
 al_ssm-y += al_hal_ssm.o

@@ -73,6 +73,28 @@ cat /proc/crypto | grep -A5 "xts-aes-al-ssm"
 # so dm-crypt will automatically use hardware crypto.
 ```
 
+## Diagnostics (devlink)
+
+Requires `CONFIG_NET_DEVLINK=y` — selected by `ARCH_ALPINE`
+(`arch/arm64/Kconfig.platforms`) because it has no Kconfig prompt of its own
+and an out-of-tree module cannot select it. Verified in
+`scripts/build-linux-fedora.py`.
+
+```bash
+devlink health show                                   # find the pci/<bdf> handle
+devlink health diagnose pci/0000:00:04.0 reporter ssm
+devlink health dump show  pci/0000:00:04.0 reporter ssm   # auto-captured at first fault
+devlink dev info pci/0000:00:04.0
+```
+
+- `#182` signature: `in_flight` stuck non-zero while `poll_cycles` climbs —
+  the engine took work and never completed it. `rx_hw_comp_head` vs
+  `rx_next_cdesc_idx` separates "hardware never completed" from "driver never
+  consumed".
+- Faults (`submit`, `completion`, `stall`, `dma allocation`) mark the reporter
+  errored and bump its error count; al_dma exposes the same counter names
+  under reporter `dma`.
+
 ## dm-crypt / LUKS Usage
 
 Once loaded, dm-crypt automatically uses the hardware engine:

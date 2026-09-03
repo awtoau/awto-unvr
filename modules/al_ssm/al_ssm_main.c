@@ -42,92 +42,11 @@
 #include <crypto/scatterwalk.h>
 #include <crypto/algapi.h>
 
-#include "al_hal_ssm.h"
-#include "al_hal_ssm_crypto.h"
-#include "al_hal_unit_adapter.h"
-
-#define DRV_NAME	"al_ssm"
-#define DRV_VERSION	"2.0.4"
+#include "al_ssm_drv.h"
 
 #define AL_SSM_VENDOR_ID	0x1c36
 #define AL_SSM_DEVICE_ID	0x0022
 #define AL_SSM_CLASS_CRYPTO	0x100000
-
-#define AL_SSM_RING_SIZE	256
-#define AL_SSM_MAX_BACKLOG	4096
-#define AL_SSM_SUBMIT_RETRIES	10
-#define AL_SSM_POLL_INTERVAL_US	100
-#define AL_SSM_MAX_DATA_SIZE	(256 * 1024)
-#define RING_BYTES		(AL_SSM_RING_SIZE * sizeof(union al_udma_desc))
-
-/*
- * Each crypto operation uses 3 TX descriptors and 1 RX descriptor.
- * Ring size is 256 entries. With HAL reserving AL_CRYPT_DESC_RES (16)
- * descriptors for padding, max concurrent ops = (256 - 16) / 3 = 80.
- * Use 64 for safety margin.
- */
-#define AL_SSM_MAX_IN_FLIGHT	64
-
-struct al_ssm_dev;
-
-struct al_ssm_reqctx {
-	struct list_head list;
-	struct skcipher_request *req;
-	struct al_ssm_dev *dev;
-	enum al_crypto_dir dir;
-	enum al_crypto_sa_enc_type enc_type;
-	void *src_virt;
-	void *dst_virt;
-	u8 *iv_buf;
-	struct al_crypto_hw_sa *hw_sa;
-	dma_addr_t src_dma;
-	dma_addr_t dst_dma;
-	dma_addr_t sa_dma;
-	dma_addr_t iv_dma;
-	unsigned int nbytes;
-};
-
-struct al_ssm_chan {
-	spinlock_t lock;
-	void *tx_ring;
-	dma_addr_t tx_ring_dma;
-	void *tx_cdesc;
-	dma_addr_t tx_cdesc_dma;
-	void *rx_ring;
-	dma_addr_t rx_ring_dma;
-	void *rx_cdesc;
-	dma_addr_t rx_cdesc_dma;
-	struct list_head pending;
-	int pending_count;
-};
-
-struct al_ssm_ctx {
-	struct al_ssm_dev *dev;
-	enum al_crypto_sa_enc_type enc_type;
-	enum al_crypto_sa_aes_ksize aes_ksize;
-	u8 key[AES_MAX_KEY_SIZE];
-	u8 xts_key[AES_MAX_KEY_SIZE];
-	unsigned int keylen;
-};
-
-struct al_ssm_dev {
-	struct pci_dev *pdev;
-	struct device *dev;
-	void __iomem *bar0;
-	void __iomem *bar4;
-	void *bars[6];
-	struct al_ssm_dma ssm_dma;
-	struct al_unit_adapter unit_adapter;
-	struct al_ssm_unit_regs_info unit_info;
-	struct al_ssm_chan channel;
-	bool crypto_registered;
-	spinlock_t backlog_lock;
-	struct list_head backlog;
-	atomic_t backlog_count;
-	struct workqueue_struct *wq;
-	struct delayed_work poll_work;
-	atomic_t total_pending;
-};
 
 static struct al_ssm_dev *g_ssm_dev;
 
@@ -154,8 +73,10 @@ static int al_ssm_alloc_resources(struct al_ssm_reqctx *rctx,
 		return -EINVAL;
 
 	rctx->src_virt = dma_alloc_coherent(dev->dev, nbytes, &rctx->src_dma, GFP_KERNEL);
-	if (!rctx->src_virt)
+	if (!rctx->src_virt) {
+		al_ssm_fault(dev, AL_SSM_FAULT_DMA_ALLOC);
 		return -ENOMEM;
+	}
 	rctx->dst_virt = dma_alloc_coherent(dev->dev, nbytes, &rctx->dst_dma, GFP_KERNEL);
 	if (!rctx->dst_virt)
 		goto err_free_src;
@@ -191,6 +112,7 @@ err_free_dst:
 	dma_free_coherent(dev->dev, nbytes, rctx->dst_virt, rctx->dst_dma);
 err_free_src:
 	dma_free_coherent(dev->dev, nbytes, rctx->src_virt, rctx->src_dma);
+	al_ssm_fault(dev, AL_SSM_FAULT_DMA_ALLOC);
 	return -ENOMEM;
 }
 
@@ -224,6 +146,19 @@ static void al_ssm_free_resources(struct al_ssm_reqctx *rctx)
  * ──────────────────────────────────────────────────────────────────── */
 
 #define AL_SSM_INLINE_POLL_US	500	/* Max spin-poll time per request */
+
+/* One hardware completion consumed: counters + stall clock. Caller holds
+ * chan->lock. */
+static void al_ssm_account_completion(struct al_ssm_dev *dev, uint32_t comp_status)
+{
+	atomic64_inc(&dev->stat_completed);
+	dev->last_completion = jiffies;
+	dev->stall_reported = false;
+	if (comp_status) {
+		atomic64_inc(&dev->stat_errors);
+		al_ssm_fault(dev, AL_SSM_FAULT_COMPLETION);
+	}
+}
 
 /**
  * al_ssm_submit_and_poll - Submit one request and try to complete inline
@@ -283,8 +218,11 @@ static int al_ssm_submit_and_poll(struct al_ssm_reqctx *rctx)
 	rc = al_crypto_dma_action(&dev->ssm_dma, 0, xaction.tx_descs_count);
 	if (rc) {
 		spin_unlock_irqrestore(&chan->lock, flags);
+		atomic64_inc(&dev->stat_errors);
+		al_ssm_fault(dev, AL_SSM_FAULT_SUBMIT);
 		return rc;
 	}
+	atomic64_inc(&dev->stat_submitted);
 
 	/*
 	 * Add to pending list BEFORE polling. Completions are FIFO —
@@ -316,6 +254,7 @@ static int al_ssm_submit_and_poll(struct al_ssm_reqctx *rctx)
 		list_del(&done->list);
 		chan->pending_count--;
 		atomic_dec(&dev->total_pending);
+		al_ssm_account_completion(dev, comp_status);
 
 		if (done == rctx) {
 			/* OUR request completed — sync fast path */
@@ -392,6 +331,7 @@ static int al_ssm_poll_channel(struct al_ssm_dev *dev)
 		list_del(&rctx->list);
 		chan->pending_count--;
 		atomic_dec(&dev->total_pending);
+		al_ssm_account_completion(dev, comp_status);
 		spin_unlock_irqrestore(&chan->lock, flags);
 
 		dev_dbg(dev->dev, "complete: dir=%d nbytes=%u comp_status=0x%x remaining=%d\n",
@@ -453,11 +393,28 @@ static void al_ssm_poll_completions(struct work_struct *work)
 	int completed;
 	int pending;
 
+	atomic64_inc(&dev->stat_poll_cycles);
+
 	completed = al_ssm_poll_channel(dev);
 	if (completed > 0)
 		al_ssm_drain_backlog(dev);
 
 	pending = atomic_read(&dev->total_pending) + atomic_read(&dev->backlog_count);
+
+	/*
+	 * #182 signature: work accepted by the engine that never completes -
+	 * in_flight stuck non-zero while poll_cycles climbs. Reported once per
+	 * stall episode; cleared by the next real completion.
+	 */
+	if (atomic_read(&dev->total_pending) > 0 && !dev->stall_reported &&
+	    time_after(jiffies,
+		       dev->last_completion + msecs_to_jiffies(AL_SSM_STALL_MS))) {
+		dev->stall_reported = true;
+		dev_warn(dev->dev,
+			 "engine stall: %d in flight, no completion for %dms\n",
+			 atomic_read(&dev->total_pending), AL_SSM_STALL_MS);
+		al_ssm_fault(dev, AL_SSM_FAULT_STALL);
+	}
 
 	dev_dbg(dev->dev, "poll_work: completed=%d pending=%d\n", completed, pending);
 
@@ -750,6 +707,7 @@ static int al_ssm_pci_probe(struct pci_dev *pdev, const struct pci_device_id *en
 	INIT_LIST_HEAD(&dev->backlog);
 	atomic_set(&dev->backlog_count, 0);
 	atomic_set(&dev->total_pending, 0);
+	dev->last_completion = jiffies;
 
 	rc = pci_enable_device(pdev);
 	if (rc)
@@ -815,12 +773,16 @@ static int al_ssm_pci_probe(struct pci_dev *pdev, const struct pci_device_id *en
 	if (!dev->wq) { rc = -ENOMEM; goto err_free_channel; }
 	INIT_DELAYED_WORK(&dev->poll_work, al_ssm_poll_completions);
 
+	rc = al_ssm_devlink_init(dev);
+	if (rc)
+		goto err_destroy_wq;
+
 	pci_set_drvdata(pdev, dev);
 	g_ssm_dev = dev;
 
 	rc = crypto_register_skciphers(al_ssm_algs, ARRAY_SIZE(al_ssm_algs));
 	if (rc)
-		goto err_destroy_wq;
+		goto err_devlink;
 	dev->crypto_registered = true;
 
 	dev_info(&pdev->dev,
@@ -829,6 +791,9 @@ static int al_ssm_pci_probe(struct pci_dev *pdev, const struct pci_device_id *en
 		 AL_SSM_RING_SIZE, AL_SSM_MAX_IN_FLIGHT);
 	return 0;
 
+err_devlink:
+	g_ssm_dev = NULL;
+	al_ssm_devlink_fini(dev);
 err_destroy_wq:
 	destroy_workqueue(dev->wq);
 err_free_channel:
@@ -862,6 +827,8 @@ static void al_ssm_pci_remove(struct pci_dev *pdev)
 	}
 	cancel_delayed_work_sync(&dev->poll_work);
 	destroy_workqueue(dev->wq);
+	/* After this no fault can still be in flight to a live reporter. */
+	al_ssm_devlink_fini(dev);
 
 	list_for_each_entry_safe(rctx, tmp, &dev->backlog, list) {
 		list_del(&rctx->list);

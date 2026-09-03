@@ -6,15 +6,39 @@
 #ifndef __AL_DMA_DRV_H__
 #define __AL_DMA_DRV_H__
 
+#include <linux/atomic.h>
 #include <linux/pci.h>
 #include <linux/dmaengine.h>
 #include <linux/spinlock.h>
 #include <linux/interrupt.h>
+#include <linux/workqueue.h>
 
 #include "al_hal_ssm.h"
 #include "al_hal_ssm_raid.h"
 
+#define DRV_NAME		"al_dma"
+#define DRV_VERSION		"1.0.0-k6.12"
+
 #define AL_DMA_MAX_XOR		31
+
+/* Stall bound shared by the cleanup tasklet's give-up check and the devlink
+ * health reporter: ~50x a real completion's ~1ms. */
+#define AL_DMA_STALL_MS		50
+
+struct devlink;
+struct devlink_health_reporter;
+
+/* Fault classes reported through devlink health. Names/order kept in step
+ * with al_ssm's enum so one userspace tool reads both. */
+enum al_dma_fault {
+	AL_DMA_FAULT_SUBMIT,		/* hardware refused a prepared transaction */
+	AL_DMA_FAULT_COMPLETION,	/* completion descriptor carried an error */
+	AL_DMA_FAULT_STALL,		/* in-flight work never completed */
+	AL_DMA_FAULT_DMA_ALLOC,		/* coherent DMA buffer allocation failed */
+	AL_DMA_FAULT_SPURIOUS,		/* completion with no submitted descriptor */
+	AL_DMA_FAULT_QUEUE_INIT,	/* HAL queue setup failed */
+	AL_DMA_FAULT_COUNT
+};
 
 /* Software descriptor for tracking in-flight operations */
 struct al_dma_sw_desc {
@@ -39,6 +63,9 @@ struct al_dma_chan {
 	 * core forever. 0 = not currently stalled. */
 	unsigned long			stall_start;
 	bool				stall_reported;
+	/* jiffies of the last hardware completion on this channel, for the
+	 * devlink health reporter's idle time. 0 = none since alloc. */
+	unsigned long			last_completion;
 
 	/* Descriptor management */
 	struct al_dma_sw_desc		*sw_ring;
@@ -78,10 +105,26 @@ struct al_dma_device {
 
 	int				num_channels;
 	struct al_dma_chan		channels[DMA_MAX_Q];
+
+	/* devlink diagnostics + fault reporting (#212) */
+	struct devlink			*devlink;
+	struct devlink_health_reporter	*hr;
+	bool				devlink_live;
+	struct work_struct		fault_work;
+	unsigned long			fault_pending;	/* bitmask of enum al_dma_fault */
+	atomic64_t			stat_submitted;
+	atomic64_t			stat_completed;
+	atomic64_t			stat_errors;
+	atomic64_t			stat_poll_cycles;
 };
 
 /* Sysfs */
 __must_check int al_dma_sysfs_init(struct al_dma_device *dev);
 void al_dma_sysfs_remove(struct al_dma_device *dev);
+
+/* al_dma_devlink.c */
+__must_check int al_dma_devlink_init(struct al_dma_device *dev);
+void al_dma_devlink_fini(struct al_dma_device *dev);
+void al_dma_fault(struct al_dma_device *dev, enum al_dma_fault fault);
 
 #endif /* __AL_DMA_DRV_H__ */
