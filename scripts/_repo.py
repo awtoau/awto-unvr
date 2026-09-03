@@ -127,9 +127,41 @@ def ea16_build_out() -> Path:
     return Path(os.environ.get("AWTO_KERNEL_OUT", "/mnt/2tb/unvr-port-refs/build-out-ea16"))
 
 
+def kernel_src() -> Path:
+    """AWTO_KERNEL_SRC as build-linux-fedora.py resolves it - the kernel
+    tree this project tracks forward against torvalds/linux mainline
+    (docs/build.md). Single source of truth so kernel_build_ver() below
+    reads the same tree the actual build ran against."""
+    return Path(os.environ.get("AWTO_KERNEL_SRC", "/mnt/2tb/unvr-port-refs/linux-v7.3-fresh"))
+
+
 def kernel_build_ver() -> str:
-    """AWTO_KERNEL_VER as build-linux-fedora.py resolved it - baked into
-    every output filename (uImage/dtb/tftp names), so the deploy step must
-    read the exact same value or look for files that don't exist. Single
-    source of truth for the same reason as kernel_build_out()."""
-    return os.environ.get("AWTO_KERNEL_VER", "7.2")
+    """Short 'VERSION.PATCHLEVEL' label (e.g. "7.3") baked into every
+    output filename (uImage/dtb/tftp names) and the uImage's own Image
+    Name field - the deploy step must read the exact same value or look
+    for files that don't exist. Single source of truth for the same
+    reason as kernel_build_out().
+
+    Derived from kernel_src()'s own Makefile, not hardcoded - this
+    project deliberately tracks mainline forward (docs/build.md), so a
+    fixed default goes stale the moment the tree moves. Confirmed live
+    2026-09-03: a stale "7.2" default sat unnoticed for days after
+    AWTO_KERNEL_SRC's default had already moved to a 7.3 tree, so every
+    build's own filenames/Image Name lied about actually being 7.3."""
+    if "AWTO_KERNEL_VER" in os.environ:
+        return os.environ["AWTO_KERNEL_VER"]
+    makefile = kernel_src() / "Makefile"
+    version = patchlevel = None
+    for line in makefile.read_text().splitlines()[:10]:
+        if line.startswith("VERSION ="):
+            version = line.split("=", 1)[1].strip()
+        elif line.startswith("PATCHLEVEL ="):
+            patchlevel = line.split("=", 1)[1].strip()
+        if version and patchlevel:
+            break
+    if not (version and patchlevel):
+        raise RuntimeError(
+            f"could not parse VERSION/PATCHLEVEL from {makefile} - "
+            "is AWTO_KERNEL_SRC a real kernel tree?"
+        )
+    return f"{version}.{patchlevel}"
