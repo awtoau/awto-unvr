@@ -39,6 +39,7 @@ import bz2
 import gzip
 import lzma
 import sys
+import zlib
 from pathlib import Path
 
 # Plausibility bounds. amp and slew_rate are hard-bounded by their field widths
@@ -116,9 +117,10 @@ def decompressed_views(buf: bytes) -> list[tuple[str, bytes]]:
             n += 1
             try:
                 data = fn(buf[i:])
-            except Exception:
-                # Truncated/!stream - expected constantly when scanning raw
-                # flash for magic bytes; only successful inflations matter.
+            except (OSError, EOFError, ValueError, lzma.LZMAError, zlib.error):
+                # A magic-byte match that is not a real stream, or a stream that
+                # runs past the end of the image. Expected constantly when
+                # scanning raw flash; only successful inflations matter.
                 continue
             if len(data) > 4096:
                 views.append((f"{name}@0x{i:x}", data))
