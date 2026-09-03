@@ -99,10 +99,19 @@ STEPS: dict[str, tuple[str, list[str], bool]] = {
     ),
     "fmt": ("reformat in place", ["ruff", "format", "."], False),
     "run": ("build + execute (n/a)", [], True),
+    # The al_* HAL is vendored 4x at 3 vintages (#218); a fix in one tree is
+    # not a fix everywhere. Compares per-tree content hashes against a
+    # baseline, so the known vintage gap stays silent and only NEW divergence
+    # fails. Intended changes: ./scripts/hal-drift-check.py --update
+    "hal-drift": (
+        "al_* HAL divergence across the 4 vendored trees (#218)",
+        [sys.executable, "scripts/hal-drift-check.py"],
+        True,
+    ),
 }
 
-GATE = ["fmt-check", "lint", "test"]
-CI = ["fmt-check", "lint", "test"]
+GATE = ["fmt-check", "lint", "test", "hal-drift"]
+CI = ["fmt-check", "lint", "test", "hal-drift"]
 
 # --------------------------------------------------------------------------
 # Logging - Tier A (dev tooling): local time, stderr + ./tmp/logs/dev.log,
