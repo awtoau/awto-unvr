@@ -41,7 +41,19 @@ def main() -> int:
     ap.add_argument(
         "--bus", type=int, required=True, help="i2c bus number (/dev/i2c-N)"
     )
-    ap.add_argument("--addr", required=True, help="7-bit address, e.g. 0x56")
+    ap.add_argument("--addr", help="7-bit address, e.g. 0x56")
+    ap.add_argument(
+        "--scan",
+        action="store_true",
+        help="probe every address 0x08-0x77 on --bus, reporting each that ACKs. "
+        "NEVER point this at the s35390a's mux channel (#86) - one addressed "
+        "read at a chosen address is what --addr is for.",
+    )
+    ap.add_argument(
+        "--skip",
+        default="",
+        help="comma-separated hex addresses to leave untouched during --scan",
+    )
     ap.add_argument(
         "--read",
         type=int,
@@ -55,8 +67,34 @@ def main() -> int:
     )
     args = ap.parse_args()
 
-    addr = int(args.addr, 0)
     dev = f"/dev/i2c-{args.bus}"
+
+    if args.scan:
+        skip = {int(x, 16) for x in args.skip.split(",") if x.strip()}
+        # 0x00-0x07 and 0x78-0x7f are reserved by the i2c spec - never addressed.
+        hits = []
+        for a in range(0x08, 0x78):
+            if a in skip:
+                print(f"  0x{a:02x} skipped")
+                continue
+            try:
+                with open(dev, "r+b", buffering=0) as f:
+                    fcntl.ioctl(f, I2C_SLAVE, a)
+                    f.read(1)
+                    hits.append(a)
+                    print(f"  0x{a:02x} ACK")
+            except OSError as exc:
+                # EBUSY = a kernel driver owns it, which is still a device.
+                if getattr(exc, "errno", 0) == 16:
+                    hits.append(a)
+                    print(f"  0x{a:02x} ACK (claimed by a kernel driver)")
+        print(f"{dev}: {len(hits)} device(s): " + " ".join(f"0x{a:02x}" for a in hits))
+        return 0
+
+    if not args.addr:
+        print("need --addr, or --scan")
+        return 2
+    addr = int(args.addr, 0)
 
     try:
         fd = open(dev, "r+b", buffering=0)
