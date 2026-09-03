@@ -78,9 +78,14 @@ static int al_reboot_probe(struct platform_device *pdev)
 		return dev_err_probe(dev, PTR_ERR(ar->wdt_base),
 				     "cannot map SP805 watchdog\n");
 
-	/* SYS_OFF_MODE_RESTART at the default priority — the sole restart
-	 * handler on this SoC; the framework passes @ar back as cb_data. */
-	ret = devm_register_restart_handler(dev, al_reboot_handler, ar);
+	/* Must outrank PSCI. Our DT declares arm,psci-0.2, so the kernel
+	 * registers psci_sys_reset_nb at notifier priority 129, but AL-324's
+	 * firmware does not implement SYSTEM_RESET - it returns and the box
+	 * hangs at "Restarting system" (#51). devm_register_restart_handler()
+	 * would use SYS_OFF_PRIO_DEFAULT (0) and never run. */
+	ret = devm_register_sys_off_handler(dev, SYS_OFF_MODE_RESTART,
+					    SYS_OFF_PRIO_HIGH,
+					    al_reboot_handler, ar);
 	if (ret)
 		return dev_err_probe(dev, ret, "cannot register restart handler\n");
 
