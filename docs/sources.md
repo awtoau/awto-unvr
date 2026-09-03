@@ -354,3 +354,76 @@ mount /dev/boot1 /mnt     # then try writing a scratch file
 
 **Preserve before you write.** Full verified dumps of `/dev/mtd*` and the boot
 device first. Our own boot USB is already failing — see [recovery.md](recovery.md).
+
+## 12. SerDes / al_eth cross-vendor survey — 2026-09-03
+
+Four parallel source sweeps done while root-causing #121. Every `al_init_eth_lm.c`
+copy reachable in public source was collected and compared. **Read this before
+starting any further al_eth source archaeology — the corpus below is exhausted.**
+
+### 12.1 The result in one line
+
+`optic_tx_params` is **byte-identical to the Annapurna SDK in every drop found**
+(`amp 0x1 / tdu 0x13 / c_plus_1 0x2 / c_minus_1 0`). Nobody has ever retuned the
+optical TX path. Two vendors retuned **copper** tables — both away from stock.
+
+| vendor | SoC | what they changed |
+|---|---|---|
+| **QNAP** TS-X32 (`ARM_AL2`) | **AL-324 — our SoC** | `da_tx_params`: `amp` 0x1→**0x3**, `c_plus_1` 0x2→**0x4**, `c_minus_1` 0x2→**0** |
+| **Synology** DSM 6.2–7.3 | AL-212/314/514 | `da_rx_params` retuned empirically — *"tested by using DS2015xs and Foxconn DA cable"*; added `rx_equal_enable` sysfs |
+| Netgear, Ubiquiti, MikroTik, FreeBSD, TrueNAS, Annapurna SDK | — | stock, unmodified |
+
+QNAP moved **the same parameter, on the same silicon, to within one step of our
+measured value** (they 0x4, we 0x5; our clean window is 4–7). Convergent evidence.
+
+### 12.2 Sources — verified reachable
+
+| source | what it holds | notes |
+|---|---|---|
+| [sourceforge qosgpl](https://sourceforge.net/projects/qosgpl/files/) | QNAP QTS 4.5.4 + 5.2.3, `linux-4.14` (AL-324) and `linux-4.2` | **richest non-Ubiquiti AL-324 source.** Also `CONFIG_CMDLINE="ahci.alpine_sss=1"` (#203) and a 3× UDMA reset retry (#90) |
+| [archive.synology.com GPL](https://archive.synology.com/download/ToolChain/Synology%20NAS%20GPL%20Source/) | DSM 6.2 / 7.1.1 / 7.3, `alpine` + `alpine4k`, `linux-3.10.x-bsp.txz` | older HAL — no `tx_params_br410` |
+| [archive.org unifi-udr-gpl-archives](https://archive.org/details/unifi-udr-gpl-archives) | UDM / UDM-Pro / UDM-SE GPL + kernels, 10.3 GB | **only al324 Ubiquiti GPL in existence.** No UNVR. sha256 verified |
+| [tikoci/mikrotik-gpl](https://github.com/tikoci/mikrotik-gpl) | `2025-03-19/linux-5.6.3.patch`, 24 MB, 527 Alpine files | **newest public Annapurna HAL** — `al_eth_v4_lm`, `mac_v4`, `ddr_alpine_v3` (all `AL_ETH_REV_ID_4` / Alpine V3, **not** our REV_ID_2) |
+| [SVoxel/R9000](https://github.com/SVoxel/R9000) | Netgear AL-514, Annapurna reference DTS | `alpine_k2s.dts` / `alpine_sdnic_nand.dts` set `freeze-serdes-params` |
+| [imbushuo/ccr2004-uefi](https://github.com/imbushuo/ccr2004-uefi) | MikroTik CCR2004-1G-2XS-PCIe DTS | sets `freeze-serdes-params = "enable"` on both SFP+ ports |
+| [NeccoNeko/UBNT-source-code](https://github.com/NeccoNeko/UBNT-source-code) | UNVR 1.3.35 GPL — **includes U-Boot source** | `board/annapurna-labs/alpine_ubnt/board.c:1133` = the `freeze-serdes-params` reader |
+| [codeberg filefly/linux-alpine-v2](https://codeberg.org/filefly/linux-alpine-v2) | Linux 6.12 LTS, UNVR/UDM-Pro/UNAS-Pro-8 | documents SMCC snoop `0x110/0x130/0x150/0x170`, `APP_CONTROL 0x220=0x03FF`, DBI `base+0x10000`, ECAM `0xfb600000`. See #201 |
+| [mornepousse/al_eth-standalone](https://github.com/mornepousse/al_eth-standalone) | fork **ahead of delroth**, kernel ≥6.3 | MDIO C22 callback modernisation |
+
+### 12.3 `freeze-serdes-params` — the mechanism we had missed
+
+A **U-Boot device-tree property**, per port under `/soc/board-cfg/ethernet/portN`,
+read by `board.c` into `dont_override_serdes` → `params.static_values = false` →
+the static tables are **never applied**. Full write-up in #199.
+
+| board | sets it? |
+|---|---|
+| Annapurna `alpine_k2s.dts`, `alpine_sdnic_nand.dts` (reference, real SFP+ cages) | **yes, all ports** |
+| MikroTik CCR2004-1G-2XS-PCIe | **yes, both SFP+** |
+| Annapurna plain dev boards, **Ubiquiti UNVR** | **no** |
+
+### 12.4 Exhausted — do not re-search these
+
+- **No public report of this defect exists.** `lore.kernel.org` has 3 hits for
+  `al_eth`, none about SerDes. `optic_tx_params` → **0 hits on grep.app**; the only
+  open-web hit is our own issue #111.
+- Ubiquiti's GPL portal is **dead**: `dl.ui.com/gpl/` and `dl.ubnt.com/GPL/` both
+  302 away, and Wayback CDX shows neither was **ever** a browsable index. Email
+  `opensource-requests@ui.com`; community threads report requests going unanswered.
+- **Asustor, TerraMaster, Zyxel ship no Alpine hardware** (corroborated against the
+  Annapurna device list). Asustor's GPL is Marvell.
+- searchcode is no longer a code index; GitLab blob search needs login; Codeberg
+  explore is repo-metadata only. GitHub `gh search code` is the complete corpus.
+
+### 12.5 Board facts settled by this survey
+
+- **The UNVR has no retimer** — probed all five i2c buses, `0x56` NAKs everywhere
+  (#202). Its SFP+ cage is wired **straight to the SoC SerDes**, so the SoC's TX
+  equalisation is the only conditioning in the path. Annapurna's EVP has a br410
+  retimer; MikroTik's cages sit behind a Marvell 98PX1012 switch chip. That is why
+  this defect bites us and nobody else.
+- Board params come from the **MAC scratch registers**, not DT, on every vendor.
+  Only U-Boot reads the DT and writes those registers (#200).
+- The `serdes_tx_*` sysfs attributes are **writable upstream** and routed through
+  `al_eth_lm_static_parameters_override()` — the API we found had zero call sites
+  and repaired in `3a1fdb1`.
