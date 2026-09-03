@@ -60,9 +60,9 @@ CONFIG_AL_SSM=y
 # overflow guard assumes a fast consumer). Cap at 7 to keep verbose safe.
 # Per-driver al_dbg->debug() (eth/serdes) is separate, via -DDEBUG in Makefiles.
 CONFIG_LOG=y
-CONFIG_LOGLEVEL=7
-CONFIG_LOG_MAX_LEVEL=7
-CONFIG_LOG_DEFAULT_LEVEL=7
+CONFIG_LOGLEVEL=6
+CONFIG_LOG_MAX_LEVEL=6
+CONFIG_LOG_DEFAULT_LEVEL=6
 CONFIG_PHYLIB=y
 CONFIG_PHY_ATHEROS=y
 CONFIG_CMD_NET=y
