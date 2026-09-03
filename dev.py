@@ -921,6 +921,17 @@ def cmd_power_cycle(extra: list[str]) -> int:
 
 
 @command(
+    "sweep the 10G SerDes TX equalisation knobs (amp / pre+post cursor taps / "
+    "slew) and measure TX throughput at each - #121 signal-integrity probe "
+    "(scripts/serdes-tx-sweep.py)",
+    args="[--param amp|c_plus_1|c_minus_1|...] [--values 1,2,3] [--duration N]",
+    kind="action",
+)
+def cmd_serdes_tx_sweep(extra: list[str]) -> int:
+    return _run_script("scripts/serdes-tx-sweep.py", extra)
+
+
+@command(
     "A/B regression benchmark suite: iperf3 on every ethernet port (1G, 10G, "
     "and any USB-attached), crypto, SATA disks, USB disk - JSON snapshot, "
     "--compare diffs two (scripts/bench-all.py)",
