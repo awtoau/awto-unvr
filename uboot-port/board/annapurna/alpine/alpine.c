@@ -1056,6 +1056,17 @@ static const char * const bs_boot_dev_names[8] = {
 	"UART(115200bps)", "SPI(M3)", "UART(1000000bps)", "SPI(M0)",
 };
 
+/* SB clock in Hz from the straps. Also feeds al_eth's board-param
+ * ref_clk_freq (drivers/net/al_eth/al_eth_boardparams.c). */
+u32 al_bootstrap_sb_clk_get(void)
+{
+	u32 reg = readl((void __iomem *)AL_BOOTSTRAP_REG);
+
+	if (BS_F(reg, 7, 0x3) == 0)
+		return BS_F(reg, 19, 0x1) ? 100000000 : 25000000;	/* bypass */
+	return bs_sb_clk_tbl[BS_F(reg, 9, 0x3)];
+}
+
 static int do_bootstrap(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 {
 	u32 reg = readl((void __iomem *)AL_BOOTSTRAP_REG);
@@ -1063,20 +1074,15 @@ static int do_bootstrap(struct cmd_tbl *cmdtp, int flag, int argc, char *const a
 	u32 cpu_pll = bs_cpu_pll_tbl[BS_F(reg, 0, 0xf)];
 	u32 ddr_pll = bs_ddr_pll_tbl[BS_F(reg, 4, 0x7)];
 	u32 sb_field = BS_F(reg, 7, 0x3);
-	u32 sb_pll, sb_clk;
+	u32 sb_pll, sb_clk = al_bootstrap_sb_clk_get();
 
 	if (cpu_pll == 0)
 		cpu_pll = ref_clk;
 	if (ddr_pll == 0)
 		ddr_pll = ref_clk;
 
-	if (sb_field == 0) {
-		sb_pll = ref_clk;
-		sb_clk = ref_clk;	/* bypass: clk follows pll */
-	} else {
-		sb_pll = (sb_field == 1) ? 3000000000U : 1500000000U;
-		sb_clk = bs_sb_clk_tbl[BS_F(reg, 9, 0x3)];
-	}
+	sb_pll = (sb_field == 0) ? ref_clk :
+		 (sb_field == 1) ? 3000000000U : 1500000000U;
 
 	printf("bootstrap: reg=0x%08x (PBS +0x110)\n", reg);
 	printf("  pll_ref_clk_freq  %u MHz\n", ref_clk / 1000000);

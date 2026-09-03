@@ -342,6 +342,96 @@ static int do_serdes_tx(int argc, char *const argv[])
 	return CMD_RET_USAGE;
 }
 
+/* ---- board params (the U-Boot -> Linux SerDes/link policy transport) -----
+ * Stock's eth_freeze_serdes_settings / eth_mac_mode_set / eth_retimer_config
+ * (#198) all read/modify/write the same MAC scratchpad. The implementation
+ * lives with the eth HAL (drivers/net/al_eth/al_eth_boardparams.c) and is
+ * called by extern prototype - same convention al_eth_dm_10g.c uses for us.
+ */
+#if IS_ENABLED(CONFIG_AL_ETH)
+
+#define AL_SERDES_BP_PORT	2		/* the SFP+ port */
+
+extern int al_eth_bp_dump(int port);
+extern int al_eth_bp_write(int port);
+extern int al_eth_bp_freeze_set(int port, int enable);
+extern int al_eth_bp_mac_mode_set(int port, unsigned int mode);
+extern int al_eth_bp_retimer_set(int port, int exist, int bus_id, int i2c_addr,
+				 int channel);
+
+/* Optional trailing <port>; defaults to the SFP+ port. */
+static int serdes_port_arg(int argc, char *const argv[], int idx)
+{
+	return (argc > idx) ? (int)dectoul(argv[idx], NULL) : AL_SERDES_BP_PORT;
+}
+
+static int do_serdes_boardparams(int argc, char *const argv[])
+{
+	if (argc > 2 && !strcmp(argv[2], "write"))
+		return al_eth_bp_write(serdes_port_arg(argc, argv, 3)) ?
+			CMD_RET_FAILURE : CMD_RET_SUCCESS;
+
+	return al_eth_bp_dump(serdes_port_arg(argc, argv, 2)) ?
+		CMD_RET_FAILURE : CMD_RET_SUCCESS;
+}
+
+static int do_serdes_freeze(int argc, char *const argv[])
+{
+	int enable;
+
+	if (argc < 3)
+		return CMD_RET_USAGE;
+	if (!strcmp(argv[2], "enable"))
+		enable = 1;
+	else if (!strcmp(argv[2], "disable"))
+		enable = 0;
+	else
+		return CMD_RET_USAGE;
+
+	return al_eth_bp_freeze_set(serdes_port_arg(argc, argv, 3), enable) ?
+		CMD_RET_FAILURE : CMD_RET_SUCCESS;
+}
+
+static int do_serdes_macmode(int argc, char *const argv[])
+{
+	if (argc < 3)
+		return CMD_RET_USAGE;
+
+	return al_eth_bp_mac_mode_set(serdes_port_arg(argc, argv, 3),
+				      (unsigned int)dectoul(argv[2], NULL)) ?
+		CMD_RET_FAILURE : CMD_RET_SUCCESS;
+}
+
+static int do_serdes_retimer(int argc, char *const argv[])
+{
+	int port = AL_SERDES_BP_PORT;
+	int exist = -1, bus = -1, addr = -1, ch = -1;
+	int i;
+
+	for (i = 2; i + 1 < argc; i += 2) {
+		const char *k = argv[i], *v = argv[i + 1];
+
+		if (!strcmp(k, "--port"))
+			port = (int)dectoul(v, NULL);
+		else if (!strcmp(k, "--exist"))
+			exist = (int)dectoul(v, NULL);
+		else if (!strcmp(k, "--bus-id"))
+			bus = (int)dectoul(v, NULL);
+		else if (!strcmp(k, "--i2c-addr"))
+			addr = (int)simple_strtoul(v, NULL, 0);
+		else if (!strcmp(k, "--channel") && (*v == 'A' || *v == 'B'))
+			ch = *v - 'A';
+		else
+			return CMD_RET_USAGE;
+	}
+	if (i != argc)
+		return CMD_RET_USAGE;
+
+	return al_eth_bp_retimer_set(port, exist, bus, addr, ch) ?
+		CMD_RET_FAILURE : CMD_RET_SUCCESS;
+}
+#endif /* CONFIG_AL_ETH */
+
 static int do_serdes(struct cmd_tbl *cmdtp, int flag, int argc,
 		     char *const argv[])
 {
@@ -349,6 +439,16 @@ static int do_serdes(struct cmd_tbl *cmdtp, int flag, int argc,
 
 	if (!strcmp(sub, "tx"))
 		return do_serdes_tx(argc, argv);
+#if IS_ENABLED(CONFIG_AL_ETH)
+	if (!strcmp(sub, "boardparams"))
+		return do_serdes_boardparams(argc, argv);
+	if (!strcmp(sub, "freeze"))
+		return do_serdes_freeze(argc, argv);
+	if (!strcmp(sub, "macmode"))
+		return do_serdes_macmode(argc, argv);
+	if (!strcmp(sub, "retimer"))
+		return do_serdes_retimer(argc, argv);
+#endif
 	if (!strcmp(sub, "init"))
 		return al_serdes_10g_init() ? CMD_RET_FAILURE : CMD_RET_SUCCESS;
 	if (!strcmp(sub, "status")) {
@@ -364,11 +464,27 @@ static int do_serdes(struct cmd_tbl *cmdtp, int flag, int argc,
 	return CMD_RET_USAGE;
 }
 
-U_BOOT_CMD(serdes, 4, 0, do_serdes,
-	   "bring up the SFP+ 25G-SerDes lane at fixed 10G + read lane status",
+U_BOOT_CMD(serdes, 12, 0, do_serdes,
+	   "SFP+ SerDes lane bring-up, status, and the al_eth board params",
 	   "init    - configure the lane for fixed 10GBASE-R (KR/AN/LT off)\n"
 	   "serdes status  - read PLL/signal/CDR/rx-valid + PCS block-lock\n"
 	   "serdes tx      - show the optic TX equaliser params\n"
 	   "serdes tx <field> <hex>  - set one and re-init the lane\n"
 	   "                 fields: amp tdu c_plus_1 c_plus_2 c_minus_1 slew\n"
-	   "serdes         - init then status");
+	   "serdes         - init then status\n"
+	   "\n"
+	   "board params (MAC scratchpad - what Linux al_eth reads at probe).\n"
+	   "<port> is optional and defaults to 2; 1 = 1G RJ45, 2 = 10G SFP+.\n"
+	   "serdes boardparams [<port>]        - decode + print all three regs\n"
+	   "serdes boardparams write [<port>]  - rebuild from the DT board-cfg\n"
+	   "serdes freeze <enable|disable> [<port>]\n"
+	   "                 dont_override_serdes: enable = Linux keeps this\n"
+	   "                 bootloader's SerDes settings. Refused in auto-speed\n"
+	   "                 mode (mode 5) - set a fixed mode first.\n"
+	   "serdes macmode <0-5> [<port>]\n"
+	   "                 0 auto-detect, 1 RGMII, 2 10G-serial, 3 SGMII,\n"
+	   "                 4 1000BASE-X, 5 auto-detect-auto-speed\n"
+	   "serdes retimer [--port <n>] [--exist <0|1>] [--bus-id <n>]\n"
+	   "               [--i2c-addr <n>] [--channel <A|B>]\n"
+	   "                 NO retimer is fitted on this board (#202: 0x56 NAKs\n"
+	   "                 on all five i2c buses) - here for other boards.");
