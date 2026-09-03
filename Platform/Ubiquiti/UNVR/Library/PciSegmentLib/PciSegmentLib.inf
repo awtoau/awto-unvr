@@ -1,0 +1,34 @@
+## @file
+#  UNVR fork of MdePkg/Library/PciSegmentLibSegmentInfo - one guard
+#  added in PciSegmentLibCommon.c for external PCIe0's devfn aliasing.
+#  See PciSegmentLibCommon.c's file header and docs/uefi.md P1.5.
+#
+#  Copyright (c) 2017, Intel Corporation. All rights reserved.<BR>
+#  Portions Copyright (c) 2026, Awto / Daniel Tyrrell. All rights reserved.<BR>
+#
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+##
+
+[Defines]
+  INF_VERSION                    = 0x0001001b
+  BASE_NAME                      = PciSegmentLib
+  FILE_GUID                      = 14455573-20ad-4e41-922c-75706f501352
+  MODULE_TYPE                    = BASE
+  VERSION_STRING                 = 1.0
+  LIBRARY_CLASS                  = PciSegmentLib
+
+[Sources]
+  PciSegmentLibCommon.h
+  PciSegmentLibCommon.c
+  BasePciSegmentLib.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+
+[LibraryClasses]
+  BaseLib
+  BaseMemoryLib
+  IoLib
+  DebugLib
+  PciSegmentInfoLib

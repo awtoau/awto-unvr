@@ -66,13 +66,15 @@
   PciExpressLib|MdePkg/Library/BasePciExpressLib/BasePciExpressLib.inf
 
   # PciSegmentLib: multi-segment (P1.5 - internal + external PCIe0, two
-  # separate ECAM windows, see Library/PciSegmentInfoLib). Both are
-  # flat single-bus ECAM (no bus-shift address bits at all - a separate
-  # register windows the target bus instead, see docs/hardware.md), so
-  # the standard segment-info-driven library works unmodified; no
-  # custom PciSegmentLib needed.
+  # separate ECAM windows, see Library/PciSegmentInfoLib). Our own fork
+  # of the stock MdePkg library (Library/PciSegmentLib/) - external
+  # PCIe0 aliases its one real device across every devfn (confirmed
+  # live 2026-09-03), so devfn!=0 on that segment is redirected to a
+  # dummy all-0xFF buffer instead of real MMIO, mirroring the devfn!=0
+  # guard every mainline pcie-designware-host.c Linux driver already
+  # has built in. See PciSegmentLibCommon.c's file header.
   PciSegmentInfoLib|Platform/Ubiquiti/UNVR/Library/PciSegmentInfoLib/PciSegmentInfoLib.inf
-  PciSegmentLib|MdePkg/Library/PciSegmentLibSegmentInfo/BasePciSegmentLibSegmentInfo.inf
+  PciSegmentLib|Platform/Ubiquiti/UNVR/Library/PciSegmentLib/PciSegmentLib.inf
 
   # ARM libraries (ArmLib moved from ArmPkg to MdePkg upstream since the
   # CCR2004 reference/docs/uefi.md were written - confirmed by cross-

@@ -385,7 +385,7 @@ PCIe0 (ASM1042A xHCI) is a separate follow-up, see below.
   ```
   4 fixed + 2 excluded = 6 total, exactly matching U-Boot's own current
   (post-#90-fix) behavior on this hardware.
-### P1.5 — external PCIe0 (ASM1042A xHCI) - in progress, real crash found
+### P1.5 — external PCIe0 (ASM1042A xHCI) - devfn-alias crash fixed, xHCI controller inits cleanly
 
 Motivation beyond completeness: EDK2's `XhciDxe` is a fully independent
 codebase from U-Boot's own xHCI driver (`uboot-port/drivers/usb/host/
@@ -431,30 +431,53 @@ alias as a separate real device, assigns each a BAR, and `XhciDxe`
 binds to more than one - at least one of which gets a BAR that doesn't
 correspond to real hardware, faulting on first touch.
 
-**Leading hypothesis for the actual fix, not yet implemented**: every
-mainline DesignWare PCIe host driver (`pcie-designware-host.c`'s
-`dw_pcie_rd_other_conf()`) has a built-in guard - config-space accesses
-to any devfn other than 0 on the root complex's own bus are answered in
-software as "no device," never actually issued to hardware. EDK2's
-generic `PciSegmentLibSegmentInfo` has no equivalent. Fixing this
-properly needs a small custom `PciSegmentLib` for segment 1 that
-returns "not present" for `Device != 0 || Function != 0` on bus 0,
-mirroring that exact, well-precedented pattern, rather than the stock
-address-computing library used today.
+**Fixed (2026-09-03): `Library/PciSegmentLib/`**, a small UNVR fork of
+the stock `MdePkg/Library/PciSegmentLibSegmentInfo` (copied verbatim,
+one change) - every mainline DesignWare PCIe host driver
+(`pcie-designware-host.c`'s `dw_pcie_rd_other_conf()`) has a built-in
+guard where config-space accesses to any devfn other than 0 on the root
+complex's own bus are answered in software as "no device," never
+actually issued to hardware; EDK2's generic `PciSegmentLibSegmentInfo`
+has no equivalent, so this fork adds it: `PciSegmentLibGetEcamAddress()`
+redirects any `Device != 0 || Function != 0` access on segment 1 to a
+static, all-`0xFF`-filled dummy buffer instead of real MMIO - reads come
+back as the standard PCI "no device" response, writes land harmlessly.
+See `PciSegmentLibCommon.c`'s file header and
+`docs/audits/audit-edk2-pcie-glue.md`.
 
-**Also confirmed working, worth keeping regardless of the alias fix**:
-LTSSM-gated root bridge addition, the config-space fixup, and the
-missing-MMU-region fix are all real, verified-necessary pieces - none of
-that is suspect, only the devfn-aliasing gap is.
+**Confirmed live: the crash is gone.** `PciBus: Discovered PCI @
+[00|00|00] [VID = 0x1B21, DID = 0x1142]` now appears **exactly once**
+(no more devfn 1-9 aliases), boot reaches the interactive Shell cleanly,
+and the Shell's own `pci` command independently confirms one clean
+entry: `Bus 01 Dev 00 Func 00 - Serial Bus Controllers - USB, Vendor
+1B21 Device 1142 Prog Interface 30` (0x30 = XHCI). `XhciDxe`'s own
+controller-level init (reset, capability read, operational register
+setup) completes with no crash, no hang, no timeout.
+
+**Not yet tested: the actual SLOT_ID-class differential comparison.**
+`map -r` showed no new block device - nothing is currently plugged into
+the external USB port, so `UsbBusDxe`/`XhciDxe` never attempted to
+enable a device slot (that path only runs once a port's CCS bit shows a
+connected device). The original differential-test question - does
+EDK2's independent xHCI driver *also* fail with `Cannot allocate device
+context to get SLOT_ID` once a real device is attached, the way U-Boot's
+does in #140 - needs a physical USB device plugged into the external
+port before the next test run.
+
+**Also confirmed working, from the earlier crash-chasing rounds, still
+correct**: LTSSM-gated root bridge addition (never retrains an
+already-linked port), the config-space fixup, and the missing-MMU-region
+fix in `PlatformLibMem.c` are all real, verified-necessary pieces.
 
 **Also confirmed NOT to help**: enabling `axi_slave_err_resp` (matching
 alpine.c) turns a failed downstream access into an immediate SError
 instead of a normal `0xFFFFFFFF` "no device" response - tried first,
-made the crash *less* informative (identical crash address regardless),
-left disabled.
+made the earlier crash *less* informative (identical crash address
+regardless), left disabled.
 
-Box power-cycled clean after every crash (RAM-payload only, docs/uefi.md
-§1's safety guarantee held throughout - never touched flash).
+Box power-cycled clean after every test, crash or success alike
+(RAM-payload only, docs/uefi.md §1's safety guarantee held throughout -
+never touched flash).
 
 ### P2 — SATA
 

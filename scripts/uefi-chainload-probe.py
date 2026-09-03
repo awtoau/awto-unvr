@@ -67,10 +67,16 @@ CRASH_PATTERN = "Synchronous Exception|Data Abort|Instruction Abort|Kernel panic
 
 # Confirmed live: BdsDxe's own boot timeout (PcdPlatformBootTimeOut=3 in
 # Unvr.dsc) opens the hotkey window; "[Bds]BdsWait(3)/(2)/(1)" spans
-# ~3s. Spam for 8s (2.5x+ margin) to absorb any slower boot on a colder
-# ccache / different candidate, then stop - holding 's' down forever
-# would just get typed into the shell once reached.
-HOTKEY_SPAM_S = 8.0
+# ~3s from whenever BDS itself starts. That start point isn't fixed,
+# though - P1.5's added PciBusDxe/XhciDxe/UsbBusDxe/UsbMassStorageDxe
+# dispatch (real controller resets/timeouts, not just image loads) push
+# it out further than P0/P1's ~8s total was sized for; confirmed live
+# 2026-09-03 that 8s missed the window entirely (boot reached the menu
+# safely, probe just never sent 's' before BdsWait closed). Widened
+# with real margin for a growing component list, not just this one
+# case - holding 's' down forever would just get typed into the shell
+# once reached, so this still isn't "as long as possible."
+HOTKEY_SPAM_S = 25.0
 HOTKEY_INTERVAL_S = 0.15
 
 # No prior data point before tonight for "how long EDK2 P0 takes to

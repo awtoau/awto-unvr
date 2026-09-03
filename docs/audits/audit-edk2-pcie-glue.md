@@ -106,6 +106,23 @@ EDK2's own platform-description concept, not a HAL register table).
 
 ---
 
+## External PCIe0: devfn-aliasing guard (`Library/PciSegmentLib/`)
+
+Not a register cross-check like the tables above - this one has no
+alpine.c or literal Linux-source equivalent to diff against (U-Boot
+apparently never scans past devfn 0, so never needed a guard; Linux's
+version lives in generic `pcie-designware-host.c` infrastructure, not
+in a single copyable register table). Recorded here anyway since it's
+the same class of "known hardware quirk, needs an explicit software
+guard" fact the rest of this doc tracks.
+
+| fact | EDK2 file:line | verified how |
+|---|---|---|
+| external PCIe0 (segment 1) has exactly one real device, at devfn 0/0 - any other devfn on that bus reads back the *same* device's identity instead of "no device" | `PciSegmentLibCommon.c`'s `PciSegmentLibGetEcamAddress()` guard, ~line 33-53 | confirmed live 2026-09-03: without the guard, `PciBus: Discovered PCI @ [00\|00\|00]` through `[00\|09\|00]` all reported identical `VID=0x1B21, DID=0x1142`; with it, exactly one entry, `pci` shell command confirms `Bus 01 Dev 00 Func 00` only |
+| conceptually equivalent to Linux's `dw_pcie_rd_other_conf()` devfn-guard (every mainline `pcie-designware-host.c` platform has this) | same | design pattern, not a copied value - see docs/porting-roadmap.md §Phase 4 / `drivers/pci/controller/dwc/pcie-designware-host.c` |
+
+---
+
 ## Summary
 
 - **Mismatches: 0.**
