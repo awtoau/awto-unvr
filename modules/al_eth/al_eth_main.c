@@ -1174,19 +1174,19 @@ static irqreturn_t al_eth_intr_msix_mgmt(int irq, void *data)
 	struct unit_regs __iomem *regs_base = (struct unit_regs __iomem *)adapter->udma_base;
 	uint32_t cause;
 
-	cause = al_udma_iofic_read_cause(regs_base,
+	cause = al_udma_iofic_read_and_clear_cause(regs_base,
 					   AL_UDMA_IOFIC_LEVEL_PRIMARY,
 					   AL_INT_GROUP_D);
 	netdev_err(adapter->netdev, "got interrupt from primary iofic, group D. cause 0x%x\n",
 			   cause);
 
-	cause = al_udma_iofic_read_cause(regs_base,
+	cause = al_udma_iofic_read_and_clear_cause(regs_base,
 					   AL_UDMA_IOFIC_LEVEL_SECONDARY,
 					   AL_INT_GROUP_A);
 	netdev_err(adapter->netdev, "secondary iofic, group A (UDMA M2S errors) cause 0x%x\n",
 		cause);
 
-	cause = al_udma_iofic_read_cause(regs_base,
+	cause = al_udma_iofic_read_and_clear_cause(regs_base,
 					   AL_UDMA_IOFIC_LEVEL_SECONDARY,
 					   AL_INT_GROUP_B);
 	netdev_err(adapter->netdev, "secondary iofic, group B (UDMA S2M errors) cause 0x%x\n",
@@ -1652,13 +1652,13 @@ static irqreturn_t al_eth_intr_intx_all(int irq, void *data)
 	struct unit_regs __iomem *regs_base = (struct unit_regs __iomem *)adapter->udma_base;
 	uint32_t reg;
 
-	reg = al_udma_iofic_read_cause(regs_base, AL_UDMA_IOFIC_LEVEL_PRIMARY, AL_INT_GROUP_A);
+	reg = al_udma_iofic_read_and_clear_cause(regs_base, AL_UDMA_IOFIC_LEVEL_PRIMARY, AL_INT_GROUP_A);
 	if (likely(reg))
 		pr_debug("%s group A cause %x\n", __func__, reg);
 
 	if (unlikely(reg & AL_INT_GROUP_A_GROUP_D_SUM)) {
 		struct al_iofic_grp_ctrl __iomem *sec_ints_base;
-		uint32_t cause_d =  al_udma_iofic_read_cause(regs_base,
+		uint32_t cause_d =  al_udma_iofic_read_and_clear_cause(regs_base,
 							     AL_UDMA_IOFIC_LEVEL_PRIMARY,
 							     AL_INT_GROUP_D);
 
@@ -1675,7 +1675,7 @@ static irqreturn_t al_eth_intr_intx_all(int irq, void *data)
 		}
 	}
 	if (reg & AL_INT_GROUP_A_GROUP_B_SUM) {
-		uint32_t cause_b = al_udma_iofic_read_cause(regs_base,
+		uint32_t cause_b = al_udma_iofic_read_and_clear_cause(regs_base,
 							    AL_UDMA_IOFIC_LEVEL_PRIMARY,
 							    AL_INT_GROUP_B);
 		int qid;
@@ -1693,7 +1693,7 @@ static irqreturn_t al_eth_intr_intx_all(int irq, void *data)
 		}
 	}
 	if (reg & AL_INT_GROUP_A_GROUP_C_SUM) {
-		uint32_t cause_c = al_udma_iofic_read_cause(regs_base,
+		uint32_t cause_c = al_udma_iofic_read_and_clear_cause(regs_base,
 							    AL_UDMA_IOFIC_LEVEL_PRIMARY,
 							    AL_INT_GROUP_C);
 		int qid;
