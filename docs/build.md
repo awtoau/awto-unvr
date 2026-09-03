@@ -22,6 +22,21 @@ tree's own git history - not as patches applied by any script here. The
 | 3 | On-box native (no cross-compile) | *(none)* | `build-on-box.py` | `/lib/modules/<kver>/updates/` on the box |
 | 4 | Fedora rootfs tarball | `build-fedora-rootfs` | `build-fedora-rootfs.py` | `tmp/fedora-rootfs.tar.gz` |
 | 5 | awto-uboot (our U-Boot) | `build-uboot` | `uboot-build.py` | staged into `/mnt/2tb/unvr-port-refs/u-boot-v2026.07`, chainload-able |
+| 6 | EDK2/UEFI (our platform port, docs/uefi.md) | `build-uefi-p0` | `build-uefi-p0.py` | builds against `/mnt/2tb/unvr-port-refs/edk2` (pristine `edk2-stable202608` clone), `UNVR.fd` chainload-able |
+
+Rows 5 and 6 both keep the actual source of truth (`uboot-port/`,
+`Platform/Ubiquiti/UNVR/`) tracked in this repo, with the upstream tree
+(`u-boot-v2026.07`, `edk2`) as a pristine, disposable clone outside it -
+neither U-Boot nor EDK2's platform port modifies any existing upstream
+file, so there's no reason to vendor either as its own fork (contrast
+the kernel, row 1-2a, where board support really is patches into
+existing upstream files and tracking a real fork - `awto-au/linux` -
+earns its keep). Row 6 goes one step further than row 5's copy-based
+staging: EDK2's own `PACKAGES_PATH` mechanism (`build-uefi-p0.py`)
+references `Platform/Ubiquiti/UNVR/` directly from this repo, no copy
+step at all - avoids the class of bug `uboot-build.py`'s `stage()` hit
+in #140 (a removed file staying resident in the build tree because
+nothing reverted it).
 
 `AWTO_KERNEL_SRC`/`AWTO_KERNEL_OUT`/`AWTO_KERNEL_VER` override the kernel
 tree/output dir/version string for any of rows 1-2a - both the producer
