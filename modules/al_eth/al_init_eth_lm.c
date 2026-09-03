@@ -2433,7 +2433,9 @@ int al_eth_lm_static_parameters_override_disable(
 	if (tx_params)
 		lm_context->serdes_tx_params_valid = AL_FALSE;
 	if (rx_params)
-		lm_context->serdes_tx_params_valid = AL_FALSE;
+		/* was serdes_TX_params_valid - copy-paste, so disabling an RX
+		 * override dropped the TX one and left RX active. */
+		lm_context->serdes_rx_params_valid = AL_FALSE;
 
 	return 0;
 }
