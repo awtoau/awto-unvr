@@ -457,15 +457,39 @@ entry: `Bus 01 Dev 00 Func 00 - Serial Bus Controllers - USB, Vendor
 controller-level init (reset, capability read, operational register
 setup) completes with no crash, no hang, no timeout.
 
-**Not yet tested: the actual SLOT_ID-class differential comparison.**
-`map -r` showed no new block device - nothing is currently plugged into
-the external USB port, so `UsbBusDxe`/`XhciDxe` never attempted to
-enable a device slot (that path only runs once a port's CCS bit shows a
-connected device). The original differential-test question - does
-EDK2's independent xHCI driver *also* fail with `Cannot allocate device
-context to get SLOT_ID` once a real device is attached, the way U-Boot's
-does in #140 - needs a physical USB device plugged into the external
-port before the next test run.
+**Tested (2026-09-03) with a real device attached: differential test
+confirmed positive.** A Realtek RTL8153 USB-Ethernet dongle
+(`0bda:8153`) was plugged into the external port. EDK2's `XhciDxe`
+fails the exact same way U-Boot's driver does in #140:
+
+```
+UsbEnumeratePort: new device connected at port 2
+XhcUsbPortReset!
+XhcInitializeDeviceSlot: Enable Slot Failed, Status = Time out
+UsbEnumerateNewDev: failed to set device address - Device Error
+```
+
+Two independent xHCI implementations (U-Boot's `drivers/usb/host/
+xhci.c` and EDK2's `MdeModulePkg/Bus/Pci/XhciDxe`, completely separate
+codebases) both fail with an Enable-Slot-command timeout on the same
+hardware, against two different real device types (a USB-SATA/SSD
+enclosure previously, this RTL8153 now). EDK2 retries a few times then
+continues gracefully (reaches the Shell fine, unlike U-Boot's long
+`usb start` retry loop).
+
+**Correction, caught right after the initial "silicon-level" framing
+was posted to #140**: Linux's own xHCI driver works fine on this exact
+hardware (#157), so this can't be a plain hardware defect - two drivers
+failing only rules out "bug in one driver's protocol implementation,"
+not the chip. The better-fitting, already-open #140 hypothesis: AL-324
+is a 2x2 A57 cluster part; Linux brings up both clusters via SMP,
+neither U-Boot nor EDK2 does (`PcdCoreCount|1` here, matching U-Boot's
+own single-core execution at this stage) - if the CCU cluster1/slave4
+snoop-routing path is gated on cluster1 actually being powered, that
+explains both bootloader failures and Linux's success with one
+variable. Untested, cheap, decisive next step: bring up EDK2's second
+core cluster (PSCI `cpu_on`, §6's other still-unconfirmed item) and see
+if that alone changes the SLOT_ID result. Full writeup: issue #140.
 
 **Also confirmed working, from the earlier crash-chasing rounds, still
 correct**: LTSSM-gated root bridge addition (never retrains an
