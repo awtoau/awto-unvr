@@ -64,6 +64,12 @@ EXTRAS = [
     "hdparm",
     "libgpiod-utils",
     "lm_sensors",
+    # r8152 (USB Ethernet, e.g. RTL8153 dongles) loads a chip-revision
+    # firmware blob via request_firmware() at probe - without it, driver
+    # behavior is degraded/undefined (issue #190's original oops is
+    # suspected to be this exact gap: a fresh rootfs has never installed
+    # this, ~50MB, worth it for reliable USB-attached hardware on a NAS).
+    "linux-firmware",
     # @core's default weak-dep resolution on this host pulls in
     # fedora-release-container (wrong PRETTY_NAME/VARIANT for a real install -
     # #124 follow-up). Force the server variant instead - closest fit for a
