@@ -13,9 +13,11 @@
  * framework instead. The SP805 register sequence is unchanged, and matches the
  * manual reset validated in scripts/reboot-to-uboot.tcl.
  *
- * wdt0 is shared with sp805_wdt (/dev/watchdog0): devm_of_iomap adds no
- * exclusive claim, and we only write on restart (LOAD=1 -> immediate reset), so
- * the two coexist — wdt0 backs both clean reboot (here) and the watchdog daemon.
+ * wdt0 is SHARED with sp805_wdt (/dev/watchdog0), so this must map it WITHOUT
+ * requesting the region. devm_of_iomap() does request it ("Requests a resource
+ * and maps the memory mapped IO", lib/devres.c) and starved sp805_wdt with
+ * -EBUSY, leaving the box with no watchdog device at all. We only write on
+ * restart (LOAD=1 -> immediate reset), so a non-exclusive mapping is correct.
  */
 #include <linux/bits.h>
 #include <linux/delay.h>
@@ -62,6 +64,7 @@ static int al_reboot_probe(struct platform_device *pdev)
 	struct device *dev = &pdev->dev;
 	struct device_node *wdt_node;
 	struct al_reboot *ar;
+	struct resource wdt_res;
 	int ret;
 
 	ar = devm_kzalloc(dev, sizeof(*ar), GFP_KERNEL);
@@ -72,11 +75,16 @@ static int al_reboot_probe(struct platform_device *pdev)
 	if (!wdt_node)
 		return dev_err_probe(dev, -ENODEV, "missing wdt-parent phandle\n");
 
-	ar->wdt_base = devm_of_iomap(dev, wdt_node, 0, NULL);
+	ret = of_address_to_resource(wdt_node, 0, &wdt_res);
 	of_node_put(wdt_node);
-	if (IS_ERR(ar->wdt_base))
-		return dev_err_probe(dev, PTR_ERR(ar->wdt_base),
-				     "cannot map SP805 watchdog\n");
+	if (ret)
+		return dev_err_probe(dev, ret, "no reg for SP805 watchdog\n");
+
+	/* devm_ioremap(), NOT devm_ioremap_resource()/devm_of_iomap() - those
+	 * request the region exclusively and lock sp805_wdt out (-EBUSY). */
+	ar->wdt_base = devm_ioremap(dev, wdt_res.start, resource_size(&wdt_res));
+	if (!ar->wdt_base)
+		return dev_err_probe(dev, -ENOMEM, "cannot map SP805 watchdog\n");
 
 	/* Must outrank PSCI. Our DT declares arm,psci-0.2, so the kernel
 	 * registers psci_sys_reset_nb at notifier priority 129, but AL-324's
