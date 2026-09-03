@@ -2460,7 +2460,7 @@ static int al_eth_ioctl(struct net_device *netdev, struct ifreq *ifr, int cmd)
 			mdio->phy_id, mdio->reg_num, mdio->val_in);
 
 	if (adapter->mdio_bus) {
-		phydev = phy_find_first(adapter->mdio_bus);
+		phydev = mdiobus_get_phy(adapter->mdio_bus, adapter->phy_addr);
 		if (phydev)
 			return phy_mii_ioctl(phydev, ifr, cmd);
 	}
@@ -4261,7 +4261,7 @@ al_eth_set_pauseparam(struct net_device *netdev,
 		__ETHTOOL_DECLARE_LINK_MODE_MASK(old_adv);
 		__ETHTOOL_DECLARE_LINK_MODE_MASK(new_adv);
 
-		phydev = phy_find_first(adapter->mdio_bus);
+		phydev = mdiobus_get_phy(adapter->mdio_bus, adapter->phy_addr);
 		link_config->flow_ctrl_supported |= AL_ETH_FLOW_CTRL_AUTONEG;
 
 		linkmode_zero(old_adv);
@@ -4501,7 +4501,7 @@ static int al_eth_set_eee(struct net_device *netdev,
 	if (!adapter->phy_exist)
 		return -EOPNOTSUPP;
 
-	phydev = phy_find_first(adapter->mdio_bus);
+	phydev = mdiobus_get_phy(adapter->mdio_bus, adapter->phy_addr);
 
 	phy_init_eee(phydev, 1);
 
@@ -4527,7 +4527,7 @@ static void al_eth_get_wol(struct net_device *netdev,
 	wol->wolopts = adapter->wol;
 
 	if ((adapter) && (adapter->phy_exist) && (adapter->mdio_bus)) {
-		phydev = phy_find_first(adapter->mdio_bus);
+		phydev = mdiobus_get_phy(adapter->mdio_bus, adapter->phy_addr);
 		if (phydev) {
 			phy_ethtool_get_wol(phydev, wol);
 			wol->supported |= WAKE_PHY;
@@ -4549,7 +4549,7 @@ static int al_eth_set_wol(struct net_device *netdev, struct ethtool_wolinfo *wol
 	adapter->wol = wol->wolopts;
 
 	if ((adapter) && (adapter->phy_exist) && (adapter->mdio_bus)) {
-		phydev = phy_find_first(adapter->mdio_bus);
+		phydev = mdiobus_get_phy(adapter->mdio_bus, adapter->phy_addr);
 		if (phydev)
 			return phy_ethtool_set_wol(phydev, wol);
 	}
