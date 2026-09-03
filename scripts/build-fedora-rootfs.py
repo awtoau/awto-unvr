@@ -240,14 +240,20 @@ def verify_not_container_flavored(root: Path) -> None:
         for rel in (Path("run") / marker, Path(marker)):
             p = root / rel
             if p.exists():
-                log(f"FATAL: container marker file present in installroot: {p} "
+                log(
+                    f"FATAL: container marker file present in installroot: {p} "
                     f"(#164 - this shadows systemd's real virtualization state "
-                    f"on the no-initramfs boot path, not just cosmetic)", "ERROR")
+                    f"on the no-initramfs boot path, not just cosmetic)",
+                    "ERROR",
+                )
                 sys.exit(1)
     for rel in ("run/systemd/container", "run/host/container-manager"):
         p = root / rel
         if p.exists():
-            log(f"FATAL: container marker file present in installroot: {p} (#164)", "ERROR")
+            log(
+                f"FATAL: container marker file present in installroot: {p} (#164)",
+                "ERROR",
+            )
             sys.exit(1)
     rpm = subprocess.run(
         ["rpm", "--root", str(root), "-q", "fedora-release-container"],
@@ -269,7 +275,9 @@ def verify_not_container_flavored(root: Path) -> None:
     if rpm.returncode != 0:
         log(f"FATAL: fedora-release-server NOT installed in {root}", "ERROR")
         sys.exit(1)
-    log("verified: not container-flavored (fedora-release-server present, os-release clean)")
+    log(
+        "verified: not container-flavored (fedora-release-server present, os-release clean)"
+    )
 
 
 def main() -> int:
@@ -323,12 +331,16 @@ def main() -> int:
         )
         # Stage the fan daemon (#44) before the chroot config step enables it.
         sudo_run(
-            "install", "-m", "755",
+            "install",
+            "-m",
+            "755",
             str(REPO / "scripts" / "unvr-fand.py"),
             str(root / "usr/local/bin/unvr-fand.py"),
         )
         sudo_run(
-            "install", "-m", "644",
+            "install",
+            "-m",
+            "644",
             str(REPO / "scripts" / "unvr-fand.service"),
             str(root / "etc/systemd/system/unvr-fand.service"),
         )

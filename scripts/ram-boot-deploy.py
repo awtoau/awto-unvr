@@ -57,6 +57,7 @@ DTB_ADDR = "0x30000000"
 MODULES_ADDR = "0xa0000000"  # 2.5GB - well clear of early kernel allocations,
 # confirmed safe via /proc/iomem showing System RAM 0x0-0xBFFFFFFF as one bank
 
+
 def log(msg: str, level: str = "INFO") -> None:
     line = f"{time.strftime('%Y-%m-%dT%H:%M:%S%z')}  {level:5s} {msg}"
     print(line)
@@ -256,7 +257,10 @@ def main() -> int:
             return 1
         kvers = [p.name for p in modules_lib.iterdir() if p.is_dir()]
         if len(kvers) != 1:
-            log(f"FATAL: expected exactly one kver dir under {modules_lib}, found {kvers}", "ERROR")
+            log(
+                f"FATAL: expected exactly one kver dir under {modules_lib}, found {kvers}",
+                "ERROR",
+            )
             return 1
         kver = kvers[0]
         modules_tar = TFTP_ROOT / f"ram-boot-modules-{kver}.tar.gz"
@@ -457,7 +461,9 @@ def main() -> int:
                 "ERROR",
             )
             return 1
-        log(f"extraction verified: {len(expected_kos)} module(s) present - swapping into place")
+        log(
+            f"extraction verified: {len(expected_kos)} module(s) present - swapping into place"
+        )
         # Only now, with the new tree confirmed complete, replace the live one.
         run_devpy(
             f"rm -rf /lib/modules/{kver} && "

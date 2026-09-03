@@ -32,7 +32,12 @@ import sys
 import time
 import zlib
 
-from _repo import NPROC, REPO, ea16_build_out, kernel_build_ver  # -j28 host build parallelism (#146); self-locating repo root
+from _repo import (
+    NPROC,
+    REPO,
+    ea16_build_out,
+    kernel_build_ver,
+)  # -j28 host build parallelism (#146); self-locating repo root
 
 SRC = os.environ.get("AWTO_KERNEL_SRC", "/mnt/2tb/unvr-port-refs/linux-v7.3-fresh")
 # _repo.py's REPO self-locates via git rev-parse, correct wherever this

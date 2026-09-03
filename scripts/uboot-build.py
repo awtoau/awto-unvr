@@ -144,9 +144,13 @@ def unstage_stale():
     git checkout of mainline that only ever gets modified by this script,
     so a full reset here is safe - nothing else should have uncommitted
     changes in it."""
-    rc = subprocess.run(["git", "checkout", "--", "."], cwd=TREE, check=False).returncode
+    rc = subprocess.run(
+        ["git", "checkout", "--", "."], cwd=TREE, check=False
+    ).returncode
     if rc != 0:
-        log(f"WARNING: git checkout -- . in {TREE} failed (rc={rc}) - stale files may remain")
+        log(
+            f"WARNING: git checkout -- . in {TREE} failed (rc={rc}) - stale files may remain"
+        )
     else:
         log(f"reset {TREE} to pristine before staging")
 

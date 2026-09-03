@@ -40,7 +40,14 @@ import sys
 import time
 from pathlib import Path
 
-GPIO_BANK_BASE = [0xFD887000, 0xFD888000, 0xFD889000, 0xFD88A000, 0xFD88B000, 0xFD897000]
+GPIO_BANK_BASE = [
+    0xFD887000,
+    0xFD888000,
+    0xFD889000,
+    0xFD88A000,
+    0xFD88B000,
+    0xFD897000,
+]
 GPIODATA_ALL_OFF = 0x3FC  # PL061 address-mask trick: all 8 mask bits set
 
 # docs/gpio-map.md per-ball table: pin -> (label, active_low, muxed_to_gpio)
@@ -100,9 +107,9 @@ PCA9575_0X20_LINES = {  # gpiochip0, 16 lines
     15: ("board strap/status/present", False),
 }
 PCA9575_0X21_LINES = {  # gpiochip1, 16 lines
-    **{i: (f"bay{i+1} pwr-enable", False) for i in range(0, 4)},
-    **{i: (f"bay{i-3} present", True) for i in range(4, 8)},
-    **{i: (f"bay{i-11} fault LED", False) for i in range(12, 16)},
+    **{i: (f"bay{i + 1} pwr-enable", False) for i in range(0, 4)},
+    **{i: (f"bay{i - 3} present", True) for i in range(4, 8)},
+    **{i: (f"bay{i - 11} fault LED", False) for i in range(12, 16)},
 }
 
 REFRESH_S = 0.1  # 100ms for the fast SoC-GPIO section, per request
@@ -134,7 +141,9 @@ def gpioget_chip(chip: str, n_lines: int) -> list[int] | None:
     try:
         out = subprocess.run(
             ["gpioget", "--chip", chip, *[str(i) for i in range(n_lines)]],
-            capture_output=True, text=True, timeout=2,
+            capture_output=True,
+            text=True,
+            timeout=2,
         )
         if out.returncode != 0:
             return None
@@ -143,8 +152,14 @@ def gpioget_chip(chip: str, n_lines: int) -> list[int] | None:
         return None
 
 
-def log_changes(log_f, source: str, prev: list[int] | None, cur: list[int],
-                 labels: dict, changed_at: dict | None = None) -> None:
+def log_changes(
+    log_f,
+    source: str,
+    prev: list[int] | None,
+    cur: list[int],
+    labels: dict,
+    changed_at: dict | None = None,
+) -> None:
     """Append one line per changed GPIO to the change log - only on actual
     transitions, not every poll, so the log stays meaningful over a long
     run rather than growing at the full 100ms/1s poll rate. If given,
@@ -160,7 +175,11 @@ def log_changes(log_f, source: str, prev: list[int] | None, cur: list[int],
             changed_at[(source, i)] = time.monotonic()
         if log_f is None:
             continue
-        label = labels.get(i, ("",))[0] if isinstance(labels.get(i), tuple) else labels.get(i, "")
+        label = (
+            labels.get(i, ("",))[0]
+            if isinstance(labels.get(i), tuple)
+            else labels.get(i, "")
+        )
         ts = time.strftime("%Y-%m-%dT%H:%M:%S%z")
         log_f.write(f"{ts} {source} line {i:<2} {label:<28} {old} -> {new}\n")
     if log_f is not None:
@@ -188,8 +207,13 @@ def recency_attr(changed_at: dict, key: tuple, colors_ok: bool = True) -> int:
 def new_poll_state() -> dict:
     return {
         "tick": 0,
-        "pca20": None, "pca21": None, "sgpo": None,
-        "prev_bits": None, "prev_pca20": None, "prev_pca21": None, "prev_sgpo": None,
+        "pca20": None,
+        "pca21": None,
+        "sgpo": None,
+        "prev_bits": None,
+        "prev_pca20": None,
+        "prev_pca21": None,
+        "prev_sgpo": None,
         "changed_at": {},  # (source, line_index) -> monotonic() of last change
     }
 
@@ -211,11 +235,25 @@ def poll_tick(mem_fd: int, log_f, state: dict) -> list[int]:
     if state["tick"] % SLOW_REFRESH_TICKS == 0:
         new_pca20 = gpioget_chip("gpiochip0", 16)
         if new_pca20:
-            log_changes(log_f, "PCA9575@0x20", state["prev_pca20"], new_pca20, PCA9575_0X20_LINES, ca)
+            log_changes(
+                log_f,
+                "PCA9575@0x20",
+                state["prev_pca20"],
+                new_pca20,
+                PCA9575_0X20_LINES,
+                ca,
+            )
             state["prev_pca20"] = state["pca20"] = new_pca20
         new_pca21 = gpioget_chip("gpiochip1", 16)
         if new_pca21:
-            log_changes(log_f, "PCA9575@0x21", state["prev_pca21"], new_pca21, PCA9575_0X21_LINES, ca)
+            log_changes(
+                log_f,
+                "PCA9575@0x21",
+                state["prev_pca21"],
+                new_pca21,
+                PCA9575_0X21_LINES,
+                ca,
+            )
             state["prev_pca21"] = state["pca21"] = new_pca21
         new_sgpo = gpioget_chip("gpiochip8", 32)
         if new_sgpo:
@@ -267,24 +305,46 @@ def run_once(mem_fd: int, log_f, color: bool = True) -> None:
             continue
         v = bits[pin]
         active = (v == 0) if active_low else (v == 1)
-        print(_c(f"  pin {pin:<2} {label:<28} {'ACTIVE' if active else '-'}", active, color))
+        print(
+            _c(
+                f"  pin {pin:<2} {label:<28} {'ACTIVE' if active else '-'}",
+                active,
+                color,
+            )
+        )
 
     for title, chip_vals, labels, ncols in (
         ("PCA9575 @0x20 (gpiochip0, 16 lines)", pca20, PCA9575_0X20_LINES, 4),
-        ("PCA9575 @0x21 (gpiochip1, 16 lines, HDD bay control)", pca21, PCA9575_0X21_LINES, 4),
+        (
+            "PCA9575 @0x21 (gpiochip1, 16 lines, HDD bay control)",
+            pca21,
+            PCA9575_0X21_LINES,
+            4,
+        ),
         ("SGPO (gpiochip8, 32 lines, bay-activity shift-reg)", sgpo, {}, 8),
     ):
         print(title + (":" if chip_vals else " - unavailable"))
         if not chip_vals:
             continue
         for start in range(0, len(chip_vals), ncols):
-            print("".join(f"{i:>2}={chip_vals[i]}  " for i in range(start, min(start + ncols, len(chip_vals)))))
+            print(
+                "".join(
+                    f"{i:>2}={chip_vals[i]}  "
+                    for i in range(start, min(start + ncols, len(chip_vals)))
+                )
+            )
         for i, (label, active_low) in sorted(labels.items()):
             if i >= len(chip_vals):
                 continue
             v = chip_vals[i]
             active = (v == 0) if active_low else (v == 1)
-            print(_c(f"  line {i:<2} {label:<28} {'ACTIVE' if active else '-'}", active, color))
+            print(
+                _c(
+                    f"  line {i:<2} {label:<28} {'ACTIVE' if active else '-'}",
+                    active,
+                    color,
+                )
+            )
 
 
 def run_headless(mem_fd: int, log_f) -> None:
@@ -317,10 +377,10 @@ def init_colors() -> bool:
     except curses.error:
         bg = curses.COLOR_BLACK  # fall back to an explicit background
     try:
-        curses.init_pair(1, curses.COLOR_RED, bg)      # <1s
+        curses.init_pair(1, curses.COLOR_RED, bg)  # <1s
         orange = 208 if curses.COLORS >= 256 else curses.COLOR_YELLOW  # <5s
-        curses.init_pair(2, orange, bg)                # true orange on 256-color
-        curses.init_pair(3, curses.COLOR_YELLOW, bg)   # <10s
+        curses.init_pair(2, orange, bg)  # true orange on 256-color
+        curses.init_pair(3, curses.COLOR_YELLOW, bg)  # <10s
         return True
     except curses.error:
         return False
@@ -339,9 +399,13 @@ def render(stdscr, mem_fd: int, log_f) -> None:
 
         stdscr.erase()
         row = 0
-        stdscr.addstr(row, 0, "awto-unvr GPIO live monitor (q to quit) - "
-                               "SoC lines 100ms, I2C expanders ~1s. "
-                               "red<1s orange<5s yellow<10s since last change")
+        stdscr.addstr(
+            row,
+            0,
+            "awto-unvr GPIO live monitor (q to quit) - "
+            "SoC lines 100ms, I2C expanders ~1s. "
+            "red<1s orange<5s yellow<10s since last change",
+        )
         row += 2
 
         # --- 48 SoC lines: table by port, columns = the 6 banks ---
@@ -362,12 +426,21 @@ def render(stdscr, mem_fd: int, log_f) -> None:
                 cell = f"{pin:>2}={v}{'*' if active else ' '}"
                 col = 5 + bank * 11
                 try:
-                    stdscr.addstr(row, col, f"{cell:<11}", recency_attr(ca, ("SoC", pin), colors_ok))
+                    stdscr.addstr(
+                        row,
+                        col,
+                        f"{cell:<11}",
+                        recency_attr(ca, ("SoC", pin), colors_ok),
+                    )
                 except curses.error:
                     pass
             row += 1
         row += 1
-        stdscr.addstr(row, 0, "* = active per docs/gpio-map.md polarity. Labels below for named pins:")
+        stdscr.addstr(
+            row,
+            0,
+            "* = active per docs/gpio-map.md polarity. Labels below for named pins:",
+        )
         row += 1
         for pin in sorted(PIN_INFO):
             label, active_low, is_gpio = PIN_INFO[pin]
@@ -376,8 +449,12 @@ def render(stdscr, mem_fd: int, log_f) -> None:
             v = bits[pin]
             active = (v == 0) if active_low else (v == 1)
             try:
-                stdscr.addstr(row, 0, f"  pin {pin:<2} {label:<28} {'ACTIVE' if active else '-'}",
-                              recency_attr(ca, ("SoC", pin), colors_ok))
+                stdscr.addstr(
+                    row,
+                    0,
+                    f"  pin {pin:<2} {label:<28} {'ACTIVE' if active else '-'}",
+                    recency_attr(ca, ("SoC", pin), colors_ok),
+                )
             except curses.error:
                 pass
             row += 1
@@ -385,8 +462,20 @@ def render(stdscr, mem_fd: int, log_f) -> None:
 
         # --- I2C-expander / SGPO GPIO, same table-by-port idea ---
         for source, title, chip_vals, labels, ncols in (
-            ("PCA9575@0x20", "PCA9575 @0x20 (gpiochip0, 16 lines)", pca20, PCA9575_0X20_LINES, 4),
-            ("PCA9575@0x21", "PCA9575 @0x21 (gpiochip1, 16 lines, HDD bay control)", pca21, PCA9575_0X21_LINES, 4),
+            (
+                "PCA9575@0x20",
+                "PCA9575 @0x20 (gpiochip0, 16 lines)",
+                pca20,
+                PCA9575_0X20_LINES,
+                4,
+            ),
+            (
+                "PCA9575@0x21",
+                "PCA9575 @0x21 (gpiochip1, 16 lines, HDD bay control)",
+                pca21,
+                PCA9575_0X21_LINES,
+                4,
+            ),
             ("SGPO", "SGPO (gpiochip8, 32 lines, bay-activity shift-reg)", sgpo, {}, 8),
         ):
             try:
@@ -401,7 +490,9 @@ def render(stdscr, mem_fd: int, log_f) -> None:
                 for i in range(start, min(start + ncols, len(chip_vals))):
                     cell = f"{i:>2}={chip_vals[i]}  "
                     try:
-                        stdscr.addstr(row, col, cell, recency_attr(ca, (source, i), colors_ok))
+                        stdscr.addstr(
+                            row, col, cell, recency_attr(ca, (source, i), colors_ok)
+                        )
                     except curses.error:
                         pass
                     col += len(cell)
@@ -412,8 +503,12 @@ def render(stdscr, mem_fd: int, log_f) -> None:
                 v = chip_vals[i]
                 active = (v == 0) if active_low else (v == 1)
                 try:
-                    stdscr.addstr(row, 0, f"  line {i:<2} {label:<28} {'ACTIVE' if active else '-'}",
-                                  recency_attr(ca, (source, i), colors_ok))
+                    stdscr.addstr(
+                        row,
+                        0,
+                        f"  line {i:<2} {label:<28} {'ACTIVE' if active else '-'}",
+                        recency_attr(ca, (source, i), colors_ok),
+                    )
                 except curses.error:
                     pass
                 row += 1

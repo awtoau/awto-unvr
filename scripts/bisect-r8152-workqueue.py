@@ -67,7 +67,9 @@ from _console import connect as console_connect  # noqa: E402
 from _console import login as console_login  # noqa: E402
 from _console import sh as console_sh  # noqa: E402
 
-SRC = Path(os.environ.get("AWTO_KERNEL_SRC", "/mnt/2tb/unvr-port-refs/linux-v7.3-fresh"))
+SRC = Path(
+    os.environ.get("AWTO_KERNEL_SRC", "/mnt/2tb/unvr-port-refs/linux-v7.3-fresh")
+)
 # MUST be the KASAN variant: all 6 original crash reproductions tonight were
 # on AWTO_KASAN_BUILD=1 kernels. The bug is a torn/racy pointer read - without
 # KASAN's shadow-memory instrumentation to catch it, a garbage-but-plausible
@@ -78,8 +80,14 @@ FEDORA_OUT = kernel_build_out(kasan=True)
 FEDORA_KOUT = FEDORA_OUT / "kbuild"
 VER = kernel_build_ver()
 LOG = REPO / "tmp/logs/bisect-r8152-workqueue.log"
-ENV = dict(os.environ, ARCH="arm64", CROSS_COMPILE="aarch64-linux-gnu-",
-           AWTO_ALLOW_DIRECT_SCRIPT="1", AWTO_VIA_DEVPY="1", AWTO_KASAN_BUILD="1")
+ENV = dict(
+    os.environ,
+    ARCH="arm64",
+    CROSS_COMPILE="aarch64-linux-gnu-",
+    AWTO_ALLOW_DIRECT_SCRIPT="1",
+    AWTO_VIA_DEVPY="1",
+    AWTO_KASAN_BUILD="1",
+)
 
 BOARD_COMMITS = ["3a8d7a1aed24", "2c9316496bad", "ff8d1c237ea6", "ae48f7150404"]
 DTS_NAME = "alpine-v2-ubnt-unvr-ea16"
@@ -122,11 +130,17 @@ def flush_log() -> None:
     _log_lines.clear()
 
 
-def run(cmd: list[str], cwd: Path | None = None, timeout: float = 60,
-        env: dict | None = None, check: bool = True) -> subprocess.CompletedProcess:
+def run(
+    cmd: list[str],
+    cwd: Path | None = None,
+    timeout: float = 60,
+    env: dict | None = None,
+    check: bool = True,
+) -> subprocess.CompletedProcess:
     log("+ " + " ".join(str(c) for c in cmd))
-    p = subprocess.run(cmd, cwd=cwd, env=env, capture_output=True, text=True,
-                        timeout=timeout)
+    p = subprocess.run(
+        cmd, cwd=cwd, env=env, capture_output=True, text=True, timeout=timeout
+    )
     if p.stdout:
         log("  " + p.stdout.strip()[-2000:])
     if p.stderr:
@@ -138,12 +152,27 @@ def run(cmd: list[str], cwd: Path | None = None, timeout: float = 60,
 
 def prep_board_commits(commit: str) -> bool:
     run(["git", "checkout", "-f", commit], cwd=SRC, timeout=30)
-    run(["git", "clean", "-fdx", "--", "arch/arm64/boot/dts/amazon",
-         "drivers/pci/controller"], cwd=SRC, timeout=30, check=False)
+    run(
+        [
+            "git",
+            "clean",
+            "-fdx",
+            "--",
+            "arch/arm64/boot/dts/amazon",
+            "drivers/pci/controller",
+        ],
+        cwd=SRC,
+        timeout=30,
+        check=False,
+    )
     for c in BOARD_COMMITS:
-        p = run(["git", "cherry-pick", "--allow-empty", c], cwd=SRC, timeout=30, check=False)
+        p = run(
+            ["git", "cherry-pick", "--allow-empty", c], cwd=SRC, timeout=30, check=False
+        )
         if p.returncode != 0:
-            log(f"cherry-pick {c} failed onto {commit} - not applicable, skipping candidate")
+            log(
+                f"cherry-pick {c} failed onto {commit} - not applicable, skipping candidate"
+            )
             run(["git", "cherry-pick", "--abort"], cwd=SRC, timeout=15, check=False)
             return False
     return True
@@ -170,8 +199,12 @@ def build_fedora_with_r8152() -> str | None:
     modules_install step never installs it. Returns the kernel release, or
     None on failure (candidate -> SKIP)."""
     try:
-        run([sys.executable, "scripts/build-linux-fedora.py"], cwd=REPO,
-            env=dict(ENV, AWTO_KERNEL_SRC=str(SRC)), timeout=BUILD_TIMEOUT_S)
+        run(
+            [sys.executable, "scripts/build-linux-fedora.py"],
+            cwd=REPO,
+            env=dict(ENV, AWTO_KERNEL_SRC=str(SRC)),
+            timeout=BUILD_TIMEOUT_S,
+        )
     except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
         log("build-linux-fedora.py failed/timed out - skipping this candidate")
         return None
@@ -181,17 +214,43 @@ def build_fedora_with_r8152() -> str | None:
     dtb = FEDORA_OUT / f"{DTS_NAME}-{VER}.dtb"
     modroot = FEDORA_OUT / "modroot"
     if not (uimage.exists() and dtb.exists()):
-        log(f"expected build outputs missing (uimage={uimage.exists()}, "
-            f"dtb={dtb.exists()}) - skipping")
+        log(
+            f"expected build outputs missing (uimage={uimage.exists()}, "
+            f"dtb={dtb.exists()}) - skipping"
+        )
         return None
 
     cfg = FEDORA_KOUT / ".config"
-    run([str(SRC / "scripts/config"), "--file", str(cfg),
-         "--module", "USB_RTL8152", "--module", "MII"], timeout=30)
-    run(["make", "-C", str(SRC), f"O={FEDORA_KOUT}", "olddefconfig"], env=ENV, timeout=60)
+    run(
+        [
+            str(SRC / "scripts/config"),
+            "--file",
+            str(cfg),
+            "--module",
+            "USB_RTL8152",
+            "--module",
+            "MII",
+        ],
+        timeout=30,
+    )
+    run(
+        ["make", "-C", str(SRC), f"O={FEDORA_KOUT}", "olddefconfig"],
+        env=ENV,
+        timeout=60,
+    )
     try:
-        run(["make", "-C", str(SRC), f"O={FEDORA_KOUT}", f"-j{os.cpu_count() or 4}", "modules"],
-            env=ENV, timeout=BUILD_TIMEOUT_S)
+        run(
+            [
+                "make",
+                "-C",
+                str(SRC),
+                f"O={FEDORA_KOUT}",
+                f"-j{os.cpu_count() or 4}",
+                "modules",
+            ],
+            env=ENV,
+            timeout=BUILD_TIMEOUT_S,
+        )
     except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
         log("r8152 module build failed - skipping this candidate")
         return None
@@ -217,10 +276,21 @@ def deploy_and_test(kv: str) -> int:
     dtb = FEDORA_OUT / f"{DTS_NAME}-{VER}.dtb"
     modroot = FEDORA_OUT / "modroot"
     try:
-        run([sys.executable, "scripts/ram-boot-deploy.py",
-             "--kernel", str(uimage), "--dtb", str(dtb),
-             "--modules-dir", str(modroot)],
-            cwd=REPO, env=ENV, timeout=DEPLOY_TIMEOUT_S)
+        run(
+            [
+                sys.executable,
+                "scripts/ram-boot-deploy.py",
+                "--kernel",
+                str(uimage),
+                "--dtb",
+                str(dtb),
+                "--modules-dir",
+                str(modroot),
+            ],
+            cwd=REPO,
+            env=ENV,
+            timeout=DEPLOY_TIMEOUT_S,
+        )
     except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
         log("ram-boot-deploy.py failed/timed out - skipping this candidate")
         return SKIP
@@ -240,7 +310,9 @@ def deploy_and_test(kv: str) -> int:
         return BAD
 
     rc, out = console_sh(
-        s, "dmesg | grep -Eic 'Internal error|Unable to handle kernel'", timeout=15,
+        s,
+        "dmesg | grep -Eic 'Internal error|Unable to handle kernel'",
+        timeout=15,
     )
     if rc is None:
         log("dmesg check never returned (hung/crashed post-probe) -> BAD")
@@ -254,8 +326,13 @@ def deploy_and_test(kv: str) -> int:
 
 
 def run_once() -> int:
-    commit = subprocess.run(["git", "rev-parse", "HEAD"], cwd=SRC,
-                             capture_output=True, text=True, timeout=10).stdout.strip()
+    commit = subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        cwd=SRC,
+        capture_output=True,
+        text=True,
+        timeout=10,
+    ).stdout.strip()
     log(f"=== bisect step: testing {commit} ===")
 
     if not prep_board_commits(commit):
@@ -269,15 +346,18 @@ def run_once() -> int:
     log(f"built kernel release: {kv}")
 
     result = deploy_and_test(kv)
-    log(f"=== result for {commit}: "
-        f"{'GOOD' if result == GOOD else 'BAD' if result == BAD else 'SKIP'} ===")
+    log(
+        f"=== result for {commit}: "
+        f"{'GOOD' if result == GOOD else 'BAD' if result == BAD else 'SKIP'} ==="
+    )
     flush_log()
     return result
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description=__doc__,
-                                  formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     ap.parse_args()
     return run_once()
 

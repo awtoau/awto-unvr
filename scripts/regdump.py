@@ -49,14 +49,27 @@ PCIE_REGS = [
 
 # PL061 GPIODATA, address-mask trick: offset 0x3FC = all 8 mask bits set,
 # i.e. the read returns the real port value, not a masked subset.
-GPIO_BANK_BASE = [0xFD887000, 0xFD888000, 0xFD889000, 0xFD88A000, 0xFD88B000, 0xFD897000]
+GPIO_BANK_BASE = [
+    0xFD887000,
+    0xFD888000,
+    0xFD889000,
+    0xFD88A000,
+    0xFD88B000,
+    0xFD897000,
+]
 GPIO_GPIODATA_ALL_OFF = 0x3FC
 
 # LTSSM state names, al_hal_pcie.h - only the early ones this issue has hit
 LTSSM_NAMES = {
-    0x0: "DETECT_QUIET", 0x1: "DETECT_ACT", 0x2: "POLL_ACTIVE",
-    0x3: "POLL_COMPLIANCE", 0x4: "POLL_CONFIG", 0x5: "PRE_DETECT_QUIET",
-    0x6: "DETECT_WAIT", 0x11: "L0", 0x12: "L0S",
+    0x0: "DETECT_QUIET",
+    0x1: "DETECT_ACT",
+    0x2: "POLL_ACTIVE",
+    0x3: "POLL_COMPLIANCE",
+    0x4: "POLL_CONFIG",
+    0x5: "PRE_DETECT_QUIET",
+    0x6: "DETECT_WAIT",
+    0x11: "L0",
+    0x12: "L0S",
 }
 
 

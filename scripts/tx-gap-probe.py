@@ -71,8 +71,9 @@ def run_send(args: argparse.Namespace) -> int:
         # 0 packets out the intended interface, all traffic still went out
         # the route table's preferred NIC). This is the exact "wrong NIC"
         # bug class #121 already found once in test-eth.py.
-        sock.setsockopt(socket.SOL_SOCKET, socket.SO_BINDTODEVICE,
-                         args.src_iface.encode() + b"\0")
+        sock.setsockopt(
+            socket.SOL_SOCKET, socket.SO_BINDTODEVICE, args.src_iface.encode() + b"\0"
+        )
     if args.src_ip:
         sock.bind((args.src_ip, 0))
     filler = b"\0" * (args.payload_size - HEADER.size)
@@ -108,8 +109,10 @@ def run_recv(args: argparse.Namespace) -> int:
     sock.bind((args.bind_ip, args.port))
     sock.settimeout(0.2)
     recv_bufsize = 9200  # covers up to jumbo-frame payload sizes
-    log(f"SO_RCVBUF requested 4194304, kernel gave {actual_rcvbuf} "
-        f"(reported value is 2x the real allocation - normal Linux behavior)")
+    log(
+        f"SO_RCVBUF requested 4194304, kernel gave {actual_rcvbuf} "
+        f"(reported value is 2x the real allocation - normal Linux behavior)"
+    )
 
     start = time.monotonic()
     last_rx = start
@@ -133,8 +136,10 @@ def run_recv(args: argparse.Namespace) -> int:
                 break
             elapsed = time.monotonic() - start
             lost.append((expected, elapsed))
-            log(f"  LOST: seq {expected} at {elapsed:.3f}s "
-                f"({received_count} received so far)")
+            log(
+                f"  LOST: seq {expected} at {elapsed:.3f}s "
+                f"({received_count} received so far)"
+            )
             expected += 1
             while expected in ooo:
                 del ooo[expected]
@@ -183,11 +188,15 @@ def run_recv(args: argparse.Namespace) -> int:
         confirm_losses()
         if stop_on_first and lost:
             missing, elapsed = lost[0]
-            log(f"GAP CONFIRMED (stopping on first, per --stop-on-first-gap): "
-                f"seq {missing} never arrived")
+            log(
+                f"GAP CONFIRMED (stopping on first, per --stop-on-first-gap): "
+                f"seq {missing} never arrived"
+            )
             flush_log()
-            print(f"RESULT=GAP missing_seq={missing} received_before={received_count} "
-                  f"elapsed_s={elapsed:.3f}")
+            print(
+                f"RESULT=GAP missing_seq={missing} received_before={received_count} "
+                f"elapsed_s={elapsed:.3f}"
+            )
             return 1
 
     elapsed = time.monotonic() - start
@@ -196,34 +205,56 @@ def run_recv(args: argparse.Namespace) -> int:
         times = [f"{t:.3f}" for _, t in lost]
         log(f"{len(lost)} packet(s) confirmed lost: seqs={seqs}")
         log(f"  at times(s)={times}")
-        log(f"  received {received_count} total, expected pointer reached "
-            f"{expected}, run lasted {elapsed:.3f}s")
+        log(
+            f"  received {received_count} total, expected pointer reached "
+            f"{expected}, run lasted {elapsed:.3f}s"
+        )
         flush_log()
-        print(f"RESULT=GAP count={len(lost)} first_seq={seqs[0]} first_elapsed_s={times[0]} "
-              f"last_seq={seqs[-1]} last_elapsed_s={times[-1]} received={received_count}")
+        print(
+            f"RESULT=GAP count={len(lost)} first_seq={seqs[0]} first_elapsed_s={times[0]} "
+            f"last_seq={seqs[-1]} last_elapsed_s={times[-1]} received={received_count}"
+        )
         return 1
 
-    log(f"no gap detected: received {received_count} packets, "
+    log(
+        f"no gap detected: received {received_count} packets, "
         f"expected pointer reached {expected}, {elapsed:.3f}s, "
-        f"idle {idle_timeout_s}s ended the run")
+        f"idle {idle_timeout_s}s ended the run"
+    )
     flush_log()
-    print(f"RESULT=CLEAN received={received_count} expected_reached={expected} "
-          f"elapsed_s={elapsed:.3f}")
+    print(
+        f"RESULT=CLEAN received={received_count} expected_reached={expected} "
+        f"elapsed_s={elapsed:.3f}"
+    )
     return 0
 
 
 def run_orchestrate(args: argparse.Namespace) -> int:
-    log(f"tx-gap-probe: box {args.box_ip} -> {args.bind_ip}%{args.bind_iface}:"
+    log(
+        f"tx-gap-probe: box {args.box_ip} -> {args.bind_ip}%{args.bind_iface}:"
         f"{args.port}, {args.duration}s, grace {args.grace_ms}ms, "
-        f"payload {args.payload_size}B")
+        f"payload {args.payload_size}B"
+    )
 
-    recv_cmd = [sys.executable, __file__, "--mode", "recv",
-                "--bind-ip", args.bind_ip, "--port", str(args.port),
-                "--grace-ms", str(args.grace_ms)]
+    recv_cmd = [
+        sys.executable,
+        __file__,
+        "--mode",
+        "recv",
+        "--bind-ip",
+        args.bind_ip,
+        "--port",
+        str(args.port),
+        "--grace-ms",
+        str(args.grace_ms),
+    ]
     if args.stop_on_first_gap:
         recv_cmd.append("--stop-on-first-gap")
     recv_proc = subprocess.Popen(
-        recv_cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
+        recv_cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
     )
     time.sleep(0.3)  # let the receiver's bind() land before traffic starts
 
@@ -237,10 +268,18 @@ def run_orchestrate(args: argparse.Namespace) -> int:
     if args.src_iface:
         send_cmd += f" --src-iface {args.src_iface}"
     ssh = subprocess.run(
-        ["ssh", "-o", f"ConnectTimeout={SSH_CONNECT_TIMEOUT}",
-         "-o", "StrictHostKeyChecking=accept-new",
-         f"root@{args.box_ip}", send_cmd],
-        input=script_src, capture_output=True, text=True,
+        [
+            "ssh",
+            "-o",
+            f"ConnectTimeout={SSH_CONNECT_TIMEOUT}",
+            "-o",
+            "StrictHostKeyChecking=accept-new",
+            f"root@{args.box_ip}",
+            send_cmd,
+        ],
+        input=script_src,
+        capture_output=True,
+        text=True,
         timeout=args.duration + SSH_CONNECT_TIMEOUT + 10,
     )
     log(f"sender (box) output: {ssh.stdout.strip()!r} stderr={ssh.stderr.strip()!r}")
@@ -267,36 +306,59 @@ def run_orchestrate(args: argparse.Namespace) -> int:
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description=__doc__,
-                                  formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--mode", choices=["send", "recv"], default=None,
-                     help="internal: run as sender or receiver only. Omit to "
-                          "orchestrate both (local recv + remote send over SSH).")
+    ap = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+    ap.add_argument(
+        "--mode",
+        choices=["send", "recv"],
+        default=None,
+        help="internal: run as sender or receiver only. Omit to "
+        "orchestrate both (local recv + remote send over SSH).",
+    )
     ap.add_argument("--box-ip", help="woomera's IP (orchestrate mode)")
     ap.add_argument("--bind-ip", help="local IP to receive on (10G-capable NIC)")
     ap.add_argument("--bind-iface", default="", help="local interface (informational)")
     ap.add_argument("--host", help="send mode: destination IP (the receiver)")
-    ap.add_argument("--src-ip", help="send mode: source IP to bind (cosmetic - "
-                     "sets the packet's source address; use --src-iface to "
-                     "actually control which NIC it egresses)")
-    ap.add_argument("--src-iface", help="send mode: box-side interface name "
-                     "(e.g. enp0s1) to force egress through via "
-                     "SO_BINDTODEVICE - required when the box has multiple "
-                     "NICs on the same subnet as the receiver, since routing "
-                     "alone picks one NIC regardless of source-address bind")
+    ap.add_argument(
+        "--src-ip",
+        help="send mode: source IP to bind (cosmetic - "
+        "sets the packet's source address; use --src-iface to "
+        "actually control which NIC it egresses)",
+    )
+    ap.add_argument(
+        "--src-iface",
+        help="send mode: box-side interface name "
+        "(e.g. enp0s1) to force egress through via "
+        "SO_BINDTODEVICE - required when the box has multiple "
+        "NICs on the same subnet as the receiver, since routing "
+        "alone picks one NIC regardless of source-address bind",
+    )
     ap.add_argument("--port", type=int, default=5604)
-    ap.add_argument("--duration", type=int, default=20,
-                     help="seconds of sending at max rate")
-    ap.add_argument("--grace-ms", type=int, default=50,
-                     help="how long a later packet must have been waiting "
-                          "before we declare an earlier one truly missing")
-    ap.add_argument("--payload-size", type=int, default=DEFAULT_PAYLOAD_SIZE,
-                     help="UDP payload bytes per packet, header included "
-                          "(min 8 for the sequence number)")
-    ap.add_argument("--stop-on-first-gap", action="store_true",
-                     help="exit immediately on the first confirmed loss "
-                          "instead of running the full --duration and "
-                          "reporting every loss (default: report all)")
+    ap.add_argument(
+        "--duration", type=int, default=20, help="seconds of sending at max rate"
+    )
+    ap.add_argument(
+        "--grace-ms",
+        type=int,
+        default=50,
+        help="how long a later packet must have been waiting "
+        "before we declare an earlier one truly missing",
+    )
+    ap.add_argument(
+        "--payload-size",
+        type=int,
+        default=DEFAULT_PAYLOAD_SIZE,
+        help="UDP payload bytes per packet, header included "
+        "(min 8 for the sequence number)",
+    )
+    ap.add_argument(
+        "--stop-on-first-gap",
+        action="store_true",
+        help="exit immediately on the first confirmed loss "
+        "instead of running the full --duration and "
+        "reporting every loss (default: report all)",
+    )
     args = ap.parse_args()
 
     if args.payload_size < HEADER.size:

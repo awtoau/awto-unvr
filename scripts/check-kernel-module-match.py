@@ -78,7 +78,10 @@ def main() -> int:
     expected = read_marker(kver)
 
     if expected is None:
-        log_kmsg("6", f"no .deployed-from marker for {kver} - nothing to check (pre-#162 deploy?)")
+        log_kmsg(
+            "6",
+            f"no .deployed-from marker for {kver} - nothing to check (pre-#162 deploy?)",
+        )
         return 0
 
     if expected == running:
@@ -90,9 +93,12 @@ def main() -> int:
     log_kmsg("2", "KERNEL/MODULE MISMATCH DETECTED")
     log_kmsg("2", f"running:  {running}")
     log_kmsg("2", f"deployed: {expected}")
-    log_kmsg("2", "modules were synced from a different kernel build than the one "
-                  "currently running - see docs/kernel-module-mismatch-recurring "
-                  "memory / GitHub #161 #162")
+    log_kmsg(
+        "2",
+        "modules were synced from a different kernel build than the one "
+        "currently running - see docs/kernel-module-mismatch-recurring "
+        "memory / GitHub #161 #162",
+    )
     return 0
 
 

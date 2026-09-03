@@ -110,7 +110,9 @@ def ssh_cmd(host: str, password: str) -> list[str]:
     ]
 
 
-def run_remote(host: str, password: str, remote_script: str, timeout: int = 60) -> tuple[int, str]:
+def run_remote(
+    host: str, password: str, remote_script: str, timeout: int = 60
+) -> tuple[int, str]:
     """Never raises TimeoutExpired - an uncaught one here crashed this whole
     suite live (crypto's own SIGALRM only bounds a milder interruptible
     hang; a genuine kernel D-state wedge on the box, as actually observed,
@@ -128,9 +130,11 @@ def run_remote(host: str, password: str, remote_script: str, timeout: int = 60) 
         )
         return result.returncode, result.stdout + result.stderr
     except subprocess.TimeoutExpired:
-        return 124, (f"ssh call timed out after {timeout}s - if this was the crypto "
-                      f"benchmark, the remote process may still be stuck (kernel D-state) "
-                      f"and need a reboot to clear, not just a retry")
+        return 124, (
+            f"ssh call timed out after {timeout}s - if this was the crypto "
+            f"benchmark, the remote process may still be stuck (kernel D-state) "
+            f"and need a reboot to clear, not just a retry"
+        )
 
 
 class Report:
@@ -138,7 +142,9 @@ class Report:
         self.checks: list[tuple[str, bool, str]] = []
         self.metrics: dict[str, float] = {}
 
-    def add(self, name: str, ok: bool, detail: str, metric: float | None = None) -> None:
+    def add(
+        self, name: str, ok: bool, detail: str, metric: float | None = None
+    ) -> None:
         self.checks.append((name, ok, detail))
         mark = "PASS" if ok else "FAIL"
         print(f"[{mark}] {name}: {detail}")
@@ -157,13 +163,18 @@ def _iface_ip(host: str, password: str, iface: str) -> str | None:
 
 def _local_ip(iface: str) -> str | None:
     result = subprocess.run(
-        ["ip", "-4", "-o", "addr", "show", iface], capture_output=True, text=True, check=False
+        ["ip", "-4", "-o", "addr", "show", iface],
+        capture_output=True,
+        text=True,
+        check=False,
     )
     m = re.search(r"inet (\d+\.\d+\.\d+\.\d+)/", result.stdout)
     return m.group(1) if m else None
 
 
-def bench_eth_pair(host: str, password: str, pair: dict, duration: int, report: Report) -> None:
+def bench_eth_pair(
+    host: str, password: str, pair: dict, duration: int, report: Report
+) -> None:
     label = pair["label"]
     target = _iface_ip(host, password, pair["box_iface"])
     if target is None:
@@ -171,7 +182,9 @@ def bench_eth_pair(host: str, password: str, pair: dict, duration: int, report: 
         return
     local_ip = _local_ip(pair["dev_iface"])
     if local_ip is None:
-        report.add(f"eth {label}", False, f"couldn't get local IP for {pair['dev_iface']}")
+        report.add(
+            f"eth {label}", False, f"couldn't get local IP for {pair['dev_iface']}"
+        )
         return
 
     # A multi-homed dev host (two NICs on the same /24) can end up with a
@@ -183,7 +196,8 @@ def bench_eth_pair(host: str, password: str, pair: dict, duration: int, report: 
     # box-side issue - best-effort, ignore if we lack CAP_NET_ADMIN.
     subprocess.run(
         ["sudo", "-n", "ip", "neigh", "flush", "dev", pair["dev_iface"]],
-        capture_output=True, check=False,
+        capture_output=True,
+        check=False,
     )
 
     port = pair["port"]
@@ -194,30 +208,47 @@ def bench_eth_pair(host: str, password: str, pair: dict, duration: int, report: 
         f"nohup iperf3 -s -p {port} > /root/bench-all-iperf-server-{port}.log 2>&1 & disown; echo started",
     )
     for _ in range(40):
-        _rc, out = run_remote(host, password, f"ss -ltn | grep -q ':{port} ' && echo up")
+        _rc, out = run_remote(
+            host, password, f"ss -ltn | grep -q ':{port} ' && echo up"
+        )
         if "up" in out:
             break
     else:
-        report.add(f"eth {label}", False, f"iperf3 server never bound to port {port} within 2s")
+        report.add(
+            f"eth {label}", False, f"iperf3 server never bound to port {port} within 2s"
+        )
         return
 
     try:
         result = subprocess.run(
             [
-                "iperf3", "-c", target,
-                "-B", f"{local_ip}%{pair['dev_iface']}",
-                "-p", str(port), "-t", str(duration), "-P", "4", "--bidir",
+                "iperf3",
+                "-c",
+                target,
+                "-B",
+                f"{local_ip}%{pair['dev_iface']}",
+                "-p",
+                str(port),
+                "-t",
+                str(duration),
+                "-P",
+                "4",
+                "--bidir",
                 # iperf3 has no built-in connect timeout - if SO_BINDTODEVICE
                 # picks an interface with no real L2 path to the target (dead
                 # link, ARP not resolving), it hangs at connect() forever
                 # rather than erroring, so the process-level timeout below is
                 # the only thing that ever ends it.
             ],
-            capture_output=True, text=True, check=False, timeout=duration + 15,
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=duration + 15,
         )
     except subprocess.TimeoutExpired:
         report.add(
-            f"eth {label}", False,
+            f"eth {label}",
+            False,
             f"iperf3 client hung past {duration + 15}s - {pair['dev_iface']} likely has no "
             f"working L2 path to {target} right now (check `ip neigh` / link state)",
         )
@@ -226,7 +257,11 @@ def bench_eth_pair(host: str, password: str, pair: dict, duration: int, report: 
     run_remote(host, password, f"pkill -f '^iperf3 -s -p {port}' 2>/dev/null; true")
 
     if result.returncode != 0 or "iperf Done" not in result.stdout:
-        report.add(f"eth {label}", False, f"iperf3 failed (rc={result.returncode}): {result.stderr[:200]}")
+        report.add(
+            f"eth {label}",
+            False,
+            f"iperf3 failed (rc={result.returncode}): {result.stderr[:200]}",
+        )
         return
 
     tx = re.search(
@@ -248,10 +283,16 @@ def bench_eth_pair(host: str, password: str, pair: dict, duration: int, report: 
     tx_mbps = to_mbps(tx.group(1), tx.group(2))
     rx_mbps = to_mbps(rx.group(1), rx.group(2))
     report.add(
-        f"eth {label} host->box", True, f"{tx.group(1)} {tx.group(2)}/sec", metric=tx_mbps
+        f"eth {label} host->box",
+        True,
+        f"{tx.group(1)} {tx.group(2)}/sec",
+        metric=tx_mbps,
     )
     report.add(
-        f"eth {label} box->host", True, f"{rx.group(1)} {rx.group(2)}/sec", metric=rx_mbps
+        f"eth {label} box->host",
+        True,
+        f"{rx.group(1)} {rx.group(2)}/sec",
+        metric=rx_mbps,
     )
 
 
@@ -267,7 +308,7 @@ def discover_usb_eth_pairs(host: str, password: str, report: Report) -> list[dic
         password,
         "for d in /sys/class/net/*/device/driver; do "
         "  i=${d%/device/driver}; i=${i#/sys/class/net/}; "
-        "  echo \"$i $(basename $(readlink -f $d))\"; "
+        '  echo "$i $(basename $(readlink -f $d))"; '
         "done 2>/dev/null",
     )
     usb_drivers = {"r8152", "cdc_ether", "cdc_ncm", "asix", "ax88179_178a", "usbnet"}
@@ -282,17 +323,20 @@ def discover_usb_eth_pairs(host: str, password: str, report: Report) -> list[dic
     for idx, iface in enumerate(found):
         if idx >= len(USB_ETH_DEV_IFACES):
             report.add(
-                f"eth usb {iface}", False,
+                f"eth usb {iface}",
+                False,
                 f"no dev-host NIC left to pair against (have "
                 f"{len(USB_ETH_DEV_IFACES)}: {', '.join(USB_ETH_DEV_IFACES)})",
             )
             continue
-        pairs.append({
-            "box_iface": iface,
-            "dev_iface": USB_ETH_DEV_IFACES[idx],
-            "label": f"USB{idx + 1}",
-            "port": USB_ETH_BASE_PORT + idx,
-        })
+        pairs.append(
+            {
+                "box_iface": iface,
+                "dev_iface": USB_ETH_DEV_IFACES[idx],
+                "label": f"USB{idx + 1}",
+                "port": USB_ETH_BASE_PORT + idx,
+            }
+        )
     return pairs
 
 
@@ -434,7 +478,8 @@ def bench_crypto(host: str, password: str, total_mb: int, report: Report) -> Non
         report.add(f"crypto {CRYPTO_ALG}", False, r.get("error", "not available"))
     elif "mb_per_sec" in r:
         report.add(
-            f"crypto {CRYPTO_ALG} [{r['driver']}]", True,
+            f"crypto {CRYPTO_ALG} [{r['driver']}]",
+            True,
             f"{r['mb_per_sec']:.1f} MB/s ({r['mb']:.1f}MB in {r['seconds']:.2f}s)",
             metric=r["mb_per_sec"],
         )
@@ -445,7 +490,9 @@ def bench_crypto(host: str, password: str, total_mb: int, report: Report) -> Non
 # ======== Disk / USB (hdparm -t --direct) ========
 
 
-def _hdparm_direct(host: str, password: str, dev: str) -> tuple[bool, str, float | None]:
+def _hdparm_direct(
+    host: str, password: str, dev: str
+) -> tuple[bool, str, float | None]:
     rc, out = run_remote(host, password, f"hdparm -t --direct /dev/{dev}", timeout=30)
     m = re.search(r"=\s*([\d.]+)\s*MB/sec", out)
     if rc != 0 or not m:
@@ -454,7 +501,9 @@ def _hdparm_direct(host: str, password: str, dev: str) -> tuple[bool, str, float
     return True, f"{mbps:.1f} MB/sec", mbps
 
 
-def bench_disks(host: str, password: str, devices: tuple[str, ...], label: str, report: Report) -> None:
+def bench_disks(
+    host: str, password: str, devices: tuple[str, ...], label: str, report: Report
+) -> None:
     for dev in devices:
         ok, detail, mbps = _hdparm_direct(host, password, dev)
         report.add(f"{label} {dev}", ok, detail, metric=mbps)
@@ -479,7 +528,10 @@ def run_suite(args) -> dict:
 
     stamp = datetime.datetime.now().astimezone().isoformat(timespec="seconds")
     commit = subprocess.run(
-        ["git", "rev-parse", "--short", "HEAD"], capture_output=True, text=True, check=False
+        ["git", "rev-parse", "--short", "HEAD"],
+        capture_output=True,
+        text=True,
+        check=False,
     ).stdout.strip()
     dirty = subprocess.run(
         ["git", "status", "--porcelain"], capture_output=True, text=True, check=False
@@ -515,27 +567,42 @@ def do_compare(path_a: Path, path_b: Path) -> int:
             regressions += 1
         print(f"  {pct:+7.1f}%  {k}: {va:.1f} -> {vb:.1f}{flag}")
     print()
-    print(f"{regressions} regression(s) >= {REGRESSION_THRESHOLD*100:.0f}%" if regressions else "no regressions")
+    print(
+        f"{regressions} regression(s) >= {REGRESSION_THRESHOLD * 100:.0f}%"
+        if regressions
+        else "no regressions"
+    )
     return 1 if regressions else 0
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--host", help="woomera's address (default: auto-locate by MAC OUI)")
+    ap = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+    ap.add_argument(
+        "--host", help="woomera's address (default: auto-locate by MAC OUI)"
+    )
     ap.add_argument("--password", default=DEFAULT_ROOT_PASSWORD)
     ap.add_argument("--skip-eth", action="store_true")
     ap.add_argument("--skip-crypto", action="store_true")
     ap.add_argument("--skip-disk", action="store_true")
     ap.add_argument("--skip-usb", action="store_true")
-    ap.add_argument("--eth-duration", type=int, default=8, help="seconds per direction per port")
-    ap.add_argument("--crypto-mb", type=int, default=32, help="MB encrypted per crypto driver")
     ap.add_argument(
-        "--out", type=Path,
+        "--eth-duration", type=int, default=8, help="seconds per direction per port"
+    )
+    ap.add_argument(
+        "--crypto-mb", type=int, default=32, help="MB encrypted per crypto driver"
+    )
+    ap.add_argument(
+        "--out",
+        type=Path,
         help="write JSON snapshot here (default: bench-history/bench-<timestamp>.json, "
         "git-tracked - commit it after the run)",
     )
     ap.add_argument(
-        "--compare", nargs=2, metavar=("BEFORE.json", "AFTER.json"),
+        "--compare",
+        nargs=2,
+        metavar=("BEFORE.json", "AFTER.json"),
         help="skip running, just diff two prior snapshots",
     )
     args = ap.parse_args()

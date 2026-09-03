@@ -38,8 +38,12 @@ def main() -> int:
     )
     g = ap.add_mutually_exclusive_group()
     g.add_argument("--on", action="store_true", help="turn on only, no cycle")
-    g.add_argument("--off", action="store_true", help="turn off only, no cycle "
-                    "(e.g. to hold the box off while reseating a cable)")
+    g.add_argument(
+        "--off",
+        action="store_true",
+        help="turn off only, no cycle "
+        "(e.g. to hold the box off while reseating a cable)",
+    )
     args = ap.parse_args()
     try:
         if args.on:

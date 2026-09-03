@@ -35,7 +35,10 @@ HTTP_PORT = 8099
 # (local source file, /boot destination name)
 FILES = [
     (f"uImage-unvr-ea16-{_VER}-fedora-gz", f"uImage-unvr-ea16-{_VER}-fedora-gz"),
-    (f"alpine-v2-ubnt-unvr-ea16-{_VER}.dtb", f"alpine-v2-ubnt-unvr-ea16-{_VER}-fedora.dtb"),
+    (
+        f"alpine-v2-ubnt-unvr-ea16-{_VER}.dtb",
+        f"alpine-v2-ubnt-unvr-ea16-{_VER}-fedora.dtb",
+    ),
 ]
 LOG = LOGS / "deploy-fedora-boot.log"
 

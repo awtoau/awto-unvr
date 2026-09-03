@@ -23,7 +23,12 @@ import sys
 import time
 import zlib
 
-from _repo import NPROC, REPO, kernel_build_out, kernel_build_ver  # -j28 host build parallelism (#146); self-locating repo root
+from _repo import (
+    NPROC,
+    REPO,
+    kernel_build_out,
+    kernel_build_ver,
+)  # -j28 host build parallelism (#146); self-locating repo root
 
 SRC = os.environ.get("AWTO_KERNEL_SRC", "/mnt/2tb/unvr-port-refs/linux-v7.3-fresh")
 PORT = os.environ.get("AWTO_KERNEL_PORT", "/mnt/2tb/unvr-port-refs/linux-alpine-v2")
@@ -266,21 +271,34 @@ def configure():
             # modules and vice versa, repeatedly, until this was fixed).
             *(
                 [
-                    "--enable", "KASAN",
-                    "--enable", "KASAN_GENERIC",
-                    "--enable", "KASAN_VMALLOC",
-                    "--enable", "PROVE_LOCKING",
-                    "--enable", "DEBUG_LOCKDEP",
-                    "--enable", "DEBUG_ATOMIC_SLEEP",
-                    "--enable", "DEBUG_SPINLOCK",
-                    "--enable", "DEBUG_MUTEXES",
-                    "--enable", "FTRACE",
-                    "--enable", "FUNCTION_TRACER",
-                    "--enable", "FUNCTION_GRAPH_TRACER",
-                    "--enable", "DYNAMIC_FTRACE",
+                    "--enable",
+                    "KASAN",
+                    "--enable",
+                    "KASAN_GENERIC",
+                    "--enable",
+                    "KASAN_VMALLOC",
+                    "--enable",
+                    "PROVE_LOCKING",
+                    "--enable",
+                    "DEBUG_LOCKDEP",
+                    "--enable",
+                    "DEBUG_ATOMIC_SLEEP",
+                    "--enable",
+                    "DEBUG_SPINLOCK",
+                    "--enable",
+                    "DEBUG_MUTEXES",
+                    "--enable",
+                    "FTRACE",
+                    "--enable",
+                    "FUNCTION_TRACER",
+                    "--enable",
+                    "FUNCTION_GRAPH_TRACER",
+                    "--enable",
+                    "DYNAMIC_FTRACE",
                     # #172 is a double-unmap - this is the tool built to catch
                     # exactly that class of bug directly, not just its symptom.
-                    "--enable", "DMA_API_DEBUG",
+                    "--enable",
+                    "DMA_API_DEBUG",
                     # Plain UBSAN, not UBSAN_TRAP - TRAP replaces the whole
                     # point of it (a descriptive report of exactly what
                     # overflowed/misaligned/etc.) with a bare crash and no
@@ -288,7 +306,8 @@ def configure():
                     # No KCSAN here: lib/Kconfig.kcsan depends on !KASAN,
                     # mutually exclusive with the KASAN above, not just an
                     # unmet dependency - would need a separate build.
-                    "--enable", "UBSAN",
+                    "--enable",
+                    "UBSAN",
                     # A lockup gets logged by default (softlockup_panic=0) -
                     # promote it to a real panic so pstore/ramoops actually
                     # captures it instead of a console message nobody sees.
@@ -296,12 +315,17 @@ def configure():
                     # HARDLOCKUP_PANIC (despite the near-identical name) is
                     # plain bool - verified against lib/Kconfig.debug
                     # directly rather than assuming they match.
-                    "--set-val", "BOOTPARAM_SOFTLOCKUP_PANIC", "1",
-                    "--enable", "BOOTPARAM_HARDLOCKUP_PANIC",
+                    "--set-val",
+                    "BOOTPARAM_SOFTLOCKUP_PANIC",
+                    "1",
+                    "--enable",
+                    "BOOTPARAM_HARDLOCKUP_PANIC",
                     # panic_on_warn is a runtime sysctl/boot param, not a
                     # Kconfig symbol - set `sysctl kernel.panic_on_warn=1`
                     # after boot instead of trying to bake it in here.
-                    "--set-str", "LOCALVERSION", "-kasan",
+                    "--set-str",
+                    "LOCALVERSION",
+                    "-kasan",
                 ]
                 if os.environ.get("AWTO_KASAN_BUILD")
                 else []
@@ -346,9 +370,11 @@ def configure():
             "CONFIG_DYNAMIC_FTRACE=y",
         ):
             if sym not in dotcfg:
-                log(f"FATAL: {sym} not set after olddefconfig - AWTO_KASAN_BUILD "
+                log(
+                    f"FATAL: {sym} not set after olddefconfig - AWTO_KASAN_BUILD "
                     f"requested it but it didn't land (renamed symbol? "
-                    f"unmet Kconfig dependency?)")
+                    f"unmet Kconfig dependency?)"
+                )
                 sys.exit(1)
     # al_eth.ko (OOT, loaded via modprobe post-boot) can depend on these as
     # modules just as well as built-in - only "enabled at all" matters, not
@@ -371,7 +397,9 @@ def configure():
     # exact bug this was added to fix.
     for sym in ("CONFIG_USB_STORAGE", "CONFIG_USB_UAS"):
         if f"{sym}=y" not in dotcfg:
-            log(f"FATAL: {sym} not built in (=y) after olddefconfig - #157 fix regressed")
+            log(
+                f"FATAL: {sym} not built in (=y) after olddefconfig - #157 fix regressed"
+            )
             sys.exit(1)
     log(
         "configured: Fedora base + ARCH_ALPINE + PCIE_AL_INTERNAL + phylink/sfp confirmed"

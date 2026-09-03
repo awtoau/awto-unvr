@@ -30,14 +30,24 @@ EXTRACT_DIR = REPO / "tmp" / "fedora-rootfs-extracted"
 ROOT_PASSWORD = "unvr"  # documented default, see docs/fedora-on-ssd.md
 
 EXCLUDES = [
-    "/proc/", "/sys/", "/dev/", "/run/", "/tmp/",
-    "/root/", "/home/", "/mnt/", "/media/",
+    "/proc/",
+    "/sys/",
+    "/dev/",
+    "/run/",
+    "/tmp/",
+    "/root/",
+    "/home/",
+    "/mnt/",
+    "/media/",
     "/boot/",  # owned by publish-fedora + ./dev.py flash, not this script
     "/efi/",  # ESP automount (unused - no UEFI boot on this board), live mount point
-    "/usr/lib/modules/", "/lib/modules/",  # owned by publish-fedora's sync_modules() - a plain
+    "/usr/lib/modules/",
+    "/lib/modules/",  # owned by publish-fedora's sync_modules() - a plain
     # dnf installroot has no OOT kernel modules, so --delete wiped the just-deployed tree
     # (confirmed live 2026-08-28: /lib/modules/7.1.8-dirty gone after the first real sync)
-    "/etc/machine-id", "/etc/hostname", "/etc/ssh/ssh_host_*",
+    "/etc/machine-id",
+    "/etc/hostname",
+    "/etc/ssh/ssh_host_*",
 ]
 
 LOG = log_path("sync-fedora-rootfs")
@@ -46,7 +56,9 @@ LOG = log_path("sync-fedora-rootfs")
 def log(m: str) -> None:
     from datetime import datetime, timezone
 
-    line = f"{datetime.now(timezone.utc).astimezone().isoformat(timespec='seconds')}  {m}"
+    line = (
+        f"{datetime.now(timezone.utc).astimezone().isoformat(timespec='seconds')}  {m}"
+    )
     print(line, flush=True)
     LOG.open("a").write(line + "\n")
 
@@ -60,7 +72,9 @@ def main() -> int:
     a = ap.parse_args()
 
     if not ROOTFS_TAR.is_file():
-        log(f"ABORT: no {ROOTFS_TAR} - run ./dev.py build-fedora-rootfs first", )
+        log(
+            f"ABORT: no {ROOTFS_TAR} - run ./dev.py build-fedora-rootfs first",
+        )
         return 1
 
     if EXTRACT_DIR.is_dir():
@@ -77,7 +91,11 @@ def main() -> int:
 
     host = subprocess.run(
         [sys.executable, "scripts/ssh-woomera.py", "--print"],
-        cwd=REPO, capture_output=True, text=True, timeout=15, check=False,
+        cwd=REPO,
+        capture_output=True,
+        text=True,
+        timeout=15,
+        check=False,
     ).stdout.strip()
     if not host:
         log("ABORT: woomera not reachable over SSH")
@@ -92,8 +110,16 @@ def main() -> int:
         # sudo: the extracted source tree is root-owned (see extraction
         # above) - a plain-user rsync can't read files it doesn't have
         # permission on.
-        "sudo", "-n", "sshpass", "-p", ROOT_PASSWORD, "rsync", "-a", "--delete",
-        "-e", ssh_opts,
+        "sudo",
+        "-n",
+        "sshpass",
+        "-p",
+        ROOT_PASSWORD,
+        "rsync",
+        "-a",
+        "--delete",
+        "-e",
+        ssh_opts,
     ]
     for e in EXCLUDES:
         rsync_cmd += ["--exclude", e]
@@ -103,9 +129,13 @@ def main() -> int:
 
     if not a.dry_run:
         log("DRY RUN first (always) - review before the real sync")
-        preview = subprocess.run(rsync_cmd[:-1] + ["-n"] + rsync_cmd[-1:], capture_output=True, text=True)
+        preview = subprocess.run(
+            rsync_cmd[:-1] + ["-n"] + rsync_cmd[-1:], capture_output=True, text=True
+        )
         changed = [l for l in preview.stdout.splitlines() if l and not l.endswith("/")]
-        log(f"dry run: {len(changed)} file(s) would change (see {LOG.relative_to(REPO)} for full list)")
+        log(
+            f"dry run: {len(changed)} file(s) would change (see {LOG.relative_to(REPO)} for full list)"
+        )
         LOG.open("a").write(preview.stdout)
         if not a.yes:
             resp = input(f"Proceed with the real sync onto root@{host} now? [y/N] ")
@@ -118,7 +148,9 @@ def main() -> int:
     if rc != 0:
         log(f"ABORT: rsync failed (rc={rc})")
         return rc
-    log("DONE - rootfs synced. Kernel/modules already fresh from ./dev.py publish-fedora.")
+    log(
+        "DONE - rootfs synced. Kernel/modules already fresh from ./dev.py publish-fedora."
+    )
     return 0
 
 

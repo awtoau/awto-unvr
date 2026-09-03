@@ -80,6 +80,7 @@ def run(cmd: list[str], timeout: float = 5.0) -> str | None:
 
 # --- SoC-internal registers, docs/hardware.md MMIO map -----------------
 
+
 def dump_cpu() -> None:
     log.info("--- CPU ---")
     out = run(["uname", "-a"])
@@ -148,9 +149,12 @@ def dump_pll() -> None:
 
 def dump_bootstrap() -> None:
     # PBS boot_strap, same register scripts/read-ddr-bootstrap.py decodes fully.
-    dump_regs("PBS bootstrap (raw - see read-ddr-bootstrap.py for decode)", [
-        ("boot_strap", 0xFD8A8110),
-    ])
+    dump_regs(
+        "PBS bootstrap (raw - see read-ddr-bootstrap.py for decode)",
+        [
+            ("boot_strap", 0xFD8A8110),
+        ],
+    )
 
 
 def dump_ddr_sram() -> None:
@@ -207,6 +211,7 @@ def dump_pcie_ext0_gpio() -> None:
 
 # --- NOR/MTD ------------------------------------------------------------
 
+
 def dump_mtd() -> None:
     log.info("--- MTD / NOR partitions ---")
     out = run(["cat", "/proc/mtd"])
@@ -215,7 +220,14 @@ def dump_mtd() -> None:
     log.info("%s", out.strip())
     # Checksum only the small partitions (u-boot/env/factory/eeprom/cksum) -
     # skip kernel/config/rootfs-scale ones, this is a snapshot not a backup.
-    small_labels = {"u-boot", "u-boot-env", "u-boot-env-redundant", "factory", "eeprom", "cksum"}
+    small_labels = {
+        "u-boot",
+        "u-boot-env",
+        "u-boot-env-redundant",
+        "factory",
+        "eeprom",
+        "cksum",
+    }
     for line in out.splitlines()[1:]:
         m = re.match(r'(mtd\d+):\s+(\S+)\s+\S+\s+"(.+)"', line)
         if not m:
@@ -229,6 +241,7 @@ def dump_mtd() -> None:
 
 
 # --- PCI / USB / SCSI trees ------------------------------------------------
+
 
 def dump_pci() -> None:
     log.info("--- PCI tree (lspci -vv) ---")
@@ -359,7 +372,9 @@ def dump_i2c_devices() -> None:
         name_f = hwmon / "name"
         if name_f.exists() and "adt7475" in name_f.read_text():
             log.info("ADT7475 hwmon: %s", hwmon)
-            for f in sorted(hwmon.glob("temp*_input")) + sorted(hwmon.glob("fan*_input")):
+            for f in sorted(hwmon.glob("temp*_input")) + sorted(
+                hwmon.glob("fan*_input")
+            ):
                 try:
                     log.info("  %-16s %s", f.name, f.read_text().strip())
                 except OSError:
@@ -373,7 +388,9 @@ def dump_i2c_devices() -> None:
 
     # PCA9575 GPIO expanders @ 0x20/0x21/0x29
     for addr in ("0020", "0021", "0029"):
-        gc = run(["find", "/sys/bus/i2c/devices", "-iname", f"*{addr}*", "-path", "*gpio*"])
+        gc = run(
+            ["find", "/sys/bus/i2c/devices", "-iname", f"*{addr}*", "-path", "*gpio*"]
+        )
         if gc:
             log.info("PCA9575 @0x%s gpiochip node(s):\n%s", addr[-2:], gc.strip())
 
@@ -383,9 +400,12 @@ def dump_i2c_devices() -> None:
 # docs/gpio-map.md per-ball table - (label, active_low, muxed_to_gpio).
 # Keep in sync with scripts/gpio-top.py's PIN_INFO (same source doc).
 GPIO_PIN_LABELS = {
-    0: ("SFP 25G speed LED", True), 31: ("ulogo_blue LED", True),
-    33: ("rps_prnt (RPS present)", False), 34: ("12v_lp (RPS 12V sense)", False),
-    37: ("ulogo_white LED", True), 38: ("reset button", True),
+    0: ("SFP 25G speed LED", True),
+    31: ("ulogo_blue LED", True),
+    33: ("rps_prnt (RPS present)", False),
+    34: ("12v_lp (RPS 12V sense)", False),
+    37: ("ulogo_white LED", True),
+    38: ("reset button", True),
     42: ("hdd force-power-on-wa", False),
 }
 
@@ -395,9 +415,13 @@ def dump_english_decode() -> None:
 
     rev = read32(PCIE_EXT0_BASE + 0x16C)
     if rev is not None:
-        log.info("PCIe ext0 controller revision: dev_id_val=%d -> %s",
-                  (rev >> 16) & 0xFFFF,
-                  {0: "REV_ID_2", 2: "REV_ID_3", 4: "REV_ID_4"}.get((rev >> 16) & 0xFFFF, "?"))
+        log.info(
+            "PCIe ext0 controller revision: dev_id_val=%d -> %s",
+            (rev >> 16) & 0xFFFF,
+            {0: "REV_ID_2", 2: "REV_ID_3", 4: "REV_ID_4"}.get(
+                (rev >> 16) & 0xFFFF, "?"
+            ),
+        )
 
     ltssm_val = read32(PCIE_EXT0_BASE + 0x2080)
     if ltssm_val is not None:
@@ -407,30 +431,48 @@ def dump_english_decode() -> None:
 
     tb = read32(PCIE_EXT0_BASE + 0x30)
     if tb is not None:
-        log.info("PCIe ext0 CFG_TARGET_BUS: mask=0x%x target_bus=%d",
-                  tb & 0xFF, (tb >> 8) & 0xFF)
+        log.info(
+            "PCIe ext0 CFG_TARGET_BUS: mask=0x%x target_bus=%d",
+            tb & 0xFF,
+            (tb >> 8) & 0xFF,
+        )
 
     cmd = read32(PCIE_EXT0_BASE + 0x10004)
     if cmd is not None:
         c = cmd & 0xFFFF
-        flags = [n for bit, n in ((0, "IO"), (1, "Mem"), (2, "BusMaster")) if c & (1 << bit)]
+        flags = [
+            n for bit, n in ((0, "IO"), (1, "Mem"), (2, "BusMaster")) if c & (1 << bit)
+        ]
         log.info("PCIe ext0 CFGHDR command: %s", "|".join(flags) or "(none enabled)")
 
     spec = read32(0xF0090004)
     s3 = read32(0xF0094000)
     s4 = read32(0xF0095000)
     if spec is not None:
-        log.info("CCU speculation_ctrl=0x%x (7 = speculative fetches disabled from masters)", spec)
+        log.info(
+            "CCU speculation_ctrl=0x%x (7 = speculative fetches disabled from masters)",
+            spec,
+        )
     if s3 is not None:
-        log.info("CCU cluster0 snoop: %s (bit0=%d)", "ENABLED" if s3 & 1 else "disabled", s3 & 1)
+        log.info(
+            "CCU cluster0 snoop: %s (bit0=%d)",
+            "ENABLED" if s3 & 1 else "disabled",
+            s3 & 1,
+        )
     if s4 is not None:
-        log.info("CCU cluster1 snoop: %s (bit0=%d)", "ENABLED" if s4 & 1 else "disabled", s4 & 1)
+        log.info(
+            "CCU cluster1 snoop: %s (bit0=%d)",
+            "ENABLED" if s4 & 1 else "disabled",
+            s4 & 1,
+        )
 
     gctlr = read32(0xF0200000)
     if gctlr is not None:
-        log.info("GIC-v3 GICD_CTLR: Group0=%s Group1=%s",
-                  "enabled" if gctlr & 1 else "disabled",
-                  "enabled" if gctlr & 2 else "disabled")
+        log.info(
+            "GIC-v3 GICD_CTLR: Group0=%s Group1=%s",
+            "enabled" if gctlr & 1 else "disabled",
+            "enabled" if gctlr & 2 else "disabled",
+        )
 
     # Bootstrap strap - reuse read-ddr-bootstrap.py's real decode table,
     # loaded by path since its filename has a dash (not import-able directly).
@@ -448,9 +490,12 @@ def dump_english_decode() -> None:
             log.info(
                 "Bootstrap: cpu_pll=%.0fMHz ddr_pll=%.0fMHz (%.0f MT/s) sb_pll=%.0fMHz "
                 "boot_device=%s debug_mode=%s",
-                d["cpu_pll_freq"] / 1e6, d["ddr_pll_freq"] / 1e6,
-                d["ddr_pll_freq"] * 2 / 1e6, d["sb_pll_freq"] / 1e6,
-                d["boot_device"], d["debug_mode"],
+                d["cpu_pll_freq"] / 1e6,
+                d["ddr_pll_freq"] / 1e6,
+                d["ddr_pll_freq"] * 2 / 1e6,
+                d["sb_pll_freq"] / 1e6,
+                d["boot_device"],
+                d["debug_mode"],
             )
     except Exception as e:
         log.warning("bootstrap decode failed: %s", e)

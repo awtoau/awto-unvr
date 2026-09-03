@@ -78,13 +78,17 @@ LOG = log_path("serial-break")
 
 
 def log(m: str) -> None:
-    line = f"{datetime.now(timezone.utc).astimezone().isoformat(timespec='seconds')}  {m}"
+    line = (
+        f"{datetime.now(timezone.utc).astimezone().isoformat(timespec='seconds')}  {m}"
+    )
     print(line, flush=True)
     LOG.open("a").write(line + "\n")
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     ap.add_argument(
         "--sysrq",
         metavar="LETTER",
@@ -104,7 +108,9 @@ def main() -> int:
 
     fd = os.open(str(dev.resolve()), os.O_RDWR | os.O_NOCTTY)
     try:
-        log(f"opened {dev} (real path {dev.resolve()}) as a second fd -- termios untouched")
+        log(
+            f"opened {dev} (real path {dev.resolve()}) as a second fd -- termios untouched"
+        )
         fcntl.ioctl(fd, TIOCSBRK)
         log(f"BREAK asserted, holding {BREAK_HOLD_S}s")
         time.sleep(BREAK_HOLD_S)

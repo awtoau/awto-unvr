@@ -347,7 +347,11 @@ def check_local_route(
         "local bind selection",
         ok,
         f"binding to {ip}%{iface} (speed={speed_str}) for traffic to {target_ip}"
-        + ("" if ok else " (NOT a 10G-capable local NIC - result below is not a real 10G test)"),
+        + (
+            ""
+            if ok
+            else " (NOT a 10G-capable local NIC - result below is not a real 10G test)"
+        ),
     )
     return ip, iface
 

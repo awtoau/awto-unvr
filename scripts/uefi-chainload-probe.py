@@ -51,7 +51,8 @@ from _power import power_cycle_verified  # noqa: E402
 import _console  # noqa: E402
 
 _rbd_spec = importlib.util.spec_from_file_location(
-    "_ram_boot_deploy", REPO / "scripts/ram-boot-deploy.py")
+    "_ram_boot_deploy", REPO / "scripts/ram-boot-deploy.py"
+)
 _rbd = importlib.util.module_from_spec(_rbd_spec)
 _rbd_spec.loader.exec_module(_rbd)
 
@@ -88,26 +89,41 @@ PROBE_TIMEOUT_S = 60
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description=__doc__,
-                                  formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--target", choices=["DEBUG", "RELEASE", "NOOPT"], default="DEBUG",
-                     help="must match the --target used with ./dev.py build-uefi-p0")
-    ap.add_argument("--fd", type=Path, default=None,
-                     help="override the FD path directly instead of deriving it from --target")
-    ap.add_argument("--no-hotkey", action="store_true",
-                     help="don't race the 's' hotkey - just watch BDS's automatic "
-                          "phase land on Boot0000's own menu (the pre-hotkey-fix behavior)")
+    ap = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+    ap.add_argument(
+        "--target",
+        choices=["DEBUG", "RELEASE", "NOOPT"],
+        default="DEBUG",
+        help="must match the --target used with ./dev.py build-uefi-p0",
+    )
+    ap.add_argument(
+        "--fd",
+        type=Path,
+        default=None,
+        help="override the FD path directly instead of deriving it from --target",
+    )
+    ap.add_argument(
+        "--no-hotkey",
+        action="store_true",
+        help="don't race the 's' hotkey - just watch BDS's automatic "
+        "phase land on Boot0000's own menu (the pre-hotkey-fix behavior)",
+    )
     args = ap.parse_args()
     if args.fd is None:
         args.fd = EDK2_OUT / f"Build/UNVR/{args.target}_GCC/FV/UNVR.fd"
 
     if not args.fd.exists():
-        print(f"FATAL: {args.fd} missing - run "
-              f"'./dev.py build-uefi-p0 --target {args.target}' first")
+        print(
+            f"FATAL: {args.fd} missing - run "
+            f"'./dev.py build-uefi-p0 --target {args.target}' first"
+        )
         return 1
     local_crc = zlib.crc32(args.fd.read_bytes()) & 0xFFFFFFFF
-    print(f"UNVR.fd: {args.fd} ({args.fd.stat().st_size} bytes, "
-          f"crc32=0x{local_crc:08x})")
+    print(
+        f"UNVR.fd: {args.fd} ({args.fd.stat().st_size} bytes, crc32=0x{local_crc:08x})"
+    )
 
     _rbd.ensure_tftpd()
     server_ip = detect_server_ip()
@@ -115,7 +131,8 @@ def main() -> int:
 
     print("starting catch-uboot.py to win the autoboot race")
     catch = subprocess.Popen(
-        [sys.executable, "scripts/catch-uboot.py", "--seconds", "60"], cwd=REPO)
+        [sys.executable, "scripts/catch-uboot.py", "--seconds", "60"], cwd=REPO
+    )
     power_cycle_verified(log=print)
     try:
         rc = catch.wait(timeout=70)
@@ -128,21 +145,38 @@ def main() -> int:
         return 1
     print("U-Boot prompt reached, autoboot stopped\n")
 
-    _rbd.run_devpy("--expect", "ALPINE_UBNT_NAS_ALL>", "--timeout", "8",
-                    f"setenv ipaddr {_rbd.IPADDR}")
-    _rbd.run_devpy("--expect", "ALPINE_UBNT_NAS_ALL>", "--timeout", "8",
-                    f"setenv serverip {server_ip}")
+    _rbd.run_devpy(
+        "--expect",
+        "ALPINE_UBNT_NAS_ALL>",
+        "--timeout",
+        "8",
+        f"setenv ipaddr {_rbd.IPADDR}",
+    )
+    _rbd.run_devpy(
+        "--expect",
+        "ALPINE_UBNT_NAS_ALL>",
+        "--timeout",
+        "8",
+        f"setenv serverip {server_ip}",
+    )
     try:
         _rbd.tftp_and_verify(args.fd, FD_ADDR)
     except (RuntimeError, subprocess.TimeoutExpired) as e:
         print(f"FATAL: tftp of UNVR.fd failed: {e}")
         return 1
 
-    out = _rbd.run_devpy("--expect", "ALPINE_UBNT_NAS_ALL>", "--timeout", "10",
-                          f"crc32 {FD_ADDR} ${{filesize}}")
+    out = _rbd.run_devpy(
+        "--expect",
+        "ALPINE_UBNT_NAS_ALL>",
+        "--timeout",
+        "10",
+        f"crc32 {FD_ADDR} ${{filesize}}",
+    )
     if f"{local_crc:08x}".lower() not in out.lower():
-        print(f"FATAL: on-device crc32 does not match local 0x{local_crc:08x} "
-              f"- refusing to jump into a corrupted transfer\n{out}")
+        print(
+            f"FATAL: on-device crc32 does not match local 0x{local_crc:08x} "
+            f"- refusing to jump into a corrupted transfer\n{out}"
+        )
         return 1
     print(f"crc32 verified: 0x{local_crc:08x} matches\n")
 
@@ -161,7 +195,11 @@ def main() -> int:
         except TimeoutError:
             pass
         now = time.monotonic() - start
-        if (not args.no_hotkey) and now < HOTKEY_SPAM_S and now - last_key_send > HOTKEY_INTERVAL_S:
+        if (
+            (not args.no_hotkey)
+            and now < HOTKEY_SPAM_S
+            and now - last_key_send > HOTKEY_INTERVAL_S
+        ):
             s.sendall(b"s")
             last_key_send = now
         text = buf.decode(errors="replace")
@@ -177,9 +215,11 @@ def main() -> int:
     if SUCCESS_PATTERN in text:
         print("\nRESULT: SUCCESS - reached the real UEFI Interactive Shell prompt.")
         return 0
-    print(f"\nRESULT: no response within {PROBE_TIMEOUT_S}s - likely hung. "
-          "Power-cycle (./dev.py power-cycle) to return to normal boot; "
-          "this never touched flash.")
+    print(
+        f"\nRESULT: no response within {PROBE_TIMEOUT_S}s - likely hung. "
+        "Power-cycle (./dev.py power-cycle) to return to normal boot; "
+        "this never touched flash."
+    )
     return 1
 
 

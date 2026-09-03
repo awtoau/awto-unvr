@@ -180,11 +180,20 @@ def sync_modules() -> None:
     # tree itself, not just the marker - covers a real gap in #161's own
     # fix too, not only #162's addition.
     rc = subprocess.run(
-        ["sshpass", "-p", ROOT_PASSWORD, "ssh",
-         "-o", "StrictHostKeyChecking=accept-new",
-         "-o", "PreferredAuthentications=password",
-         "-o", "PubkeyAuthentication=no",
-         f"root@{host}", "sync"],
+        [
+            "sshpass",
+            "-p",
+            ROOT_PASSWORD,
+            "ssh",
+            "-o",
+            "StrictHostKeyChecking=accept-new",
+            "-o",
+            "PreferredAuthentications=password",
+            "-o",
+            "PubkeyAuthentication=no",
+            f"root@{host}",
+            "sync",
+        ],
         check=False,
     ).returncode
     if rc != 0:
@@ -206,9 +215,13 @@ def _kernel_banner() -> str:
     out = subprocess.run(
         ["strings", "-a", str(BUILD_IMAGE)], capture_output=True, text=True, check=True
     ).stdout
-    matches = [line.strip() for line in out.splitlines() if line.startswith("Linux version")]
+    matches = [
+        line.strip() for line in out.splitlines() if line.startswith("Linux version")
+    ]
     if not matches:
-        sys.exit(f"ABORT: no 'Linux version' banner found in {BUILD_IMAGE} - can't record #162 provenance")
+        sys.exit(
+            f"ABORT: no 'Linux version' banner found in {BUILD_IMAGE} - can't record #162 provenance"
+        )
     return max(matches, key=len)
 
 
@@ -229,10 +242,16 @@ def _deploy_kernel_module_check(host: str) -> None:
         f"synced_at={datetime.now(timezone.utc).astimezone().isoformat(timespec='seconds')}\n"
     )
     ssh_base = [
-        "sshpass", "-p", ROOT_PASSWORD, "ssh",
-        "-o", "StrictHostKeyChecking=accept-new",
-        "-o", "PreferredAuthentications=password",
-        "-o", "PubkeyAuthentication=no",
+        "sshpass",
+        "-p",
+        ROOT_PASSWORD,
+        "ssh",
+        "-o",
+        "StrictHostKeyChecking=accept-new",
+        "-o",
+        "PreferredAuthentications=password",
+        "-o",
+        "PubkeyAuthentication=no",
         f"root@{host}",
     ]
     # Piping content via `input=` through an sshpass-wrapped ssh landed as a
@@ -247,11 +266,20 @@ def _deploy_kernel_module_check(host: str) -> None:
         marker_path = Path(tf.name)
     try:
         rc = subprocess.run(
-            ["sshpass", "-p", ROOT_PASSWORD, "scp",
-             "-o", "StrictHostKeyChecking=accept-new",
-             "-o", "PreferredAuthentications=password",
-             "-o", "PubkeyAuthentication=no",
-             str(marker_path), f"root@{host}:/lib/modules/{KVER}/.deployed-from"],
+            [
+                "sshpass",
+                "-p",
+                ROOT_PASSWORD,
+                "scp",
+                "-o",
+                "StrictHostKeyChecking=accept-new",
+                "-o",
+                "PreferredAuthentications=password",
+                "-o",
+                "PubkeyAuthentication=no",
+                str(marker_path),
+                f"root@{host}:/lib/modules/{KVER}/.deployed-from",
+            ],
             check=False,
         ).returncode
     finally:
@@ -266,11 +294,20 @@ def _deploy_kernel_module_check(host: str) -> None:
         (unit, "/etc/systemd/system/check-kernel-module-match.service"),
     ):
         rc = subprocess.run(
-            ["sshpass", "-p", ROOT_PASSWORD, "scp",
-             "-o", "StrictHostKeyChecking=accept-new",
-             "-o", "PreferredAuthentications=password",
-             "-o", "PubkeyAuthentication=no",
-             str(src), f"root@{host}:{dst}"],
+            [
+                "sshpass",
+                "-p",
+                ROOT_PASSWORD,
+                "scp",
+                "-o",
+                "StrictHostKeyChecking=accept-new",
+                "-o",
+                "PreferredAuthentications=password",
+                "-o",
+                "PubkeyAuthentication=no",
+                str(src),
+                f"root@{host}:{dst}",
+            ],
             check=False,
         ).returncode
         if rc != 0:
@@ -285,11 +322,16 @@ def _deploy_kernel_module_check(host: str) -> None:
         check=False,
     ).returncode
     if check != 0:
-        sys.exit(f"ABORT: #162 marker landed but is empty/malformed on woomera - refusing to continue")
+        sys.exit(
+            f"ABORT: #162 marker landed but is empty/malformed on woomera - refusing to continue"
+        )
     rc = subprocess.run(
-        [*ssh_base, "chmod +x /usr/local/bin/check-kernel-module-match.py "
-                    "&& systemctl daemon-reload "
-                    "&& systemctl enable check-kernel-module-match.service"],
+        [
+            *ssh_base,
+            "chmod +x /usr/local/bin/check-kernel-module-match.py "
+            "&& systemctl daemon-reload "
+            "&& systemctl enable check-kernel-module-match.service",
+        ],
         check=False,
     ).returncode
     if rc != 0:

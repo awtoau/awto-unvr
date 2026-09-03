@@ -40,23 +40,47 @@ def field(reg: int, spec: tuple[int, int]) -> int:
 
 # al_bootstrap_cpu_pll_freq_get(), dev_id<=ALPINE_V2 table (index = CPU_PLL field)
 CPU_PLL_TBL = [
-    0, 1_000_000_000, 1_400_000_000, 1_500_000_000, 1_600_000_000,
-    1_700_000_000, 1_800_000_000, 1_900_000_000, 2_100_000_000, 2_200_000_000,
-    2_300_000_000, 2_400_000_000, 2_500_000_000, 2_600_000_000, 2_700_000_000,
+    0,
+    1_000_000_000,
+    1_400_000_000,
+    1_500_000_000,
+    1_600_000_000,
+    1_700_000_000,
+    1_800_000_000,
+    1_900_000_000,
+    2_100_000_000,
+    2_200_000_000,
+    2_300_000_000,
+    2_400_000_000,
+    2_500_000_000,
+    2_600_000_000,
+    2_700_000_000,
     2_000_000_000,
 ]
 
 # al_bootstrap_ddr_pll_freq_get(), Alpine V2 arm (index = NB/DDR_PLL field)
 DDR_PLL_TBL = [
-    0, 1_066_666_666, 666_666_666, 1_300_000_000,
-    933_333_333, 1_050_000_000, 1_200_000_000, 800_000_000,
+    0,
+    1_066_666_666,
+    666_666_666,
+    1_300_000_000,
+    933_333_333,
+    1_050_000_000,
+    1_200_000_000,
+    800_000_000,
 ]
 
 SB_CLK_TBL = [250_000_000, 375_000_000, 428_000_000, 500_000_000]
 
 BOOT_DEV_NAMES = [
-    "UART-CLI", "UART(2000000bps)", "NAND", "reserved",
-    "UART(115200bps)", "SPI(M3)", "UART(1000000bps)", "SPI(M0)",
+    "UART-CLI",
+    "UART(2000000bps)",
+    "NAND",
+    "reserved",
+    "UART(115200bps)",
+    "SPI(M3)",
+    "UART(1000000bps)",
+    "SPI(M0)",
 ]
 
 
@@ -96,11 +120,21 @@ def main() -> int:
         return 2
 
     d = decode(reg)
-    print(f"boot_strap reg = 0x{reg:08x}  (PBS 0x{PBS_BASE:08x} + 0x{BOOT_STRAP_OFF:03x})")
-    for name in ("pll_ref_clk_freq", "cpu_pll_freq", "ddr_pll_freq", "sb_pll_freq", "sb_clk_freq"):
+    print(
+        f"boot_strap reg = 0x{reg:08x}  (PBS 0x{PBS_BASE:08x} + 0x{BOOT_STRAP_OFF:03x})"
+    )
+    for name in (
+        "pll_ref_clk_freq",
+        "cpu_pll_freq",
+        "ddr_pll_freq",
+        "sb_pll_freq",
+        "sb_clk_freq",
+    ):
         hz = d[name]
         print(f"  {name:<18} {hz:>12d} Hz  ({hz / 1e6:.1f} MHz)")
-    print(f"  ddr data rate      {d['ddr_pll_freq'] * 2 / 1e6:.0f} MT/s  (DDR = 2x clock)")
+    print(
+        f"  ddr data rate      {d['ddr_pll_freq'] * 2 / 1e6:.0f} MT/s  (DDR = 2x clock)"
+    )
     print(f"  boot_device        {d['boot_device']}")
     print(f"  debug_mode         {d['debug_mode']}")
     print(f"  cpu_exist field    {d['cpu_exist_field']}  (0=1 core, 1=2, 3=4)")

@@ -28,7 +28,8 @@ os.environ.setdefault("AWTO_ALLOW_DIRECT_SCRIPT", "1")
 from _power import power_cycle_verified  # noqa: E402
 
 _rbd_spec = importlib.util.spec_from_file_location(
-    "_ram_boot_deploy", REPO / "scripts/ram-boot-deploy.py")
+    "_ram_boot_deploy", REPO / "scripts/ram-boot-deploy.py"
+)
 _rbd = importlib.util.module_from_spec(_rbd_spec)
 _rbd_spec.loader.exec_module(_rbd)
 
@@ -40,7 +41,8 @@ COMMANDS = ["version", "help", "help bootm", "printenv", "bdinfo", "help go"]
 def main() -> int:
     print("starting catch-uboot.py to win the autoboot race")
     catch = subprocess.Popen(
-        [sys.executable, "scripts/catch-uboot.py", "--seconds", "60"], cwd=REPO)
+        [sys.executable, "scripts/catch-uboot.py", "--seconds", "60"], cwd=REPO
+    )
     power_cycle_verified(log=print)
     try:
         rc = catch.wait(timeout=70)

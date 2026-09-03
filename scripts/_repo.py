@@ -124,7 +124,9 @@ def kernel_build_out(kasan: bool | None = None) -> Path:
 def ea16_build_out() -> Path:
     """Same single-source-of-truth reasoning as kernel_build_out(), for
     build-linux-ea16.py's own output dir instead of the fedora one."""
-    return Path(os.environ.get("AWTO_KERNEL_OUT", "/mnt/2tb/unvr-port-refs/build-out-ea16"))
+    return Path(
+        os.environ.get("AWTO_KERNEL_OUT", "/mnt/2tb/unvr-port-refs/build-out-ea16")
+    )
 
 
 def kernel_src() -> Path:
@@ -132,7 +134,9 @@ def kernel_src() -> Path:
     tree this project tracks forward against torvalds/linux mainline
     (docs/build.md). Single source of truth so kernel_build_ver() below
     reads the same tree the actual build ran against."""
-    return Path(os.environ.get("AWTO_KERNEL_SRC", "/mnt/2tb/unvr-port-refs/linux-v7.3-fresh"))
+    return Path(
+        os.environ.get("AWTO_KERNEL_SRC", "/mnt/2tb/unvr-port-refs/linux-v7.3-fresh")
+    )
 
 
 def kernel_build_ver() -> str:

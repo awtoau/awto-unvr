@@ -51,8 +51,12 @@ def log(msg: str) -> None:
         f.write(msg + "\n")
 
 
-def run(cmd: list[str], cwd: Path | None = None, env: dict | None = None,
-        timeout: float = 300) -> None:
+def run(
+    cmd: list[str],
+    cwd: Path | None = None,
+    env: dict | None = None,
+    timeout: float = 300,
+) -> None:
     log("+ " + " ".join(str(c) for c in cmd))
     p = subprocess.run(cmd, cwd=cwd, env=env, timeout=timeout)
     if p.returncode != 0:
@@ -62,23 +66,41 @@ def run(cmd: list[str], cwd: Path | None = None, env: dict | None = None,
 def ensure_edk2() -> None:
     if not (EDK2_OUT / ".git").exists():
         log(f"cloning edk2 @ {EDK2_TAG} into {EDK2_OUT}")
-        run(["git", "clone", "--depth", "1", "--branch", EDK2_TAG,
-             "https://github.com/tianocore/edk2.git", str(EDK2_OUT)],
-            timeout=180)
+        run(
+            [
+                "git",
+                "clone",
+                "--depth",
+                "1",
+                "--branch",
+                EDK2_TAG,
+                "https://github.com/tianocore/edk2.git",
+                str(EDK2_OUT),
+            ],
+            timeout=180,
+        )
     for sm in SUBMODULES:
         if not any((EDK2_OUT / sm).iterdir()) if (EDK2_OUT / sm).is_dir() else True:
-            run(["git", "submodule", "update", "--init", "--depth", "1", sm],
-                cwd=EDK2_OUT, timeout=120)
+            run(
+                ["git", "submodule", "update", "--init", "--depth", "1", sm],
+                cwd=EDK2_OUT,
+                timeout=120,
+            )
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description=__doc__,
-                                  formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--target", choices=["DEBUG", "RELEASE", "NOOPT"], default="DEBUG",
-                     help="EDK2 build target - RELEASE compiles out ASSERT() "
-                          "(docs/uefi.md P0 status: useful for checking whether "
-                          "an ASSERT-only failure is masking an otherwise-working "
-                          "boot path)")
+    ap = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+    ap.add_argument(
+        "--target",
+        choices=["DEBUG", "RELEASE", "NOOPT"],
+        default="DEBUG",
+        help="EDK2 build target - RELEASE compiles out ASSERT() "
+        "(docs/uefi.md P0 status: useful for checking whether "
+        "an ASSERT-only failure is masking an otherwise-working "
+        "boot path)",
+    )
     args = ap.parse_args()
 
     ensure_edk2()
@@ -95,11 +117,17 @@ def main() -> int:
 
     target_txt = EDK2_OUT / "Conf/target.txt"
     if not target_txt.exists():
-        run(["bash", "-c", f"cd {EDK2_OUT} && source ./edksetup.sh BaseTools"],
-            env=env, timeout=60)
+        run(
+            ["bash", "-c", f"cd {EDK2_OUT} && source ./edksetup.sh BaseTools"],
+            env=env,
+            timeout=60,
+        )
     text = target_txt.read_text()
     for old, new in (
-        (r"ACTIVE_PLATFORM.*", "ACTIVE_PLATFORM       = Platform/Ubiquiti/UNVR/Unvr.dsc"),
+        (
+            r"ACTIVE_PLATFORM.*",
+            "ACTIVE_PLATFORM       = Platform/Ubiquiti/UNVR/Unvr.dsc",
+        ),
         (r"TARGET_ARCH.*", "TARGET_ARCH           = AARCH64"),
         (r"TOOL_CHAIN_TAG.*", "TOOL_CHAIN_TAG        = GCC"),
     ):
