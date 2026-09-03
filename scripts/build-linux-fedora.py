@@ -236,6 +236,22 @@ def configure():
             "USB_STORAGE",
             "--enable",
             "USB_UAS",
+            # USB-attached ethernet (the dock's ports: RTL8153 0bda:8153 and
+            # Lenovo ThinkPad Lan 17ef:a359, both r8152-family; CDC_ETHER/NCM
+            # cover the standard-class ones). localmodconfig above drops these
+            # by construction - it only keeps what the BUILD host's running
+            # kernel had loaded, which never includes a driver for a device
+            # attached to the target box. Confirmed live 2026-09-03: both dock
+            # ethernet devices enumerated on USB but had no driver at all
+            # ("modprobe: FATAL: Module r8152 not found"), so no interfaces.
+            "--module",
+            "USB_USBNET",
+            "--module",
+            "USB_RTL8152",
+            "--module",
+            "USB_NET_CDCETHER",
+            "--module",
+            "USB_NET_CDC_NCM",
             # DIAGNOSTIC KASAN build for #131 - disabled by default so the
             # normal build (matching the flashed NAND kernel/modules) stays
             # the daily-driver. Re-enable via AWTO_KASAN_BUILD=1 to continue
@@ -298,6 +314,11 @@ def configure():
         "CONFIG_ARCH_ALPINE=y",
         "CONFIG_PCIE_AL_INTERNAL=y",
         "CONFIG_PCIE_AL=y",
+        # USB ethernet (dock ports) - localmodconfig drops these every run,
+        # so verify the force-enable above actually survived rather than
+        # finding out from a box with no USB network interfaces again.
+        "CONFIG_USB_RTL8152=m",
+        "CONFIG_USB_USBNET=m",
     ):
         if sym not in dotcfg:
             log(f"FATAL: {sym} not set after olddefconfig")
