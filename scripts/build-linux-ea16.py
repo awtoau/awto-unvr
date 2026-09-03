@@ -218,7 +218,10 @@ def configure():
     run(args)
     run(["make", "-C", SRC, f"O={KOUT}", "olddefconfig"])
     dotcfg = pathlib.Path(os.path.join(KOUT, ".config")).read_text()
-    for sym in ("CONFIG_PCIE_AL_INTERNAL=y", "CONFIG_PCIE_AL=y"):
+    # AHCI_ALPINE comes from unvr_defconfig; check it survived olddefconfig -
+    # its absence means patches/ahci-alpine-per-port-msix.patch isn't applied
+    # in AWTO_KERNEL_SRC and SATA is silently back on shared INTx (#92).
+    for sym in ("CONFIG_PCIE_AL_INTERNAL=y", "CONFIG_PCIE_AL=y", "CONFIG_AHCI_ALPINE=y"):
         if sym not in dotcfg:
             log(f"FATAL: {sym} not set after olddefconfig")
             sys.exit(1)

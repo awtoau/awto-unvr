@@ -9,7 +9,12 @@ Kernel target is `/mnt/2tb/unvr-port-refs/linux-v7.3-fresh`, tracking
 `torvalds/linux` mainline directly (this repo's own methodology: pull
 forward, port whatever breaks). Board support (DTS, `pcie-al-internal.c`,
 the `pcie-al.c` DBI fix, `unvr_defconfig`) lives as real commits in that
-tree's own git history - not as patches applied by any script here. The
+tree's own git history - not as patches applied by any script here.
+`patches/*.patch` are staging artifacts for that: `git apply` + commit them
+in the kernel tree, they are not applied by a build.
+`patches/ahci-alpine-per-port-msix.patch` (`drivers/ata/ahci_alpine.c` +
+Kconfig/Makefile/`ahci.c`/`unvr_defconfig`) is required - both kernel build
+scripts FATAL if `CONFIG_AHCI_ALPINE=y` is missing (#92). The
 6.12/6.18/7.1-specific scripts (`build-linux-612-ea16.py`, `build-linux-618-ea16.py`, the old
 `build-linux-71-ea16.py`/`build-linux-71-fedora.py`) are retired to
 `debris/scripts/` - not runnable via `dev.py`, kept for history only.
