@@ -28,13 +28,13 @@ CONFIG_HUSH_PARSER=y
 # Kernel cmdline — bootm fixes this into the DTB's /chosen/bootargs. Matches the
 # live /proc/cmdline (rootfs on SSD sda2 by PARTUUID). Without it: no root -> panic.
 CONFIG_USE_BOOTARGS=y
-CONFIG_BOOTARGS="console=ttyS0,115200 root=PARTUUID=dcdc291e-9956-48cd-9d7c-48219877881a rootfstype=ext4 rw rootwait selinux=0 panic=15 reboot=cold ahci.mask_port_map=0x5"
+CONFIG_BOOTARGS="console=ttyS0,115200 root=PARTUUID=dcdc291e-9956-48cd-9d7c-48219877881a rootfstype=ext4 rw rootwait selinux=0 panic=15 reboot=cold ahci.mask_port_map=0x5 ahci_alpine.mask_port_map=0x5"
 # Canary in OUR U-Boot (chainloaded, so a bad bootcmd can't crash-loop the box).
 # 0x10000000 is 16-aligned so itest.l is alignment-safe; survives warm reset
 # (DRAM persists). Set it (mw 0x10000000 0xb0075709) to stay at our prompt on the
 # next boot instead of booting off the SSD.
 CONFIG_USE_BOOTCOMMAND=y
-CONFIG_BOOTCOMMAND="if itest.l *0x10000000 == 0xb0075709; then echo == CANARY set - staying in U-Boot ==; else scsi scan; ext4load scsi 0:2 0x02000000 /boot/uImage-unvr-ea16-7.1-fedora-gz && ext4load scsi 0:2 0x04078000 /boot/alpine-v2-ubnt-unvr-ea16-7.1-fedora.dtb && bootm 0x02000000 - 0x04078000; fi"
+CONFIG_BOOTCOMMAND="if itest.l *0x10000000 == 0xb0075709; then echo == CANARY set - staying in U-Boot ==; else scsi scan; for d in 0 1 2 3; do if ext4load scsi ${d}:2 0x02000000 /boot/uImage && ext4load scsi ${d}:2 0x04078000 /boot/unvr.dtb; then echo == booting from scsi ${d}:2 ==; bootm 0x02000000 - 0x04078000; fi; done; echo == no /boot/uImage found on any scsi device ==; fi"
 # CCU coherency fixup (#97) needs ft_board_setup() to run at bootm FDT-prep.
 CONFIG_OF_BOARD_SETUP=y
 CONFIG_OF_CONTROL=y
