@@ -5038,13 +5038,25 @@ al_eth_start_xmit(struct sk_buff *skb, struct net_device *dev)
 	}
 
 	hal_pkt->num_of_bufs = 1 + last_frag;
+	/* Reachable only if the kernel hands us more frags than the descriptor
+	 * ring can hold - i.e. CONFIG_MAX_SKB_FRAGS raised above this bound.
+	 * Drop the packet; panicking a NAS over one oversized skb is not a
+	 * proportionate response (#179). */
+	BUILD_BUG_ON_MSG(CONFIG_MAX_SKB_FRAGS > (AL_ETH_PKT_MAX_BUFS - 2),
+			 "CONFIG_MAX_SKB_FRAGS exceeds AL_ETH_PKT_MAX_BUFS - 2; raise AL_ETH_PKT_MAX_BUFS");
 	if (unlikely(last_frag > (AL_ETH_PKT_MAX_BUFS - 2))) {
-		int i;
-		netdev_err(adapter->netdev, "too much descriptors. last_frag %d!\n", last_frag);
-		for (i = 0; i <= last_frag; i++)
-			netdev_err(adapter->netdev, "frag[%d]: addr:0x%llx, len 0x%x\n",
-					i, (unsigned long long)hal_pkt->bufs[i].addr, hal_pkt->bufs[i].len);
-		BUG();
+		int f;
+
+		WARN_ONCE(1, "%s: %d frags exceeds the %d-buffer descriptor limit, dropping\n",
+			  netdev_name(adapter->netdev), last_frag,
+			  AL_ETH_PKT_MAX_BUFS - 2);
+		for (f = 0; f <= last_frag; f++)
+			netdev_dbg(adapter->netdev, "frag[%d]: addr:0x%llx, len 0x%x\n",
+				   f, (unsigned long long)hal_pkt->bufs[f].addr,
+				   hal_pkt->bufs[f].len);
+		/* every frag was mapped by the loop above - unwind all of them */
+		i = last_frag;
+		goto dma_error;
 	}
 	netdev_tx_sent_queue(txq, skb->len);
 
