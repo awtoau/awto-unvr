@@ -3072,7 +3072,9 @@ static int al_serdes_calc_eye_size(
 			AL_SRDS_REG_TYPE_PMA,
 			SERDES_IREG_FLD_RXCALEYEDIAGFSM_EYESUM_LSB_REG_NUM,
 			&reg_value);
-	*width =+ reg_value & SERDES_IREG_FLD_RXCALEYEDIAGFSM_EYESUM_LSB_MAKE;
+	/* was '=+' - a transposed '+=', which assigned the LSB and threw
+	 * the MSB away. Fields are disjoint (MSB<<6 | 6-bit LSB). */
+	*width |= reg_value & SERDES_IREG_FLD_RXCALEYEDIAGFSM_EYESUM_LSB_MAKE;
 
 	/*
 	 * Clear Bit:
@@ -3163,7 +3165,9 @@ static int al_serdes_calc_eye_size(
 			AL_SRDS_REG_TYPE_PMA,
 			SERDES_IREG_FLD_RXCALEYEDIAGFSM_EYESUM_LSB_REG_NUM,
 			&reg_value );
-	*height =+ reg_value & SERDES_IREG_FLD_RXCALEYEDIAGFSM_EYESUM_LSB_MAKE;
+	/* was '=+' - a transposed '+=', which assigned the LSB and threw
+	 * the MSB away. Fields are disjoint (MSB<<6 | 6-bit LSB). */
+	*height |= reg_value & SERDES_IREG_FLD_RXCALEYEDIAGFSM_EYESUM_LSB_MAKE;
 
 	/*
 	 * Clear Bit:
