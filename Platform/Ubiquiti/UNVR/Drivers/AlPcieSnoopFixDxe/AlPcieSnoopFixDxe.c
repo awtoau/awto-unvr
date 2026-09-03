@@ -2,11 +2,16 @@
   Applies the Alpine internal-PCIe AXI-snoop/APP_CONTROL coherency
   fixup after PCI enumeration completes (docs/uefi.md P1). Mirrors
   al_pcie_snoop_fix()/al_snoop_one() in our U-Boot fork's
-  board/annapurna/alpine/alpine.c, register-for-register (issue #74).
+  board/annapurna/alpine/alpine.c, register-for-register (issue #74) -
+  both include the same hal/pcie-al-alpine-regs.h, not just matching
+  hand-typed values. See that header's own comment for the full
+  three-way (Linux/U-Boot/EDK2) provenance.
 
   Deliberately excludes al_eth (1c36:0001/0002): applying this fixup to
   it broke UDMA TX and persisted across a warm reset (#74, #90) - U-Boot
-  fixed that the same way, by skipping those two device IDs here.
+  fixed that the same way, by skipping those two device IDs here. Not
+  part of the shared header - Linux's al_eth applies its own snoop from
+  inside its own probe instead, so there's no shared constant for it.
 
   Copyright (c) 2026, Awto / Daniel Tyrrell. All rights reserved.
 
@@ -21,15 +26,10 @@
 #include <Protocol/PciIo.h>
 #include <IndustryStandard/Pci.h>
 
-#define AL_VENDOR_ID     0x1c36
+#include "../../../../../hal/pcie-al-alpine-regs.h"
+
 #define AL_ETH_DEVICE_0  0x0001
 #define AL_ETH_DEVICE_1  0x0002
-#define AL_SMCC          0x110
-#define AL_SMCC_BUNDLE   0x20
-#define AL_SMCC_SNOOP    0x3    // SNOOP_OVR | SNOOP_ENABLE
-#define AL_APP_CONTROL   0x220
-#define AL_APP_LO16      0x03ff
-#define AL_SLOT_THRESH   5
 
 STATIC
 VOID
@@ -41,18 +41,18 @@ AlSnoopOneDevice (
   UINT32  Value;
   UINTN   Index;
 
-  PciIo->Pci.Read (PciIo, EfiPciIoWidthUint32, AL_SMCC, 1, &Value);
-  Value |= AL_SMCC_SNOOP;
-  PciIo->Pci.Write (PciIo, EfiPciIoWidthUint32, AL_SMCC, 1, &Value);
-  if (Device <= AL_SLOT_THRESH) {
-    for (Index = 1; Index < 4; Index++) {
-      PciIo->Pci.Write (PciIo, EfiPciIoWidthUint32, AL_SMCC + Index * AL_SMCC_BUNDLE, 1, &Value);
+  PciIo->Pci.Read (PciIo, EfiPciIoWidthUint32, AL_ADAPTER_SMCC, 1, &Value);
+  Value |= AL_ADAPTER_SMCC_SNOOP_BITS;
+  PciIo->Pci.Write (PciIo, EfiPciIoWidthUint32, AL_ADAPTER_SMCC, 1, &Value);
+  if (Device <= AL_INTERNAL_SLOT_THRESHOLD) {
+    for (Index = 1; Index < AL_ADAPTER_SMCC_NUM_SUBMASTERS; Index++) {
+      PciIo->Pci.Write (PciIo, EfiPciIoWidthUint32, AL_ADAPTER_SMCC + Index * AL_ADAPTER_SMCC_BUNDLE_SIZE, 1, &Value);
     }
   }
 
-  PciIo->Pci.Read (PciIo, EfiPciIoWidthUint32, AL_APP_CONTROL, 1, &Value);
-  Value = (Value & 0xffff0000) | AL_APP_LO16;
-  PciIo->Pci.Write (PciIo, EfiPciIoWidthUint32, AL_APP_CONTROL, 1, &Value);
+  PciIo->Pci.Read (PciIo, EfiPciIoWidthUint32, AL_ADAPTER_APP_CONTROL, 1, &Value);
+  Value = (Value & 0xffff0000) | AL_ADAPTER_APP_CONTROL_LO16;
+  PciIo->Pci.Write (PciIo, EfiPciIoWidthUint32, AL_ADAPTER_APP_CONTROL, 1, &Value);
 }
 
 EFI_STATUS
@@ -93,7 +93,7 @@ AlPcieSnoopFixEntry (
     PciIo->Pci.Read (PciIo, EfiPciIoWidthUint32, PCI_VENDOR_ID_OFFSET, 1, &VendorDevice);
     VendorId = (UINT16)VendorDevice;
     DeviceId = (UINT16)(VendorDevice >> 16);
-    if (VendorId != AL_VENDOR_ID) {
+    if (VendorId != PCI_VENDOR_ID_ANNAPURNA_LABS) {
       continue;
     }
     if ((DeviceId == AL_ETH_DEVICE_0) || (DeviceId == AL_ETH_DEVICE_1)) {

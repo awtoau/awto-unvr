@@ -1,15 +1,26 @@
 # Source-of-truth audit — EDK2 PCIe glue vs U-Boot / Linux
 
 Cross-reference audit of `Platform/Ubiquiti/UNVR/`'s Alpine PCIe register
-glue (P1/P1.5, docs/uefi.md) against its two sources of truth: our own
-U-Boot fork's `alpine.c` (the working, hardware-verified reference this
-was ported from) and, where a real Linux equivalent exists, the mainline
-kernel driver. Same method and table format as
-[audit-board-shim-dts.md](audit-board-shim-dts.md) - this project keeps
-register glue duplicated per-codebase (each needs its own idiomatic
-style/build system) rather than shared-sourced, so an explicit,
-maintained cross-check is what keeps the duplication honest instead of
-silently drifting.
+glue (P1/P1.5, docs/uefi.md) against its sources of truth. Same method
+and table format as [audit-board-shim-dts.md](audit-board-shim-dts.md).
+
+**Update (2026-09-03)**: the internal-PCIe SMCC/APP_CONTROL register
+constants are no longer duplicated-and-cross-checked - they're now
+genuinely shared. `hal/pcie-al-alpine-regs.h` (this repo) is a
+byte-identical mirror of our Linux fork's canonical
+`drivers/pci/controller/pcie-al-alpine-regs.h`
+(github.com/awto-au/linux, commit `f755b2f5dc75`), and both
+`uboot-port/board/annapurna/alpine/alpine.c` and
+`AlPcieSnoopFixDxe.c` `#include` it directly. The table below is now a
+record of that fact (and the two symbols that are deliberately *not*
+shared) rather than a value-by-value cross-check - drift is no longer
+possible for the shared constants themselves, only for hal/'s copy
+falling out of sync with the Linux fork's, which is a trivial `diff`
+away from being caught (unlike hand-typed numbers).
+
+The external-PCIe0 fixup (next section) has no Linux equivalent to
+share with - alpine.c stays its sole source of truth, still
+cross-checked the old way.
 
 Date: 2026-09-03.
 
@@ -18,24 +29,23 @@ Date: 2026-09-03.
 ## Internal PCIe: SMCC/APP_CONTROL snoop fixup
 
 `Platform/Ubiquiti/UNVR/Drivers/AlPcieSnoopFixDxe/AlPcieSnoopFixDxe.c`
-vs `uboot-port/board/annapurna/alpine/alpine.c` vs Linux's
-`pcie-al-internal.c` (the same three-way check
-audit-board-shim-dts.md already ran for alpine.c alone - extended here
-with the EDK2 column).
+and `uboot-port/board/annapurna/alpine/alpine.c` both `#include`
+`hal/pcie-al-alpine-regs.h` directly - not cross-checked values, the
+same bytes.
 
-| our symbol/value | EDK2 file:line | alpine.c file:line | Linux (pcie-al-internal.c) | VERDICT |
-|---|---|---|---|---|
-| `AL_SMCC 0x110` | AlPcieSnoopFixDxe.c:27 | alpine.c:795 | `AL_ADAPTER_SMCC 0x110` @60 | **match** |
-| `AL_SMCC_BUNDLE 0x20` | AlPcieSnoopFixDxe.c:28 | alpine.c:796 | `AL_ADAPTER_SMCC_BUNDLE_SIZE 0x20` @61 | **match** |
-| `AL_SMCC_SNOOP 0x3` (OVR\|EN) | AlPcieSnoopFixDxe.c:29 | alpine.c:797 | `SNOOP_OVR BIT(0)\|SNOOP_EN BIT(1)=0x3` @62-65 | **match** |
-| `AL_APP_CONTROL 0x220` | AlPcieSnoopFixDxe.c:30 | alpine.c:798 | `AL_ADAPTER_APP_CONTROL 0x220` @76 | **match** |
-| `AL_APP_LO16 0x03ff` | AlPcieSnoopFixDxe.c:31 | alpine.c:799 | `AL_ADAPTER_APP_CONTROL_LO16 0x03ff` @77 | **match** |
-| `AL_SLOT_THRESH 5` | AlPcieSnoopFixDxe.c:32 | alpine.c:800 | `AL_INTERNAL_SLOT_THRESHOLD 5` @85 | **match** |
-| `AL_VENDOR_ID 0x1c36` | AlPcieSnoopFixDxe.c:24 | `AL_VENDOR 0x1c36` @801 | `PCI_VENDOR_ID_ANNAPURNA_LABS 0x1c36` @88 | **match** |
-| SM1-3 loop `i=1;i<4` writes SM0 val | AlPcieSnoopFixDxe.c:47-51 | alpine.c:189-191 | `for i=1..3 write val` @153-159 | **match** |
-| APP_CONTROL `(v&0xffff0000)\|lo16` | AlPcieSnoopFixDxe.c:53-55 | alpine.c:194 | identical RMW @167 | **match** |
-| eth exclusion `1c36:0001`/`0002` | AlPcieSnoopFixDxe.c:99 (`AL_ETH_DEVICE_0`/`_1`) | alpine.c:836-844 (device_id 0x0001/0x0002) | n/a (Linux's own al_eth driver applies snoop from inside its own probe instead, not via this notifier) | **match vs alpine.c** |
-| filter: vendor **AND** func==0 **AND** root-bus | AlPcieSnoopFixDxe.c:90-98 (`Function != 0`, `Bus != 0`, `Segment != 0` all checked via `GetLocation()`) | alpine.c:834 (**vendor only** - audit-board-shim-dts.md MUST-FIX #2, still open) | vendor **AND** `PCI_FUNC==0` **AND** root-bus @120,132,135 | **EDK2 matches Linux, stricter than alpine.c** (see note) |
+| symbol | shared via `hal/pcie-al-alpine-regs.h`? | notes |
+|---|---|---|
+| `AL_ADAPTER_SMCC 0x110` | yes | |
+| `AL_ADAPTER_SMCC_BUNDLE_SIZE 0x20` | yes | |
+| `AL_ADAPTER_SMCC_SNOOP_BITS` (OVR\|EN = 0x3) | yes | |
+| `AL_ADAPTER_SMCC_NUM_SUBMASTERS 4` | yes | alpine.c's old bare `4` in the submaster loop was itself replaced with this symbol as part of the same change |
+| `AL_ADAPTER_APP_CONTROL 0x220` | yes | |
+| `AL_ADAPTER_APP_CONTROL_LO16 0x03ff` | yes | |
+| `AL_INTERNAL_SLOT_THRESHOLD 5` | yes | |
+| `PCI_VENDOR_ID_ANNAPURNA_LABS 0x1c36` | yes | |
+| eth exclusion `1c36:0001`/`0002` (`AL_ETH_DEVICE_0`/`_1`) | **no**, deliberately | not a shared concept - Linux's own al_eth driver applies snoop from inside its own probe instead of this notifier, so there's no Linux constant to share; U-Boot and EDK2 both still define these two locally (alpine.c:836-844, AlPcieSnoopFixDxe.c:25-26) |
+| filter: vendor **AND** func==0 **AND** root-bus | **no** (framework-specific check, not a constant) | EDK2 (`AlPcieSnoopFixDxe.c`'s `GetLocation()` check) matches Linux's stricter filter; alpine.c's own vendor-only filter is a separate, still-open gap tracked in audit-board-shim-dts.md MUST-FIX #2, unaffected by this change |
+| SM1-3 loop / APP_CONTROL RMW *logic* | **no** (control flow, not data) | each codebase's own loop/RMW, using the shared constants - see docs/uefi.md P1.5's stated scope: register data is shared, framework-specific bring-up logic isn't |
 
 **Note on the last row**: EDK2's filter is the *stricter*, Linux-matching
 one (see `AlPcieSnoopFixDxe.c`'s `GetLocation()` check) - alpine.c's own

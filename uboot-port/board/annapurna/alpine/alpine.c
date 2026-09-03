@@ -791,30 +791,29 @@ U_BOOT_CMD(rtcinit, 1, 0, do_rtcinit,
  *   APP_CONTROL @ 0x220: low 16 bits = 0x3ff, keep upper 16.
  *   slot <= 5: all 4 sub-masters; slot > 5: SM0 only. All devices: APP_CONTROL.
  * These live in extended config space (>0xff) — ECAM reaches them.
+ *
+ * Register defs come from pcie-al-alpine-regs.h - shared verbatim with
+ * this SoC's Linux driver (drivers/pci/controller/pcie-al-internal.c
+ * in our fork) and with the EDK2/UEFI port's AlPcieSnoopFixDxe.c, not
+ * just cross-checked. See docs/audits/audit-edk2-pcie-glue.md.
  */
-#define AL_SMCC		0x110
-#define AL_SMCC_BUNDLE	0x20
-#define AL_SMCC_SNOOP	0x3	/* SNOOP_OVR|SNOOP_EN */
-#define AL_APP_CONTROL	0x220
-#define AL_APP_LO16	0x3ff
-#define AL_SLOT_THRESH	5
-#define AL_VENDOR	0x1c36
+#include "pcie-al-alpine-regs.h"
 
 static void al_snoop_one(struct udevice *dev, uint slot)
 {
 	u32 v;
 	int i;
 
-	dm_pci_read_config32(dev, AL_SMCC, &v);
-	v |= AL_SMCC_SNOOP;
-	dm_pci_write_config32(dev, AL_SMCC, v);
-	if (slot <= AL_SLOT_THRESH)
-		for (i = 1; i < 4; i++)
-			dm_pci_write_config32(dev, AL_SMCC + i * AL_SMCC_BUNDLE, v);
+	dm_pci_read_config32(dev, AL_ADAPTER_SMCC, &v);
+	v |= AL_ADAPTER_SMCC_SNOOP_BITS;
+	dm_pci_write_config32(dev, AL_ADAPTER_SMCC, v);
+	if (slot <= AL_INTERNAL_SLOT_THRESHOLD)
+		for (i = 1; i < AL_ADAPTER_SMCC_NUM_SUBMASTERS; i++)
+			dm_pci_write_config32(dev, AL_ADAPTER_SMCC + i * AL_ADAPTER_SMCC_BUNDLE_SIZE, v);
 
-	dm_pci_read_config32(dev, AL_APP_CONTROL, &v);
-	v = (v & 0xffff0000) | AL_APP_LO16;
-	dm_pci_write_config32(dev, AL_APP_CONTROL, v);
+	dm_pci_read_config32(dev, AL_ADAPTER_APP_CONTROL, &v);
+	v = (v & 0xffff0000) | AL_ADAPTER_APP_CONTROL_LO16;
+	dm_pci_write_config32(dev, AL_ADAPTER_APP_CONTROL, v);
 }
 
 static int al_pcie_snoop_fix(void)
@@ -831,7 +830,7 @@ static int al_pcie_snoop_fix(void)
 
 			/* config access works on bound children — no probe */
 			dm_pci_read_config32(dev, PCI_VENDOR_ID, &vendor);
-			if ((vendor & 0xffff) != AL_VENDOR)
+			if ((vendor & 0xffff) != PCI_VENDOR_ID_ANNAPURNA_LABS)
 				continue;
 			/*
 			 * SKIP the two al_eth devices (1c36:0001 RJ45, 0002 SFP+).
@@ -1124,7 +1123,7 @@ static void al_eth_flr_all(void)
 			int pos;
 
 			dm_pci_read_config32(dev, PCI_VENDOR_ID, &vendor);
-			if ((vendor & 0xffff) != AL_VENDOR)
+			if ((vendor & 0xffff) != PCI_VENDOR_ID_ANNAPURNA_LABS)
 				continue;
 			if (((vendor >> 16) & 0xffff) != 0x0001 &&
 			    ((vendor >> 16) & 0xffff) != 0x0002)

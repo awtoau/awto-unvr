@@ -159,6 +159,20 @@ def stage():
         os.makedirs(os.path.dirname(d), exist_ok=True)
         shutil.copy2(s, d)
         log(f"staged {dst}")
+
+    # Shared internal-PCIe register-constants header (docs/uefi.md P1.5,
+    # docs/audits/audit-edk2-pcie-glue.md) - canonical copy lives in our
+    # Linux fork's drivers/pci/controller/pcie-al-internal.c; this repo's
+    # hal/ is the byte-identical mirror both alpine.c and the EDK2 port
+    # actually #include, not a hand-retyped copy. Staged into the same
+    # directory as alpine.c so its plain `#include "pcie-al-alpine-regs.h"`
+    # resolves without needing a build-time -I flag.
+    shutil.copy2(
+        os.path.join(REPO, "hal/pcie-al-alpine-regs.h"),
+        os.path.join(TREE, "board/annapurna/alpine/pcie-al-alpine-regs.h"),
+    )
+    log("staged board/annapurna/alpine/pcie-al-alpine-regs.h (shared, from hal/)")
+
     for src, dst in DIRS.items():
         s = os.path.join(SCAFFOLD, src)
         d = os.path.join(TREE, dst)

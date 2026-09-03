@@ -362,10 +362,13 @@ PCIe0 (ASM1042A xHCI) is a separate follow-up, see below.
   SMCC (`cfg 0x110` + `0x20`×{1,2,3} for slot≤5, `SNOOP_OVR|SNOOP_EN` =
   `0x3`) and `APP_CONTROL` (`cfg 0x220` low-16 = `0x3ff`) registers
   `al_pcie_snoop_fix()`/`al_snoop_one()` in our U-Boot fork
-  (`board/annapurna/alpine/alpine.c`) already applies every boot -
-  register-for-register match, see issue #74. Deliberately excludes
-  `1c36:0001`/`0002` (al_eth), mirroring U-Boot's own exclusion (applying
-  this fixup to al_eth broke UDMA TX and persisted across a warm reset,
+  (`board/annapurna/alpine/alpine.c`) already applies every boot - not
+  just matching values, both now `#include hal/pcie-al-alpine-regs.h`
+  directly (2026-09-03), a byte-identical mirror of our Linux fork's
+  canonical copy (`drivers/pci/controller/pcie-al-internal.c`,
+  `awto-au/linux`) - see docs/audits/audit-edk2-pcie-glue.md. Deliberately
+  excludes `1c36:0001`/`0002` (al_eth), mirroring U-Boot's own exclusion
+  (applying this fixup to al_eth broke UDMA TX and persisted across a warm reset,
   #74/#90).
 - Added `ArmPkg/Drivers/ArmPciCpuIo2Dxe`, `MdeModulePkg/Bus/Pci/
   PciHostBridgeDxe`, `MdeModulePkg/Bus/Pci/PciBusDxe` to the component
