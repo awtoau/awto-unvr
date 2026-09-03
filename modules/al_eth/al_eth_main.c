@@ -1194,6 +1194,12 @@ static irqreturn_t al_eth_intr_msix_mgmt(int irq, void *data)
 
 	//panic("Ethernet fatal error! (due to a UDMA error/hint)\n");
 
+	/* Group A auto-masks when it fires, so without this the mgmt interrupt
+	 * is delivered exactly ONCE per up() and every later UDMA error is
+	 * silent - which makes "no errors were logged" meaningless (#175). */
+	al_udma_iofic_unmask(regs_base, AL_UDMA_IOFIC_LEVEL_PRIMARY,
+			     AL_INT_GROUP_A, AL_INT_GROUP_A_GROUP_D_SUM);
+
 	return IRQ_HANDLED;
 }
 
