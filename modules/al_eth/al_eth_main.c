@@ -647,8 +647,14 @@ static int al_eth_board_params_init(struct al_eth_adapter *adapter)
 
 		rc = al_eth_board_params_get(adapter->mac_base, &params);
 		if (rc) {
-			dev_err(&adapter->pdev->dev, "board info not available\n");
-			return -1;
+			/* -ENOENT here means board params reg 1 read 0, i.e. no
+			 * bootloader ever wrote them. Propagate the real errno -
+			 * -1 is -EPERM and misdescribes it. See
+			 * docs/board-params-handoff.md. */
+			dev_err(&adapter->pdev->dev,
+				"board params not initialised by the bootloader (%d)\n",
+				rc);
+			return rc;
 		}
 
 		adapter->phy_if = params.phy_if;
@@ -677,8 +683,14 @@ static int al_eth_board_params_init(struct al_eth_adapter *adapter)
 
 		rc = al_eth_board_params_get(adapter->mac_base, &params);
 		if (rc) {
-			dev_err(&adapter->pdev->dev, "board info not available\n");
-			return -1;
+			/* -ENOENT here means board params reg 1 read 0, i.e. no
+			 * bootloader ever wrote them. Propagate the real errno -
+			 * -1 is -EPERM and misdescribes it. See
+			 * docs/board-params-handoff.md. */
+			dev_err(&adapter->pdev->dev,
+				"board params not initialised by the bootloader (%d)\n",
+				rc);
+			return rc;
 		}
 
 		adapter->phy_exist = params.phy_exist == AL_TRUE;
