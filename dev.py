@@ -1123,7 +1123,9 @@ def cmd_chainload(extra: list[str]) -> int:
 
 @command(
     "put the FRESH build on the box + stop at awto-nas# for hands-on testing: "
-    "SP805-reset -> catch stock -> tftp -> go (scripts/uboot-test.tcl)",
+    "SP805-reset -> catch stock -> tftp -> go (scripts/uboot-test.tcl). "
+    "--cold: box isn't already at awto-nas# - power-cycle first, skip the "
+    "SP805 warm-reset precondition",
     kind="action",
 )
 def cmd_uboot_test(_extra: list[str]) -> int:
@@ -1133,6 +1135,7 @@ def cmd_uboot_test(_extra: list[str]) -> int:
             "ERROR",
         )
         return 1
+    cold = "--cold" in _extra
     TFTP_ROOT.mkdir(parents=True, exist_ok=True)
     shutil.copy2(UBOOT_BIN, CHAINLOAD_BIN)
     log(f"staged {CHAINLOAD_BIN.relative_to(REPO)} ({UBOOT_BIN.stat().st_size} bytes)")
@@ -1144,9 +1147,32 @@ def cmd_uboot_test(_extra: list[str]) -> int:
 
     server_ip = detect_server_ip()
     log(f"tftp server IP (auto-detected): {server_ip}")
+    power_proc = None
+    if cold:
+        # Non-blocking: power_cycle_verified()'s own cut+restore+verify cycle
+        # takes real wall-clock seconds on its own, on top of the SoC's own
+        # ~9s ROM/S2/preboot chain before stock's autoboot window even opens
+        # - blocking on it first (as an earlier version of this did) starts
+        # the ESC-catch loop below too late, missing the window entirely
+        # (confirmed live 2026-09-03: 15+ min of nothing but console bell
+        # chars, no boot prompt ever caught). The proven pattern used
+        # elsewhere this session (uefi-chainload-probe.py) starts catching
+        # BEFORE triggering the reset - this starts the power-cycle in the
+        # background and immediately proceeds to the catch loop instead,
+        # so both are in flight concurrently rather than strictly sequenced.
+        log("uboot-test --cold: starting power-cycle in background, catch loop starts now")
+        power_proc = subprocess.Popen(
+            [sys.executable, "dev.py", "power-cycle"], cwd=REPO
+        )
     log("uboot-test: reset+catch+tftp+go, then STOP at awto-nas# (no auto-tests)")
-    script = f"set SERVERIP {server_ip}\n" + Path("scripts/uboot-test.tcl").read_text()
-    return cmd_console_tcl(["-e", script])
+    cold_line = "set COLD 1\n" if cold else ""
+    script = f"set SERVERIP {server_ip}\n{cold_line}" + Path("scripts/uboot-test.tcl").read_text()
+    rc = cmd_console_tcl(["-e", script])
+    if power_proc is not None:
+        power_rc = power_proc.wait(timeout=30)
+        if power_rc != 0:
+            log(f"power-cycle.py exited {power_rc} - verify box power state", "ERROR")
+    return rc
 
 
 @command(
