@@ -3311,15 +3311,19 @@ al_eth_tx_poll(struct napi_struct *napi, int budget)
 		       dev_kfree_skb(skb);
 		tx_pkt++;
 
-		/** Increase counters, relevent in adaptive mode only */
-		tx_ring->packets += tx_pkt;
-		tx_ring->bytes += tx_bytes;
-
 		total_done -= tx_info->tx_descs;
 		next_to_clean = AL_ETH_TX_RING_IDX_NEXT(tx_ring, next_to_clean);
 	}
 
 	netdev_tx_completed_queue(txq, tx_pkt, tx_bytes);
+
+	/* Counters for adaptive moderation. These used to be accumulated with
+	 * the RUNNING TOTALS inside the completion loop above, so N packets
+	 * added N(N+1)/2 - quadratic over-counting that would slam moderation
+	 * straight to HIGHEST the moment the adaptive TX path is wired up.
+	 * Add once, after the loop, matching al_eth_rx_poll(). */
+	tx_ring->packets += tx_pkt;
+	tx_ring->bytes += tx_bytes;
 
 	tx_ring->next_to_clean = next_to_clean;
 
