@@ -1566,6 +1566,30 @@ int al_eth_mac_config(struct al_hal_eth_adapter *adapter, enum al_eth_mac_mode m
 		al_reg_write32_masked(&adapter->mac_regs_base->gen.led_cfg,
 				      ETH_MAC_GEN_LED_CFG_SEL_MASK,
 				      ETH_MAC_GEN_LED_CFG_SEL_DEFAULT_REG);
+
+		/*
+		 * Reset the PCS after the MAC is configured - same rationale the
+		 * KR_LL_25G case below documents: "packets aren't transmitted to
+		 * the line, even though the link is up... the PCS might exit reset
+		 * before the MAC and for some reason enters a bad state (due to
+		 * garbage input from the MAC)". 10GBASE-R drives the same KR PCS
+		 * block (note gen.mux_sel above is masked with KR_IN), but this
+		 * mode never got the fix - it was only added to KR_LL_25G.
+		 *
+		 * Matches the live 10G symptom exactly: link up, RX 7.71 Gbit/s,
+		 * TX ~2-6 Mbit/s with constant retransmits at EVERY offered rate.
+		 * NOT taking the gearbox reset the 25G case pairs with this - that
+		 * one drives LANE_x_TX_25_GS_SW_RESET, which is 25G-gearbox
+		 * specific and dead on this HSSP 10G board.
+		 */
+		pcs_reg = al_eth_kr_pcs_reg_read(adapter, ETH_MAC_KR_PCS_CONTROL_1_ADDR);
+		AL_REG_FIELD_SET(pcs_reg,
+				ETH_MAC_KR_PCS_CONTROL_1_RESET_MASK,
+				ETH_MAC_KR_PCS_CONTROL_1_RESET_SHIFT,
+				1);
+		al_eth_kr_pcs_reg_write(adapter, ETH_MAC_KR_PCS_CONTROL_1_ADDR, pcs_reg);
+		al_udelay(AL_ETH_KR_PCS_RESET_DELAY);
+		pr_debug("%s: 10GbE_Serial: performed KR_PCS reset after MAC config\n", __func__);
 		break;
 
 	case AL_ETH_MAC_MODE_KR_LL_25G:

@@ -2038,7 +2038,16 @@ static int al_mdio_read(struct mii_bus *bp, int mii_id, int reg)
 		netdev_err(adapter->netdev, "MDIO C22 read phy %d reg %d failed\n",
 			   mii_id, reg);
 
-	return value;
+	/*
+	 * mii_bus->read must return a NEGATIVE ERRNO on failure. Returning
+	 * `value` (0) here made a failed read indistinguishable from a genuine
+	 * 0x0000, so phylib accepted it as real register content: a failed
+	 * MII_STAT1000 read then reads as "link partner advertises no
+	 * gigabit" and genphy_read_lpa() clears lp_advertising - the exact
+	 * "negotiated 100Mb on a gigabit link, intermittently" symptom.
+	 * al_mdio_write() below already returned rc correctly.
+	 */
+	return rc;
 }
 
 /* Clause 22 MDIO write */
@@ -2090,7 +2099,8 @@ static int al_mdio_read_c45(struct mii_bus *bp, int mii_id, int dev, int reg)
 	if (rc)
 		netdev_err(adapter->netdev, "MDIO read failed on timeout\n");
 
-	return value;
+	/* Negative errno on failure, not a fake 0x0000 - see al_mdio_read(). */
+	return rc;
 }
 
 static int

@@ -115,7 +115,22 @@ enum al_eth_direction {
 #define AL_ETH_INTR_HIGHEST_PKTS           128
 #define AL_ETH_INTR_HIGHEST_BYTES          192*1024
 
-#define AL_ETH_INTR_INITIAL_TX_INTERVAL_USECS		196
+/*
+ * TX was 196us. With adaptive moderation enabled by default, the adaptive
+ * engine's AL_ETH_TX branch is never actually called - al_eth_update_intr_
+ * moderation() has exactly one call site, inside al_eth_rx_poll(), hardcoded
+ * to AL_ETH_RX. So this "initial" value was in fact PERMANENT: every TX
+ * completion interrupt deferred 196us forever (~5100 completion batches/sec/
+ * queue) while RX ran unmoderated at 0us. Every packet sets
+ * AL_ETH_TX_FLAGS_INT, so there is no xmit_more batching to absorb it, and
+ * TCP's send window collapses - which is why TX was broken at EVERY offered
+ * rate (~2 Mbit/s even when asked for 100 Mbit) while RX on the same port
+ * did 7.71 Gbit/s. Matching RX's 0 until the adaptive TX path is properly
+ * wired up (which also needs the quadratic tx_ring->packets/bytes
+ * accumulation inside al_eth_tx_poll()'s loop fixed first, or moderation
+ * immediately ratchets to HIGHEST).
+ */
+#define AL_ETH_INTR_INITIAL_TX_INTERVAL_USECS		0
 #define AL_ETH_INTR_INITIAL_RX_INTERVAL_USECS		0
 
 struct al_eth_irq {
