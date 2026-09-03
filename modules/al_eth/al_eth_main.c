@@ -4625,6 +4625,21 @@ static const struct al_eth_ethtool_stats al_eth_ethtool_stats_global_strings[] =
 	AL_ETH_ETHTOOL_STAT_GLOBAL_ENTRY(interface_down),
 	AL_ETH_ETHTOOL_STAT_GLOBAL_ENTRY(pcs_errored_blocks),
 	AL_ETH_ETHTOOL_STAT_GLOBAL_ENTRY(pcs_ber_events),
+	AL_ETH_ETHTOOL_STAT_GLOBAL_ENTRY(ec_faf_in_rx_short),
+	AL_ETH_ETHTOOL_STAT_GLOBAL_ENTRY(ec_faf_in_rx_long),
+	AL_ETH_ETHTOOL_STAT_GLOBAL_ENTRY(ec_faf_out_rx_short),
+	AL_ETH_ETHTOOL_STAT_GLOBAL_ENTRY(ec_faf_out_rx_long),
+	AL_ETH_ETHTOOL_STAT_GLOBAL_ENTRY(ec_faf_out_drop),
+	AL_ETH_ETHTOOL_STAT_GLOBAL_ENTRY(ec_rxf_in_fifo_err),
+	AL_ETH_ETHTOOL_STAT_GLOBAL_ENTRY(ec_lbf_in_fifo_err),
+	AL_ETH_ETHTOOL_STAT_GLOBAL_ENTRY(ec_rxf_out_drop_1_pkt),
+	AL_ETH_ETHTOOL_STAT_GLOBAL_ENTRY(ec_rxf_out_drop_2_pkt),
+	AL_ETH_ETHTOOL_STAT_GLOBAL_ENTRY(ec_rfw_in_vlan_drop),
+	AL_ETH_ETHTOOL_STAT_GLOBAL_ENTRY(ec_rfw_in_parse_drop),
+	AL_ETH_ETHTOOL_STAT_GLOBAL_ENTRY(ec_rfw_in_mac_drop),
+	AL_ETH_ETHTOOL_STAT_GLOBAL_ENTRY(ec_rfw_in_mac_ndet_drop),
+	AL_ETH_ETHTOOL_STAT_GLOBAL_ENTRY(ec_rfw_in_ctrl_drop),
+	AL_ETH_ETHTOOL_STAT_GLOBAL_ENTRY(ec_rfw_in_prot_i_drop),
 };
 
 static const struct al_eth_ethtool_stats al_eth_ethtool_stats_tx_strings[] = {
@@ -4692,6 +4707,38 @@ static void al_eth_ethtool_queue_stats(struct al_eth_adapter *adapter, u64 **dat
 	}
 }
 
+/*
+ * Refresh the EC drop/error mirrors. al_eth_ec_stats_get() reads 32-bit hardware
+ * counters; they are mirrored into 64-bit dev_stats so the existing table-driven
+ * ethtool path can emit them. Accumulate rather than assign - the hardware
+ * fields are narrow and we do not want a wrap to look like a reset (#210).
+ */
+static void al_eth_refresh_ec_stats(struct al_eth_adapter *adapter)
+{
+	struct al_eth_ec_stats ec;
+
+	if (al_eth_ec_stats_get(&adapter->hal_adapter, &ec))
+		return;
+
+	u64_stats_update_begin(&adapter->syncp);
+	adapter->dev_stats.ec_faf_in_rx_short = ec.faf_in_rx_short;
+	adapter->dev_stats.ec_faf_in_rx_long = ec.faf_in_rx_long;
+	adapter->dev_stats.ec_faf_out_rx_short = ec.faf_out_rx_short;
+	adapter->dev_stats.ec_faf_out_rx_long = ec.faf_out_rx_long;
+	adapter->dev_stats.ec_faf_out_drop = ec.faf_out_drop;
+	adapter->dev_stats.ec_rxf_in_fifo_err = ec.rxf_in_fifo_err;
+	adapter->dev_stats.ec_lbf_in_fifo_err = ec.lbf_in_fifo_err;
+	adapter->dev_stats.ec_rxf_out_drop_1_pkt = ec.rxf_out_drop_1_pkt;
+	adapter->dev_stats.ec_rxf_out_drop_2_pkt = ec.rxf_out_drop_2_pkt;
+	adapter->dev_stats.ec_rfw_in_vlan_drop = ec.rfw_in_vlan_drop;
+	adapter->dev_stats.ec_rfw_in_parse_drop = ec.rfw_in_parse_drop;
+	adapter->dev_stats.ec_rfw_in_mac_drop = ec.rfw_in_mac_drop;
+	adapter->dev_stats.ec_rfw_in_mac_ndet_drop = ec.rfw_in_mac_ndet_drop;
+	adapter->dev_stats.ec_rfw_in_ctrl_drop = ec.rfw_in_ctrl_drop;
+	adapter->dev_stats.ec_rfw_in_prot_i_drop = ec.rfw_in_prot_i_drop;
+	u64_stats_update_end(&adapter->syncp);
+}
+
 static void al_eth_get_ethtool_stats(struct net_device *netdev,
 				  struct ethtool_stats *stats,
 				  u64 *data)
@@ -4700,6 +4747,8 @@ static void al_eth_get_ethtool_stats(struct net_device *netdev,
 	const struct al_eth_ethtool_stats *al_eth_ethtool_stats;
 	u64 *ptr;
 	int i;
+
+	al_eth_refresh_ec_stats(adapter);
 
 	for (i = 0; i < AL_ETH_ETHTOOL_STATS_ARRAY_GLOBAL; i++) {
 		al_eth_ethtool_stats = &al_eth_ethtool_stats_global_strings[i];

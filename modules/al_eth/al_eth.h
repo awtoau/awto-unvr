@@ -313,6 +313,27 @@ struct al_eth_stats_dev {
 	 */
 	u64 pcs_errored_blocks;
 	u64 pcs_ber_events;
+	/*
+	 * Ethernet-controller drop/error counters, refreshed from
+	 * al_eth_ec_stats_get() on each ethtool -S. The silicon counts far
+	 * more than we used to read: these say WHERE a packet was dropped,
+	 * which is the first question in #184/#122 and was unanswerable.
+	 */
+	u64 ec_faf_in_rx_short;
+	u64 ec_faf_in_rx_long;
+	u64 ec_faf_out_rx_short;
+	u64 ec_faf_out_rx_long;
+	u64 ec_faf_out_drop;
+	u64 ec_rxf_in_fifo_err;
+	u64 ec_lbf_in_fifo_err;
+	u64 ec_rxf_out_drop_1_pkt;
+	u64 ec_rxf_out_drop_2_pkt;
+	u64 ec_rfw_in_vlan_drop;
+	u64 ec_rfw_in_parse_drop;
+	u64 ec_rfw_in_mac_drop;
+	u64 ec_rfw_in_mac_ndet_drop;
+	u64 ec_rfw_in_ctrl_drop;
+	u64 ec_rfw_in_prot_i_drop;
 };
 
 /* board specific private data structure */
