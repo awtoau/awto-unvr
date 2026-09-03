@@ -1197,7 +1197,9 @@ def cmd_uboot_test(_extra: list[str]) -> int:
     else:
         at_prompt = _probe_awto_nas()
         cold = not at_prompt
-        log(f"uboot-test: auto-detected {'COLD (not at awto-nas#)' if cold else 'WARM (already at awto-nas#)'}")
+        log(
+            f"uboot-test: auto-detected {'COLD (not at awto-nas#)' if cold else 'WARM (already at awto-nas#)'}"
+        )
     TFTP_ROOT.mkdir(parents=True, exist_ok=True)
     shutil.copy2(UBOOT_BIN, CHAINLOAD_BIN)
     log(f"staged {CHAINLOAD_BIN.relative_to(REPO)} ({UBOOT_BIN.stat().st_size} bytes)")
@@ -1222,13 +1224,18 @@ def cmd_uboot_test(_extra: list[str]) -> int:
         # BEFORE triggering the reset - this starts the power-cycle in the
         # background and immediately proceeds to the catch loop instead,
         # so both are in flight concurrently rather than strictly sequenced.
-        log("uboot-test --cold: starting power-cycle in background, catch loop starts now")
+        log(
+            "uboot-test --cold: starting power-cycle in background, catch loop starts now"
+        )
         power_proc = subprocess.Popen(
             [sys.executable, "dev.py", "power-cycle"], cwd=REPO
         )
     log("uboot-test: reset+catch+tftp+go, then STOP at awto-nas# (no auto-tests)")
     cold_line = "set COLD 1\n" if cold else ""
-    script = f"set SERVERIP {server_ip}\n{cold_line}" + Path("scripts/uboot-test.tcl").read_text()
+    script = (
+        f"set SERVERIP {server_ip}\n{cold_line}"
+        + Path("scripts/uboot-test.tcl").read_text()
+    )
     rc = cmd_console_tcl(["-e", script])
     if power_proc is not None:
         power_rc = power_proc.wait(timeout=30)
@@ -1263,13 +1270,18 @@ def cmd_deploy_fedora_rootfs(_extra: list[str]) -> int:
             log(f"ABORT: missing {p} - build it first", "ERROR")
             return 1
     if not fd.MODROOT.is_dir():
-        log(f"ABORT: no module tree at {fd.MODROOT} - build the fedora kernel first", "ERROR")
+        log(
+            f"ABORT: no module tree at {fd.MODROOT} - build the fedora kernel first",
+            "ERROR",
+        )
         return 1
 
     TFTP_ROOT.mkdir(parents=True, exist_ok=True)
     shutil.copy2(ea16_uimage, TFTP_ROOT / ea16_uimage.name)
     shutil.copy2(ea16_dtb, TFTP_ROOT / ea16_dtb.name)
-    log(f"staged installer {ea16_uimage.name} + {ea16_dtb.name} into {TFTP_ROOT.relative_to(REPO)}")
+    log(
+        f"staged installer {ea16_uimage.name} + {ea16_dtb.name} into {TFTP_ROOT.relative_to(REPO)}"
+    )
     _ensure_tftpd()
 
     serve_dir = REPO / "tmp" / "rootfs-deploy"
@@ -1282,7 +1294,9 @@ def cmd_deploy_fedora_rootfs(_extra: list[str]) -> int:
     subprocess.run(
         ["tar", "-C", str(fd.MODROOT.parent), "-cf", str(modtar), fd.KVER], check=True
     )
-    log(f"staged rootfs tar (symlink) + fresh module tar ({modtar.name}) in {serve_dir.relative_to(REPO)}")
+    log(
+        f"staged rootfs tar (symlink) + fresh module tar ({modtar.name}) in {serve_dir.relative_to(REPO)}"
+    )
 
     import http.server
     import socketserver
@@ -1298,25 +1312,39 @@ def cmd_deploy_fedora_rootfs(_extra: list[str]) -> int:
 
     host = subprocess.run(
         [sys.executable, "scripts/ssh-woomera.py", "--print"],
-        cwd=REPO, capture_output=True, text=True, timeout=15, check=False,
+        cwd=REPO,
+        capture_output=True,
+        text=True,
+        timeout=15,
+        check=False,
     ).stdout.strip()
     if not host:
-        log("ABORT: woomera not reachable over SSH - can't arm the SP805 reset", "ERROR")
+        log(
+            "ABORT: woomera not reachable over SSH - can't arm the SP805 reset", "ERROR"
+        )
         httpd.shutdown()
         return 1
     log(f"arming SP805 watchdog over SSH ({host}) - box resets to stock U-Boot in ~2s")
     subprocess.run(
         [
-            "sshpass", "-p", fd.ROOT_PASSWORD, "ssh",
-            "-o", "StrictHostKeyChecking=accept-new",
-            "-o", "PreferredAuthentications=password",
-            "-o", "PubkeyAuthentication=no",
-            "-o", "ConnectTimeout=5",
+            "sshpass",
+            "-p",
+            fd.ROOT_PASSWORD,
+            "ssh",
+            "-o",
+            "StrictHostKeyChecking=accept-new",
+            "-o",
+            "PreferredAuthentications=password",
+            "-o",
+            "PubkeyAuthentication=no",
+            "-o",
+            "ConnectTimeout=5",
             f"root@{host}",
             "python3 -c \"import fcntl,struct; f=open('/dev/watchdog','r+b',buffering=0); "
             "fcntl.ioctl(f,0xC0045706,struct.pack('I',1)); exec('while True: pass')\"",
         ],
-        timeout=8, check=False,
+        timeout=8,
+        check=False,
     )
 
     script = (
@@ -1393,7 +1421,9 @@ def _box_has_module_tree(kver: str) -> bool:
         s = _console.connect()
         _console.login(s)
         _, out = _console.sh(
-            s, f"test -d /lib/modules/{kver} && echo MODS_YES || echo MODS_NO", timeout=15
+            s,
+            f"test -d /lib/modules/{kver} && echo MODS_YES || echo MODS_NO",
+            timeout=15,
         )
     except Exception:
         return False
@@ -1424,7 +1454,9 @@ def _reset_to_uboot() -> int:
     try:
         s = _console.connect()
         _console.login(s)
-        _, out = _console.sh(s, "test -c /dev/watchdog && echo WD_YES || echo WD_NO", timeout=10)
+        _, out = _console.sh(
+            s, "test -c /dev/watchdog && echo WD_YES || echo WD_NO", timeout=10
+        )
         has_watchdog = "WD_YES" in (out or "")
     except Exception:
         pass
@@ -1437,10 +1469,14 @@ def _reset_to_uboot() -> int:
         rc = cmd_console_tcl(["scripts/reboot-to-uboot.tcl"])
         if rc == 0:
             return 0
-        log("reset-to-uboot: watchdog path failed - falling back to power-cycle", "WARN")
+        log(
+            "reset-to-uboot: watchdog path failed - falling back to power-cycle", "WARN"
+        )
     else:
-        log("reset-to-uboot: no /dev/watchdog (unhealthy or non-Linux state) - "
-            "using power-cycle + catch-stock")
+        log(
+            "reset-to-uboot: no /dev/watchdog (unhealthy or non-Linux state) - "
+            "using power-cycle + catch-stock"
+        )
 
     # Same catch-before-reset ordering as uboot-test --cold / the EDK2 probe:
     # the ESC stream must already be running when power comes back.
@@ -1533,8 +1569,11 @@ def cmd_deploy_fedora(extra: list[str]) -> int:
         # _probe_fedora_shell() answers directly, so that decides.
         rc = cmd_wait_for_boot([])
         if rc != 0:
-            log("deploy-fedora: wait-for-boot reported trouble lines - "
-                "probing the shell directly to decide", "WARN")
+            log(
+                "deploy-fedora: wait-for-boot reported trouble lines - "
+                "probing the shell directly to decide",
+                "WARN",
+            )
         if not _probe_fedora_shell():
             log("deploy-fedora: no usable Fedora shell after boot", "ERROR")
             return 1
@@ -1549,15 +1588,21 @@ def cmd_deploy_fedora(extra: list[str]) -> int:
         # (checkable over the console, no network needed) - that keeps the real
         # invariant intact: never boot a kernel without its matching modules.
         if _box_has_module_tree(KVER):
-            log(f"deploy-fedora: publish's module sync failed (box unreachable), "
+            log(
+                f"deploy-fedora: publish's module sync failed (box unreachable), "
                 f"but /lib/modules/{KVER} is already present on the box - "
                 f"continuing to flash to bootstrap it back online. Re-run this "
-                f"command afterwards to sync the current modules.", "WARN")
+                f"command afterwards to sync the current modules.",
+                "WARN",
+            )
         else:
-            log(f"deploy-fedora: publish failed and the box has no "
+            log(
+                f"deploy-fedora: publish failed and the box has no "
                 f"/lib/modules/{KVER} - NOT flashing (booting it would give a "
                 f"kernel with no modules, which is how this box got wedged in "
-                f"the first place, #165)", "ERROR")
+                f"the first place, #165)",
+                "ERROR",
+            )
             return rc
 
     rc = _reset_to_uboot()
@@ -1567,9 +1612,12 @@ def cmd_deploy_fedora(extra: list[str]) -> int:
 
     rc = cmd_flash(extra)
     if rc != 0:
-        log("deploy-fedora: FLASH FAILED - NAND may hold the previous kernel "
+        log(
+            "deploy-fedora: FLASH FAILED - NAND may hold the previous kernel "
             "while the module tree on disk is now the new one. Re-run this "
-            "command; do not leave the box in this state (#165)", "ERROR")
+            "command; do not leave the box in this state (#165)",
+            "ERROR",
+        )
         return rc
 
     log("deploy-fedora: booting the freshly-flashed kernel")
@@ -1588,8 +1636,11 @@ def cmd_deploy_fedora(extra: list[str]) -> int:
         s.close()
     running = running.strip().splitlines()[-1].strip() if running.strip() else ""
     if running != KVER:
-        log(f"deploy-fedora: MISMATCH - flashed {KVER} but box is running "
-            f"{running!r}. NAND did not take, or it booted something else.", "ERROR")
+        log(
+            f"deploy-fedora: MISMATCH - flashed {KVER} but box is running "
+            f"{running!r}. NAND did not take, or it booted something else.",
+            "ERROR",
+        )
         return 1
     log(f"deploy-fedora: verified - box is running {running}, the kernel just flashed")
     return 0

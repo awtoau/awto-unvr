@@ -59,7 +59,12 @@ BOX_IFACE = "enp0s2"
 BOX_IP = "192.168.25.122"
 IPERF_PORT = 5701
 TX_PARAMS = (
-    "amp", "total_driver_units", "c_minus_1", "c_plus_1", "c_plus_2", "slew_rate",
+    "amp",
+    "total_driver_units",
+    "c_minus_1",
+    "c_plus_1",
+    "c_plus_2",
+    "slew_rate",
 )
 # Link needs to re-establish for an override to be applied - the params are
 # consumed by al_eth_serdes_static_tx_params_set() during link setup, not
@@ -107,10 +112,14 @@ def measure_tx(s, server_ip: str, duration: int) -> tuple[float, int]:
 
 def main() -> int:
     ap = argparse.ArgumentParser(
-        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     ap.add_argument("--param", default="amp", choices=TX_PARAMS)
-    ap.add_argument("--values", default="1,2,3,4,5,6,7",
-                    help="comma-separated values to try (decimal; written as hex)")
+    ap.add_argument(
+        "--values",
+        default="1,2,3,4,5,6,7",
+        help="comma-separated values to try (decimal; written as hex)",
+    )
     ap.add_argument("--duration", type=int, default=6, help="iperf3 seconds per point")
     args = ap.parse_args()
 
@@ -127,12 +136,16 @@ def main() -> int:
         original = read_params(s)
         print(f"original TX params: {original}\n")
         if not original.get(args.param):
-            print(f"FATAL: could not read serdes_tx_{args.param} - is this the 10G port?")
+            print(
+                f"FATAL: could not read serdes_tx_{args.param} - is this the 10G port?"
+            )
             return 1
 
         base_mbps, base_retr = measure_tx(s, server_ip, args.duration)
         print(f"{'value':>6}  {'Mbit/s':>9}  {'retrans':>8}   note")
-        print(f"{original[args.param]:>6}  {base_mbps:>9.1f}  {base_retr:>8}   (baseline, unchanged)")
+        print(
+            f"{original[args.param]:>6}  {base_mbps:>9.1f}  {base_retr:>8}   (baseline, unchanged)"
+        )
 
         results = []
         for v in values:
@@ -150,7 +163,10 @@ def main() -> int:
             results.append((v, mbps, retr))
 
         # Restore.
-        sh(s, f"echo {int(original[args.param]):x} > {SYSFS_DIR}/serdes_tx_{args.param}")
+        sh(
+            s,
+            f"echo {int(original[args.param]):x} > {SYSFS_DIR}/serdes_tx_{args.param}",
+        )
         sh(s, f"ip link set {BOX_IFACE} down", timeout=20)
         sh(s, f"ip link set {BOX_IFACE} up", timeout=20)
         time.sleep(LINK_SETTLE_S)
@@ -159,11 +175,15 @@ def main() -> int:
         if results:
             best = max(results, key=lambda r: r[1])
             if best[1] > base_mbps * 1.5:
-                print(f"BEST: {args.param}={best[0]} -> {best[1]:.1f} Mbit/s "
-                      f"({best[1] / max(base_mbps, 0.001):.1f}x baseline)")
+                print(
+                    f"BEST: {args.param}={best[0]} -> {best[1]:.1f} Mbit/s "
+                    f"({best[1] / max(base_mbps, 0.001):.1f}x baseline)"
+                )
             else:
-                print(f"No value beat the baseline by >1.5x - "
-                      f"{args.param} is probably not the limiting factor.")
+                print(
+                    f"No value beat the baseline by >1.5x - "
+                    f"{args.param} is probably not the limiting factor."
+                )
     finally:
         s.close()
     return 0
