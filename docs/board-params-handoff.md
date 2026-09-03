@@ -60,6 +60,12 @@ al_reg_write32(&mac_regs_base->mac_1g.scratch, reg);
   writer must guarantee at least one non-zero field. In practice `media_type`
   and `serdes_grp` do it, but that is a property of our values, not of the code —
   do not rely on it silently.
+- **This does not apply uniformly to every board type.** `al_eth_board_params_init()`
+  calls the getter only in the `ALPINE_NIC_V2_25`/`_DUAL` and `ALPINE_INTEGRATED`
+  branches (two near-identical copies). The earlier `ALPINE_NIC` branches never
+  consult board params at all — they hardcode `active_speed`. **Ours is
+  `ALPINE_INTEGRATED`**, so the dependency is real for us; just do not generalise
+  it to the whole driver.
 - **Register 2 has no validity check at all.** Its trustworthiness is inferred
   entirely from register 1 being non-zero. So "reg 1 written, reg 2 not" reads as
   perfectly valid zeros — and zero in reg 2 means
