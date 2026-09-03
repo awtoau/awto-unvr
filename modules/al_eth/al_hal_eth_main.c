@@ -2016,7 +2016,7 @@ int al_eth_mac_stop(struct al_hal_eth_adapter *adapter)
 		al_reg_write32_masked(&adapter->mac_regs_base->mac_10g.cmd_cfg,
 				ETH_10G_MAC_CMD_CFG_TX_ENA | ETH_10G_MAC_CMD_CFG_RX_ENA,
 				0);
-	else {
+	else if (adapter->rev_id > AL_ETH_REV_ID_2) {
 		uint32_t cmd_cfg;
 
 		cmd_cfg = al_eth_40g_mac_reg_read(adapter,
@@ -2028,6 +2028,14 @@ int al_eth_mac_stop(struct al_hal_eth_adapter *adapter)
 		al_eth_40g_mac_reg_write(adapter,
 				ETH_MAC_GEN_V3_MAC_40G_COMMAND_CONFIG_ADDR,
 				cmd_cfg);
+	} else {
+		/* The 40G path reaches gen_v3.mac_40g_ll_*, a V3-only window;
+		 * on rev 2 that indirect access is an async SError. An
+		 * unrecognised mac_mode used to land here - e.g. garbage after a
+		 * reload - and take the box down. Fail loudly instead (#139). */
+		pr_err("%s: unsupported mac_mode %d on rev_id %d\n",
+		       __func__, adapter->mac_mode, adapter->rev_id);
+		return -EINVAL;
 	}
 
 	return 0;
