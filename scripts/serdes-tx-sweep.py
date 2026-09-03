@@ -49,8 +49,8 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO / "scripts"))
 os.environ.setdefault("AWTO_ALLOW_DIRECT_SCRIPT", "1")
-import _console  # noqa: E402
-from _net import detect_server_ip  # noqa: E402
+import _console
+from _net import detect_server_ip
 
 # 10G port: enp0s2, PCI 0000:00:02.0
 SYSFS_DIR = "/sys/devices/platform/soc/fbc00000.pci/pci0000:00/0000:00:02.0"
@@ -81,7 +81,7 @@ def marked(s, cmd, timeout=30):
     echoes the command itself and interleaves kernel messages, so a bare
     read of the transcript is not parseable."""
     out = sh(s, f"echo MK$({cmd})MK", timeout=timeout)
-    m = re.search(r"MK(.*?)MK", out, re.S)
+    m = re.search(r"MK(.*?)MK", out, re.DOTALL)
     return m.group(1).strip() if m else ""
 
 

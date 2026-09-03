@@ -1256,9 +1256,9 @@ def cmd_deploy_fedora_rootfs(_extra: list[str]) -> int:
     scripts_dir = str(REPO / "scripts")
     if scripts_dir not in sys.path:
         sys.path.insert(0, scripts_dir)
+    import _fedora_deploy as fd
     from _net import detect_server_ip
     from _repo import ea16_build_out, kernel_build_ver
-    import _fedora_deploy as fd
 
     ea16_out = ea16_build_out()
     ea16_ver = kernel_build_ver()
