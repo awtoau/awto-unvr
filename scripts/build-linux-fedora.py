@@ -88,6 +88,11 @@ def log(m):
 
 def run(cmd, **kw):
     log("+ " + (cmd if isinstance(cmd, str) else " ".join(cmd)))
+    # stdin=DEVNULL: a kernel bump adds new Kconfig symbols, and localmodconfig
+    # then PROMPTS for each one. With an inherited tty that blocks forever -
+    # indistinguishable from a hang. On EOF Kconfig takes the default, which is
+    # what olddefconfig below would pick anyway.
+    kw.setdefault("stdin", subprocess.DEVNULL)
     subprocess.run(cmd, check=True, env=ENV, **kw)
 
 
