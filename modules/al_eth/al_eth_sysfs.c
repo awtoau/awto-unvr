@@ -215,7 +215,20 @@ static ssize_t al_eth_store_serdes_tx_param(struct device *dev,
 
 	*(((uint8_t *)&tx_params) + offset) = param;
 
+	/* Commit it. Without this the function mutated a stack local and threw
+	 * it away - every write returned success and changed nothing, and
+	 * al_eth_lm_static_parameters_override() (which sets the _valid flag)
+	 * had zero call sites tree-wide, so the static tables always won. */
+	err = al_eth_lm_static_parameters_override(&adapter->lm_context,
+						  &tx_params, NULL);
+
 	spin_unlock(&adapter->serdes_config_lock);
+
+	if (err) {
+		netdev_err(adapter->netdev,
+			   "failed to apply serdes tx param override (%d)\n", err);
+		return err;
+	}
 
 	return len;
 }
@@ -262,7 +275,18 @@ static ssize_t al_eth_store_serdes_rx_param(struct device *dev,
 
 	*(((uint8_t *)&rx_params) + offset) = param;
 
+	/* Commit it - see al_eth_store_serdes_tx_param() for why this was
+	 * missing and what it silently broke. */
+	err = al_eth_lm_static_parameters_override(&adapter->lm_context,
+						  NULL, &rx_params);
+
 	spin_unlock(&adapter->serdes_config_lock);
+
+	if (err) {
+		netdev_err(adapter->netdev,
+			   "failed to apply serdes rx param override (%d)\n", err);
+		return err;
+	}
 
 	return len;
 }
