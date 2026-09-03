@@ -174,6 +174,20 @@ static void al_eth_pcs_get_state(struct phylink_pcs *pcs, unsigned int neg_mode,
 	if (al_eth_link_status_get(&adapter->hal_adapter, &status))
 		return;
 
+	/*
+	 * Accumulate the Clause 49 counters that read fetched. They are
+	 * clear-on-read and this poll is their only reader, so anything not
+	 * banked here is lost. Unlike throughput they do not clip at line rate,
+	 * which is what makes them usable for SerDes equalisation work - see
+	 * #196. Exposed as pcs_errored_blocks / pcs_ber_events in ethtool -S.
+	 */
+	if (status.pcs_errored_blocks || status.pcs_ber_count) {
+		u64_stats_update_begin(&adapter->syncp);
+		adapter->dev_stats.pcs_errored_blocks += status.pcs_errored_blocks;
+		adapter->dev_stats.pcs_ber_events += status.pcs_ber_count;
+		u64_stats_update_end(&adapter->syncp);
+	}
+
 	if (status.link_up == AL_TRUE) {
 		state->link = true;
 		state->an_complete = true;

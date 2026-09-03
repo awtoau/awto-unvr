@@ -4391,6 +4391,13 @@ int al_eth_link_status_get(struct al_hal_eth_adapter *adapter,
 
 		reg = al_eth_kr_pcs_reg_read(adapter, ETH_MAC_KR_PCS_BASE_R_STATUS2);
 
+		/* Harvest the Clause 49 counters from THIS read - they are
+		 * clear-on-read, so a second read would return zero (#196). */
+		status->pcs_errored_blocks = reg & AL_ETH_PCS_BASE_R_STAT2_ERR_MASK;
+		status->pcs_ber_count =
+			(reg & AL_ETH_PCS_BASE_R_STAT2_BER_MASK) >>
+			AL_ETH_PCS_BASE_R_STAT2_BER_SHIFT;
+
 		if (reg & AL_BIT(15)) {
 			reg = al_reg_read32(&adapter->mac_regs_base->mac_10g.status);
 

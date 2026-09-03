@@ -304,6 +304,15 @@ struct al_eth_stats_dev {
 	u64 tx_timeout;
 	u64 interface_up;
 	u64 interface_down;
+	/*
+	 * Clause 49 BASE-R PCS counters, accumulated from the phylink poll.
+	 * The hardware fields are clear-on-read and saturate (255 / 63), so
+	 * these are lower bounds under a heavy error rate. Unlike throughput
+	 * they do not clip at line rate, which is what makes them usable as a
+	 * SerDes equalisation metric (#196, #207).
+	 */
+	u64 pcs_errored_blocks;
+	u64 pcs_ber_events;
 };
 
 /* board specific private data structure */

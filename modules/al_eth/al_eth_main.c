@@ -4623,6 +4623,8 @@ static const struct al_eth_ethtool_stats al_eth_ethtool_stats_global_strings[] =
 	AL_ETH_ETHTOOL_STAT_GLOBAL_ENTRY(tx_timeout),
 	AL_ETH_ETHTOOL_STAT_GLOBAL_ENTRY(interface_up),
 	AL_ETH_ETHTOOL_STAT_GLOBAL_ENTRY(interface_down),
+	AL_ETH_ETHTOOL_STAT_GLOBAL_ENTRY(pcs_errored_blocks),
+	AL_ETH_ETHTOOL_STAT_GLOBAL_ENTRY(pcs_ber_events),
 };
 
 static const struct al_eth_ethtool_stats al_eth_ethtool_stats_tx_strings[] = {

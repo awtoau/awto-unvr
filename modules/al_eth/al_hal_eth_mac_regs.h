@@ -2075,6 +2075,12 @@ struct al_eth_mac_regs {
 #define ETH_MAC_KR_PCS_CONTROL_1_ADDR                   0x00000000
 
 #define ETH_MAC_KR_PCS_BASE_R_STATUS2			0x00000021
+/* Clause 49 BASE-R Status 2 counter fields. Both CLEAR-ON-READ and both
+ * saturate, so a pegged value means "at least this many". Same layout as
+ * MDIO_PCS_10GBRT_STAT2_{ERR,BER} in include/uapi/linux/mdio.h. */
+#define AL_ETH_PCS_BASE_R_STAT2_ERR_MASK		0x000000ff
+#define AL_ETH_PCS_BASE_R_STAT2_BER_MASK		0x00003f00
+#define AL_ETH_PCS_BASE_R_STAT2_BER_SHIFT		8
 
 #define ETH_MAC_KR_AN_MILLISECONDS_COUNTER_ADDR         0x00008000
 #define ETH_MAC_AN_LT_MILLISECONDS_COUNTER_ADDR         0x00000020

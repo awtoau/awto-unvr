@@ -1836,6 +1836,15 @@ struct al_eth_link_status {
 	al_bool		link_up;
 	al_bool		local_fault;
 	al_bool		remote_fault;
+	/*
+	 * Clause 49 BASE-R Status 2 counters, harvested by the same read that
+	 * fetches the fault bits. They are CLEAR-ON-READ, so there must be
+	 * exactly one reader - do not add a second read to get them.
+	 * Both saturate (errored_blocks at 255, ber at 63), so a pegged value
+	 * means "at least this many", not "this many".
+	 */
+	uint8_t		pcs_errored_blocks;	/* STAT2 bits 7:0  */
+	uint8_t		pcs_ber_count;		/* STAT2 bits 13:8 */
 };
 
 /**
