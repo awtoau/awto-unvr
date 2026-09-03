@@ -2535,12 +2535,10 @@ static int al_eth_mdio_10g_mac_wait_busy(struct al_hal_eth_adapter *adapter)
 
 	do {
 		mdio_cfg_status = al_reg_read32(&adapter->mac_regs_base->mac_10g.mdio_cfg_status);
-/*
-		if (mdio_cfg_status & AL_BIT(1)){ //error
-			pr_err(" %s mdio read failed on error. phy_addr 0x%x reg 0x%x\n",
-				udma_params.name, phy_addr, reg);
-			return -EIO;
-		}*/
+		/* Do NOT check the error bit (AL_BIT(1)) here - tried and
+		 * reverted. This polls BEFORE the transaction completes, so a
+		 * latched error from the previous one aborts this one and the
+		 * PHY is lost entirely. Both callers check it after. (#121) */
 		if (mdio_cfg_status & AL_BIT(0)){
 			if (count > 0)
 				pr_debug("eth [%s] mdio: still busy!\n", adapter->name);
@@ -2551,6 +2549,27 @@ static int al_eth_mdio_10g_mac_wait_busy(struct al_hal_eth_adapter *adapter)
 	}while(count++ < AL_ETH_MDIO_DELAY_COUNT);
 
 	return -ETIMEDOUT;
+}
+
+/*
+ * Wait for BUSY to assert, i.e. for the MDIO state machine to accept the
+ * command, before polling for it to clear.
+ *
+ * Without this, wait_busy() can sample not-busy from before the command
+ * latched (MDC is 2.5 MHz, the CPU wins the race) and the caller reads the
+ * PREVIOUS transaction's data - register N returns register N-1. Bounded
+ * and fail-open: 4us is ~8 MDC periods. (#121)
+ */
+#define AL_ETH_MDIO_BUSY_ASSERT_US	4
+static void al_eth_mdio_10g_mac_wait_busy_asserted(struct al_hal_eth_adapter *adapter)
+{
+	int count = 0;
+
+	do {
+		if (al_reg_read32(&adapter->mac_regs_base->mac_10g.mdio_cfg_status) & AL_BIT(0))
+			return;
+		al_udelay(1);
+	} while (count++ < AL_ETH_MDIO_BUSY_ASSERT_US);
 }
 
 static int al_eth_mdio_10g_mac_type22(
@@ -2580,6 +2599,8 @@ static int al_eth_mdio_10g_mac_type22(
 	if (!read)
 		al_reg_write16(&adapter->mac_regs_base->mac_10g.mdio_data,
 				*val);
+
+	al_eth_mdio_10g_mac_wait_busy_asserted(adapter);
 
 	//wait for the busy to clear
 	rc = al_eth_mdio_10g_mac_wait_busy(adapter);
@@ -2624,6 +2645,8 @@ static int al_eth_mdio_10g_mac_type45(
 
 	// send address frame
 	al_reg_write16(&adapter->mac_regs_base->mac_10g.mdio_regaddr, reg);
+	al_eth_mdio_10g_mac_wait_busy_asserted(adapter);
+
 	//wait for the busy to clear
 	rc = al_eth_mdio_10g_mac_wait_busy(adapter);
 	if (rc) {
@@ -2642,6 +2665,8 @@ static int al_eth_mdio_10g_mac_type45(
 			(uint16_t *)&adapter->mac_regs_base->mac_10g.mdio_data,
 			*val);
 	}
+	al_eth_mdio_10g_mac_wait_busy_asserted(adapter);
+
 	//wait for the busy to clear
 	rc = al_eth_mdio_10g_mac_wait_busy(adapter);
 	if (rc) {
