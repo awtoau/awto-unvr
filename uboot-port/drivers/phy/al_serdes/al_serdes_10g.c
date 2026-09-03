@@ -291,11 +291,64 @@ void al_serdes_10g_status(void)
 	 * MAC-adapter window aborts on direct read (0xfe120a04). See al_eth_dm_10g. */
 }
 
+/* TX equaliser fields settable from the prompt, so a tap can be swept without a
+ * rebuild. Main cursor = total_driver_units - (c_minus_1 + c_plus_1 + c_plus_2),
+ * so raising a tap costs amplitude - too high and the lane dies (#121). */
+static const struct {
+	const char	*name;
+	uint8_t		*field;
+} tx_fields[] = {
+	{ "amp",	&optic_tx_params.amp },
+	{ "tdu",	&optic_tx_params.total_driver_units },
+	{ "c_plus_1",	&optic_tx_params.c_plus_1 },
+	{ "c_plus_2",	&optic_tx_params.c_plus_2 },
+	{ "c_minus_1",	&optic_tx_params.c_minus_1 },
+	{ "slew",	&optic_tx_params.slew_rate },
+};
+
+static void serdes_tx_params_show(void)
+{
+	int i;
+
+	printf("optic TX params (hex):");
+	for (i = 0; i < ARRAY_SIZE(tx_fields); i++)
+		printf(" %s=%x", tx_fields[i].name, *tx_fields[i].field);
+	printf("\n  main cursor = %d of %d units\n",
+	       optic_tx_params.total_driver_units -
+		       (optic_tx_params.c_minus_1 + optic_tx_params.c_plus_1 +
+			optic_tx_params.c_plus_2),
+	       optic_tx_params.total_driver_units);
+}
+
+static int do_serdes_tx(int argc, char *const argv[])
+{
+	int i;
+
+	if (argc < 4) {
+		serdes_tx_params_show();
+		return CMD_RET_SUCCESS;
+	}
+
+	for (i = 0; i < ARRAY_SIZE(tx_fields); i++) {
+		if (strcmp(argv[2], tx_fields[i].name))
+			continue;
+		*tx_fields[i].field = (uint8_t)hextoul(argv[3], NULL);
+		serdes_tx_params_show();
+		/* Params are consumed during lane setup, so re-init to apply. */
+		return al_serdes_10g_init() ? CMD_RET_FAILURE : CMD_RET_SUCCESS;
+	}
+
+	printf("unknown TX field '%s'\n", argv[2]);
+	return CMD_RET_USAGE;
+}
+
 static int do_serdes(struct cmd_tbl *cmdtp, int flag, int argc,
 		     char *const argv[])
 {
 	const char *sub = (argc > 1) ? argv[1] : "all";
 
+	if (!strcmp(sub, "tx"))
+		return do_serdes_tx(argc, argv);
 	if (!strcmp(sub, "init"))
 		return al_serdes_10g_init() ? CMD_RET_FAILURE : CMD_RET_SUCCESS;
 	if (!strcmp(sub, "status")) {
@@ -311,8 +364,11 @@ static int do_serdes(struct cmd_tbl *cmdtp, int flag, int argc,
 	return CMD_RET_USAGE;
 }
 
-U_BOOT_CMD(serdes, 2, 0, do_serdes,
+U_BOOT_CMD(serdes, 4, 0, do_serdes,
 	   "bring up the SFP+ 25G-SerDes lane at fixed 10G + read lane status",
 	   "init    - configure the lane for fixed 10GBASE-R (KR/AN/LT off)\n"
 	   "serdes status  - read PLL/signal/CDR/rx-valid + PCS block-lock\n"
+	   "serdes tx      - show the optic TX equaliser params\n"
+	   "serdes tx <field> <hex>  - set one and re-init the lane\n"
+	   "                 fields: amp tdu c_plus_1 c_plus_2 c_minus_1 slew\n"
 	   "serdes         - init then status");
