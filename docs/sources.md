@@ -283,6 +283,23 @@ Do not modify firmware; extend it.
 
 ## 10. Local mirrors on this machine
 
+**`/mnt/2tb/unvr-port-refs/UBNT-source-code/UNVR-1.3.35-GPL/`** — the Ubiquiti GPL
+drop, **checked out locally since 2026-08-16**. Check here BEFORE reversing
+anything from a stock binary.
+
+- `u-boot/board/annapurna-labs/common/cmd_eth.c` — all six `eth_*` commands in
+  source (504 lines, 6 × `U_BOOT_CMD`)
+- `u-boot/board/annapurna-labs/alpine_ubnt/board.c` — board-cfg → board_params
+  translation, and the `freeze-serdes-params` DT reader
+- `u-boot/drivers/net/al_eth.c:420` — the `al_eth_board_params_set()` call site
+- `linux-arm64-unvr-4.1.37-ubnt/drivers/net/ethernet/al/` — matching Linux HAL,
+  incl. the interrupt-driven `drivers/crypto/al/` absent from the 4.19 drop
+
+Note `unvr-port-refs/gpl/` is an **empty** directory and is not this — mistaking
+its emptiness for "no GPL source" cost a round of unnecessary reverse-engineering
+(#198).
+
+
 - Mainline Linux — has `arch/arm64/boot/dts/amazon/alpine-v2*`, `irq-alpine-msi.c`,
   `pcie-al.c`; **no `al_eth`** ✅
 - QEMU — `hw/arm/` has **no Alpine machine model**, only `virt` and `sbsa-ref` ✅
