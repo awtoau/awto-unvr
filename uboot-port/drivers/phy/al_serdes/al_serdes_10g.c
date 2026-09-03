@@ -63,17 +63,19 @@
 #define AL_PCS_10G_LL_CFG_10GR	0x00000050
 
 /*
- * 10G optic TX/RX equaliser params — mirror al_init_eth_lm.c's 10G_OPTIC static
+ * 10G optic TX/RX equaliser params - mirror al_init_eth_lm.c's 10G_OPTIC static
  * values (optic_tx_params / optic_rx_params). Applied in al_serdes_10g_init()
- * via obj.tx_advanced_params_set()/rx_advanced_params_set() (#111). HW: these
- * are the vendor optic defaults; retune per the actual SFP/DAC on the box
- * (rx_equalization sweep).
+ * via obj.tx_advanced_params_set()/rx_advanced_params_set() (#111).
+ *
+ * c_plus_1 is 0x4, not the vendor's 0x2: the vendor "optic" table is really the
+ * direct-attach copper one and under-equalises a real optic. Measured under
+ * Linux on this board, see #121. Untested in U-Boot - no throughput path here.
  */
 static struct al_serdes_adv_tx_params optic_tx_params = {
 	.override		= AL_TRUE,
 	.amp			= 0x1,
 	.total_driver_units	= 0x13,
-	.c_plus_1		= 0x2,
+	.c_plus_1		= 0x4,
 	.c_plus_2		= 0,
 	.c_minus_1		= 0,
 	.slew_rate		= 0,
