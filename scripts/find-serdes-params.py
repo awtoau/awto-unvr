@@ -25,8 +25,11 @@ Known-good reference values from the vendor source (al_init_eth_lm.c):
     tx_params_br410   tdu=0x1b c+1=0x6 c-1=0     "calibrated for br410 on EVP only"
     optic_tx_params   tdu=0x13 c+1=0x2 c-1=0     the uncalibrated catch-all (#121)
 
-Compressed payloads (uImage/vmlinuz/squashfs) are searched too: every embedded
-gzip/xz/lz4 stream is inflated and scanned as well as the raw bytes.
+Compressed payloads are searched too: every embedded gzip/xz/bzip2 stream is
+inflated and scanned as well as the raw bytes. NOTE the UNVR 5.1.x rootfs is
+SquashFS/zstd, which is NOT inflated here - but `al_eth` is built into the stock
+kernel (no .ko), so scan `tmp/sections/kernel-Image` from
+`scripts/analyse-unvr-firmware.py --extract` instead.
 
 Usage:
     ./scripts/find-serdes-params.py <file> [<file> ...]
