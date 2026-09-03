@@ -1136,19 +1136,22 @@ def _probe_awto_nas(timeout_s: float = 4.0) -> bool:
         s = _console.connect()
     except FileNotFoundError:
         return False
-    s.sendall(b"\r")
-    buf = b""
-    end = time.monotonic() + timeout_s
-    while time.monotonic() < end:
-        try:
-            d = s.recv(4096)
-            if d:
-                buf += d
-        except TimeoutError:
-            continue
-        if b"awto-nas#" in buf:
-            return True
-    return False
+    try:
+        s.sendall(b"\r")
+        buf = b""
+        end = time.monotonic() + timeout_s
+        while time.monotonic() < end:
+            try:
+                d = s.recv(4096)
+                if d:
+                    buf += d
+            except TimeoutError:
+                continue
+            if b"awto-nas#" in buf:
+                return True
+        return False
+    finally:
+        s.close()
 
 
 @command(
@@ -1354,6 +1357,89 @@ def cmd_flash(extra: list[str]) -> int:
     return _run_script("scripts/flash-nand.py", extra)
 
 
+def _box_has_module_tree(kver: str) -> bool:
+    """Does the box already have /lib/modules/<kver>? Checked over the serial
+    console, so it works even when the box has no network (which is exactly
+    when it matters - see deploy-fedora's bootstrap path)."""
+    scripts_dir = str(REPO / "scripts")
+    if scripts_dir not in sys.path:
+        sys.path.insert(0, scripts_dir)
+    import _console
+
+    s = None
+    try:
+        s = _console.connect()
+        _console.login(s)
+        _, out = _console.sh(
+            s, f"test -d /lib/modules/{kver} && echo MODS_YES || echo MODS_NO", timeout=15
+        )
+    except Exception:
+        return False
+    finally:
+        if s is not None:
+            s.close()
+    return "MODS_YES" in (out or "")
+
+
+def _reset_to_uboot() -> int:
+    """Get the box to a U-Boot prompt, whatever state it's in.
+
+    Prefers the SP805 watchdog reset (fast, no power-cycle) but that needs
+    /dev/watchdog, which needs the watchdog MODULE - and a box booted on a
+    kernel whose module tree is missing has no /dev/watchdog at all (hit
+    live 2026-09-03: NAND held 7.1.8-dirty while /lib/modules had only
+    7.2/7.3 trees, so nothing loaded - no watchdog AND no network, #165).
+    Checks for the device first and falls back to power-cycle + catch-stock
+    rather than spending ~400s spamming ESC after a watchdog that was never
+    going to fire."""
+    scripts_dir = str(REPO / "scripts")
+    if scripts_dir not in sys.path:
+        sys.path.insert(0, scripts_dir)
+    import _console
+
+    has_watchdog = False
+    s = None
+    try:
+        s = _console.connect()
+        _console.login(s)
+        _, out = _console.sh(s, "test -c /dev/watchdog && echo WD_YES || echo WD_NO", timeout=10)
+        has_watchdog = "WD_YES" in (out or "")
+    except Exception:
+        pass
+    finally:
+        if s is not None:
+            s.close()
+
+    if has_watchdog:
+        log("reset-to-uboot: SP805 watchdog reset (no power-cycle)")
+        rc = cmd_console_tcl(["scripts/reboot-to-uboot.tcl"])
+        if rc == 0:
+            return 0
+        log("reset-to-uboot: watchdog path failed - falling back to power-cycle", "WARN")
+    else:
+        log("reset-to-uboot: no /dev/watchdog (unhealthy or non-Linux state) - "
+            "using power-cycle + catch-stock")
+
+    # Same catch-before-reset ordering as uboot-test --cold / the EDK2 probe:
+    # the ESC stream must already be running when power comes back.
+    catch = subprocess.Popen(
+        [sys.executable, "scripts/catch-uboot.py", "--seconds", "90"],
+        cwd=REPO,
+        env={**os.environ, "AWTO_VIA_DEVPY": "1"},
+    )
+    rc = cmd_power_cycle([])
+    if rc != 0:
+        catch.kill()
+        log("reset-to-uboot: power-cycle failed", "ERROR")
+        return rc
+    try:
+        return catch.wait(timeout=120)
+    except subprocess.TimeoutExpired:
+        catch.kill()
+        log("reset-to-uboot: never caught the stock U-Boot prompt", "ERROR")
+        return 1
+
+
 def _probe_fedora_shell(timeout_s: float = 8.0) -> bool:
     """Is the box currently at a usable Fedora shell (login prompt or an
     already-logged-in root shell)? Used by deploy-fedora to decide whether
@@ -1368,12 +1454,16 @@ def _probe_fedora_shell(timeout_s: float = 8.0) -> bool:
     # deploy-fedora then skips booting the box and fails confusingly later
     # (hit live 2026-09-03). U-Boot has no `uname`, so requiring "Linux" in
     # the output distinguishes a real Linux shell from a bootloader prompt.
+    s = None
     try:
         s = _console.connect()
         _console.login(s)
         rc, out = _console.sh(s, "uname -s", timeout=timeout_s)
     except Exception:
         return False
+    finally:
+        if s is not None:
+            s.close()
     return "Linux" in (out or "")
 
 
@@ -1414,22 +1504,41 @@ def cmd_deploy_fedora(extra: list[str]) -> int:
         if rc != 0:
             log("deploy-fedora: power-cycle failed", "ERROR")
             return rc
+        # wait-for-boot returns non-zero if it saw ANY trouble line during
+        # boot (e.g. a benign lm_sensors.service failure) even when it also
+        # reached the login prompt - too strict to abort a deploy on. The
+        # authoritative test is whether the box is actually usable now, which
+        # _probe_fedora_shell() answers directly, so that decides.
         rc = cmd_wait_for_boot([])
         if rc != 0:
-            log("deploy-fedora: box did not reach a Fedora login", "ERROR")
-            return rc
+            log("deploy-fedora: wait-for-boot reported trouble lines - "
+                "probing the shell directly to decide", "WARN")
         if not _probe_fedora_shell():
-            log("deploy-fedora: still no Fedora shell after boot", "ERROR")
+            log("deploy-fedora: no usable Fedora shell after boot", "ERROR")
             return 1
 
     rc = cmd_publish_fedora(extra)
     if rc != 0:
-        log("deploy-fedora: publish failed - NOT flashing (box left on its "
-            "current kernel, which is the safe outcome)", "ERROR")
-        return rc
+        # Bootstrap case (#165): a box booted on a kernel whose module tree is
+        # missing has no network, so the module rsync can't run - but flashing
+        # the new kernel is exactly what fixes that, and publish_artifacts()
+        # has already regenerated the tftp images by the time the rsync fails.
+        # Only proceed if the target kernel's module tree is ALREADY on the box
+        # (checkable over the console, no network needed) - that keeps the real
+        # invariant intact: never boot a kernel without its matching modules.
+        if _box_has_module_tree(KVER):
+            log(f"deploy-fedora: publish's module sync failed (box unreachable), "
+                f"but /lib/modules/{KVER} is already present on the box - "
+                f"continuing to flash to bootstrap it back online. Re-run this "
+                f"command afterwards to sync the current modules.", "WARN")
+        else:
+            log(f"deploy-fedora: publish failed and the box has no "
+                f"/lib/modules/{KVER} - NOT flashing (booting it would give a "
+                f"kernel with no modules, which is how this box got wedged in "
+                f"the first place, #165)", "ERROR")
+            return rc
 
-    log("deploy-fedora: resetting to U-Boot (SP805 watchdog, no power-cycle)")
-    rc = cmd_console_tcl(["scripts/reboot-to-uboot.tcl"])
+    rc = _reset_to_uboot()
     if rc != 0:
         log("deploy-fedora: could not reach the U-Boot prompt - NOT flashing", "ERROR")
         return rc
@@ -1450,8 +1559,11 @@ def cmd_deploy_fedora(extra: list[str]) -> int:
     # The check none of #105/#161/#165 had: confirm the RUNNING kernel is
     # the one just flashed, not whatever NAND happened to still hold.
     s = _console.connect()
-    _console.login(s)
-    _, running = _console.sh(s, "uname -r", timeout=15)
+    try:
+        _console.login(s)
+        _, running = _console.sh(s, "uname -r", timeout=15)
+    finally:
+        s.close()
     running = running.strip().splitlines()[-1].strip() if running.strip() else ""
     if running != KVER:
         log(f"deploy-fedora: MISMATCH - flashed {KVER} but box is running "
