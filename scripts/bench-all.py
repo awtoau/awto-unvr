@@ -262,7 +262,7 @@ def discover_usb_eth_pairs(host: str, password: str, report: Report) -> list[dic
     by name: the names encode USB topology and change on a replug. Returns []
     when nothing is attached, so a run without the dock still works.
     """
-    listing = run_remote(
+    _rc, listing = run_remote(
         host,
         password,
         "for d in /sys/class/net/*/device/driver; do "

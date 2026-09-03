@@ -921,6 +921,17 @@ def cmd_power_cycle(extra: list[str]) -> int:
 
 
 @command(
+    "A/B regression benchmark suite: iperf3 on every ethernet port (1G, 10G, "
+    "and any USB-attached), crypto, SATA disks, USB disk - JSON snapshot, "
+    "--compare diffs two (scripts/bench-all.py)",
+    args="[--skip-eth|--skip-crypto|--skip-disk|--skip-usb] [--compare A B]",
+    kind="action",
+)
+def cmd_bench_all(extra: list[str]) -> int:
+    return _run_script("scripts/bench-all.py", extra)
+
+
+@command(
     "power-cycle, catch the U-Boot prompt, run read-only bench diagnostics "
     "(scripts/uboot-bench-check.py) - no writes, no chainload jump",
     kind="action",

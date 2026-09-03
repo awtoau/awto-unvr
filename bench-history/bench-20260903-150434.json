@@ -1,0 +1,81 @@
+{
+  "timestamp": "2026-09-03T15:04:34+10:00",
+  "commit": "a2b527d-dirty",
+  "host": "192.168.25.122",
+  "checks": [
+    {
+      "name": "eth 1G host->box",
+      "ok": true,
+      "detail": "922 Mbits/sec"
+    },
+    {
+      "name": "eth 1G box->host",
+      "ok": true,
+      "detail": "69.5 Mbits/sec"
+    },
+    {
+      "name": "eth 10G host->box",
+      "ok": true,
+      "detail": "7.71 Gbits/sec"
+    },
+    {
+      "name": "eth 10G box->host",
+      "ok": true,
+      "detail": "82.4 Mbits/sec"
+    },
+    {
+      "name": "eth USB1 host->box",
+      "ok": true,
+      "detail": "923 Mbits/sec"
+    },
+    {
+      "name": "eth USB1 box->host",
+      "ok": true,
+      "detail": "70.6 Mbits/sec"
+    },
+    {
+      "name": "eth USB2",
+      "ok": false,
+      "detail": "iperf3 client hung past 25s - enp6s0f1 likely has no working L2 path to 192.168.25.120 right now (check `ip neigh` / link state)"
+    },
+    {
+      "name": "sata sdb",
+      "ok": true,
+      "detail": "228.1 MB/sec"
+    },
+    {
+      "name": "sata sdc",
+      "ok": true,
+      "detail": "190.6 MB/sec"
+    },
+    {
+      "name": "sata sdd",
+      "ok": true,
+      "detail": "177.7 MB/sec"
+    },
+    {
+      "name": "sata sde",
+      "ok": true,
+      "detail": "435.8 MB/sec"
+    },
+    {
+      "name": "usb sda",
+      "ok": true,
+      "detail": "33.1 MB/sec"
+    }
+  ],
+  "metrics": {
+    "eth 1G host->box": 922.0,
+    "eth 1G box->host": 69.5,
+    "eth 10G host->box": 7710.0,
+    "eth 10G box->host": 82.4,
+    "eth USB1 host->box": 923.0,
+    "eth USB1 box->host": 70.6,
+    "sata sdb": 228.11,
+    "sata sdc": 190.63,
+    "sata sdd": 177.68,
+    "sata sde": 435.76,
+    "usb sda": 33.07
+  },
+  "all_ok": false
+}
