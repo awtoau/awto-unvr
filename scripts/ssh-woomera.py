@@ -28,7 +28,7 @@ PING_TIMEOUT_S = 1
 CACHE = Path("tmp/woomera-addr")  # regenerable: last address that answered
 
 
-def mac_of(ip: str) -> str | None:
+def macs_of(ip: str) -> list[str]:
     subprocess.run(
         ["ping", "-c", "1", "-W", str(PING_TIMEOUT_S), ip],
         capture_output=True,
@@ -37,8 +37,10 @@ def mac_of(ip: str) -> str | None:
     out = subprocess.run(
         ["ip", "neigh", "show", ip], capture_output=True, text=True, check=False
     ).stdout
-    m = re.search(r"lladdr ([0-9a-f:]{17})", out)
-    return m.group(1).lower() if m else None
+    # One entry PER HOST NIC on a shared subnet, and a stale one can name a
+    # different port of the same box. Match if ANY entry is the 1G MAC rather
+    # than taking the first - one stale row must not hide a good one.
+    return [m.lower() for m in re.findall(r"lladdr ([0-9a-f:]{17})", out)]
 
 
 # The 1G RJ45 (enp0s1), from the NOR identity blob at 0x1f0000. Match this
@@ -49,7 +51,7 @@ WOOMERA_MAC_1G = "74:ac:b9:41:a8:11"
 
 
 def is_woomera(ip: str) -> bool:
-    return mac_of(ip) == WOOMERA_MAC_1G
+    return WOOMERA_MAC_1G in macs_of(ip)
 
 
 def scan(subnet: str) -> str | None:
