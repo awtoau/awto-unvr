@@ -57,7 +57,6 @@ from _net import detect_server_ip
 SYSFS_DIR = "/sys/devices/platform/soc/fbc00000.pci/pci0000:00/0000:00:02.0"
 IFACE = "10G"
 BOX_IFACE = "enp0s2"
-BOX_IP = "192.168.25.122"
 IPERF_PORT = 5701
 TX_PARAMS = (
     "amp",
@@ -99,6 +98,18 @@ def marked(s, cmd, timeout=30):
     out = sh(s, f"echo MK$({cmd})MK", timeout=timeout)
     m = re.search(r"MK(.*?)MK", out, re.DOTALL)
     return m.group(1).strip() if m else ""
+
+
+def box_iface_ip(s, iface: str) -> str:
+    """The box's own IPv4 on `iface`, read live over the console. iperf3 is
+    bound to it (-B ip%iface, #121); a lease baked in here went stale."""
+    out = marked(
+        s,
+        f"ip -4 -o addr show dev {iface} | awk '{{print $4}}' | cut -d/ -f1 | head -n1",
+    )
+    if not re.fullmatch(r"\d+\.\d+\.\d+\.\d+", out):
+        raise SystemExit(f"FATAL: no IPv4 address on {iface} on the box: {out!r}")
+    return out
 
 
 def read_params(s) -> dict[str, str]:
@@ -148,7 +159,9 @@ def far_end_rx_errors(iface: str) -> int | None:
     return total if seen else None
 
 
-def measure_udp_loss(s, server_ip: str, duration: int, mbit: int) -> tuple[float, int]:
+def measure_udp_loss(
+    s, server_ip: str, box_ip: str, duration: int, mbit: int
+) -> tuple[float, int]:
     """Offer a FIXED UDP rate and return (loss_percent, datagrams_lost).
 
     Better than throughput as a tuning metric. TCP throughput saturates at line
@@ -163,7 +176,7 @@ def measure_udp_loss(s, server_ip: str, duration: int, mbit: int) -> tuple[float
     out = sh(
         s,
         f"iperf3 -c {server_ip} -p {IPERF_PORT} -u -b {mbit}M -t {duration} "
-        f"-B {BOX_IP}%{BOX_IFACE} 2>&1 | grep -E '%\\)'",
+        f"-B {box_ip}%{BOX_IFACE} 2>&1 | grep -E '%\\)'",
         timeout=duration + 35,
     )
     m = re.search(r"(\d+)/\s*(\d+)\s+\(([\d.]+)%\)", out)
@@ -172,13 +185,13 @@ def measure_udp_loss(s, server_ip: str, duration: int, mbit: int) -> tuple[float
     return (float(m.group(3)), int(m.group(1)))
 
 
-def measure_tx(s, server_ip: str, duration: int) -> tuple[float, int]:
+def measure_tx(s, server_ip: str, box_ip: str, duration: int) -> tuple[float, int]:
     """Returns (Mbit/s, retransmits). SO_BINDTODEVICE-bound per #121's own
     wrong-NIC caveat."""
     out = sh(
         s,
         f"iperf3 -c {server_ip} -p {IPERF_PORT} -t {duration} -P 4 "
-        f"-B {BOX_IP}%{BOX_IFACE} 2>&1 | grep -E 'SUM.*sender'",
+        f"-B {box_ip}%{BOX_IFACE} 2>&1 | grep -E 'SUM.*sender'",
         timeout=duration + 35,
     )
     m = re.search(r"([\d.]+)\s+([KMG])bits/sec\s+(\d+)", out)
@@ -232,6 +245,8 @@ def main() -> int:
     try:
         _console.login(s)
         sh(s, "dmesg -n 1")
+        box_ip = box_iface_ip(s, BOX_IFACE)
+        print(f"box {BOX_IFACE} address (live): {box_ip}")
 
         original = read_params(s)
         print(f"original TX params: {original}\n")
@@ -244,10 +259,10 @@ def main() -> int:
         def measure(s):
             if args.metric == "udp-loss":
                 loss, lost = measure_udp_loss(
-                    s, server_ip, args.duration, args.udp_mbit
+                    s, server_ip, box_ip, args.duration, args.udp_mbit
                 )
                 return (loss, lost)
-            return measure_tx(s, server_ip, args.duration)
+            return measure_tx(s, server_ip, box_ip, args.duration)
 
         ctrl0 = far_end_rx_errors(args.control_iface) if args.control_iface else None
 
