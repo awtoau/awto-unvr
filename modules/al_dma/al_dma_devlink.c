@@ -184,8 +184,13 @@ static void al_dma_fmsg_state(struct al_dma_device *dev, struct devlink_fmsg *fm
 			"iofic_sec_cause_a", "iofic_sec_cause_b",
 			"iofic_sec_cause_c", "iofic_sec_cause_d",
 		};
+		/* Only 2 groups exist at the SECONDARY level below UDMA rev 4,
+		 * 3 at rev 4+ (al_udma_iofic_level_and_group_valid). Reading a
+		 * group that is not there raises an async SError and panics the
+		 * box - al_ssm's copy of this loop did exactly that. */
+		int ngrp = 2;
 
-		for (i = 0; i < AL_IOFIC_MAX_GROUPS; i++)
+		for (i = 0; i < ngrp; i++)
 			devlink_fmsg_u32_pair_put(fmsg, grp[i],
 				al_udma_iofic_read_cause(
 					(struct unit_regs __iomem *)dev->udma_regs,

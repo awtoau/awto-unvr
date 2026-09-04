@@ -142,9 +142,14 @@ static void al_ssm_fmsg_state(struct al_ssm_dev *dev, struct devlink_fmsg *fmsg)
 			"iofic_sec_cause_a", "iofic_sec_cause_b",
 			"iofic_sec_cause_c", "iofic_sec_cause_d",
 		};
+		/* The SECONDARY level has only 2 groups below UDMA rev 4, 3 at
+		 * rev 4+ (al_udma_iofic_level_and_group_valid). Reading a group
+		 * that does not exist raises an async SError and panics the box -
+		 * it did, via `devlink health diagnose`. */
+		int ngrp = (rx_q->udma->rev_id < AL_UDMA_REV_ID_4) ? 2 : 3;
 		int i;
 
-		for (i = 0; i < AL_IOFIC_MAX_GROUPS; i++)
+		for (i = 0; i < ngrp; i++)
 			devlink_fmsg_u32_pair_put(fmsg, grp[i],
 						  al_iofic_read_cause(sec, i));
 	}
