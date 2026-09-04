@@ -13,7 +13,9 @@ ONLY offset/length/format/math properties. It NEVER prints or carves key bytes.
 Logs to tmp/logs/decode-identity.log. Field map (no secrets) -> docs/nor-reference/.
 """
 
+import argparse
 import collections
+import glob
 import itertools
 import json
 import logging
@@ -25,9 +27,10 @@ import uuid
 import zlib
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DUMP = os.path.join(
-    REPO, "images/mtd/UNVR-74acb941a811-sysidea16-20260815-212945-post-5.1.25-final"
-)
+# Dump directories are named UNVR-<mac>-sysid<id>-<YYYYMMDD-HHMMSS>[-tag]; the
+# newest by name is the newest capture. --image overrides.
+DUMP_GLOB = "images/mtd/UNVR-*-sysidea16-*"
+DUMP = None  # set by main() from --image
 LOGDIR = os.path.join(REPO, "tmp/logs")
 os.makedirs(LOGDIR, exist_ok=True)
 logging.basicConfig(
@@ -266,8 +269,21 @@ def decode_config():
     }
 
 
+def resolve_dump(explicit):
+    if explicit:
+        return explicit
+    found = sorted(glob.glob(os.path.join(REPO, DUMP_GLOB)))
+    if not found:
+        sys.exit(f"no dump directory matching {DUMP_GLOB} under {REPO} - pass --image")
+    return found[-1]
+
+
 def main():
-    log("UNVR identity decode (5.1.25 generation)")
+    global DUMP
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("--image", help=f"MTD dump directory (default: newest {DUMP_GLOB})")
+    DUMP = resolve_dump(ap.parse_args().image)
+    log(f"UNVR identity decode (5.1.25 generation): {os.path.relpath(DUMP, REPO)}")
     blank_verdict("mtd03-Factory")
     blank_verdict("mtd07-cksum")
     fm_eeprom = decode_eeprom()
