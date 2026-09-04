@@ -964,8 +964,14 @@
 	 * HDD bay power control — signals via PCA9575 @0x21:
 	 *   pins 0-3 power-enable, 4-7 presence (active-low), 12-15 fault LEDs.
 	 * Force-power-on workaround: GPIO5 pin 2.
-	 * No mainline ui,hdd-pwrctl driver binds this; kept as the board wiring
-	 * record. pwren is owned by reg_hdd_bay1-4 above.
+	 * Bound by modules/ubnt_hdd_pwrctl (#208): presence + fault LEDs only.
+	 * pwren is the wiring record ONLY - reg_hdd_bay1-4 above own those
+	 * lines so AHCI has a supplier to defer on (#104). Nothing may claim it
+	 * here; two consumers of one gpio is -EBUSY.
+	 * Do NOT rename it to pwren-gpios: the "-gpios" suffix makes the OF gpio
+	 * core treat it as a real consumer of lines 0-3, reg-fixed-voltage then
+	 * fails "can't get GPIO", and both AHCI controllers defer forever -> no
+	 * rootfs. The non-standard name is deliberate and load-bearing.
 	 */
 	hdd-pwrctl {
 		compatible = "ui,hdd-pwrctl";
@@ -976,33 +982,33 @@
 		hdd@0 {
 			reg = <0>;
 			slot-no = <1>;
-			pwren     = <&i2c_gpio1 0 GPIO_ACTIVE_HIGH>;
-			present   = <&i2c_gpio1 4 GPIO_ACTIVE_LOW>;
-			fault-led = <&i2c_gpio1 12 GPIO_ACTIVE_HIGH>;
+			pwren           = <&i2c_gpio1 0 GPIO_ACTIVE_HIGH>;
+			present-gpios   = <&i2c_gpio1 4 GPIO_ACTIVE_LOW>;
+			fault-led-gpios = <&i2c_gpio1 12 GPIO_ACTIVE_HIGH>;
 		};
 
 		hdd@1 {
 			reg = <1>;
 			slot-no = <2>;
-			pwren     = <&i2c_gpio1 1 GPIO_ACTIVE_HIGH>;
-			present   = <&i2c_gpio1 5 GPIO_ACTIVE_LOW>;
-			fault-led = <&i2c_gpio1 13 GPIO_ACTIVE_HIGH>;
+			pwren           = <&i2c_gpio1 1 GPIO_ACTIVE_HIGH>;
+			present-gpios   = <&i2c_gpio1 5 GPIO_ACTIVE_LOW>;
+			fault-led-gpios = <&i2c_gpio1 13 GPIO_ACTIVE_HIGH>;
 		};
 
 		hdd@2 {
 			reg = <2>;
 			slot-no = <3>;
-			pwren     = <&i2c_gpio1 2 GPIO_ACTIVE_HIGH>;
-			present   = <&i2c_gpio1 6 GPIO_ACTIVE_LOW>;
-			fault-led = <&i2c_gpio1 14 GPIO_ACTIVE_HIGH>;
+			pwren           = <&i2c_gpio1 2 GPIO_ACTIVE_HIGH>;
+			present-gpios   = <&i2c_gpio1 6 GPIO_ACTIVE_LOW>;
+			fault-led-gpios = <&i2c_gpio1 14 GPIO_ACTIVE_HIGH>;
 		};
 
 		hdd@3 {
 			reg = <3>;
 			slot-no = <4>;
-			pwren     = <&i2c_gpio1 3 GPIO_ACTIVE_HIGH>;
-			present   = <&i2c_gpio1 7 GPIO_ACTIVE_LOW>;
-			fault-led = <&i2c_gpio1 15 GPIO_ACTIVE_HIGH>;
+			pwren           = <&i2c_gpio1 3 GPIO_ACTIVE_HIGH>;
+			present-gpios   = <&i2c_gpio1 7 GPIO_ACTIVE_LOW>;
+			fault-led-gpios = <&i2c_gpio1 15 GPIO_ACTIVE_HIGH>;
 		};
 	};
 
