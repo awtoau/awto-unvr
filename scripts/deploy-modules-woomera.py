@@ -24,13 +24,10 @@ Prereqs: build-out present (scripts/build-linux-fedora.py), console socket up
 from __future__ import annotations
 
 import http.server
-import os
 import re
-import socket
 import socketserver
 import sys
 import threading
-import time
 from datetime import datetime, timezone
 from functools import partial
 from pathlib import Path
@@ -38,18 +35,16 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import _fedora_deploy as fd
 
+import _console
 from _net import detect_server_ip
 from _repo import LOGS
 
-SOCK = Path(os.environ.get("XDG_RUNTIME_DIR", "/tmp")) / "tio-unvr.sock"
 # fd.OUT/fd.KVER are the single source of truth (kernel_build_out() +
 # the modroot's own real kernelrelease) - a hardcoded copy here silently
 # drifted from the actual build-out path/kernel version once already.
 EXTRA = fd.OUT / "modroot" / "lib" / "modules" / fd.KVER / "extra"
 MODS = ["al_eth.ko", "al_ssm.ko"]  # the two with fixes; al_dma/al_sgpo unchanged
 HTTP_PORT = 8099
-USER, PASSWD = "root", "unvr"
-PROMPT = "@@P@@"  # our own unambiguous shell marker
 
 
 def log(m):
@@ -61,78 +56,11 @@ def log(m):
     (LOGS / "deploy-modules-woomera.log").open("a").write(line + "\n")
 
 
-def _read_until(s, needle, limit, extra_needles=()):
-    buf = b""
-    end = time.monotonic() + limit
-    while time.monotonic() < end:
-        try:
-            c = s.recv(4096)
-        except TimeoutError:
-            continue
-        if not c:
-            break
-        buf += c
-        if needle.encode() in buf:
-            return buf, needle
-        for n in extra_needles:
-            if n.encode() in buf:
-                return buf, n
-    return buf, None
-
-
-def login(s):
-    """Drive the getty login. Idempotent-ish: if already at a shell, sets PS1."""
-    s.sendall(b"\r")
-    buf, hit = _read_until(s, "login:", 8, extra_needles=("Password:", "# ", "$ "))
-    if hit in ("# ", "$ "):
-        log("already at a shell")
-    else:
-        if hit != "login:":
-            # maybe a stale session; send a newline and retry once
-            s.sendall(b"\r")
-            buf, hit = _read_until(s, "login:", 8, extra_needles=("Password:",))
-        if hit == "login:":
-            s.sendall(USER.encode() + b"\r")
-            _read_until(s, "Password:", 6)
-            s.sendall(PASSWD.encode() + b"\r")
-        elif hit == "Password:":
-            s.sendall(PASSWD.encode() + b"\r")
-        buf, _ = _read_until(s, "#", 12, extra_needles=("Login incorrect",))
-        if b"Login incorrect" in buf:
-            log("FAIL: login incorrect (root/unvr rejected)")
-            raise SystemExit(2)
-    # drop root's mv/cp/rm -i aliases (they block on "overwrite?" over serial)
-    s.sendall(b"unalias -a 2>/dev/null; true\r")
-    _read_until(s, "#", 4)
-    # set an unambiguous prompt so command completion is unmistakable
-    s.sendall(f"export PS1='{PROMPT}'\r".encode())
-    _read_until(s, PROMPT, 6)
-    # swallow the echo of the just-set prompt line
-    _read_until(s, PROMPT, 3)
-    log("logged in")
-
-
 def sh(s, cmd, timeout=20, label=None):
-    """Run cmd, return (rc, output_text). Uses a value-substituted marker so the
-    echoed command line can't be mistaken for completion."""
-    s.sendall(cmd.encode() + b"; echo @@RC=$?@@\r")
-    buf = b""
-    end = time.monotonic() + timeout
-    rc = None
-    while time.monotonic() < end:
-        try:
-            c = s.recv(4096)
-        except TimeoutError:
-            continue
-        if not c:
-            break
-        buf += c
-        m = re.search(rb"@@RC=(\d+)@@", buf)
-        if m:
-            rc = int(m.group(1))
-            break
-    _read_until(s, PROMPT, 4)  # consume the prompt that follows
-    txt = buf.decode(errors="replace")
+    """_console.sh with this script's two extras: a timeout is FATAL (a
+    half-installed module tree must not be silently continued past), and an
+    optional per-step label in the log."""
+    rc, txt = _console.sh(s, cmd, timeout=timeout)
     if rc is None:
         log(f"  TIMEOUT: {label or cmd} ({timeout}s)\n{txt[-500:]}")
         raise SystemExit(3)
@@ -150,8 +78,8 @@ def serve():
 
 
 def main():
-    if not SOCK.exists():
-        sys.exit(f"console socket absent: {SOCK} — start ./dev.py console")
+    if not _console.SOCK.exists():
+        sys.exit(f"console socket absent: {_console.SOCK} — start ./dev.py console")
     for m in MODS:
         if not (EXTRA / m).exists():
             sys.exit(f"missing module {EXTRA / m} — run build-linux-fedora.py")
@@ -161,11 +89,14 @@ def main():
 
     httpd = serve()
     log(f"serving {EXTRA} on {selwyn_ip}:{HTTP_PORT}")
-    s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-    s.settimeout(0.2)
-    s.connect(str(SOCK))
+    s = _console.connect()
     try:
-        login(s)
+        try:
+            _console.login(s)
+        except RuntimeError as e:
+            log(f"FAIL: {e}")
+            raise SystemExit(2)
+        log("logged in")
 
         rc, out = sh(s, "uname -r", label="kernel")
         kv_match = re.search(r"(\d+\.\d+\.\d+\S*)", out)
