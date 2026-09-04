@@ -7,11 +7,10 @@ Global rules: `/home/dan/.claude/CLAUDE.md`. This file is the project layer on t
 
 ## Hard "do not" list — every one of these has cost hours
 
-- **NEVER scan i2c.** No `i2cdetect`, no full-bus probe. Probing empty addresses on mux
-  ch0 wedges the whole controller, **recoverable only by a COLD POWER CYCLE** — a warm
-  reboot comes back still wedged. It drops the 10G link (SFP polling fails → "module
-  removed"). `docs/rtc-s35390a-fault.md`, #86.
-  - `i2cdetect` exiting 0 proves nothing; the wedge surfaces on the *next* access.
+- ~~NEVER scan i2c~~ — **fixed 2026-09-04 (#86).** Scanning is safe on a kernel whose DTB
+  carries `snps,no-enable-abort`; the bus also runs at 400 kHz now. On any *older* build the
+  old rule still applies: a ch0 scan wedges the controller, recoverable only by a **cold power
+  cycle**, and it drops the 10G link. `docs/rtc-s35390a-fault.md`.
   - `i2cget 0x30` is an SMBus READ_BYTE and is NOT what the RTC driver does. The
     driver-shaped test is `i2ctransfer -y <bus> r1@0x30`.
 - **NEVER run `./dev.py flash` casually.** NAND `0x1300000` holds awto-uboot since #216;
