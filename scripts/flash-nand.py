@@ -1,7 +1,17 @@
 #!/usr/bin/env python3
-"""Flash the published Fedora kernel + DTB into NAND. Phase 2 of 2 - see
-scripts/_fedora_deploy.py for the incident this split is fixing, and run
-./dev.py publish-fedora (phase 1, needs Fedora+SSH up) before this.
+"""RECOVERY ONLY - flash a Fedora kernel + DTB into NAND. NOT the deploy path.
+
+**This OVERWRITES awto-uboot.** NAND 0x1300000 held the kernel under the old
+layout; since #216 it holds awto-uboot itself, and this script writes 18.9 MiB
+there. Running it destroys the bootloader and the box falls back to stock.
+
+The deploy path is `./dev.py deploy-ssd` - awto-uboot boots /boot/uImage from
+the SSD, so a deploy is an scp, not a flash. Use this only to put a bootable
+kernel back in NAND when the SSD path is broken, and re-run
+`./dev.py flash-uboot` afterwards to restore awto-uboot.
+
+Requires --i-know-this-overwrites-awto-uboot. Phase 1 is ./dev.py
+publish-fedora (needs Fedora+SSH up).
 
 Runs against a device ALREADY at the U-Boot prompt (ALPINE_UBNT_NAS_ALL>). tftp's
 our gzip uImage + ea16 DTB from the host and writes them into the DEAD stock
@@ -79,6 +89,14 @@ def step(s, cmd, needle, limit, label):
 
 
 def main():
+    if "--i-know-this-overwrites-awto-uboot" not in sys.argv:
+        sys.exit(
+            "REFUSING: this writes 18.9 MiB to NAND 0x1300000, where awto-uboot\n"
+            "now lives (#216) - it would destroy the bootloader.\n\n"
+            "  Deploying a kernel?   ./dev.py deploy-ssd --reboot\n"
+            "  Really recovering?    add --i-know-this-overwrites-awto-uboot,\n"
+            "                        then ./dev.py flash-uboot to restore it."
+        )
     assert_fresh()
     if not SOCK.exists():
         sys.exit(f"console socket absent: {SOCK}")

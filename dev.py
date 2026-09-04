@@ -1439,9 +1439,9 @@ def cmd_flash_uboot(extra: list[str]) -> int:
 
 
 @command(
-    "phase 2/2 of a Fedora deploy: flash the published kernel+DTB into NAND + "
-    "set U-Boot to boot it. Run ./dev.py publish-fedora first, then reset to "
-    "U-Boot (scripts/flash-nand.py)",
+    "RECOVERY ONLY - flash a kernel+DTB into NAND. OVERWRITES awto-uboot at "
+    "0x1300000 (#216) and refuses without --i-know-this-overwrites-awto-uboot. "
+    "The deploy path is ./dev.py deploy-ssd (scripts/flash-nand.py)",
     kind="action",
 )
 def cmd_flash(extra: list[str]) -> int:
@@ -1574,10 +1574,10 @@ def _probe_fedora_shell(timeout_s: float = 8.0) -> bool:
 
 
 @command(
-    "ONE-SHOT Fedora deploy, any starting box state: publish (tftp artifacts + "
-    "module sync) -> reset to U-Boot -> flash NAND -> boot -> VERIFY the box "
-    "actually came up running the kernel just flashed. Fails loudly rather "
-    "than leaving a half-deployed box (#165)",
+    "SUPERSEDED by publish-fedora + deploy-ssd (#216) - it flashes NAND, which "
+    "now overwrites awto-uboot, so its flash step refuses. Kept for the "
+    "recovery case: publish -> reset to U-Boot -> flash NAND -> boot -> VERIFY "
+    "the box came up on the kernel just flashed, failing loudly (#165)",
     kind="action",
 )
 def cmd_deploy_fedora(extra: list[str]) -> int:
