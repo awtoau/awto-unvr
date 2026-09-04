@@ -296,24 +296,40 @@ static int al_eth_stats_show(int port)
 	return 0;
 }
 
+/* al_eth_diag.c */
+int al_eth_diag_show(int port);
+
 static int do_eth(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 {
 	int port = AL_ETH_STATS_DEFAULT_PORT;
+	int rc;
 
-	if (argc < 2 || strcmp(argv[1], "stats"))
+	if (argc < 2)
 		return CMD_RET_USAGE;
 	if (argc > 2)
 		port = (int)dectoul(argv[2], NULL);
 
-	return al_eth_stats_show(port) ? CMD_RET_FAILURE : CMD_RET_SUCCESS;
+	if (!strcmp(argv[1], "stats"))
+		rc = al_eth_stats_show(port);
+	else if (!strcmp(argv[1], "diag"))
+		rc = al_eth_diag_show(port);
+	else
+		return CMD_RET_USAGE;
+
+	return rc ? CMD_RET_FAILURE : CMD_RET_SUCCESS;
 }
 
 U_BOOT_CMD(eth, 3, 0, do_eth,
-	   "al_eth hardware counters (U-Boot's `ethtool -S`)",
-	   "stats [<port>]  - dump MAC + EC + per-UDMA counters (default port 2).\n"
+	   "al_eth bring-up diagnostics + hardware counters",
+	   "diag [<port>]   - one bring-up block: PCI BDF, the three BARs, MAC\n"
+	   "                  address + source, board params decoded, and link\n"
+	   "                  state (1G: PHY id + AN result; 10G: PCS block-lock,\n"
+	   "                  SerDes grp/lane, TX equalisation taps in force).\n"
+	   "eth stats [<port>]  - dump MAC + EC + per-UDMA counters.\n"
 	   "                  Drop/error counters come first. Zero counters are\n"
 	   "                  printed too. On a 10G port the Clause-49 PCS\n"
 	   "                  errored-block/BER counters are included - those two\n"
 	   "                  are clear-on-read and saturate, so reading zeroes\n"
 	   "                  them and a pegged value means \"at least this many\".\n"
-	   "                  Ports: 1 = 1G RJ45, 2 = 10G SFP+.");
+	   "\n"
+	   "<port> defaults to 2; 1 = 1G RJ45, 2 = 10G SFP+.");

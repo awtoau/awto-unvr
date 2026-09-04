@@ -12,17 +12,18 @@ ccflags-y += -I$(srctree)/drivers/net/al_eth/hal/include
 ccflags-y += -Wno-unused-variable -Wno-unused-function -Wno-sign-compare
 ccflags-y += -Wno-unused-but-set-variable -Wno-missing-prototypes
 
-# VERBOSE TRACE (eth-debug): -DDEBUG makes al_dbg()->debug() and the driver's
-# debug()/dev_dbg() print for every eth object (driver + eth/UDMA HAL) - the
-# full UDMA descriptor-fetch / adapter bring-up trace. Scoped to this directory
-# only (DDR/serdes are separate Makefiles). Remove once the TX path is proven.
-ccflags-y += -DDEBUG
+# VERBOSE TRACE, off by default: -DDEBUG makes al_dbg()->debug() and the
+# driver's debug()/dev_dbg() print for every eth object (driver + eth/UDMA HAL)
+# - the full UDMA descriptor-fetch / adapter bring-up trace, thousands of lines
+# per boot. `eth diag` covers the normal question; this is for a live trace.
+ccflags-$(CONFIG_AL_ETH_DEBUG) += -DDEBUG
 
 obj-$(CONFIG_AL_ETH) += al_eth_dm.o
 obj-$(CONFIG_AL_ETH) += al_eth_stubs.o
 obj-$(CONFIG_AL_ETH) += al_eth_port.o		# port idx -> PCI fn -> BARs
 obj-$(CONFIG_AL_ETH) += al_eth_boardparams.o	# MAC scratchpad seed + edit
 obj-$(CONFIG_AL_ETH) += al_eth_stats.o		# `eth stats` counter dump
+obj-$(CONFIG_AL_ETH) += al_eth_diag.o		# `eth diag` bring-up block
 # 10G SFP+ (eth2, 1c36:0002) - DRAFT front-end; same HAL subset, no new objects.
 obj-$(CONFIG_AL_ETH_10G) += al_eth_dm_10g.o
 

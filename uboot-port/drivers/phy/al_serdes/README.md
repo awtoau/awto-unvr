@@ -5,7 +5,8 @@ Brings up the Annapurna Labs (AL-324 / Alpine V2) 25G SerDes lane for the UNVR's
 link-training DISABLED** (mode `10G_OPTIC` / passive-DAC). SerDes/PCS half only —
 the MAC/UDMA come from the `al_eth` driver (separate effort). Part of #83 "later: 10G".
 
-**Compile-verified only.** A human iterates the real lane bring-up on the box.
+The group-D retarget is hardware-verified (eac280a). The EQ tap values are not —
+see **Open** below.
 
 ## Files
 
@@ -49,8 +50,13 @@ U-Boot shims; every other vendor file is unmodified.
 ## Command
 
     serdes init     # configure the lane for fixed 10GBASE-R (KR/AN/LT off)
-    serdes status   # read PLL lock / signal-detect / CDR lock / rx-valid / PCS block-lock
+    serdes status   # group-D gen.version + PMA signal-detect
+    serdes tx       # show the optic TX equaliser params (set one to re-init)
     serdes          # init then status
+
+PCS block-lock and the taps **actually in force** are in `eth diag 2`
+(`drivers/net/al_eth/al_eth_diag.c`) — the MAC owns the PCS window, and reading
+it from here external-aborts.
 
 ## On-box verification (the human test)
 
@@ -65,17 +71,16 @@ After `serdes init`, `serdes status` reads (via the HAL vtable + PCS regs):
 Good link with an optic/DAC inserted: PLL LOCKED, signal yes, CDR LOCKED,
 rx-valid yes, **pcs_block_lock LOCKED**.
 
-## Hardware-iteration points (tagged `HW:` in the source)
+## Open
 
-- **Lane index** (`AL_SFP_LANE`, default `LN0`) — confirm which physical 25G
-  lane the SFP+ TX/RX is wired to.
-- **Optic TX/RX EQ params** — now actually applied (#111, `al_serdes_10g_init()`
-  calls `obj.tx_advanced_params_set()`/`rx_advanced_params_set()` via the ported
-  HSSP HAL) but the VALUES are still the vendor `10G_OPTIC` defaults, unretuned
-  for the real SFP/DAC. Whether they help or hurt link training is unverified —
-  needs the box (the HAL's `rx_equalization` sweep is the retune path).
-- **PCS base + reset ordering** — the `pcs` window base (`docs/hardware.md` lists
-  eth2 @ `0xfe120000`; the task brief said `0xfc200000` — resolve on the box) and
-  the PCS-vs-MAC reset sequencing are owned by the MAC agent; reconcile at merge.
-- The `mode_set_kr` group-config polls PLL/lane-OK with the HAL's own timeouts;
-  a fresh (non-chainloaded) bring-up may need extra clock/PBS init first.
+- **Optic TX/RX EQ VALUES** — applied for real (#111, via the HSSP vtable), but
+  the values are the vendor `10G_OPTIC` defaults with the #121 `c_plus_1`
+  change. Whether they suit this board's optic is open (#207); the HAL's
+  `rx_equalization` sweep is the retune path. `eth diag 2` reads back what
+  landed, so an apply that silently failed is visible.
+- A fresh (non-chainloaded) bring-up may need clock/PBS init first — today
+  preboot has already done it, so `al_serdes_10g_init()` only reads.
+
+Settled: the lane is group D (`serdes-grp 3`) lane 0 per the DT, confirmed by
+the retarget that stopped the SError (eac280a). The PCS belongs to the MAC
+driver, not this one.

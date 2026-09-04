@@ -60,8 +60,16 @@ the internal-PCIe units cache-coherent — so no explicit cache flush/invalidate
 same as the vendor driver on this coherent SoC. If HW bring-up shows stale
 descriptors/buffers, add flush(TX submit)/invalidate(RX consume).
 
+## Diagnostics
+- `eth diag [<port>]` — PCI BDF, the three BARs, MAC + its source, board params
+  decoded, and link state (1G: PHY id + AN result; 10G: PCS block-lock, SerDes
+  grp/lane, TX equalisation taps in force). Read-only; safe on a live port.
+- `eth stats [<port>]` — every MAC/EC/UDMA counter, drops first.
+- `CONFIG_AL_ETH_DEBUG` — `-DDEBUG` across al_eth + al_serdes: the full HAL
+  register trace. Off by default; thousands of lines per boot.
+
 ## Status
-Compile-clean, wired to the HAL. Runtime (ping/tftp) untested — needs the box.
-Board params confirmed (PHY addr 4, MDIO 1000 kHz, ref clk 500 MHz, RGMII). Open
-`HARDWARE-TODO` in `al_eth_dm.c`: re-config MAC to PHY-negotiated speed/duplex
-after `phy_startup`; tighten the TX completion poll bound once drain time measured.
+Compile-clean, wired to the HAL. Traffic blocked on #90 (UDMA M2S descriptor
+read hangs, both ports). Board params confirmed (PHY addr 4, MDIO 1000 kHz, ref
+clk 500 MHz, RGMII). The TX completion poll bound is still ~8000x worst case —
+it cannot be tightened until #90 makes a completion observable.

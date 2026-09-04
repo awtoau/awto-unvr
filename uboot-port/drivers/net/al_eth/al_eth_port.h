@@ -7,15 +7,23 @@
 #ifndef __AL_ETH_PORT_H__
 #define __AL_ETH_PORT_H__
 
-/* The three al_eth BARs: UDMA = BAR0, EC = BAR4, MAC = BAR2. */
+struct udevice;
+
+/* The three al_eth BARs: UDMA = BAR0, EC = BAR4, MAC = BAR2. `dev`/`bdf` name
+ * the PCI function they came from (diagnostics; NULL/0 if unresolved). */
 struct al_eth_port_regs {
 	void __iomem	*udma;
 	void __iomem	*ec;
 	void __iomem	*mac;
+	struct udevice	*dev;
+	unsigned long	bdf;
 };
 
 /* Human name for a port, or NULL if the board has no such function. */
 const char *al_eth_port_desc(int port);
+
+/* The PCI device id this board fits at <port>, or 0 if none. */
+unsigned int al_eth_port_devid(int port);
 
 /* Map port <port>'s three register windows. Probes the PCI function if needed,
  * which is what assigns the BARs - the al_eth DM driver need not have started.

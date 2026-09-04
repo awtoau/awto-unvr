@@ -42,10 +42,19 @@ const char *al_eth_port_desc(int port)
 	return al_eth_ports[port].what;
 }
 
+unsigned int al_eth_port_devid(int port)
+{
+	if (port < 0 || port >= ARRAY_SIZE(al_eth_ports))
+		return 0;
+	return al_eth_ports[port].devid;
+}
+
 int al_eth_port_regs_get(int port, struct al_eth_port_regs *regs)
 {
 	struct udevice *dev;
 	int rc;
+
+	memset(regs, 0, sizeof(*regs));
 
 	if (port < 0 || port >= ARRAY_SIZE(al_eth_ports) ||
 	    !al_eth_ports[port].devid) {
@@ -63,6 +72,9 @@ int al_eth_port_regs_get(int port, struct al_eth_port_regs *regs)
 	}
 
 	dm_pci_clrset_config16(dev, PCI_COMMAND, 0, PCI_COMMAND_MEMORY);
+
+	regs->dev = dev;
+	regs->bdf = dm_pci_get_bdf(dev);
 
 	regs->udma = dm_pci_map_bar(dev, AL_ETH_PORT_BAR_UDMA, 0, 0,
 				    PCI_REGION_TYPE, PCI_REGION_MEM);

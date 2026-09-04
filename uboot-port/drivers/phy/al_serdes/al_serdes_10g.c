@@ -8,15 +8,14 @@
  * Derived from Annapurna Labs HAL (Copyright (C) Annapurna Labs Ltd, GPLv2 OR
  * BSD-3-Clause); reimplemented on U-Boot primitives.
  *
- * Scope: SerDes PMA (25G HAL for status; HSSP HAL for the group-D SFP+ lane's
- * optic TX/RX EQ, #111) + the 10GBASE-R PCS + the fixed-10G link-mgmt bits. It
- * does NOT touch the MAC/UDMA/DM_ETH driver (a separate effort). The SerDes
- * electrical mode here is the HAL's "KR" = 10.3125G NRZ; Clause-73 AN /
- * Clause-72 LT are a MAC-KR-FSM feature that is deliberately NOT invoked, so
- * the lane comes up at a fixed rate (10G_OPTIC / passive-DAC use case).
+ * Scope: the SFP+ lane only - HSSP group D status + the optic TX/RX EQ (#111).
+ * The PCS and MAC belong to al_eth_dm_10g.c. Electrical mode is the HAL's "KR"
+ * = 10.3125G NRZ; Clause-73 AN / Clause-72 LT live in the MAC KR FSM and are
+ * deliberately never invoked, so the lane comes up at a fixed rate.
  *
- * COMPILE-VERIFIED ONLY. A human iterates the real lane bring-up on the box.
- * Hardware-iteration points are tagged "HW:" below.
+ * The group-D retarget is hardware-verified (it is what stopped the SError,
+ * commit eac280a). The EQ tap VALUES are not - see optic_tx_params below.
+ * `eth diag 2` reads back what is actually in force.
  */
 
 #include <command.h>
@@ -30,48 +29,18 @@
 #include "al_hal_serdes_hssp.h"		/* HSSP group HAL - the REAL group-D driver */
 #include "al_serdes_10g.h"
 
-/* DT: our U-Boot dts is the hardware-of-record (docs/hardware.md). Bases are
- * read via ofnode by reg-name, never hardcoded.
- *   reg-name "serdes" -> SerDes PMA  (fd8c0000, size 0x2400)
- *   reg-name "pcs"    -> eth2 MAC-adapter window that holds the 10GBASE-R PCS
- *                        sub-block (OPTIONAL; shared with the eth/MAC agent's
- *                        node — HW: confirm the exact base on the box).
- */
+/* DT is hardware-of-record (docs/hardware.md); the complex base comes from
+ * reg-name "serdes" (fd8c0000, size 0x2400) via ofnode, never hardcoded. */
 #define AL_SERDES_DT_COMPAT	"annapurna-labs,al-serdes-25g"
 
-/*
- * The SFP+ lane. HW: confirm which physical 25G lane the SFP+ TX/RX pair is
- * wired to on the AL-324 (LN0 vs LN1) before trusting per-lane status.
- */
+/* SFP+ lane: group D lane 0, per the DT's serdes-grp 3 / serdes-lane 0. */
 #define AL_SFP_LANE		AL_SRDS_LANE_0
 
-/*
- * 10GBASE-R PCS register offsets inside the "pcs" (MAC-adapter) window.
- * Transcribed from al_hal_eth_mac_regs.h so we do NOT pull in the MAC HAL:
- *   kr        @ 0xa00 : pcs_addr +0x00, pcs_data +0x04 (Clause-45 indirect)
- *   gen_v3    @ 0xe00 : pcs_10g_ll_cfg +0x38, pcs_10g_ll_status +0x3c
- * PCS block-lock (10G serial) = KR-PCS BASE-R Status 2 (reg 0x21), bit 15.
- */
-#define AL_PCS_KR_ADDR		0xa00	/* kr.pcs_addr  */
-#define AL_PCS_KR_DATA		0xa04	/* kr.pcs_data  */
-#define AL_PCS_10G_LL_CFG	0xe38	/* gen_v3.pcs_10g_ll_cfg    */
-#define AL_PCS_10G_LL_STATUS	0xe3c	/* gen_v3.pcs_10g_ll_status */
-#define AL_PCS_10G_LL_STATUS_FEC_LOCKED	(1u << 0)
-#define AL_KR_PCS_BASE_R_STATUS2	0x21	/* Clause-45 dev3 reg 0x21 */
-#define AL_KR_PCS_BLOCK_LOCK		(1u << 15)
-/* 10GbE-Serial PCS cfg value (al_hal_eth_main 10GbE_Serial path). HW: verify. */
-#define AL_PCS_10G_LL_CFG_10GR	0x00000050
-
-/*
- * 10G optic TX/RX equaliser params - mirror al_init_eth_lm.c's 10G_OPTIC static
- * values (optic_tx_params / optic_rx_params). Applied in al_serdes_10g_init()
- * via obj.tx_advanced_params_set()/rx_advanced_params_set() (#111).
- *
+/* 10G optic TX/RX equaliser params - al_init_eth_lm.c's 10G_OPTIC statics,
+ * applied via the HSSP vtable in al_serdes_10g_init() (#111).
  * c_plus_1 is 0x5, not the vendor's 0x2: the vendor "optic" table is really the
- * direct-attach copper one and under-equalises a real optic. Clean window is
- * 4-7, so 0x5 centres it. Measured under Linux on this board, see #121.
- * Untested in U-Boot - no throughput path here.
- */
+ * direct-attach copper one and under-equalises a real optic (#121, #207).
+ * Chosen under Linux; untested in U-Boot - there is no throughput path here. */
 static struct al_serdes_adv_tx_params optic_tx_params = {
 	.override		= AL_TRUE,
 	.amp			= 0x1,
@@ -118,17 +87,12 @@ static void __iomem *al_serdes_dt_base(const char *reg_name)
 	return (void __iomem *)(uintptr_t)addr;
 }
 
-/* ---- HSSP SerDes group D (the REAL SFP+ 10G lane) -------------------------
- * CORRECTION (root cause of the 10G SError): the UNVR SFP+ 10G is on the HSSP
- * SerDes complex, GROUP D (serdes-grp 3, lane 0), NOT the 25G complex that
- * al_hal_serdes_25g targets. On this board the 25G complex (group E) is board-
- * cfg SKIP / powered-down, so the 25G indirect reg model external-aborts on the
- * first access. al_boot preboot already muxes + powers + clock-routes + KR/10G-
- * configures group D (al_serdes_init_cores @ PBS 0xfd8a8000) before our U-Boot
- * runs, so we RETARGET to group D and read status via the HSSP reg model - no
- * firmware blob, no heavy re-init needed.
- * Group base = complex base + offset; groups {A,B,C,D,E} = {0,0x400,0x800,0xc00,
- * 0x2000}. HSSP regs: gen.version@0x0, gen.reg_addr@0x10, gen.reg_data@0x14. */
+/* ---- HSSP SerDes group D (the SFP+ 10G lane) ------------------------------
+ * The SFP+ 10G is on the HSSP complex, group D - NOT the 25G complex, whose
+ * group E is board-cfg SKIP / powered down here and external-aborts on first
+ * access (that was the 10G SError). preboot already muxes/powers/clocks and
+ * KR-configures group D, so we only read status; no re-init needed.
+ * Group base = complex + {A,B,C,D,E} = {0,0x400,0x800,0xc00,0x2000}. */
 #define AL_HSSP_GRP_D_OFF	0xc00		/* serdes-grp 3 (GRP_D) */
 #define AL_HSSP_GEN_VERSION	0x00
 #define AL_HSSP_GEN_REG_ADDR	0x10
@@ -155,19 +119,10 @@ static u8 al_hssp_reg_read(void __iomem *grp, unsigned page, unsigned type,
 	return (u8)readl(grp + AL_HSSP_GEN_REG_DATA);
 }
 
-/*
- * Build a per-call HAL object bound to the HSSP group-D base (complex base +
- * 0xc00 - see al_hssp_grp_d_base()). No HW side effects.
- *
- * Uses al_serdes_hssp_handle_init(), NOT al_serdes_25g_handle_init(): group D
- * is an HSSP group (see the block comment above al_hssp_grp_d_base()), and
- * al_serdes_hssp_handle_init() takes the GROUP base directly (obj->regs_base
- * = serdes_regs_base, no further offset applied) - matching how Linux's
- * alpine_serdes_grp_objs_init() calls al_serdes_handle_grp_init() with
- * alpine_serdes_resource_get(group) = complex_base + serdes_grp_offset[group]
- * (modules/al_eth/alpine_serdes.c). The 25G handle_init is for the 25G-complex
- * group (E on this board, powered-down/SKIP) and is the wrong model here.
- */
+/* Per-call HAL object bound to the group-D base. No HW side effects.
+ * al_serdes_hssp_handle_init(), NOT the 25G one: it takes the GROUP base
+ * directly (no further offset), matching Linux's alpine_serdes_grp_objs_init().
+ * The 25G handle_init models the 25G complex and is the wrong model here. */
 static int al_serdes_obj_get(struct al_serdes_grp_obj *obj, void __iomem **base)
 {
 	void __iomem *grp = al_hssp_grp_d_base();
@@ -183,31 +138,10 @@ static int al_serdes_obj_get(struct al_serdes_grp_obj *obj, void __iomem **base)
 	return 0;
 }
 
-/*
- * 10GBASE-R PCS bring-up (optional). Selects the 10G-serial PCS via the MAC
- * adapter's pcs_10g_ll_cfg. HW: the MAC agent owns the full adapter datapath +
- * reset ordering; this is the minimal PCS-mode write for standalone bring-up
- * and must be reconciled with the MAC config at merge / verified on the box.
- */
-static void al_serdes_pcs_10gr_config(void __iomem *pcs)
-{
-	writel(AL_PCS_10G_LL_CFG_10GR, pcs + AL_PCS_10G_LL_CFG);
-	/* PCS reset settle. 1 us: al_hal_eth_main AL_ETH_KR_PCS_RESET_DELAY. */
-	udelay(1);
-}
-
-/* Indirect Clause-45 read of a KR-PCS register through the MAC adapter. */
-static u16 al_serdes_kr_pcs_read(void __iomem *pcs, u16 reg)
-{
-	writel(reg, pcs + AL_PCS_KR_ADDR);
-	return (u16)readl(pcs + AL_PCS_KR_DATA);
-}
-
 int al_serdes_10g_init(void)
 {
 	struct al_serdes_grp_obj obj;
 	void __iomem *base;
-	void __iomem *pcs;
 	int rc;
 
 	void __iomem *grp = al_hssp_grp_d_base();
@@ -220,33 +154,23 @@ int al_serdes_10g_init(void)
 		return -ENODEV;
 	}
 
-	/*
-	 * Go/no-go: read HSSP group-D gen.version. On the OLD (wrong) 25G target
-	 * this first read external-aborts (SError -> box reset). On group D - which
-	 * al_boot preboot already powered/clocked/KR-configured - it returns the
-	 * SerDes revision. A plausible value here == the retarget is correct.
-	 */
+	/* gen.version doubles as the go/no-go: a plausible value means the group-D
+	 * base is right (the wrong 25G target external-aborts on this first read). */
 	version = readl(grp + AL_HSSP_GEN_VERSION);
 	printf("serdes: HSSP group D (SFP+ lane %d) @ %p, gen.version=0x%08x\n",
 	       AL_SFP_LANE, grp, version);
 
-	/*
-	 * preboot already ran al_serdes_hssp_group_cfg_eth_kr_mode(156MHz) on this
-	 * group, so the lane is in fixed-10G KR. We do NOT re-init here - just read
-	 * the PMA RX-signal-detect for the SFP+ lane via the HSSP indirect model.
-	 */
+	/* preboot already ran group_cfg_eth_kr_mode(156MHz) here, so the lane is
+	 * in fixed-10G KR - we do not re-init, only read PMA signal-detect. */
 	rxdet = al_hssp_reg_read(grp, AL_SFP_LANE, AL_HSSP_TYPE_PMA,
 				 AL_HSSP_RXRANDET_REG);
 	printf("serdes: lane %d signal_detect=%s (pma rxrandet=0x%02x)\n",
 	       AL_SFP_LANE, (rxdet & AL_HSSP_RXRANDET_STAT) ? "yes" : "no", rxdet);
 
-	/*
-	 * Apply the 10G-optic TX/RX EQ (#111). Real HSSP HAL vtable call - the
-	 * same path Linux's al_eth_serdes_static_tx/rx_params_set() uses
-	 * (al_init_eth_lm.c), now that al_hal_serdes_hssp.c is ported here.
-	 * HW: unverified - vendor 10G_OPTIC defaults, not yet confirmed to
-	 * help (or not hurt) link training on this box.
-	 */
+	/* Apply the 10G-optic TX/RX EQ (#111) - the same HSSP vtable path Linux's
+	 * al_eth_serdes_static_tx/rx_params_set() uses. Whether these tap VALUES
+	 * help this board's optic is still open (#207); `eth diag 2` reads back
+	 * what actually landed. */
 	rc = al_serdes_obj_get(&obj, &base);
 	if (rc) {
 		printf("serdes: HSSP obj_get failed (%d); EQ params NOT applied\n", rc);
@@ -257,14 +181,9 @@ int al_serdes_10g_init(void)
 		       AL_SFP_LANE);
 	}
 
-	/*
-	 * PCS is DEFERRED to the MAC driver. al_eth_dm_10g configures the 10GBASE-R
-	 * PCS as part of the MAC ("Configured MAC to KR mode", 10GbE_Serial path in
-	 * al_hal_eth_mac_v1_v2). Poking the "pcs" MAC-adapter window directly here
-	 * (base 0xfe120000, unconfirmed) external-aborts on read (0xfe120a04) and is
-	 * redundant with the MAC path - so the serdes driver no longer touches it.
-	 */
-	(void)pcs;
+	/* PCS is the MAC driver's: al_eth_dm_10g's al_eth_mac_config(10GbE_Serial)
+	 * configures it. Poking the MAC-adapter window from here external-aborts
+	 * and is redundant, so this driver does not touch it. */
 	printf("serdes: 10G init done (HSSP group D); PCS owned by the MAC driver\n");
 	return 0;
 }
@@ -289,6 +208,54 @@ void al_serdes_10g_status(void)
 
 	/* PCS block-lock / FEC is read by the MAC driver, not here - the "pcs"
 	 * MAC-adapter window aborts on direct read (0xfe120a04). See al_eth_dm_10g. */
+}
+
+/* ---- readback for `eth diag` (al_eth_diag.c, extern - no cross-dir -I) ----
+ * The taps ACTUALLY in force, read back off the lane, not the static table we
+ * meant to write - the two differ whenever the apply failed or Linux/LT moved
+ * them. Read-only. */
+
+int al_serdes_10g_tx_params_get(unsigned int lane, unsigned int *override,
+				unsigned int *c_minus_1, unsigned int *c_plus_1,
+				unsigned int *c_plus_2, unsigned int *tdu,
+				unsigned int *amp)
+{
+	struct al_serdes_adv_tx_params tx;
+	struct al_serdes_grp_obj obj;
+	int rc;
+
+	rc = al_serdes_obj_get(&obj, NULL);
+	if (rc)
+		return rc;
+	if (!obj.tx_advanced_params_get)
+		return -ENOSYS;
+
+	memset(&tx, 0, sizeof(tx));
+	obj.tx_advanced_params_get(&obj, (enum al_serdes_lane)lane, &tx);
+
+	*override = tx.override;
+	*c_minus_1 = tx.c_minus_1;
+	*c_plus_1 = tx.c_plus_1;
+	*c_plus_2 = tx.c_plus_2;
+	*tdu = tx.total_driver_units;
+	*amp = tx.amp;
+	return 0;
+}
+
+int al_serdes_10g_lane_status_get(unsigned int lane, unsigned int *sig_det,
+				  unsigned int *version)
+{
+	void __iomem *grp = al_hssp_grp_d_base();
+	u8 rxdet;
+
+	if (!grp)
+		return -ENODEV;
+
+	*version = readl(grp + AL_HSSP_GEN_VERSION);
+	rxdet = al_hssp_reg_read(grp, lane, AL_HSSP_TYPE_PMA,
+				 AL_HSSP_RXRANDET_REG);
+	*sig_det = !!(rxdet & AL_HSSP_RXRANDET_STAT);
+	return 0;
 }
 
 /* TX equaliser fields settable from the prompt, so a tap can be swept without a
@@ -467,7 +434,8 @@ static int do_serdes(struct cmd_tbl *cmdtp, int flag, int argc,
 U_BOOT_CMD(serdes, 12, 0, do_serdes,
 	   "SFP+ SerDes lane bring-up, status, and the al_eth board params",
 	   "init    - configure the lane for fixed 10GBASE-R (KR/AN/LT off)\n"
-	   "serdes status  - read PLL/signal/CDR/rx-valid + PCS block-lock\n"
+	   "serdes status  - group-D version + PMA signal-detect. PCS block-lock\n"
+	   "                 and the taps in force are in `eth diag 2`.\n"
 	   "serdes tx      - show the optic TX equaliser params\n"
 	   "serdes tx <field> <hex>  - set one and re-init the lane\n"
 	   "                 fields: amp tdu c_plus_1 c_plus_2 c_minus_1 slew\n"

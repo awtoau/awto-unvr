@@ -15,8 +15,8 @@ ccflags-y += -I$(srctree)/drivers/net/al_hal_shim
 # Third-party HAL: silence its style warnings so it builds under -Werror.
 ccflags-y += -Wno-unused-variable -Wno-unused-but-set-variable
 
-# VERBOSE TRACE (serdes-debug): -DDEBUG turns on al_dbg()->debug() across the
-# SerDes 25G HAL + 10G bring-up, so every PMA register access is logged - the
-# last line before an SError names the faulting register. Scoped to this dir.
-ccflags-y += -DDEBUG
+# VERBOSE TRACE, off by default: -DDEBUG turns on al_dbg()->debug() across the
+# SerDes HALs + 10G bring-up, so every PMA register access is logged - the last
+# line before an SError names the faulting register. Shares the eth switch.
+ccflags-$(CONFIG_AL_ETH_DEBUG) += -DDEBUG
 ccflags-y += -Wno-unused-function

@@ -8,28 +8,20 @@
  * Derived from Annapurna Labs HAL / vendor U-Boot al_eth.c (Copyright (C)
  * Annapurna Labs Ltd, GPLv2 OR BSD-3-Clause); reimplemented on U-Boot primitives.
  *
- * Scope / relationship to the tree:
+ * Scope:
  * - eth2 shares the SAME UDMA/EC datapath as eth1 (al_eth_dm.c). The UDMA glue
- *   below (rings, FLR, snoop, send/recv, cache maintenance) is a MIRROR of
- *   al_eth_dm.c - duplicated here ONLY because that file is owned by another
- *   effort and must not be edited. DEDUP AT MERGE into a shared al_eth_dm_core.
- * - The 10G-specific deltas vs eth1 are marked "10G:" below: dev_id ADVANCED,
- *   SerDes/PCS bring-up, MAC mode 10GbE_Serial, and NO external PHY / phylib
- *   (link = 10GBASE-R PCS block-lock, not MDIO negotiation).
- * - SerDes/PCS PMA bring-up lives in drivers/phy/al_serdes (CONFIG_AL_SERDES);
- *   we call its al_serdes_10g_init() by extern prototype (no cross-dir -I).
+ *   here (rings, FLR, snoop, send/recv, cache maintenance) is a MIRROR of that
+ *   file - DEDUP into a shared al_eth_dm_core when #90 settles which arm wins.
+ * - 10G deltas vs eth1: dev_id ADVANCED, SerDes/PCS bring-up, MAC mode
+ *   10GbE_Serial, and no external PHY (link = PCS block-lock, not MDIO AN).
+ * - Lane bring-up lives in drivers/phy/al_serdes (CONFIG_AL_SERDES), called by
+ *   extern prototype so no cross-directory -I is needed.
+ * - Fixed 10.3125 Gbps, KR AN + LT off, so no al_hal_eth_kr.c / LM FSM: the
+ *   10GbE_Serial path is served entirely by al_hal_eth_mac_v1_v2.c (rev 2).
  *
- * Fixed 10G optic (10G_OPTIC): fixed 10.3125 Gbps, KR Clause-73 AN + Clause-72
- * LT DISABLED (they engage only for passive-DAC/25G, never a 10G optical SFP -
- * see docs/eth-10g-plan.md). So NO al_hal_eth_kr.c / LM FSM is pulled in; the
- * 10GbE_Serial MAC path is fully served by the already-compiled
- * al_hal_eth_mac_v1_v2.c (rev_id 2).
- *
- * DEPENDENCY: 10G passes NO traffic until the shared UDMA TX fix (M2S never
- * completes a TX descriptor) lands - same bug the 1G port hits. Link bring-up
- * (SerDes + PCS block-lock) is independently testable without traffic.
- *
- * HARDWARE-TODO markers flag values/paths that can only be finalised on the box.
+ * Passes NO traffic until #90 (M2S never completes a TX descriptor) is fixed -
+ * the same bug eth1 hits. Link bring-up is testable without traffic:
+ * `eth diag 2` prints lane, PCS lock and the TX equalisation taps in force.
  */
 
 #include <dm.h>
@@ -69,16 +61,15 @@
 #define AL_ETH_RX_CDESC_OFF	(3 * AL_ETH_Q_DESCS_SIZE)
 #define AL_ETH_DESC_BLOCK_SIZE	(4 * AL_ETH_Q_DESCS_SIZE)
 
-/* Poll bound for a single TX completion. ~1us/spin; a 1518B frame at 10Gbps
- * drains in ~1.2us, so 100000 (~100ms) is a very generous cap that names itself
- * in the log. HARDWARE-TODO: tighten once real 10G drain time is measured. */
+/* One TX completion: 1us/spin, so 100000 = ~100ms. A 1518B frame at 10Gbps
+ * drains in ~1.2us, making this ~80000x worst case - far past the repo's 1.25x
+ * rule, kept only until #90 makes a completion observable enough to measure.
+ * On expiry: log descs-left + elapsed, flush the MAC TX, fail the send. */
 #define AL_ETH_TX_POLL_MAX	100000
 
-/* 10G: PCS block-lock is the link-up gate (no external PHY). Poll bound for the
- * lane+PCS to lock after bring-up. Stock LM uses ~30 iters x 100ms = ~3s with a
- * link partner already up; 3000 x 1ms = 3s here. HARDWARE-TODO: derive the real
- * lock time on the box (optic vs DAC differ) and tighten. Expiry -> report "no
- * 10G link" and continue (a later start retries). */
+/* PCS block-lock after lane bring-up: 1ms/iter, so 3000 = ~3s. Matches stock's
+ * LM budget (~30 x 100ms) with a partner already up. On expiry: warn "no 10G
+ * link" and continue - a later start() retries. */
 #define AL_ETH_10G_LINK_POLL_MAX	3000
 
 /* al_eth "advanced" function id for the 10G port (al_hal_eth.h:111). */
@@ -161,14 +152,10 @@ static void *al_eth_10g_dma_low_alloc(size_t size)
 }
 
 /* Replicate al_unit_adapter_init() on THIS function's PCI config space (mirror
- * of al_eth_dm_unit_adapter_setup in al_eth_dm.c). unit_adapter=NULL makes the
- * HAL skip it; its three steps are mandatory and all reset by FLR/adapter_init,
- * so they run post-adapter_init here:
- *   1. snoop_enable - SMCC SNOOP_OVR|SNOOP_EN=0x3 (4 sub-masters) + axcache 0x3ff
- *   2. error_track  - disable (SMCC_CONF_2 bit8), func 0
- *   3. rob_cfg      - reset then enable READ_ROB_EN|WRITE_ROB_EN (GEN_CTL_19).
- *                     ROB gates the master's DRAM reads; without it the M2S
- *                     descriptor fetch is never serviced (drhp stuck, 0x2222). */
+ * of al_eth_dm_unit_adapter_setup in al_eth_dm.c): snoop, error-track, ROB. All
+ * three are reset by FLR/adapter_init, so they run post-adapter_init here.
+ * NB error_track is DISABLED here and left ENABLED on eth1 - eth1 needs the
+ * latched AXI-error attributes for the #90 dump. */
 #define AL_ETH_SMCC		0x110
 #define AL_ETH_SMCC_BUNDLE	0x20
 #define AL_ETH_SMCC_SNOOP	0x3	/* SNOOP_OVR|SNOOP_EN */
@@ -258,10 +245,10 @@ static int al_eth_10g_dma_init(struct udevice *dev)
 	ap.mac_common_regs = NULL;		/* MAC ver < 4 */
 	ap.eth_common_regs_base = NULL;		/* rev < 4 */
 	ap.name = priv->name;
-	ap.serdes_lane = 0;	/* 10G: UNVR DT = serdes-grp 3, lane 0 (roadmap).
-				 * NB stock CODE default is 3-port_idx = lane 1 for
-				 * port2; only the explicit DT gives 0.
-				 * HARDWARE-TODO: confirm the physical lane. */
+	/* HSSP group D (serdes-grp 3), lane 0 - the DT is hardware-of-record and
+	 * the group-D retarget is what stopped the SError (commit eac280a). Stock's
+	 * CODE default (3 - port_idx = lane 1) is wrong for this board. */
+	ap.serdes_lane = 0;
 	ap.unit_adapter = NULL;	/* board_late_init already did PCI/snoop init */
 	ap.common_mode = AL_ETH_COMMON_MODE_INVALID;
 
@@ -279,16 +266,10 @@ static int al_eth_10g_dma_init(struct udevice *dev)
 	/* Re-enable DMA snoop post-FLR/adapter-init (they clear it). */
 	al_eth_10g_snoop_enable(dev);
 
-	/*
-	 * 10G: bring the SerDes lane + 10GBASE-R PCS up BEFORE MAC config, so the
-	 * electrical lane is live when the MAC selects the KR mux. Order mirrors
-	 * stock (serdes mode_set -> al_eth_mac_config). al_serdes_10g_init() does
-	 * the group-3 fixed-10G electrical mode + lane-0 optic EQ + (optional) PCS.
-	 * HARDWARE-TODO: the serdes driver's optional PCS write and the MAC's KR
-	 * mux/PCS-mode writes overlap - decide a single owner on the box
-	 * (docs/eth-10g-plan.md §7). A non-chainload cold path may need serdes
-	 * group PLL / PBS clock init first (README HW: note).
-	 */
+	/* SerDes lane before MAC config, so the electrical lane is live when the
+	 * MAC selects the KR mux (stock's order). PCS has a single owner - this
+	 * driver, via al_eth_mac_config below; al_serdes_10g_init() only does the
+	 * lane (group D fixed-10G + optic EQ) and no longer touches the PCS. */
 	err = al_serdes_10g_init();
 	if (err)
 		dev_warn(dev, "al_serdes_10g_init failed: %d (continuing; MAC may still mux)\n",
@@ -321,13 +302,9 @@ static int al_eth_10g_dma_init(struct udevice *dev)
 	al_udma_q_handle_get(&priv->adapter.tx_udma, 0, &priv->tx_q);
 	al_udma_q_handle_get(&priv->adapter.rx_udma, 0, &priv->rx_q);
 
-	/*
-	 * 10G: MAC mode 10GbE_Serial. Served entirely by al_hal_eth_mac_v1_v2.c
-	 * (compiled) - self-contained register writes, no serdes/KR closure. Do
-	 * NOT call al_eth_mac_link_config: stock skips it for 10GbE_Serial (that
-	 * path is SGMII AN only); speed is fixed 10.3125G, the SerDes/PCS drive
-	 * the line side.
-	 */
+	/* MAC mode 10GbE_Serial, served entirely by al_hal_eth_mac_v1_v2.c - no
+	 * serdes/KR closure. NOT al_eth_mac_link_config: stock skips it here (that
+	 * path is SGMII AN only) and speed is fixed, driven by the SerDes/PCS. */
 	err = al_eth_mac_config(&priv->adapter, AL_ETH_MAC_MODE_10GbE_Serial);
 	if (err) {
 		dev_err(dev, "al_eth_mac_config(10GbE_Serial) failed: %d\n", err);
@@ -384,13 +361,10 @@ static int al_eth_10g_start(struct udevice *dev)
 	if (err)
 		return err;
 
-	/*
-	 * 10G: no phylib. Link = 10GBASE-R PCS block-lock (needs an SFP module +
-	 * link partner). We do NOT hard-fail start() on no-link so the port can be
-	 * probed with nothing plugged; a real send will simply not complete.
-	 * HARDWARE-TODO: decide whether to fail start() when no SFP/link, once the
-	 * on-box behaviour (and the shared UDMA TX fix) is known.
-	 */
+	/* No phylib: link = 10GBASE-R PCS block-lock. start() does NOT hard-fail on
+	 * no-link, so the port is probeable with nothing plugged; a send then just
+	 * does not complete. OPEN: whether that should instead fail start() waits
+	 * on #90 - today every send fails anyway, so no-link is indistinguishable. */
 	if (al_eth_10g_wait_link(dev))
 		dev_warn(dev, "10G link not up (no SFP/partner?) - continuing\n");
 	else if (IS_ENABLED(CONFIG_AL_SERDES))
@@ -516,13 +490,11 @@ static int al_eth_10g_write_hwaddr(struct udevice *dev)
 	return al_eth_mac_addr_store(priv->ec_regs, 0, pdata->enetaddr);
 }
 
-/*
- * 10G MAC = NOR base MAC (0x1f0000) + 2, matching stock U-Boot's
- * "mac: [74acb941a811] + [2]". Carry runs through the 24-bit NIC part only, so
- * the result stays inside the OUI. The 6 bytes at +0x6 are NOT used - nothing
- * confirms they are a MAC field, and the factory value there is locally
- * administered (76:.., LAA bit set), i.e. not globally unique (#89).
- */
+/* 10G MAC = NOR base MAC (0x1f0000) + 1. Stock's "mac: [<base>] + [2]" is a
+ * COUNT of allocated MACs, not an offset - port 1 is base+0 (#222/#223). Carry
+ * runs through the 24-bit NIC part only, so the result stays inside the OUI.
+ * The 6 bytes at +0x6 are NOT a second MAC: the factory value is locally
+ * administered, so not globally unique (#89, #223). */
 #define AL_ETH_MAC_ROM_OFFSET	0x1f0000
 
 static int al_eth_10g_read_rom_hwaddr(struct udevice *dev)
@@ -544,7 +516,7 @@ static int al_eth_10g_read_rom_hwaddr(struct udevice *dev)
 
 	nic = (pdata->enetaddr[3] << 16) | (pdata->enetaddr[4] << 8) |
 	      pdata->enetaddr[5];
-	nic = (nic + 2) & 0xffffff;
+	nic = (nic + 1) & 0xffffff;
 	pdata->enetaddr[3] = nic >> 16;
 	pdata->enetaddr[4] = nic >> 8;
 	pdata->enetaddr[5] = nic;

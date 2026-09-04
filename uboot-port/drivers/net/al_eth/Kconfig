@@ -9,6 +9,19 @@ config AL_ETH
 	  MAC + UDMA + clause-22 MDIO only; no serdes/KR/PCS (10G SFP+ excluded).
 	  Bundles a curated subset of the Annapurna Labs HAL under hal/.
 
+config AL_ETH_DEBUG
+	bool "al_eth + al_serdes verbose HAL trace (-DDEBUG)"
+	depends on AL_ETH
+	help
+	  Compile the al_eth and al_serdes directories with -DDEBUG, which turns
+	  every HAL al_dbg() and driver debug()/dev_dbg() into a console print:
+	  the full UDMA descriptor-fetch and adapter bring-up trace, plus every
+	  SerDes PMA register access. Thousands of lines per boot.
+
+	  Off by default. `eth diag` answers the usual "why is this port down"
+	  question on demand; turn this on only to trace a bring-up live - e.g.
+	  the last register logged before an SError names the faulting access.
+
 config AL_ETH_10G
 	bool "Annapurna Labs al_eth 10G SFP+ (eth2, 1c36:0002) - DRAFT"
 	depends on AL_ETH
