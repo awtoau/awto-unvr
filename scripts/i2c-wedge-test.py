@@ -31,7 +31,6 @@ from __future__ import annotations
 
 import argparse
 import subprocess
-import sys
 from pathlib import Path
 
 # The s35390a sits at 0x30 on mux channel 0. Bus numbering shifts with probe

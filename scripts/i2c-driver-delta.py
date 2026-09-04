@@ -28,21 +28,38 @@ LOG_DIR = REPO / "tmp" / "logs"
 # common/master/platdrv upstream, so one 4.1.37 file maps to several.
 PAIRS: list[tuple[str, str, str]] = [
     ("rtc-s35390a", "drivers/rtc/rtc-s35390a.c", "drivers/rtc/rtc-s35390a.c"),
-    ("i2c-mux-pca954x", "drivers/i2c/muxes/i2c-mux-pca954x.c",
-     "drivers/i2c/muxes/i2c-mux-pca954x.c"),
-    ("dw-core-vs-master", "drivers/i2c/busses/i2c-designware-core.c",
-     "drivers/i2c/busses/i2c-designware-master.c"),
-    ("dw-core-vs-common", "drivers/i2c/busses/i2c-designware-core.c",
-     "drivers/i2c/busses/i2c-designware-common.c"),
-    ("dw-platdrv", "drivers/i2c/busses/i2c-designware-platdrv.c",
-     "drivers/i2c/busses/i2c-designware-platdrv.c"),
+    (
+        "i2c-mux-pca954x",
+        "drivers/i2c/muxes/i2c-mux-pca954x.c",
+        "drivers/i2c/muxes/i2c-mux-pca954x.c",
+    ),
+    (
+        "dw-core-vs-master",
+        "drivers/i2c/busses/i2c-designware-core.c",
+        "drivers/i2c/busses/i2c-designware-master.c",
+    ),
+    (
+        "dw-core-vs-common",
+        "drivers/i2c/busses/i2c-designware-core.c",
+        "drivers/i2c/busses/i2c-designware-common.c",
+    ),
+    (
+        "dw-platdrv",
+        "drivers/i2c/busses/i2c-designware-platdrv.c",
+        "drivers/i2c/busses/i2c-designware-platdrv.c",
+    ),
 ]
 
 # Properties/symbols worth grepping for on both sides: each is a knob that
 # changes what appears on the wire for the fussy s35390a.
 MARKERS = [
-    "hcnt-raw", "lcnt-raw", "sda-hold-time-ns", "scl-falling-time-ns",
-    "DW_IC_SDA_HOLD_RX_MASK", "i2c_recover_bus", "i2c-mux-idle-disconnect",
+    "hcnt-raw",
+    "lcnt-raw",
+    "sda-hold-time-ns",
+    "scl-falling-time-ns",
+    "DW_IC_SDA_HOLD_RX_MASK",
+    "i2c_recover_bus",
+    "i2c-mux-idle-disconnect",
     "MUX_IDLE_DISCONNECT",
 ]
 
@@ -69,12 +86,12 @@ def diff_pair(label: str, ubnt_rel: str, main_rel: str) -> None:
     a, b = UBNT / ubnt_rel, MAINLINE / main_rel
     logging.info("\n%s\n== %s\n%s", "=" * 78, label, "=" * 78)
     if not a.is_file() or not b.is_file():
-        logging.warning("skip %s: missing %s", label,
-                        a if not a.is_file() else b)
+        logging.warning("skip %s: missing %s", label, a if not a.is_file() else b)
         return
     # diff exits 1 when files differ; that is the expected case, not an error.
-    res = subprocess.run(["diff", "-u", str(a), str(b)],
-                         capture_output=True, text=True, check=False)
+    res = subprocess.run(
+        ["diff", "-u", str(a), str(b)], capture_output=True, text=True, check=False
+    )
     if res.returncode == 0:
         logging.info("identical")
     else:
@@ -82,14 +99,25 @@ def diff_pair(label: str, ubnt_rel: str, main_rel: str) -> None:
 
 
 def scan_markers() -> None:
-    logging.info("\n%s\n== marker presence (UBNT 4.1.37 vs mainline v7.3)\n%s",
-                 "=" * 78, "=" * 78)
+    logging.info(
+        "\n%s\n== marker presence (UBNT 4.1.37 vs mainline v7.3)\n%s",
+        "=" * 78,
+        "=" * 78,
+    )
     for marker in MARKERS:
         for name, tree in (("ubnt", UBNT), ("main", MAINLINE)):
             res = subprocess.run(
-                ["grep", "-rl", marker, str(tree / "drivers/i2c"),
-                 str(tree / "drivers/rtc")],
-                capture_output=True, text=True, check=False)
+                [
+                    "grep",
+                    "-rl",
+                    marker,
+                    str(tree / "drivers/i2c"),
+                    str(tree / "drivers/rtc"),
+                ],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
             hits = [h for h in res.stdout.split("\n") if h]
             rel = sorted(str(Path(h).relative_to(tree)) for h in hits)
             logging.info("%-26s %-5s %s", marker, name, ", ".join(rel) or "-")
