@@ -87,6 +87,14 @@ def test_console_tcl_substitutes_ipaddr_into_send(monkeypatch, tmp_path):
     ]
 
 
+def test_dev_has_no_private_uboot_banner_parser():
+    # dev.py:1175 _verify_uboot_banner had its own regex requiring a
+    # "-<suffix>" after the version, which a clean fork build (#256) lacks,
+    # and no caller. The one banner parser is scripts/verify-versions.py.
+    assert not hasattr(_dev(), "_verify_uboot_banner")
+    assert "U-Boot 20" not in (REPO / "dev.py").read_text()
+
+
 def test_no_console_tcl_carries_the_literal():
     bad = sorted(
         p.name for p in (REPO / "scripts").glob("*.tcl") if UNVR_IPADDR in p.read_text()
