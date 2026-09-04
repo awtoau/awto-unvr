@@ -182,6 +182,10 @@
 		 * optional (absent -> PCS left to the MAC agent). HW: confirm the
 		 * exact PCS base on the box and reconcile with the eth MAC datapath.
 		 */
+		/* "25g" is a MISNOMER kept only because the driver matches on it.
+		 * The SFP+ is HSSP group D at +0xc00; group E (+0x2000) is the
+		 * real 25G complex and every board DTB sets it to `skip`, so its
+		 * 8051 firmware never loads (#246, docs/blob57-identified.md). */
 		serdes: serdes@fd8c0000 {
 			compatible = "annapurna-labs,al-serdes-25g";
 			reg = <0x0 0xfd8c0000 0x0 0x00002400>,	/* serdes PMA */
@@ -327,39 +331,41 @@
 			awto,single-devfn;
 		};
 
-		/* SoC GPIO (PL061), 6 banks × 8 = 48 lines. "arm,pl061" only (drop
-		 * primecell -> no AMBA needed). gpio-line-names = the live MUIO
-		 * pinmux map (read 2026-08-18, docs/gpio-map.md) so `gpio status`
+		/* SoC GPIO (PL061), 6 banks × 8 = 48 lines. compatible matches Linux's
+		 * ("arm,pl061", "arm,primecell") so #75 can share one DTS; U-Boot binds
+		 * on the first string and has no AMBA bus driver at all (#76).
+		 * gpio-line-names = the live MUIO pinmux map (read 2026-08-18,
+		 * docs/gpio-map.md) so `gpio status`
 		 * self-labels every ball: mux func 0=GPIO / nand / uart2(RPS) /
 		 * sgpo / eth-led. "spare*" = GPIO-mode, no known consumer (SW1/SW2/
 		 * strap candidates). NAND-bus lines named so they're not mistaken
 		 * for free. */
 		gpio0: gpio@fd887000 {
-			compatible = "arm,pl061"; reg = <0x0 0xfd887000 0x0 0x1000>;
+			compatible = "arm,pl061", "arm,primecell"; reg = <0x0 0xfd887000 0x0 0x1000>;
 			gpio-controller; #gpio-cells = <2>;
 			gpio-line-names = "sfp-25g-led", "spare1", "spare2", "spare3",
 					  "spare4", "spare5", "nand-d0", "nand-d1";
 		};
 		gpio1: gpio@fd888000 {
-			compatible = "arm,pl061"; reg = <0x0 0xfd888000 0x0 0x1000>;
+			compatible = "arm,pl061", "arm,primecell"; reg = <0x0 0xfd888000 0x0 0x1000>;
 			gpio-controller; #gpio-cells = <2>;
 			gpio-line-names = "nand-d2", "nand-d3", "nand-d4", "nand-d5",
 					  "nand-d6", "nand-d7", "nand-d8", "nand-d9";
 		};
 		gpio2: gpio@fd889000 {
-			compatible = "arm,pl061"; reg = <0x0 0xfd889000 0x0 0x1000>;
+			compatible = "arm,pl061", "arm,primecell"; reg = <0x0 0xfd889000 0x0 0x1000>;
 			gpio-controller; #gpio-cells = <2>;
 			gpio-line-names = "nand-d10", "nand-d11", "nand-d12", "nand-cs",
 					  "spare20", "sgpo", "spare22", "spare23";
 		};
 		gpio5: gpio@fd897000 {
-			compatible = "arm,pl061"; reg = <0x0 0xfd897000 0x0 0x1000>;
+			compatible = "arm,pl061", "arm,primecell"; reg = <0x0 0xfd897000 0x0 0x1000>;
 			gpio-controller; #gpio-cells = <2>;
 			gpio-line-names = "spare40", "spare41", "hdd-force-pwr", "spare43",
 					  "spare44", "spare45", "spare46", "spare47";
 		};
 		gpio3: gpio@fd88a000 {
-			compatible = "arm,pl061";
+			compatible = "arm,pl061", "arm,primecell";
 			reg = <0x0 0xfd88a000 0x0 0x1000>;
 			gpio-controller;
 			#gpio-cells = <2>;
@@ -367,7 +373,7 @@
 					  "spare28", "spare29", "eth-led", "ulogo-blue";
 		};
 		gpio4: gpio@fd88b000 {
-			compatible = "arm,pl061";
+			compatible = "arm,pl061", "arm,primecell";
 			reg = <0x0 0xfd88b000 0x0 0x1000>;
 			gpio-controller;
 			#gpio-cells = <2>;
@@ -465,6 +471,16 @@
 						compatible = "sii,s35390a";
 						reg = <0x30>;
 					};
+				};
+
+				/* Channel 1: SFP+ module EEPROM (SFF-8472 @0x50/0x51),
+				 * eth2. Same channel Linux's sfp0 i2c-bus phandle points
+				 * at (docs/i2c-map.md). Declared so `i2c dev`/`i2c md`
+				 * can reach the module - the read itself is #108. */
+				sfp_i2c: i2c@1 {
+					reg = <1>;
+					#address-cells = <1>;
+					#size-cells = <0>;
 				};
 
 				i2c@3 {

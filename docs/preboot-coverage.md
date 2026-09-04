@@ -56,7 +56,7 @@ segment map + pool/movw-movt scan):
 
 | region | bytes | class | referenced-by | name / evidence |
 |---|---|---|---|---|
-| blob57 @0x0103469d | 57,343 | data (opaque) | **NONE (abs)** | no A32 pool/movw-movt word equals its base; entropy 6.66; invalid as A32/Thumb/AArch64; no gzip/xz/lz/zlib header; 0xff-record structure → **not code, not a mis-carve** (it is inside the length-prefixed 0x4a6b0 payload). Candidate: SerDes-25G PHY microcode DMA'd via a computed pointer (`al_serdes_25g_*` present). The one region that resists decode. |
+| blob57 @0x010346a0 | 57,340 | **IDENTIFIED**: `al_serdes_25g_fw[]`, an 8051 program | `FUN_01021b60` @0x01021b60 | **RESOLVED** - see [blob57-identified.md](blob57-identified.md). sha256 matches `delroth-alpine_hal/.../al_hal_serdes_25g_fw.h` byte for byte, 0 mismatches. The earlier "Referenced-by: NONE (abs)" was a FALSE NEGATIVE: the scan used 0x0103469d (where the preceding .rodata string ends; the next 3 bytes are alignment pad), so the real `movw #0x46a0`/`movt #0x103` pair was missed. "0xff-record structure" was also wrong - no 0xff run of length >=4 exists. NOT boot-critical: single call site, group-E only, and every board DTB sets group E = `skip`, so the loader never runs on this hardware. |
 | zero-pad / BSS | 30,219 | padding | NONE (expected) | 549 runs `00`; 20 KB block @0x010441eb = BSS/scratch; rest inter-fn alignment |
 | AArch64 resume-agent @0x01029157 | 20,493 | code (AArch64) | embedded payload (computed ptr; no abs ref) | `stp/msr cpacr_el1/dsb`; 66 AArch64 functions (below); secondary-CPU bring-up, position-independent, copied to the A57s |
 | data tables / literal pools | 2,138 | data | referenced (PC-rel pools inside fns) | const tables + `ldr [pc,#imm]` pools |
