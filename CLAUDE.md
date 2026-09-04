@@ -40,7 +40,10 @@ stock U-Boot → NAND 0x1300000 (awto-uboot, raw, `go`) → ext4load /boot/uImag
 - If it reports "No route to host": `ping -c1 <ip>` to re-ARP, then retry. Both al_eth
   ports are on one subnet, so neighbour entries go stale (#170).
 - Fallback when al_eth is down: `root@192.168.25.100` (a USB NIC).
-- Recovery if it will not boot: `<Esc><Esc>` at stock, then `run bootnand`.
+- Recovery if it will not boot: `<Esc><Esc>` at stock, then netboot - stock is the
+  only stage with working networking. **`run bootnand` is NOT a recovery path**: the
+  NAND recovery image at `0x300000` is not genuine stock firmware and does not boot
+  (#166). Pristine MTD backups: `git_debris/woomera-mtd/...-164356/`.
 
 ## Verifying, not assuming
 
