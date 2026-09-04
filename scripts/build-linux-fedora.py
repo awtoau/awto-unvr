@@ -278,6 +278,11 @@ def configure():
             "USB_STORAGE",
             "--enable",
             "USB_UAS",
+            # DisplayLink (17e9:6015 ThinkPad Hybrid dock). =m, not =y: it is
+            # not needed to reach a rootfs. DRM and DRM_GEM_SHMEM_HELPER (its
+            # dependency) are already =y from the Fedora base.
+            "--module",
+            "DRM_UDL",
             # #92: per-port MSI-X for the two Alpine AHCI controllers instead
             # of board_ahci_al's one shared INTx. Needs
             # patches/ahci-alpine-per-port-msix.patch applied in the kernel
