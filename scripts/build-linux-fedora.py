@@ -283,11 +283,36 @@ def configure():
             # dependency) are already =y from the Fedora base.
             "--module",
             "DRM_UDL",
-            # RTC. Without it the clock resets to the build epoch every boot,
-            # and dnf rejects any package signed after that date ("Not live
-            # until ..."). The s35390a is on i2c ch0 behind the pca9546 (#86).
+            # RTC. Built, but INERT today: the DTS node is status="disabled"
+            # to keep Linux off i2c ch0 (#86 SDA-hold wedge). No battery either,
+            # so NTP is the real clock fix - this only readies the driver for
+            # when ch0 recovery exists.
             "--enable",
             "RTC_DRV_S35390A",
+            # FAT. Its absence made efi.automount fail, which killed dbus-broker
+            # at step NAMESPACE and took ALL networking down (#231). Also needed
+            # to read the SSD's ESP or any FAT stick. NLS_CODEPAGE_437/ASCII are
+            # already =y.
+            "--enable",
+            "VFAT_FS",
+            "--enable",
+            "MSDOS_FS",
+            # Everything the box physically has gets a driver, even on a
+            # headless NAS: an unexercised subsystem is an unknown, and each one
+            # that probes is a test of the port. Audit: scripts/audit-hw-coverage.py
+            # Dock audio (3x UAC interfaces on 17e9:6015). CONFIG_SOUND was off
+            # entirely, so ALSA had nothing to bind.
+            "--module",
+            "SOUND",
+            "--module",
+            "SND",
+            "--module",
+            "SND_USB_AUDIO",
+            # EDAC on the DDR controller. Note the compatible mismatch: our DTS
+            # says annapurna-labs,alpine-mc but al_mc_edac.c matches
+            # amazon,al-mc-edac - the symbol alone will not bind (#208).
+            "--module",
+            "EDAC_AL_MC",
             # #92: per-port MSI-X for the two Alpine AHCI controllers instead
             # of board_ahci_al's one shared INTx. Needs
             # patches/ahci-alpine-per-port-msix.patch applied in the kernel

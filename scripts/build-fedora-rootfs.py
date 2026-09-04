@@ -185,6 +185,11 @@ systemctl enable sshd.service
 # by default (Fedora's default client is chrony, which @core does not pull in).
 systemctl enable systemd-timesyncd.service
 
+# r8152 PHY patch firmware for the dock's two USB NICs. Without it:
+#   "Direct firmware load for rtl_nic/rtl8153b-2.fw failed with error -2"
+# They run unpatched. @core does not pull linux-firmware in.
+dnf install -y --setopt=install_weak_deps=False linux-firmware 2>/dev/null || true
+
 # systemd-gpt-auto-generator synthesises these from the SSD's ESP, but the
 # kernel has no CONFIG_VFAT_FS so the mount can never succeed - and any unit
 # whose sandboxing touches /efi then dies at step NAMESPACE, which took
