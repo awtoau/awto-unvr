@@ -120,6 +120,10 @@ WRITE_STATUS       = TRUE
   # in despite its own menu not being able to reach Shell.inf
   INF MdeModulePkg/Application/BootManagerMenuApp/BootManagerMenuApp.inf
 
+  # Boot Manager Policy - without it no driver is auto-connected at all,
+  # so SATA never binds. See Unvr.dsc for the full note.
+  INF MdeModulePkg/Universal/BootManagerPolicyDxe/BootManagerPolicyDxe.inf
+
   # FV as filesystem
   INF MdeModulePkg/Universal/FvSimpleFileSystemDxe/FvSimpleFileSystemDxe.inf
 

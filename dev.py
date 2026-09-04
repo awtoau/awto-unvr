@@ -995,6 +995,16 @@ def cmd_uefi_chainload_probe(extra: list[str]) -> int:
 
 
 @command(
+    "chainload EDK2 from OUR U-Boot's awto-nas# prompt (the shipped chain, so "
+    "the SATA bays are already powered): ext4load the FD off the SSD, `go`, "
+    "race the Shell hotkey (scripts/uefi-chainload-from-awto.py)",
+    kind="action",
+)
+def cmd_uefi_chainload_from_awto(extra: list[str]) -> int:
+    return _run_script("scripts/uefi-chainload-from-awto.py", extra)
+
+
+@command(
     "type commands at an already-running EDK2 UEFI Shell prompt, e.g. P2's "
     "`map -r` / `ls fs0:` acceptance test (scripts/uefi-shell-cmd.py)",
     kind="action",

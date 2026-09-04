@@ -520,6 +520,64 @@ never touched flash).
 - 2× AHCI EPs behind internal PCIe (`1c36:0031`, abar `0xfe154000` / `0xfe158000`,
   4 ports each). Stock `AtaAtapiPassThru` + `AhciBus` (generic AHCI).
 
+**Status (2026-09-04): DONE. All 4 disks, their GPTs and the ESP
+enumerate automatically, with no board-specific SATA code at all.**
+`./dev.py uefi-chainload-from-awto` reproduces it end to end.
+
+```
+FS2:  PcieRoot(0x0)/Pci(0x8,0x0)/Sata(0x2,...)/HD(1,GPT,79CD524F-…)   ESP, FAT
+BLK5: PcieRoot(0x0)/Pci(0x8,0x0)/Sata(0x2,...)/HD(2,GPT,DCDC291E-…)   Fedora root
+BLK1/2:  Pci(0x8,0x0)/Sata(0x0)   6 TB Seagate, 2 GPT parts
+BLK6/7:  Pci(0x9,0x0)/Sata(0x0|0x2)   2x WD82PURZ
+```
+
+Three things had to be true; none of them is a SATA driver.
+
+- **Enter EDK2 from awto-uboot, not stock.** awto-uboot's PCA9575 @0x21
+  gpio-hogs power the four bays; stock never does. Unpowered drives is
+  the whole reason `PxSSTS` read `0xFFFFFFFF` on every port. Confirmed
+  from awto-uboot's own prompt: `scsi scan` lists all 4 drives, so the
+  bays are live and the drives spun up before EDK2 even starts. **UEFI
+  needs no i2c/PCA9575 code of its own** — the earlier plan to write a
+  DesignWare-i2c DXE was dropped; awto-uboot owns the bring-up.
+- **`dcache off; icache off` before `go`.** Not optional. awto-uboot
+  (v2026.07) runs with MMU + caches ON, stock (2015.07) does not, and
+  `go` (`cmd/boot.c do_go`) does no `cleanup_before_linux` — unlike
+  `bootm`. The identical FD (crc32 `0x58f8b174`) reached the Shell from
+  stock and took a Synchronous Abort from `awto-nas#`: `esr 0x86000004`
+  (instruction abort, lower EL), `far 0x20006eb4`, i.e. inside the FD's
+  own text, right after the firmware banner. The probe script does this
+  itself.
+- **`MdeModulePkg/Universal/BootManagerPolicyDxe`** added to the
+  component list. It provides `gEfiBootManagerPolicyProtocolGuid`;
+  without it ArmPkg's `PlatformBootManagerLib` logs *"BootDiscoveryPolicy
+  Handler - Failed to locate gEfiBootManagerPolicyProtocolGuid. Driver
+  connect will be skipped"* and connects **nothing**. `PciBusDxe` still
+  enumerated both AHCI EPs (`devices` showed handles 4F/50 with `#D 0`,
+  `#C 0` — no driver bound, no children), but `SataControllerDxe` /
+  `AtaAtapiPassThru` never bound, so no BlockIo, no partitions, no ESP.
+  A manual `connect -r` in the Shell brought all 4 disks up immediately;
+  this component is what makes that automatic.
+
+Not needed, checked rather than assumed:
+
+- **No spin-up delay, no SSS handling of our own.** `AtaAtapiPassThru`
+  already does the whole staggered-spin-up flow: it sets `PxCMD.SUD`
+  when `CAP.SSS` is set, then polls `PxSSTS.DET`
+  (`EFI_AHCI_BUS_PHY_DETECT_TIMEOUT` = 15 ms) and clears SUD again on
+  ports with nothing attached. 15 ms only works because the drives are
+  already spinning by then — see the first bullet.
+- **No CCU work for SATA.** `AlPcieSnoopFixDxe`'s SMCC/APP_CONTROL
+  writes are what AHCI DMA depends on (see the finding notes in the
+  P2 investigation), not the CCU cluster-snoop registers.
+
+Transport note: the FD is `ext4load`ed off the SSD, not tftp'd —
+awto-uboot's own ethernet cannot transmit (#90: `TX completion timeout:
+1 descs left`, then `ARP Retry count exceeded`, on both the 1G and 10G
+ports). Its AHCI works fine, so the disks it just powered are also the
+delivery path. Stage the FD with
+`scp <fd> root@<box>:/boot/UNVR.fd` from a Linux boot first.
+
 ### P3 — network
 
 - 1G `al_eth` `1c36:0001` (RGMII → AR8031 addr 4) and/or 10G `1c36:0002` (SFP+).

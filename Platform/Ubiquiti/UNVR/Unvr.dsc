@@ -478,6 +478,14 @@
   MdeModulePkg/Application/BootManagerMenuApp/BootManagerMenuApp.inf
 
   #
+  # Provides gEfiBootManagerPolicyProtocolGuid. Without it ArmPkg's
+  # PlatformBootManagerLib connects NOTHING ("Driver connect will be
+  # skipped"), so SATA enumerates but never binds - no BlockIo, no ESP.
+  # This is what makes P2's disks appear automatically (docs/uefi.md P2).
+  #
+  MdeModulePkg/Universal/BootManagerPolicyDxe/BootManagerPolicyDxe.inf
+
+  #
   # FV as filesystem (lets the shell see FV contents as FSn:)
   #
   MdeModulePkg/Universal/FvSimpleFileSystemDxe/FvSimpleFileSystemDxe.inf
