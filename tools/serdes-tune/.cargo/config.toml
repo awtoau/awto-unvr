@@ -1,0 +1,11 @@
+# Cross-compile for woomera (aarch64). Without this cargo emits correct
+# aarch64 objects and then links them with the host cc, which fails with
+# "incompatible with elf64-x86-64".
+[target.aarch64-unknown-linux-gnu]
+linker = "aarch64-linux-gnu-gcc"
+
+# musl: fully static, so the binary runs on the box with no runtime deps and
+# no cross-glibc needed on this host. Rust ships the CRT objects itself; only
+# the linker has to be the aarch64 one.
+[target.aarch64-unknown-linux-musl]
+linker = "aarch64-linux-gnu-gcc"
