@@ -189,9 +189,11 @@
 			reg = <0x00 0xfd8c0000 0x00 0x2400>;
 		};
 
-		/* Memory controller */
+		/* Memory controller. Both compatibles: the vendor DTS string plus
+		 * the one drivers/edac/al_mc_edac.c actually matches - with only the
+		 * vendor string, EDAC_AL_MC builds but never binds (#208). */
 		mc: memory-controller@f0080000 {
-			compatible = "annapurna-labs,alpine-mc";
+			compatible = "annapurna-labs,alpine-mc", "amazon,al-mc-edac";
 			reg = <0x00 0xf0080000 0x00 0x10000>;
 		};
 
