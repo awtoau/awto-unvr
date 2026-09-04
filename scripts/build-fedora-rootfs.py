@@ -178,6 +178,18 @@ printf '[main]\ndns=default\nrc-manager=symlink\n' > /etc/NetworkManager/conf.d/
 ln -sf /run/NetworkManager/resolv.conf /etc/resolv.conf
 # --- ssh ---
 systemctl enable sshd.service
+
+# Time. The RTC has no battery, so every COLD boot starts at the build epoch -
+# and dnf then rejects any package signed later ("Not live until ..."). NTP is
+# the fix, not the RTC driver. timesyncd ships inside systemd but is disabled
+# by default (Fedora's default client is chrony, which @core does not pull in).
+systemctl enable systemd-timesyncd.service
+
+# systemd-gpt-auto-generator synthesises these from the SSD's ESP, but the
+# kernel has no CONFIG_VFAT_FS so the mount can never succeed - and any unit
+# whose sandboxing touches /efi then dies at step NAMESPACE, which took
+# dbus-broker and all networking down with it (#231).
+systemctl mask efi.mount efi.automount
 sed -i 's/^#\?PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config
 # --- root password (CHANGE THIS) ---
 echo 'root:unvr' | chpasswd

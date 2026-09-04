@@ -283,6 +283,11 @@ def configure():
             # dependency) are already =y from the Fedora base.
             "--module",
             "DRM_UDL",
+            # RTC. Without it the clock resets to the build epoch every boot,
+            # and dnf rejects any package signed after that date ("Not live
+            # until ..."). The s35390a is on i2c ch0 behind the pca9546 (#86).
+            "--enable",
+            "RTC_DRV_S35390A",
             # #92: per-port MSI-X for the two Alpine AHCI controllers instead
             # of board_ahci_al's one shared INTx. Needs
             # patches/ahci-alpine-per-port-msix.patch applied in the kernel
