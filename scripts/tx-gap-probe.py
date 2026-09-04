@@ -37,7 +37,7 @@ from pathlib import Path
 
 LOG_DIR = Path("tmp/logs")
 LOG_FILE = LOG_DIR / "tx-gap-probe.log"
-SSH_CONNECT_TIMEOUT = 8
+SSH_CONNECT_TIMEOUT = 8  # = _box.SSH_OPTS_BATCH's ConnectTimeout; bounds the subprocess
 HEADER = struct.Struct(">Q")  # 8-byte big-endian sequence number
 DEFAULT_PAYLOAD_SIZE = 1200  # + 28B UDP/IP header = 1228B, under 1500 MTU
 
@@ -230,6 +230,10 @@ def run_recv(args: argparse.Namespace) -> int:
 
 
 def run_orchestrate(args: argparse.Namespace) -> int:
+    # Lazy: this file is piped over ssh and run on the BOX as the sender,
+    # where scripts/_box.py does not exist.
+    import _box
+
     log(
         f"tx-gap-probe: box {args.box_ip} -> {args.bind_ip}%{args.bind_iface}:"
         f"{args.port}, {args.duration}s, grace {args.grace_ms}ms, "
@@ -268,15 +272,7 @@ def run_orchestrate(args: argparse.Namespace) -> int:
     if args.src_iface:
         send_cmd += f" --src-iface {args.src_iface}"
     ssh = subprocess.run(
-        [
-            "ssh",
-            "-o",
-            f"ConnectTimeout={SSH_CONNECT_TIMEOUT}",
-            "-o",
-            "StrictHostKeyChecking=accept-new",
-            f"root@{args.box_ip}",
-            send_cmd,
-        ],
+        _box.ssh_argv(args.box_ip, cmd=[send_cmd], batch=True),
         input=script_src,
         capture_output=True,
         text=True,

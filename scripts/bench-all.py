@@ -89,21 +89,7 @@ def locate_woomera() -> str:
 
 
 def ssh_cmd(host: str, password: str) -> list[str]:
-    return [
-        "sshpass",
-        "-p",
-        password,
-        "ssh",
-        "-o",
-        "ConnectTimeout=8",
-        "-o",
-        "StrictHostKeyChecking=accept-new",
-        "-o",
-        "PreferredAuthentications=password",
-        "-o",
-        "PubkeyAuthentication=no",
-        f"root@{host}",
-    ]
+    return [*_box.sshpass_argv(password, connect_timeout=8), f"root@{host}"]
 
 
 def run_remote(

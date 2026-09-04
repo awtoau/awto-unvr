@@ -61,11 +61,7 @@ TFTP_KIMG = TFTP_DIR / f"uImage-unvr-ea16-{VER}-fedora-gz"
 TFTP_DIMG = TFTP_DIR / f"{DTS_NAME}-{VER}-fedora.dtb"
 
 ROOT_PASSWORD = "unvr"  # documented default, see docs/fedora-on-ssd.md
-SSH_OPTS = (
-    "ssh -o StrictHostKeyChecking=accept-new"
-    " -o PreferredAuthentications=password"
-    " -o PubkeyAuthentication=no"
-)
+SSH_OPTS = _box.SSH_PASSWORD_E  # rsync -e form
 
 LOG = log_path("fedora-deploy")
 
@@ -141,20 +137,7 @@ def sync_modules() -> None:
             f"ABORT: module rsync failed (rc={rc}) - refusing to deploy a mismatched kernel"
         )
     rc = subprocess.run(
-        [
-            "sshpass",
-            "-p",
-            ROOT_PASSWORD,
-            "ssh",
-            "-o",
-            "StrictHostKeyChecking=accept-new",
-            "-o",
-            "PreferredAuthentications=password",
-            "-o",
-            "PubkeyAuthentication=no",
-            f"root@{host}",
-            f"depmod -a {KVER}",
-        ],
+        [*_box.sshpass_argv(ROOT_PASSWORD), f"root@{host}", f"depmod -a {KVER}"],
         check=False,
     ).returncode
     if rc != 0:
@@ -174,20 +157,7 @@ def sync_modules() -> None:
     # tree itself, not just the marker - covers a real gap in #161's own
     # fix too, not only #162's addition.
     rc = subprocess.run(
-        [
-            "sshpass",
-            "-p",
-            ROOT_PASSWORD,
-            "ssh",
-            "-o",
-            "StrictHostKeyChecking=accept-new",
-            "-o",
-            "PreferredAuthentications=password",
-            "-o",
-            "PubkeyAuthentication=no",
-            f"root@{host}",
-            "sync",
-        ],
+        [*_box.sshpass_argv(ROOT_PASSWORD), f"root@{host}", "sync"],
         check=False,
     ).returncode
     if rc != 0:
@@ -235,19 +205,7 @@ def _deploy_kernel_module_check(host: str) -> None:
         f"kver={KVER}\n"
         f"synced_at={datetime.now(timezone.utc).astimezone().isoformat(timespec='seconds')}\n"
     )
-    ssh_base = [
-        "sshpass",
-        "-p",
-        ROOT_PASSWORD,
-        "ssh",
-        "-o",
-        "StrictHostKeyChecking=accept-new",
-        "-o",
-        "PreferredAuthentications=password",
-        "-o",
-        "PubkeyAuthentication=no",
-        f"root@{host}",
-    ]
+    ssh_base = [*_box.sshpass_argv(ROOT_PASSWORD), f"root@{host}"]
     # Piping content via `input=` through an sshpass-wrapped ssh landed as a
     # silently-empty 0-byte file (sshpass's own pty handling for the
     # password prompt apparently interferes with forwarding stdin to the
@@ -261,16 +219,7 @@ def _deploy_kernel_module_check(host: str) -> None:
     try:
         rc = subprocess.run(
             [
-                "sshpass",
-                "-p",
-                ROOT_PASSWORD,
-                "scp",
-                "-o",
-                "StrictHostKeyChecking=accept-new",
-                "-o",
-                "PreferredAuthentications=password",
-                "-o",
-                "PubkeyAuthentication=no",
+                *_box.sshpass_argv(ROOT_PASSWORD, prog="scp"),
                 str(marker_path),
                 f"root@{host}:/lib/modules/{KVER}/.deployed-from",
             ],
@@ -289,16 +238,7 @@ def _deploy_kernel_module_check(host: str) -> None:
     ):
         rc = subprocess.run(
             [
-                "sshpass",
-                "-p",
-                ROOT_PASSWORD,
-                "scp",
-                "-o",
-                "StrictHostKeyChecking=accept-new",
-                "-o",
-                "PreferredAuthentications=password",
-                "-o",
-                "PubkeyAuthentication=no",
+                *_box.sshpass_argv(ROOT_PASSWORD, prog="scp"),
                 str(src),
                 f"root@{host}:{dst}",
             ],
@@ -341,16 +281,7 @@ def _verify_sync_integrity(host: str) -> None:
     never legitimately exist, as a cheap post-sync integrity signal."""
     out = subprocess.run(
         [
-            "sshpass",
-            "-p",
-            ROOT_PASSWORD,
-            "ssh",
-            "-o",
-            "StrictHostKeyChecking=accept-new",
-            "-o",
-            "PreferredAuthentications=password",
-            "-o",
-            "PubkeyAuthentication=no",
+            *_box.sshpass_argv(ROOT_PASSWORD),
             f"root@{host}",
             f"find /lib/modules/{KVER} -name '*.ko' -size 0",
         ],

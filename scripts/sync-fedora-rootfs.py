@@ -95,10 +95,7 @@ def main() -> int:
         return 1
     log(f"target: root@{host}:/ (live, running system)")
 
-    ssh_opts = (
-        "ssh -o StrictHostKeyChecking=accept-new"
-        " -o PreferredAuthentications=password -o PubkeyAuthentication=no"
-    )
+    ssh_opts = _box.SSH_PASSWORD_E
     rsync_cmd = [
         # sudo: the extracted source tree is root-owned (see extraction
         # above) - a plain-user rsync can't read files it doesn't have

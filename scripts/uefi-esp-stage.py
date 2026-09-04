@@ -49,14 +49,7 @@ KERNEL = BUILD_OUT / "Image"
 DTB = BUILD_OUT / "alpine-v2-ubnt-unvr-ea16-7.3.dtb"
 
 MNT = "/mnt/awto-esp"
-SSH_OPTS = [
-    "-o",
-    "StrictHostKeyChecking=no",
-    "-o",
-    "UserKnownHostsFile=/dev/null",
-    "-o",
-    "LogLevel=ERROR",
-]
+SSH_OPTS = _box.SSH_OPTS_BATCH
 
 
 def log(m: str) -> None:

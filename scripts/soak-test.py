@@ -60,14 +60,7 @@ ETH_PAIRS = (
     {"box": "enp0s2", "dev": "enp7s0", "label": "10G", "port": 5613},
 )
 
-SSH_OPTS = [
-    "-o",
-    "ConnectTimeout=8",
-    "-o",
-    "StrictHostKeyChecking=no",
-    "-o",
-    "BatchMode=yes",
-]
+SSH_OPTS = _box.SSH_OPTS_BATCH
 
 # dmesg lines worth reporting. Deliberately broad - a soak that stays silent
 # through a call trace is worse than one that reports a few benign lines.

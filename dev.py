@@ -1402,18 +1402,7 @@ def cmd_deploy_fedora_rootfs(_extra: list[str]) -> int:
     log(f"arming SP805 watchdog over SSH ({host}) - box resets to stock U-Boot in ~2s")
     subprocess.run(
         [
-            "sshpass",
-            "-p",
-            fd.ROOT_PASSWORD,
-            "ssh",
-            "-o",
-            "StrictHostKeyChecking=accept-new",
-            "-o",
-            "PreferredAuthentications=password",
-            "-o",
-            "PubkeyAuthentication=no",
-            "-o",
-            "ConnectTimeout=5",
+            *_box.sshpass_argv(fd.ROOT_PASSWORD, connect_timeout=5),
             f"root@{host}",
             "python3 -c \"import fcntl,struct; f=open('/dev/watchdog','r+b',buffering=0); "
             "fcntl.ioctl(f,0xC0045706,struct.pack('I',1)); exec('while True: pass')\"",

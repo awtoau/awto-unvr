@@ -90,7 +90,7 @@ def ssh(cmd: str) -> str:
     _box.flush_failed_neighbours(ip)
     try:
         p = subprocess.run(
-            _box.ssh_argv(ip, cmd=[cmd]),
+            _box.ssh_argv(ip, cmd=[cmd], batch=True),
             capture_output=True,
             text=True,
             timeout=SSH_TIMEOUT_S,

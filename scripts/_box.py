@@ -42,10 +42,14 @@ PING_TIMEOUT_S = 1
 # Regenerable: last address that answered. Repo-relative, not cwd-relative.
 CACHE = Path(__file__).resolve().parent.parent / "tmp" / "woomera-addr"
 
-# ssh options for an interactive/long-lived session to the box. Keepalives
-# because the box has two NICs on one subnet and picks its egress per reply
-# (#170): 15 s x 8 = 2 min before a quiet session is called dead, which
-# outlasts a reboot's link flap. ConnectTimeout=8: fail fast on stale ARP.
+# ssh option sets - exactly three, each with a reason. Scripts build their
+# command lines from these; a guard test fails on any other "-o Strict..."
+# literal.
+#
+# Interactive/long-lived session (./dev.py ssh). Keepalives because the box
+# has two NICs on one subnet and picks its egress per reply (#170): 15 s x 8 =
+# 2 min before a quiet session is called dead, outlasting a reboot's link
+# flap. ConnectTimeout=8: fail fast on stale ARP.
 SSH_OPTS_INTERACTIVE = [
     "-o",
     "StrictHostKeyChecking=accept-new",
@@ -58,6 +62,33 @@ SSH_OPTS_INTERACTIVE = [
     "-o",
     "TCPKeepAlive=yes",
 ]
+# One-shot command or scp from a script, key auth: never prompt (BatchMode),
+# fail fast, and no host-key bookkeeping - the box's key changes on every
+# rootfs rebuild, and a stale known_hosts row must not block a deploy.
+SSH_OPTS_BATCH = [
+    "-o",
+    "BatchMode=yes",
+    "-o",
+    "ConnectTimeout=8",
+    "-o",
+    "StrictHostKeyChecking=no",
+    "-o",
+    "UserKnownHostsFile=/dev/null",
+    "-o",
+    "LogLevel=ERROR",
+]
+# Password auth through sshpass - the box's documented lab root password
+# (docs/fedora-on-ssd.md), for hosts with no key installed yet.
+SSH_OPTS_PASSWORD = [
+    "-o",
+    "StrictHostKeyChecking=accept-new",
+    "-o",
+    "PreferredAuthentications=password",
+    "-o",
+    "PubkeyAuthentication=no",
+]
+# rsync -e / string form of the same.
+SSH_PASSWORD_E = " ".join(["ssh", *SSH_OPTS_PASSWORD])
 
 
 def macs_of(ip: str) -> list[str]:
@@ -128,7 +159,20 @@ def flush_failed_neighbours(ip: str) -> None:
                 )
 
 
-def ssh_argv(ip: str, user: str = "root", cmd: list[str] | tuple = ()) -> list[str]:
-    """The ssh command line ssh-woomera.py runs: keepalive session as `user`,
-    optionally running `cmd` instead of a shell."""
-    return ["ssh", *SSH_OPTS_INTERACTIVE, f"{user}@{ip}", *cmd]
+def ssh_argv(
+    ip: str, user: str = "root", cmd: list[str] | tuple = (), *, batch: bool = False
+) -> list[str]:
+    """ssh command line to the box as `user`, optionally running `cmd`.
+    batch=True: SSH_OPTS_BATCH (scripted one-shot); default: the keepalive
+    session ssh-woomera.py execs."""
+    opts = SSH_OPTS_BATCH if batch else SSH_OPTS_INTERACTIVE
+    return ["ssh", *opts, f"{user}@{ip}", *cmd]
+
+
+def sshpass_argv(
+    password: str, *, prog: str = "ssh", connect_timeout: int | None = None
+) -> list[str]:
+    """`sshpass -p <pw> <prog> [-o ConnectTimeout=N] <SSH_OPTS_PASSWORD>` -
+    the caller appends the target (root@host, or root@host:path for scp)."""
+    ct = ["-o", f"ConnectTimeout={connect_timeout}"] if connect_timeout else []
+    return ["sshpass", "-p", password, prog, *ct, *SSH_OPTS_PASSWORD]

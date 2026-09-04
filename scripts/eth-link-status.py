@@ -66,18 +66,7 @@ def main() -> int:
 
     result = subprocess.run(
         [
-            "sshpass",
-            "-p",
-            args.password,
-            "ssh",
-            "-o",
-            "ConnectTimeout=8",
-            "-o",
-            "StrictHostKeyChecking=accept-new",
-            "-o",
-            "PreferredAuthentications=password",
-            "-o",
-            "PubkeyAuthentication=no",
+            *_box.sshpass_argv(args.password, connect_timeout=8),
             f"root@{host}",
             REMOTE_SCRIPT,
         ],

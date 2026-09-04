@@ -37,6 +37,8 @@ import sys
 import time
 from pathlib import Path
 
+import _box
+
 DEFAULT_ROOT_PASSWORD = "unvr"
 LOG_DIR = Path("tmp/logs")
 LOG_FILE = LOG_DIR / "eth-tx-capture-diag.log"
@@ -59,18 +61,7 @@ def flush_log() -> None:
 
 def ssh_cmd(box_ip: str, password: str) -> list[str]:
     return [
-        "sshpass",
-        "-p",
-        password,
-        "ssh",
-        "-o",
-        f"ConnectTimeout={SSH_CONNECT_TIMEOUT}",
-        "-o",
-        "StrictHostKeyChecking=accept-new",
-        "-o",
-        "PreferredAuthentications=password",
-        "-o",
-        "PubkeyAuthentication=no",
+        *_box.sshpass_argv(password, connect_timeout=SSH_CONNECT_TIMEOUT),
         f"root@{box_ip}",
     ]
 
@@ -104,18 +95,9 @@ def scp_pull(
     try:
         p = subprocess.run(
             [
-                "sshpass",
-                "-p",
-                password,
-                "scp",
-                "-o",
-                f"ConnectTimeout={SSH_CONNECT_TIMEOUT}",
-                "-o",
-                "StrictHostKeyChecking=accept-new",
-                "-o",
-                "PreferredAuthentications=password",
-                "-o",
-                "PubkeyAuthentication=no",
+                *_box.sshpass_argv(
+                    password, prog="scp", connect_timeout=SSH_CONNECT_TIMEOUT
+                ),
                 f"root@{box_ip}:{remote_path}",
                 str(local_path),
             ],

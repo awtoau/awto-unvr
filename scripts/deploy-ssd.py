@@ -69,14 +69,7 @@ def main() -> int:
     ip = _box.require()
     log(f"deploy-ssd -> {ip}, kernel {KVER}")
     host = f"root@{ip}"
-    opts = [
-        "-o",
-        "StrictHostKeyChecking=no",
-        "-o",
-        "UserKnownHostsFile=/dev/null",
-        "-o",
-        "LogLevel=ERROR",
-    ]
+    opts = _box.SSH_OPTS_BATCH
 
     run(["scp", *opts, str(KERNEL), f"{host}:/boot/uImage"], "kernel -> /boot/uImage")
     run(["scp", *opts, str(DTB), f"{host}:/boot/unvr.dtb"], "dtb -> /boot/unvr.dtb")

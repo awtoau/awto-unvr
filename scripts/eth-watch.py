@@ -89,18 +89,7 @@ def main() -> int:
     LOG.parent.mkdir(parents=True, exist_ok=True)
     proc = subprocess.Popen(
         [
-            "sshpass",
-            "-p",
-            args.password,
-            "ssh",
-            "-o",
-            "ConnectTimeout=8",
-            "-o",
-            "StrictHostKeyChecking=accept-new",
-            "-o",
-            "PreferredAuthentications=password",
-            "-o",
-            "PubkeyAuthentication=no",
+            *_box.sshpass_argv(args.password, connect_timeout=8),
             f"root@{host}",
             REMOTE_LOOP,
         ],

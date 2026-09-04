@@ -61,7 +61,7 @@ def main() -> int:
     if ip:
         _box.flush_failed_neighbours(ip)
         out = subprocess.run(
-            _box.ssh_argv(ip, cmd=["sh", "-c", PROBE]),
+            _box.ssh_argv(ip, cmd=["sh", "-c", PROBE], batch=True),
             capture_output=True,
             text=True,
             check=False,

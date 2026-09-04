@@ -167,6 +167,37 @@ def test_ssh_argv_keepalives_and_command():
     assert argv[-3:] == [f"root@{IP}", "uname", "-a"]
 
 
+def test_ssh_argv_batch_never_prompts_and_has_no_keepalive():
+    argv = _box.ssh_argv(IP, cmd=["true"], batch=True)
+    assert "BatchMode=yes" in argv and "ConnectTimeout=8" in argv
+    assert "UserKnownHostsFile=/dev/null" in argv
+    assert not any(o.startswith("ServerAlive") for o in argv)
+    assert argv[-2:] == [f"root@{IP}", "true"]
+
+
+def test_sshpass_argv_shapes():
+    ssh = _box.sshpass_argv("pw", connect_timeout=8)
+    assert ssh[:4] == ["sshpass", "-p", "pw", "ssh"]
+    assert ssh[4:6] == ["-o", "ConnectTimeout=8"]
+    assert ssh[6:] == _box.SSH_OPTS_PASSWORD
+    scp = _box.sshpass_argv("pw", prog="scp")
+    assert scp[3] == "scp" and "ConnectTimeout" not in " ".join(scp)
+    assert _box.SSH_PASSWORD_E == "ssh " + " ".join(_box.SSH_OPTS_PASSWORD)
+
+
+def test_ssh_options_have_one_home():
+    # Five ad-hoc option lists and a dozen inline copies used to exist; any
+    # new "-o StrictHostKeyChecking=..." outside _box.py is a regression.
+    bad = []
+    for p in [REPO / "dev.py", *sorted((REPO / "scripts").glob("*.py"))]:
+        if p.name == "_box.py":
+            continue
+        for n, line in enumerate(p.read_text().splitlines(), 1):
+            if "StrictHostKeyChecking" in line:
+                bad.append(f"{p.name}:{n}")
+    assert not bad, f"ssh options copied instead of imported from _box: {bad}"
+
+
 def test_ssh_woomera_cli_is_a_thin_wrapper():
     spec = importlib.util.spec_from_file_location(
         "_ssh_woomera", REPO / "scripts/ssh-woomera.py"
