@@ -334,6 +334,13 @@
 			 * / hold SDA -> whole-bus wedge + `controller timed out` flood.
 			 * The tolerant devices (adt7475/EEPROM/PCA9575) never noticed. */
 			i2c-sda-hold-time-ns = <300>;
+			/* Mainline's __i2c_dw_disable() issues a hardware IC_ENABLE.ABORT
+			 * (2023, commit 2409205acd3c), terminating the transfer mid-byte.
+			 * The s35390a answers that by holding SDA low until clocked
+			 * through - the unrecoverable wedge. The vendor 4.19 kernel that
+			 * drives this board has no abort at all and never wedged. Our
+			 * U-Boot has none either, and its RTC access works (#86). */
+			snps,no-enable-abort;
 			/* Stock's proven raw SCL counts (live.dts:249-254) so the
 			 * s35390a doesn't wedge. At clock-frequency=100000 the SS
 			 * pair is used; fs/hs carried for completeness. Honored by
@@ -361,7 +368,11 @@
 			i2c_mux: i2c-mux@71 {
 				compatible = "nxp,pca9546";
 				reg = <0x71>;
-				i2c-mux-idle-disconnect;
+				/* i2c-mux-idle-disconnect REMOVED for #86 testing: stock's
+				 * mux node has compatible+reg only (live.dts:257-259), and
+				 * i2c-mux.c:49-53 runs deselect unconditionally - including
+				 * after a FAILED transfer - so we write to the mux while ch0
+				 * may be mid-recovery. A delta we introduced. */
 				#address-cells = <1>;
 				#size-cells = <0>;
 
