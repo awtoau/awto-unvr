@@ -730,9 +730,36 @@ static u8 s35_rev(u8 b)
 #define S35_RESET	0x80	/* B7 reset (write-only) */
 
 /*
- * Reset-at-probe for the S-35390A RTC (0x30, behind PCA9546 mux ch0 = i2c bus 1,
- * the first mux child i2c@0 in the DT). Reached via the DM mux CHILD bus, NOT a
- * hand-poke of the 0x71 select register: the mux uclass selects ch0, runs the
+ * Resolve an i2c chip from its DT node instead of a hardcoded bus number.
+ * Bus numbers are assigned in DT order and SHIFT whenever a bus is added or
+ * removed - adding the SFP mux channel renumbered mux ch3 from bus 2 to bus 3
+ * and silently broke `fan`. That is the #98 failure class; #84 is the audit.
+ * The chip's own node carries its address and its parent is the right bus, so
+ * both come from the DT and neither can drift.
+ */
+static int al_i2c_chip_by_compat(const char *compat, struct udevice **chip)
+{
+	struct udevice *bus;
+	ofnode node;
+	u32 addr;
+	int rc;
+
+	node = ofnode_by_compatible(ofnode_null(), compat);
+	if (!ofnode_valid(node))
+		return -ENODEV;
+	if (ofnode_read_u32(node, "reg", &addr))
+		return -EINVAL;
+	rc = uclass_get_device_by_ofnode(UCLASS_I2C, ofnode_get_parent(node),
+					 &bus);
+	if (rc)
+		return rc;
+	return i2c_get_chip(bus, addr, 1, chip);
+}
+
+/*
+ * Reset-at-probe for the S-35390A RTC (sii,s35390a @0x30, PCA9546 mux ch0).
+ * Reached via the DM mux CHILD bus, NOT a hand-poke of the 0x71 select
+ * register: the mux uclass selects ch0, runs the
  * transfer, and deselects (writes 0x00) after it — so nothing our code does can
  * leave ch0 latched and wedge the parent bus (Linux i2c/SATA-bay power live on
  * it). A manual select/deselect straddling get_chip could strand ch0 if the RTC
@@ -749,9 +776,9 @@ static void rtc_s35390a_init(void)
 	u8 v, st;
 	int rc, rr, gr;
 
-	gr = i2c_get_chip_for_busnum(1, 0x30, 0, &rtc);	/* bus 1 = mux ch0 child */
+	gr = al_i2c_chip_by_compat("sii,s35390a", &rtc);
 	if (gr) {
-		printf("rtc-s35390a: get_chip (bus1/ch0) rtc=%d\n", gr);
+		printf("rtc-s35390a: no sii,s35390a node / bus (rc=%d)\n", gr);
 		return;
 	}
 
@@ -989,7 +1016,7 @@ int board_late_init(void)
 }
 
 /*
- * `fan <duty>` — set all 3 adt7475 fans (0x2e, behind mux ch3 = i2c bus 2) to a
+ * `fan <duty>` - set all 3 adt7475 fans (adi,adt7475 @0x2e, mux ch3) to a
  * manual PWM duty 0-255. Regs: 0x5c-0x5e PWM config (0xe8 = manual mode),
  * 0x30-0x32 PWM duty. Matches the stock `slowfan` env. `fan` with no arg reads
  * back the current duties.
@@ -999,9 +1026,9 @@ static int do_fan(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 	struct udevice *adt;
 	int rc, i;
 
-	rc = i2c_get_chip_for_busnum(2, 0x2e, 1, &adt);
+	rc = al_i2c_chip_by_compat("adi,adt7475", &adt);
 	if (rc) {
-		printf("fan: adt7475 not found on bus 2 (rc=%d)\n", rc);
+		printf("fan: no adi,adt7475 node / bus (rc=%d)\n", rc);
 		return CMD_RET_FAILURE;
 	}
 	if (argc < 2) {

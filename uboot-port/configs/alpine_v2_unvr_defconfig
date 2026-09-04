@@ -52,12 +52,12 @@ CONFIG_DM_ETH=y
 CONFIG_AL_ETH=y
 CONFIG_AL_ETH_10G=y
 CONFIG_AL_SSM=y
-# VERBOSE logging at level 7 (LOGL_DEBUG) - full DM-bind/ofnode/driver-debug
-# trace. Deliberately NOT level 8 (LOGL_DEBUG_CONTENT): level 8 is where
-# designware_spi.c does log_content("tx/rx=..") PER BYTE, which (a) floods and
-# (b) stalls the SPI reader until the 64KB env read OVERRUNS the Rx FIFO ->
-# spi_flash_read() fails -> default env. That's a real dw_spi fragility (its
-# overflow guard assumes a fast consumer). Cap at 7 to keep verbose safe.
+# Level 6 (LOGL_INFO) for boot speed, NOT correctness: level 8
+# (LOGL_DEBUG_CONTENT) makes designware_spi.c log_content("tx/rx=..") PER BYTE,
+# so the 64KB env read takes minutes. It used to also CORRUPT that read (slow
+# consumer overran the Rx FIFO -> default env); fixed by dw_spi_adjust_op_size()
+# bounding reads to fifo_len (#91, verified at level 8: 8638 transfers, 0
+# overflows). Raise this freely to debug - it is only slow now.
 # Per-driver al_dbg->debug() (eth/serdes) is separate, via -DDEBUG in Makefiles.
 CONFIG_LOG=y
 CONFIG_LOGLEVEL=6
@@ -176,7 +176,6 @@ CONFIG_CYCLIC=y
 # diagnostics (were the 4 "Unknown command" gaps)
 CONFIG_CMD_DM=y
 CONFIG_CMD_CLK=y
-CONFIG_CMD_PART=y
 CONFIG_CMD_MMC=y
 # --- 10G SFP+ SerDes/PCS (drivers/phy/al_serdes, #83 later:10G)
 CONFIG_AL_SERDES=y
