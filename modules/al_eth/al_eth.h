@@ -307,6 +307,16 @@ struct al_eth_stats_dev {
 	u64 interface_up;
 	u64 interface_down;
 	/*
+	 * UDMA secondary-IOFIC causes, split by severity (#175). The _errors
+	 * are parity/AXI faults that risk data corruption and trigger a reset;
+	 * the _hints (no-desc, prefetch promotion, header-split) are normal
+	 * back-pressure indications and only count.
+	 */
+	u64 udma_m2s_errors;
+	u64 udma_s2m_errors;
+	u64 udma_hints;
+	u64 udma_resets;
+	/*
 	 * Clause 49 BASE-R PCS counters, accumulated from the phylink poll.
 	 * The hardware fields are clear-on-read and saturate (255 / 63), so
 	 * these are lower bounds under a heavy error rate. Unlike throughput
@@ -336,6 +346,79 @@ struct al_eth_stats_dev {
 	u64 ec_rfw_in_mac_ndet_drop;
 	u64 ec_rfw_in_ctrl_drop;
 	u64 ec_rfw_in_prot_i_drop;
+	/*
+	 * Stage packet counts. Paired in/out per stage, so a mismatch localises
+	 * a silent loss to one block even when no drop counter fires (#210).
+	 */
+	u64 ec_faf_in_rx_pkt;
+	u64 ec_faf_out_rx_pkt;
+	u64 ec_rxf_in_rx_pkt;
+	u64 ec_lbf_in_rx_pkt;
+	u64 ec_rxf_out_rx_1_pkt;
+	u64 ec_rxf_out_rx_2_pkt;
+	u64 ec_rpe_1_in_rx_pkt;
+	u64 ec_rpe_1_out_rx_pkt;
+	u64 ec_rpe_2_in_rx_pkt;
+	u64 ec_rpe_2_out_rx_pkt;
+	u64 ec_rpe_3_in_rx_pkt;
+	u64 ec_rpe_3_out_rx_pkt;
+	u64 ec_tpe_in_tx_pkt;
+	u64 ec_tpe_out_tx_pkt;
+	u64 ec_tpm_tx_pkt;
+	u64 ec_tfw_in_tx_pkt;
+	u64 ec_tfw_out_tx_pkt;
+	u64 ec_rfw_in_rx_pkt;
+	u64 ec_rfw_in_mc;
+	u64 ec_rfw_in_bc;
+	u64 ec_rfw_in_vlan_exist;
+	u64 ec_rfw_in_vlan_nexist;
+	u64 ec_eee_in;
+	/*
+	 * Per-UDMA EC counters for the one UDMA this port uses
+	 * (adapter->udma_num). msw_drop_q_full is the RX-side "host could not
+	 * keep up" counter #184 needs; the rest bracket the TX path.
+	 */
+	u64 ecu_rfw_out_rx_pkt;
+	u64 ecu_rfw_out_drop;
+	u64 ecu_msw_in_rx_pkt;
+	u64 ecu_msw_drop_q_full;
+	u64 ecu_msw_drop_sop;
+	u64 ecu_msw_drop_eop;
+	u64 ecu_msw_wr_eop;
+	u64 ecu_msw_out_rx_pkt;
+	u64 ecu_tso_no_tso_pkt;
+	u64 ecu_tso_tso_pkt;
+	u64 ecu_tso_seg_pkt;
+	u64 ecu_tso_pad_pkt;
+	u64 ecu_tpm_tx_spoof;
+	u64 ecu_tmi_in_tx_pkt;
+	u64 ecu_tmi_out_to_mac;
+	u64 ecu_tmi_out_to_rx;
+	/*
+	 * KR FEC corrected/uncorrectable, rev 3 (10G advanced) only - the HAL
+	 * refuses rev <= 2 and these stay 0. Read even with FEC off so turning
+	 * it on cannot leave the counters forgotten (#210).
+	 */
+	u64 fec_corrected;
+	u64 fec_uncorrectable;
+	/*
+	 * UDMA engine counters from al_udma_stats_get(), which was an empty
+	 * stub until #235. udma_rx_drop_pkt is the UDMA's own discard count -
+	 * distinct from the EC drops above, which happen a stage earlier.
+	 */
+	u64 udma_tx_pkts;
+	u64 udma_tx_bytes;
+	u64 udma_tx_prefed_desc;
+	u64 udma_tx_comp_pkt;
+	u64 udma_tx_comp_desc;
+	u64 udma_tx_ack_pkts;
+	u64 udma_rx_pkts;
+	u64 udma_rx_bytes;
+	u64 udma_rx_prefed_desc;
+	u64 udma_rx_comp_pkt;
+	u64 udma_rx_comp_desc;
+	u64 udma_rx_ack_pkts;
+	u64 udma_rx_drop_pkt;
 };
 
 /* board specific private data structure */

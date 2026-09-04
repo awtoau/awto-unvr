@@ -67,9 +67,31 @@ static void al_ssm_fmsg_queue(struct devlink_fmsg *fmsg, const char *prefix,
 	}
 
 	if (q->udma) {
+		struct al_udma_stats st;
+
 		snprintf(name, sizeof(name), "%s_udma_state", prefix);
 		devlink_fmsg_string_pair_put(fmsg, name,
 			al_ssm_udma_state_str(al_udma_state_get(q->udma)));
+
+		/* Engine counters, stubbed out until #235. */
+		if (!al_udma_stats_get(q->udma, &st)) {
+			snprintf(name, sizeof(name), "%s_hw_pkts", prefix);
+			devlink_fmsg_u32_pair_put(fmsg, name, st.pkts);
+			snprintf(name, sizeof(name), "%s_hw_bytes", prefix);
+			devlink_fmsg_u64_pair_put(fmsg, name, st.bytes);
+			snprintf(name, sizeof(name), "%s_hw_prefed_desc", prefix);
+			devlink_fmsg_u32_pair_put(fmsg, name, st.prefed_desc);
+			snprintf(name, sizeof(name), "%s_hw_comp_pkt", prefix);
+			devlink_fmsg_u32_pair_put(fmsg, name, st.comp_pkt);
+			snprintf(name, sizeof(name), "%s_hw_comp_desc", prefix);
+			devlink_fmsg_u32_pair_put(fmsg, name, st.comp_desc);
+			snprintf(name, sizeof(name), "%s_hw_ack_pkts", prefix);
+			devlink_fmsg_u32_pair_put(fmsg, name, st.ack_pkts);
+			if (is_rx) {
+				snprintf(name, sizeof(name), "%s_hw_drop_pkt", prefix);
+				devlink_fmsg_u32_pair_put(fmsg, name, st.drop_pkt);
+			}
+		}
 	}
 }
 

@@ -349,8 +349,24 @@ struct al_udma_gen_tgtid_msix_conf {
 /* Report Error - to be used for abort */
 void al_udma_err_report(struct al_udma *udma);
 
-/* Statistics - TBD */
-void al_udma_stats_get(struct al_udma *udma);
+/**
+ * UDMA hardware statistics, one direction (udma->type picks M2S or S2M).
+ * Free-running 32-bit counters; bytes is the 64-bit pair. drop_pkt is
+ * S2M-only and is the UDMA's own "receive discarded a packet" counter
+ * (#235) - zero on the M2S side.
+ */
+struct al_udma_stats {
+	uint32_t	pkts;		/* m2s tx_pkt / s2m comp_pkt */
+	uint64_t	bytes;
+	uint32_t	prefed_desc;	/* descriptors fetched from host memory */
+	uint32_t	comp_pkt;	/* packets completed */
+	uint32_t	comp_desc;	/* descriptors written to the comp ring */
+	uint32_t	ack_pkts;	/* packets acknowledged on the stream */
+	uint32_t	drop_pkt;	/* S2M only */
+};
+
+/* Read the UDMA statistics counters. Returns 0, or -EINVAL on a bad handle. */
+int al_udma_stats_get(struct al_udma *udma, struct al_udma_stats *stats);
 
 /* Misc configurations */
 /* Configure AXI configuration */

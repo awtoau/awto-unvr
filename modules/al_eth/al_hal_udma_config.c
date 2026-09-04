@@ -353,10 +353,46 @@ void al_udma_err_report(struct al_udma *udma __attribute__((__unused__)))
 	return;
 }
 
-/** Statistics - TBD */
-void al_udma_stats_get(struct al_udma *udma __attribute__((__unused__)))
+/**
+ * Read the UDMA statistics counters (#235 - this was an empty stub in all
+ * three driver trees, so ~62 hardware counters had no reader at all).
+ * The bytes pair is sampled by reading _low first: the hardware latches the
+ * high word on that read, so the order below is required, not stylistic.
+ */
+int al_udma_stats_get(struct al_udma *udma, struct al_udma_stats *stats)
 {
-	return;
+	uint32_t lo, hi;
+
+	if (!udma || !udma->udma_regs || !stats)
+		return -EINVAL;
+
+	al_memset(stats, 0, sizeof(*stats));
+
+	if (udma->type == UDMA_TX) {
+		struct udma_m2s_stat __iomem *st = &udma->udma_regs->m2s.m2s_stat;
+
+		stats->pkts = al_reg_read32(&st->tx_pkt);
+		lo = al_reg_read32(&st->tx_bytes_low);
+		hi = al_reg_read32(&st->tx_bytes_high);
+		stats->prefed_desc = al_reg_read32(&st->prefed_desc);
+		stats->comp_pkt = al_reg_read32(&st->comp_pkt);
+		stats->comp_desc = al_reg_read32(&st->comp_desc);
+		stats->ack_pkts = al_reg_read32(&st->ack_pkts);
+	} else {
+		struct udma_s2m_stat __iomem *st = &udma->udma_regs->s2m.s2m_stat;
+
+		stats->drop_pkt = al_reg_read32(&st->drop_pkt);
+		lo = al_reg_read32(&st->rx_bytes_low);
+		hi = al_reg_read32(&st->rx_bytes_high);
+		stats->prefed_desc = al_reg_read32(&st->prefed_desc);
+		stats->comp_pkt = al_reg_read32(&st->comp_pkt);
+		stats->comp_desc = al_reg_read32(&st->comp_desc);
+		stats->ack_pkts = al_reg_read32(&st->ack_pkts);
+		stats->pkts = stats->comp_pkt;
+	}
+
+	stats->bytes = ((uint64_t)hi << 32) | lo;
+	return 0;
 }
 
 /** Configure UDMA M2S descriptor prefetch */

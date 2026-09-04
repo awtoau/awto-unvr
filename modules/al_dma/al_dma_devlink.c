@@ -68,6 +68,34 @@ static void al_dma_fmsg_queue(struct devlink_fmsg *fmsg, const char *prefix,
 	}
 }
 
+/* UDMA engine counters - al_udma_stats_get() was an empty stub until #235. */
+static void al_dma_fmsg_hw_stats(struct devlink_fmsg *fmsg, const char *prefix,
+				 struct al_udma *udma, bool is_rx)
+{
+	struct al_udma_stats st;
+	char name[48];
+
+	if (al_udma_stats_get(udma, &st))
+		return;
+
+	snprintf(name, sizeof(name), "%s_hw_pkts", prefix);
+	devlink_fmsg_u32_pair_put(fmsg, name, st.pkts);
+	snprintf(name, sizeof(name), "%s_hw_bytes", prefix);
+	devlink_fmsg_u64_pair_put(fmsg, name, st.bytes);
+	snprintf(name, sizeof(name), "%s_hw_prefed_desc", prefix);
+	devlink_fmsg_u32_pair_put(fmsg, name, st.prefed_desc);
+	snprintf(name, sizeof(name), "%s_hw_comp_pkt", prefix);
+	devlink_fmsg_u32_pair_put(fmsg, name, st.comp_pkt);
+	snprintf(name, sizeof(name), "%s_hw_comp_desc", prefix);
+	devlink_fmsg_u32_pair_put(fmsg, name, st.comp_desc);
+	snprintf(name, sizeof(name), "%s_hw_ack_pkts", prefix);
+	devlink_fmsg_u32_pair_put(fmsg, name, st.ack_pkts);
+	if (is_rx) {
+		snprintf(name, sizeof(name), "%s_hw_drop_pkt", prefix);
+		devlink_fmsg_u32_pair_put(fmsg, name, st.drop_pkt);
+	}
+}
+
 static void al_dma_fmsg_state(struct al_dma_device *dev, struct devlink_fmsg *fmsg)
 {
 	struct al_udma *udma;
@@ -137,12 +165,16 @@ static void al_dma_fmsg_state(struct al_dma_device *dev, struct devlink_fmsg *fm
 	}
 	devlink_fmsg_arr_pair_nest_end(fmsg);
 
-	if (al_m2m_udma_handle_get(&dev->hal_dma.m2m_udma, UDMA_TX, &udma) == 0)
+	if (al_m2m_udma_handle_get(&dev->hal_dma.m2m_udma, UDMA_TX, &udma) == 0) {
 		devlink_fmsg_string_pair_put(fmsg, "tx_udma_state",
 			al_dma_udma_state_str(al_udma_state_get(udma)));
-	if (al_m2m_udma_handle_get(&dev->hal_dma.m2m_udma, UDMA_RX, &udma) == 0)
+		al_dma_fmsg_hw_stats(fmsg, "tx", udma, false);
+	}
+	if (al_m2m_udma_handle_get(&dev->hal_dma.m2m_udma, UDMA_RX, &udma) == 0) {
 		devlink_fmsg_string_pair_put(fmsg, "rx_udma_state",
 			al_dma_udma_state_str(al_udma_state_get(udma)));
+		al_dma_fmsg_hw_stats(fmsg, "rx", udma, true);
+	}
 
 	/* Secondary-level IOFIC is where UDMA error causes land. This driver
 	 * services no interrupt, so nothing else is reading (and potentially

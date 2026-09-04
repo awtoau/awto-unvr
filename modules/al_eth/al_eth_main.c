@@ -5065,10 +5065,11 @@ static void al_eth_ethtool_queue_stats(struct al_eth_adapter *adapter, u64 **dat
 
 /*
  * Mirror the EC and per-UDMA EC counters into dev_stats so the table-driven
- * ethtool path emits them (#210). Assigned, not accumulated: these registers
- * are free-running and NOT clear-on-read (unlike the Clause 49 PCS pair), so
- * the hardware value is already the running total. They are 32-bit and wrap;
- * a reader diffing snapshots must handle that.
+ * ethtool path emits them (#210). ACCUMULATED, not assigned: these registers
+ * ARE clear-on-read - measured on an idle port, two back-to-back reads gave
+ * ec_rxf_in_rx_pkt 293 -> 0. Assigning would discard everything since the last
+ * read, so every `ethtool -S` would report only the delta and the counter would
+ * appear to go backwards.
  */
 static void al_eth_refresh_ec_stats(struct al_eth_adapter *adapter)
 {
@@ -5083,62 +5084,62 @@ static void al_eth_refresh_ec_stats(struct al_eth_adapter *adapter)
 		return;
 
 	u64_stats_update_begin(&adapter->syncp);
-	adapter->dev_stats.ec_faf_in_rx_short = ec.faf_in_rx_short;
-	adapter->dev_stats.ec_faf_in_rx_long = ec.faf_in_rx_long;
-	adapter->dev_stats.ec_faf_out_rx_short = ec.faf_out_rx_short;
-	adapter->dev_stats.ec_faf_out_rx_long = ec.faf_out_rx_long;
-	adapter->dev_stats.ec_faf_out_drop = ec.faf_out_drop;
-	adapter->dev_stats.ec_rxf_in_fifo_err = ec.rxf_in_fifo_err;
-	adapter->dev_stats.ec_lbf_in_fifo_err = ec.lbf_in_fifo_err;
-	adapter->dev_stats.ec_rxf_out_drop_1_pkt = ec.rxf_out_drop_1_pkt;
-	adapter->dev_stats.ec_rxf_out_drop_2_pkt = ec.rxf_out_drop_2_pkt;
-	adapter->dev_stats.ec_rfw_in_vlan_drop = ec.rfw_in_vlan_drop;
-	adapter->dev_stats.ec_rfw_in_parse_drop = ec.rfw_in_parse_drop;
-	adapter->dev_stats.ec_rfw_in_mac_drop = ec.rfw_in_mac_drop;
-	adapter->dev_stats.ec_rfw_in_mac_ndet_drop = ec.rfw_in_mac_ndet_drop;
-	adapter->dev_stats.ec_rfw_in_ctrl_drop = ec.rfw_in_ctrl_drop;
-	adapter->dev_stats.ec_rfw_in_prot_i_drop = ec.rfw_in_prot_i_drop;
+	adapter->dev_stats.ec_faf_in_rx_short += ec.faf_in_rx_short;
+	adapter->dev_stats.ec_faf_in_rx_long += ec.faf_in_rx_long;
+	adapter->dev_stats.ec_faf_out_rx_short += ec.faf_out_rx_short;
+	adapter->dev_stats.ec_faf_out_rx_long += ec.faf_out_rx_long;
+	adapter->dev_stats.ec_faf_out_drop += ec.faf_out_drop;
+	adapter->dev_stats.ec_rxf_in_fifo_err += ec.rxf_in_fifo_err;
+	adapter->dev_stats.ec_lbf_in_fifo_err += ec.lbf_in_fifo_err;
+	adapter->dev_stats.ec_rxf_out_drop_1_pkt += ec.rxf_out_drop_1_pkt;
+	adapter->dev_stats.ec_rxf_out_drop_2_pkt += ec.rxf_out_drop_2_pkt;
+	adapter->dev_stats.ec_rfw_in_vlan_drop += ec.rfw_in_vlan_drop;
+	adapter->dev_stats.ec_rfw_in_parse_drop += ec.rfw_in_parse_drop;
+	adapter->dev_stats.ec_rfw_in_mac_drop += ec.rfw_in_mac_drop;
+	adapter->dev_stats.ec_rfw_in_mac_ndet_drop += ec.rfw_in_mac_ndet_drop;
+	adapter->dev_stats.ec_rfw_in_ctrl_drop += ec.rfw_in_ctrl_drop;
+	adapter->dev_stats.ec_rfw_in_prot_i_drop += ec.rfw_in_prot_i_drop;
 
-	adapter->dev_stats.ec_faf_in_rx_pkt = ec.faf_in_rx_pkt;
-	adapter->dev_stats.ec_faf_out_rx_pkt = ec.faf_out_rx_pkt;
-	adapter->dev_stats.ec_rxf_in_rx_pkt = ec.rxf_in_rx_pkt;
-	adapter->dev_stats.ec_lbf_in_rx_pkt = ec.lbf_in_rx_pkt;
-	adapter->dev_stats.ec_rxf_out_rx_1_pkt = ec.rxf_out_rx_1_pkt;
-	adapter->dev_stats.ec_rxf_out_rx_2_pkt = ec.rxf_out_rx_2_pkt;
-	adapter->dev_stats.ec_rpe_1_in_rx_pkt = ec.rpe_1_in_rx_pkt;
-	adapter->dev_stats.ec_rpe_1_out_rx_pkt = ec.rpe_1_out_rx_pkt;
-	adapter->dev_stats.ec_rpe_2_in_rx_pkt = ec.rpe_2_in_rx_pkt;
-	adapter->dev_stats.ec_rpe_2_out_rx_pkt = ec.rpe_2_out_rx_pkt;
-	adapter->dev_stats.ec_rpe_3_in_rx_pkt = ec.rpe_3_in_rx_pkt;
-	adapter->dev_stats.ec_rpe_3_out_rx_pkt = ec.rpe_3_out_rx_pkt;
-	adapter->dev_stats.ec_tpe_in_tx_pkt = ec.tpe_in_tx_pkt;
-	adapter->dev_stats.ec_tpe_out_tx_pkt = ec.tpe_out_tx_pkt;
-	adapter->dev_stats.ec_tpm_tx_pkt = ec.tpm_tx_pkt;
-	adapter->dev_stats.ec_tfw_in_tx_pkt = ec.tfw_in_tx_pkt;
-	adapter->dev_stats.ec_tfw_out_tx_pkt = ec.tfw_out_tx_pkt;
-	adapter->dev_stats.ec_rfw_in_rx_pkt = ec.rfw_in_rx_pkt;
-	adapter->dev_stats.ec_rfw_in_mc = ec.rfw_in_mc;
-	adapter->dev_stats.ec_rfw_in_bc = ec.rfw_in_bc;
-	adapter->dev_stats.ec_rfw_in_vlan_exist = ec.rfw_in_vlan_exist;
-	adapter->dev_stats.ec_rfw_in_vlan_nexist = ec.rfw_in_vlan_nexist;
-	adapter->dev_stats.ec_eee_in = ec.eee_in;
+	adapter->dev_stats.ec_faf_in_rx_pkt += ec.faf_in_rx_pkt;
+	adapter->dev_stats.ec_faf_out_rx_pkt += ec.faf_out_rx_pkt;
+	adapter->dev_stats.ec_rxf_in_rx_pkt += ec.rxf_in_rx_pkt;
+	adapter->dev_stats.ec_lbf_in_rx_pkt += ec.lbf_in_rx_pkt;
+	adapter->dev_stats.ec_rxf_out_rx_1_pkt += ec.rxf_out_rx_1_pkt;
+	adapter->dev_stats.ec_rxf_out_rx_2_pkt += ec.rxf_out_rx_2_pkt;
+	adapter->dev_stats.ec_rpe_1_in_rx_pkt += ec.rpe_1_in_rx_pkt;
+	adapter->dev_stats.ec_rpe_1_out_rx_pkt += ec.rpe_1_out_rx_pkt;
+	adapter->dev_stats.ec_rpe_2_in_rx_pkt += ec.rpe_2_in_rx_pkt;
+	adapter->dev_stats.ec_rpe_2_out_rx_pkt += ec.rpe_2_out_rx_pkt;
+	adapter->dev_stats.ec_rpe_3_in_rx_pkt += ec.rpe_3_in_rx_pkt;
+	adapter->dev_stats.ec_rpe_3_out_rx_pkt += ec.rpe_3_out_rx_pkt;
+	adapter->dev_stats.ec_tpe_in_tx_pkt += ec.tpe_in_tx_pkt;
+	adapter->dev_stats.ec_tpe_out_tx_pkt += ec.tpe_out_tx_pkt;
+	adapter->dev_stats.ec_tpm_tx_pkt += ec.tpm_tx_pkt;
+	adapter->dev_stats.ec_tfw_in_tx_pkt += ec.tfw_in_tx_pkt;
+	adapter->dev_stats.ec_tfw_out_tx_pkt += ec.tfw_out_tx_pkt;
+	adapter->dev_stats.ec_rfw_in_rx_pkt += ec.rfw_in_rx_pkt;
+	adapter->dev_stats.ec_rfw_in_mc += ec.rfw_in_mc;
+	adapter->dev_stats.ec_rfw_in_bc += ec.rfw_in_bc;
+	adapter->dev_stats.ec_rfw_in_vlan_exist += ec.rfw_in_vlan_exist;
+	adapter->dev_stats.ec_rfw_in_vlan_nexist += ec.rfw_in_vlan_nexist;
+	adapter->dev_stats.ec_eee_in += ec.eee_in;
 
-	adapter->dev_stats.ecu_rfw_out_rx_pkt = ecu.rfw_out_rx_pkt;
-	adapter->dev_stats.ecu_rfw_out_drop = ecu.rfw_out_drop;
-	adapter->dev_stats.ecu_msw_in_rx_pkt = ecu.msw_in_rx_pkt;
-	adapter->dev_stats.ecu_msw_drop_q_full = ecu.msw_drop_q_full;
-	adapter->dev_stats.ecu_msw_drop_sop = ecu.msw_drop_sop;
-	adapter->dev_stats.ecu_msw_drop_eop = ecu.msw_drop_eop;
-	adapter->dev_stats.ecu_msw_wr_eop = ecu.msw_wr_eop;
-	adapter->dev_stats.ecu_msw_out_rx_pkt = ecu.msw_out_rx_pkt;
-	adapter->dev_stats.ecu_tso_no_tso_pkt = ecu.tso_no_tso_pkt;
-	adapter->dev_stats.ecu_tso_tso_pkt = ecu.tso_tso_pkt;
-	adapter->dev_stats.ecu_tso_seg_pkt = ecu.tso_seg_pkt;
-	adapter->dev_stats.ecu_tso_pad_pkt = ecu.tso_pad_pkt;
-	adapter->dev_stats.ecu_tpm_tx_spoof = ecu.tpm_tx_spoof;
-	adapter->dev_stats.ecu_tmi_in_tx_pkt = ecu.tmi_in_tx_pkt;
-	adapter->dev_stats.ecu_tmi_out_to_mac = ecu.tmi_out_to_mac;
-	adapter->dev_stats.ecu_tmi_out_to_rx = ecu.tmi_out_to_rx;
+	adapter->dev_stats.ecu_rfw_out_rx_pkt += ecu.rfw_out_rx_pkt;
+	adapter->dev_stats.ecu_rfw_out_drop += ecu.rfw_out_drop;
+	adapter->dev_stats.ecu_msw_in_rx_pkt += ecu.msw_in_rx_pkt;
+	adapter->dev_stats.ecu_msw_drop_q_full += ecu.msw_drop_q_full;
+	adapter->dev_stats.ecu_msw_drop_sop += ecu.msw_drop_sop;
+	adapter->dev_stats.ecu_msw_drop_eop += ecu.msw_drop_eop;
+	adapter->dev_stats.ecu_msw_wr_eop += ecu.msw_wr_eop;
+	adapter->dev_stats.ecu_msw_out_rx_pkt += ecu.msw_out_rx_pkt;
+	adapter->dev_stats.ecu_tso_no_tso_pkt += ecu.tso_no_tso_pkt;
+	adapter->dev_stats.ecu_tso_tso_pkt += ecu.tso_tso_pkt;
+	adapter->dev_stats.ecu_tso_seg_pkt += ecu.tso_seg_pkt;
+	adapter->dev_stats.ecu_tso_pad_pkt += ecu.tso_pad_pkt;
+	adapter->dev_stats.ecu_tpm_tx_spoof += ecu.tpm_tx_spoof;
+	adapter->dev_stats.ecu_tmi_in_tx_pkt += ecu.tmi_in_tx_pkt;
+	adapter->dev_stats.ecu_tmi_out_to_mac += ecu.tmi_out_to_mac;
+	adapter->dev_stats.ecu_tmi_out_to_rx += ecu.tmi_out_to_rx;
 
 	if (!al_eth_fec_stats_get(&adapter->hal_adapter, &fec_cor, &fec_unc)) {
 		adapter->dev_stats.fec_corrected = fec_cor;
