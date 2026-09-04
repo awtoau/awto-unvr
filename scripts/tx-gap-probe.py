@@ -18,8 +18,8 @@ concluding it's truly lost - long enough that a same-LAN reorder (sub-ms
 latency, confirmed in #121) couldn't explain it, so any real gap fires long
 before the grace period would ever need to matter for a legitimate reorder.
 
-  ./scripts/tx-gap-probe.py --box-ip 192.168.25.133 \\
-      --bind-ip 192.168.25.147 --bind-iface enp7s0 --port 5604 --duration 20
+  ./scripts/tx-gap-probe.py --box-ip <box-ip> \\
+      --bind-ip <dev-host-ip> --bind-iface enp7s0 --port 5604 --duration 20
 
 Runs the receiver locally, pipes this same file over SSH to run as the
 sender on the box (--mode send), and reports the first gap or a clean pass.

@@ -20,10 +20,10 @@ Requires: local passwordless sudo for tcpdump on the bind interface (see
 bench-all.py's ARP-flush precedent for the same requirement), tcpdump+tshark
 locally and on the box, an iperf3 server the box can run (auto-started).
 
-  ./scripts/eth-tx-capture-diag.py --box-ip 192.168.25.133 --box-iface enp0s2 \\
-      --bind-ip 192.168.25.147 --bind-iface enp7s0 --port 5603 --direction tx
-  ./scripts/eth-tx-capture-diag.py --box-ip 192.168.25.133 --box-iface enp0s2 \\
-      --bind-ip 192.168.25.147 --bind-iface enp7s0 --port 5603 --direction rx \\
+  ./scripts/eth-tx-capture-diag.py --box-ip <box-ip> --box-iface enp0s2 \\
+      --bind-ip <dev-host-ip> --bind-iface enp7s0 --port 5603 --direction tx
+  ./scripts/eth-tx-capture-diag.py --box-ip <box-ip> --box-iface enp0s2 \\
+      --bind-ip <dev-host-ip> --bind-iface enp7s0 --port 5603 --direction rx \\
       --streams 1 --duration 8 --no-capture   # throughput only, no pcap
 """
 
