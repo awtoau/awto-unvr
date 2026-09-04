@@ -106,7 +106,7 @@ def main() -> int:
     dtb = a.dtb or f"alpine-v2-ubnt-unvr-ea16-{a.tag}.dtb"
     panic = f" panic={a.panic}" if a.panic else ""
     bootargs = a.bootargs or (
-        f"console=ttyS0,115200 sysid=ea16 ubnthal.sysid=ea16 "
+        f"console=ttyS0,1500000 sysid=ea16 ubnthal.sysid=ea16 "
         f"reboot=warm rw iommu.passthrough=1 pci=pcie_bus_perf{panic}"
     )
 

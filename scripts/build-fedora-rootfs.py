@@ -22,7 +22,7 @@ Output: tmp/fedora-rootfs-ea16.tar (+ .sha256). Slow (dnf under emulation).
 
 Choices baked in (all overridable later in the tar):
 - SELinux disabled (selinux=0 also set in bootargs) - no relabel path without dracut.
-- serial getty on ttyS0 @115200 enabled.
+- serial getty on ttyS0 enabled (baud inherited from console=, #220).
 - NetworkManager (not systemd-networkd - stale claim, actual code below always
   enabled NetworkManager), DHCP on all wired links, so eth0/eth1 come up.
 - systemd-resolved disabled (#124) - it fights NetworkManager over

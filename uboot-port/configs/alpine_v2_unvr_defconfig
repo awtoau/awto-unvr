@@ -27,8 +27,11 @@ CONFIG_PREBOOT="led d1 on; led d2 on; led d3 on; led d4 on; led white on; led bl
 CONFIG_HUSH_PARSER=y
 # Kernel cmdline — bootm fixes this into the DTB's /chosen/bootargs. Matches the
 # live /proc/cmdline (rootfs on SSD sda2 by PARTUUID). Without it: no root -> panic.
+# 1500000: fastest rate inside the SoC divisor's framing budget (d=21,
+# -0.79%). Must match console= in CONFIG_BOOTARGS and the DTS. #220.
+CONFIG_BAUDRATE=1500000
 CONFIG_USE_BOOTARGS=y
-CONFIG_BOOTARGS="console=ttyS0,115200 root=PARTUUID=dcdc291e-9956-48cd-9d7c-48219877881a rootfstype=ext4 rw rootwait selinux=0 panic=15 reboot=cold ahci.mask_port_map=0x5 ahci_alpine.mask_port_map=0x5"
+CONFIG_BOOTARGS="console=ttyS0,1500000 root=PARTUUID=dcdc291e-9956-48cd-9d7c-48219877881a rootfstype=ext4 rw rootwait selinux=0 panic=15 reboot=cold ahci.mask_port_map=0x5 ahci_alpine.mask_port_map=0x5"
 # Canary in OUR U-Boot (chainloaded, so a bad bootcmd can't crash-loop the box).
 # 0x10000000 is 16-aligned so itest.l is alignment-safe; survives warm reset
 # (DRAM persists). Set it (mw 0x10000000 0xb0075709) to stay at our prompt on the

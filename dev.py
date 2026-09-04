@@ -46,11 +46,18 @@ LOG = LOGS / "dev.log"
 # --------------------------------------------------------------------------
 # Hardware / console constants - the only device-specific configuration.
 # --------------------------------------------------------------------------
-# 115200 8N1 is not a guess: U-Boot's own `loadbootargs` sets
-# console=ttyS0,115200. Confirmed by baud sweep against the live unit.
+# 1500000 8N1. Must match U-Boot CONFIG_BAUDRATE, the kernel console= in
+# every bootargs, UEFI PcdSerialBaudRate and both DTS stdout-paths - #220
+# lists all ten. 1.5M is the fastest the SoC divisor reaches inside the
+# framing budget (d=21, -0.79%); 2M is d=16 at -2.34% and corrupts under load.
+#
+# STOCK U-BOOT STAYS 115200 and cannot be changed (closed binary). A chainload
+# boot is therefore 115200 until awto-uboot's banner, then 1500000 - a single
+# tio cannot follow both. Set UNVR_CONSOLE_BAUD=115200 to watch the stock
+# stage; direct-from-NAND boots are 1500000 throughout.
 CONSOLE_BAUD = int(
-    os.environ.get("UNVR_CONSOLE_BAUD", "115200")
-)  # override for baud tests (e.g. 1000000)
+    os.environ.get("UNVR_CONSOLE_BAUD", "1500000")
+)  # override for baud tests (e.g. 115200 for stock U-Boot)
 # The UNVR console is the CP2102 (Silicon Labs, 3.3 V logic — what the UNVR UART
 # wants). Match it ONLY by its stable by-id path.
 # Do NOT fall back to bare /dev/ttyUSB<N>: those numbers are assigned in USB

@@ -32,7 +32,7 @@ KERNEL = "/boot/uImage-unvr-ea16-7.1-fedora-gz"
 DTB = "/boot/alpine-v2-ubnt-unvr-ea16-7.1-fedora.dtb"
 KADDR, DTADDR = "0x02000000", "0x04078000"
 BOOTARGS = (
-    f"console=ttyS0,115200 root=PARTUUID={PARTUUID} rootfstype=ext4 "
+    f"console=ttyS0,1500000 root=PARTUUID={PARTUUID} rootfstype=ext4 "
     f"rw rootwait selinux=0 panic=15 reboot=cold"
 )
 BOOTCMD = (
