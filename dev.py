@@ -124,9 +124,26 @@ STEPS: dict[str, tuple[str, list[str], bool]] = {
         [sys.executable, "scripts/check-box-container-markers.py"],
         True,
     ),
+    # #258. Report-only, like box-container above: --gate prints the table
+    # and always exits 0. The box's state is never a reason to block a
+    # commit of unrelated code, and the gate is shared. The failing exit
+    # code lives on the explicit `./dev.py verify-versions`.
+    "versions": (
+        "the box's running build vs the working tree, per stage (#258)",
+        [sys.executable, "scripts/verify-versions.py", "--gate"],
+        True,
+    ),
 }
 
-GATE = ["fmt-check", "lint", "test", "hal-drift", "dt-drift", "box-container"]
+GATE = [
+    "fmt-check",
+    "lint",
+    "test",
+    "hal-drift",
+    "dt-drift",
+    "box-container",
+    "versions",
+]
 CI = ["fmt-check", "lint", "test", "hal-drift", "dt-drift"]
 
 # --------------------------------------------------------------------------
@@ -998,6 +1015,17 @@ def cmd_build_uefi_p0(extra: list[str]) -> int:
 
 
 @command(
+    "is the box running what we just built? Scan the console log for each "
+    "stage's banner and compare the embedded git revision (#258, "
+    "scripts/verify-versions.py)",
+    args="[--stage uboot|uefi|kernel] [--log P] [--require a,b] [--gate]",
+    kind="action",
+)
+def cmd_verify_versions(extra: list[str]) -> int:
+    return _run_script("scripts/verify-versions.py", extra)
+
+
+@command(
     "docs/uefi.md §5's dry chainload probe: tftp+crc32-verify+`go` the P0 "
     "UNVR.fd, watch for the UEFI Shell prompt (scripts/uefi-chainload-probe.py)",
     kind="action",
@@ -1471,7 +1499,8 @@ def cmd_publish_fedora(extra: list[str]) -> int:
 @command(
     "deploy the published kernel+DTB onto the SSD over 1G - the deploy path for "
     "the current boot chain (awto-uboot boots /boot/uImage from SSD). Run "
-    "./dev.py publish-fedora first. `--reboot` boots into it (scripts/deploy-ssd.py)",
+    "./dev.py publish-fedora first. `--reboot` boots into it and verifies the "
+    "kernel that came back is this tree's build (#258) (scripts/deploy-ssd.py)",
     kind="action",
 )
 def cmd_deploy_ssd(extra: list[str]) -> int:

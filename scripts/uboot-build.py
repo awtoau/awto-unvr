@@ -32,7 +32,7 @@ import sys
 import time
 from pathlib import Path
 
-from _repo import NPROC  # -j28 host build parallelism (#146)
+from _repo import NPROC, build_ident  # -j28 host build parallelism (#146)
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SCAFFOLD = os.path.join(REPO, "uboot-port")
@@ -412,11 +412,59 @@ def run(cmd):
     return p.returncode
 
 
+def stamp_ident():
+    """#258: set CONFIG_IDENT_STRING to this build's revision, after
+    defconfig and before make.
+
+    Not a defconfig line - it is a SHA, so it changes every commit and a
+    tracked file would either go stale or be dirty on every build.
+
+    Reaches the console for free: common/version.c concatenates
+    CONFIG_IDENT_STRING onto version_string[], which lib/display_options.c
+    prints as the boot banner. Verified against the v2026.07 tree, not
+    assumed.
+
+    Leading space so the banner reads
+    "U-Boot 2026.07-dirty (<date>) awto-<sha>", not run together with the
+    closing paren."""
+    ident = f" awto-{build_ident('uboot')}"
+    cfg = os.path.join(TREE, "scripts/config")
+    rc = run(
+        [
+            cfg,
+            "--file",
+            os.path.join(BUILDDIR, ".config"),
+            "--set-str",
+            "IDENT_STRING",
+            ident,
+        ]
+    )
+    if rc != 0:
+        log("IDENT_STRING stamp FAILED")
+        return rc
+    # olddefconfig re-resolves so IDENT_STRING lands in the generated
+    # include/generated/autoconf.h that version.c actually compiles against.
+    if run(["make", f"O={BUILDDIR}", "olddefconfig"]) != 0:
+        log("olddefconfig after IDENT_STRING FAILED")
+        return 1
+    dotcfg = Path(os.path.join(BUILDDIR, ".config")).read_text()
+    want = f'CONFIG_IDENT_STRING="{ident}"'
+    if want not in dotcfg:
+        # A silently-dropped ident puts us back to an unidentifiable binary,
+        # which is the whole defect - fail rather than build a mystery.
+        log(f"FATAL: {want} not in .config after olddefconfig")
+        return 1
+    log(f"IDENT_STRING = {ident!r}")
+    return 0
+
+
 def build():
     os.makedirs(BUILDDIR, exist_ok=True)
     o = f"O={BUILDDIR}"
     if run(["make", o, "alpine_v2_unvr_defconfig"]) != 0:
         log("defconfig FAILED")
+        return 1
+    if stamp_ident() != 0:
         return 1
     rc = run(["make", o, f"-j{NPROC}"])
     binp = os.path.join(BUILDDIR, "u-boot.bin")

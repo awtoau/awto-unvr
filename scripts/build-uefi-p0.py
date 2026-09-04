@@ -28,7 +28,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 os.environ.setdefault("AWTO_ALLOW_DIRECT_SCRIPT", "1")
-from _repo import REPO, log_path  # noqa: E402
+from _repo import REPO, build_ident, log_path  # noqa: E402
 
 LOG = log_path("build-uefi-p0")
 EDK2_OUT = Path(os.environ.get("AWTO_EDK2_SRC", "/mnt/2tb/unvr-port-refs/edk2"))
@@ -134,10 +134,20 @@ def main() -> int:
         text = re.sub(r"^" + old, new, text, flags=re.MULTILINE)
     target_txt.write_text(text)
 
+    # #258: stamp the build's revision into the version string DxeMain
+    # already prints ("UEFI firmware (version <this> built at ...)"), so it
+    # reaches the console log with no new code.
+    # --pcd, not a DSC edit: the SHA changes every commit, so a tracked
+    # value would either go stale or make the tree dirty on every build.
+    # The DSC keeps the bare "UNVR EDK2 P1" as the no-git fallback.
+    ident = build_ident("uefi")
+    version = f"UNVR EDK2 P1 awto-{ident}"
+    log(f"PcdFirmwareVersionString = {version!r}")
     log(f"building Platform/Ubiquiti/UNVR/Unvr.dsc (P0, target={args.target})")
     build_cmd = (
         f"cd {EDK2_OUT} && source ./edksetup.sh BaseTools >/dev/null && "
-        f"build -b {args.target}"
+        f"build -b {args.target} "
+        f'--pcd gEfiMdeModulePkgTokenSpaceGuid.PcdFirmwareVersionString=L"{version}"'
     )
     run(["bash", "-c", build_cmd], env=env, timeout=300)
 

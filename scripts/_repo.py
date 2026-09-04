@@ -95,6 +95,62 @@ def rel(p: Path | str) -> str:
         return str(p)
 
 
+# --------------------------------------------------------------------------
+# Build identity (#258) - "is the box running what I just built?"
+# --------------------------------------------------------------------------
+# Which git tree's revision answers "what produced this binary", per stage.
+# One table, so #256 (U-Boot rewritten as alu_* in the awtoau/awto-uboot
+# fork, HAL shared) is a one-line edit here and nothing else moves:
+#   "uboot": AWTO_UBOOT_SRC / the fork checkout, once it builds from there.
+# Env override per stage, so a build against a non-default tree still
+# stamps that tree's SHA rather than lying about it.
+STAGE_SRC_ENV = {
+    "kernel": None,  # awto-unvr: the DTS/config/OOT modules are ours
+    "uboot": "AWTO_UBOOT_IDENT_SRC",  # today: uboot-port/ overlay, i.e. REPO
+    "uefi": "AWTO_UEFI_IDENT_SRC",  # today: Platform/Ubiquiti overlay = REPO
+}
+
+
+def git_describe(tree: Path | str | None = None) -> str:
+    """`git describe --always --dirty` for `tree` (default: this repo).
+
+    The -dirty suffix carries as much as the SHA: it separates "built from a
+    commit" from "built from an uncommitted tree", the more common source of
+    the stale-deploy confusion (#105, #131, #161).
+
+    Timeout 5 s: a local `git describe` on this repo is ~10 ms, so 5 s is
+    ~500x - it is a "git is wedged on an NFS/lock" bound, not a pacing one.
+    On expiry (or any git failure) returns "unknown" and the build carries
+    that literal, which still distinguishes it from a real SHA.
+    """
+    path = Path(tree) if tree else REPO
+    try:
+        out = subprocess.run(
+            ["git", "-C", str(path), "describe", "--always", "--dirty"],
+            capture_output=True,
+            text=True,
+            timeout=5,
+            check=False,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return "unknown"
+    return out.stdout.strip() or "unknown"
+
+
+def build_ident(stage: str) -> str:
+    """The revision string embedded in `stage`'s binary at build time, and
+    the thing `./dev.py verify-versions` compares the console log against.
+
+    Stages: "kernel", "uboot", "uefi". Same producer/consumer single-source
+    reasoning as kernel_build_out() - the builder that stamps it and the
+    verifier that checks it must never compute it two different ways."""
+    if stage not in STAGE_SRC_ENV:
+        raise ValueError(f"unknown stage {stage!r} - one of {sorted(STAGE_SRC_ENV)}")
+    env_name = STAGE_SRC_ENV[stage]
+    override = os.environ.get(env_name) if env_name else None
+    return git_describe(Path(override) if override else REPO)
+
+
 # Build parallelism for every `make -j` in this repo (#146). 28 of this host's
 # 32 cores; the 4 spare keep the box interactive during a kernel build. Env
 # override AWTO_NPROC for a different host.

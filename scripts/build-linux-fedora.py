@@ -26,6 +26,7 @@ import zlib
 from _repo import (
     NPROC,
     REPO,
+    build_ident,
     check_kernel_patches,
     kernel_build_out,
     kernel_build_ver,
@@ -126,6 +127,17 @@ def trim_to_woomera_modules():
     run(["make", "-C", SRC, f"O={KOUT}", f"LSMOD={LSMOD_KNOWN_GOOD}", "localmodconfig"])
     n = len(pathlib.Path(LSMOD_KNOWN_GOOD).read_text().splitlines()) - 1
     log(f"trimmed to {LSMOD_KNOWN_GOOD} ({n} modules)")
+
+
+def localversion() -> str:
+    """CONFIG_LOCALVERSION for this build: "[-kasan]-<git describe>" (#258).
+
+    Order matters. -kasan must stay a *prefix* of the suffix so the two
+    builds keep landing in different /lib/modules/ dirs even when they share
+    a SHA - swapping the order would make a plain and a KASAN build of the
+    same commit collide again (the #131 incident)."""
+    kasan = "-kasan" if os.environ.get("AWTO_KASAN_BUILD") else ""
+    return f"{kasan}-{build_ident('kernel')}"
 
 
 def configure():
@@ -428,13 +440,26 @@ def configure():
                     # panic_on_warn is a runtime sysctl/boot param, not a
                     # Kconfig symbol - set `sysctl kernel.panic_on_warn=1`
                     # after boot instead of trying to bake it in here.
-                    "--set-str",
-                    "LOCALVERSION",
-                    "-kasan",
                 ]
                 if os.environ.get("AWTO_KASAN_BUILD")
                 else []
             ),
+        ]
+    )
+    # #258: stamp the build's revision into `uname -r`, EVERY build. Without
+    # it every build ever made reported the same bare version, so a stale
+    # deploy was invisible (#105, #131, #161).
+    # Composed, not clobbered: -kasan stays (see the load-bearing note above -
+    # it keeps the two builds in separate /lib/modules/ dirs), with the SHA
+    # appended after it.
+    run(
+        [
+            cfg,
+            "--file",
+            os.path.join(KOUT, ".config"),
+            "--set-str",
+            "LOCALVERSION",
+            localversion(),
         ]
     )
     # MD_RAID456 does not survive the big --enable/--disable chain above -
@@ -461,6 +486,10 @@ def configure():
         # DMA_XOR/DMA_PQ. localmodconfig drops it (nothing was using it),
         # so verify the force-enable survived.
         "CONFIG_MD_RAID456=m",
+        # #258: the build's own identity. olddefconfig has been seen to drop
+        # a --set-str, and a silently-empty LOCALVERSION puts us straight
+        # back to "every build looks identical".
+        f'CONFIG_LOCALVERSION="{localversion()}"',
     ):
         if sym not in dotcfg:
             log(f"FATAL: {sym} not set after olddefconfig")
