@@ -36,9 +36,10 @@ from functools import partial
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import _fedora_deploy as fd
+
 from _net import detect_server_ip
 from _repo import LOGS
-import _fedora_deploy as fd
 
 SOCK = Path(os.environ.get("XDG_RUNTIME_DIR", "/tmp")) / "tio-unvr.sock"
 # fd.OUT/fd.KVER are the single source of truth (kernel_build_out() +

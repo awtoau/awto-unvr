@@ -29,6 +29,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from _fedora_deploy import TFTP_DIMG, TFTP_KIMG, assert_fresh
+
 from _net import detect_server_ip
 from _repo import LOGS
 

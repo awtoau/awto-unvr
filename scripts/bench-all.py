@@ -619,7 +619,7 @@ def main() -> int:
             f.write(f"[{'PASS' if c['ok'] else 'FAIL'}] {c['name']}: {c['detail']}\n")
 
     out_path = args.out or Path(
-        f"bench-history/bench-{datetime.datetime.now().strftime('%Y%m%d-%H%M%S')}.json"
+        f"bench-history/bench-{datetime.datetime.now().astimezone().strftime('%Y%m%d-%H%M%S')}.json"
     )
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(json.dumps(result, indent=2))

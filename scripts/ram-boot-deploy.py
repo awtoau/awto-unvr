@@ -28,7 +28,6 @@ import argparse
 import hashlib
 import os
 import socket
-import struct
 import subprocess
 import sys
 import tarfile
@@ -38,10 +37,11 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import tftpd as _tftpd
+
 from _net import UNVR_IPADDR as IPADDR
 from _net import detect_server_ip
 from _power import power_cycle_verified
-from _repo import LOGS, REPO, TFTP_ROOT, log_path
+from _repo import REPO, TFTP_ROOT, log_path
 
 LOG = log_path("ram-boot-deploy")
 

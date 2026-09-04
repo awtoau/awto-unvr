@@ -3,3 +3,19 @@ extend-exclude = [
     "debris",
     ".claude/worktrees",
 ]
+
+# Rule selection. Without this ruff runs its default set, which nobody chose:
+# that produced 75 findings and a crop of `# noqa: E402` comments fighting a
+# rule we do not want. E4/E7/E9+F is ruff's default; I sorts imports; DTZ
+# catches naive datetimes (repo rule: ISO 8601 with an offset).
+[lint]
+select = ["E4", "E7", "E9", "F", "I", "DTZ"]
+
+# Scripts sys.path.insert() and set AWTO_ALLOW_DIRECT_SCRIPT before importing
+# the shared _console/_repo helpers.
+# E741 (`l` as a name): 16 sites, all short-lived line/loop variables in
+# parsing code where `l` reads fine. Not worth churning the files.
+ignore = ["E402", "E741"]
+
+[lint.isort]
+known-first-party = ["_console", "_net", "_power", "_repo"]

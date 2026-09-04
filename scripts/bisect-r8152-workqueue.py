@@ -62,10 +62,10 @@ sys.path.insert(0, str(REPO / "scripts"))
 # subcommand dispatch) is itself always a direct invocation, so it opts in
 # for itself and every subprocess it spawns.
 os.environ.setdefault("AWTO_ALLOW_DIRECT_SCRIPT", "1")
-from _repo import kernel_build_out, kernel_build_ver  # noqa: E402
 from _console import connect as console_connect  # noqa: E402
 from _console import login as console_login  # noqa: E402
 from _console import sh as console_sh  # noqa: E402
+from _repo import kernel_build_out, kernel_build_ver  # noqa: E402
 
 SRC = Path(
     os.environ.get("AWTO_KERNEL_SRC", "/mnt/2tb/unvr-port-refs/linux-v7.3-fresh")

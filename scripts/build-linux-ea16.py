@@ -221,7 +221,11 @@ def configure():
     # AHCI_ALPINE comes from unvr_defconfig; check it survived olddefconfig -
     # its absence means patches/ahci-alpine-per-port-msix.patch isn't applied
     # in AWTO_KERNEL_SRC and SATA is silently back on shared INTx (#92).
-    for sym in ("CONFIG_PCIE_AL_INTERNAL=y", "CONFIG_PCIE_AL=y", "CONFIG_AHCI_ALPINE=y"):
+    for sym in (
+        "CONFIG_PCIE_AL_INTERNAL=y",
+        "CONFIG_PCIE_AL=y",
+        "CONFIG_AHCI_ALPINE=y",
+    ):
         if sym not in dotcfg:
             log(f"FATAL: {sym} not set after olddefconfig")
             sys.exit(1)

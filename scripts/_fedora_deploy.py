@@ -323,7 +323,7 @@ def _deploy_kernel_module_check(host: str) -> None:
     ).returncode
     if check != 0:
         sys.exit(
-            f"ABORT: #162 marker landed but is empty/malformed on woomera - refusing to continue"
+            "ABORT: #162 marker landed but is empty/malformed on woomera - refusing to continue"
         )
     rc = subprocess.run(
         [

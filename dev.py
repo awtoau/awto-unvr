@@ -1266,6 +1266,7 @@ def cmd_deploy_fedora_rootfs(_extra: list[str]) -> int:
     if scripts_dir not in sys.path:
         sys.path.insert(0, scripts_dir)
     import _fedora_deploy as fd
+
     from _net import detect_server_ip
     from _repo import ea16_build_out, kernel_build_ver
 
@@ -1556,8 +1557,9 @@ def cmd_deploy_fedora(extra: list[str]) -> int:
     # for its own process - but we ARE dev.py, which is exactly what that
     # guard exists to permit (it's there to stop bare `python3 scripts/x.py`).
     os.environ.setdefault("AWTO_VIA_DEVPY", "1")
-    import _console
     from _fedora_deploy import KVER
+
+    import _console
 
     log(f"deploy-fedora: target kernel {KVER}")
 

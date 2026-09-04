@@ -19,11 +19,10 @@ from __future__ import annotations
 import argparse
 import subprocess
 import sys
-import tarfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from _repo import LOGS, REPO, log_path
+from _repo import REPO, log_path
 
 ROOTFS_TAR = REPO / "tmp" / "fedora-rootfs-ea16.tar"
 EXTRACT_DIR = REPO / "tmp" / "fedora-rootfs-extracted"
