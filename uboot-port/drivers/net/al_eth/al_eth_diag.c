@@ -9,10 +9,12 @@
  * raw hex), and the live link state - PHY id / AN result on 1G, PCS block-lock
  * + SerDes lane and TX equalisation taps on 10G.
  *
- * Read-only: the adapter handle is built here (never al_eth_adapter_init), and
- * MDIO/SerDes reads have no side effects, so a live port is never disturbed.
- * One exception, printed as a note in the output: reading BASE-R Status 2 on
- * 10G clears its errored-block/BER fields, which `eth stats` also reports.
+ * Near read-only: the adapter handle is built here, never al_eth_adapter_init,
+ * so a live port is not reconfigured. Two exceptions:
+ * - 1G re-asserts the MDIO master config (al_eth_mdio_config) - without it a
+ *   bare handle routes reads at an unconfigured window and SErrors.
+ * - reading BASE-R Status 2 on 10G clears its errored-block/BER fields, which
+ *   `eth stats` also reports; printed as a note in the output.
  */
 
 #include <command.h>
@@ -31,16 +33,17 @@
 #include <al_hal_eth_mac.h>
 #include <al_hal_eth_mac_regs.h>
 
+#include "al_eth_hwaddr.h"
 #include "al_eth_port.h"
+
+/* MDIO master clock; al_eth_dm.c uses the same 1 MHz (board params report it
+ * as the mdio_freq flag, which is a 1/2.5 MHz bit, not a number). */
+#define AL_DIAG_MDIO_CLK_KHZ		1000
 
 /* Bit 15 of KR-PCS BASE-R Status 2 (Clause-45 dev 3 reg 0x21) = block lock. */
 #define AL_DIAG_PCS_BASE_R_STATUS2	0x21
 #define AL_DIAG_PCS_BLOCK_LOCK		AL_BIT(15)
 #define AL_DIAG_PCS_HI_BER		AL_BIT(14)
-
-/* Per-unit MAC in the SPI-NOR identity partition; port 1 is base+0, port 2 is
- * base+1 (docs/mtd.md, #223). Mirrors what the two DM drivers program. */
-#define AL_DIAG_MAC_ROM_OFFSET		0x1f0000
 
 /* SerDes/EQ readback from drivers/phy/al_serdes (extern - no cross-dir -I). */
 #if IS_ENABLED(CONFIG_AL_SERDES)
@@ -80,12 +83,12 @@ static void diag_ident(int port, const struct al_eth_port_regs *r)
 	       r->udma, r->ec, r->mac);
 }
 
-/* The MAC the EC filter is actually programmed with, plus what the NOR would
- * give - a mismatch is the "wrong MAC" bug, and both being zero means the port
- * was never started. */
+/* The MAC the EC filter is actually programmed with vs what NOR says it should
+ * be - a mismatch is the "wrong MAC" bug Linux inherits (#222). */
 static void diag_hwaddr(int port, const struct al_eth_port_regs *r)
 {
-	uint8_t live[ARP_HLEN];
+	uint8_t live[ARP_HLEN], want[ARP_HLEN];
+	int rc;
 
 	if (al_eth_mac_addr_read(r->ec, 0, live)) {
 		printf("  mac        : unreadable (ec addr slot 0)\n");
@@ -94,10 +97,16 @@ static void diag_hwaddr(int port, const struct al_eth_port_regs *r)
 
 	printf("  mac        : %pM  <- EC filter slot 0", live);
 	if (is_zero_ethaddr(live))
-		printf(" (UNSET - port never started)");
+		printf(" (UNSET)");
 	printf("\n");
-	printf("  mac source : SPI-NOR 0x%06x + %d (#223)\n",
-	       AL_DIAG_MAC_ROM_OFFSET, port - 1);
+
+	rc = al_eth_hwaddr_get(port, want);
+	if (rc) {
+		printf("  mac source : SPI-NOR unreadable (%d)\n", rc);
+		return;
+	}
+	printf("  mac source : %pM (NOR base+%d) - %s\n", want, port - 1,
+	       memcmp(live, want, ARP_HLEN) ? "MISMATCH" : "match");
 }
 
 /* ---- board params (the MAC scratchpad Linux reads at probe) ------------- */
@@ -153,6 +162,17 @@ static void diag_link_1g(struct al_hal_eth_adapter *a,
 {
 	uint16_t id1, id2, bmsr, bmcr, lpa, stat1000;
 	unsigned int addr = p->phy_exist ? p->phy_mdio_addr : 4;
+	int rc;
+
+	/* The ONLY register write diag makes, and it is required: a bare handle
+	 * leaves mdio_if 0 (= 1G MAC), whose raw phy_regs_base window SErrors on
+	 * a MAC the DM driver never started. Re-asserts what al_eth_dm.c sets. */
+	rc = al_eth_mdio_config(a, AL_ETH_MDIO_TYPE_CLAUSE_22, AL_TRUE,
+				p->ref_clk_freq, AL_DIAG_MDIO_CLK_KHZ);
+	if (rc) {
+		printf("  link       : mdio config failed (%d)\n", rc);
+		return;
+	}
 
 	if (diag_mdio_read(a, addr, MII_PHYSID1, &id1) ||
 	    diag_mdio_read(a, addr, MII_PHYSID2, &id2)) {

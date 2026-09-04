@@ -29,7 +29,6 @@
 #include <net.h>
 #include <pci.h>
 #include <phy.h>
-#include <spi_flash.h>
 #include <cpu_func.h>
 #include <linux/delay.h>
 #include <asm/io.h>
@@ -39,6 +38,7 @@
 #include <al_hal_udma.h>
 
 #include "al_eth_boardparams.h"
+#include "al_eth_hwaddr.h"
 
 /* A PCI endpoint on the internal PCIe, not a DT device - the eth0..3 nodes at
  * 0xfc000000+ are unused (docs/hardware.md). THREE non-contiguous BARs, so the
@@ -46,6 +46,7 @@
  * al_hal_eth.h. Ascending order does NOT apply: EC is BAR4, MAC is BAR2. */
 #define AL_ETH_PCI_VENDOR	0x1c36
 #define AL_ETH_PCI_DEV_1G	0x0001
+#define AL_ETH_DM_PORT		1		/* stock eth_* port index (al_eth_port.c) */
 #define AL_ETH_BAR_UDMA		PCI_BASE_ADDRESS_0	/* AL_ETH_UDMA_BAR = 0 */
 #define AL_ETH_BAR_EC		PCI_BASE_ADDRESS_4	/* AL_ETH_EC_BAR   = 4 */
 #define AL_ETH_BAR_MAC		PCI_BASE_ADDRESS_2	/* AL_ETH_MAC_BAR  = 2 */
@@ -568,34 +569,17 @@ static int al_eth_dm_free_pkt_noop(struct udevice *dev)
 	return al_eth_dm_free_pkt(dev, NULL, 0);
 }
 
-/* Per-unit MAC from the SPI-NOR identity partition (mtd4 "EEPROM", 0x1f0000);
- * the base MAC at +0x0000 IS this RJ45 port. Read over the DM SPI-NOR so a
- * working interface needs no env ethaddr (#89). The eth uclass calls this when
- * env has none. Same flash as our env (docs/mtd.md). */
-#define AL_ETH_MAC_ROM_OFFSET	0x1f0000
-
+/* Per-unit MAC from the SPI-NOR identity partition; this RJ45 port is the base
+ * address (al_eth_hwaddr.c). The eth uclass calls this when env has no ethaddr
+ * (#89); probe has already committed the same value to the EC filter. */
 static int al_eth_dm_read_rom_hwaddr(struct udevice *dev)
 {
 	struct eth_pdata *pdata = dev_get_plat(dev);
-	struct udevice *flash;
-	int ret;
+	int ret = al_eth_hwaddr_get(AL_ETH_DM_PORT, pdata->enetaddr);
 
-	ret = uclass_first_device_err(UCLASS_SPI_FLASH, &flash);
-	if (ret) {
-		dev_dbg(dev, "no SPI-NOR to read MAC: %d\n", ret);
-		return ret;
-	}
-	ret = spi_flash_read_dm(flash, AL_ETH_MAC_ROM_OFFSET, ARP_HLEN,
-				pdata->enetaddr);
-	if (ret) {
-		dev_dbg(dev, "MAC read from NOR failed: %d\n", ret);
-		return ret;
-	}
-	if (!is_valid_ethaddr(pdata->enetaddr)) {
-		dev_dbg(dev, "NOR MAC %pM invalid\n", pdata->enetaddr);
-		return -EINVAL;
-	}
-	return 0;
+	if (ret)
+		dev_dbg(dev, "no MAC from NOR: %d\n", ret);
+	return ret;
 }
 
 static const struct eth_ops al_eth_dm_ops = {
@@ -638,7 +622,11 @@ static int al_eth_dm_probe(struct udevice *dev)
 
 	/* Hand the board params to Linux via the MAC scratchpad. Stock U-Boot
 	 * does this too; without it Linux al_eth fails probe outright. */
-	al_eth_bp_seed(1, priv->mac_regs);
+	al_eth_bp_seed(AL_ETH_DM_PORT, priv->mac_regs);
+
+	/* MAC into the EC filter here, not from the uclass's lazy write_hwaddr:
+	 * Linux inherits this register whether or not U-Boot uses the port (#222). */
+	al_eth_hwaddr_commit(AL_ETH_DM_PORT, priv->ec_regs);
 
 	/* PHY on the internal MDIO bus - confirmed hardware-of-record: RGMII,
 	 * AR8031/8033 (at803x) @ addr 4. No DT node backs this PCI endpoint. */

@@ -30,7 +30,6 @@
 #include <memalign.h>
 #include <net.h>
 #include <pci.h>
-#include <spi_flash.h>
 #include <cpu_func.h>
 #include <linux/delay.h>
 #include <asm/io.h>
@@ -40,11 +39,13 @@
 #include <al_hal_udma.h>
 
 #include "al_eth_boardparams.h"
+#include "al_eth_hwaddr.h"
 
 /* eth2 = the "advanced" al_eth function on the internal PCIe (vendor 0x1c36 dev
  * 0x0002). Same three-BAR layout as eth1 (UDMA=BAR0, EC=BAR4, MAC=BAR2). */
 #define AL_ETH_PCI_VENDOR	0x1c36
 #define AL_ETH_PCI_DEV_10G	0x0002		/* al_eth2 SFP+ cage */
+#define AL_ETH_10G_PORT		2		/* stock eth_* port index (al_eth_port.c) */
 #define AL_ETH_BAR_UDMA		PCI_BASE_ADDRESS_0	/* AL_ETH_UDMA_BAR = 0 */
 #define AL_ETH_BAR_EC		PCI_BASE_ADDRESS_4	/* AL_ETH_EC_BAR   = 4 */
 #define AL_ETH_BAR_MAC		PCI_BASE_ADDRESS_2	/* AL_ETH_MAC_BAR  = 2 */
@@ -490,38 +491,16 @@ static int al_eth_10g_write_hwaddr(struct udevice *dev)
 	return al_eth_mac_addr_store(priv->ec_regs, 0, pdata->enetaddr);
 }
 
-/* 10G MAC = NOR base MAC (0x1f0000) + 1. Stock's "mac: [<base>] + [2]" is a
- * COUNT of allocated MACs, not an offset - port 1 is base+0 (#222/#223). Carry
- * runs through the 24-bit NIC part only, so the result stays inside the OUI.
- * The 6 bytes at +0x6 are NOT a second MAC: the factory value is locally
- * administered, so not globally unique (#89, #223). */
-#define AL_ETH_MAC_ROM_OFFSET	0x1f0000
-
+/* 10G MAC = NOR base + 1 (al_eth_hwaddr.c). The eth uclass calls this when env
+ * has no ethaddr; probe has already committed the same value to the EC filter. */
 static int al_eth_10g_read_rom_hwaddr(struct udevice *dev)
 {
 	struct eth_pdata *pdata = dev_get_plat(dev);
-	struct udevice *flash;
-	u32 nic;
-	int ret;
+	int ret = al_eth_hwaddr_get(AL_ETH_10G_PORT, pdata->enetaddr);
 
-	ret = uclass_first_device_err(UCLASS_SPI_FLASH, &flash);
 	if (ret)
-		return ret;
-	ret = spi_flash_read_dm(flash, AL_ETH_MAC_ROM_OFFSET, ARP_HLEN,
-				pdata->enetaddr);
-	if (ret)
-		return ret;
-	if (!is_valid_ethaddr(pdata->enetaddr))
-		return -EINVAL;
-
-	nic = (pdata->enetaddr[3] << 16) | (pdata->enetaddr[4] << 8) |
-	      pdata->enetaddr[5];
-	nic = (nic + 1) & 0xffffff;
-	pdata->enetaddr[3] = nic >> 16;
-	pdata->enetaddr[4] = nic >> 8;
-	pdata->enetaddr[5] = nic;
-
-	return 0;
+		dev_dbg(dev, "no MAC from NOR: %d\n", ret);
+	return ret;
 }
 
 static const struct eth_ops al_eth_10g_ops = {
@@ -560,7 +539,12 @@ static int al_eth_10g_probe(struct udevice *dev)
 
 	/* Hand the board params to Linux via the MAC scratchpad. Stock U-Boot
 	 * does this too; without it Linux al_eth fails probe outright. */
-	al_eth_bp_seed(2, priv->mac_regs);
+	al_eth_bp_seed(AL_ETH_10G_PORT, priv->mac_regs);
+
+	/* MAC into the EC filter here, not from the uclass's lazy write_hwaddr:
+	 * U-Boot never activates this port, so Linux would otherwise inherit the
+	 * previous bootloader's wrong value (#222). */
+	al_eth_hwaddr_commit(AL_ETH_10G_PORT, priv->ec_regs);
 
 	/* al_udma-visible memory MUST be low DRAM (master can't reach U-Boot's ~3GB
 	 * heap - mirrors al_eth_dm.c's al_eth_dma_low_alloc; own 0x02100000 window). */
