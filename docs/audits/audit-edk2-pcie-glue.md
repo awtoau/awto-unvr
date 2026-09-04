@@ -6,17 +6,21 @@ and table format as [audit-board-shim-dts.md](audit-board-shim-dts.md).
 
 **Update (2026-09-03)**: the internal-PCIe SMCC/APP_CONTROL register
 constants are no longer duplicated-and-cross-checked - they're now
-genuinely shared. `hal/pcie-al-alpine-regs.h` (this repo) is a
-byte-identical mirror of our Linux fork's canonical
-`drivers/pci/controller/pcie-al-alpine-regs.h`
+genuinely shared. `hal/pcie-al-alpine-regs.h` (this repo) mirrors our
+Linux fork's canonical `drivers/pci/controller/pcie-al-alpine-regs.h`
 (github.com/awto-au/linux, commit `f755b2f5dc75`), and both
 `uboot-port/board/annapurna/alpine/alpine.c` and
 `AlPcieSnoopFixDxe.c` `#include` it directly. The table below is now a
 record of that fact (and the two symbols that are deliberately *not*
-shared) rather than a value-by-value cross-check - drift is no longer
-possible for the shared constants themselves, only for hal/'s copy
-falling out of sync with the Linux fork's, which is a trivial `diff`
-away from being caught (unlike hand-typed numbers).
+shared) rather than a value-by-value cross-check.
+
+**Enforced, not asserted (2026-09-04)**: `scripts/hal-drift-check.py`'s
+`check_shared_header()` compares the two copies' `#define` *values* on
+every `./dev.py gate`, and checks both consumers still `#include` it.
+Values, not bytes: the two copies carry different file-header prose
+(each describes its own tree's role), so a byte-hash check would fail
+forever and be ignored - the exact failure mode that script's own
+docstring was written about.
 
 The external-PCIe0 fixup (next section) has no Linux equivalent to
 share with - alpine.c stays its sole source of truth, still

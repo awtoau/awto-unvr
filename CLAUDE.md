@@ -60,7 +60,6 @@ stock U-Boot → NAND 0x1300000 (awto-uboot, raw, `go`) → ext4load /boot/uImag
 
 - `dts/alpine-v2-ubnt-unvr-ea16.dts` — Linux DT, built to `/boot/unvr.dtb` on the SSD.
 - `uboot-port/arch/dts/awto-alpine-v2-unvr-uboot.dts` — compiled **into** `u-boot.bin`.
-- `Platform/Ubiquiti/UNVR/DeviceTree/unvr.dts` — UEFI's, **referenced by nothing** (#39).
 - `dts/reference/`, `docs/hw-reference/*/live.dts` — vendor hardware-of-record, never built.
 - Reference trees (20 sources, ~9.9 GB) under `/mnt/2tb/unvr-port-refs/` — QNAP, MikroTik
   CCR2004 UEFI, the UBNT GPL drop with the **working 4.1.37 kernel**, delroth's HAL.

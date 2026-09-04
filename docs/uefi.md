@@ -105,9 +105,18 @@ Platform/Ubiquiti/UNVR/
 │   ├── UnvrSerialPortLib/   # thin wrapper over MdeModulePkg 16550 (see below)
 │   ├── UnvrMemoryInitLib/   # ArmPlatformGetVirtualMemoryMap (table below)
 │   └── UnvrResetSystemLib/  # ArmPsciResetSystemLib (PSCI SMC)
-└── DeviceTree/
-    └── unvr.dts             # = docs/hw-reference/20260816-104601/live.dts (verbatim)
 ```
+
+**No DeviceTree/ directory.** It held a byte-identical copy of
+`docs/hw-reference/20260816-104601/live.dts`, referenced by nothing - not the
+.dsc, not the .fdf, no `gFdtTableGuid` install, no build rule. Removed
+2026-09-04 rather than wired up: it is the *vendor's* decompiled live DTB
+(`compatible = "annapurna-labs,alpine"`, vendor bootargs baked in), not our
+maintained Linux DT (`dts/alpine-v2-ubnt-unvr-ea16.dts`, `compatible =
+"ubnt,unvr"`). Installing it as a config table would hand GRUB the wrong tree.
+When P4 needs DT handoff, the source is the ea16 DTS, compiled and installed as
+`gFdtTableGuid` - a real build-rule change, not a file that was already sitting
+there.
 
 ### Known values to bake into the PCDs
 

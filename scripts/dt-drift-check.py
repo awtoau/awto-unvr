@@ -7,7 +7,6 @@ Why: there are four device trees and nothing keeps them in step (#221).
 
   dts/alpine-v2-ubnt-unvr-ea16.dts       -> Linux, built to /boot/unvr.dtb (SSD)
   uboot-port/arch/dts/awto-...-uboot.dts -> awto-uboot, COMPILED INTO u-boot.bin
-  Platform/Ubiquiti/UNVR/DeviceTree/     -> UEFI, referenced by nothing (dead)
   dts/reference/, docs/hw-reference/     -> vendor record, never built
 
 Unlike the HAL copies (scripts/hal-drift-check.py) these are NOT copies of each

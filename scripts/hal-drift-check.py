@@ -28,6 +28,11 @@ change - which is exactly the "you fixed al_eth, check the other three" prompt.
 The cost is that intended edits need --update; that is the point, since it
 forces the sibling question to be answered explicitly.
 
+Also checks hal/pcie-al-alpine-regs.h - the one header that is genuinely shared
+(a single file #include'd by U-Boot and EDK2) rather than vendored per tree. The
+baseline model above cannot see it, so it is compared by #define value against
+the Linux fork's canonical copy instead. See check_shared_header().
+
 Usage:
     ./scripts/hal-drift-check.py            # check against the baseline
     ./scripts/hal-drift-check.py --update   # re-record after an INTENDED change
@@ -39,6 +44,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -56,6 +62,73 @@ TREES: dict[str, list[str]] = {
         "uboot-port/drivers/crypto/al_ssm",
     ],
 }
+
+# hal/pcie-al-alpine-regs.h is the one header genuinely SHARED (one file,
+# #include'd) rather than vendored per tree, so the basename check above
+# cannot see it - it never appears in 2+ trees. Its risk is the other
+# direction: drifting from the Linux fork's canonical copy, which lives
+# outside this repo. Compared by #define VALUES, not bytes: the two copies
+# legitimately carry different file-header prose, and a byte-hash check
+# would fire on that forever and be ignored (this script's own docstring).
+SHARED_HEADER = "hal/pcie-al-alpine-regs.h"
+SHARED_HEADER_CANONICAL = Path(
+    "/mnt/2tb/unvr-port-refs/linux-v7.3-fresh/drivers/pci/controller/pcie-al-alpine-regs.h"
+)
+# Consumers that #include it directly - listed so a dropped include is caught.
+SHARED_HEADER_CONSUMERS = [
+    "uboot-port/board/annapurna/alpine/alpine.c",
+    "Platform/Ubiquiti/UNVR/Drivers/AlPcieSnoopFixDxe/AlPcieSnoopFixDxe.c",
+]
+
+DEFINE_RE = re.compile(
+    r"^\s*#\s*define\s+(\w+)(?:\([^)]*\))?\s+(.*?)\s*(?:/\*.*)?$", re.M
+)
+
+
+def defines(text: str) -> dict[str, str]:
+    """name -> value, whitespace-normalised. Comments and prose ignored."""
+    return {
+        m.group(1): " ".join(m.group(2).split())
+        for m in DEFINE_RE.finditer(text)
+        if m.group(2).strip()
+    }
+
+
+def check_shared_header() -> list[str]:
+    """Compare the shared header's constants against the canonical Linux copy."""
+    problems = []
+    local = REPO / SHARED_HEADER
+
+    if not local.is_file():
+        return [f"  MISSING {SHARED_HEADER} - both U-Boot and EDK2 #include it"]
+
+    for consumer in SHARED_HEADER_CONSUMERS:
+        p = REPO / consumer
+        if not p.is_file():
+            problems.append(f"  MISSING consumer {consumer}")
+        elif "pcie-al-alpine-regs.h" not in p.read_text():
+            problems.append(
+                f"  {consumer} no longer #includes pcie-al-alpine-regs.h"
+                " - it has gone back to hand-typed constants"
+            )
+
+    if not SHARED_HEADER_CANONICAL.is_file():
+        # A missing reference tree is not a failure - it is not in this repo.
+        print(
+            f"note: canonical copy absent ({SHARED_HEADER_CANONICAL}), value check skipped"
+        )
+        return problems
+
+    ours = defines(local.read_text())
+    theirs = defines(SHARED_HEADER_CANONICAL.read_text())
+    for name in sorted(set(ours) | set(theirs)):
+        o, t = ours.get(name), theirs.get(name)
+        if o == t:
+            continue
+        problems.append(
+            f"  VALUE DIFFERS  {name}: {SHARED_HEADER}={o!r} vs Linux fork={t!r}"
+        )
+    return problems
 
 
 def sha(p: Path) -> str:
@@ -147,6 +220,12 @@ def main() -> int:
             f" - does the same fix apply there?"
         )
 
+    shared = check_shared_header()
+    if shared:
+        print(f"SHARED-HEADER DRIFT: {len(shared)} problem(s) in {SHARED_HEADER}\n")
+        print("\n".join(shared))
+        print()
+
     if problems:
         print(f"HAL DRIFT: {len(problems)} change(s) vs the baseline (#218)\n")
         print("\n".join(problems))
@@ -156,7 +235,13 @@ def main() -> int:
         )
         return 1
 
-    print(f"HAL drift: OK ({len(cur)} shared files unchanged)")
+    if shared:
+        return 1
+
+    print(
+        f"HAL drift: OK ({len(cur)} vendored files unchanged,"
+        f" {SHARED_HEADER} matches the Linux fork)"
+    )
     return 0
 
 
