@@ -130,11 +130,10 @@ class Box:
 
 
 def resolve_box(explicit: str | None) -> str:
-    """Find woomera. Prefers ssh-woomera.py (MAC-based, the project rule), but
-    falls back to the addresses it is known to answer on - the MAC resolver
-    fails when ARP for the 1G IP resolves to the 10G port's MAC, which happens
-    because all four NICs sit on one subnet and every one answers ARP for any
-    local address (arp_ignore=0)."""
+    """Find woomera by MAC via ssh-woomera.py - the project rule, no IP
+    fallback. The ARP-flux case that once tempted one (the 1G IP resolving
+    to the 10G port's MAC) is fixed in the resolver itself: cdc58d1 accepts
+    either of the box's own MACs."""
     if explicit:
         return explicit
     r = subprocess.run(
@@ -147,18 +146,9 @@ def resolve_box(explicit: str | None) -> str:
     cand = r.stdout.strip()
     if cand:
         return cand
-    for ip in ("192.168.25.138", "192.168.25.127", "192.168.25.100"):
-        probe = subprocess.run(
-            ["ssh", *SSH_OPTS, f"root@{ip}", "echo ok"],
-            capture_output=True,
-            text=True,
-            check=False,
-            timeout=20,
-        )
-        if probe.stdout.strip() == "ok":
-            log(f"MAC resolver failed; reached box at {ip}")
-            return ip
-    sys.exit("FATAL: cannot reach woomera on any known address")
+    sys.exit(
+        f"FATAL: ssh-woomera.py could not resolve woomera by MAC\n{r.stderr.strip()}"
+    )
 
 
 # --------------------------------------------------------------------------
