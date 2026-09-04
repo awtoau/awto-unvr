@@ -108,10 +108,18 @@ STEPS: dict[str, tuple[str, list[str], bool]] = {
         [sys.executable, "scripts/hal-drift-check.py"],
         True,
     ),
+    # The DTs are NOT copies of each other, so no baseline and no --update:
+    # only a handful of board facts must agree, and any disagreement is a bug
+    # now. Both stages program the same silicon from them.
+    "dt-drift": (
+        "board facts shared by the Linux and U-Boot device trees (#221)",
+        [sys.executable, "scripts/dt-drift-check.py"],
+        True,
+    ),
 }
 
-GATE = ["fmt-check", "lint", "test", "hal-drift"]
-CI = ["fmt-check", "lint", "test", "hal-drift"]
+GATE = ["fmt-check", "lint", "test", "hal-drift", "dt-drift"]
+CI = ["fmt-check", "lint", "test", "hal-drift", "dt-drift"]
 
 # --------------------------------------------------------------------------
 # Logging - Tier A (dev tooling): local time, stderr + ./tmp/logs/dev.log,
