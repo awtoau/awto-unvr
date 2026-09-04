@@ -49,6 +49,7 @@
 #include <linux/of.h>
 #include <linux/of_net.h>
 #include <linux/nvmem-consumer.h>
+#include <linux/unaligned.h>
 
 #include "al_hal_eth.h"
 #include "al_hal_serdes_25g.h"
@@ -1383,35 +1384,51 @@ static irqreturn_t al_eth_intr_msix_all(int irq, void *data)
  **/
 static irqreturn_t al_eth_intr_msix_mgmt(int irq, void *data)
 {
-	/* Currently this interrupt is triggered due to the following events:
-	 * 1. UDMA M2S error/hint aggregate
-	 * 2. UDMA S2M error/hint aggregate
-	 * so we crash in order to prevent potential user data corruption.
-	 * Specific handling of each error/hint will be added in the future.
-	 */
+	/* Secondary group A/B aggregate the UDMA M2S/S2M causes. The HAL's
+	 * *_ERROR_INTS masks pick out the parity/AXI faults that risk data
+	 * corruption; everything else in these groups is a back-pressure hint
+	 * (no-desc, prefetch promotion, header split) and is not fatal (#175). */
 	struct al_eth_adapter *adapter = data;
 	struct unit_regs __iomem *regs_base = (struct unit_regs __iomem *)adapter->udma_base;
-	uint32_t cause;
+	uint32_t cause_d, cause_a, cause_b, err_a, err_b, hints;
 
-	cause = al_udma_iofic_read_and_clear_cause(regs_base,
+	cause_d = al_udma_iofic_read_and_clear_cause(regs_base,
 					   AL_UDMA_IOFIC_LEVEL_PRIMARY,
 					   AL_INT_GROUP_D);
-	netdev_err(adapter->netdev, "got interrupt from primary iofic, group D. cause 0x%x\n",
-			   cause);
-
-	cause = al_udma_iofic_read_and_clear_cause(regs_base,
+	cause_a = al_udma_iofic_read_and_clear_cause(regs_base,
 					   AL_UDMA_IOFIC_LEVEL_SECONDARY,
 					   AL_INT_GROUP_A);
-	netdev_err(adapter->netdev, "secondary iofic, group A (UDMA M2S errors) cause 0x%x\n",
-		cause);
-
-	cause = al_udma_iofic_read_and_clear_cause(regs_base,
+	cause_b = al_udma_iofic_read_and_clear_cause(regs_base,
 					   AL_UDMA_IOFIC_LEVEL_SECONDARY,
 					   AL_INT_GROUP_B);
-	netdev_err(adapter->netdev, "secondary iofic, group B (UDMA S2M errors) cause 0x%x\n",
-			   cause);
 
-	//panic("Ethernet fatal error! (due to a UDMA error/hint)\n");
+	err_a = cause_a & AL_UDMA_IOFIC_2ND_GROUP_A_ERROR_INTS;
+	err_b = cause_b & AL_UDMA_IOFIC_2ND_GROUP_B_ERROR_INTS;
+	hints = (cause_a & ~AL_UDMA_IOFIC_2ND_GROUP_A_ERROR_INTS) |
+		(cause_b & ~AL_UDMA_IOFIC_2ND_GROUP_B_ERROR_INTS);
+
+	u64_stats_update_begin(&adapter->syncp);
+	if (err_a)
+		adapter->dev_stats.udma_m2s_errors++;
+	if (err_b)
+		adapter->dev_stats.udma_s2m_errors++;
+	if (hints)
+		adapter->dev_stats.udma_hints++;
+	u64_stats_update_end(&adapter->syncp);
+
+	if (err_a || err_b) {
+		netdev_err(adapter->netdev,
+			   "UDMA error: grpD 0x%x, M2S 0x%x, S2M 0x%x - resetting interface\n",
+			   cause_d, err_a, err_b);
+		u64_stats_update_begin(&adapter->syncp);
+		adapter->dev_stats.udma_resets++;
+		u64_stats_update_end(&adapter->syncp);
+		schedule_work(&adapter->reset_task);
+	} else if (cause_d || hints) {
+		net_warn_ratelimited("%s: UDMA hint: grpD 0x%x, M2S 0x%x, S2M 0x%x\n",
+				     netdev_name(adapter->netdev), cause_d,
+				     cause_a, cause_b);
+	}
 
 	/* Group A auto-masks when it fires, so without this the mgmt interrupt
 	 * is delivered exactly ONCE per up() and every later UDMA error is
@@ -1475,6 +1492,10 @@ static int al_init_rx_cpu_rmap(struct al_eth_adapter *adapter)
 	return 0;
 }
 
+/* pci_enable_msix_exact(), not pci_alloc_irq_vectors(): the UDMA IOFIC hard-wires
+ * each cause to a fixed MSI-X table entry (mgmt 2, rx 3..6, tx 7..10), and only
+ * this API lets us name a sparse .entry set. pci_alloc_irq_vectors() always takes
+ * 0..n-1 and its affinity spreading would fight the fixed queue->entry map (#177). */
 static void al_eth_enable_msix(struct al_eth_adapter *adapter)
 {
 	int i, msix_vecs, rc;
@@ -3556,7 +3577,9 @@ al_eth_tx_poll(struct napi_struct *napi, int budget)
 		tx_bytes += skb->len;
 		dev_dbg(&adapter->pdev->dev, "tx_poll: q %d skb %p completed\n",
 				qid, skb);
-		       dev_kfree_skb(skb);
+		/* NAPI-aware free: returns the skb to the per-cpu cache
+		 * instead of straight to the slab allocator (#205). */
+		napi_consume_skb(skb, budget);
 		tx_pkt++;
 
 		total_done -= tx_info->tx_descs;
@@ -4469,6 +4492,17 @@ al_eth_get_ringparam(struct net_device *netdev, struct ethtool_ringparam *ring,
 	ring->tx_pending = tx_ring->sw_count;
 }
 
+/* ethtool -d is NOT implemented, deliberately.
+ *
+ * A blind readl() sweep of mac_base HARD-RESETS the box - reproduced twice on
+ * both ports, no oops, no console output: an unrecoverable SError. The windows
+ * span mode-dependent sub-blocks (1G RGMII vs 10G KR) that are unclocked or
+ * absent depending on configuration, and reading an unclocked block aborts the
+ * SoC. Any future attempt must enumerate only the blocks live for the current
+ * media type, and must still exclude stat@0xc00/stat_lane@0xd00 (clear-on-read
+ * - dumping them would zero what ethtool -S reports). #176.
+ */
+
 static void
 al_eth_get_pauseparam(struct net_device *netdev,
 			 struct ethtool_pauseparam *pause)
@@ -4583,16 +4617,39 @@ static u32 al_eth_get_rxfh_indir_size(struct net_device *netdev)
 	return AL_ETH_RX_RSS_TABLE_SIZE;
 }
 
+static u32 al_eth_get_rxfh_key_size(struct net_device *netdev)
+{
+	return AL_ETH_RX_HASH_KEY_NUM * sizeof(u32);
+}
+
+/* The key is held as host-order words but programmed through htonl(), so the
+ * byte order the hardware hashes with - and the one ethtool must show - is
+ * big-endian. */
+static void al_eth_rxfh_key_to_bytes(const struct al_eth_adapter *adapter,
+				     u8 *key)
+{
+	int i;
+
+	for (i = 0; i < AL_ETH_RX_HASH_KEY_NUM; i++)
+		put_unaligned_be32(adapter->toeplitz_hash_key[i],
+				   key + i * sizeof(u32));
+}
+
 static int al_eth_get_rxfh(struct net_device *netdev,
 			   struct ethtool_rxfh_param *rxfh)
 {
 	struct al_eth_adapter *adapter = netdev_priv(netdev);
 	int i;
 
+	rxfh->hfunc = ETH_RSS_HASH_TOP;
+
 	if (rxfh->indir) {
 		for (i = 0; i < AL_ETH_RX_RSS_TABLE_SIZE; i++)
 			rxfh->indir[i] = adapter->rss_ind_tbl[i];
 	}
+
+	if (rxfh->key)
+		al_eth_rxfh_key_to_bytes(adapter, rxfh->key);
 
 	return 0;
 }
@@ -4603,6 +4660,28 @@ static int al_eth_set_rxfh(struct net_device *netdev,
 {
 	struct al_eth_adapter *adapter = netdev_priv(netdev);
 	size_t i;
+
+	/* Toeplitz is the only function this hardware implements. */
+	if (rxfh->hfunc != ETH_RSS_HASH_NO_CHANGE &&
+	    rxfh->hfunc != ETH_RSS_HASH_TOP) {
+		NL_SET_ERR_MSG_MOD(extack, "only Toeplitz hashing is supported");
+		return -EOPNOTSUPP;
+	}
+
+	if (rxfh->key) {
+		for (i = 0; i < AL_ETH_RX_HASH_KEY_NUM; i++) {
+			u32 word = get_unaligned_be32(rxfh->key + i * sizeof(u32));
+			int rc = al_eth_hash_key_set(&adapter->hal_adapter, i,
+						     htonl(word));
+
+			if (rc) {
+				netdev_err(netdev, "%s: failed to set hash key word %zu (rc %d)\n",
+					   __func__, i, rc);
+				return rc;
+			}
+			adapter->toeplitz_hash_key[i] = word;
+		}
+	}
 
 	if (!rxfh->indir)
 		return 0;
@@ -4842,6 +4921,10 @@ static const struct al_eth_ethtool_stats al_eth_ethtool_stats_global_strings[] =
 	AL_ETH_ETHTOOL_STAT_GLOBAL_ENTRY(tx_timeout),
 	AL_ETH_ETHTOOL_STAT_GLOBAL_ENTRY(interface_up),
 	AL_ETH_ETHTOOL_STAT_GLOBAL_ENTRY(interface_down),
+	AL_ETH_ETHTOOL_STAT_GLOBAL_ENTRY(udma_m2s_errors),
+	AL_ETH_ETHTOOL_STAT_GLOBAL_ENTRY(udma_s2m_errors),
+	AL_ETH_ETHTOOL_STAT_GLOBAL_ENTRY(udma_hints),
+	AL_ETH_ETHTOOL_STAT_GLOBAL_ENTRY(udma_resets),
 	AL_ETH_ETHTOOL_STAT_GLOBAL_ENTRY(pcs_errored_blocks),
 	AL_ETH_ETHTOOL_STAT_GLOBAL_ENTRY(pcs_ber_events),
 	AL_ETH_ETHTOOL_STAT_GLOBAL_ENTRY(ec_faf_in_rx_short),
@@ -4859,6 +4942,60 @@ static const struct al_eth_ethtool_stats al_eth_ethtool_stats_global_strings[] =
 	AL_ETH_ETHTOOL_STAT_GLOBAL_ENTRY(ec_rfw_in_mac_ndet_drop),
 	AL_ETH_ETHTOOL_STAT_GLOBAL_ENTRY(ec_rfw_in_ctrl_drop),
 	AL_ETH_ETHTOOL_STAT_GLOBAL_ENTRY(ec_rfw_in_prot_i_drop),
+	AL_ETH_ETHTOOL_STAT_GLOBAL_ENTRY(ec_faf_in_rx_pkt),
+	AL_ETH_ETHTOOL_STAT_GLOBAL_ENTRY(ec_faf_out_rx_pkt),
+	AL_ETH_ETHTOOL_STAT_GLOBAL_ENTRY(ec_rxf_in_rx_pkt),
+	AL_ETH_ETHTOOL_STAT_GLOBAL_ENTRY(ec_lbf_in_rx_pkt),
+	AL_ETH_ETHTOOL_STAT_GLOBAL_ENTRY(ec_rxf_out_rx_1_pkt),
+	AL_ETH_ETHTOOL_STAT_GLOBAL_ENTRY(ec_rxf_out_rx_2_pkt),
+	AL_ETH_ETHTOOL_STAT_GLOBAL_ENTRY(ec_rpe_1_in_rx_pkt),
+	AL_ETH_ETHTOOL_STAT_GLOBAL_ENTRY(ec_rpe_1_out_rx_pkt),
+	AL_ETH_ETHTOOL_STAT_GLOBAL_ENTRY(ec_rpe_2_in_rx_pkt),
+	AL_ETH_ETHTOOL_STAT_GLOBAL_ENTRY(ec_rpe_2_out_rx_pkt),
+	AL_ETH_ETHTOOL_STAT_GLOBAL_ENTRY(ec_rpe_3_in_rx_pkt),
+	AL_ETH_ETHTOOL_STAT_GLOBAL_ENTRY(ec_rpe_3_out_rx_pkt),
+	AL_ETH_ETHTOOL_STAT_GLOBAL_ENTRY(ec_tpe_in_tx_pkt),
+	AL_ETH_ETHTOOL_STAT_GLOBAL_ENTRY(ec_tpe_out_tx_pkt),
+	AL_ETH_ETHTOOL_STAT_GLOBAL_ENTRY(ec_tpm_tx_pkt),
+	AL_ETH_ETHTOOL_STAT_GLOBAL_ENTRY(ec_tfw_in_tx_pkt),
+	AL_ETH_ETHTOOL_STAT_GLOBAL_ENTRY(ec_tfw_out_tx_pkt),
+	AL_ETH_ETHTOOL_STAT_GLOBAL_ENTRY(ec_rfw_in_rx_pkt),
+	AL_ETH_ETHTOOL_STAT_GLOBAL_ENTRY(ec_rfw_in_mc),
+	AL_ETH_ETHTOOL_STAT_GLOBAL_ENTRY(ec_rfw_in_bc),
+	AL_ETH_ETHTOOL_STAT_GLOBAL_ENTRY(ec_rfw_in_vlan_exist),
+	AL_ETH_ETHTOOL_STAT_GLOBAL_ENTRY(ec_rfw_in_vlan_nexist),
+	AL_ETH_ETHTOOL_STAT_GLOBAL_ENTRY(ec_eee_in),
+	AL_ETH_ETHTOOL_STAT_GLOBAL_ENTRY(ecu_rfw_out_rx_pkt),
+	AL_ETH_ETHTOOL_STAT_GLOBAL_ENTRY(ecu_rfw_out_drop),
+	AL_ETH_ETHTOOL_STAT_GLOBAL_ENTRY(ecu_msw_in_rx_pkt),
+	AL_ETH_ETHTOOL_STAT_GLOBAL_ENTRY(ecu_msw_drop_q_full),
+	AL_ETH_ETHTOOL_STAT_GLOBAL_ENTRY(ecu_msw_drop_sop),
+	AL_ETH_ETHTOOL_STAT_GLOBAL_ENTRY(ecu_msw_drop_eop),
+	AL_ETH_ETHTOOL_STAT_GLOBAL_ENTRY(ecu_msw_wr_eop),
+	AL_ETH_ETHTOOL_STAT_GLOBAL_ENTRY(ecu_msw_out_rx_pkt),
+	AL_ETH_ETHTOOL_STAT_GLOBAL_ENTRY(ecu_tso_no_tso_pkt),
+	AL_ETH_ETHTOOL_STAT_GLOBAL_ENTRY(ecu_tso_tso_pkt),
+	AL_ETH_ETHTOOL_STAT_GLOBAL_ENTRY(ecu_tso_seg_pkt),
+	AL_ETH_ETHTOOL_STAT_GLOBAL_ENTRY(ecu_tso_pad_pkt),
+	AL_ETH_ETHTOOL_STAT_GLOBAL_ENTRY(ecu_tpm_tx_spoof),
+	AL_ETH_ETHTOOL_STAT_GLOBAL_ENTRY(ecu_tmi_in_tx_pkt),
+	AL_ETH_ETHTOOL_STAT_GLOBAL_ENTRY(ecu_tmi_out_to_mac),
+	AL_ETH_ETHTOOL_STAT_GLOBAL_ENTRY(ecu_tmi_out_to_rx),
+	AL_ETH_ETHTOOL_STAT_GLOBAL_ENTRY(fec_corrected),
+	AL_ETH_ETHTOOL_STAT_GLOBAL_ENTRY(fec_uncorrectable),
+	AL_ETH_ETHTOOL_STAT_GLOBAL_ENTRY(udma_tx_pkts),
+	AL_ETH_ETHTOOL_STAT_GLOBAL_ENTRY(udma_tx_bytes),
+	AL_ETH_ETHTOOL_STAT_GLOBAL_ENTRY(udma_tx_prefed_desc),
+	AL_ETH_ETHTOOL_STAT_GLOBAL_ENTRY(udma_tx_comp_pkt),
+	AL_ETH_ETHTOOL_STAT_GLOBAL_ENTRY(udma_tx_comp_desc),
+	AL_ETH_ETHTOOL_STAT_GLOBAL_ENTRY(udma_tx_ack_pkts),
+	AL_ETH_ETHTOOL_STAT_GLOBAL_ENTRY(udma_rx_pkts),
+	AL_ETH_ETHTOOL_STAT_GLOBAL_ENTRY(udma_rx_bytes),
+	AL_ETH_ETHTOOL_STAT_GLOBAL_ENTRY(udma_rx_prefed_desc),
+	AL_ETH_ETHTOOL_STAT_GLOBAL_ENTRY(udma_rx_comp_pkt),
+	AL_ETH_ETHTOOL_STAT_GLOBAL_ENTRY(udma_rx_comp_desc),
+	AL_ETH_ETHTOOL_STAT_GLOBAL_ENTRY(udma_rx_ack_pkts),
+	AL_ETH_ETHTOOL_STAT_GLOBAL_ENTRY(udma_rx_drop_pkt),
 };
 
 static const struct al_eth_ethtool_stats al_eth_ethtool_stats_tx_strings[] = {
@@ -4927,16 +5064,22 @@ static void al_eth_ethtool_queue_stats(struct al_eth_adapter *adapter, u64 **dat
 }
 
 /*
- * Refresh the EC drop/error mirrors. al_eth_ec_stats_get() reads 32-bit hardware
- * counters; they are mirrored into 64-bit dev_stats so the existing table-driven
- * ethtool path can emit them. Accumulate rather than assign - the hardware
- * fields are narrow and we do not want a wrap to look like a reset (#210).
+ * Mirror the EC and per-UDMA EC counters into dev_stats so the table-driven
+ * ethtool path emits them (#210). Assigned, not accumulated: these registers
+ * are free-running and NOT clear-on-read (unlike the Clause 49 PCS pair), so
+ * the hardware value is already the running total. They are 32-bit and wrap;
+ * a reader diffing snapshots must handle that.
  */
 static void al_eth_refresh_ec_stats(struct al_eth_adapter *adapter)
 {
+	struct al_eth_ec_stat_udma ecu;
+	uint32_t fec_cor, fec_unc;
 	struct al_eth_ec_stats ec;
+	struct al_udma_stats ust;
 
 	if (al_eth_ec_stats_get(&adapter->hal_adapter, &ec))
+		return;
+	if (al_eth_ec_stat_udma_get(&adapter->hal_adapter, adapter->udma_num, &ecu))
 		return;
 
 	u64_stats_update_begin(&adapter->syncp);
@@ -4955,6 +5098,70 @@ static void al_eth_refresh_ec_stats(struct al_eth_adapter *adapter)
 	adapter->dev_stats.ec_rfw_in_mac_ndet_drop = ec.rfw_in_mac_ndet_drop;
 	adapter->dev_stats.ec_rfw_in_ctrl_drop = ec.rfw_in_ctrl_drop;
 	adapter->dev_stats.ec_rfw_in_prot_i_drop = ec.rfw_in_prot_i_drop;
+
+	adapter->dev_stats.ec_faf_in_rx_pkt = ec.faf_in_rx_pkt;
+	adapter->dev_stats.ec_faf_out_rx_pkt = ec.faf_out_rx_pkt;
+	adapter->dev_stats.ec_rxf_in_rx_pkt = ec.rxf_in_rx_pkt;
+	adapter->dev_stats.ec_lbf_in_rx_pkt = ec.lbf_in_rx_pkt;
+	adapter->dev_stats.ec_rxf_out_rx_1_pkt = ec.rxf_out_rx_1_pkt;
+	adapter->dev_stats.ec_rxf_out_rx_2_pkt = ec.rxf_out_rx_2_pkt;
+	adapter->dev_stats.ec_rpe_1_in_rx_pkt = ec.rpe_1_in_rx_pkt;
+	adapter->dev_stats.ec_rpe_1_out_rx_pkt = ec.rpe_1_out_rx_pkt;
+	adapter->dev_stats.ec_rpe_2_in_rx_pkt = ec.rpe_2_in_rx_pkt;
+	adapter->dev_stats.ec_rpe_2_out_rx_pkt = ec.rpe_2_out_rx_pkt;
+	adapter->dev_stats.ec_rpe_3_in_rx_pkt = ec.rpe_3_in_rx_pkt;
+	adapter->dev_stats.ec_rpe_3_out_rx_pkt = ec.rpe_3_out_rx_pkt;
+	adapter->dev_stats.ec_tpe_in_tx_pkt = ec.tpe_in_tx_pkt;
+	adapter->dev_stats.ec_tpe_out_tx_pkt = ec.tpe_out_tx_pkt;
+	adapter->dev_stats.ec_tpm_tx_pkt = ec.tpm_tx_pkt;
+	adapter->dev_stats.ec_tfw_in_tx_pkt = ec.tfw_in_tx_pkt;
+	adapter->dev_stats.ec_tfw_out_tx_pkt = ec.tfw_out_tx_pkt;
+	adapter->dev_stats.ec_rfw_in_rx_pkt = ec.rfw_in_rx_pkt;
+	adapter->dev_stats.ec_rfw_in_mc = ec.rfw_in_mc;
+	adapter->dev_stats.ec_rfw_in_bc = ec.rfw_in_bc;
+	adapter->dev_stats.ec_rfw_in_vlan_exist = ec.rfw_in_vlan_exist;
+	adapter->dev_stats.ec_rfw_in_vlan_nexist = ec.rfw_in_vlan_nexist;
+	adapter->dev_stats.ec_eee_in = ec.eee_in;
+
+	adapter->dev_stats.ecu_rfw_out_rx_pkt = ecu.rfw_out_rx_pkt;
+	adapter->dev_stats.ecu_rfw_out_drop = ecu.rfw_out_drop;
+	adapter->dev_stats.ecu_msw_in_rx_pkt = ecu.msw_in_rx_pkt;
+	adapter->dev_stats.ecu_msw_drop_q_full = ecu.msw_drop_q_full;
+	adapter->dev_stats.ecu_msw_drop_sop = ecu.msw_drop_sop;
+	adapter->dev_stats.ecu_msw_drop_eop = ecu.msw_drop_eop;
+	adapter->dev_stats.ecu_msw_wr_eop = ecu.msw_wr_eop;
+	adapter->dev_stats.ecu_msw_out_rx_pkt = ecu.msw_out_rx_pkt;
+	adapter->dev_stats.ecu_tso_no_tso_pkt = ecu.tso_no_tso_pkt;
+	adapter->dev_stats.ecu_tso_tso_pkt = ecu.tso_tso_pkt;
+	adapter->dev_stats.ecu_tso_seg_pkt = ecu.tso_seg_pkt;
+	adapter->dev_stats.ecu_tso_pad_pkt = ecu.tso_pad_pkt;
+	adapter->dev_stats.ecu_tpm_tx_spoof = ecu.tpm_tx_spoof;
+	adapter->dev_stats.ecu_tmi_in_tx_pkt = ecu.tmi_in_tx_pkt;
+	adapter->dev_stats.ecu_tmi_out_to_mac = ecu.tmi_out_to_mac;
+	adapter->dev_stats.ecu_tmi_out_to_rx = ecu.tmi_out_to_rx;
+
+	if (!al_eth_fec_stats_get(&adapter->hal_adapter, &fec_cor, &fec_unc)) {
+		adapter->dev_stats.fec_corrected = fec_cor;
+		adapter->dev_stats.fec_uncorrectable = fec_unc;
+	}
+
+	if (!al_udma_stats_get(&adapter->hal_adapter.tx_udma, &ust)) {
+		adapter->dev_stats.udma_tx_pkts = ust.pkts;
+		adapter->dev_stats.udma_tx_bytes = ust.bytes;
+		adapter->dev_stats.udma_tx_prefed_desc = ust.prefed_desc;
+		adapter->dev_stats.udma_tx_comp_pkt = ust.comp_pkt;
+		adapter->dev_stats.udma_tx_comp_desc = ust.comp_desc;
+		adapter->dev_stats.udma_tx_ack_pkts = ust.ack_pkts;
+	}
+	if (!al_udma_stats_get(&adapter->hal_adapter.rx_udma, &ust)) {
+		adapter->dev_stats.udma_rx_pkts = ust.pkts;
+		adapter->dev_stats.udma_rx_bytes = ust.bytes;
+		adapter->dev_stats.udma_rx_prefed_desc = ust.prefed_desc;
+		adapter->dev_stats.udma_rx_comp_pkt = ust.comp_pkt;
+		adapter->dev_stats.udma_rx_comp_desc = ust.comp_desc;
+		adapter->dev_stats.udma_rx_ack_pkts = ust.ack_pkts;
+		adapter->dev_stats.udma_rx_drop_pkt = ust.drop_pkt;
+	}
 	u64_stats_update_end(&adapter->syncp);
 }
 
@@ -5112,6 +5319,7 @@ static const struct ethtool_ops al_eth_ethtool_ops = {
 	.get_rxnfc		= al_eth_get_rxnfc,
 	.get_sset_count		= al_eth_get_sset_count,
 	.get_rxfh_indir_size    = al_eth_get_rxfh_indir_size,
+	.get_rxfh_key_size	= al_eth_get_rxfh_key_size,
 	.get_rxfh		= al_eth_get_rxfh,
 	.set_rxfh		= al_eth_set_rxfh,
 	.get_channels		= al_eth_get_channels,
@@ -5411,6 +5619,13 @@ al_eth_start_xmit(struct sk_buff *skb, struct net_device *dev)
 	return NETDEV_TX_OK;
 
 tx_csum_error:
+	/* Reached before skb->data was mapped, so bufs[0] still holds the
+	 * previous packet's already-unmapped addr/len - unmapping it here would
+	 * be a double-unmap (#172). Only the ring slot needs releasing. */
+	tx_info->skb = NULL;
+	dev_kfree_skb(skb);
+	return NETDEV_TX_OK;
+
 dma_error:
 	/* save value of frag that failed */
 	last_frag = i;
@@ -5649,16 +5864,10 @@ al_eth_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 		return -ENOMEM;
 	}
 
-	rc = dma_set_mask(&pdev->dev, DMA_BIT_MASK(40));
+	rc = dma_set_mask_and_coherent(&pdev->dev, DMA_BIT_MASK(40));
 	if (rc) {
-		dev_err(&pdev->dev, "dma_set_mask failed 0x%x\n", rc);
-		return rc;
-	}
-
-	rc = dma_set_coherent_mask(&pdev->dev, DMA_BIT_MASK(40));
-	if (rc) {
-		dev_err(&pdev->dev,
-			"dma_set_coherent_mask failed 0x%x\n", rc);
+		dev_err(&pdev->dev, "dma_set_mask_and_coherent failed (rc %d)\n",
+			rc);
 		return rc;
 	}
 
@@ -5862,6 +6071,10 @@ al_eth_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 				NETIF_F_TSO_ECN |
 				NETIF_F_TSO6 |
 				NETIF_F_RXCSUM |
+				/* Not an ethtool -N claim (there is no hardware
+				 * filter table and no .set_rxnfc): net/core/dev.c
+				 * gates aRFS on this bit, and we do implement
+				 * ndo_rx_flow_steer + rx_cpu_rmap (#173). */
 				NETIF_F_NTUPLE |
 				NETIF_F_RXHASH |
 				NETIF_F_HIGHDMA;
