@@ -6,6 +6,33 @@ returned -121 / wedged the bus. Commit "i2c: honor stock's raw SCL hcnt/lcnt". T
 CODE (our DW i2c driver computed too-tight SCL edges); the chip and cell were always good.
 Remaining: a full `i2c probe` (all addresses) still wedges — targeted RTC access works.
 
+> ## ⚠️ RECOVERY IS A COLD POWER CYCLE. A REBOOT DOES NOT WORK.
+>
+> Measured 2026-09-04: after `systemctl reboot` from a wedged state the box came back
+> with **123 `controller timed out` inside 2 minutes of uptime** — still wedged on a
+> fresh boot. After a power cycle: 0 timeouts. A warm reset never removes power from
+> the s35390a, so it comes back still holding SDA, and nothing in the SoC reset path
+> clocks it through.
+>
+> **It is not cosmetic — it drops the 10G link.** The SFP driver's i2c reads fail long
+> enough that it concludes the module was pulled:
+> ```
+> sfp sfp: failed to read SFP soft status: -ETIMEDOUT
+> sfp sfp: module removed
+> al_eth_10g 0000:00:02.0 enp0s2: Link is Down
+> ```
+>
+> **What wedges it:**
+> - `i2cdetect` / any full bus scan that probes empty addresses on ch0
+> - an SMBus-style access to 0x30. `i2cget -y <bus> 0x30` issues a READ_BYTE and is
+>   NOT what the driver does — `rtc-s35390a.c:87` builds a raw `i2c_msg` with
+>   `I2C_M_RD`. Mainline itself excludes 0x30-0x37 from SMBus Quick probing
+>   (`i2c-core-base.c:2462`) because chips there do not tolerate it.
+>   The driver-shaped test is `i2ctransfer -y <bus> r1@0x30`.
+>
+> **`i2cdetect` exiting 0 proves nothing** — it only means the scan finished. The wedge
+> surfaces on the NEXT access. Any probe must re-read the bus afterwards to know.
+
 Datasheet: [sources/chips/S-35390A.pdf](../sources/chips/S-35390A.pdf) (ABLIC Rev.4.2), chip doc
 [docs/chips/s-35390a.md](chips/s-35390a.md). Single source for the ch0 wedge — other docs link here.
 

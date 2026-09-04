@@ -5583,12 +5583,10 @@ static void al_eth_dbg_check_tail(struct net_device *netdev, const char *checkpo
 		al_eth_dbg_snap_qmo = netdev->queue_mgmt_ops;
 		al_eth_dbg_snap_rol = netdev->request_ops_lock;
 	} else {
-		/* Routine, expected outcome at nearly every checkpoint on
-		 * every boot - was pr_err(), which buried the real anomaly
-		 * branch above under dozens of fake "error"-level lines per
-		 * boot in any severity-filtered dmesg view. This is a status
-		 * confirmation, not a problem report. */
-		pr_info("al_eth #131 DIAG: qmo/rol clean after '%s'\n", checkpoint);
+		/* Expected at all 22 checkpoints on every boot, i.e. ~44 lines
+		 * of "nothing happened" per boot. Only the anomaly is worth a
+		 * message; this is pr_debug so it can still be turned on. */
+		pr_debug("al_eth #131 DIAG: qmo/rol clean after '%s'\n", checkpoint);
 	}
 }
 
