@@ -102,7 +102,7 @@ class Box:
     """SSH to the box. Address is resolved once at startup and reused, because
     re-resolving mid-soak would mask exactly the network fault we are hunting."""
 
-    def __init__(self, host: str, password: str | None = None) -> None:
+    def __init__(self, host: str) -> None:
         self.host = host
 
     def run(self, cmd: str, timeout: int = 120) -> subprocess.CompletedProcess:

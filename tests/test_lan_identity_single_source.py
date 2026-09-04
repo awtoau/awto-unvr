@@ -17,11 +17,8 @@ Scanned: dev.py, scripts/*.py, scripts/*.tcl (tcl gets $IPADDR/$SERVERIP
 injected by dev.py console-tcl). tests/ are not scanned: fixtures need
 literals.
 
-Allowlist:
-  scripts/decode-identity.py  an MTD dump FILENAME carries the MAC
-                              (images/mtd/UNVR-74acb941a811-...). Not a MAC
-                              constant; a glob or --image arg would be
-                              better, not changed in this pass.
+Allowlist: empty. decode-identity.py once needed one for an MTD dump
+FILENAME carrying the MAC; it now globs images/mtd/UNVR-*-sysidea16-*.
 
 Run: pytest tests/test_lan_identity_single_source.py -q
 """
@@ -47,7 +44,7 @@ MAC_RE = re.compile(r"74:?ac:?b9", re.IGNORECASE)
 
 IP_HOME = {"scripts/_net.py"}
 MAC_HOME = {"scripts/_box.py"}
-MAC_ALLOW = {"scripts/decode-identity.py"}  # dump filename, see docstring
+MAC_ALLOW: set[str] = set()  # empty on purpose; grow it only with a reason
 
 
 def _scanned() -> list[Path]:

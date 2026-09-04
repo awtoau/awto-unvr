@@ -58,7 +58,9 @@ def login(s):
         s.sendall(USER.encode() + b"\r")
         _ru(s, "Password:", 6)
         s.sendall(PASSWD.encode() + b"\r")
-        _ru(s, "]#", 12, extra=("incorrect",))
+        _, hit = _ru(s, "]#", 12, extra=("incorrect",))
+        if hit == "incorrect":
+            raise RuntimeError(f"login incorrect - {USER}/{PASSWD} rejected")
     # Quiet the shell so output parses cleanly: systemd 256+ sets PROMPT_COMMAND
     # to emit OSC-3008 "context" markers (machineid/cwd/... ) that interleave with
     # command output. Unset it, force TERM=dumb so nothing re-enables terminal

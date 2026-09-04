@@ -25,7 +25,8 @@ from pathlib import Path
 from _net import LAN_SUBNET
 
 # The box's two al_eth MACs, from the NOR identity blob at 0x1f0000
-# (docs/identity-partitions.md): base+1 = 1G RJ45 (eth0), base+2 = 10G SFP+.
+# (docs/identity-partitions.md). Stock's `mac: [base] + [2]` is a COUNT of two
+# allocated MACs (#222/#223): base+0 = 1G RJ45 (eth0), base+1 = 10G SFP+.
 # EXACT MACs, never the OUI: other UBNT gear shares 74:AC:B9 and an OUI match
 # once picked a neighbouring device. BOTH ports: all four host NICs answer ARP
 # for any local IP and both box ports sit on one subnet (#170), so `ip neigh`

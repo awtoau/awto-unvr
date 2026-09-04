@@ -26,7 +26,6 @@ from __future__ import annotations
 
 import json
 import os
-import re
 import shutil
 import socket
 import subprocess
@@ -1191,52 +1190,6 @@ def _ensure_tftpd(port: int = 69, root: str = "tmp/tftp") -> None:
             return
         time.sleep(0.05)
     log("tftpd not bound after 2s - is passwordless sudo set up for tftpd.py?", "ERROR")
-
-
-def _verify_uboot_banner(expected_bin: Path) -> bool:
-    """Post-boot check (#119): confirm the console actually printed the
-    banner embedded in `expected_bin`, not a stale binary from an earlier
-    build. U-Boot's own banner ("U-Boot 2026.07-dirty (Mon DD YYYY -
-    HH:MM:SS +ZZZZ)") is a literal string baked in at build time - extract it
-    from the just-built binary and from the live console log, and compare
-    the full line: any mismatch means the box booted something else."""
-    banner_re = re.compile(
-        rb"U-Boot 20\d\d\.\d\d-\w+ \([A-Za-z]+ \d+ \d{4} - [\d:]+ [+-]\d{4}\)"
-    )
-    try:
-        blob = expected_bin.read_bytes()
-    except OSError as e:
-        log(f"banner check: can't read {expected_bin}: {e}", "WARN")
-        return False
-    m = banner_re.search(blob)
-    if not m:
-        log("banner check: no U-Boot banner string found in the built binary", "WARN")
-        return False
-    expected = m.group(0).decode()
-
-    log_path = REPO / "tmp" / "logs" / "unvr-console.log"
-    try:
-        tail = log_path.read_bytes()[-200_000:]
-    except OSError as e:
-        log(f"banner check: can't read console log: {e}", "WARN")
-        return False
-    seen = [mm.group(0).decode() for mm in banner_re.finditer(tail)]
-    if not seen:
-        log("banner check: no U-Boot banner seen on the console yet", "WARN")
-        return False
-    actual = seen[-1]
-    if actual == expected:
-        log(f"banner check OK: {actual}")
-        return True
-    log(
-        f"BANNER MISMATCH: box printed {actual!r}, built binary is {expected!r}",
-        "ERROR",
-    )
-    log(
-        "this means the box booted a DIFFERENT build than the one just staged - stop",
-        "ERROR",
-    )
-    return False
 
 
 @command(
