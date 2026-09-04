@@ -62,13 +62,10 @@ FILES = {
     # DW spi: #91 bound EEPROM-read transfers to the Rx FIFO depth so a slow
     # polled consumer can't overrun the Rx FIFO (env load fails otherwise).
     "drivers/spi/designware_spi.c": "drivers/spi/designware_spi.c",
-    # #140 DIAGNOSTIC (temporary): command-ring/event-ring/doorbell tracing
-    # around the Enable Slot command, where "Cannot allocate device context
-    # to get SLOT_ID" originates. Revert once #140 is root-caused - these
-    # are otherwise unmodified stock xhci.c/xhci-ring.c plus printf's.
-    "drivers/usb/host/xhci.c": "drivers/usb/host/xhci.c",
-    "drivers/usb/host/xhci-ring.c": "drivers/usb/host/xhci-ring.c",
-    "drivers/usb/host/xhci-mem.c": "drivers/usb/host/xhci-mem.c",
+    # #140: external PCIe aliases its one root-port device across every devfn.
+    # addr_valid() rejects devfn != 0 on the port's own bus, so `pci enum`
+    # binds one xhci driver instead of 32 clobbering one register block.
+    "drivers/pci/pcie_ecam_generic.c": "drivers/pci/pcie_ecam_generic.c",
 }
 
 # Whole subtrees copied verbatim: scaffold rel-dir -> tree rel-dir.

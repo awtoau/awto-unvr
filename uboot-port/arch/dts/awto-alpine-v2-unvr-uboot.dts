@@ -323,6 +323,8 @@
 			reg = <0x0 0xfb600000 0x0 0x100000>;
 			ranges = <0x02000000 0x0 0xc0010000  0x0 0xc0010000  0x0 0x07ff0000>;
 			bus-range = <0x01 0x01>;
+			/* #140: port aliases its one device across all 32 devfns */
+			awto,single-devfn;
 		};
 
 		/* SoC GPIO (PL061), 6 banks × 8 = 48 lines. "arm,pl061" only (drop
