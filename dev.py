@@ -1401,6 +1401,16 @@ def cmd_publish_fedora(extra: list[str]) -> int:
 
 
 @command(
+    "shell on woomera over the 1G port - a second terminal beside the serial "
+    "console. Finds the box by its stable 1G MAC every time (DHCP moves the "
+    "lease); pass `-- <cmd>` to run one command (scripts/woomera-ssh.py)",
+    kind="action",
+)
+def cmd_ssh(extra: list[str]) -> int:
+    return _run_script("scripts/woomera-ssh.py", extra)
+
+
+@command(
     "flash awto-uboot into NAND and point stock's bootcmd at it, so awto-uboot "
     "owns the boot and loads the kernel from SSD (~6x faster than NAND, and our "
     "bootargs win). Run at the stock U-Boot prompt (scripts/flash-awto-uboot.py)",
