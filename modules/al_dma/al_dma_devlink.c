@@ -186,8 +186,11 @@ static void al_dma_fmsg_state(struct al_dma_device *dev, struct devlink_fmsg *fm
 		};
 		/* Only 2 groups exist at the SECONDARY level below UDMA rev 4,
 		 * 3 at rev 4+ (al_udma_iofic_level_and_group_valid). Reading a
-		 * group that is not there raises an async SError and panics the
-		 * box - al_ssm's copy of this loop did exactly that. */
+		 * group that is not there trips that al_assert (a BUG_ON) or
+		 * raises an async SError - al_ssm's copy of this loop panicked
+		 * the box exactly that way. Flat 2, not rev-gated like al_ssm's:
+		 * this HAL copy only defines REV_ID_1/2 (#218 - three vintages),
+		 * so rev 4 is unreachable here. */
 		int ngrp = 2;
 
 		for (i = 0; i < ngrp; i++)
