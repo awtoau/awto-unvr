@@ -995,6 +995,15 @@ def cmd_uefi_chainload_probe(extra: list[str]) -> int:
 
 
 @command(
+    "type commands at an already-running EDK2 UEFI Shell prompt, e.g. P2's "
+    "`map -r` / `ls fs0:` acceptance test (scripts/uefi-shell-cmd.py)",
+    kind="action",
+)
+def cmd_uefi_shell_cmd(extra: list[str]) -> int:
+    return _run_script("scripts/uefi-shell-cmd.py", extra)
+
+
+@command(
     "send a serial BREAK (+ optional Magic SysRq letter) to the UNVR's "
     "console, e.g. to grab a live blocked-task dump during a hang that "
     "console-send can't reach - tio's socket mode doesn't relay ctrl-t "

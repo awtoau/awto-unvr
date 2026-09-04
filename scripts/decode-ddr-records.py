@@ -476,12 +476,77 @@ out(
         tck, tck, fe, FREQ_E.get(fe, "?")
     )
 )
+
+
+# FUN_f2200e74 ddr4_cwl_from_tck: descending tCK ladder. Ghidra renders the
+# return values as AL_I2C_* symbols; they are plain integers (0x9, 0xA, 0xB, 0xC).
+def cwl_from_tck(t):
+    for thr, cwl in (
+        (0x4E2, 9),
+        (0x42E, 10),
+        (0x3A7, 11),
+        (0x341, 12),
+        (0x2EE, 14),
+        (0x2A9, 16),
+    ):
+        if t >= thr:
+            return cwl
+    return None  # below 0x2a9 the loader errors out
+
+
+def cl_solve(t):
+    """FUN_f2200ed8 ddr_cl_solve: ceil(tAA/tCK), then scan up the CAS support mask."""
+    c = math.ceil(taa / t)
+    while c < 0x20 and not (casmap & (1 << (c - 7))):
+        c += 1
+    return c if c < 0x20 else None
+
+
+# The RUNNING point is the NB PLL, NOT the boot_strap NB_PLL field.
+# The strap is only the reset-time default; the 0x57 preload script reprograms the PLL
+# before the S2 runs (docs/ddr-eeprom-0x57.md §7). Live on woomera 2026-09-04:
+#   boot_strap @0xfd8a8110 = 0x0fffdef5, NB_PLL field (bits 6:4) = 7 -> 800 MHz  (default)
+#   NB PLL     @0xfd860c00 = 0x8000001b, NF+1=28 / NR*OD=3        -> 933.33 MHz (running)
+# Corroborated by DT nbclk 0x37a18808 = 933.333 MHz and the arch timer at 933.33/16 =
+# 58.33 MHz (dmesg "cp15 timer running at 58.33MHz"). scripts/read-nb-pll.py reads it.
+DDR_PLL_HZ = 933_333_333
+run_tck = 1_000_000_000 // (DDR_PLL_HZ // 1000)  # S2: tCK_ps = 1e9 / (pll_hz/1000)
+run_fe = freq_enum(run_tck)
+out("")
+out(f"  RUNNING point: NB PLL @0xfd860c00 = {DDR_PLL_HZ / 1e6:.2f} MHz")
+out("    (NOT the boot_strap NB_PLL field, which reads 7 = 800 MHz — that is only the")
 out(
-    f"  CL  (tmg+0x38) = {clk(taa)}  ;  CWL (tmg+0x3c, FUN_f2200e74 @tCK={tck}) = {10 if 0x42E <= tck < 0x4E2 else 0}"
+    "     reset default; the 0x57 preload script reprograms the PLL before the S2 runs)"
 )
 out(
-    "  NOTE: running freq = bootstrap ddr_pll_freq (live, still open); SPD CAPS it at 1866."
+    f"    tCK = 1e9/(pll/1000) = {run_tck} ps (0x{run_tck:x}) -> enum {run_fe} = AL_DDR_FREQ_{FREQ_E.get(run_fe, '?')}"
 )
-out("        A request for 2400 (tCK 833) fails 'DIMM too slow' -> NB PLL downshift.")
+out(f"    CL  (tmg+0x38, FUN_f2200ed8) = {cl_solve(run_tck)}")
+out(f"    CWL (tmg+0x3c, FUN_f2200e74) = {cwl_from_tck(run_tck)}")
+out("    timings at the running tCK:")
+for nm, ps in (
+    ("tRCD", trcd),
+    ("tRP", trp),
+    ("tRAS", tras),
+    ("tRC", trc),
+    ("tFAW", tfaw),
+    ("tRRD_S", trrds),
+    ("tRRD_L", trrdl),
+    ("tCCD_L", tccdl),
+):
+    out(f"      {nm:7} {ps:6d} ps -> {math.ceil(ps / run_tck):3d} clk")
+out("")
+if run_fe < fe:
+    out(
+        f"  Running {FREQ_E.get(run_fe, '?')} is BELOW the SPD cap of {FREQ_E.get(fe, '?')},"
+    )
+    out("  so ddr_freq_change_according_to_spd does NOT downshift the NB PLL.")
+else:
+    out(
+        f"  Running {FREQ_E.get(run_fe, '?')} == the SPD cap {FREQ_E.get(fe, '?')}: the board runs"
+    )
+    out(
+        "  the DIMM at exactly its fastest declared bin. No PLL downshift, no headroom in SPD."
+    )
 
 out(f"\nlog -> {LOG}")

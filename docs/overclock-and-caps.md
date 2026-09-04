@@ -24,9 +24,13 @@ alpine_ubnt/board.c`, live `hw-reference/20260816-104601/`, `preboot-alboot-deco
   - CPU — rewrite **CPU PLL `setup_0` @ `0xfd860d40`** (V2 format) to a higher
     feedback scalar, set RELOCK, poll lock. Runtime-capable (HAL `al_pll_freq_set`
     path; preboot already reprograms PLLs live). **[P]**
-  - DRAM — raise **NB PLL `setup_0` @ `0xfd860c40`**, but only viable **at boot before
-    DDR training** (needs full PHY retrain by the closed CVOS agent); cleanest via the
-    **bootstrap strap** NB_PLL_FREQ field or by patching the agent's `ddr_freq`. **[P/I]**
+  - DRAM — raise the NB PLL, still only viable **at boot before DDR training** (needs a
+    full PHY retrain). ✎ **Not via the bootstrap strap** — the strap is already overridden
+    (see §2). The lever is the **`0x57` EEPROM's preload register-write script**, which is
+    what actually programs `0xfd860c00`; or the same registers written by our own SPL.
+    ✎ Live dump shows the writes land at `+0x00`/`+0x04`/`+0x20`, and `+0x40..+0x7c`
+    mirrors `+0x00..+0x3c` — so "`setup_0` @ `0xfd860c40`" below names the mirror, not the
+    primary. `scripts/read-nb-pll.py`. **[P]**
 - **eFuse caps gate nothing overclock-relevant, and are not unlockable. [P]** The
   RSA-2048/eFuse "capabilities" blob gates optional SoC feature flags, is signed
   against a SHA-256 modulus hash fused at `0xfd89608c`, and its failure path is
@@ -137,7 +141,8 @@ in several places. Same HAL, same registers. **[P]**
 ## 2. DRAM overclock
 
 **Current:** DDR4-**1866**, NB PLL = **933.33 MHz** {ref1,pre2,post28,out6}. **[P]**
-Confirmed two ways: DT `nbclk`=`0x37a18808` (933.33 MHz), and U-Boot writes
+Confirmed three ways (2026-09-04, #67): live NB PLL `0xfd860c00` = `0x8000001b`, low byte
+27 ⇒ 100 MHz × 28/3 = 933.33 (`scripts/read-nb-pll.py`); DT `nbclk`=`0x37a18808` (933.33 MHz); and U-Boot writes
 `arm,armv8-timer clock-frequency = ddr_pll_freq/(1+scale)` = 58.33 MHz with scale=15 ⇒
 ddr_pll_freq=933.33 MHz (`board.c` `ft_board_setup`). DDR data rate = 2× clock.
 
@@ -148,9 +153,15 @@ ddr_pll_freq=933.33 MHz (`board.c` `ft_board_setup`). DDR data rate = 2× clock.
 | 0x1 | 1066.67 MHz | DDR4-2133 |
 | 0x2 | 666.67 MHz | DDR4-1333 |
 | 0x3 | **1300 MHz** | **DDR4-2600 (strap max)** |
-| **0x4** | **933.33 MHz ← now** | **DDR4-1866** |
+| 0x4 | 933.33 MHz | DDR4-1866 |
 | 0x6 | 1200 MHz | DDR4-2400 |
-| 0x7 | 800 MHz | DDR4-1600 |
+| **0x7** | **800 MHz ← this board's strap** | DDR4-1600 |
+
+✎ **The strap is NOT what is running.** Live strap NB_PLL field = **0x7** (800 MHz), but the
+NB PLL is running at 933.33 MHz: the `0x57` EEPROM's preload register-write script
+reprograms it before the S2 starts (live PLL registers are byte-identical to the EEPROM's
+values — [ddr-eeprom-0x57.md](ddr-eeprom-0x57.md) §3, §7). **Good news for overclocking:**
+the rate is set by a writable PLL register, not by the OTP/strap path described below.
 
 DDR controller enum (`enum al_ddr_freq`) supports up to **DDR4-3200**, but NB PLL also
 clocks the **system fabric** — raising it raises fabric clock in lockstep (a real

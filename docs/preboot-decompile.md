@@ -581,9 +581,11 @@ call site.
 
 - Exact AL-324 DDR PHY timings — **RESOLVED**: SPD/impedance decoded from the live I²C
   EEPROM ([ddr-config-reverse.md](ddr-config-reverse.md) §6, `scripts/decode-ddr-records.py`).
-  The one field the EEPROM can't give (`al_bootstrap.ddr_pll_freq`, the running strap —
-  EEPROM only bounds it ≤1866 MT/s) now has tooling to read it live: U-Boot `bootstrap`
-  command + `scripts/read-ddr-bootstrap.py` (ddr-config-reverse.md §7).
+  **Closed 2026-09-04 (#67)**: running frequency read live from the NB PLL
+  (`scripts/read-nb-pll.py`, `0xfd860c00` = 933.33 MHz ⇒ DDR4-1866 CL13 CWL10).
+  ✎ `al_bootstrap.ddr_pll_freq` is **not** the running rate — it reads 800 MHz and is only
+  the reset default; the `0x57` EEPROM's preload register-write script reprograms the PLL
+  before the S2 runs ([ddr-eeprom-0x57.md](ddr-eeprom-0x57.md) §3, §7).
 - `FUN_01012b08` used as both memcmp and RSA-verify entry — same primitive; not
   split into named sub-ops here.
 - S2 0xf22000fc jumptable (pointer-dispatch) not reconstructed.

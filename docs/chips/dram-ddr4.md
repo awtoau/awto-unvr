@@ -4,6 +4,11 @@
   (`SEC 013 / K4A8G16 / 5WB-BCRC`, refs U3/U4 + 2). 4 × 8 Gb = 4 GiB.
 - **Function:** main system memory.
 - **Confirmed:** U-Boot `DRAM: 4 GiB`, `SPD I2C Address: 57`; stage2_loader reads SPD to bring up DRAM. ✅ live.
+- **Speed/timings (live-confirmed 2026-09-04, #67):** **DDR4-1866, CL13, CWL10**,
+  tRCD/tRP 13 clk, tRAS 32, tRC 45, tFAW 29 @ tCK 1071 ps. NB PLL `0xfd860c00` runs at
+  933.33 MHz. SPD `tCKAVGmin` is also 1071 ps, so the board runs the part at exactly its
+  fastest declared bin. Full byte map + the from-scratch recipe:
+  [ddr-eeprom-0x57.md](../ddr-eeprom-0x57.md).
 
 ## What is known
 
@@ -23,9 +28,11 @@
 
 ## Datasheet
 
-- **None saved yet.** Fetch the Samsung K4A8G165WB-BCRC datasheet if exact timing
-  parameters are needed for a from-scratch DRAM re-init.
+- **Not needed for a re-init.** The exact timings are in this board's own SPD, decoded in
+  [ddr-eeprom-0x57.md](../ddr-eeprom-0x57.md) §4. Fetch the Samsung K4A8G165WB-BCRC
+  datasheet only to explore beyond the SPD's declared 1866 bin (the `-BCRC` suffix is a
+  2400 part).
 
 ## RE / repurpose notes
 
-- Nothing to reprogram (RAM). The actionable item is **reading the SPD at 0x57** to close [hardware.md](../hardware.md) open questions and to know the exact timings if ever re-initialising DRAM outside the stock preboot.
+- Nothing to reprogram (RAM). The SPD at `0x57` is **read and fully decoded** — [ddr-eeprom-0x57.md](../ddr-eeprom-0x57.md) carries the byte map and a drop-in `al_ddr_init_cfg` for a from-scratch DDR init.

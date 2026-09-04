@@ -29,8 +29,11 @@ Marks: ✅ confirmed (byte/disasm evidence) · ⚠ needs live HW read · ✎ cor
   u64 ddr_size; }` at SRAM **`0xfbff4150`**. al_boot Stage-3 only *reads* it. ✅
 - **EEPROM RESOLVED (2026-08-17):** live 0x57 dumped + decoded through the Annapurna S2 algorithm
   → full `al_ddr_init_cfg` for ea16 ([ddr-s2-parser-analysis.md](ddr-s2-parser-analysis.md)).
-  DDR4-1866 CL13, 4 GiB, x16, 1 rank. Only `al_bootstrap.ddr_pll_freq` (running-point strap)
-  remains live-open, SPD-bounded to ≤1866. ⚠
+  DDR4-1866 CL13, 4 GiB, x16, 1 rank. ✅
+- **CLOSED (2026-09-04, #67):** running frequency read live = NB PLL `0xfd860c00` →
+  **933.33 MHz ⇒ DDR4-1866**, confirming CL13/CWL10. ✎ It is **not** the boot strap:
+  `ddr_pll_freq` reads 800 MHz, which is only the reset default — the EEPROM's preload
+  script reprograms the PLL. Byte map + recipe: [ddr-eeprom-0x57.md](ddr-eeprom-0x57.md). ✅
 
 ---
 
@@ -411,20 +414,22 @@ Total from the size math (`FUN_f22003d8:439-452`): `ranks(1) << (row+col+bank+bg
 Structural + per-unit config now known. The EEPROM is dumped
 (`docs/nor-reference/ddr-config-eeprom-0x57-8k.bin`) and decoded through the Annapurna S2 algorithm
 (`scripts/decode-ddr-records.py` → `tmp/logs/decode-ddr-records.log`; analysis
-[ddr-s2-parser-analysis.md](ddr-s2-parser-analysis.md)). What remains is **one strap**:
+[ddr-s2-parser-analysis.md](ddr-s2-parser-analysis.md)).
 
-| unknown | why it matters | how to get it |
+**CLOSED 2026-09-04 (#67).** The last open value is read, and the answer corrects the
+question. Full write-up: [ddr-eeprom-0x57.md](ddr-eeprom-0x57.md).
+
+| value | read | result |
 |---|---|---|
-| `al_bootstrap.ddr_pll_freq` | picks the *running* point on the freq ladder (SPD bounds it to ≤1866) → exact `tmg.ddr_freq`, `ref_clk_freq_mhz`, and CL/CWL | live PBS read (0xfd8a8000) via `/dev/mem`, or infer from the trained controller (§8) |
+| `al_bootstrap.ddr_pll_freq` (strap) | `scripts/read-ddr-bootstrap.py`, PBS `0xfd8a8110` = `0x0fffdef5`, NB_PLL field = 7 | 800 MHz — **the reset default, NOT the running rate** |
+| NB PLL (running) | `scripts/read-nb-pll.py`, `0xfd860c00` = `0x8000001b` | **933.33 MHz** ⇒ DDR4-1866, tCK 1071 ps |
 
-**Tooling now exists** to take the live PBS read: U-Boot `bootstrap` command
-(`uboot-port/board/annapurna/alpine/alpine.c`) and `scripts/read-ddr-bootstrap.py` (runs on
-woomera, root, reads `/dev/mem` @ `0xfd8a8110`). Both port `al_bootstrap_parse()` /
-`al_hal_bootstrap.c` (delroth-alpine_hal), Alpine V2 branches only. Not yet run against the
-box — SSH reachability check (2026-08-26) found no host answering on the box's expected IP;
-a MAC-matched host on the LAN spoke old-dropbear SSH incompatible with this workstation's
-OpenSSL crypto policy. Run `scripts/read-ddr-bootstrap.py` on-box (or the `bootstrap` U-Boot
-command) and record the result here once reachable.
+✎ **The strap does not set the running DDR frequency.** The `0x57` EEPROM's preload
+register-write script reprograms the NB PLL before the S2 runs; the live PLL registers are
+byte-identical to the EEPROM's values. Corroborated three ways: PLL `+0x00` low byte 27
+(⇒ 100 × 28/3), DT `nbclk` `0x37a18808`, and the measured arch timer at 933.33/16 =
+58.33 MHz. So the DDR4-1866 CL13 CWL10 above is **confirmed**, but taking the strap at face
+value would have given CL12/CWL9 at 1600 — wrong.
 
 `al_bootstrap.i2c_preload_addr` is resolved by the dump itself (records present at 0x57 offset
 0x400; `spd_i2c_addr=0xff` ⇒ strap fallback, live console prints `SPD I2C Address: 57`).

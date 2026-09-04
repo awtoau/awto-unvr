@@ -20,8 +20,11 @@ bin, CL/tRCD/tRP, addrmap, ranks, impedance) — was the only missing piece and 
 **RESOLVED (#67)**: decoded from the live `0x57` EEPROM through the Annapurna S2 algorithm →
 full `al_ddr_init_cfg` for ea16 (**DDR4-1866 CL13, 4 GiB, ×16, 1 rank**, impedance from the
 `0xCC` block). See [ddr-s2-parser-analysis.md](ddr-s2-parser-analysis.md) (byte-exact +
-drop-in portable C). Only `al_bootstrap.ddr_pll_freq` (running-point strap, SPD-bounded
-≤1866) remains a live read.
+drop-in portable C). **Fully closed 2026-09-04 (#67)**: the running frequency is read live
+from the NB PLL (`0xfd860c00` = 933.33 MHz ⇒ DDR4-1866, CL13, CWL10), *not* from the boot
+strap — the strap reads 800 MHz and is only the reset default, overridden by the EEPROM's
+preload script. Drop-in `al_ddr_init_cfg` + full 8 KiB byte map:
+[ddr-eeprom-0x57.md](ddr-eeprom-0x57.md).
 
 ---
 
