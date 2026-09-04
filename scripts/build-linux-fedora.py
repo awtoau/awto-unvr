@@ -212,9 +212,18 @@ def configure():
             # (not 64K), so with 64K-only erase the kernel force-read-onlys them.
             "--enable",
             "MTD_SPI_NOR_USE_4K_SECTORS",
+            # RAID5/6 + the async_tx offload path. This is a NAS: MD_RAID456
+            # was not built at all, so parity RAID was unavailable AND al_dma's
+            # DMA_XOR/DMA_PQ had no consumer. RAID6_PQ_BENCHMARK so the kernel
+            # measures rather than defaulting to neonx8 unmeasured (#236).
+            "--module",
+            "MD_RAID456",
             "--enable",
-            "DEBUG_INFO_NONE",
-            "--disable",
+            "RAID6_PQ_BENCHMARK",
+            # WERROR on: a warning in our own OOT drivers is a defect, and the
+            # repo rule is zero warnings. DEBUG_INFO_NONE is NOT set - full
+            # DWARF is deliberate (#214), and enabling both would contradict.
+            "--enable",
             "WERROR",
             # bring-up/dev kernel: bias toward hang-recoverability over
             # performance (#97) - sysrq default-on for serial BREAK+key
@@ -410,6 +419,10 @@ def configure():
             ),
         ]
     )
+    # MD_RAID456 does not survive the big --enable/--disable chain above -
+    # RAID6_PQ_BENCHMARK from the same block does, so it is --module in a mixed
+    # chain that gets lost. Re-assert it on its own; olddefconfig preserves it.
+    run([cfg, "--file", os.path.join(KOUT, ".config"), "--module", "MD_RAID456"])
     run(["make", "-C", SRC, f"O={KOUT}", "olddefconfig"])
     dotcfg = pathlib.Path(os.path.join(KOUT, ".config")).read_text()
     for sym in (
@@ -426,6 +439,10 @@ def configure():
         # ARCH_ALPINE does it instead (arch/arm64/Kconfig.platforms, in the
         # kernel tree's own history). Both .ko's fail to load without it.
         "CONFIG_NET_DEVLINK=y",
+        # #236: parity RAID on a NAS, and the only consumer of al_dma's
+        # DMA_XOR/DMA_PQ. localmodconfig drops it (nothing was using it),
+        # so verify the force-enable survived.
+        "CONFIG_MD_RAID456=m",
     ):
         if sym not in dotcfg:
             log(f"FATAL: {sym} not set after olddefconfig")
@@ -627,7 +644,17 @@ def build():
     # claims SYSTEM_RESET at notifier priority 129 but AL-324's firmware does
     # not implement it, so without our SP805 handler loaded the box just hangs
     # at "Restarting system". It was written but never added here.
-    for m in ("al_eth", "al_dma", "al_ssm", "al_sgpo", "al_thermal", "al_reboot"):
+    # ubnt_hdd_pwrctl binds the ui,hdd-pwrctl DT node (#208) - bay presence and
+    # the amber fault LEDs, which had no driver at all.
+    for m in (
+        "al_eth",
+        "al_dma",
+        "al_ssm",
+        "al_sgpo",
+        "al_thermal",
+        "al_reboot",
+        "ubnt_hdd_pwrctl",
+    ):
         mpath = os.path.join(OUT, m)
         if os.path.exists(mpath):
             shutil.rmtree(mpath)

@@ -2481,7 +2481,7 @@ int al_eth_mdio_config(
 			pr_err("eth [%s]: %s: invalid reference clock frequency"
 				" (%d)\n",
 				adapter->name, __func__, ref_clk_freq);
-			/* fallthrough */
+			fallthrough;	/* an invalid freq defaults to 375 MHz */
 		case AL_ETH_REF_FREQ_375_MHZ:
 			ref_clk_freq_khz = 375000;
 			break;

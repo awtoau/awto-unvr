@@ -29,7 +29,7 @@
   "uboot": "a0330c585f34d7b7"
  },
  "al_hal_eth_main.c": {
-  "al_eth": "eab2c7ad75a6fe30",
+  "al_eth": "348ccde3f2828972",
   "uboot": "dc2b02135569a38f"
  },
  "al_hal_iofic.c": {
@@ -148,16 +148,16 @@
   "uboot": "9c6e021632ac2efd"
  },
  "al_hal_udma_config.c": {
-  "al_dma": "6e448d03c4dc3b88",
-  "al_eth": "769e1f828ff10158",
-  "al_ssm": "d4886e02f2c6c4aa",
-  "uboot": "e06d2b8f27e155f2"
+  "al_dma": "dd8f41b1745c6bb9",
+  "al_eth": "b3e072c9235f4398",
+  "al_ssm": "2a59b5f5f8585b19",
+  "uboot": "b2459e3edf1a0948"
  },
  "al_hal_udma_config.h": {
-  "al_dma": "921004d33e679b47",
-  "al_eth": "0e888b34151d49b4",
-  "al_ssm": "0014972f381b0b98",
-  "uboot": "647cafa9a102d3b5"
+  "al_dma": "164f359064434966",
+  "al_eth": "d335baf9e06030cc",
+  "al_ssm": "f86d5c510629e3f4",
+  "uboot": "01b0d06287d38a85"
  },
  "al_hal_udma_debug.c": {
   "al_dma": "8f648aa4dc23d677",
