@@ -318,15 +318,12 @@
 			reg = <0x00 0xfd880000 0x00 0x1000>;
 			interrupts = <GIC_SPI 21 IRQ_TYPE_LEVEL_HIGH>;
 			clocks = <&sbclk>;
-			/* 100 kHz (Standard-mode) = stock's speed. NOT max-by-default:
-			 * the s35390a RTC on mux ch0 is timing-fussy and at 400 kHz mis-reads
-			 * a phantom START/STOP and holds SDA -> whole-bus wedge, unrecoverable
-			 * in SW on this bus (pld-i2c SCL/SDA have no GPIO alt for a bit-bang
-			 * deblock, and the DW v1.20 core has no HW SDA-stuck recovery - see
-			 * docs/rtc-s35390a-fault.md). Stock ran 100 kHz and talked to the RTC
-			 * fine; slower SCL = more setup/hold margin = no latch. The tolerant
-			 * devices (PCA9575/EEPROM/mux/adt7475) don't care about the speed. */
-			clock-frequency = <100000>;
+			/* 400 kHz (Fast-mode) = every part's rated max: 24C64, PCA9575 x2,
+			 * PCA9546, adt7475, s35390a. The SFP EEPROM's SFF-8472 100 kHz is
+			 * the standard being conservative, not its silicon. 100 kHz was a
+			 * workaround for the ch0 wedge; that turned out to be mainline's
+			 * IC_ENABLE.ABORT, not timing (#86), so the reason is gone. */
+			clock-frequency = <400000>;
 			/* SDA hold = 300 ns, from the stock working DTB (live.dts:255,
 			 * i2c-sda-hold-time-ns=0x12c). Without it the DW driver reuses the
 			 * leftover DW_IC_SDA_HOLD register value (U-Boot/reset), which is

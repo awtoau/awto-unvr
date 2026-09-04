@@ -20,8 +20,12 @@ REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 NODE = "i2c@fd880000"  # the shared pld bus, both trees
 EXPECT = {
-    "clock-frequency": 100000,  # Standard-mode: stock's speed, needed so the
-    # s35390a RTC on ch0 does not wedge (rtc-s35390a-fault.md)
+    # Fast-mode. Every part on this bus rates 400 kHz: 24C64, PCA9575 x2,
+    # PCA9546, adt7475, s35390a. The SFP EEPROM's SFF-8472 100 kHz is the
+    # standard being conservative, not its silicon. 100 kHz was a workaround
+    # for the ch0 wedge, and that turned out to be IC_ENABLE.ABORT, not
+    # timing (#86) - so the reason is gone.
+    "clock-frequency": 400000,
     "i2c-sda-hold-time-ns": 300,  # stock value; dropping it wedges the RTC
     # Stock's proven raw SCL counts (live.dts:249-254). Honored by our patched
     # U-Boot DW i2c driver so the s35390a doesn't wedge; must not drift.

@@ -387,13 +387,12 @@
 			compatible = "snps,designware-i2c";
 			reg = <0x0 0xfd880000 0x0 0x1000>;
 			clocks = <&sbclk>;
-			/* 100 kHz (Standard-mode) = stock's speed. NOT max-by-default:
-			 * the s35390a RTC on mux ch0 mis-reads a phantom START/STOP at
-			 * 400 kHz and holds SDA -> whole-bus wedge, unrecoverable in SW on
-			 * this bus (no GPIO alt for a bit-bang deblock; DW v1.20 has no HW
-			 * SDA-stuck recovery - docs/rtc-s35390a-fault.md). Stock ran 100 kHz
-			 * and talked to the RTC fine. Tolerant devices don't care. */
-			clock-frequency = <100000>;
+			/* 400 kHz (Fast-mode) = every part's rated max: 24C64, PCA9575 x2,
+			 * PCA9546, adt7475, s35390a. The SFP EEPROM's SFF-8472 100 kHz is
+			 * the standard being conservative, not its silicon. 100 kHz was a
+			 * workaround for the ch0 wedge; that turned out to be mainline's
+			 * IC_ENABLE.ABORT, not timing (#86), so the reason is gone. */
+			clock-frequency = <400000>;
 			/* SDA hold time = the stock board value (live.dts:
 			 * i2c-sda-hold-time-ns = 0x12c = 300 ns), which mainline dropped.
 			 * Restored for parity with stock. Effect on the RTC: unverified. */
