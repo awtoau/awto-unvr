@@ -9,6 +9,7 @@
 
 #include <config.h>
 #include <command.h>
+#include <cpu_func.h>	/* cleanup_before_linux() - bootedk2 */
 #include <dm.h>
 #include <fdt_support.h>
 #include <fdtdec.h>
@@ -1126,6 +1127,40 @@ static int do_bootstrap(struct cmd_tbl *cmdtp, int flag, int argc, char *const a
 }
 U_BOOT_CMD(bootstrap, 1, 0, do_bootstrap,
 	   "decode the PBS bootstrap strap register (clocks incl. ddr_pll_freq)", "");
+
+/*
+ * Jump to a bare-metal payload (EDK2) with the CPU state it expects.
+ *
+ * `go` does NOT call cleanup_before_linux(); `bootm` does. We run with MMU
+ * and caches ON (stock 2015.07 did not), so a payload entered via `go` takes
+ * a Synchronous Abort in its own text - esr 0x86000004, far 0x20006eb4 for
+ * EDK2, just past its banner. The identical image chainloads from stock.
+ * docs/uefi.md P2.
+ */
+static int do_bootedk2(struct cmd_tbl *cmdtp, int flag, int argc,
+		       char *const argv[])
+{
+	ulong addr;
+
+	if (argc < 2)
+		return CMD_RET_USAGE;
+
+	addr = hextoul(argv[1], NULL);
+
+	printf("## bootedk2: cleanup_before_linux() then jump to 0x%08lx\n", addr);
+	cleanup_before_linux();
+
+	((void (*)(void))addr)();
+
+	/* Reached only if the payload returns, which EDK2 never does. */
+	printf("## bootedk2: payload returned - it should not\n");
+	return CMD_RET_FAILURE;
+}
+U_BOOT_CMD(bootedk2, 2, 0, do_bootedk2,
+	   "jump to a bare-metal payload with caches off (EDK2) - `go` does not",
+	   "<addr>\n"
+	   "    - cleanup_before_linux() (caches+MMU off, irqs off), then jump.\n"
+	   "      `go` skips that and the payload aborts. See docs/uefi.md P2.");
 
 int dram_init(void)
 {

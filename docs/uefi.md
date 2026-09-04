@@ -546,8 +546,10 @@ Three things had to be true; none of them is a SATA driver.
   `bootm`. The identical FD (crc32 `0x58f8b174`) reached the Shell from
   stock and took a Synchronous Abort from `awto-nas#`: `esr 0x86000004`
   (instruction abort, lower EL), `far 0x20006eb4`, i.e. inside the FD's
-  own text, right after the firmware banner. The probe script does this
-  itself.
+  own text, right after the firmware banner.
+  **Use `bootedk2 <addr>`, not `go`** — a board command that calls
+  `cleanup_before_linux()` (caches+MMU off, irqs off) then jumps, so the
+  requirement cannot be forgotten. `board/annapurna/alpine/alpine.c`.
 - **`MdeModulePkg/Universal/BootManagerPolicyDxe`** added to the
   component list. It provides `gEfiBootManagerPolicyProtocolGuid`;
   without it ArmPkg's `PlatformBootManagerLib` logs *"BootDiscoveryPolicy
