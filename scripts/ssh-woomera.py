@@ -21,26 +21,6 @@ import sys
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-# Ubiquiti Networks OUIs (subset covering current gear; extend as needed).
-UBNT_OUIS = {
-    "00:15:6d",
-    "00:27:22",
-    "04:18:d6",
-    "18:e8:29",
-    "24:5a:4c",
-    "44:d9:e7",
-    "68:72:51",
-    "74:83:c2",
-    "74:ac:b9",
-    "78:8a:20",
-    "80:2a:a8",
-    "b4:fb:e4",
-    "dc:9f:db",
-    "e0:63:da",
-    "f0:9f:c2",
-    "fc:ec:da",
-}
-
 # ICMP on a LAN answers in well under a millisecond; 1 s is ~3 orders of magnitude
 # over that. On expiry: host treated as down and skipped (full scan then runs).
 PING_TIMEOUT_S = 1
@@ -61,9 +41,15 @@ def mac_of(ip: str) -> str | None:
     return m.group(1).lower() if m else None
 
 
+# The 1G RJ45 (enp0s1), from the NOR identity blob at 0x1f0000. Match this
+# EXACTLY, not just the OUI: the 10G port is base+1 and other UBNT gear shares
+# the OUI, so an OUI match picked the 10G port (.127) - unroutable from here -
+# while the box answered on the 1G port (.136).
+WOOMERA_MAC_1G = "74:ac:b9:41:a8:11"
+
+
 def is_woomera(ip: str) -> bool:
-    mac = mac_of(ip)
-    return bool(mac) and mac[:8] in UBNT_OUIS
+    return mac_of(ip) == WOOMERA_MAC_1G
 
 
 def scan(subnet: str) -> str | None:

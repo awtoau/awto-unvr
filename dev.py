@@ -1401,13 +1401,23 @@ def cmd_publish_fedora(extra: list[str]) -> int:
 
 
 @command(
+    "deploy the published kernel+DTB onto the SSD over 1G - the deploy path for "
+    "the current boot chain (awto-uboot boots /boot/uImage from SSD). Run "
+    "./dev.py publish-fedora first. `--reboot` boots into it (scripts/deploy-ssd.py)",
+    kind="action",
+)
+def cmd_deploy_ssd(extra: list[str]) -> int:
+    return _run_script("scripts/deploy-ssd.py", extra)
+
+
+@command(
     "shell on woomera over the 1G port - a second terminal beside the serial "
     "console. Finds the box by its stable 1G MAC every time (DHCP moves the "
-    "lease); pass `-- <cmd>` to run one command (scripts/woomera-ssh.py)",
+    "lease); pass `-- <cmd>` to run one command (scripts/ssh-woomera.py)",
     kind="action",
 )
 def cmd_ssh(extra: list[str]) -> int:
-    return _run_script("scripts/woomera-ssh.py", extra)
+    return _run_script("scripts/ssh-woomera.py", extra)
 
 
 @command(

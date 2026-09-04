@@ -610,9 +610,12 @@ static int al_eth_get_serdes_25g_speed(struct al_eth_adapter *adapter, uint *spe
 	return 0;
 }
 
-/* SFP+ port (Linux eth1); its MAC is the NOR base + 2, as stock U-Boot does. */
+/* SFP+ port (Linux eth1). Stock's "mac: [<base>] + [2]" is a COUNT of the
+ * MACs allocated (ports 1 and 2), not an offset: port 1 takes base+0, so the
+ * 10G port is base+1. Verified on hardware - stock gives ...a8:12, base is
+ * ...a8:11. */
 #define AL_ETH_10G_PORT_ID	2
-#define AL_ETH_10G_MAC_OFFSET	2
+#define AL_ETH_10G_MAC_OFFSET	1
 
 /*
  * al_eth binds by PCI ID, so the PCI core leaves of_node NULL. Match the DT
@@ -784,12 +787,12 @@ static int al_eth_mac_addr_resolve(struct al_eth_adapter *adapter)
 		of_node_put(np);
 		if (!rc) {
 			have_nor = true;
-		} else if (rc == -EPROBE_DEFER) {
-			/* MTD is a module and may load after us. Defer rather
-			 * than skip - a skipped check is how #89 stayed silent. */
-			dev_info(dev, "NOR nvmem provider not up yet - deferring probe to verify the MAC\n");
-			return -EPROBE_DEFER;
 		} else {
+			/* Never -EPROBE_DEFER here. MTD is a module, so the cell
+			 * can be absent at probe - but a PCI probe returning
+			 * -EPROBE_DEFER is not retried the way a platform one is,
+			 * and both ports stayed down permanently. The MAC check is
+			 * a cross-check; it must never cost us the network. */
 			dev_warn(dev, "no usable MAC from DT/NOR nvmem (%d) - MAC unverified\n",
 				 rc);
 		}
