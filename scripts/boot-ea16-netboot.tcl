@@ -7,7 +7,7 @@
 # `ip -4 addr` on this host and update serverip.
 send_raw CR
 expect "ALPINE_UBNT_NAS_ALL>" 8
-send "setenv ipaddr 192.168.25.140"; expect "ALPINE_UBNT_NAS_ALL>" 6
+send "setenv ipaddr $IPADDR"; expect "ALPINE_UBNT_NAS_ALL>" 6
 send "setenv serverip 192.168.25.145"; expect "ALPINE_UBNT_NAS_ALL>" 6
 send "tftpboot 0x02000000 uImage-unvr-ea16-7.1"
 expect "Bytes transferred" 30

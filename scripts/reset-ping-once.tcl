@@ -10,7 +10,7 @@ send "mw 0xfd88c000 0x00002000"; expect "awto-nas#" 6
 send "mw 0xfd88c008 0x00000003"
 puts "SP805-ARMED — waiting for auto-chainload back to awto-nas#"
 if {[catch {expect "awto-nas#" 75}]} { puts "NO-UNVR (auto-chainload didn't complete)"; return }
-send "setenv ipaddr 192.168.25.140"; expect "awto-nas#" 6
+send "setenv ipaddr $IPADDR"; expect "awto-nas#" 6
 send "setenv serverip 192.168.25.145"; expect "awto-nas#" 6
 puts "=== single ping (fresh UDMA) ==="
 send "ping 192.168.25.145"

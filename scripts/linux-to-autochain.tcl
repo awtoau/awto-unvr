@@ -16,7 +16,7 @@ for {set i 0} {$i < 400} {incr i} {
 }
 if {!$found} { puts "NO-STOCK-UBOOT"; exit 1 }
 puts "AT-STOCK-UBOOT"
-send {setenv bootchain 'setenv ipaddr 192.168.25.140; setenv serverip 192.168.25.145; if tftpboot 0x1100000 u-boot-chainload.bin; then go 0x1100000; fi'}
+send "setenv bootchain 'setenv ipaddr $IPADDR; setenv serverip 192.168.25.145; if tftpboot 0x1100000 u-boot-chainload.bin; then go 0x1100000; fi'"
 expect "ALPINE_UBNT_NAS_ALL>" 8
 send {setenv bootcmd 'run bootchain'}
 expect "ALPINE_UBNT_NAS_ALL>" 8

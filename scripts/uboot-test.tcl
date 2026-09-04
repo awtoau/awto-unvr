@@ -34,7 +34,7 @@ if {!$COLD} {
 set ok 0
 for {set i 0} {$i < 60} {incr i} { send_raw ESC; if {[catch {expect "ALPINE_UBNT_NAS_ALL>" 1}] == 0} { set ok 1; break } }
 if {!$ok} { puts "NO-STOCK (SP805 reset didn't reach stock in ~60s; a power-cycle may be needed)"; return }
-send "setenv ipaddr 192.168.25.140";     expect "ALPINE_UBNT_NAS_ALL>" 6
+send "setenv ipaddr $IPADDR";     expect "ALPINE_UBNT_NAS_ALL>" 6
 send "setenv serverip $SERVERIP"; expect "ALPINE_UBNT_NAS_ALL>" 6
 send "tftpboot 0x1100000 u-boot-chainload.bin"; catch {expect "Bytes transferred" 30}
 expect "ALPINE_UBNT_NAS_ALL>" 6

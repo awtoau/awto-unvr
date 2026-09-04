@@ -12,7 +12,7 @@
 # retries forever ("Retry count exceeded"), check `ip -4 addr` on this host and
 # update serverip below - see scripts/_net.py detect_server_ip() for the pattern
 # used where a driving dev.py command CAN inject it fresh.
-set ipaddr   192.168.25.140
+set ipaddr   $IPADDR
 set serverip 192.168.25.145
 
 proc catch_uboot {} {

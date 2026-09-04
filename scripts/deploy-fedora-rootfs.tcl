@@ -20,7 +20,7 @@ for {set i 0} {$i < 400} {incr i} {
 if {!$found} { puts "NO-STOCK-UBOOT"; exit 1 }
 puts "AT-STOCK-UBOOT"
 
-send "setenv ipaddr 192.168.25.140"; expect "ALPINE_UBNT_NAS_ALL>" 6
+send "setenv ipaddr $IPADDR"; expect "ALPINE_UBNT_NAS_ALL>" 6
 send "setenv serverip $SERVERIP"; expect "ALPINE_UBNT_NAS_ALL>" 6
 
 # 22.8 MB installer uImage: same order of magnitude as the 18.5 MB gzip

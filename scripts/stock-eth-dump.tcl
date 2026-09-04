@@ -13,7 +13,7 @@ send "reset"
 set ok 0
 for {set i 0} {$i < 3000} {incr i} { send_raw ESC; if {[catch {expect "ALPINE_UBNT_NAS_ALL>" 1}] == 0} { set ok 1; break } }
 if {!$ok} { puts "NO-STOCK (not caught in window)"; return }
-send "setenv ipaddr 192.168.25.140";   expect "ALPINE_UBNT_NAS_ALL>" 6
+send "setenv ipaddr $IPADDR";   expect "ALPINE_UBNT_NAS_ALL>" 6
 send "setenv serverip 192.168.25.145"; expect "ALPINE_UBNT_NAS_ALL>" 6
 puts "=== STOCK eth 00:01.0 BEFORE eth use ==="
 send "pci display 0.1.0 0x10 4";  catch {expect "ALPINE_UBNT_NAS_ALL>" 8}

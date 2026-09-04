@@ -697,6 +697,18 @@ class _ConsoleTcl:
             pass
 
 
+def _tcl_preamble() -> str:
+    """Variables every console .tcl gets for free, so no script carries its
+    own copy of a LAN literal (#252): $IPADDR = the box's U-Boot static
+    address from scripts/_net.py."""
+    scripts_dir = str(REPO / "scripts")
+    if scripts_dir not in sys.path:
+        sys.path.insert(0, scripts_dir)
+    from _net import UNVR_IPADDR
+
+    return f"set IPADDR {UNVR_IPADDR}\n"
+
+
 @command(
     "drive the console with a Tcl script (send/expect via mini_jimtcl)",
     args="<script.tcl> | -e '<tcl>'",
@@ -725,6 +737,7 @@ def cmd_console_tcl(extra: list[str]) -> int:
             log(f"no such script: {p}", "ERROR")
             return 2
         script = p.read_text()
+    script = _tcl_preamble() + script
     try:
         mod = _load_minijimtcl()
     except RuntimeError as e:
