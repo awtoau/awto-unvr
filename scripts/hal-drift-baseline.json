@@ -29,7 +29,7 @@
   "uboot": "a0330c585f34d7b7"
  },
  "al_hal_eth_main.c": {
-  "al_eth": "9b13d95dc095f5e6",
+  "al_eth": "eab2c7ad75a6fe30",
   "uboot": "dc2b02135569a38f"
  },
  "al_hal_iofic.c": {

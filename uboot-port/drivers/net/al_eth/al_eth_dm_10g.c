@@ -517,30 +517,38 @@ static int al_eth_10g_write_hwaddr(struct udevice *dev)
 }
 
 /*
- * Per-unit MAC in the SPI-NOR identity partition (mtd4 "EEPROM", offset
- * 0x1f0000). eth1 (1G) is the base MAC at +0x0000; the 10G port is base+1
- * (stock: eth0=...:11, eth1=...:12). HARDWARE-TODO: confirm the 10G MAC lives at
- * +0x0006 (one ARP_HLEN after the base) on this unit, or read it back from the
- * chainloaded EC if stock already programmed it.
+ * 10G MAC = NOR base MAC (0x1f0000) + 2, matching stock U-Boot's
+ * "mac: [74acb941a811] + [2]". Carry runs through the 24-bit NIC part only, so
+ * the result stays inside the OUI. The 6 bytes at +0x6 are NOT used - nothing
+ * confirms they are a MAC field, and the factory value there is locally
+ * administered (76:.., LAA bit set), i.e. not globally unique (#89).
  */
 #define AL_ETH_MAC_ROM_OFFSET	0x1f0000
-#define AL_ETH_MAC_ROM_10G_OFF	(AL_ETH_MAC_ROM_OFFSET + ARP_HLEN)
 
 static int al_eth_10g_read_rom_hwaddr(struct udevice *dev)
 {
 	struct eth_pdata *pdata = dev_get_plat(dev);
 	struct udevice *flash;
+	u32 nic;
 	int ret;
 
 	ret = uclass_first_device_err(UCLASS_SPI_FLASH, &flash);
 	if (ret)
 		return ret;
-	ret = spi_flash_read_dm(flash, AL_ETH_MAC_ROM_10G_OFF, ARP_HLEN,
+	ret = spi_flash_read_dm(flash, AL_ETH_MAC_ROM_OFFSET, ARP_HLEN,
 				pdata->enetaddr);
 	if (ret)
 		return ret;
 	if (!is_valid_ethaddr(pdata->enetaddr))
 		return -EINVAL;
+
+	nic = (pdata->enetaddr[3] << 16) | (pdata->enetaddr[4] << 8) |
+	      pdata->enetaddr[5];
+	nic = (nic + 2) & 0xffffff;
+	pdata->enetaddr[3] = nic >> 16;
+	pdata->enetaddr[4] = nic >> 8;
+	pdata->enetaddr[5] = nic;
+
 	return 0;
 }
 

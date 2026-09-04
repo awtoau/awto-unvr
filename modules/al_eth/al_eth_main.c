@@ -610,6 +610,10 @@ static int al_eth_get_serdes_25g_speed(struct al_eth_adapter *adapter, uint *spe
 	return 0;
 }
 
+/* SFP+ port (Linux eth1); its MAC is the NOR base + 2, as stock U-Boot does. */
+#define AL_ETH_10G_PORT_ID	2
+#define AL_ETH_10G_MAC_OFFSET	2
+
 /*
  * al_eth binds by PCI ID, so the PCI core leaves of_node NULL. Match the DT
  * node on port-id == PCI slot, same rule as al_eth_phylink.c (which is
@@ -633,32 +637,38 @@ static struct device_node *al_eth_mac_of_node(struct pci_dev *pdev)
 }
 
 /*
- * Read the NOR "EEPROM" MAC (nvmem cell "mac-address" on the DT node) - the
- * authority. Explicit DT mac-address/local-mac-address wins if present.
+ * The base MAC nvmem cell lives on the 1G port's node (only that port uses NOR
+ * directly). The 10G port derives from it, so find the node carrying the cell.
  */
-static int al_eth_mac_addr_nor(struct device_node *np, u8 *addr,
-			       const char **src)
+static struct device_node *al_eth_mac_base_of_node(void)
 {
-	static const char * const dt_props[] = {
-		"mac-address", "local-mac-address",
-	};
+	struct device_node *np = NULL;
+
+	for_each_compatible_node(np, NULL, "annapurna-labs,al-eth") {
+		if (!of_device_is_available(np))
+			continue;
+		if (of_property_match_string(np, "nvmem-cell-names",
+					     "mac-address") >= 0)
+			return np;
+	}
+
+	return NULL;
+}
+
+/* Read the NOR "EEPROM" base MAC (nvmem cell "mac-address"). */
+static int al_eth_mac_addr_nor_base(u8 *addr)
+{
+	struct device_node *np;
 	struct nvmem_cell *cell;
 	size_t len;
 	void *buf;
-	int i;
 
-	/* of_get_mac_address() would fall back to nvmem internally; read the
-	 * properties directly so the two sources stay distinguishable. */
-	for (i = 0; i < ARRAY_SIZE(dt_props); i++) {
-		if (of_property_read_u8_array(np, dt_props[i], addr, ETH_ALEN))
-			continue;
-		if (!is_valid_ether_addr(addr))
-			continue;
-		*src = dt_props[i];
-		return 0;
-	}
+	np = al_eth_mac_base_of_node();
+	if (!np)
+		return -ENODEV;
 
 	cell = of_nvmem_cell_get(np, "mac-address");
+	of_node_put(np);
 	if (IS_ERR(cell))
 		return PTR_ERR(cell);
 
@@ -674,7 +684,64 @@ static int al_eth_mac_addr_nor(struct device_node *np, u8 *addr,
 
 	ether_addr_copy(addr, buf);
 	kfree(buf);
-	*src = "NOR EEPROM 0x1f0000";
+
+	return is_valid_ether_addr(addr) ? 0 : -EINVAL;
+}
+
+/*
+ * Stock U-Boot prints "mac: [<base>] + [n]" and programs base+n. Carry runs
+ * through the 24-bit NIC part only, so the result stays inside the OUI.
+ */
+static void al_eth_mac_addr_derive(const u8 *base, u8 *out, u32 n)
+{
+	u32 nic = (base[3] << 16) | (base[4] << 8) | base[5];
+
+	ether_addr_copy(out, base);
+	nic = (nic + n) & 0xffffff;
+	out[3] = nic >> 16;
+	out[4] = nic >> 8;
+	out[5] = nic;
+}
+
+/*
+ * Per-port MAC from NOR. Explicit DT mac-address/local-mac-address wins.
+ * Otherwise: 1G port = NOR base, 10G port = base+2 (stock's derivation; the
+ * bytes at NOR +0x6 are unverified and locally administered, so unused, #89).
+ */
+static int al_eth_mac_addr_nor(struct device_node *np, unsigned int port_id,
+			       u8 *addr, u8 *base, bool *derived,
+			       const char **src)
+{
+	static const char * const dt_props[] = {
+		"mac-address", "local-mac-address",
+	};
+	int i, rc;
+
+	*derived = false;
+
+	/* of_get_mac_address() would fall back to nvmem internally; read the
+	 * properties directly so the two sources stay distinguishable. */
+	for (i = 0; i < ARRAY_SIZE(dt_props); i++) {
+		if (of_property_read_u8_array(np, dt_props[i], addr, ETH_ALEN))
+			continue;
+		if (!is_valid_ether_addr(addr))
+			continue;
+		*src = dt_props[i];
+		return 0;
+	}
+
+	rc = al_eth_mac_addr_nor_base(base);
+	if (rc)
+		return rc;
+
+	if (port_id == AL_ETH_10G_PORT_ID) {
+		al_eth_mac_addr_derive(base, addr, AL_ETH_10G_MAC_OFFSET);
+		*derived = true;
+		*src = "NOR EEPROM 0x1f0000 base + 2";
+	} else {
+		ether_addr_copy(addr, base);
+		*src = "NOR EEPROM 0x1f0000 base";
+	}
 
 	return is_valid_ether_addr(addr) ? 0 : -EINVAL;
 }
@@ -687,10 +754,13 @@ static int al_eth_mac_addr_nor(struct device_node *np, u8 *addr,
 static int al_eth_mac_addr_resolve(struct al_eth_adapter *adapter)
 {
 	struct device *dev = &adapter->pdev->dev;
+	unsigned int port_id = PCI_SLOT(adapter->pdev->devfn);
 	u8 nor_addr[ETH_ALEN], ec_addr[ETH_ALEN];
+	u8 nor_base[ETH_ALEN] = {};
 	const char *nor_src = NULL;
 	struct device_node *np;
 	bool have_nor = false;
+	bool derived = false;
 	bool have_ec = false;
 	int rc;
 
@@ -707,9 +777,10 @@ static int al_eth_mac_addr_resolve(struct al_eth_adapter *adapter)
 	np = al_eth_mac_of_node(adapter->pdev);
 	if (!np) {
 		dev_warn(dev, "no DT node for PCI slot %u - cannot check the MAC against NOR\n",
-			 PCI_SLOT(adapter->pdev->devfn));
+			 port_id);
 	} else {
-		rc = al_eth_mac_addr_nor(np, nor_addr, &nor_src);
+		rc = al_eth_mac_addr_nor(np, port_id, nor_addr, nor_base,
+					 &derived, &nor_src);
 		of_node_put(np);
 		if (!rc) {
 			have_nor = true;
@@ -730,10 +801,17 @@ static int al_eth_mac_addr_resolve(struct al_eth_adapter *adapter)
 	if (have_nor)
 		dev_info(dev, "MAC from %s (authority): %pM\n", nor_src, nor_addr);
 
-	if (have_nor && have_ec && !ether_addr_equal(nor_addr, ec_addr))
-		dev_err(dev,
-			"MAC mismatch - %s gives %pM, bootloader programmed %pM - using %pM\n",
-			nor_src, nor_addr, ec_addr, nor_addr);
+	if (have_nor && have_ec && !ether_addr_equal(nor_addr, ec_addr)) {
+		if (derived)
+			dev_err(dev,
+				"MAC mismatch - NOR base %pM + %u = %pM, bootloader programmed %pM - using %pM\n",
+				nor_base, AL_ETH_10G_MAC_OFFSET, nor_addr,
+				ec_addr, nor_addr);
+		else
+			dev_err(dev,
+				"MAC mismatch - %s gives %pM, bootloader programmed %pM - using %pM\n",
+				nor_src, nor_addr, ec_addr, nor_addr);
+	}
 
 	/* NOR is the authority; EC only when NOR is unreadable. Leaving
 	 * mac_addr zeroed makes al_eth_probe() fall to a random MAC. */
