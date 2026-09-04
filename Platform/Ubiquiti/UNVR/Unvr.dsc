@@ -259,7 +259,7 @@
   gEfiMdeModulePkgTokenSpaceGuid.PcdSerialUseMmio|TRUE
   gEfiMdeModulePkgTokenSpaceGuid.PcdSerialRegisterBase|0xFD883000
   gEfiMdeModulePkgTokenSpaceGuid.PcdSerialClockRate|500000000
-  gEfiMdeModulePkgTokenSpaceGuid.PcdSerialBaudRate|1500000
+  gEfiMdeModulePkgTokenSpaceGuid.PcdSerialBaudRate|115200
   gEfiMdeModulePkgTokenSpaceGuid.PcdSerialRegisterStride|4
   gEfiMdeModulePkgTokenSpaceGuid.PcdSerialRegisterAccessWidth|32
   gEfiMdeModulePkgTokenSpaceGuid.PcdSerialLineControl|0x03

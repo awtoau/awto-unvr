@@ -9,8 +9,7 @@
 
 /*
  * Selectable console baud rates: `setenv baudrate <n>` then switch the host
- * terminal to match. Default is 1500000 (CONFIG_BAUDRATE); 115200 stays in the
- * table so a stock-U-Boot chainload can be followed at its own rate.
+ * terminal to match. Default stays 115200 (CONFIG_BAUDRATE).
  *
  * The limit is the SoC's UART divisor, not the CP2102 (which accepts 3 Mbps).
  * sbclk is 500 MHz and the divisor is integer, so error = |500e6/(16*d) - baud|:
