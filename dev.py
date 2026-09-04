@@ -699,14 +699,21 @@ class _ConsoleTcl:
 
 def _tcl_preamble() -> str:
     """Variables every console .tcl gets for free, so no script carries its
-    own copy of a LAN literal (#252): $IPADDR = the box's U-Boot static
-    address from scripts/_net.py."""
+    own copy of a LAN literal (#252):
+      $IPADDR    the box's U-Boot static address (scripts/_net.py)
+      $SERVERIP  this host's address on the route to it, detected fresh
+                 each run; left unset when there is no route."""
     scripts_dir = str(REPO / "scripts")
     if scripts_dir not in sys.path:
         sys.path.insert(0, scripts_dir)
-    from _net import UNVR_IPADDR
+    from _net import UNVR_IPADDR, detect_server_ip
 
-    return f"set IPADDR {UNVR_IPADDR}\n"
+    lines = [f"set IPADDR {UNVR_IPADDR}"]
+    try:
+        lines.append(f"set SERVERIP {detect_server_ip()}")
+    except OSError as e:
+        log(f"console-tcl: no route to {UNVR_IPADDR}, $SERVERIP unset ({e})", "WARN")
+    return "\n".join(lines) + "\n"
 
 
 @command(

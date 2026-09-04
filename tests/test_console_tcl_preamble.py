@@ -33,7 +33,22 @@ def _dev():
     return mod
 
 
-def test_preamble_defines_ipaddr_from_net():
+def test_preamble_defines_ipaddr_and_detected_serverip(monkeypatch):
+    import _net
+
+    monkeypatch.setattr(_net, "detect_server_ip", lambda: "10.0.0.7")
+    assert (
+        _dev()._tcl_preamble() == f"set IPADDR {UNVR_IPADDR}\nset SERVERIP 10.0.0.7\n"
+    )
+
+
+def test_preamble_omits_serverip_when_no_route(monkeypatch):
+    import _net
+
+    def no_route():
+        raise OSError("Network is unreachable")
+
+    monkeypatch.setattr(_net, "detect_server_ip", no_route)
     assert _dev()._tcl_preamble() == f"set IPADDR {UNVR_IPADDR}\n"
 
 

@@ -6,14 +6,9 @@
 # Offsets match scripts/flash-nand.py. Chainload-safe: NOR U-Boot binary untouched, env only.
 
 # --- catch the U-Boot prompt: send ESC, poll for the prompt, up to ~120 tries ---
-# --- LAN config: EDIT for your setup (device = ipaddr, tftp host = serverip) ---
-# serverip is THIS dev host's IP and drifts with its DHCP lease - no injection point
-# here (standalone script, not driven by a dedicated dev.py command). If tftpboot
-# retries forever ("Retry count exceeded"), check `ip -4 addr` on this host and
-# update serverip below - see scripts/_net.py detect_server_ip() for the pattern
-# used where a driving dev.py command CAN inject it fresh.
+# --- LAN config: $IPADDR/$SERVERIP injected by `./dev.py console-tcl` (scripts/_net.py) ---
 set ipaddr   $IPADDR
-set serverip 192.168.25.145
+set serverip $SERVERIP
 
 proc catch_uboot {} {
     for {set i 0} {$i < 120} {incr i} {

@@ -3,11 +3,9 @@
 # fallback (owner: never boot Linux on reset) -> chainload now -> our U-Boot.
 # Revert = restore stock bootcmd. Requires host tftpd serving u-boot-chainload.bin.
 # If tftp is ever down, reset stops at the stock prompt (recoverable) — never Linux.
-# serverip below is THIS dev host's IP and is SAVED into U-Boot's persisted env
-# (saveenv) - it drifts with this host's DHCP lease, and a stale value baked in
-# here means every future auto-chainload silently retries forever against nobody.
-# Standalone script, no dev.py command drives it; re-run this after any DHCP
-# lease change to refresh the saved value (check `ip -4 addr` on this host).
+# $IPADDR/$SERVERIP are injected by `./dev.py console-tcl` (scripts/_net.py).
+# serverip is SAVED into U-Boot's env (saveenv) and this host's lease drifts:
+# re-run this after a lease change, or every auto-chainload retries against nobody.
 send {python3 -c "import fcntl,struct; f=open('/dev/watchdog','r+b',buffering=0); fcntl.ioctl(f,0xC0045706,struct.pack('I',1)); exec('while True: pass')"}
 set found 0
 for {set i 0} {$i < 400} {incr i} {
@@ -16,7 +14,7 @@ for {set i 0} {$i < 400} {incr i} {
 }
 if {!$found} { puts "NO-STOCK-UBOOT"; exit 1 }
 puts "AT-STOCK-UBOOT"
-send "setenv bootchain 'setenv ipaddr $IPADDR; setenv serverip 192.168.25.145; if tftpboot 0x1100000 u-boot-chainload.bin; then go 0x1100000; fi'"
+send "setenv bootchain 'setenv ipaddr $IPADDR; setenv serverip $SERVERIP; if tftpboot 0x1100000 u-boot-chainload.bin; then go 0x1100000; fi'"
 expect "ALPINE_UBNT_NAS_ALL>" 8
 send {setenv bootcmd 'run bootchain'}
 expect "ALPINE_UBNT_NAS_ALL>" 8
