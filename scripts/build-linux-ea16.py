@@ -125,6 +125,19 @@ def prep_initramfs():
         os.path.join(INITRAMFS_BASE, "initramfs-devnodes"),
         os.path.join(OUT, "initramfs-devnodes"),
     )
+    # Fail fast on a container marker: this skeleton is copied into every ea16
+    # image, and one left by the old podman build propagated for weeks (#164,
+    # #217). PID1 reads it before /run's tmpfs mounts and caches "container"
+    # for life, disabling .swap units and ConditionVirtualization=!container.
+    for marker in (".dockerenv", ".containerenv", "run/.containerenv"):
+        for base, label in ((INITRAMFS_BASE, "skeleton"), (OUT, "build")):
+            m = os.path.join(base, "initramfs-root", marker)
+            if os.path.exists(m):
+                log(
+                    f"FATAL: container marker in the initramfs {label}: {m} (#164)",
+                    "ERROR",
+                )
+                sys.exit(1)
     log("prepped initramfs-root (reused 6.12, modules cleared)")
 
 
