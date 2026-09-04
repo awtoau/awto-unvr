@@ -103,10 +103,10 @@
 			 * we had none at all, worse than upstream. al_eth/al_dma/
 			 * al_ssm still have no entry here (upstream doesn't either)
 			 * and still log "of_irq_parse_pci failed rc=-22" at probe -
-			 * benign, MSI-X only (msi-parent = &msix); silenced properly
-			 * via a PCI_FIXUP_HEADER quirk in pcie-al-internal.c instead,
-			 * since a DT interrupt-map can't express "this pin is wired
-			 * to nothing" for devices that never use INTx at all.
+			 * benign, MSI-X only (msi-parent = &msix). NOT silenced: the
+			 * PCI_FIXUP_HEADER quirk that used to claim this was retired
+			 * to debris/patches/ (#206 - dev->pin = 0 is a no-op, since
+			 * pci_assign_irq() re-reads the pin from hardware). #55.
 			 *
 			 * Re-applied (#131) after #130's UBSAN crash was proven
 			 * unrelated: reverting both this and the PCI quirk did NOT
