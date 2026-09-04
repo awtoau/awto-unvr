@@ -1,0 +1,59 @@
+## @file
+#  Annapurna Labs HAL (eth + UDMA + IOFIC) compiled as an EDK2 BASE library.
+#
+#  - Sources are our own maintained HAL copy, byte-identical to
+#    uboot-port/drivers/net/al_eth/hal/ - keep the two in sync.
+#  - include/ is FLAT (one -I), unlike the nested imbushuo/ccr2004-uefi tree.
+#  - al_hal_plat_types.h / al_hal_plat_services.h in this dir are the UEFI
+#    porting layer, force-included ahead of everything via -include.
+#  - $(MODULE_DIR) is used for -I because this repo sits on PACKAGES_PATH, not
+#    under WORKSPACE (scripts/build-uefi-p0.py), so $(WORKSPACE)/... would not
+#    resolve.
+#
+#  Copyright (c) 2026, Awto / Daniel Tyrrell. All rights reserved.
+#
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+##
+
+[Defines]
+  INF_VERSION                    = 0x0001001b
+  BASE_NAME                      = AlpineHalLib
+  FILE_GUID                      = 898fcaf2-a7e4-40c1-8ce8-be17fc6e0fd0
+  MODULE_TYPE                    = BASE
+  VERSION_STRING                 = 1.0
+  LIBRARY_CLASS                  = AlpineHalLib
+
+[Sources]
+  # Ethernet
+  drivers/eth/al_hal_eth_main.c
+  drivers/eth/al_hal_eth_mac.c
+  drivers/eth/al_hal_eth_mac_v1_v2.c
+  drivers/eth/al_hal_eth_mac_internal.c
+  drivers/eth/al_hal_eth_common.c
+  drivers/eth/al_hal_eth_epe.c
+  drivers/eth/al_hal_eth_rfw.c
+  drivers/eth/al_hal_eth_field.c
+
+  # UDMA
+  drivers/udma/al_hal_udma_main.c
+  drivers/udma/al_hal_udma_config.c
+  drivers/udma/al_hal_udma_iofic.c
+
+  # IOFIC
+  drivers/iofic/al_hal_iofic.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+
+[LibraryClasses]
+  BaseLib
+  BaseMemoryLib
+  DebugLib
+  IoLib
+  PrintLib
+  TimerLib
+
+[BuildOptions]
+  # -Wno-*: vendor C, not our style to fix; suppress rather than patch the HAL.
+  GCC:*_*_*_CC_FLAGS = -I$(MODULE_DIR) -I$(MODULE_DIR)/include -include al_hal_plat_types.h -include al_hal_plat_services.h -Wno-unused-parameter -Wno-sign-compare -Wno-unused-variable -Wno-unused-function -Wno-unused-but-set-variable -Wno-maybe-uninitialized -Wno-parentheses -Wno-missing-braces -Wno-type-limits

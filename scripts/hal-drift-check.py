@@ -61,6 +61,11 @@ TREES: dict[str, list[str]] = {
         "uboot-port/drivers/phy/al_serdes",
         "uboot-port/drivers/crypto/al_ssm",
     ],
+    # Fifth copy, added deliberately for the EDK2 al_eth SNP driver (P3,
+    # docs/uefi.md). Copied from the uboot tree, so it starts identical to it -
+    # EDK2 INFs cannot reference sources outside their own package, so sharing
+    # the uboot copy in place was not an option.
+    "edk2": ["Platform/Ubiquiti/UNVR/Library/AlpineHalLib"],
 }
 
 # hal/pcie-al-alpine-regs.h is the one header genuinely SHARED (one file,

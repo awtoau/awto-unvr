@@ -97,6 +97,11 @@
   # Annapurna Labs HAL (eth + UDMA + IOFIC), shared by the ethernet SNP driver
   AlpineHalLib|Platform/Ubiquiti/UNVR/Library/AlpineHalLib/AlpineHalLib.inf
 
+  # No NetLib: AlEth1gSnpDxe deliberately does NOT link NetworkPkg's DxeNetLib,
+  # whose [Depex] gEfiRngProtocolGuid nothing in this build installs - the
+  # driver would never be dispatched (confirmed live 2026-09-04). It defines
+  # the two macros it needs itself. Revisit when a real network stack lands.
+
   # Null stubs
   PerformanceLib|MdePkg/Library/BasePerformanceLibNull/BasePerformanceLibNull.inf
   ReportStatusCodeLib|MdePkg/Library/BaseReportStatusCodeLibNull/BaseReportStatusCodeLibNull.inf
@@ -407,6 +412,18 @@
   MdeModulePkg/Bus/Pci/PciHostBridgeDxe/PciHostBridgeDxe.inf
   MdeModulePkg/Bus/Pci/PciBusDxe/PciBusDxe.inf
   Platform/Ubiquiti/UNVR/Drivers/AlPcieSnoopFixDxe/AlPcieSnoopFixDxe.inf
+
+  #
+  # Networking (P3, docs/uefi.md) - al_eth 1G RJ45 (1c36:0001) SNP driver.
+  # RGMII to an AR8031/AR8033 at MDIO addr 4. The 10G SFP+ (1c36:0002) is
+  # NOT bound: it needs SerDes bring-up this driver omits.
+  #
+  # Note AlPcieSnoopFixDxe deliberately EXCLUDES both al_eth functions from
+  # the AXI snoop fixup (applying it broke UDMA TX, #74/#90), so this driver
+  # runs against an unsnooped device - hence the uncached descriptor rings
+  # and explicit cache maintenance in AlEth1gSnpDxe.c.
+  #
+  Platform/Ubiquiti/UNVR/Drivers/AlEth1gSnpDxe/AlEth1gSnpDxe.inf
 
   #
   # USB (P1.5 - external PCIe0 xHCI, ASM1042A). Independent differential

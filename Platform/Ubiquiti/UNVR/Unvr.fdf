@@ -98,6 +98,9 @@ WRITE_STATUS       = TRUE
   INF MdeModulePkg/Bus/Pci/PciBusDxe/PciBusDxe.inf
   INF Platform/Ubiquiti/UNVR/Drivers/AlPcieSnoopFixDxe/AlPcieSnoopFixDxe.inf
 
+  # Networking (P3 - al_eth 1G RJ45 SNP, see Unvr.dsc)
+  INF Platform/Ubiquiti/UNVR/Drivers/AlEth1gSnpDxe/AlEth1gSnpDxe.inf
+
   # USB (P1.5 - external PCIe0 xHCI, see Unvr.dsc)
   INF MdeModulePkg/Bus/Pci/XhciDxe/XhciDxe.inf
   INF MdeModulePkg/Bus/Usb/UsbBusDxe/UsbBusDxe.inf

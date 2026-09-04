@@ -523,11 +523,95 @@ never touched flash).
 ### P3 — network
 
 - 1G `al_eth` `1c36:0001` (RGMII → AR8031 addr 4) and/or 10G `1c36:0002` (SFP+).
-- **An EDK2 al_eth driver exists**: `imbushuo/ccr2004-uefi`'s `Drivers/AlEthNextDxe/`
-  is a real SimpleNetworkProtocol driver for the same SoC (AL324/Alpine V2), on the
-  same delroth-vintage HAL (2.9) ours uses ([hal-provenance-and-cross-system.md](hal-provenance-and-cross-system.md)
-  §3, #85). Still a genuine port for our board (own DTS/board params), not a drop-in,
-  but the "no reference exists" framing was wrong — this is a strong reference.
+- **Reference**: `imbushuo/ccr2004-uefi`'s `Drivers/AlEthNextDxe/` — a real SNP
+  driver for the same SoC (AL324/Alpine V2) on the same delroth-vintage HAL (2.9)
+  ([hal-provenance-and-cross-system.md](hal-provenance-and-cross-system.md) §3, #85).
+  **BSD-2-Clause-Patent** (per-file SPDX headers; the repo carries no LICENSE file),
+  so copying is fine with the MikroTik copyright line kept.
+
+**Status (2026-09-04): binds on hardware, confirmed live. TX/RX untested.**
+
+```
+Loading driver at 0x000BB2A2000 EntryPoint=0x000BB2AB408 AlEth1gSnpDxe.efi
+AlEth1g: BARs UDMA 0xFE000000 MAC 0xFE15C000 EC 0xFE150000
+AlEth1g: MAC 74:AC:B9:41:A8:11
+AlEth1g: SNP installed on 1c36:0001
+```
+
+- All three BARs match [hardware.md](hardware.md#mmio-and-address-map)'s recorded
+  map exactly (eth0 `0xfe000000`, eth3 `0xfe150000`, eth4 `0xfe15c000`).
+- MAC read from the EC filter matches what U-Boot printed the same boot
+  (`al_eth1: MAC 74:ac:b9:41:a8:11`) — the EC hand-off works.
+- `connect -r` binds cleanly, installs DevicePath + SNP, no exception or hang.
+- Reproduce: `./dev.py uefi-chainload-probe`, then
+  `./dev.py uefi-shell-cmd "connect -r"`. Log `tmp/logs/uefi-p3-connect.log`.
+
+Two new pieces, both inside `Platform/Ubiquiti/UNVR/`:
+
+- **`Library/AlpineHalLib/`** — the HAL compiled for EDK2. 12 `.c` (eth + UDMA +
+  IOFIC) and 47 headers, copied **byte-identical from our own U-Boot tree**
+  (`uboot-port/drivers/net/al_eth/hal/` plus 3 from `al_hal_shim/`), not from the
+  CCR2004 reference: same board, our maintained fixes, and the exact subset the
+  1G path needs (no v3/v4 MAC, no serdes/KR closure). The porting layer is the two
+  force-included shims `al_hal_plat_types.h` / `al_hal_plat_services.h`, adapted
+  from the reference's — MMIO, barriers, delays, `al_memset`, logging onto MdePkg.
+  - EDK2 INFs cannot reference sources outside their own package, so sharing the
+    U-Boot copy in place was impossible. This is a **fifth** HAL copy (#218) and is
+    now a registered `hal-drift-check.py` tree (`edk2`), starting at zero drift.
+- **`Drivers/AlEth1gSnpDxe/`** — the SNP driver. Binds `1c36:0001` only.
+
+Board deltas vs the CCR2004 reference, each traceable to our working U-Boot driver
+(`uboot-port/drivers/net/al_eth/al_eth_dm.c`):
+
+| Delta | Why |
+|---|---|
+| PHY addr fixed at **4**, no MDIO scan | Hardware-of-record; a scan can latch a stale/aliasing address |
+| **No** AR8035 RGMII TX-delay poke | UNVR's delay is board-strapped; our U-Boot driver does not touch it |
+| **No** `al_eth_mac_link_config()` | Stock skips it for external-PHY RGMII — the AR8033 drives the link, MAC follows in-band |
+| MAC from the **EC filter register** | No MikroTik BoardInfo protocol, and EDK2 has no SPI-NOR driver. U-Boot writes it at probe from NOR `0x1f0000` (`al_eth_hwaddr.c`); a zero reading falls back to a locally-administered address |
+| **No** EmbeddedGpio PHY reset | No PL061/GPIO driver on this platform |
+
+- `AlEth1gHalStubs.c` stubs `al_eth_mac_v3/v4_handle_init` and
+  `al_unit_adapter_init` — the same three symbols, for the same reason, as
+  U-Boot's own `al_eth_stubs.c`. Avoids dragging in the SerDes/KR closure.
+- DMA is **uncached + explicit cache maintenance**: `AlPcieSnoopFixDxe`
+  deliberately excludes both al_eth functions from the AXI snoop fixup (applying
+  it broke UDMA TX, #74/#90), so the device is not coherent with CPU caches.
+
+**Trap, cost an hour: a LibraryClass can silently un-dispatch a driver.**
+Declaring `NetLib` for two *header macros* (`NET_ETHER_ADDR_LEN`,
+`NET_IFTYPE_ETHERNET`) linked `NetworkPkg/DxeNetLib`, whose own
+`[Depex] gEfiRngProtocolGuid` is folded into the module's auto-generated depex.
+Nothing here installs an RNG **protocol** (`RngLib` is a library, not
+`RngDxe`), so the AND chain evaluated FALSE forever:
+
+```
+Evaluate DXE DEPEX for FFS(3696B990-...)
+  PUSH GUID(3152BCA5-EADE-433D-862E-C01CDC291F44) = FALSE   <- gEfiRngProtocol
+  ...  RESULT = FALSE
+```
+
+- Failure mode is **silence**: the driver is present in the FV, never loads, and
+  nothing says why unless `DEBUG_DISPATCH` tracing is read.
+- Fix: define the two macros locally, drop `NetLib`. The module then emits **no
+  `.depex` at all**, which is correct for a `UEFI_DRIVER` bound by `PciBusDxe`.
+- Diagnosing it: decode `Build/.../OUTPUT/<mod>.depex` (opcode `0x02` = PUSH
+  GUID) and check each GUID against the boot trace.
+- **Second trap**: an incremental build reuses a cached `.depex`. `rm -rf` the
+  module's Build dir when changing `[LibraryClasses]`/`[Depex]`.
+
+**Still unproven:**
+
+- link state off `MAC_GEN_RGMII_STAT` (`0x91C` bit 4) — never read, since
+  nothing calls `SnpInitialize()` without a network stack driving it;
+- `SnpInitialize()` itself: the HAL adapter init, queue config, `mac_config`,
+  MDIO/PHY bring-up. All that ran was `Start()` (bind + BAR/MAC read);
+- TX/RX. **TX is the known risk**: `#90`'s UDMA M2S DRAM-read hang is open and
+  unexplained on the 1G port under Linux. If it reproduces here it is the same
+  bug in a second, independent driver — useful evidence either way.
+
+Next step is a small UEFI Shell app calling `Initialize()` + `GetStatus()` on the
+SNP handle, which forces the whole init path and prints link state.
 
 ### P4 — GRUB → Linux
 

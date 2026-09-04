@@ -1,54 +1,177 @@
 {
  "al_hal_an_lt_wrapper_regs.h": {
   "al_eth": "33856b22cc0d9f1f",
+  "edk2": "1d16da022f698028",
   "uboot": "1d16da022f698028"
+ },
+ "al_hal_arm_asm_macros.h": {
+  "edk2": "24512667a500725e",
+  "uboot": "24512667a500725e"
  },
  "al_hal_common.h": {
   "al_dma": "4c755175ed2ac966",
   "al_eth": "4c755175ed2ac966",
-  "al_ssm": "27ec8eeabfa8418a"
+  "al_ssm": "27ec8eeabfa8418a",
+  "edk2": "27ec8eeabfa8418a"
  },
  "al_hal_eth.h": {
   "al_eth": "c6005c4743cf8e18",
+  "edk2": "abe7575f8d929baf",
   "uboot": "abe7575f8d929baf"
  },
  "al_hal_eth_alu.h": {
   "al_eth": "c308bf5fc3efabcb",
+  "edk2": "0ba0d5963f363113",
   "uboot": "0ba0d5963f363113"
+ },
+ "al_hal_eth_common.c": {
+  "edk2": "c18e1f36b0698361",
+  "uboot": "c18e1f36b0698361"
+ },
+ "al_hal_eth_common.h": {
+  "edk2": "fac072aa746b8730",
+  "uboot": "fac072aa746b8730"
+ },
+ "al_hal_eth_common_regs.h": {
+  "edk2": "8997c78ee9eb614d",
+  "uboot": "8997c78ee9eb614d"
+ },
+ "al_hal_eth_crc_tables.h": {
+  "edk2": "6af0ffd51f9defee",
+  "uboot": "6af0ffd51f9defee"
+ },
+ "al_hal_eth_defs.h": {
+  "edk2": "da61dbb30aa6323c",
+  "uboot": "da61dbb30aa6323c"
+ },
+ "al_hal_eth_desc.h": {
+  "edk2": "3ac0954101176c1f",
+  "uboot": "3ac0954101176c1f"
  },
  "al_hal_eth_ec_regs.h": {
   "al_eth": "8efde99f4ef229b8",
+  "edk2": "8aa5d4b8b49af45c",
   "uboot": "8aa5d4b8b49af45c"
+ },
+ "al_hal_eth_epe.c": {
+  "edk2": "fd910a7990d2dcbe",
+  "uboot": "fd910a7990d2dcbe"
+ },
+ "al_hal_eth_epe.h": {
+  "edk2": "31eaac8c4bfb067f",
+  "uboot": "31eaac8c4bfb067f"
+ },
+ "al_hal_eth_epe_regs.h": {
+  "edk2": "b109f7cda35b32c3",
+  "uboot": "b109f7cda35b32c3"
+ },
+ "al_hal_eth_field.c": {
+  "edk2": "87ae5d9a35370856",
+  "uboot": "87ae5d9a35370856"
+ },
+ "al_hal_eth_field.h": {
+  "edk2": "a2d3de16abfeb8b1",
+  "uboot": "a2d3de16abfeb8b1"
+ },
+ "al_hal_eth_fwd_tables.h": {
+  "edk2": "cebf62cdc7af4119",
+  "uboot": "cebf62cdc7af4119"
  },
  "al_hal_eth_kr.h": {
   "al_eth": "d90f71050084fd1f",
+  "edk2": "4d3c82d5c0e7e846",
   "uboot": "4d3c82d5c0e7e846"
+ },
+ "al_hal_eth_mac.c": {
+  "edk2": "4836151299821a41",
+  "uboot": "4836151299821a41"
+ },
+ "al_hal_eth_mac.h": {
+  "edk2": "09169d74c2222094",
+  "uboot": "09169d74c2222094"
+ },
+ "al_hal_eth_mac_config_defs.h": {
+  "edk2": "2f31c99977317790",
+  "uboot": "2f31c99977317790"
+ },
+ "al_hal_eth_mac_internal.c": {
+  "edk2": "905d47ce5bd29f3e",
+  "uboot": "905d47ce5bd29f3e"
+ },
+ "al_hal_eth_mac_internal.h": {
+  "edk2": "a73d8eab2f65fbc6",
+  "uboot": "a73d8eab2f65fbc6"
  },
  "al_hal_eth_mac_regs.h": {
   "al_eth": "35859e3f08ec9f43",
+  "edk2": "a0330c585f34d7b7",
   "uboot": "a0330c585f34d7b7"
+ },
+ "al_hal_eth_mac_v1_v2.c": {
+  "edk2": "91a34db7bab404b2",
+  "uboot": "91a34db7bab404b2"
+ },
+ "al_hal_eth_mac_v4_common_regs.h": {
+  "edk2": "541e717a06f2186c",
+  "uboot": "541e717a06f2186c"
+ },
+ "al_hal_eth_mac_v4_regs.h": {
+  "edk2": "e47d34a71b53c82b",
+  "uboot": "e47d34a71b53c82b"
  },
  "al_hal_eth_main.c": {
   "al_eth": "348ccde3f2828972",
+  "edk2": "dc2b02135569a38f",
   "uboot": "dc2b02135569a38f"
+ },
+ "al_hal_eth_rfw.c": {
+  "edk2": "0ad1ad8e9130a1f3",
+  "uboot": "0ad1ad8e9130a1f3"
+ },
+ "al_hal_eth_rfw.h": {
+  "edk2": "9a4809f77647ae8c",
+  "uboot": "9a4809f77647ae8c"
+ },
+ "al_hal_eth_rfw_regs.h": {
+  "edk2": "1d7944a7871a643e",
+  "uboot": "1d7944a7871a643e"
+ },
+ "al_hal_eth_rmp_regs.h": {
+  "edk2": "62c34a6f4a36adad",
+  "uboot": "62c34a6f4a36adad"
+ },
+ "al_hal_eth_rx_fwd_lrss_tables.h": {
+  "edk2": "b5391d0c8f718478",
+  "uboot": "b5391d0c8f718478"
+ },
+ "al_hal_eth_shared_resource_regs.h": {
+  "edk2": "f52e41d56d095838",
+  "uboot": "f52e41d56d095838"
  },
  "al_hal_iofic.c": {
   "al_dma": "3eb1bd7c6a663fb0",
   "al_eth": "3eb1bd7c6a663fb0",
   "al_ssm": "80e227fe010d7ae8",
+  "edk2": "80e227fe010d7ae8",
   "uboot": "80e227fe010d7ae8"
  },
  "al_hal_iofic.h": {
   "al_dma": "5ab881387bedb393",
   "al_eth": "e1f5df57459f3334",
   "al_ssm": "02490b8a47b9599c",
+  "edk2": "c200ed3da12f2e8f",
   "uboot": "c200ed3da12f2e8f"
  },
  "al_hal_iofic_regs.h": {
   "al_dma": "0fa63826ee40003d",
   "al_eth": "56f31710e3e22f45",
   "al_ssm": "0fa63826ee40003d",
+  "edk2": "e31696970d90a9ea",
   "uboot": "e31696970d90a9ea"
+ },
+ "al_hal_iomap.h": {
+  "edk2": "46912664e1c6cd51",
+  "uboot": "46912664e1c6cd51"
  },
  "al_hal_m2m_udma.c": {
   "al_dma": "4c680eca0ff8d563",
@@ -58,22 +181,30 @@
  "al_hal_m2m_udma.h": {
   "al_dma": "07c55c0e7379facb",
   "al_ssm": "c20ef563ae5449f3",
+  "edk2": "a8831f18655d573c",
   "uboot": "a8831f18655d573c"
+ },
+ "al_hal_msg_ipc.h": {
+  "edk2": "68709ed662a78efb",
+  "uboot": "68709ed662a78efb"
  },
  "al_hal_plat_services.h": {
   "al_dma": "e48b477de1f9c1b4",
   "al_eth": "e48b477de1f9c1b4",
-  "al_ssm": "8130611da1bf42f2"
+  "al_ssm": "8130611da1bf42f2",
+  "edk2": "5ef8d37b9550e4b2"
  },
  "al_hal_plat_types.h": {
   "al_dma": "9183ddbad9aa1734",
   "al_eth": "9183ddbad9aa1734",
-  "al_ssm": "f386e9fb8039d96d"
+  "al_ssm": "f386e9fb8039d96d",
+  "edk2": "d3cd70e85f01a582"
  },
  "al_hal_reg_utils.h": {
   "al_dma": "28f2d15d16d77eb9",
   "al_eth": "28f2d15d16d77eb9",
-  "al_ssm": "bd9f363a2d393ed1"
+  "al_ssm": "bd9f363a2d393ed1",
+  "edk2": "bd9f363a2d393ed1"
  },
  "al_hal_serdes_25g.c": {
   "al_eth": "6856873cefdb8b9a",
@@ -139,24 +270,28 @@
  "al_hal_types.h": {
   "al_dma": "663c7766a8211ebf",
   "al_eth": "663c7766a8211ebf",
-  "al_ssm": "2e2eaedb59ac9d26"
+  "al_ssm": "2e2eaedb59ac9d26",
+  "edk2": "2e2eaedb59ac9d26"
  },
  "al_hal_udma.h": {
   "al_dma": "87f2fe6300271603",
   "al_eth": "e37edde8dcb71937",
   "al_ssm": "d6e96ea3142631b9",
+  "edk2": "9c6e021632ac2efd",
   "uboot": "9c6e021632ac2efd"
  },
  "al_hal_udma_config.c": {
   "al_dma": "dd8f41b1745c6bb9",
   "al_eth": "b3e072c9235f4398",
   "al_ssm": "2a59b5f5f8585b19",
+  "edk2": "b2459e3edf1a0948",
   "uboot": "b2459e3edf1a0948"
  },
  "al_hal_udma_config.h": {
   "al_dma": "164f359064434966",
   "al_eth": "d335baf9e06030cc",
   "al_ssm": "f86d5c510629e3f4",
+  "edk2": "01b0d06287d38a85",
   "uboot": "01b0d06287d38a85"
  },
  "al_hal_udma_debug.c": {
@@ -168,72 +303,85 @@
   "al_dma": "7fbc934cef9fddb4",
   "al_eth": "7fbc934cef9fddb4",
   "al_ssm": "93b1b32e5e5f8f9d",
+  "edk2": "880acdcbbb4f4213",
   "uboot": "880acdcbbb4f4213"
  },
  "al_hal_udma_iofic.c": {
   "al_dma": "ef9ff62d47aa0209",
   "al_eth": "09cb3016f1e70bda",
   "al_ssm": "7ca5d36e875f6aed",
+  "edk2": "3205ea561871de5c",
   "uboot": "3205ea561871de5c"
  },
  "al_hal_udma_iofic.h": {
   "al_dma": "2f60e540d80caa0a",
   "al_eth": "38fb56382138b945",
   "al_ssm": "0b67b854b84fe79a",
+  "edk2": "e0e779f51bbcdf37",
   "uboot": "e0e779f51bbcdf37"
  },
  "al_hal_udma_iofic_regs.h": {
   "al_dma": "801553ed170fcf4a",
   "al_eth": "dcc4fd3e960de69a",
   "al_ssm": "801553ed170fcf4a",
+  "edk2": "99d6a5d6826db375",
   "uboot": "99d6a5d6826db375"
  },
  "al_hal_udma_main.c": {
   "al_dma": "3677f4863334f4bd",
   "al_eth": "42fed4bd5b6e3688",
   "al_ssm": "1414c32a5ead9037",
+  "edk2": "bfcc175796e9da9c",
   "uboot": "bfcc175796e9da9c"
  },
  "al_hal_udma_regs.h": {
   "al_dma": "84ac4ae13049694d",
   "al_eth": "84ac4ae13049694d",
   "al_ssm": "eac4b9a437100c8c",
+  "edk2": "eac4b9a437100c8c",
   "uboot": "eac4b9a437100c8c"
  },
  "al_hal_udma_regs_gen.h": {
   "al_dma": "7db82a929777b64f",
   "al_eth": "7db82a929777b64f",
   "al_ssm": "0222af361847b61f",
+  "edk2": "0222af361847b61f",
   "uboot": "0222af361847b61f"
  },
  "al_hal_udma_regs_gen_section_ctrl.h": {
   "al_ssm": "9d0684d0329cbd87",
+  "edk2": "9d0684d0329cbd87",
   "uboot": "9d0684d0329cbd87"
  },
  "al_hal_udma_regs_m2s.h": {
   "al_dma": "39cd0f19183c7e8e",
   "al_eth": "39cd0f19183c7e8e",
   "al_ssm": "011b8e3aba9fd14c",
+  "edk2": "011b8e3aba9fd14c",
   "uboot": "011b8e3aba9fd14c"
  },
  "al_hal_udma_regs_s2m.h": {
   "al_dma": "524a521379cecea6",
   "al_eth": "524a521379cecea6",
   "al_ssm": "98d15f32586c6a40",
+  "edk2": "98d15f32586c6a40",
   "uboot": "98d15f32586c6a40"
  },
  "al_hal_unit_adapter.h": {
   "al_ssm": "f1f873d2b0ae106f",
+  "edk2": "6dbf2e10f3b7d3d1",
   "uboot": "6dbf2e10f3b7d3d1"
  },
  "al_hal_unit_adapter_gen_regs.h": {
   "al_ssm": "e08f8e4230f490ab",
+  "edk2": "e08f8e4230f490ab",
   "uboot": "e08f8e4230f490ab"
  },
  "al_hal_unit_adapter_regs.h": {
   "al_dma": "fb24f7b82f8a54e9",
   "al_eth": "fb24f7b82f8a54e9",
   "al_ssm": "a23051b7a43efd23",
+  "edk2": "a23051b7a43efd23",
   "uboot": "a23051b7a43efd23"
  }
 }

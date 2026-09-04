@@ -1,0 +1,59 @@
+## @file
+#  Alpine al_eth 1G RGMII SimpleNetworkProtocol driver for the Ubiquiti UNVR.
+#
+#  Binds PCI 1c36:0001 (RJ45, RGMII -> AR8031/AR8033 at MDIO addr 4).
+#  Adapted from imbushuo/ccr2004-uefi's Drivers/AlEthNextDxe.
+#
+#  Copyright (c) 2024, MikroTik. All rights reserved.
+#  Copyright (c) 2026, Awto / Daniel Tyrrell. All rights reserved.
+#
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+##
+
+[Defines]
+  INF_VERSION                    = 0x0001001b
+  BASE_NAME                      = AlEth1gSnpDxe
+  FILE_GUID                      = 3696b990-1029-4f11-a253-c4f3926086fd
+  MODULE_TYPE                    = UEFI_DRIVER
+  VERSION_STRING                 = 1.0
+  ENTRY_POINT                    = AlEth1gSnpDxeEntryPoint
+
+[Sources]
+  AlEth1gSnpDxe.c
+  AlEth1gSnpDxe.h
+  AlEth1gHalStubs.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+  Platform/Ubiquiti/UNVR/Unvr.dec
+
+[LibraryClasses]
+  AlpineHalLib
+  BaseLib
+  BaseMemoryLib
+  CacheMaintenanceLib
+  DebugLib
+  DevicePathLib
+  IoLib
+  MemoryAllocationLib
+  TimerLib
+  UefiBootServicesTableLib
+  UefiDriverEntryPoint
+  UefiLib
+
+[Protocols]
+  gEfiCpuArchProtocolGuid                  ## CONSUMES
+  gEfiSimpleNetworkProtocolGuid            ## BY_START
+  gEfiDevicePathProtocolGuid               ## BY_START
+  gEfiPciIoProtocolGuid                    ## TO_START
+
+[Depex]
+  gEfiCpuArchProtocolGuid
+
+[BuildOptions]
+  # The HAL's own headers, plus its two force-included platform shims. Same
+  # $(MODULE_DIR)-relative form AlpineHalLib.inf uses - this repo is on
+  # PACKAGES_PATH, not under WORKSPACE (scripts/build-uefi-p0.py).
+  GCC:*_*_AARCH64_CC_FLAGS = -I$(MODULE_DIR)/../../Library/AlpineHalLib -I$(MODULE_DIR)/../../Library/AlpineHalLib/include -include al_hal_plat_types.h -include al_hal_plat_services.h
