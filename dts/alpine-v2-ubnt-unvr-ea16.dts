@@ -381,14 +381,14 @@
 
 					/* OFFLINE for now (status="disabled"): U-Boot does the RTC
 					 * reset-at-probe (clears POC/BLD before Linux, alpine.c), and
-					 * keeping Linux off ch0's RTC avoids re-triggering the SDA-hold
-					 * wedge (docs/rtc-s35390a-fault.md, #86) so the ch0/SFP-EEPROM
-					 * segment stays scannable + no al_eth poll flood. Fedora keeps
-					 * time via NTP. Re-enable once a Linux-side ch0 recovery exists. */
+					 * Enabled since #86: the ch0 wedge was mainline's IC_ENABLE.ABORT,
+					 * suppressed by snps,no-enable-abort on the parent. A full ch0
+					 * scan and repeated RTC reads now leave the bus clean. The cell
+					 * has no battery, so this only holds time across a WARM reboot;
+					 * NTP remains the real clock source. */
 					rtc@30 {
 						compatible = "sii,s35390a";
 						reg = <0x30>;
-						status = "disabled";
 					};
 				};
 
