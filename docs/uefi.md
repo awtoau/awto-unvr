@@ -690,13 +690,33 @@ Evaluate DXE DEPEX for FFS(3696B990-...)
 Next step is a small UEFI Shell app calling `Initialize()` + `GetStatus()` on the
 SNP handle, which forces the whole init path and prints link state.
 
-### P4 — GRUB → Linux
+### P4 — Linux, direct from the EFI stub (no GRUB, no FDT table)
 
-- EDK2 installs `live.dtb` as `gFdtTableGuid` config table; `grubaa64.efi` from the
-  ext4 USB or SATA; GRUB loads the mainline `Image` + initramfs; Linux enters at
-  the EL EDK2 hands off (EL2 per current chain).
-- This is the payoff: a standard UEFI+ACPI/DT boot for TrueNAS/Fedora/Debian
-  without the stock initramfs.
+**Status (2026-09-05): achieved with `maxcpus=1`, build `753879b`.** Chain
+`stock → awto-uboot (bootedk2) → EDK2 → EFI stub → Linux` reaches Fedora login,
+systemd, SATA root and the USB NICs. `efi: EFI v2.7 by EDK II` in dmesg is the
+proof (bootm logs `efi: UEFI not found`). Record: #251.
+
+- `Image` is already a PE32+ EFI application (machine `0xaa64`, subsystem `0x0a`
+  EFI_APPLICATION) and `CONFIG_EFI_ARMSTUB_DTB_LOADER=y` lets its stub load the
+  DTB itself. No GRUB, no `gFdtTableGuid` installer.
+- Launched from the Shell on the SSD's vfat ESP (`FS2:` over SATA):
+  `Image.efi dtb=\unvr.dtb earlycon=uart8250,mmio32,0xfd883000 maxcpus=1
+  console=ttyS0,115200 root=PARTUUID=... rootfstype=ext4 rw rootwait ...`
+- `dtb=` is image-relative: `\unvr.dtb`, never `fs2:\unvr.dtb`. The Shell's
+  argv[0] leaks onto the kernel cmdline (`Image.efi dtb=...`); harmless.
+- **`earlycon` is required to see anything.** The stub's `efi_puts` goes to
+  ConOut, which is not wired to the UART here; EDK2's own DEBUG output is. Without
+  it a kernel that entered and hung is indistinguishable from one that never ran.
+- **Secondary CPUs do not come up on this path.** `smp: Bringing up secondary
+  CPUs ...` hangs silently without `maxcpus=1`. Same PSCI (`alpine-v2.dtsi`,
+  SMC, `cpu_on 0x84000003`), same DT as bootm, where all four arrive in <6 ms
+  each — so it is state EDK2 leaves behind. Lead: EDK2 allocates to the top of
+  bank 0 (`0xBFFFFFFF`), which is where #153's 146 MB EL3 carveout sits; if the
+  platform memory PCDs do not reserve it, `CPU_ON` releases secondaries into
+  overwritten memory. #255.
+- `./dev.py uefi-p4-boot` cannot yet complete unattended (#261); the Tcl sequence
+  on #251 is what works.
 
 ---
 
