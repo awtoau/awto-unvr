@@ -94,6 +94,9 @@
   # PCI host bridge (P1 - internal PCIe only, docs/uefi.md)
   PciHostBridgeLib|Platform/Ubiquiti/UNVR/Library/PciHostBridgeLib/PciHostBridgeLib.inf
 
+  # Annapurna Labs HAL (eth + UDMA + IOFIC), shared by the ethernet SNP driver
+  AlpineHalLib|Platform/Ubiquiti/UNVR/Library/AlpineHalLib/AlpineHalLib.inf
+
   # Null stubs
   PerformanceLib|MdePkg/Library/BasePerformanceLibNull/BasePerformanceLibNull.inf
   ReportStatusCodeLib|MdePkg/Library/BaseReportStatusCodeLibNull/BaseReportStatusCodeLibNull.inf
@@ -159,6 +162,14 @@
 
   # Sort
   SortLib|MdeModulePkg/Library/UefiSortLib/UefiSortLib.inf
+
+  # Block storage (P2 - SATA/USB mass storage, docs/uefi.md)
+  # GptLib     <- PartitionDxe (GPT header/entry parsing)
+  # UefiScsiLib <- ScsiBusDxe/ScsiDiskDxe (SCSI command helpers)
+  # Both are the same instances ArmVirtPkg/ArmVirt.dsc.inc and
+  # OvmfPkg/RiscVVirt use; no platform-specific choice exists.
+  GptLib|MdeModulePkg/Library/GptLib/GptLib.inf
+  UefiScsiLib|MdePkg/Library/UefiScsiLib/UefiScsiLib.inf
 
   # Shell
   ShellLib|ShellPkg/Library/UefiShellLib/UefiShellLib.inf
@@ -336,6 +347,12 @@
   ArmPlatformPkg/PeilessSec/PeilessSec.inf
 
   #
+  # Alpine HAL - listed as a component so it is compiled even before the
+  # ethernet SNP driver that consumes it exists.
+  #
+  Platform/Ubiquiti/UNVR/Library/AlpineHalLib/AlpineHalLib.inf
+
+  #
   # DXE Core
   #
   MdeModulePkg/Core/Dxe/DxeMain.inf {
@@ -401,6 +418,30 @@
   MdeModulePkg/Bus/Pci/XhciDxe/XhciDxe.inf
   MdeModulePkg/Bus/Usb/UsbBusDxe/UsbBusDxe.inf
   MdeModulePkg/Bus/Usb/UsbMassStorageDxe/UsbMassStorageDxe.inf
+
+  #
+  # Block storage (P2, docs/uefi.md) - all stock EDK2, the exact set
+  # OvmfPkg/RiscVVirt/RiscVVirtQemu.dsc uses for AHCI, plus the disk
+  # layers from ArmVirtPkg/ArmVirt.dsc.inc. No board-specific driver:
+  # the 2x AHCI EPs (1c36:0031, abar 0xfe154000/0xfe158000, 4 ports
+  # each) report PCI class 01/06/01 = generic AHCI 1.0, which is what
+  # SataControllerDxe's IS_PCI_SATADPA match and AtaAtapiPassThru's
+  # AHCI path expect (class bytes read off the live box, 2026-09-04).
+  #
+  # Stack: PciBusDxe -> SataControllerDxe (IdeControllerInit, a
+  # TO_START dependency of AtaAtapiPassThru) -> AtaAtapiPassThru
+  # (AtaPassThru/ExtScsiPassThru) -> AtaBusDxe (BlockIo) ->
+  # PartitionDxe (GPT/MBR) -> DiskIoDxe -> Fat.inf (the ESP).
+  # ScsiBus/ScsiDisk serve ATAPI and the USB mass-storage path.
+  #
+  MdeModulePkg/Bus/Pci/SataControllerDxe/SataControllerDxe.inf
+  MdeModulePkg/Bus/Ata/AtaBusDxe/AtaBusDxe.inf
+  MdeModulePkg/Bus/Ata/AtaAtapiPassThru/AtaAtapiPassThru.inf
+  MdeModulePkg/Bus/Scsi/ScsiBusDxe/ScsiBusDxe.inf
+  MdeModulePkg/Bus/Scsi/ScsiDiskDxe/ScsiDiskDxe.inf
+  MdeModulePkg/Universal/Disk/DiskIoDxe/DiskIoDxe.inf
+  MdeModulePkg/Universal/Disk/PartitionDxe/PartitionDxe.inf
+  FatPkg/EnhancedFatDxe/Fat.inf
 
   # Boot Manager Menu. NOTE (2026-09-02, see docs/uefi.md): this app's
   # own interactive menu auto-enumerates generic "non-block boot
