@@ -1004,6 +1004,27 @@ def cmd_uefi_shell_cmd(extra: list[str]) -> int:
 
 
 @command(
+    "stage Image.efi + unvr.dtb onto the boot SSD's existing 200 MB vfat "
+    "ESP - docs/uefi.md P4 needs a FAT volume and Fat.inf cannot read the "
+    "ext4 root. Finds it by GPT type, never /dev/sdX (scripts/uefi-esp-stage.py)",
+    kind="action",
+)
+def cmd_uefi_esp_stage(extra: list[str]) -> int:
+    return _run_script("scripts/uefi-esp-stage.py", extra)
+
+
+@command(
+    "docs/uefi.md P4 end-to-end from awto-nas#: ext4load+crc32+`go` the EDK2 "
+    "FD, reach the Shell, `connect -r`, then launch our kernel directly - "
+    "Image is already PE/COFF and its EFI stub loads the DTB from `dtb=`, so "
+    "no GRUB and no FDT config table (#251, scripts/uefi-p4-boot.py)",
+    kind="action",
+)
+def cmd_uefi_p4_boot(extra: list[str]) -> int:
+    return _run_script("scripts/uefi-p4-boot.py", extra)
+
+
+@command(
     "send a serial BREAK (+ optional Magic SysRq letter) to the UNVR's "
     "console, e.g. to grab a live blocked-task dump during a hang that "
     "console-send can't reach - tio's socket mode doesn't relay ctrl-t "
