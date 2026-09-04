@@ -1408,6 +1408,16 @@ def cmd_publish_fedora(extra: list[str]) -> int:
 
 
 @command(
+    "flash awto-uboot into NAND and point stock's bootcmd at it, so awto-uboot "
+    "owns the boot and loads the kernel from SSD (~6x faster than NAND, and our "
+    "bootargs win). Run at the stock U-Boot prompt (scripts/flash-awto-uboot.py)",
+    kind="action",
+)
+def cmd_flash_uboot(extra: list[str]) -> int:
+    return _run_script("scripts/flash-awto-uboot.py", extra)
+
+
+@command(
     "phase 2/2 of a Fedora deploy: flash the published kernel+DTB into NAND + "
     "set U-Boot to boot it. Run ./dev.py publish-fedora first, then reset to "
     "U-Boot (scripts/flash-nand.py)",
