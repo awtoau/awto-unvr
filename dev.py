@@ -81,7 +81,8 @@ CONSOLE_ROLL_KEEP = 3
 CONSOLE_PEEK_LINES = 500
 
 BOARD_SYSID = "0xea16"
-BOARD_MAC = "74:ac:b9:41:a8:11"
+sys.path.insert(0, str(REPO / "scripts"))
+from _box import MAC_1G as BOARD_MAC  # noqa: E402  - both MACs live in _box.py
 
 # --------------------------------------------------------------------------
 # STEPS - the only project-specific build table. This repo has no compiled

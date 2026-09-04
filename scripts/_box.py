@@ -5,11 +5,8 @@
 
 - Resolve by MAC, never by IP: the DHCP lease moves (.149, .106, .129, .136,
   .140 so far) and a stale address fails "refused", not "timeout".
-- EXACT MACs, never the OUI: other UBNT gear shares 74:AC:B9, and an OUI
-  match once picked a neighbouring device. docs/identity-partitions.md.
-- BOTH MACs: all four host NICs answer ARP for any local IP (arp_ignore=0)
-  and both box ports sit on one subnet (#170), so `ip neigh` routinely
-  names the 10G port's MAC for an IP the 1G port also answers.
+- The MACs live here and only here (WOOMERA_MACS below); a guard test
+  fails on any other copy.
 - Does NOT import _repo on purpose: ssh-woomera.py is run by tools outside
   dev.py and must not trip the direct-invocation guard.
 
@@ -27,8 +24,12 @@ from pathlib import Path
 
 from _net import LAN_SUBNET
 
-# The two al_eth MACs from the NOR identity blob at 0x1f0000: base+1 is the
-# 1G RJ45 (eth0), base+2 the 10G SFP+ (eth1).
+# The box's two al_eth MACs, from the NOR identity blob at 0x1f0000
+# (docs/identity-partitions.md): base+1 = 1G RJ45 (eth0), base+2 = 10G SFP+.
+# EXACT MACs, never the OUI: other UBNT gear shares 74:AC:B9 and an OUI match
+# once picked a neighbouring device. BOTH ports: all four host NICs answer ARP
+# for any local IP and both box ports sit on one subnet (#170), so `ip neigh`
+# routinely names the 10G MAC for an IP the 1G port also answers.
 MAC_1G = "74:ac:b9:41:a8:11"
 MAC_10G = "74:ac:b9:41:a8:12"
 WOOMERA_MACS = frozenset({MAC_1G, MAC_10G})

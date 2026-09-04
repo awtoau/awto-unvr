@@ -21,13 +21,10 @@ import time
 REPO = pathlib.Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO / "scripts"))
 import _console  # noqa: E402
+from _box import MAC_1G, MAC_10G  # noqa: E402
 from _net import UNVR_IPADDR, detect_server_ip  # noqa: E402
 
 LOG = REPO / "tmp" / "logs" / "uboot-eth-wire-test.log"
-
-# The two al_eth MACs (docs: base MAC + 1 = 1G RJ45, + 2 = 10G SFP+).
-MAC_1G = "74:ac:b9:41:a8:11"
-MAC_10G = "74:ac:b9:41:a8:12"
 
 
 def logw(msg):
