@@ -307,6 +307,11 @@ def configure():
             "VFAT_FS",
             "--enable",
             "MSDOS_FS",
+            # vfat's DEFAULT iocharset is iso8859-1. Without it every plain
+            # `mount /dev/sdd1` fails "IO charset iso8859-1 not found" even
+            # though VFAT_FS is on - only -o iocharset=ascii works (#250).
+            "--enable",
+            "NLS_ISO8859_1",
             # Everything the box physically has gets a driver, even on a
             # headless NAS: an unexercised subsystem is an unknown, and each one
             # that probes is a test of the port. Audit: scripts/audit-hw-coverage.py
