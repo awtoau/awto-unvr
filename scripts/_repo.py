@@ -139,6 +139,38 @@ def kernel_src() -> Path:
     )
 
 
+# Source-level patch markers: file -> (string that must be present, patch,
+# issue). A Kconfig symbol cannot stand in for these - the i2c fix is a
+# behaviour change inside a function, with no CONFIG of its own, so an
+# unapplied patch would otherwise build clean and wedge the bus on the box.
+KERNEL_PATCH_MARKERS = {
+    "drivers/i2c/busses/i2c-designware-common.c": (
+        '"snps,no-enable-abort"',
+        "patches/i2c-designware-no-enable-abort.patch",
+        "#86",
+    ),
+}
+
+
+def check_kernel_patches(log_fn=None) -> None:
+    """FATAL if the kernel tree about to be built is missing a source-level
+    patch from patches/. Mirrors the CONFIG_AHCI_ALPINE=y check (#92) for
+    the changes that have no config symbol to check."""
+    src = kernel_src()
+    for relpath, (marker, patch, issue) in KERNEL_PATCH_MARKERS.items():
+        path = src / relpath
+        if not path.exists() or marker not in path.read_text():
+            msg = (
+                f"FATAL: {relpath} in {src} does not contain {marker} - "
+                f"apply {patch} in AWTO_KERNEL_SRC ({issue})"
+            )
+            if log_fn:
+                log_fn(msg)
+            else:
+                print(msg, file=sys.stderr)
+            sys.exit(1)
+
+
 def kernel_build_ver() -> str:
     """Short 'VERSION.PATCHLEVEL' label (e.g. "7.3") baked into every
     output filename (uImage/dtb/tftp names) and the uImage's own Image

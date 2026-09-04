@@ -1,0 +1,49 @@
+Subject: spi: designware: bound Rx transfers to the Rx FIFO depth
+
+Tree: /mnt/2tb/unvr-port-refs/u-boot-v2026.07 (UBOOT_TREE)
+Issue: #91
+
+A polled consumer that falls behind overruns the Rx FIFO; the symptom is
+the environment failing to load off SPI flash. Chunk the transfer to the
+FIFO depth so the consumer cannot fall behind by more than one FIFO.
+
+Currently invisible - uboot-port/drivers/spi/designware_spi.c is copied
+over the upstream file wholesale.
+
+diff --git a/drivers/spi/designware_spi.c b/drivers/spi/designware_spi.c
+index b520c727..bb873043 100644
+--- a/drivers/spi/designware_spi.c
++++ b/drivers/spi/designware_spi.c
+@@ -674,10 +674,30 @@ static int dw_spi_exec_op(struct spi_slave *slave, const struct spi_mem_op *op)
+ 	return ret;
+ }
+ 
+-/* The size of ctrl1 limits data transfers to 64K */
++/*
++ * CTRLR1 (NDF) is 16-bit, so any single transfer is limited to 64K.
++ *
++ * awto-unvr #91: additionally bound a *read* to the Rx FIFO depth. In
++ * EEPROM-read mode the controller free-runs all NDF frames into the Rx FIFO
++ * with no back-pressure; a slow polled consumer (e.g. per-byte log_content at
++ * LOGLEVEL 8) drains late, the FIFO overruns, and the read is silently
++ * corrupted ("FIFO overflow on Rx" -> env load fails -> default env). Capping a
++ * read at fifo_len means every frame the controller clocks in fits even if the
++ * CPU never reads until the end, so consumer speed can't overrun it - the
++ * spi-mem layer just issues more (address-advanced) reads. Writes stay at 64K:
++ * dw_writer()/tx_max() already flow-control Tx against the FIFO, so they can't
++ * overrun and shouldn't lose throughput. SPI here is env (64K) + MAC EEPROM
++ * only, so the extra read commands are immaterial to boot time.
++ */
+ static int dw_spi_adjust_op_size(struct spi_slave *slave, struct spi_mem_op *op)
+ {
+-	op->data.nbytes = min(op->data.nbytes, (unsigned int)SZ_64K);
++	struct dw_spi_priv *priv = dev_get_priv(slave->dev->parent);
++
++	if (op->data.dir == SPI_MEM_DATA_IN && priv->fifo_len)
++		op->data.nbytes = min_t(unsigned int, op->data.nbytes,
++					priv->fifo_len);
++	else
++		op->data.nbytes = min(op->data.nbytes, (unsigned int)SZ_64K);
+ 
+ 	return 0;
+ }

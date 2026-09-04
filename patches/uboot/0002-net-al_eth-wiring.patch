@@ -1,0 +1,33 @@
+Subject: net: wire up the al_eth 1G RGMII driver
+
+Tree: /mnt/2tb/unvr-port-refs/u-boot-v2026.07 (UBOOT_TREE)
+Issue: #224
+
+drivers/net/al_eth/ is copied in from uboot-port/ by
+scripts/uboot-build.py; this is the obj line + sourced Kconfig that make it
+reachable.
+
+Was: NET_MK_LINE / NET_KC_LINE txt.replace() in scripts/uboot-build.py.
+
+diff --git a/drivers/net/Kconfig b/drivers/net/Kconfig
+index 66661868..f30c8038 100644
+--- a/drivers/net/Kconfig
++++ b/drivers/net/Kconfig
+@@ -1108,6 +1108,8 @@ source "drivers/net/phy/Kconfig"
+ source "drivers/net/pfe_eth/Kconfig"
+ source "drivers/net/fsl-mc/Kconfig"
+ 
++source "drivers/net/al_eth/Kconfig"
++
+ endif # NETDEVICES
+ 
+ endmenu
+diff --git a/drivers/net/Makefile b/drivers/net/Makefile
+index 5e90183d..e8702abc 100644
+--- a/drivers/net/Makefile
++++ b/drivers/net/Makefile
+@@ -113,3 +113,4 @@ obj-y += mscc_eswitch/
+ obj-y += phy/
+ obj-y += qe/
+ obj-y += ti/
++obj-$(CONFIG_AL_ETH) += al_eth/

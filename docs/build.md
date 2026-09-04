@@ -12,9 +12,54 @@ the `pcie-al.c` DBI fix, `unvr_defconfig`) lives as real commits in that
 tree's own git history - not as patches applied by any script here.
 `patches/*.patch` are staging artifacts for that: `git apply` + commit them
 in the kernel tree, they are not applied by a build.
-`patches/ahci-alpine-per-port-msix.patch` (`drivers/ata/ahci_alpine.c` +
-Kconfig/Makefile/`ahci.c`/`unvr_defconfig`) is required - both kernel build
-scripts FATAL if `CONFIG_AHCI_ALPINE=y` is missing (#92). The
+
+### `patches/` - kernel tree (`/mnt/2tb/unvr-port-refs/linux-v7.3-fresh`)
+
+| Patch | Covers | Enforced by |
+|---|---|---|
+| `ahci-alpine-per-port-msix.patch` | `drivers/ata/ahci_alpine.c` + `drivers/ata/{Kconfig,Makefile}`, `ahci.c` handoff, `unvr_defconfig` | `CONFIG_AHCI_ALPINE=y` FATAL, both kernel scripts (#92) |
+| `i2c-designware-no-enable-abort.patch` | `snps,no-enable-abort` + `snps,no-sda-rx-hold` DT opt-outs in `i2c-designware-common.c` | `check_kernel_patches()` source-marker FATAL (#86) |
+| `arm64-alpine-select-net-devlink.patch` | `ARCH_ALPINE select NET_DEVLINK if NET` in `Kconfig.platforms` | `CONFIG_NET_DEVLINK=y` FATAL, `build-linux-fedora.py` |
+
+The i2c one has no config symbol of its own - it is a behaviour change
+inside `__i2c_dw_disable()`, so an unapplied patch would build clean and
+wedge the pld bus on the box. `_repo.py`'s `KERNEL_PATCH_MARKERS` /
+`check_kernel_patches()` greps the tree's source instead; add an entry there
+for any future patch that is likewise config-invisible.
+
+The board DTS is **not** a patch - `build-linux-fedora.py` stages
+`dts/*.dts{,i}` from this repo over the kernel tree at every build, so
+`dts/` is the single source of truth (see `stage_dts()`).
+
+### `patches/uboot/` - U-Boot tree (`/mnt/2tb/unvr-port-refs/u-boot-v2026.07`)
+
+Extracted from `uboot-build.py`'s in-place string surgery (#224). All eight
+apply cleanly to pristine `v2026.07` and together reproduce the tree exactly.
+
+| Patch | Covers | Was |
+|---|---|---|
+| `0001-board-alpine-v2-unvr-target.patch` | `TARGET_ALPINE_V2_UNVR` + board Kconfig source in `arch/arm/Kconfig` | `txt.replace()` |
+| `0002-net-al_eth-wiring.patch` | `drivers/net/{Kconfig,Makefile}` al_eth hooks | `txt.replace()` |
+| `0003-phy-al_serdes-wiring.patch` | `drivers/Makefile` obj + `drivers/phy/Kconfig` source | `txt.replace()` + a hand-written truncation guard (#102) |
+| `0004-crypto-al_ssm-wiring.patch` | `drivers/crypto/{Kconfig,Makefile}` al_ssm hooks | `txt.replace()` |
+| `0005-i2c-designware-raw-scl-hcnt-lcnt.patch` | raw SCL hcnt/lcnt from DT (#86) | whole-file copy |
+| `0006-ahci-block-size-and-spinup-wait.patch` | `MAX_SATA_BLOCKS_READ_WRITE` 0x80->0x800 (#92), spin-up link wait (#94) | whole-file copy |
+| `0007-spi-designware-bound-rx-to-fifo-depth.patch` | bound Rx to FIFO depth (#91) | whole-file copy |
+| `0008-pci-ecam-reject-aliased-devfn.patch` | `awto,single-devfn` devfn filter (#140) | whole-file copy |
+
+0005-0008 modify existing upstream files but were previously **invisible**:
+`uboot-build.py` copies `uboot-port/drivers/**` over them wholesale, so
+nothing showed what actually changed. 0008 is the patch found silently
+unstaged on 2026-08-27 (the incident in `unstage_stale()`'s docstring).
+
+`uboot-build.py` still performs the staging (the copies and the Kconfig /
+Makefile hooks) - it now calls `verify_patch_state()` afterwards, which
+re-reads the tree and FATALs naming the missing patch file if any of 11
+markers is absent. That is the U-Boot equivalent of the
+`CONFIG_AHCI_ALPINE=y` FATAL: a half-applied tree is loud, not a
+silently-wrong `u-boot.bin`.
+
+The
 6.12/6.18/7.1-specific scripts (`build-linux-612-ea16.py`, `build-linux-618-ea16.py`, the old
 `build-linux-71-ea16.py`/`build-linux-71-fedora.py`) are retired to
 `debris/scripts/` - not runnable via `dev.py`, kept for history only.

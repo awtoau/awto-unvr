@@ -1,0 +1,35 @@
+Subject: crypto: wire up the al_ssm crypto driver
+
+Tree: /mnt/2tb/unvr-port-refs/u-boot-v2026.07 (UBOOT_TREE)
+Issue: #224
+
+drivers/crypto/ is descended unconditionally (drivers/Makefile has a plain
+`obj-y += crypto/`), so a subdir obj line plus a sourced Kconfig suffice -
+the same pattern as al_eth under net/.
+
+drivers/crypto/al_ssm/ is copied in from uboot-port/ by
+scripts/uboot-build.py.
+
+Was: CRYPTO_MK_LINE / CRYPTO_KC_LINE txt.replace() in
+scripts/uboot-build.py.
+
+diff --git a/drivers/crypto/Kconfig b/drivers/crypto/Kconfig
+index 0d58e391..5d9daffa 100644
+--- a/drivers/crypto/Kconfig
++++ b/drivers/crypto/Kconfig
+@@ -12,4 +12,6 @@ source "drivers/crypto/nuvoton/Kconfig"
+ 
+ source "drivers/crypto/tegra/Kconfig"
+ 
++source "drivers/crypto/al_ssm/Kconfig"
++
+ endmenu
+diff --git a/drivers/crypto/Makefile b/drivers/crypto/Makefile
+index e4a4482b..ddbc3614 100644
+--- a/drivers/crypto/Makefile
++++ b/drivers/crypto/Makefile
+@@ -11,3 +11,4 @@ obj-y += hash/
+ obj-y += aspeed/
+ obj-y += nuvoton/
+ obj-y += tegra/
++obj-$(CONFIG_AL_SSM) += al_ssm/

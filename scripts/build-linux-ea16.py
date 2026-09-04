@@ -35,6 +35,7 @@ import zlib
 from _repo import (
     NPROC,
     REPO,
+    check_kernel_patches,
     ea16_build_out,
     kernel_build_ver,
 )  # -j28 host build parallelism (#146); self-locating repo root
@@ -242,6 +243,10 @@ def configure():
         if sym not in dotcfg:
             log(f"FATAL: {sym} not set after olddefconfig")
             sys.exit(1)
+    # Patches with no config symbol of their own - our DTS sets
+    # snps,no-enable-abort, so a tree that ignores it wedges the pld bus on
+    # the box (cold-power-cycle-only recovery) rather than failing here.
+    check_kernel_patches(log)
     log("configured: PCIE_AL + PCIE_AL_INTERNAL confirmed =y")
 
 

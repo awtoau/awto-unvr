@@ -254,6 +254,90 @@ def stage():
         log("patched drivers/crypto/Kconfig (source al_ssm/Kconfig)")
 
 
+# Post-stage verification: tree rel-path -> (marker that must be present,
+# patch under patches/uboot/ that supplies it, what breaks without it).
+# stage() is idempotent-by-`if X not in txt`, which drifts as upstream moves;
+# this re-reads the tree afterwards so a hook that silently failed to land is
+# loud here instead of producing a quietly-wrong u-boot.bin (#224).
+PATCH_MARKERS = {
+    "arch/arm/Kconfig": (
+        "TARGET_ALPINE_V2_UNVR",
+        "0001-board-alpine-v2-unvr-target.patch",
+        "no board target - defconfig will not resolve",
+    ),
+    "drivers/net/Makefile": (
+        "obj-$(CONFIG_AL_ETH)",
+        "0002-net-al_eth-wiring.patch",
+        "al_eth never compiled - no 1G ethernet",
+    ),
+    "drivers/net/Kconfig": (
+        "drivers/net/al_eth/Kconfig",
+        "0002-net-al_eth-wiring.patch",
+        "CONFIG_AL_ETH unknown - obj line silently no-ops",
+    ),
+    "drivers/Makefile": (
+        "obj-$(CONFIG_AL_SERDES)",
+        "0003-phy-al_serdes-wiring.patch",
+        "al_serdes never compiled - no 10G/25G SFP+",
+    ),
+    "drivers/phy/Kconfig": (
+        "drivers/phy/al_serdes/Kconfig",
+        "0003-phy-al_serdes-wiring.patch",
+        "CONFIG_AL_SERDES unknown - obj line silently no-ops",
+    ),
+    "drivers/crypto/Makefile": (
+        "obj-$(CONFIG_AL_SSM)",
+        "0004-crypto-al_ssm-wiring.patch",
+        "al_ssm never compiled",
+    ),
+    "drivers/crypto/Kconfig": (
+        "drivers/crypto/al_ssm/Kconfig",
+        "0004-crypto-al_ssm-wiring.patch",
+        "CONFIG_AL_SSM unknown - obj line silently no-ops",
+    ),
+    # Whole-file copies from uboot-port/. Their diffs are invisible in the
+    # copy, so the marker is the one line the fix turns on.
+    "drivers/i2c/designware_i2c.c": (
+        "i2c-ss-scl-hcnt-raw",
+        "0005-i2c-designware-raw-scl-hcnt-lcnt.patch",
+        "computed i2c timing wedges the pld bus (#86)",
+    ),
+    "drivers/pci/pcie_ecam_generic.c": (
+        "awto,single-devfn",
+        "0008-pci-ecam-reject-aliased-devfn.patch",
+        "aliased devfn binds 32 xhci drivers on one register block (#140)",
+    ),
+    "drivers/ata/ahci.c": (
+        "WAIT_MS_LINKUP_SPINUP",
+        "0006-ahci-block-size-and-spinup-wait.patch",
+        "cold HDDs missed by the first scsi scan; SATA capped ~62 MB/s (#92, #94)",
+    ),
+    "drivers/spi/designware_spi.c": (
+        "SPI_MEM_DATA_IN && priv->fifo_len",
+        "0007-spi-designware-bound-rx-to-fifo-depth.patch",
+        "Rx FIFO overrun corrupts the env read (#91)",
+    ),
+}
+
+
+def verify_patch_state():
+    """Re-read TREE after stage() and confirm every upstream hook is present.
+    Equivalent to the kernel's CONFIG_AHCI_ALPINE=y FATAL (#92): a missing or
+    half-applied patch must be loud, not a silently-wrong binary."""
+    missing = []
+    for relpath, (marker, patch, consequence) in PATCH_MARKERS.items():
+        p = Path(TREE) / relpath
+        if not p.exists() or marker not in p.read_text():
+            missing.append(f"  {relpath}: no {marker!r} - {consequence}")
+            missing.append(f"    supplied by patches/uboot/{patch}")
+    if missing:
+        log("ABORT: UBOOT_TREE is not at the expected patch state:")
+        for line in missing:
+            log(line)
+        sys.exit(1)
+    log(f"verified {len(PATCH_MARKERS)} upstream patch markers in {TREE}")
+
+
 def unstage():
     txt = Path(KCONFIG).read_text()
     txt = txt.replace(TARGET_BLOCK.lstrip("\n") + "\n", "")
@@ -366,4 +450,5 @@ if __name__ == "__main__":
     else:
         check_dts_shared()
         stage()
+        verify_patch_state()
         sys.exit(build())

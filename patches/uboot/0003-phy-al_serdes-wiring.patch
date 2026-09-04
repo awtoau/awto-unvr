@@ -1,0 +1,38 @@
+Subject: phy: wire up the al_serdes 25G/10GBASE-R driver
+
+Tree: /mnt/2tb/unvr-port-refs/u-boot-v2026.07 (UBOOT_TREE)
+Issue: #224
+
+The obj line goes in drivers/Makefile, NOT drivers/phy/Makefile: the latter
+is only descended into when CONFIG_PHY=y, and we do not need the PHY uclass.
+The Kconfig is sourced from drivers/phy/Kconfig, which drivers/Kconfig
+always sources.
+
+drivers/phy/al_serdes/ is copied in from uboot-port/ by
+scripts/uboot-build.py.
+
+Was: DRIVERS_MAKE_LINE / PHY_KCONFIG_LINE txt.replace() in
+scripts/uboot-build.py, guarded by a hand-written DRIVERS_MK_SANITY check
+against truncated files (#102). git apply's own context matching replaces
+that guard.
+
+diff --git a/drivers/Makefile b/drivers/Makefile
+index 43d0ba33..0dec9bd9 100644
+--- a/drivers/Makefile
++++ b/drivers/Makefile
+@@ -135,3 +135,4 @@ obj-$(CONFIG_$(PHASE_)DM_RNG) += rng/
+ endif
+ 
+ obj-y += soc/
++obj-$(CONFIG_AL_SERDES) += phy/al_serdes/
+diff --git a/drivers/phy/Kconfig b/drivers/phy/Kconfig
+index 5c8ec2b1..9f1c71bc 100644
+--- a/drivers/phy/Kconfig
++++ b/drivers/phy/Kconfig
+@@ -358,4 +358,6 @@ config PHY_COMMON_PROPS
+ 	  drivers to read polarity and other standard PHY properties from the
+ 	  device tree node.
+ 
++source "drivers/phy/al_serdes/Kconfig"
++
+ endmenu

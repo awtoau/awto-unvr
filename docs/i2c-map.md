@@ -30,7 +30,7 @@ AL-324 SoC
 │    ├─ 0x21  PCA9575   (bay power / presence / fault LEDs)
 │    ├─ 0x57  24C64     (DDR-config EEPROM)
 │    └─ 0x71  PCA9546 4-ch MUX
-│               ├─ ch0 → i2c-1 ── 0x30 s35390a RTC ⚠ (KNOWN BUG: wedges on probe)
+│               ├─ ch0 → i2c-1 ── 0x30-0x37 s35390a RTC (bound as rtc0)
 │               ├─ ch1 → i2c-2 ── 0x50 SFP+ module EEPROM
 │               ├─ ch2 → i2c-3 ── (empty)
 │               └─ ch3 → i2c-4 ── 0x2e adt7475 fan controller
@@ -67,21 +67,16 @@ AL-324 SoC
 - Bay-activity LEDs are **not** i2c: SGPO `fd8b4000` → external **74VHC595 (UB20)** shift
   register, sgpo lines 16-23. See [gpio-switches-leds.md](gpio-switches-leds.md).
 
-## KNOWN BUG — mux ch0 (s35390a RTC) wedges the bus
+## ch0 wedge — FIXED (2026-09-04)
 
-Selecting ch0 + touching any address holds SDA low and wedges the whole pld bus (s35390a RTC
-@0x30 strongly implicated). The SFP EEPROM @0x50 is on ch1, a separate bus, uninvolved in this
-wedge. Likely cause = a
-dropped `i2c-sda-hold-time-ns`, fixed by restoring it — **full analysis, fix, and recovery in
-[rtc-s35390a-fault.md](rtc-s35390a-fault.md)**. Behind-mux is otherwise fine (ch3 adt7475 reads
-clean).
+Cause was mainline's `IC_ENABLE.ABORT` terminating transfers mid-byte, which the s35390a answers
+by holding SDA low. Suppressed via `snps,no-enable-abort` on `i2c_pld`. A full
+`i2cdetect -y -r 1` of ch0 now completes with 0 timeouts; the bus runs at 400 kHz.
+Full analysis in [rtc-s35390a-fault.md](rtc-s35390a-fault.md).
 
 ## Re-scan recipe
 
 - Linux: `i2cdetect -l`; per-bus map `for d in /sys/bus/i2c/devices/*; do echo $(basename $d) $(cat $d/name); done`.
-  Force read-probe for hidden devices: `i2cdetect -y -r <bus>` (behind-mux buses can stall on
-  per-address timeouts — bounded ranges only).
-- U-Boot: `i2c dev <n>; i2c probe`. ch3 is reachable via `i2c mw 0x71 0 8 1` then
-  `i2c md 0x2e 3d 1` (adt7475 = 0x75). Do **not** select ch0 (`i2c mw 0x71 0 1 1`) + read —
-  it wedges the bus and needs an SP805 reset. (Our U-Boot LED blink is now solid-on so a
-  wedge no longer floods — see defconfig PREBOOT.)
+  Read-probe every bus including ch0: `i2cdetect -y -r <bus>`. Safe since the ABORT fix.
+- U-Boot: `i2c bus` lists the pld bus and the four mux child buses; `i2c dev <n>; i2c probe`
+  scans each. U-Boot never issued `IC_ENABLE.ABORT`, so ch0 was always safe there.

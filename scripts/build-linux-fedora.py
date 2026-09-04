@@ -26,6 +26,7 @@ import zlib
 from _repo import (
     NPROC,
     REPO,
+    check_kernel_patches,
     kernel_build_out,
     kernel_build_ver,
 )  # -j28 host build parallelism (#146); self-locating repo root
@@ -511,6 +512,10 @@ def configure():
             "patches/ahci-alpine-per-port-msix.patch in AWTO_KERNEL_SRC (#92)"
         )
         sys.exit(1)
+    # Same idea for the patches with no config symbol of their own - our DTS
+    # sets snps,no-enable-abort, so a tree that ignores it wedges the pld bus
+    # on the box (cold-power-cycle-only recovery) rather than failing here.
+    check_kernel_patches(log)
     log(
         "configured: Fedora base + ARCH_ALPINE + PCIE_AL_INTERNAL + phylink/sfp confirmed"
     )

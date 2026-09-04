@@ -1,0 +1,39 @@
+Subject: arm: add TARGET_ALPINE_V2_UNVR and source the board Kconfig
+
+Tree: /mnt/2tb/unvr-port-refs/u-boot-v2026.07 (UBOOT_TREE)
+Issue: #224
+
+Board wiring only. The board itself (board/annapurna/alpine/,
+include/configs/alpine.h, configs/alpine_v2_unvr_defconfig,
+arch/arm/dts/awto-alpine-v2-unvr-uboot.dts) is copied in from this repo's
+uboot-port/ by scripts/uboot-build.py - those are new files, not upstream
+modifications, so they are not part of this patch.
+
+Was: TARGET_BLOCK / SRC_LINE txt.replace() in scripts/uboot-build.py.
+
+diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
+index 514bf200..558a6d87 100644
+--- a/arch/arm/Kconfig
++++ b/arch/arm/Kconfig
+@@ -1451,6 +1451,13 @@ config TARGET_TOTAL_COMPUTE
+ 	imply OF_HAS_PRIOR_STAGE if !BLOBLIST
+ 	imply MISC_INIT_R
+ 
++config TARGET_ALPINE_V2_UNVR
++	bool "Support Ubiquiti UNVR (Annapurna Labs Alpine V2 / AL-324)"
++	select ARM64
++	select DM
++	select DM_SERIAL
++	select OF_CONTROL
++
+ config TARGET_LS2080A_EMU
+ 	bool "Support ls2080a_emu"
+ 	select ARCH_LS2080A
+@@ -2415,6 +2422,7 @@ source "arch/arm/mach-nexell/Kconfig"
+ source "arch/arm/mach-npcm/Kconfig"
+ 
+ source "board/armltd/total_compute/Kconfig"
++source "board/annapurna/alpine/Kconfig"
+ source "board/armltd/corstone1000/Kconfig"
+ source "board/bosch/shc/Kconfig"
+ source "board/bosch/guardian/Kconfig"

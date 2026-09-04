@@ -1,0 +1,53 @@
+Subject: i2c: designware: add snps,no-enable-abort / snps,no-sda-rx-hold opt-outs
+
+Tree: /mnt/2tb/unvr-port-refs/linux-v7.3-fresh (torvalds/linux mainline)
+Issue: #86, docs/rtc-s35390a-fault.md
+
+Two per-controller DT opt-outs for mainline DesignWare i2c behaviour that
+wedges the UNVR's pld bus:
+
+- snps,no-enable-abort - __i2c_dw_disable() issuing IC_ENABLE.ABORT
+  (mainline 2409205acd3c, 2023) terminates the transfer mid-byte. The
+  S-35390A RTC (datasheet Fig 46) answers by holding SDA low until it is
+  clocked through; the bus wedges and only a COLD power cycle recovers it.
+  The vendor 4.19 kernel has no abort and does not wedge.
+- snps,no-sda-rx-hold - suppresses the unconditional 1-tick RX SDA hold
+  added alongside the TX hold. Not currently set by our DTS; kept with the
+  abort opt-out because both are the same "do what the vendor driver did"
+  escape hatch on the same controller.
+
+Only snps,no-enable-abort is consumed by
+dts/alpine-v2-ubnt-unvr-ea16.dts today. Both kernel build scripts FATAL if
+the tree they are about to build does not honour it.
+
+diff --git a/drivers/i2c/busses/i2c-designware-common.c b/drivers/i2c/busses/i2c-designware-common.c
+index a1eca6cd4b75..a4672c146943 100644
+--- a/drivers/i2c/busses/i2c-designware-common.c
++++ b/drivers/i2c/busses/i2c-designware-common.c
+@@ -599,7 +599,8 @@ static int i2c_dw_set_sda_hold(struct dw_i2c_dev *dev)
+ 		 * extends incoming SDA low to high transition while SCL is
+ 		 * high but it appears to help also above issue.
+ 		 */
+-		if (!(dev->sda_hold_time & DW_IC_SDA_HOLD_RX_MASK))
++		if (!(dev->sda_hold_time & DW_IC_SDA_HOLD_RX_MASK) &&
++		    !device_property_read_bool(dev->dev, "snps,no-sda-rx-hold"))
+ 			dev->sda_hold_time |= 1 << DW_IC_SDA_HOLD_RX_SHIFT;
+ 
+ 		dev_dbg(dev->dev, "SDA Hold Time TX:RX = %d:%d\n",
+@@ -643,6 +644,16 @@ void __i2c_dw_disable(struct dw_i2c_dev *dev)
+ 	if (dev->mode == DW_IC_SLAVE && (ic_stats & DW_IC_STATUS_SLAVE_ACTIVITY))
+ 		abort_needed = true;
+ 
++	/*
++	 * IC_ENABLE.ABORT terminates the transfer mid-byte, which some targets
++	 * (S-35390A, Fig 46) answer by holding SDA low until clocked through -
++	 * an unrecoverable bus wedge. Introduced in 2023 (2409205acd3c); the
++	 * vendor 4.19 kernel that drives this board has no abort and does not
++	 * wedge. Opt out per-controller.
++	 */
++	if (device_property_read_bool(dev->dev, "snps,no-enable-abort"))
++		abort_needed = false;
++
+ 	if (abort_needed) {
+ 		if (!(enable & DW_IC_ENABLE_ENABLE)) {
+ 			regmap_write(dev->map, DW_IC_ENABLE, DW_IC_ENABLE_ENABLE);

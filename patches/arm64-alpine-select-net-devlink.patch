@@ -1,0 +1,26 @@
+Subject: arm64: Kconfig.platforms: ARCH_ALPINE selects NET_DEVLINK
+
+Tree: /mnt/2tb/unvr-port-refs/linux-v7.3-fresh (torvalds/linux mainline)
+
+NET_DEVLINK has no prompt - it is select-only. The Alpine SoC drivers that
+register devlink instances (al_ssm, al_dma, al_eth) are out-of-tree in
+modules/, so nothing in-tree selects it for this board and the OOT builds
+fail to link. ARCH_ALPINE is exactly "building for this SoC", so it carries
+the select.
+
+diff --git a/arch/arm64/Kconfig.platforms b/arch/arm64/Kconfig.platforms
+index d2acfac73003..7b02d996a612 100644
+--- a/arch/arm64/Kconfig.platforms
++++ b/arch/arm64/Kconfig.platforms
+@@ -29,6 +29,11 @@ config ARCH_SUNXI
+ config ARCH_ALPINE
+ 	bool "Annapurna Labs Alpine platform"
+ 	select ALPINE_MSI if PCI
++	# NET_DEVLINK is a select-only symbol (no prompt), and the Alpine SoC
++	# drivers that need it (al_ssm, al_dma, al_eth) are out-of-tree, so
++	# nothing in-tree selects it for this board. Selected here because
++	# ARCH_ALPINE is exactly "building for this SoC".
++	select NET_DEVLINK if NET
+ 	help
+ 	  This enables support for the Annapurna Labs Alpine
+ 	  Soc family.

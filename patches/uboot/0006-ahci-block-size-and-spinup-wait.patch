@@ -1,0 +1,76 @@
+Subject: ata: ahci: raise max transfer blocks and wait for cold-disk spin-up
+
+Tree: /mnt/2tb/unvr-port-refs/u-boot-v2026.07 (UBOOT_TREE)
+Issue: #92, #94
+
+- #92: MAX_SATA_BLOCKS_READ_WRITE 0x80 -> 0x800. 62 MB/s was the ceiling
+  the old value imposed.
+- #94: spin-up-aware link-up wait, so the first `scsi scan` finds HDDs that
+  are still spinning up rather than reporting zero disks.
+
+Currently invisible - uboot-port/drivers/ata/ahci.c is copied over the
+upstream file wholesale.
+
+diff --git a/drivers/ata/ahci.c b/drivers/ata/ahci.c
+index 38e953ee..52a8e8ce 100644
+--- a/drivers/ata/ahci.c
++++ b/drivers/ata/ahci.c
+@@ -40,9 +40,16 @@ static int ata_io_flush(struct ahci_uc_priv *uc_priv, u8 port);
+  * Contemporary SSD devices work much faster if the read/write size is aligned
+  * to a power of 2.  Let's set default to 128 and allowing to be overwritten if
+  * needed.
++ *
++ * awto-unvr: raised 0x80 (64 KB) -> 0x800 (1 MB) per command. #92: 64 KB/cmd
++ * capped SATA reads at ~62 MB/s (per-command FIS+doorbell+cache-maint dominated)
++ * vs the SSD's ~500 MB/s. 0x800 blocks = 1 MB = one SG entry (buf_len < the 4 MB
++ * MAX_DATA_BYTE_COUNT), well inside AHCI_MAX_SG=56; fits u16 now_blocks. ~16x
++ * fewer commands. Config-header override can't reach this TU (ahci.c has no
++ * #include <config.h>), so it is set here in our staged copy.
+  */
+ #ifndef MAX_SATA_BLOCKS_READ_WRITE
+-#define MAX_SATA_BLOCKS_READ_WRITE	0x80
++#define MAX_SATA_BLOCKS_READ_WRITE	0x800
+ #endif
+ 
+ /* Maximum timeouts for each event */
+@@ -106,22 +113,30 @@ static int waiting_for_cmd_completed(void __iomem *offset,
+ 	return (i < timeout_msec) ? 0 : -1;
+ }
+ 
++/*
++ * awto-unvr #94: a cold 8TB HDD does not present PHYRDY until its motor is up
++ * (~15-20 s from bay power-on), so the stock 200 ms link-up wait times out and
++ * the first `scsi scan` misses the spinning disks. Wait long enough for spin-up,
++ * but do not penalise a genuinely empty bay: an occupied port asserts DET
++ * (device-present, DET != 0) within a few ms of power, so DET==0 that persists
++ * past WAIT_MS_LINKUP means no device - bail early then. Ceiling matches
++ * WAIT_MS_SPINUP (20 s).
++ */
++#define WAIT_MS_LINKUP_SPINUP	WAIT_MS_SPINUP
++
+ int __weak ahci_link_up(struct ahci_uc_priv *uc_priv, int port)
+ {
+-	u32 tmp;
++	u32 det;
+ 	int j = 0;
+ 	void __iomem *port_mmio = uc_priv->port[port].port_mmio;
+ 
+-	/*
+-	 * Bring up SATA link.
+-	 * SATA link bringup time is usually less than 1 ms; only very
+-	 * rarely has it taken between 1-2 ms. Never seen it above 2 ms.
+-	 */
+-	while (j < WAIT_MS_LINKUP) {
+-		tmp = readl(port_mmio + PORT_SCR_STAT);
+-		tmp &= PORT_SCR_STAT_DET_MASK;
+-		if (tmp == PORT_SCR_STAT_DET_PHYRDY)
++	while (j < WAIT_MS_LINKUP_SPINUP) {
++		det = readl(port_mmio + PORT_SCR_STAT) & PORT_SCR_STAT_DET_MASK;
++		if (det == PORT_SCR_STAT_DET_PHYRDY)
+ 			return 0;
++		/* DET==0 past the fast-link window: empty bay, don't wait out spin-up */
++		if (det == 0 && j >= WAIT_MS_LINKUP)
++			return 1;
+ 		udelay(1000);
+ 		j++;
+ 	}

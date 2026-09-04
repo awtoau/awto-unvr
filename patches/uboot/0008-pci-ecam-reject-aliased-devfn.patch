@@ -1,0 +1,59 @@
+Subject: pci: pcie_ecam_generic: reject aliased devfn on a root port's own bus
+
+Tree: /mnt/2tb/unvr-port-refs/u-boot-v2026.07 (UBOOT_TREE)
+Issue: #140
+
+External PCIe aliases its single root-port device across every devfn.
+Without an addr_valid() rejecting devfn != 0 on the port's own bus,
+`pci enum` binds 32 xhci drivers all clobbering one register block instead
+of the one real device.
+
+Currently invisible - uboot-port/drivers/pci/pcie_ecam_generic.c is copied
+over the upstream file wholesale. This is the exact patch that was found
+silently unstaged on 2026-08-27 (the incident quoted in
+scripts/uboot-build.py's unstage_stale() docstring).
+
+diff --git a/drivers/pci/pcie_ecam_generic.c b/drivers/pci/pcie_ecam_generic.c
+index 3cb2bbbc..426ea06a 100644
+--- a/drivers/pci/pcie_ecam_generic.c
++++ b/drivers/pci/pcie_ecam_generic.c
+@@ -24,6 +24,8 @@ struct generic_ecam_pcie {
+ 	void *cfg_base;
+ 	pci_size_t size;
+ 	int first_busno;
++	/* #140: DT "awto,single-devfn" - only devfn 0 is real on this bus */
++	bool single_devfn;
+ };
+ 
+ /**
+@@ -67,8 +69,20 @@ static bool pci_generic_ecam_addr_valid(const struct udevice *bus,
+ 	struct generic_ecam_pcie *pcie = dev_get_priv(bus);
+ 	int num_buses = DIV_ROUND_UP(pcie->size, 1 << 16);
+ 
+-	return (PCI_BUS(bdf) >= pcie->first_busno &&
+-		PCI_BUS(bdf) < pcie->first_busno + num_buses);
++	if (PCI_BUS(bdf) < pcie->first_busno ||
++	    PCI_BUS(bdf) >= pcie->first_busno + num_buses)
++		return false;
++
++	/*
++	 * #140: the external port aliases its one root-port device across
++	 * every devfn, so a flat scan binds 32 drivers to one register
++	 * block. Only devfn 0 is real. Mirrors dw_pcie_rd_other_conf().
++	 * Internal bus 0 is genuinely multi-device - never filter it.
++	 */
++	if (pcie->single_devfn && PCI_DEV(bdf) > 0)
++		return false;
++
++	return true;
+ }
+ 
+ /**
+@@ -144,6 +158,7 @@ static int pci_generic_ecam_of_to_plat(struct udevice *dev)
+ 
+ 	pcie->size = resource_size(&reg_res);
+ 	pcie->cfg_base = map_physmem(reg_res.start, pcie->size, MAP_NOCACHE);
++	pcie->single_devfn = ofnode_read_bool(node, "awto,single-devfn");
+ 
+ 	return 0;
+ }

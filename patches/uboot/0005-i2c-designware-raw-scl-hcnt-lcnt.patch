@@ -1,0 +1,149 @@
+Subject: i2c: designware: honour explicit raw SCL hcnt/lcnt from DT
+
+Tree: /mnt/2tb/unvr-port-refs/u-boot-v2026.07 (UBOOT_TREE)
+Ref: docs/rtc-s35390a-fault.md, #86
+
+Lets the DT pin stock firmware's proven s35390a-safe pld-bus timing instead
+of letting the driver compute hcnt/lcnt from the nominal bus speed. Same
+class of fix as the Linux-side snps,no-enable-abort opt-out
+(patches/i2c-designware-no-enable-abort.patch): the computed timing wedges
+this bus, the vendor's does not.
+
+This diff is currently invisible - scripts/uboot-build.py copies
+uboot-port/drivers/i2c/designware_i2c.{c,h} over the upstream files
+wholesale, so nothing shows what actually changed.
+
+diff --git a/drivers/i2c/designware_i2c.c b/drivers/i2c/designware_i2c.c
+index 8ad716f4..32f9c505 100644
+--- a/drivers/i2c/designware_i2c.c
++++ b/drivers/i2c/designware_i2c.c
+@@ -428,20 +428,55 @@ static int i2c_xfer_init(struct i2c_regs *i2c_base, uchar chip, uint addr,
+ 	return 0;
+ }
+ 
++/*
++ * The DesignWare controller reports NAK / arbitration-loss / abort ONLY via
++ * IC_TX_ABRT + ic_tx_abrt_source. Neither was referenced anywhere in this
++ * driver, so an aborted transfer either spun to I2C_BYTE_TO and returned
++ * -ETIMEDOUT, or - for writes, where the TX FIFO drains regardless -
++ * returned SUCCESS with nothing having reached the wire, leaving the abort
++ * flag latched to poison the next transfer. That is why the #78/#86 "SDA
++ * held low, whole pld bus wedged" diagnostics could never distinguish
++ * "bus wedged" from "device NAK" from "transfer fine".
++ *
++ * Returns -EREMOTEIO on abort, and always clears the latch.
++ */
++static int i2c_check_tx_abrt(struct i2c_regs *i2c_base)
++{
++	u32 abrt_source;
++
++	if (!(readl(&i2c_base->ic_raw_intr_stat) & IC_TX_ABRT))
++		return 0;
++
++	abrt_source = readl(&i2c_base->ic_tx_abrt_source);
++	readl(&i2c_base->ic_clr_tx_abrt);	/* clear the latch */
++	printf("i2c: transfer aborted, ic_tx_abrt_source=0x%08x\n", abrt_source);
++
++	return -EREMOTEIO;
++}
++
+ static int i2c_xfer_finish(struct i2c_regs *i2c_base)
+ {
+ 	ulong start_stop_det = get_timer(0);
+ 	int ret;
++	int abrt;
+ 
+ 	while (1) {
+ 		if ((readl(&i2c_base->ic_raw_intr_stat) & IC_STOP_DET)) {
+ 			readl(&i2c_base->ic_clr_stop_det);
+ 			break;
+ 		} else if (get_timer(start_stop_det) > I2C_STOPDET_TO) {
++			/* Was a silent break into the SUCCESS path. */
++			printf("i2c: timed out waiting for STOP_DET\n");
+ 			break;
+ 		}
+ 	}
+ 
++	/* Check BEFORE i2c_wait_for_bb() - an abort is the more specific
++	 * diagnosis and would otherwise surface as a generic bus-busy. */
++	abrt = i2c_check_tx_abrt(i2c_base);
++	if (abrt)
++		return abrt;
++
+ 	ret = i2c_wait_for_bb(i2c_base);
+ 	if (ret) {
+ 		printf("Timed out waiting for bus\n");
+@@ -516,6 +551,9 @@ static int __dw_i2c_read(struct i2c_regs *i2c_base, u8 dev, uint addr,
+ 			start_time_rx = get_timer(0);
+ 			active = 0;
+ 		} else if (get_timer(start_time_rx) > I2C_BYTE_TO) {
++			/* The write path logs its timeout; this one was silent,
++			 * making every RTC/fan/mux read failure invisible. */
++			printf("Timed out. i2c read Failed\n");
+ 			return -ETIMEDOUT;
+ 		}
+ 	}
+@@ -782,6 +820,40 @@ int designware_i2c_of_to_plat(struct udevice *bus)
+ 	}
+ #endif
+ 
++	/*
++	 * awto: honor explicit raw SCL counts from DT (docs/rtc-s35390a-fault.md).
++	 * The generic OF path always COMPUTES the minimum-legal SCL hcnt/lcnt;
++	 * the timing-fussy s35390a RTC on the pld bus needs stock's larger, more
++	 * conservative counts or it aborts mid-frame and wedges SDA. When the DT
++	 * carries the ss pair (+ sda-hold), build a dw_scl_sda_cfg so set_bus_speed
++	 * writes these verbatim (calc_bus_speed: the scl_sda_cfg override branch)
++	 * instead of computing them. fs/hs are optional (default 0). sda_hold is
++	 * derived from i2c-sda-hold-time-ns the same way dw_i2c_calc_timing does.
++	 */
++	if (!dev_read_u32(bus, "i2c-ss-scl-hcnt-raw", &priv->dw_of_cfg.ss_hcnt) &&
++	    !dev_read_u32(bus, "i2c-ss-scl-lcnt-raw", &priv->dw_of_cfg.ss_lcnt) &&
++	    priv->sda_hold_time_ns) {
++		ulong rate;
++
++#if CONFIG_IS_ENABLED(CLK)
++		rate = clk_get_rate(&priv->clk);
++		if (IS_ERR_VALUE(rate))
++			rate = IC_CLK;
++#else
++		rate = IC_CLK;
++#endif
++		priv->dw_of_cfg.fs_hcnt =
++			dev_read_u32_default(bus, "i2c-fs-scl-hcnt-raw", 0);
++		priv->dw_of_cfg.fs_lcnt =
++			dev_read_u32_default(bus, "i2c-fs-scl-lcnt-raw", 0);
++		priv->dw_of_cfg.hs_hcnt =
++			dev_read_u32_default(bus, "i2c-hs-scl-hcnt-raw", 0);
++		priv->dw_of_cfg.hs_lcnt =
++			dev_read_u32_default(bus, "i2c-hs-scl-lcnt-raw", 0);
++		priv->dw_of_cfg.sda_hold = calc_counts(rate, priv->sda_hold_time_ns);
++		priv->scl_sda_cfg = &priv->dw_of_cfg;
++	}
++
+ 	return 0;
+ }
+ 
+diff --git a/drivers/i2c/designware_i2c.h b/drivers/i2c/designware_i2c.h
+index 049976e8..66e2c8b0 100644
+--- a/drivers/i2c/designware_i2c.h
++++ b/drivers/i2c/designware_i2c.h
+@@ -193,6 +193,10 @@ struct dw_i2c_speed_config {
+  * @sda_hold_time_ns: Configured SDA hold time in nanoseconds
+  * @has_spk_cnt: true if the spike-count register is present
+  * @clk: Clock input to the I2C controller
++ * @dw_of_cfg: Backing store for explicit raw SCL/SDA counts read from DT
++ *	(i2c-{ss,fs,hs}-scl-{h,l}cnt-raw); scl_sda_cfg points here when set.
++ *	awto: pins stock's proven s35390a-safe pld-bus timing, see
++ *	docs/rtc-s35390a-fault.md.
+  */
+ struct dw_i2c {
+ 	struct i2c_regs *regs;
+@@ -206,6 +210,7 @@ struct dw_i2c {
+ 	struct clk clk;
+ #endif
+ 	struct dw_i2c_speed_config config;
++	struct dw_scl_sda_cfg dw_of_cfg;
+ };
+ 
+ extern const struct dm_i2c_ops designware_i2c_ops;
