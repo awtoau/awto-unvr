@@ -94,14 +94,13 @@ static void __iomem *al_serdes_dt_base(const char *reg_name)
  * KR-configures group D, so we only read status; no re-init needed.
  * Group base = complex + {A,B,C,D,E} = {0,0x400,0x800,0xc00,0x2000}. */
 #define AL_HSSP_GRP_D_OFF	0xc00		/* serdes-grp 3 (GRP_D) */
-#define AL_HSSP_GEN_VERSION	0x00
-#define AL_HSSP_GEN_REG_ADDR	0x10
-#define AL_HSSP_GEN_REG_DATA	0x14
-/* SRDS_CORE_REG_ADDR(page,type,offset) = (page<<13)|(type<<12)|offset */
-#define AL_HSSP_ADDR(page, type, off)	(((page) << 13) | ((type) << 12) | (off))
-#define AL_HSSP_TYPE_PMA	0
 #define AL_HSSP_RXRANDET_REG	41	/* PMA reg 41: RX random-data detect */
 #define AL_HSSP_RXRANDET_STAT	0x20	/* bit 5 set = signal detected */
+
+/* gen.version / gen.reg_addr / gen.reg_data come from struct al_serdes_regs,
+ * NOT hand-rolled offsets: gen is at [0x100], so the old 0x00/0x10/0x14 read
+ * the reserved window (#110). Compiler-computed, so it cannot drift again. */
+#define AL_HSSP_GEN(grp)	(&((struct al_serdes_regs __iomem *)(grp))->gen)
 
 /* Group-D base (SFP+ lane) from the DT complex "serdes" base. */
 static void __iomem *al_hssp_grp_d_base(void)
@@ -111,12 +110,19 @@ static void __iomem *al_hssp_grp_d_base(void)
 	return sbase ? sbase + AL_HSSP_GRP_D_OFF : NULL;
 }
 
-/* Indirect HSSP register read: lane page, PMA/PCS type, 8-bit reg number. */
-static u8 al_hssp_reg_read(void __iomem *grp, unsigned page, unsigned type,
-			   u16 off)
+/* Indirect HSSP register read via the HAL's own vtable - it owns the addr/data
+ * sequencing, so no address arithmetic is duplicated here.
+ * The HAL has no settling wait between the addr write and the data read: a
+ * failed read returns 0xFF, indistinguishable from a real value (#239/#228). */
+static u8 al_hssp_reg_read(struct al_serdes_grp_obj *obj, unsigned page,
+			   enum al_serdes_reg_type type, u16 off)
 {
-	writel(AL_HSSP_ADDR(page, type, off), grp + AL_HSSP_GEN_REG_ADDR);
-	return (u8)readl(grp + AL_HSSP_GEN_REG_DATA);
+	uint8_t data = 0xff;
+
+	if (obj->reg_read)
+		obj->reg_read(obj, (enum al_serdes_reg_page)page, type, off,
+			      &data);
+	return data;
 }
 
 /* Per-call HAL object bound to the group-D base. No HW side effects.
@@ -141,28 +147,22 @@ static int al_serdes_obj_get(struct al_serdes_grp_obj *obj, void __iomem **base)
 int al_serdes_10g_init(void)
 {
 	struct al_serdes_grp_obj obj;
-	void __iomem *base;
+	void __iomem *grp;
+	u8 rxdet;
 	int rc;
 
-	void __iomem *grp = al_hssp_grp_d_base();
-	u32 version;
-	u8 rxdet;
-
-	if (!grp) {
-		printf("serdes: no '%s' DT node / 'serdes' reg\n",
-		       AL_SERDES_DT_COMPAT);
-		return -ENODEV;
-	}
+	rc = al_serdes_obj_get(&obj, &grp);
+	if (rc)
+		return rc;
 
 	/* gen.version doubles as the go/no-go: a plausible value means the group-D
 	 * base is right (the wrong 25G target external-aborts on this first read). */
-	version = readl(grp + AL_HSSP_GEN_VERSION);
 	printf("serdes: HSSP group D (SFP+ lane %d) @ %p, gen.version=0x%08x\n",
-	       AL_SFP_LANE, grp, version);
+	       AL_SFP_LANE, grp, readl(&AL_HSSP_GEN(grp)->version));
 
 	/* preboot already ran group_cfg_eth_kr_mode(156MHz) here, so the lane is
 	 * in fixed-10G KR - we do not re-init, only read PMA signal-detect. */
-	rxdet = al_hssp_reg_read(grp, AL_SFP_LANE, AL_HSSP_TYPE_PMA,
+	rxdet = al_hssp_reg_read(&obj, AL_SFP_LANE, AL_SRDS_REG_TYPE_PMA,
 				 AL_HSSP_RXRANDET_REG);
 	printf("serdes: lane %d signal_detect=%s (pma rxrandet=0x%02x)\n",
 	       AL_SFP_LANE, (rxdet & AL_HSSP_RXRANDET_STAT) ? "yes" : "no", rxdet);
@@ -171,15 +171,10 @@ int al_serdes_10g_init(void)
 	 * al_eth_serdes_static_tx/rx_params_set() uses. Whether these tap VALUES
 	 * help this board's optic is still open (#207); `eth diag 2` reads back
 	 * what actually landed. */
-	rc = al_serdes_obj_get(&obj, &base);
-	if (rc) {
-		printf("serdes: HSSP obj_get failed (%d); EQ params NOT applied\n", rc);
-	} else {
-		obj.tx_advanced_params_set(&obj, AL_SFP_LANE, &optic_tx_params);
-		obj.rx_advanced_params_set(&obj, AL_SFP_LANE, &optic_rx_params);
-		printf("serdes: lane %d TX/RX optic EQ applied (HSSP group D)\n",
-		       AL_SFP_LANE);
-	}
+	obj.tx_advanced_params_set(&obj, AL_SFP_LANE, &optic_tx_params);
+	obj.rx_advanced_params_set(&obj, AL_SFP_LANE, &optic_rx_params);
+	printf("serdes: lane %d TX/RX optic EQ applied (HSSP group D)\n",
+	       AL_SFP_LANE);
 
 	/* PCS is the MAC driver's: al_eth_dm_10g's al_eth_mac_config(10GbE_Serial)
 	 * configures it. Poking the MAC-adapter window from here external-aborts
@@ -190,18 +185,17 @@ int al_serdes_10g_init(void)
 
 void al_serdes_10g_status(void)
 {
-	void __iomem *grp = al_hssp_grp_d_base();
+	struct al_serdes_grp_obj obj;
+	void __iomem *grp;
 	u8 rxdet;
 
-	if (!grp) {
-		printf("serdes: no 'serdes' DT base\n");
+	if (al_serdes_obj_get(&obj, &grp))
 		return;
-	}
 
 	printf("serdes: HSSP group D @ %p, SFP+ lane %d:\n", grp, AL_SFP_LANE);
-	printf("  gen.version  : 0x%08x\n", readl(grp + AL_HSSP_GEN_VERSION));
+	printf("  gen.version  : 0x%08x\n", readl(&AL_HSSP_GEN(grp)->version));
 
-	rxdet = al_hssp_reg_read(grp, AL_SFP_LANE, AL_HSSP_TYPE_PMA,
+	rxdet = al_hssp_reg_read(&obj, AL_SFP_LANE, AL_SRDS_REG_TYPE_PMA,
 				 AL_HSSP_RXRANDET_REG);
 	printf("  signal_detect: %s (pma rxrandet=0x%02x)\n",
 	       (rxdet & AL_HSSP_RXRANDET_STAT) ? "yes" : "no", rxdet);
@@ -245,14 +239,17 @@ int al_serdes_10g_tx_params_get(unsigned int lane, unsigned int *override,
 int al_serdes_10g_lane_status_get(unsigned int lane, unsigned int *sig_det,
 				  unsigned int *version)
 {
-	void __iomem *grp = al_hssp_grp_d_base();
+	struct al_serdes_grp_obj obj;
+	void __iomem *grp;
 	u8 rxdet;
+	int rc;
 
-	if (!grp)
-		return -ENODEV;
+	rc = al_serdes_obj_get(&obj, &grp);
+	if (rc)
+		return rc;
 
-	*version = readl(grp + AL_HSSP_GEN_VERSION);
-	rxdet = al_hssp_reg_read(grp, lane, AL_HSSP_TYPE_PMA,
+	*version = readl(&AL_HSSP_GEN(grp)->version);
+	rxdet = al_hssp_reg_read(&obj, lane, AL_SRDS_REG_TYPE_PMA,
 				 AL_HSSP_RXRANDET_REG);
 	*sig_det = !!(rxdet & AL_HSSP_RXRANDET_STAT);
 	return 0;
