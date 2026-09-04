@@ -37,6 +37,7 @@ obj-m := $(MODNAME).o
 
 # Object files that make up the module
 $(MODNAME)-y := al_eth_main.o \
+            al_eth_devlink.o \
             al_eth_phylink.o \
             al_eth_sysfs.o \
             al_hal_eth_kr.o \

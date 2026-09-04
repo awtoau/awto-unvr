@@ -29,6 +29,8 @@
 
 struct device_node;
 struct al_eth_phylink;
+struct devlink;
+struct devlink_health_reporter;
 
 enum board_t {
 	ALPINE_INTEGRATED = 0,
@@ -493,6 +495,32 @@ struct al_eth_adapter {
 	al_bool				kr_fec_enable;
 
 	struct 	work_struct 		reset_task;
+
+	/* MAC cross-check reporting (#222), out of band - never used by probe. */
+	struct devlink			*devlink;
+	struct devlink_health_reporter	*mac_hr;
+};
+
+/* SFP+ port (Linux eth1). Stock's "mac: [<base>] + [2]" is a COUNT of the MACs
+ * allocated (ports 1 and 2), not an offset: port 1 takes base+0, so the 10G
+ * port is base+1. Verified on hardware - stock gives ...a8:12, base ...a8:11. */
+#define AL_ETH_10G_PORT_ID	2
+#define AL_ETH_10G_MAC_OFFSET	1
+
+/* One port's MAC cross-check: what the bootloader programmed vs what NOR says.
+ * Any source may be absent - have_ec/have_nor say which, #222. */
+struct al_eth_mac_check {
+	unsigned int	port_id;
+	u8		ec[ETH_ALEN];		/* EC forwarding table */
+	u8		nor[ETH_ALEN];		/* expected, per NOR */
+	u8		nor_base[ETH_ALEN];	/* NOR base, before derivation */
+	const char	*ec_src;
+	const char	*nor_src;
+	int		nor_rc;
+	bool		have_ec;
+	bool		have_nor;
+	bool		derived;		/* nor = base + AL_ETH_10G_MAC_OFFSET */
+	bool		match;
 };
 
 /* defined in al_eth_main.c, used by al_eth_sysfs.c */
@@ -505,5 +533,12 @@ void al_eth_get_intr_moderation_entry(enum al_eth_intr_moderation_level level,
 
 /* defined in al_eth_main.c, used by al_eth_phylink.c */
 void al_eth_link_leds_set(struct al_eth_adapter *adapter, int speed);
+
+/* MAC cross-check (#222). al_eth_mac_verify() is in al_eth_main.c; the devlink
+ * reporter wrapping it is in al_eth_devlink.c. Both are out-of-band only. */
+int al_eth_mac_verify(struct al_eth_adapter *adapter,
+		      struct al_eth_mac_check *out);
+int al_eth_devlink_init(struct al_eth_adapter *adapter);
+void al_eth_devlink_fini(struct al_eth_adapter *adapter);
 
 #endif /* !(AL_ETH_H) */

@@ -667,93 +667,102 @@
 				#address-cells = <1>;
 				#size-cells = <1>;
 
-				/*
-				 * Preboot + stock U-Boot, laid out by the Annapurna TOC @0x80000
-				 * (magic 0x070c070c). Exact offsets within this partition:
-				 *   0x00000  preboot obj  = S2 + al_boot + stage3 (payload @0x21000)
-				 *   0x80000  the TOC itself
-				 *   0xA1000  uboot obj    = stock U-Boot 2015.07 (hdr @0xA1048,
-				 *            AArch64, loads/runs at RAM 0x1100000), fills to 0x1c0000
-				 * "al_boot" the CODE lives here (in preboot), NOT the empty NAND
-				 * al_boot partition. docs/bootloader.md, nor-boot-chain.md.
-				 */
-				partition@0 {
-					reg = <0x000000 0x1c0000>;
-					label = "u-boot";
-				};
-
-				/* Stock U-Boot env (holds eth1addr). OUR U-Boot uses mtd3
-				 * (Factory) instead, so this stays stock's — left intact for a
-				 * clean fallback to stock. */
-				partition@1c0000 {
-					reg = <0x1c0000 0x10000>;
-					label = "u-boot env";
-				};
-
-				/* Redundant copy of the stock env. */
-				partition@1d0000 {
-					reg = <0x1d0000 0x10000>;
-					label = "u-boot env redundant";
-				};
-
-				/*
-				 * Stock: blank 0xFF, unused. REPURPOSED: our U-Boot stores its
-				 * OWN env here (CONFIG_ENV_OFFSET=0x1e0000) - #81, docs/mtd.md.
-				 * read-only in Linux so Fedora never clobbers our U-Boot env.
-				 * (Label kept "Factory" for stock traceability; content is ours.)
-				 */
-				partition@1e0000 {
-					reg = <0x1e0000 0x10000>;
-					label = "Factory";
-					read-only;
-				};
-
-				/*
-				 * Board identity blob (NOT a chip - a NOR region Ubiquiti named
-				 * "EEPROM"). base MAC @0x0, boardid @0xC, ONIE TLV @0xd000, RSA
-				 * key @0xe004. ubnthal reads it; our U-Boot reads the MAC (#89).
-				 * The real EEPROM chip is the 24C64 @ i2c 0x57 (DDR blob).
-				 */
-				/* compatible "nvmem-cells" makes this partition an nvmem
-				 * provider, so al_eth can compare the stored base MAC
-				 * against what the bootloader programmed into the EC (#89). */
-				eeprom: partition@1f0000 {
-					compatible = "nvmem-cells";
-					reg = <0x1f0000 0x10000>;
-					label = "EEPROM";
-					read-only;
+				/* ofpart skips a partition subnode carrying a `compatible`
+				 * unless the parent is a dedicated "fixed-partitions" node, so
+				 * the EEPROM nvmem partition was silently dropped. */
+				partitions {
+					compatible = "fixed-partitions";
 					#address-cells = <1>;
 					#size-cells = <1>;
 
-					mac_base: mac-base@0 {
-						reg = <0x0 0x6>;
+					/*
+					 * Preboot + stock U-Boot, laid out by the Annapurna TOC @0x80000
+					 * (magic 0x070c070c). Exact offsets within this partition:
+					 *   0x00000  preboot obj  = S2 + al_boot + stage3 (payload @0x21000)
+					 *   0x80000  the TOC itself
+					 *   0xA1000  uboot obj    = stock U-Boot 2015.07 (hdr @0xA1048,
+					 *            AArch64, loads/runs at RAM 0x1100000), fills to 0x1c0000
+					 * "al_boot" the CODE lives here (in preboot), NOT the empty NAND
+					 * al_boot partition. docs/bootloader.md, nor-boot-chain.md.
+					 */
+					partition@0 {
+						reg = <0x000000 0x1c0000>;
+						label = "u-boot";
 					};
-				};
 
-				/* STOCK U-Boot loads this on a recovery boot (recovery_mem_read
-				 * + AL_RECOVERY_OFFSET, board.c). Fallback kernel, 16 MiB. */
-				partition@200000 {
-					reg = <0x200000 0x1000000>;
-					label = "recovery kernel";
-				};
+					/* Stock U-Boot env (holds eth1addr). OUR U-Boot uses mtd3
+					 * (Factory) instead, so this stays stock's — left intact for a
+					 * clean fallback to stock. */
+					partition@1c0000 {
+						reg = <0x1c0000 0x10000>;
+						label = "u-boot env";
+					};
 
-				/* ext4: persistent device settings (mounted /tmp/.config).
-				 * Linux/userspace only — STOCK U-Boot never touches it. Wiped by
-				 * a factory reset. Stock-usage summary: docs/mtd.md. */
-				partition@1200000 {
-					reg = <0x1200000 0xdff000>;
-					label = "config";
-				};
+					/* Redundant copy of the stock env. */
+					partition@1d0000 {
+						reg = <0x1d0000 0x10000>;
+						label = "u-boot env redundant";
+					};
 
-				/*
-				 * DEAD: named "cksum" but it is 100% 0x00 and never a live
-				 * checksum (nothing reads it). 5.1.25 dropped this partition
-				 * (absorbed into config). Kept here only to map the real flash;
-				 * safe to remove. docs/mtd.md.
-				 */
-				partition@1fff000 {
-					reg = <0x1fff000 0x1000>;
-					label = "cksum";
+					/*
+					 * Stock: blank 0xFF, unused. REPURPOSED: our U-Boot stores its
+					 * OWN env here (CONFIG_ENV_OFFSET=0x1e0000) - #81, docs/mtd.md.
+					 * read-only in Linux so Fedora never clobbers our U-Boot env.
+					 * (Label kept "Factory" for stock traceability; content is ours.)
+					 */
+					partition@1e0000 {
+						reg = <0x1e0000 0x10000>;
+						label = "Factory";
+						read-only;
+					};
+
+					/*
+					 * Board identity blob (NOT a chip - a NOR region Ubiquiti named
+					 * "EEPROM"). base MAC @0x0, boardid @0xC, ONIE TLV @0xd000, RSA
+					 * key @0xe004. ubnthal reads it; our U-Boot reads the MAC (#89).
+					 * The real EEPROM chip is the 24C64 @ i2c 0x57 (DDR blob).
+					 */
+					/* compatible "nvmem-cells" makes this partition an nvmem
+					 * provider, so al_eth can compare the stored base MAC
+					 * against what the bootloader programmed into the EC (#89). */
+					eeprom: partition@1f0000 {
+						compatible = "nvmem-cells";
+						reg = <0x1f0000 0x10000>;
+						label = "EEPROM";
+						read-only;
+						#address-cells = <1>;
+						#size-cells = <1>;
+
+						mac_base: mac-base@0 {
+							reg = <0x0 0x6>;
+						};
+					};
+
+					/* STOCK U-Boot loads this on a recovery boot (recovery_mem_read
+					 * + AL_RECOVERY_OFFSET, board.c). Fallback kernel, 16 MiB. */
+					partition@200000 {
+						reg = <0x200000 0x1000000>;
+						label = "recovery kernel";
+					};
+
+					/* ext4: persistent device settings (mounted /tmp/.config).
+					 * Linux/userspace only — STOCK U-Boot never touches it. Wiped by
+					 * a factory reset. Stock-usage summary: docs/mtd.md. */
+					partition@1200000 {
+						reg = <0x1200000 0xdff000>;
+						label = "config";
+					};
+
+					/*
+					 * DEAD: named "cksum" but it is 100% 0x00 and never a live
+					 * checksum (nothing reads it). 5.1.25 dropped this partition
+					 * (absorbed into config). Kept here only to map the real flash;
+					 * safe to remove. docs/mtd.md.
+					 */
+					partition@1fff000 {
+						reg = <0x1fff000 0x1000>;
+						label = "cksum";
+					};
 				};
 			};
 		};

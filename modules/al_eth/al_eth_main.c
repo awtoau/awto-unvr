@@ -610,13 +610,6 @@ static int al_eth_get_serdes_25g_speed(struct al_eth_adapter *adapter, uint *spe
 	return 0;
 }
 
-/* SFP+ port (Linux eth1). Stock's "mac: [<base>] + [2]" is a COUNT of the
- * MACs allocated (ports 1 and 2), not an offset: port 1 takes base+0, so the
- * 10G port is base+1. Verified on hardware - stock gives ...a8:12, base is
- * ...a8:11. */
-#define AL_ETH_10G_PORT_ID	2
-#define AL_ETH_10G_MAC_OFFSET	1
-
 /*
  * al_eth binds by PCI ID, so the PCI core leaves of_node NULL. Match the DT
  * node on port-id == PCI slot, same rule as al_eth_phylink.c (which is
@@ -708,8 +701,8 @@ static void al_eth_mac_addr_derive(const u8 *base, u8 *out, u32 n)
 
 /*
  * Per-port MAC from NOR. Explicit DT mac-address/local-mac-address wins.
- * Otherwise: 1G port = NOR base, 10G port = base+2 (stock's derivation; the
- * bytes at NOR +0x6 are unverified and locally administered, so unused, #89).
+ * Otherwise: 1G port = NOR base, 10G port = base+1 (the bytes at NOR +0x6 are
+ * unverified and locally administered, so unused, #89).
  */
 static int al_eth_mac_addr_nor(struct device_node *np, unsigned int port_id,
 			       u8 *addr, u8 *base, bool *derived,
@@ -740,7 +733,7 @@ static int al_eth_mac_addr_nor(struct device_node *np, unsigned int port_id,
 	if (port_id == AL_ETH_10G_PORT_ID) {
 		al_eth_mac_addr_derive(base, addr, AL_ETH_10G_MAC_OFFSET);
 		*derived = true;
-		*src = "NOR EEPROM 0x1f0000 base + 2";
+		*src = "NOR EEPROM 0x1f0000 base + 1";
 	} else {
 		ether_addr_copy(addr, base);
 		*src = "NOR EEPROM 0x1f0000 base";
@@ -750,81 +743,81 @@ static int al_eth_mac_addr_nor(struct device_node *np, unsigned int port_id,
 }
 
 /*
- * Compare every MAC source and use the authority (NOR). A wrong-but-valid MAC
- * passes is_valid_ether_addr() and every other check we have, so only this
- * comparison catches it - log all sources on every boot (#89).
+ * Out-of-band MAC cross-check (#222). Never called from probe: a NOR read
+ * needs MTD, and a PCI probe is not retried on -EPROBE_DEFER, so depending on
+ * it there took both ports down permanently. NOR unreadable is a reported
+ * state, not an error.
+ */
+int al_eth_mac_verify(struct al_eth_adapter *adapter,
+		      struct al_eth_mac_check *out)
+{
+	unsigned int port_id = PCI_SLOT(adapter->pdev->devfn);
+	struct device_node *np;
+	int rc;
+
+	memset(out, 0, sizeof(*out));
+	out->port_id = port_id;
+	out->nor_src = "unavailable";
+
+	rc = al_eth_mac_addr_read(adapter->ec_base, 0, out->ec);
+	if (!rc && is_valid_ether_addr(out->ec)) {
+		out->have_ec = true;
+		out->ec_src = "EC forwarding table (bootloader)";
+	} else {
+		out->ec_src = (rc == -ENOENT) ? "never programmed" :
+			      (rc ? "unbacked read" : "invalid address");
+	}
+
+	np = al_eth_mac_of_node(adapter->pdev);
+	if (!np) {
+		out->nor_src = "no DT node for this PCI slot";
+	} else {
+		rc = al_eth_mac_addr_nor(np, port_id, out->nor, out->nor_base,
+					 &out->derived, &out->nor_src);
+		of_node_put(np);
+		if (rc) {
+			/* MTD is a module - the cell can simply be absent. */
+			out->nor_rc = rc;
+			out->nor_src = (rc == -EPROBE_DEFER || rc == -ENODEV) ?
+				       "NOR nvmem cell not available (MTD not up?)" :
+				       "NOR read failed";
+		} else {
+			out->have_nor = true;
+		}
+	}
+
+	out->match = out->have_ec && out->have_nor &&
+		     ether_addr_equal(out->ec, out->nor);
+
+	return 0;
+}
+
+/*
+ * Trust the EC registers. The bootloader already read NOR and programmed them;
+ * that IS the handoff. Verification is out of band - al_eth_mac_verify().
  */
 static int al_eth_mac_addr_resolve(struct al_eth_adapter *adapter)
 {
 	struct device *dev = &adapter->pdev->dev;
-	unsigned int port_id = PCI_SLOT(adapter->pdev->devfn);
-	u8 nor_addr[ETH_ALEN], ec_addr[ETH_ALEN];
-	u8 nor_base[ETH_ALEN] = {};
-	const char *nor_src = NULL;
-	struct device_node *np;
-	bool have_nor = false;
-	bool derived = false;
-	bool have_ec = false;
+	u8 ec_addr[ETH_ALEN];
 	int rc;
 
 	rc = al_eth_mac_addr_read(adapter->ec_base, 0, ec_addr);
-	if (rc)
+	if (rc) {
 		dev_err(dev, "bootloader programmed no MAC into the EC forwarding table (rc %d)\n",
 			rc);
-	else if (!is_valid_ether_addr(ec_addr))
+		eth_zero_addr(adapter->mac_addr);
+		return 0;
+	}
+	if (!is_valid_ether_addr(ec_addr)) {
 		dev_err(dev, "bootloader programmed an invalid MAC %pM into the EC\n",
 			ec_addr);
-	else
-		have_ec = true;
-
-	np = al_eth_mac_of_node(adapter->pdev);
-	if (!np) {
-		dev_warn(dev, "no DT node for PCI slot %u - cannot check the MAC against NOR\n",
-			 port_id);
-	} else {
-		rc = al_eth_mac_addr_nor(np, port_id, nor_addr, nor_base,
-					 &derived, &nor_src);
-		of_node_put(np);
-		if (!rc) {
-			have_nor = true;
-		} else {
-			/* Never -EPROBE_DEFER here. MTD is a module, so the cell
-			 * can be absent at probe - but a PCI probe returning
-			 * -EPROBE_DEFER is not retried the way a platform one is,
-			 * and both ports stayed down permanently. The MAC check is
-			 * a cross-check; it must never cost us the network. */
-			dev_warn(dev, "no usable MAC from DT/NOR nvmem (%d) - MAC unverified\n",
-				 rc);
-		}
-	}
-
-	if (have_ec)
-		dev_info(dev, "MAC from EC forwarding table (bootloader): %pM\n",
-			 ec_addr);
-	if (have_nor)
-		dev_info(dev, "MAC from %s (authority): %pM\n", nor_src, nor_addr);
-
-	if (have_nor && have_ec && !ether_addr_equal(nor_addr, ec_addr)) {
-		if (derived)
-			dev_err(dev,
-				"MAC mismatch - NOR base %pM + %u = %pM, bootloader programmed %pM - using %pM\n",
-				nor_base, AL_ETH_10G_MAC_OFFSET, nor_addr,
-				ec_addr, nor_addr);
-		else
-			dev_err(dev,
-				"MAC mismatch - %s gives %pM, bootloader programmed %pM - using %pM\n",
-				nor_src, nor_addr, ec_addr, nor_addr);
-	}
-
-	/* NOR is the authority; EC only when NOR is unreadable. Leaving
-	 * mac_addr zeroed makes al_eth_probe() fall to a random MAC. */
-	if (have_nor)
-		ether_addr_copy(adapter->mac_addr, nor_addr);
-	else if (have_ec)
-		ether_addr_copy(adapter->mac_addr, ec_addr);
-	else
 		eth_zero_addr(adapter->mac_addr);
+		return 0;
+	}
 
+	dev_info(dev, "MAC from EC forwarding table (bootloader): %pM\n", ec_addr);
+	ether_addr_copy(adapter->mac_addr, ec_addr);
 	return 0;
 }
 
@@ -4988,9 +4981,50 @@ static void al_eth_get_ethtool_stats(struct net_device *netdev,
 	al_eth_ethtool_queue_stats(adapter, &data);
 }
 
+/* ethtool -t: the MAC cross-check as a pass/fail a script can branch on.
+ * Addresses and provenance come from `devlink health diagnose` - a self-test
+ * result is one number per named test (#222).
+ * Read-only (EC regs + nvmem), so safe on a live link - keep it that way, or
+ * ethtool -t here starts costing traffic. */
+static const char al_eth_selftest_strings[][ETH_GSTRING_LEN] = {
+	"mac_matches_nor",
+};
+
+#define AL_ETH_SELFTEST_COUNT	ARRAY_SIZE(al_eth_selftest_strings)
+
+static void al_eth_self_test(struct net_device *netdev,
+			     struct ethtool_test *test, u64 *data)
+{
+	struct al_eth_adapter *adapter = netdev_priv(netdev);
+	struct al_eth_mac_check c;
+
+	al_eth_mac_verify(adapter, &c);
+
+	/* Unknown (NOR unreadable) is not a failure: MTD is a module and may
+	 * simply be absent. ethtool has no "skipped" result, so report 0 and
+	 * say why in the log - devlink diagnose gives the full picture. */
+	if (!c.have_ec || !c.have_nor) {
+		data[0] = 0;
+		netdev_info(netdev, "MAC check skipped: EC %s, NOR %s\n",
+			    c.ec_src, c.nor_src);
+		return;
+	}
+
+	data[0] = c.match ? 0 : 1;
+	if (!c.match) {
+		test->flags |= ETH_TEST_FL_FAILED;
+		netdev_err(netdev,
+			   "MAC mismatch - %s gives %pM, bootloader programmed %pM\n",
+			   c.nor_src, c.nor, c.ec);
+	}
+}
+
 static int al_eth_get_sset_count(struct net_device *netdev, int sset)
 {
 	struct al_eth_adapter *adapter = netdev_priv(netdev);
+
+	if (sset == ETH_SS_TEST)
+		return AL_ETH_SELFTEST_COUNT;
 
 	if (sset != ETH_SS_STATS)
 		return -EOPNOTSUPP;
@@ -5034,6 +5068,12 @@ static void al_eth_get_strings(struct net_device *netdev, u32 sset, u8 *data)
 	const struct al_eth_ethtool_stats *al_eth_ethtool_stats;
 	int i;
 
+	if (sset == ETH_SS_TEST) {
+		memcpy(data, al_eth_selftest_strings,
+		       sizeof(al_eth_selftest_strings));
+		return;
+	}
+
 	if (sset != ETH_SS_STATS)
 		return;
 
@@ -5067,6 +5107,7 @@ static const struct ethtool_ops al_eth_ethtool_ops = {
 	.get_pauseparam		= al_eth_get_pauseparam,
 	.set_pauseparam		= al_eth_set_pauseparam,
 	.get_strings		= al_eth_get_strings,
+	.self_test		= al_eth_self_test,
 	.get_ethtool_stats	= al_eth_get_ethtool_stats,
 	.get_rxnfc		= al_eth_get_rxnfc,
 	.get_sset_count		= al_eth_get_sset_count,
@@ -5865,6 +5906,11 @@ al_eth_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 	if (rc)
 		return rc;
 
+	/* Reporting only - a failure here must never cost us the interface. */
+	rc = al_eth_devlink_init(adapter);
+	if (rc)
+		dev_warn(&pdev->dev, "no devlink MAC reporter (%d)\n", rc);
+
 	adapter->adaptive_intr_rate = adaptive_int_moderation;
 	al_eth_init_intr_default_moderation_table_intervals(adapter);
 	/* assign initial_moderation_table the accurate interval values,according to SB frequency */
@@ -5906,6 +5952,7 @@ al_eth_remove(struct pci_dev *pdev)
 
 	al_eth_phylink_teardown(adapter);
 
+	al_eth_devlink_fini(adapter);
 	al_eth_sysfs_terminate(&pdev->dev);
 	free_netdev(dev);
 
