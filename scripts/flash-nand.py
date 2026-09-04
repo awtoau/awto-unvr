@@ -40,13 +40,13 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from _fedora_deploy import TFTP_DIMG, TFTP_KIMG, assert_fresh
 
+from _net import UNVR_IPADDR as IPADDR
 from _net import detect_server_ip
 from _repo import LOGS
 
 SOCK = Path(os.environ.get("XDG_RUNTIME_DIR", "/tmp")) / "tio-unvr.sock"
 PROMPT = b"ALPINE_UBNT_NAS_ALL>"
 
-IPADDR = "192.168.25.140"
 KIMG = TFTP_KIMG.name
 DIMG = TFTP_DIMG.name
 K_NAND, K_SPAN = "0x1300000", "0x1200000"  # 18.9 MiB span (kernel ~18.5)

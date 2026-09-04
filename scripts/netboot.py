@@ -10,7 +10,7 @@ race). tftp keeps U-Boot busy so the watchdog never idles out.
 
 Run (device must be power-cycling or about to reboot):
     ./scripts/netboot.py --tag 7.1
-    ./scripts/netboot.py --tag 6.18 --ip 192.168.25.140  # --server auto-detected
+    ./scripts/netboot.py --tag 6.18   # --ip and --server default from _net.py
 """
 
 from __future__ import annotations
@@ -24,7 +24,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from _net import detect_server_ip
+from _net import UNVR_IPADDR, detect_server_ip
 from _repo import LOGS
 
 SOCK = Path(os.environ.get("XDG_RUNTIME_DIR", "/tmp")) / "tio-unvr.sock"
@@ -68,7 +68,7 @@ def main() -> int:
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
     )
     ap.add_argument("--tag", required=True, help="image suffix, e.g. 7.1 or 6.18")
-    ap.add_argument("--ip", default="192.168.25.140")
+    ap.add_argument("--ip", default=UNVR_IPADDR, help="box IP in U-Boot (_net.py)")
     ap.add_argument(
         "--server",
         default=None,

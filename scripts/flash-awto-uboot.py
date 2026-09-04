@@ -32,6 +32,7 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO / "scripts"))
 os.environ.setdefault("AWTO_ALLOW_DIRECT_SCRIPT", "1")
+from _net import UNVR_IPADDR as IPADDR  # noqa: E402
 from _net import detect_server_ip  # noqa: E402
 from _repo import LOGS  # noqa: E402
 
@@ -40,7 +41,6 @@ from _repo import LOGS  # noqa: E402
 TFTP_DIR = REPO / "tmp/tftp"
 
 SOCK = Path(os.environ.get("XDG_RUNTIME_DIR", "/tmp")) / "tio-unvr.sock"
-IPADDR = "192.168.25.140"
 
 UBOOT_BIN = REPO / "tmp/uboot-build/u-boot.bin"
 TFTP_NAME = "u-boot-awto.bin"

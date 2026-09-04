@@ -21,6 +21,7 @@ import time
 REPO = pathlib.Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO / "scripts"))
 import _console  # noqa: E402
+from _net import UNVR_IPADDR, detect_server_ip  # noqa: E402
 
 LOG = REPO / "tmp" / "logs" / "uboot-eth-wire-test.log"
 
@@ -62,11 +63,15 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--iface", default="enp7s0", help="dev-host capture interface")
     ap.add_argument("--port", choices=["1g", "10g"], default="1g")
-    ap.add_argument("--peer", default="192.168.25.147", help="ping target (this host)")
     ap.add_argument(
-        "--ipaddr", default="192.168.25.140", help="box IP in U-Boot (#252)"
+        "--peer",
+        default=None,
+        help="ping target (this host; default: detected, _net.detect_server_ip)",
     )
+    ap.add_argument("--ipaddr", default=UNVR_IPADDR, help="box IP in U-Boot (#252)")
     args = ap.parse_args()
+    if args.peer is None:
+        args.peer = detect_server_ip()
 
     LOG.parent.mkdir(parents=True, exist_ok=True)
     mac = MAC_1G if args.port == "1g" else MAC_10G
