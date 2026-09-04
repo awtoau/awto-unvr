@@ -23,6 +23,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+import _box
+
 DEFAULT_ROOT_PASSWORD = "unvr"  # documented default, see docs/fedora-on-ssd.md
 LOG = Path("tmp/logs/eth-watch.log")
 
@@ -67,13 +69,7 @@ done
 
 
 def locate_woomera() -> str:
-    out = subprocess.run(
-        [sys.executable, "scripts/ssh-woomera.py", "--print"],
-        capture_output=True,
-        text=True,
-        check=True,
-    )
-    return out.stdout.strip()
+    return _box.require()
 
 
 def main() -> int:

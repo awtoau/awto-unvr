@@ -18,4 +18,4 @@ select = ["E4", "E7", "E9", "F", "I", "DTZ"]
 ignore = ["E402", "E741"]
 
 [lint.isort]
-known-first-party = ["_console", "_net", "_power", "_repo"]
+known-first-party = ["_box", "_console", "_net", "_power", "_repo"]

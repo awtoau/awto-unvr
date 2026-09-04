@@ -47,6 +47,8 @@ import threading
 import time
 from pathlib import Path
 
+import _box
+
 REPO = Path(__file__).resolve().parent.parent
 LOG = REPO / "tmp" / "logs" / "soak-test.log"
 
@@ -130,25 +132,16 @@ class Box:
 
 
 def resolve_box(explicit: str | None) -> str:
-    """Find woomera by MAC via ssh-woomera.py - the project rule, no IP
+    """Find woomera by MAC via _box.locate() - the project rule, no IP
     fallback. The ARP-flux case that once tempted one (the 1G IP resolving
     to the 10G port's MAC) is fixed in the resolver itself: cdc58d1 accepts
     either of the box's own MACs."""
     if explicit:
         return explicit
-    r = subprocess.run(
-        [sys.executable, str(REPO / "scripts" / "ssh-woomera.py"), "--print"],
-        cwd=REPO,
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-    cand = r.stdout.strip()
+    cand = _box.locate()
     if cand:
         return cand
-    sys.exit(
-        f"FATAL: ssh-woomera.py could not resolve woomera by MAC\n{r.stderr.strip()}"
-    )
+    sys.exit("FATAL: could not resolve woomera by MAC (_box.locate)")
 
 
 # --------------------------------------------------------------------------

@@ -22,6 +22,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import _box
 from _repo import REPO, log_path
 
 ROOTFS_TAR = REPO / "tmp" / "fedora-rootfs-ea16.tar"
@@ -88,14 +89,7 @@ def main() -> int:
         check=True,
     )
 
-    host = subprocess.run(
-        [sys.executable, "scripts/ssh-woomera.py", "--print"],
-        cwd=REPO,
-        capture_output=True,
-        text=True,
-        timeout=15,
-        check=False,
-    ).stdout.strip()
+    host = _box.locate()
     if not host:
         log("ABORT: woomera not reachable over SSH")
         return 1

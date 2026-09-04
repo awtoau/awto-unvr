@@ -1416,14 +1416,9 @@ def cmd_deploy_fedora_rootfs(_extra: list[str]) -> int:
     server_ip = detect_server_ip()
     log(f"serving {serve_dir.relative_to(REPO)} on {server_ip}:{http_port}")
 
-    host = subprocess.run(
-        [sys.executable, "scripts/ssh-woomera.py", "--print"],
-        cwd=REPO,
-        capture_output=True,
-        text=True,
-        timeout=15,
-        check=False,
-    ).stdout.strip()
+    import _box
+
+    host = _box.locate()
     if not host:
         log(
             "ABORT: woomera not reachable over SSH - can't arm the SP805 reset", "ERROR"

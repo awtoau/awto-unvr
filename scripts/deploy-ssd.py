@@ -30,6 +30,7 @@ sys.path.insert(0, str(REPO / "scripts"))
 os.environ.setdefault("AWTO_ALLOW_DIRECT_SCRIPT", "1")
 from _fedora_deploy import KVER, TFTP_DIMG, TFTP_KIMG  # noqa: E402
 
+import _box  # noqa: E402
 from _repo import LOGS  # noqa: E402
 
 # The gzipped uImage + DTB that publish-fedora produces - the same artifacts
@@ -37,28 +38,11 @@ from _repo import LOGS  # noqa: E402
 KERNEL = TFTP_KIMG
 DTB = TFTP_DIMG
 
-SSH = REPO / "scripts/ssh-woomera.py"
-
 
 def log(m: str) -> None:
     print(m, flush=True)
     LOGS.mkdir(parents=True, exist_ok=True)
     (LOGS / "deploy-ssd.log").open("a").write(m + "\n")
-
-
-def box_ip() -> str:
-    """Resolve the box by its 1G MAC - the lease moves, the MAC does not."""
-    r = subprocess.run(
-        [sys.executable, str(SSH), "--print"],
-        capture_output=True,
-        text=True,
-        check=False,
-        env={**os.environ, "AWTO_ALLOW_DIRECT_SCRIPT": "1"},
-    )
-    ip = r.stdout.strip().splitlines()[-1] if r.stdout.strip() else ""
-    if not ip:
-        sys.exit("woomera not found on the LAN - is it up?")
-    return ip
 
 
 def run(cmd: list[str], label: str) -> None:
@@ -82,7 +66,7 @@ def main() -> int:
         if not p.exists():
             sys.exit(f"missing artifact: {p} (run ./dev.py publish-fedora)")
 
-    ip = box_ip()
+    ip = _box.require()
     log(f"deploy-ssd -> {ip}, kernel {KVER}")
     host = f"root@{ip}"
     opts = [

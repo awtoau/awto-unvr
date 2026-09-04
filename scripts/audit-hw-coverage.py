@@ -27,6 +27,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+import _box
+
 ROOT = Path(__file__).resolve().parent.parent
 CACHE = ROOT / "tmp" / "hwaudit"
 LOGDIR = ROOT / "tmp" / "logs"
@@ -80,11 +82,19 @@ PROBES = {
 
 
 def ssh(cmd: str) -> str:
-    """One ssh round trip via dev.py. Returns stdout, '' on failure."""
-    argv = [sys.executable, str(ROOT / "scripts" / "ssh-woomera.py"), "--", cmd]
+    """One ssh round trip. Returns stdout, '' on failure."""
+    ip = _box.locate()
+    if not ip:
+        logging.warning("woomera not found on the LAN for %.60s", cmd)
+        return ""
+    _box.flush_failed_neighbours(ip)
     try:
         p = subprocess.run(
-            argv, capture_output=True, text=True, timeout=SSH_TIMEOUT_S, cwd=ROOT
+            _box.ssh_argv(ip, cmd=[cmd]),
+            capture_output=True,
+            text=True,
+            timeout=SSH_TIMEOUT_S,
+            cwd=ROOT,
         )
     except subprocess.TimeoutExpired:
         logging.error("ssh probe exceeded %ds limit: %.60s", SSH_TIMEOUT_S, cmd)
@@ -93,10 +103,7 @@ def ssh(cmd: str) -> str:
         logging.warning(
             "ssh rc=%d for %.60s: %s", p.returncode, cmd, p.stderr.strip()[:200]
         )
-    # ssh-woomera.py prefixes a '# woomera at <ip>' banner line.
-    return "\n".join(
-        ln for ln in p.stdout.splitlines() if not ln.startswith("# woomera at")
-    )
+    return p.stdout
 
 
 def collect() -> dict[str, str]:

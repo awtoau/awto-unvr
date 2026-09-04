@@ -41,6 +41,7 @@ REPO = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO / "scripts"))
 os.environ.setdefault("AWTO_ALLOW_DIRECT_SCRIPT", "1")
 
+import _box  # noqa: E402
 from _repo import LOGS  # noqa: E402
 
 BUILD_OUT = Path("/mnt/2tb/unvr-port-refs/build-out-fedora")
@@ -48,7 +49,6 @@ KERNEL = BUILD_OUT / "Image"
 DTB = BUILD_OUT / "alpine-v2-ubnt-unvr-ea16-7.3.dtb"
 
 MNT = "/mnt/awto-esp"
-SSH = REPO / "scripts/ssh-woomera.py"
 SSH_OPTS = [
     "-o",
     "StrictHostKeyChecking=no",
@@ -66,18 +66,7 @@ def log(m: str) -> None:
 
 
 def box_ip() -> str:
-    """Resolve the box by its 1G MAC - the lease moves, the MAC does not."""
-    r = subprocess.run(
-        [sys.executable, str(SSH), "--print"],
-        capture_output=True,
-        text=True,
-        check=False,
-        env={**os.environ, "AWTO_ALLOW_DIRECT_SCRIPT": "1"},
-    )
-    ip = r.stdout.strip().splitlines()[-1] if r.stdout.strip() else ""
-    if not ip:
-        sys.exit("woomera not found on the LAN - is it up and in Linux?")
-    return ip
+    return _box.require(hint="is it up and in Linux?")
 
 
 def sh(host: str, cmd: str, check: bool = True) -> str:

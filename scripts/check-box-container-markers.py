@@ -35,8 +35,7 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO / "scripts"))
 os.environ.setdefault("AWTO_ALLOW_DIRECT_SCRIPT", "1")
-
-SSH = REPO / "scripts" / "ssh-woomera.py"
+import _box  # noqa: E402
 
 # Files systemd's detect_container() consults. Only a container runtime ever
 # writes these; on a bare-metal rootfs any of them is a defect.
@@ -57,14 +56,16 @@ PROBE = (
 
 
 def main() -> int:
-    r = subprocess.run(
-        [sys.executable, str(SSH), "--", "sh", "-c", PROBE],
-        capture_output=True,
-        text=True,
-        check=False,
-        env={**os.environ, "AWTO_ALLOW_DIRECT_SCRIPT": "1"},
-    )
-    out = r.stdout
+    ip = _box.locate()
+    out = ""
+    if ip:
+        _box.flush_failed_neighbours(ip)
+        out = subprocess.run(
+            _box.ssh_argv(ip, cmd=["sh", "-c", PROBE]),
+            capture_output=True,
+            text=True,
+            check=False,
+        ).stdout
     if "VIRT=" not in out:
         # Not reachable is not a failure - the box is often at the U-Boot
         # prompt or powered off during a gate run.

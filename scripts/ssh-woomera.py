@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 """Connect to woomera by MAC, not by address - the DHCP lease moves.
 
-Seen at .149 (2026-08-16) then .106 (2026-08-18); .149 was reassigned to another
-host, so a stale address fails "refused" rather than "timeout". The Ubiquiti OUI
-is the only stable handle. See docs/unvr-access-research.md.
+The resolver itself lives in scripts/_box.py (import it; do not shell out to
+this script and parse its stdout). See docs/unvr-access-research.md.
 
   ssh-woomera.py              # interactive shell
   ssh-woomera.py --print      # just print the address
@@ -13,83 +12,17 @@ is the only stable handle. See docs/unvr-access-research.md.
 from __future__ import annotations
 
 import argparse
-import ipaddress
 import os
-import re
-import subprocess
 import sys
-from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-# ICMP on a LAN answers in well under a millisecond; 1 s is ~3 orders of magnitude
-# over that. On expiry: host treated as down and skipped (full scan then runs).
-PING_TIMEOUT_S = 1
-
-CACHE = Path("tmp/woomera-addr")  # regenerable: last address that answered
-
-
-def macs_of(ip: str) -> list[str]:
-    subprocess.run(
-        ["ping", "-c", "1", "-W", str(PING_TIMEOUT_S), ip],
-        capture_output=True,
-        check=False,
-    )
-    out = subprocess.run(
-        ["ip", "neigh", "show", ip], capture_output=True, text=True, check=False
-    ).stdout
-    # One entry PER HOST NIC on a shared subnet, and a stale one can name a
-    # different port of the same box. Return ALL entries so the caller can
-    # match any - one stale row must not hide a good one.
-    return [m.lower() for m in re.findall(r"lladdr ([0-9a-f:]{17})", out)]
-
-
-# Woomera's own two MACs, from the NOR identity blob at 0x1f0000: the 1G RJ45
-# (eth0) and the 10G SFP+ (eth1, base+1). docs/identity-partitions.md.
-#
-# EXACT MACs, never the OUI: other UBNT gear shares 74:AC:B9, and an OUI match
-# once picked a neighbouring device instead of the box.
-#
-# BOTH, not just the 1G one: all four NICs answer ARP for any local IP
-# (arp_ignore=0 default) and both box ports are on one subnet (#170), so the
-# neighbour table routinely attributes an IP to the other port's MAC. Requiring
-# the 1G MAC specifically then reports the box as absent while it is up.
-WOOMERA_MACS = frozenset(
-    {
-        "74:ac:b9:41:a8:11",  # 1G RJ45
-        "74:ac:b9:41:a8:12",  # 10G SFP+
-    }
-)
-
-
-def is_woomera(ip: str) -> bool:
-    return bool(WOOMERA_MACS.intersection(macs_of(ip)))
-
-
-def scan(subnet: str) -> str | None:
-    hosts = [str(h) for h in ipaddress.ip_network(subnet).hosts()]
-    with ThreadPoolExecutor(max_workers=64) as pool:
-        for ip, hit in zip(hosts, pool.map(is_woomera, hosts)):
-            if hit:
-                return ip
-    return None
-
-
-def locate(subnet: str) -> str | None:
-    if CACHE.exists():  # fast path: lease usually has not moved
-        cached = CACHE.read_text().strip()
-        if cached and is_woomera(cached):
-            return cached
-        print(f"# {cached} is no longer woomera, rescanning {subnet}", file=sys.stderr)
-    found = scan(subnet)
-    if found:
-        CACHE.parent.mkdir(parents=True, exist_ok=True)
-        CACHE.write_text(found + "\n")
-    return found
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from _box import DEFAULT_SUBNET, flush_failed_neighbours, locate, ssh_argv
 
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--subnet", default="192.168.25.0/24")
+    ap.add_argument("--subnet", default=DEFAULT_SUBNET)
     ap.add_argument("--user", default="root")
     ap.add_argument("--print", dest="print_only", action="store_true")
     ap.add_argument("cmd", nargs="*", help="command to run remotely (default: shell)")
@@ -107,45 +40,9 @@ def main() -> int:
         print(ip)
         return 0
 
-    # A FAILED neighbour entry on the NIC the route picks gives "No route to
-    # host" even though the box is up and other NICs resolved it fine - both
-    # ports are on one subnet (#170). Drop the bad entry so ssh re-ARPs.
-    for line in subprocess.run(
-        ["ip", "neigh", "show", ip], capture_output=True, text=True, check=False
-    ).stdout.splitlines():
-        if "FAILED" in line or "INCOMPLETE" in line:
-            dev = line.split(" dev ", 1)[1].split()[0] if " dev " in line else None
-            if dev:
-                subprocess.run(
-                    ["ip", "neigh", "del", ip, "dev", dev],
-                    capture_output=True,
-                    check=False,
-                )
-
+    flush_failed_neighbours(ip)
     print(f"# woomera at {ip}", file=sys.stderr)
-    os.execvp(
-        "ssh",
-        [
-            "ssh",
-            "-o",
-            "StrictHostKeyChecking=accept-new",
-            # Keep the pipe open. The box has two NICs on one subnet and picks
-            # its egress per-reply (#170), so a session goes quiet and the
-            # default no-keepalive ssh sits until TCP gives up. 15s x 8 = 2 min
-            # before we call it dead, which outlasts a reboot's link flap.
-            "-o",
-            "ServerAliveInterval=15",
-            "-o",
-            "ServerAliveCountMax=8",
-            # Reconnect fast rather than hanging on a stale ARP entry.
-            "-o",
-            "ConnectTimeout=8",
-            "-o",
-            "TCPKeepAlive=yes",
-            f"{args.user}@{ip}",
-            *args.cmd,
-        ],
-    )
+    os.execvp("ssh", ssh_argv(ip, args.user, args.cmd))
 
 
 if __name__ == "__main__":

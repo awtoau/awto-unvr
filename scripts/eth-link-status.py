@@ -15,6 +15,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+import _box
+
 # Documented default (docs/fedora-on-ssd.md) - not a secret, this box's own lab
 # root password. Override with --password if it's been changed.
 DEFAULT_ROOT_PASSWORD = "unvr"
@@ -48,13 +50,7 @@ echo module al_eth -p > /sys/kernel/debug/dynamic_debug/control 2>/dev/null || t
 
 
 def locate_woomera() -> str:
-    out = subprocess.run(
-        [sys.executable, "scripts/ssh-woomera.py", "--print"],
-        capture_output=True,
-        text=True,
-        check=True,
-    )
-    return out.stdout.strip()
+    return _box.require()
 
 
 def main() -> int:

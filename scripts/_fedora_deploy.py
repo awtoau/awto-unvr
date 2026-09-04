@@ -23,6 +23,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import _box
 from _repo import IMAGES, REPO, kernel_build_out, kernel_build_ver, log_path
 
 OUT = kernel_build_out()
@@ -114,14 +115,7 @@ def sync_modules() -> None:
     Aborts the whole deploy if this fails."""
     if not MODROOT.is_dir():
         sys.exit(f"ABORT: no module tree at {MODROOT} - build first")
-    host = subprocess.run(
-        [sys.executable, "scripts/ssh-woomera.py", "--print"],
-        cwd=REPO,
-        capture_output=True,
-        text=True,
-        timeout=15,
-        check=False,
-    ).stdout.strip()
+    host = _box.locate()
     if not host:
         sys.exit(
             "ABORT: woomera not reachable - can't sync modules, refusing to deploy"
