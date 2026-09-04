@@ -192,9 +192,14 @@ def main() -> int:
             f"rm -f *.o *.ko .*.cmd modules.order Module.symvers 2>/dev/null || true\n"
             f"make -C {kdir} M={MODDIR} modules 2>&1 | tail -30\n"
             f'echo "--- vermagic ---"\n'
-            f"modinfo {MODDIR}/al_eth.ko | grep vermagic\n"
+            # al_eth split into al_eth_1g/al_eth_10g - there is no al_eth.ko
+            # (#242). Pick whatever the build produced rather than naming one,
+            # so a future rename does not silently skip the vermagic guard.
+            f'PROBE="$(ls {MODDIR}/*.ko 2>/dev/null | head -1)"\n'
+            f'if [ -z "$PROBE" ]; then echo "ABORT: no .ko built"; exit 1; fi\n'
+            f'modinfo "$PROBE" | grep vermagic\n'
             f'RUNNING="$(uname -r)"\n'
-            f"BUILT=\"$(modinfo {MODDIR}/al_eth.ko | awk '/vermagic/{{print $2}}')\"\n"
+            f'BUILT="$(modinfo "$PROBE" | awk \'/vermagic/{{print $2}}\')"\n'
             f'if [ "$RUNNING" != "$BUILT" ]; then\n'
             f'  echo "ABORT: vermagic $BUILT does not match running kernel $RUNNING"\n'
             f"  exit 1\n"

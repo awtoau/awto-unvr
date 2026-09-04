@@ -968,6 +968,18 @@ def cmd_bench_all(extra: list[str]) -> int:
 
 
 @command(
+    "concurrent long-duration soak: iperf3 both al_eth ports + fio --direct=1 "
+    "reads on every SATA and USB disk, all at once, sampling dmesg/ethtool/"
+    "interrupts throughout - finds the faults that only appear under sustained "
+    "concurrent DMA load (scripts/soak-test.py)",
+    args="[--duration S] [--skip-eth|--skip-sata|--skip-usb]",
+    kind="action",
+)
+def cmd_soak_test(extra: list[str]) -> int:
+    return _run_script("scripts/soak-test.py", extra)
+
+
+@command(
     "power-cycle, catch the U-Boot prompt, run read-only bench diagnostics "
     "(scripts/uboot-bench-check.py) - no writes, no chainload jump",
     kind="action",
@@ -1899,6 +1911,12 @@ def main(argv: list[str] | None = None) -> int:
     if meta is None:
         print(f"unknown command: {name!r} - try ./dev.py describe", file=sys.stderr)
         return 2
+    # `./dev.py <cmd> --help` used to RUN <cmd> - only argv[0] was checked, so
+    # asking a destructive command for help performed it instead (#120).
+    if any(a in ("-h", "--help") for a in extra):
+        arg = f" {meta['args']}" if meta["args"] else ""
+        print(f"./dev.py {name}{arg}\n\n{meta['summary']}")
+        return 0
     rc = meta["fn"](extra)
     return 0 if rc == SKIPPED else rc
 
