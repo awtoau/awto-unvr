@@ -25,13 +25,13 @@ import sys
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
+from _net import LAN_SUBNET
+
 # The two al_eth MACs from the NOR identity blob at 0x1f0000: base+1 is the
 # 1G RJ45 (eth0), base+2 the 10G SFP+ (eth1).
 MAC_1G = "74:ac:b9:41:a8:11"
 MAC_10G = "74:ac:b9:41:a8:12"
 WOOMERA_MACS = frozenset({MAC_1G, MAC_10G})
-
-DEFAULT_SUBNET = "192.168.25.0/24"
 
 # ICMP on a LAN answers in well under a millisecond; 1 s is ~3 orders of
 # magnitude over that. On expiry: host treated as down and skipped.
@@ -77,7 +77,7 @@ def is_woomera(ip: str) -> bool:
     return bool(WOOMERA_MACS.intersection(macs_of(ip)))
 
 
-def scan(subnet: str = DEFAULT_SUBNET) -> str | None:
+def scan(subnet: str = LAN_SUBNET) -> str | None:
     hosts = [str(h) for h in ipaddress.ip_network(subnet).hosts()]
     with ThreadPoolExecutor(max_workers=64) as pool:
         for ip, hit in zip(hosts, pool.map(is_woomera, hosts)):
@@ -86,7 +86,7 @@ def scan(subnet: str = DEFAULT_SUBNET) -> str | None:
     return None
 
 
-def locate(subnet: str = DEFAULT_SUBNET) -> str | None:
+def locate(subnet: str = LAN_SUBNET) -> str | None:
     """The box's current address, or None. Cached last-known address is
     re-verified by MAC before use; a full scan runs only when it moved."""
     if CACHE.exists():
@@ -101,7 +101,7 @@ def locate(subnet: str = DEFAULT_SUBNET) -> str | None:
     return found
 
 
-def require(subnet: str = DEFAULT_SUBNET, *, hint: str = "is it up?") -> str:
+def require(subnet: str = LAN_SUBNET, *, hint: str = "is it up?") -> str:
     """locate(), or exit 1 with a one-line reason."""
     ip = locate(subnet)
     if not ip:

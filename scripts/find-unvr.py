@@ -10,7 +10,7 @@ Three independent methods, because any one can miss:
 Read-only: sends discovery probes and TCP connects on the local subnet. Nothing
 is written to any device.
 
-Run: ./scripts/find-unvr.py [--subnet 192.168.25.0/24] [--sweep]
+Run: ./scripts/find-unvr.py [--subnet <cidr>] [--sweep]
 """
 
 import argparse

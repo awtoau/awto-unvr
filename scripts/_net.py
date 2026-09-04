@@ -9,6 +9,11 @@ from __future__ import annotations
 
 import socket
 
+# The lab LAN. The ONE place a 192.168.25.x literal may appear in Python
+# (tests/test_lan_identity_single_source.py enforces it).
+LAN_SUBNET = "192.168.25.0/24"
+# The static address every U-Boot flow gives the box (`setenv ipaddr`). Not a
+# lease: Linux-side addresses come from _box.locate(), never a literal.
 UNVR_IPADDR = "192.168.25.140"
 
 

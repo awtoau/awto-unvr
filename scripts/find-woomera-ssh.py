@@ -21,6 +21,8 @@ import sys
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
+from _net import LAN_SUBNET
+
 # TCP connect on a LAN is sub-millisecond and sshd sends its banner immediately on
 # accept; ICMP likewise. 2.0 s is ~3 orders of magnitude over that - generous for a
 # host that is up but loaded. On expiry: host reported as down/no-banner, not retried.
@@ -86,7 +88,7 @@ def survey(ip: str) -> tuple[str, str | None, str | None] | None:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--subnet", default="192.168.25.0/24")
+    ap.add_argument("--subnet", default=LAN_SUBNET)
     ap.add_argument("--workers", type=int, default=64)
     args = ap.parse_args()
 

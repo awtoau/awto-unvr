@@ -17,12 +17,13 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from _box import DEFAULT_SUBNET, flush_failed_neighbours, locate, ssh_argv
+from _box import flush_failed_neighbours, locate, ssh_argv
+from _net import LAN_SUBNET
 
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--subnet", default=DEFAULT_SUBNET)
+    ap.add_argument("--subnet", default=LAN_SUBNET)
     ap.add_argument("--user", default="root")
     ap.add_argument("--print", dest="print_only", action="store_true")
     ap.add_argument("cmd", nargs="*", help="command to run remotely (default: shell)")
