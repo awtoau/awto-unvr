@@ -11,9 +11,10 @@ Answers three questions U-Boot cannot:
   2. What is the real sustained read throughput? #137 measured ~25 MB/s. A
      figure far above the negotiated link's ceiling means the transfer is not
      happening, not that the disk is fast.
-  3. Does the data actually arrive intact? An address-in-data pattern catches
-     the faults a throughput number hides: truncated transfers, wrapped offsets,
-     and stuck address lines that return the wrong block without erroring.
+  3. Does the data actually arrive intact? `badblocks -w` writes and verifies
+     four patterns (0xaa/0x55/0xff/0x00) across the WHOLE device, catching the
+     faults a throughput number hides: truncated transfers, wrapped offsets and
+     stuck address lines. Standard tool, better tested than a hand-rolled loop.
 
 Read-only by default. The write test needs --write and a device with no
 mounted filesystem - it DESTROYS the target's contents.
@@ -26,7 +27,7 @@ Run on the box:
 from __future__ import annotations
 
 import argparse
-import os
+import re
 import subprocess
 import sys
 import time
@@ -71,12 +72,52 @@ def link_info(dev: str) -> dict[str, str]:
     return out
 
 
-def read_bench(dev: str, mib: int) -> tuple[float, float]:
-    """Sustained read of `mib` MiB from offset 0, cache dropped first."""
+def have(tool: str) -> bool:
+    return subprocess.run(
+        ["command", "-v", tool], capture_output=True, shell=False, check=False
+    ).returncode == 0 or bool(sh(["sh", "-c", f"command -v {tool}"]).strip())
+
+
+def fio_read(dev: str, mib: int) -> tuple[float, float] | None:
+    """Sustained sequential read via fio - the standard tool, O_DIRECT, no cache.
+
+    fio reports its own throughput, so we do not infer it from wall time and
+    cannot be fooled by a call that returns early.
+    """
+    if not have("fio"):
+        return None
+    out = sh(
+        [
+            "fio",
+            "--name=seqread",
+            f"--filename={dev}",
+            "--rw=read",
+            "--bs=1M",
+            f"--size={mib}M",
+            "--direct=1",
+            "--ioengine=libaio",
+            "--iodepth=8",
+            "--runtime=120",
+            "--group_reporting",
+            "--output-format=terse",
+            "--minimal",
+        ]
+    )
+    # terse v3+: read bandwidth in KiB/s is field 7 (1-indexed) of the ';' row.
+    for line in out.splitlines():
+        f = line.split(";")
+        if len(f) > 7 and f[2] == "seqread":
+            kib = float(f[6])
+            return (mib * 1024 / kib if kib else 0.0), kib / 1024
+    return None
+
+
+def dd_read(dev: str, mib: int) -> tuple[float, float]:
+    """Fallback when fio is absent: dd with O_DIRECT, timed by wall clock."""
     try:
         Path("/proc/sys/vm/drop_caches").write_text("3\n")
     except OSError:
-        pass  # not fatal - iflag=direct below is what actually matters
+        pass
     t0 = time.monotonic()
     subprocess.run(
         ["dd", f"if={dev}", "of=/dev/null", "bs=1M", f"count={mib}", "iflag=direct"],
@@ -87,40 +128,20 @@ def read_bench(dev: str, mib: int) -> tuple[float, float]:
     return dt, (mib / dt if dt else 0.0)
 
 
-def pattern_block(lba: int) -> bytes:
-    """Address-in-data: every 8 bytes of the block encodes its own LBA.
+def badblocks_rw(dev: str) -> tuple[int, str]:
+    """DESTRUCTIVE write-mode badblocks: the standard address/pattern test.
 
-    A truncated or wrapped transfer, or a stuck address line, returns data
-    whose embedded LBA does not match where it was read from - which a
-    throughput number and a plain zero/one pattern both miss.
+    -w writes 0xaa/0x55/0xff/0x00 over the whole device and verifies each pass,
+    which catches stuck bits and aliased addresses across the FULL range. -s
+    shows progress, -v reports counts. This is what badblocks exists for; a
+    hand-rolled LBA loop tests less and is less trusted.
     """
-    return (lba.to_bytes(8, "little")) * (SECTOR // 8)
-
-
-def write_verify(dev: str, lbas: list[int]) -> list[str]:
-    """DESTRUCTIVE. Write the address-in-data pattern, read back, compare."""
-    faults = []
-    with open(dev, "rb+", buffering=0) as f:
-        for lba in lbas:
-            f.seek(lba * SECTOR)
-            f.write(pattern_block(lba))
-        os.fsync(f.fileno())
-    try:
-        Path("/proc/sys/vm/drop_caches").write_text("3\n")
-    except OSError:
-        pass
-    with open(dev, "rb", buffering=0) as f:
-        for lba in lbas:
-            f.seek(lba * SECTOR)
-            got = f.read(SECTOR)
-            want = pattern_block(lba)
-            if got != want:
-                embedded = int.from_bytes(got[:8], "little") if len(got) >= 8 else -1
-                faults.append(
-                    f"LBA {lba} (0x{lba:x}): data says LBA {embedded} "
-                    f"(0x{embedded:x}) - {'wrapped/aliased' if embedded != lba else 'corrupt'}"
-                )
-    return faults
+    out = sh(["badblocks", "-w", "-s", "-v", "-b", "4096", dev])
+    bad = 0
+    m = re.search(r"(\d+)\s+bad blocks found", out)
+    if m:
+        bad = int(m.group(1))
+    return bad, out
 
 
 def main() -> int:
@@ -154,9 +175,11 @@ def main() -> int:
         print("  link speed : could not resolve the USB parent in sysfs")
         ceiling = 0.0
 
-    print("  --- sustained read (O_DIRECT, caches dropped) ---")
+    tool = "fio" if have("fio") else "dd"
+    print(f"  --- sustained read ({tool}, O_DIRECT) ---")
     for mib in READ_SIZES_MIB:
-        dt, mbs = read_bench(a.dev, mib)
+        r = fio_read(a.dev, mib) or dd_read(a.dev, mib)
+        dt, mbs = r
         flag = ""
         if ceiling and mbs > ceiling:
             flag = f"  <-- IMPOSSIBLE: {mbs / ceiling:.1f}x the link ceiling"
@@ -165,23 +188,17 @@ def main() -> int:
     if a.write:
         # Span the device: first, last, and powers of two between. Catches a
         # stuck high address line, which a sequential test never reaches.
-        blocks = int(sh(["blockdev", "--getsz", a.dev]).strip() or 0)
-        if not blocks:
-            sys.exit("could not read device size")
-        lbas = [0, 1, 63, 255]
-        n = 1024
-        while n < blocks:
-            lbas.append(n)
-            n *= 2
-        lbas.append(blocks - 1)
-        lbas = sorted({x for x in lbas if 0 <= x < blocks})
-        print(f"  --- address-in-data write/verify, {len(lbas)} LBAs (DESTRUCTIVE) ---")
-        faults = write_verify(a.dev, lbas)
-        if faults:
-            for f in faults:
-                print(f"  FAULT {f}")
+        if not have("badblocks"):
+            sys.exit("badblocks not installed (dnf install e2fsprogs)")
+        print(
+            "  --- badblocks -w: 4-pattern write/verify, WHOLE device (DESTRUCTIVE) ---"
+        )
+        bad, out = badblocks_rw(a.dev)
+        print("  " + "\n  ".join(out.strip().splitlines()[-6:]))
+        if bad:
+            print(f"  FAULT: {bad} bad block(s)")
             return 1
-        print(f"  OK: all {len(lbas)} LBAs read back their own address")
+        print("  OK: no bad blocks")
     else:
         print("  (pass --write for the destructive address-in-data integrity test)")
     return 0
