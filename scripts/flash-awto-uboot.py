@@ -35,9 +35,12 @@ os.environ.setdefault("AWTO_ALLOW_DIRECT_SCRIPT", "1")
 from _net import detect_server_ip  # noqa: E402
 from _repo import LOGS  # noqa: E402
 
+# tmp/tftp, matching dev.py's TFTP_ROOT and what the running tftpd serves.
+# images/tftp is the deploy-artifact dir and is NOT the server root (#dev.py:1012).
+TFTP_DIR = REPO / "tmp/tftp"
+
 SOCK = Path(os.environ.get("XDG_RUNTIME_DIR", "/tmp")) / "tio-unvr.sock"
 IPADDR = "192.168.25.140"
-TFTP_DIR = Path("/var/lib/tftpboot")
 
 UBOOT_BIN = REPO / "tmp/uboot-build/u-boot.bin"
 TFTP_NAME = "u-boot-awto.bin"
