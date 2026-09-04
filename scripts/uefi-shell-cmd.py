@@ -55,7 +55,12 @@ def send_cmd(s, cmd: str) -> str:
         if now - start > CMD_LIMIT_S:
             print(f"  [limit] {CMD_LIMIT_S}s elapsed for {cmd!r}, moving on")
             break
-        if buf and now - last_rx > QUIET_S:
+        # QUIET_S of silence means done, whether or not anything arrived. The
+        # old `buf and` guard made total silence - the box not at a Shell at
+        # all, the usual failure - cost the full CMD_LIMIT_S per command.
+        if now - last_rx > QUIET_S:
+            if not buf:
+                print(f"  [silent] nothing at all for {cmd!r} - is this a Shell?")
             break
         try:
             d = s.recv(4096)

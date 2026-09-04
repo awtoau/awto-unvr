@@ -80,12 +80,21 @@ CRASH_PATTERN = "Synchronous Exception|Data Abort|Instruction Abort|Kernel panic
 HOTKEY_SPAM_S = 25.0
 HOTKEY_INTERVAL_S = 0.15
 
-# No prior data point before tonight for "how long EDK2 P0 takes to
-# reach a shell" - now that it's confirmed reachable, budget generously
-# above the observed run (a fresh boot + hotkey race takes low tens of
-# seconds) since a hang is recoverable (power-cycle) and a timeout
-# that's too short would abort a genuinely-still-booting probe.
+# Waits for: "UEFI Interactive Shell" after `go`. Observed: a fresh boot +
+# hotkey race reaches it in low tens of seconds on this P0 component list
+# (which is far shorter than P4's - see uefi-chainload-from-awto.py's 180s).
+# 60s is ~2x. On expiry: dump the transcript, tell the caller to power-cycle;
+# RAM payload, nothing at risk. A failed jump aborts in <1s via jump_failed().
 PROBE_TIMEOUT_S = 60
+# Waits for: `go`'s "## Starting application at 0x..." banner, a printf on
+# the line before the branch. Expected: one console round-trip, ~30ms at
+# 115200 for a 60-char line. 1.5s is ~50x - loose on purpose because it only
+# bounds the failure case and a false abort costs a whole power-cycle.
+# On expiry: report that `go` never announced itself and stop.
+JUMP_BANNER_S = 1.5
+# Stock's prompt. `go` returning to it after the jump command is proof the
+# jump did not take (bad address, or the payload returned).
+STOCK_PROMPT = "ALPINE_UBNT_NAS_ALL>"
 
 
 def main() -> int:
@@ -165,12 +174,16 @@ def main() -> int:
         print(f"FATAL: tftp of UNVR.fd failed: {e}")
         return 1
 
+    # Length LITERAL, never ${filesize}: that variable is set only by U-Boot's
+    # own load commands, so anything that skips the tftp leaves it empty and
+    # crc32 then aborts on a byte-correct image. The local file is the
+    # authority for both the length and the expected value.
     out = _rbd.run_devpy(
         "--expect",
         "ALPINE_UBNT_NAS_ALL>",
         "--timeout",
         "10",
-        f"crc32 {FD_ADDR} ${{filesize}}",
+        f"crc32 {FD_ADDR} 0x{args.fd.stat().st_size:x}",
     )
     if f"{local_crc:08x}".lower() not in out.lower():
         print(
@@ -187,6 +200,8 @@ def main() -> int:
     start = time.monotonic()
     buf = b""
     last_key_send = -1.0
+    verdict = None
+    hotkey = "" if args.no_hotkey else "s"
     while time.monotonic() - start < PROBE_TIMEOUT_S:
         try:
             d = s.recv(4096)
@@ -195,20 +210,29 @@ def main() -> int:
         except TimeoutError:
             pass
         now = time.monotonic() - start
-        if (
-            (not args.no_hotkey)
-            and now < HOTKEY_SPAM_S
-            and now - last_key_send > HOTKEY_INTERVAL_S
-        ):
-            s.sendall(b"s")
-            last_key_send = now
         text = buf.decode(errors="replace")
+
+        # Abort on PROOF the jump failed rather than spamming a dead prompt
+        # and then waiting out PROBE_TIMEOUT_S. See _console.jump_failed.
+        verdict = _console.jump_failed(text, hotkey, STOCK_PROMPT)
+        if verdict:
+            break
+        if now > JUMP_BANNER_S and _console.jump_banner_missing(text):
+            verdict = f"`go` never announced itself within {JUMP_BANNER_S}s"
+            break
+
+        if hotkey and now < HOTKEY_SPAM_S and now - last_key_send > HOTKEY_INTERVAL_S:
+            s.sendall(hotkey.encode())
+            last_key_send = now
         if SUCCESS_PATTERN in text or any(p in text for p in CRASH_PATTERN.split("|")):
             break
 
     text = buf.decode(errors="replace")
     print(text)
 
+    if verdict:
+        print(f"\nRESULT: {verdict} (aborted after {time.monotonic() - start:.1f}s).")
+        return 1
     if any(p in text for p in CRASH_PATTERN.split("|")):
         print("\nRESULT: EDK2 crashed (exception/abort).")
         return 1

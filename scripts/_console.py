@@ -97,3 +97,58 @@ def sh(s, cmd, timeout=30):
     txt = re.sub(r"\]3008;[^\r\n]*", "", txt)  # leaked OSC-3008 body remnant
     lines = [l for l in txt.splitlines() if "@@RC=" not in l and "; echo @@RC" not in l]
     return rc, "\n".join(lines).strip()
+
+
+# --- stage-handoff failure detection -------------------------------------
+#
+# The failure this catches: we sent a jump command meant for stage B (EDK2,
+# a kernel) and stage A (U-Boot) never left. Every subsequent keystroke -
+# the BdsWait 's' hotkey spam - is then typed at stage A's live prompt and
+# echoes straight back:
+#
+#     awto-nas# sssssssssssssssssssssssssss
+#
+# That echo is PROOF, available in well under a second, that the handoff
+# failed. Waiting out the stage-B marker timeout after it adds nothing.
+
+# Banner each jump command prints before transferring control. Both are a
+# printf immediately preceding the branch, not work - if neither appears the
+# jump was never attempted (bad address, command not built in, typo).
+JUMP_BANNERS = ("Starting application at", "bootedk2:")
+
+
+def jump_failed(text: str, sent: str, stage_a_prompt: str, tail_chars: int = 400):
+    """Proof, from the transcript, that a stage-A -> stage-B jump did not take.
+
+    Returns a one-line reason, or None if there is no proof yet. Deliberately
+    conservative: "no evidence of success" is NOT proof and never returns a
+    reason here - only positive evidence that stage A is still running.
+
+    text          everything received since the jump command was sent
+    sent          the extra bytes we typed after the jump (e.g. "s" hotkeys);
+                  "" if none, which disables the echo check
+    stage_a_prompt  the prompt that must NOT reappear, e.g. "awto-nas#"
+    """
+    tail = text[-tail_chars:]
+    # Stage A re-prompting after the jump command means control came back to
+    # it: `go` rejected the address, or the command does not exist.
+    if stage_a_prompt in tail:
+        return f"{stage_a_prompt} re-prompted after the jump - it did not take"
+    # Three of our own keystrokes in a row, un-consumed, at a live prompt.
+    # Three not one: a single character can legitimately appear in stage-B
+    # trace output, a run of the exact byte we are spamming cannot.
+    if sent and sent * 3 in tail:
+        return (
+            f"our own {sent!r} keystrokes are echoing - stage A still has the console"
+        )
+    return None
+
+
+def jump_banner_missing(text: str) -> bool:
+    """True if no jump command has announced itself yet.
+
+    Only meaningful after the banner's own grace window has elapsed - the
+    banner is a printf on the line before the branch, so its absence past
+    a second means the command errored out rather than jumped.
+    """
+    return not any(b in text for b in JUMP_BANNERS)

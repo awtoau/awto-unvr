@@ -38,20 +38,31 @@ def macs_of(ip: str) -> list[str]:
         ["ip", "neigh", "show", ip], capture_output=True, text=True, check=False
     ).stdout
     # One entry PER HOST NIC on a shared subnet, and a stale one can name a
-    # different port of the same box. Match if ANY entry is the 1G MAC rather
-    # than taking the first - one stale row must not hide a good one.
+    # different port of the same box. Return ALL entries so the caller can
+    # match any - one stale row must not hide a good one.
     return [m.lower() for m in re.findall(r"lladdr ([0-9a-f:]{17})", out)]
 
 
-# The 1G RJ45 (enp0s1), from the NOR identity blob at 0x1f0000. Match this
-# EXACTLY, not just the OUI: the 10G port is base+1 and other UBNT gear shares
-# the OUI, so an OUI match picked the 10G port (.127) - unroutable from here -
-# while the box answered on the 1G port (.136).
-WOOMERA_MAC_1G = "74:ac:b9:41:a8:11"
+# Woomera's own two MACs, from the NOR identity blob at 0x1f0000: the 1G RJ45
+# (eth0) and the 10G SFP+ (eth1, base+1). docs/identity-partitions.md.
+#
+# EXACT MACs, never the OUI: other UBNT gear shares 74:AC:B9, and an OUI match
+# once picked a neighbouring device instead of the box.
+#
+# BOTH, not just the 1G one: all four NICs answer ARP for any local IP
+# (arp_ignore=0 default) and both box ports are on one subnet (#170), so the
+# neighbour table routinely attributes an IP to the other port's MAC. Requiring
+# the 1G MAC specifically then reports the box as absent while it is up.
+WOOMERA_MACS = frozenset(
+    {
+        "74:ac:b9:41:a8:11",  # 1G RJ45
+        "74:ac:b9:41:a8:12",  # 10G SFP+
+    }
+)
 
 
 def is_woomera(ip: str) -> bool:
-    return WOOMERA_MAC_1G in macs_of(ip)
+    return bool(WOOMERA_MACS.intersection(macs_of(ip)))
 
 
 def scan(subnet: str) -> str | None:

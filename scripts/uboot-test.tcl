@@ -24,9 +24,16 @@ if {!$COLD} {
 } else {
     puts "COLD START (already power-cycled) — catching stock U-Boot"
 }
+# Waits for: stock's prompt after the SP805 reset (the power-cycle already
+# happened when $COLD). Expected: reset -> preboot -> banner -> bootdelay=2
+# prompt; every automated catch-uboot.py caller budgets 60s for exactly this
+# (ram-boot-deploy.py, uboot-bench-check.py), so 60 iterations x 1s matches
+# the number already validated elsewhere. The old 1200 was 20 MINUTES - a
+# dead reset is indistinguishable from a hang for that whole time.
+# On expiry: say NO-STOCK and return, rather than typing into whatever is there.
 set ok 0
-for {set i 0} {$i < 1200} {incr i} { send_raw ESC; if {[catch {expect "ALPINE_UBNT_NAS_ALL>" 1}] == 0} { set ok 1; break } }
-if {!$ok} { puts "NO-STOCK (SP805 reset didn't reach stock; a power-cycle may be needed)"; return }
+for {set i 0} {$i < 60} {incr i} { send_raw ESC; if {[catch {expect "ALPINE_UBNT_NAS_ALL>" 1}] == 0} { set ok 1; break } }
+if {!$ok} { puts "NO-STOCK (SP805 reset didn't reach stock in ~60s; a power-cycle may be needed)"; return }
 send "setenv ipaddr 192.168.25.140";     expect "ALPINE_UBNT_NAS_ALL>" 6
 send "setenv serverip $SERVERIP"; expect "ALPINE_UBNT_NAS_ALL>" 6
 send "tftpboot 0x1100000 u-boot-chainload.bin"; catch {expect "Bytes transferred" 30}

@@ -58,16 +58,29 @@ CRASH_PATTERNS = ("Synchronous Exception", "Data Abort", "Instruction Abort")
 # into the shell once reached.
 HOTKEY_SPAM_S = 25.0
 HOTKEY_INTERVAL_S = 0.15
-# Measured 2026-09-04: `go` -> "UEFI Interactive Shell" took ~145s on a
-# DEBUG build with the full P1.5 USB + P2 AHCI + P3 eth component list
-# (the DEBUG trace itself is most of it - every dispatch line is 115200
-# baud). 1.25x that = 180s. On expiry we print what arrived and tell the
-# caller to power-cycle; RAM payload, so nothing is at risk.
+# Waits for: "UEFI Interactive Shell" after the jump. Measured 2026-09-04:
+# ~145s on a DEBUG build with the full P1.5 USB + P2 AHCI + P3 eth component
+# list (the DEBUG trace itself is most of it - every dispatch line is 115200
+# baud). 1.25x = 180s. On expiry: print what arrived and tell the caller to
+# power-cycle; RAM payload, so nothing is at risk. A failed jump never gets
+# here - jump_failed() catches it in <1s.
 PROBE_TIMEOUT_S = 180
+# Waits for: `bootedk2`'s "## bootedk2: ..." banner, a printf on the line
+# before the branch. Expected: one console round-trip, ~30ms at 115200 for a
+# 60-char line. 1.5s is ~50x - loose on purpose because it only bounds the
+# failure case and a false abort costs a whole cold-boot cycle.
+# On expiry: report the command never announced itself and stop.
+JUMP_BANNER_S = 1.5
 
 
-def send_expect(s, cmd: str, want: str, limit_s: float) -> str:
+def send_expect(
+    s, cmd: str, want: str, limit_s: float, *, or_prompt: bool = False
+) -> str:
     """Send one command, read until `want` appears or limit_s elapses.
+
+    or_prompt: also stop when PROMPT returns after the command's own echo. A
+    command that failed (missing file, no such device) prints its error and
+    re-prompts at once, so waiting out limit_s after that adds nothing.
 
     On expiry: return what arrived so far. Every caller checks for its
     own marker, so a partial read surfaces as a named failure rather
@@ -83,7 +96,10 @@ def send_expect(s, cmd: str, want: str, limit_s: float) -> str:
                 buf += d
         except TimeoutError:
             continue
-        if want in buf.decode(errors="replace"):
+        text = buf.decode(errors="replace")
+        if want in text:
+            break
+        if or_prompt and cmd and cmd in text and PROMPT in text.split(cmd, 1)[1]:
             break
     return buf.decode(errors="replace")
 
@@ -139,8 +155,14 @@ def main() -> int:
     if "Device 1:" not in out:
         print(f"FATAL: scsi scan did not find the SSD\n{out}")
         return 1
+    # or_prompt: a missing file re-prompts at once, so the 60s bound only
+    # ever applies to a genuinely-running read.
     out = send_expect(
-        s, f"ext4load scsi {SSD_PART} {FD_ADDR} {FD_ON_SSD}", "bytes read", 60
+        s,
+        f"ext4load scsi {SSD_PART} {FD_ADDR} {FD_ON_SSD}",
+        "bytes read",
+        60,
+        or_prompt=True,
     )
     if "bytes read" not in out:
         print(f"FATAL: ext4load of {FD_ON_SSD} did not complete\n{out}")
@@ -150,31 +172,28 @@ def main() -> int:
     # before the digits) both return empty and read as a false mismatch.
     # Size passed literally, not ${filesize}, so this needs no U-Boot var.
     want_crc = f"{local_crc:08x}"
-    out = send_expect(s, f"crc32 {FD_ADDR} 0x{len(fd_bytes):x}", want_crc, 30)
+    # or_prompt: crc32 prints its value BEFORE re-prompting, so stopping at
+    # the prompt cannot truncate a match - it only ends a mismatch early.
+    out = send_expect(
+        s, f"crc32 {FD_ADDR} 0x{len(fd_bytes):x}", want_crc, 30, or_prompt=True
+    )
     if want_crc not in out.lower():
         print(f"FATAL: on-device crc32 mismatch (want 0x{want_crc})\n{out}")
         return 1
     print(f"crc32 verified: 0x{local_crc:08x}\n")
 
-    # MANDATORY. awto-uboot runs with MMU + caches ON and `go`
-    # (cmd/boot.c do_go) does no cleanup_before_linux, unlike `bootm` -
-    # so it is the caller's job. Without this the FD takes a Synchronous
-    # Abort inside its own text right after the firmware banner; the
-    # identical image chainloads fine from stock, which runs caches off.
-    # Full evidence: docs/uefi.md P2.
-    for cmd in ("dcache off", "icache off"):
-        out = send_expect(s, cmd, PROMPT, 10)
-        if PROMPT not in out:
-            print(f"FATAL: '{cmd}' did not return to the prompt\n{out}")
-            return 1
-    print("caches disabled (required - see comment)\n")
-
-    print(f"=== go {FD_ADDR} - transferring control to EDK2 SEC ===")
-    s.sendall(f"go {FD_ADDR}\r".encode())
+    # bootedk2, not `go` + manual `dcache off; icache off`. awto-uboot runs
+    # with MMU + caches ON and do_go skips cleanup_before_linux(), so the FD
+    # aborts in its own text (esr 0x86000004). bootedk2 does the cleanup
+    # itself, so the requirement cannot be forgotten. 0c2b4d4, docs/uefi.md P2.
+    print(f"=== bootedk2 {FD_ADDR} - transferring control to EDK2 SEC ===")
+    s.sendall(f"bootedk2 {FD_ADDR}\r".encode())
 
     start = time.monotonic()
     buf = b""
     last_key = -1.0
+    verdict = None
+    hotkey = "" if args.no_hotkey else "s"
     while time.monotonic() - start < PROBE_TIMEOUT_S:
         try:
             d = s.recv(4096)
@@ -183,19 +202,30 @@ def main() -> int:
         except TimeoutError:
             pass
         now = time.monotonic() - start
-        if (
-            (not args.no_hotkey)
-            and now < HOTKEY_SPAM_S
-            and now - last_key > HOTKEY_INTERVAL_S
-        ):
-            s.sendall(b"s")
-            last_key = now
         text = buf.decode(errors="replace")
+
+        # Abort on PROOF the jump failed rather than spamming a dead prompt
+        # and then waiting out PROBE_TIMEOUT_S. See _console.jump_failed.
+        verdict = _console.jump_failed(text, hotkey, PROMPT)
+        if verdict:
+            break
+        if now > JUMP_BANNER_S and _console.jump_banner_missing(text):
+            verdict = f"bootedk2 never announced itself within {JUMP_BANNER_S}s"
+            break
+
+        if hotkey and now < HOTKEY_SPAM_S and now - last_key > HOTKEY_INTERVAL_S:
+            s.sendall(hotkey.encode())
+            last_key = now
         if SUCCESS_PATTERN in text or any(p in text for p in CRASH_PATTERNS):
             break
 
     text = buf.decode(errors="replace")
     print(text)
+    if verdict:
+        print(f"\nRESULT: {verdict} (aborted after {time.monotonic() - start:.1f}s).")
+        if "Unknown command" in text:
+            print("  -> this awto-uboot predates `bootedk2` (0c2b4d4); reflash it.")
+        return 1
     if any(p in text for p in CRASH_PATTERNS):
         print("\nRESULT: EDK2 crashed (exception/abort).")
         return 1

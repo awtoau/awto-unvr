@@ -6,7 +6,9 @@
 One script for the whole payoff path, so the awto-nas# prompt's non-sticky
 autoboot is only raced once:
 
-  1. ext4load the EDK2 FD off the SSD, crc32-verify it, `go` to it.
+  1. ext4load the EDK2 FD off the SSD, crc32-verify it, `bootedk2` to it.
+     (bootedk2, not `go`: it calls cleanup_before_linux() first, which
+     EDK2 requires - `go` leaves caches on and the FD aborts. 0c2b4d4.)
      (ext4load, not tftp: awto-uboot's own ethernet cannot transmit -
      #90's UDMA TX hang - but its AHCI/SCSI works.)
   2. Spam the BdsWait hotkey to land at Shell> rather than autobooting.
@@ -57,6 +59,10 @@ DEFAULT_ARGS = (
 )
 
 SHELL_MARK = "UEFI Interactive Shell"
+# The Shell's prompt after `fs0:` selects a filesystem, e.g. "fs0:\>". Matched
+# only at end-of-transcript: an image that exits drops straight back to it.
+# Built from --fs so it tracks the mapping actually used.
+SHELL_PROMPT_SUFFIX = ":\\>"
 CRASHES = ("Synchronous Exception", "Data Abort", "Instruction Abort")
 
 # BdsWait's hotkey window is ~3s but starts at an unfixed point once the
@@ -64,10 +70,18 @@ CRASHES = ("Synchronous Exception", "Data Abort", "Instruction Abort")
 # Shell is reached only types at the prompt, which is harmless.
 HOTKEY_SPAM_S = 25.0
 HOTKEY_INTERVAL_S = 0.15
-# Measured 2026-09-04: `go` -> Shell took ~145s on a DEBUG build with the
-# full USB + AHCI + eth component list (the 115200-baud DEBUG trace is
-# most of it). 1.25x = 180s. On expiry we print what arrived.
+# Waits for: "UEFI Interactive Shell" after the jump. Measured 2026-09-04:
+# ~145s on a DEBUG build with the full USB + AHCI + eth component list (the
+# 115200-baud DEBUG trace is most of it). 1.25x = 180s. On expiry: dump the
+# transcript, tell the caller to power-cycle. Only a genuinely-progressing
+# EDK2 ever reaches it - a failed jump is caught in <1s by jump_failed().
 SHELL_TIMEOUT_S = 180
+# Waits for: `bootedk2`'s "## bootedk2: ..." banner, a printf on the line
+# before the branch. Expected: one console round-trip, ~30ms at 115200 for
+# a 60-char line. 1.5s is ~50x - deliberately loose because it only bounds
+# the failure case and a false abort here costs a whole cold-boot cycle.
+# On expiry: report the command never announced itself and stop.
+JUMP_BANNER_S = 1.5
 
 # `connect -r` walks every handle, each line 115200-baud trace; measured
 # ~25s. 60s is ~2.4x. Local Shell commands answer in well under a second,
@@ -114,11 +128,15 @@ def make_log():
     return log
 
 
-def expect(s, cmd: str, want: str, limit_s: float) -> str:
+def expect(s, cmd: str, want: str, limit_s: float, *, or_prompt: bool = False) -> str:
     """Send one command, read until `want` appears or limit_s elapses.
 
-    On expiry: return what arrived. Every caller checks its own marker, so
-    a partial read surfaces as a named failure, not a silent wrong answer.
+    or_prompt: also stop when PROMPT returns. A command that failed (missing
+    file, no such device) prints its error and re-prompts immediately, so
+    waiting out limit_s after that adds nothing. Callers still check `want`,
+    so an early return surfaces as their own named failure.
+
+    On expiry: return what arrived, never a silent wrong answer.
     """
     s.sendall(cmd.encode() + b"\r")
     buf = b""
@@ -130,19 +148,28 @@ def expect(s, cmd: str, want: str, limit_s: float) -> str:
                 buf += d
         except TimeoutError:
             continue
-        if want in buf.decode(errors="replace"):
+        text = buf.decode(errors="replace")
+        if want in text:
+            break
+        # Require the command's own echo first: the prompt alone could be a
+        # leftover from before this send.
+        if or_prompt and cmd and cmd in text and PROMPT in text.split(cmd, 1)[1]:
             break
     return buf.decode(errors="replace")
 
 
 def quiet(s, cmd: str, limit_s: float) -> str:
-    """Send one line, read until QUIET_S of silence or limit_s elapses."""
+    """Send one line, read until QUIET_S of silence or limit_s elapses.
+
+    Silence counts from the start, not from the first byte: a box that is not
+    at a Shell answers nothing, and gating on `buf` made that cost limit_s.
+    """
     s.sendall(cmd.encode() + b"\r")
     buf = b""
     start = last = time.monotonic()
     while True:
         now = time.monotonic()
-        if now - start > limit_s or (buf and now - last > QUIET_S):
+        if now - start > limit_s or now - last > QUIET_S:
             break
         try:
             d = s.recv(4096)
@@ -171,8 +198,9 @@ def main() -> int:
     if not FD.exists():
         log(f"FATAL: {FD} missing - run ./dev.py build-uefi-p0")
         return 1
-    crc = zlib.crc32(FD.read_bytes()) & 0xFFFFFFFF
-    log(f"FD: {FD.name} ({FD.stat().st_size} B, crc32=0x{crc:08x})")
+    fd_bytes = FD.read_bytes()
+    crc = zlib.crc32(fd_bytes) & 0xFFFFFFFF
+    log(f"FD: {FD.name} ({len(fd_bytes)} B, crc32=0x{crc:08x})")
     log(f"expecting this exact image already at {FD_ON_SSD} (scp it from Linux)")
 
     s = _console.connect()
@@ -186,23 +214,47 @@ def main() -> int:
     if "Device 1:" not in out:
         log(f"FATAL: scsi scan did not find the SSD\n{out}")
         return 1
-    out = expect(s, f"ext4load scsi {SSD_PART} {FD_ADDR} {FD_ON_SSD}", "bytes read", 60)
+    # or_prompt: a missing file re-prompts at once ("Failed to load"), so the
+    # 60s bound only ever applies to a genuinely-running read.
+    out = expect(
+        s,
+        f"ext4load scsi {SSD_PART} {FD_ADDR} {FD_ON_SSD}",
+        "bytes read",
+        60,
+        or_prompt=True,
+    )
     if "bytes read" not in out:
         log(f"FATAL: ext4load of {FD_ON_SSD} did not complete\n{out}")
         return 1
     expect(s, "", PROMPT, 6)
 
-    out = expect(s, f"crc32 {FD_ADDR} ${{filesize}}", PROMPT, 20)
-    if f"{crc:08x}" not in out.lower():
-        log(f"FATAL: on-device crc32 mismatch (want 0x{crc:08x})\n{out}")
+    # Length passed LITERALLY, never ${filesize}: that variable is set only by
+    # U-Boot's own load commands, so an FD already resident from a previous
+    # step makes it empty and crc32 aborts on a byte-correct image (two false
+    # FATALs on hardware, 2026-09-05). The local file is the authority.
+    #
+    # Wait for the crc VALUE, not PROMPT: the prompt is already in the stream
+    # and crc32's "==>" arrives a read before the digits, so matching either
+    # returns early and reads as a false mismatch. or_prompt still bounds the
+    # genuine-mismatch case, since the value prints before the re-prompt.
+    want_crc = f"{crc:08x}"
+    out = expect(
+        s, f"crc32 {FD_ADDR} 0x{len(fd_bytes):x}", want_crc, 20, or_prompt=True
+    )
+    if want_crc not in out.lower():
+        log(f"FATAL: on-device crc32 mismatch (want 0x{want_crc})\n{out}")
         return 1
     log(f"crc32 verified: 0x{crc:08x}")
 
-    log(f"=== go {FD_ADDR} - transferring control to EDK2 SEC ===")
-    s.sendall(f"go {FD_ADDR}\r".encode())
+    # bootedk2, not `go`: awto-uboot runs with MMU + caches ON and do_go skips
+    # cleanup_before_linux(), so an FD entered via `go` aborts in its own text
+    # (esr 0x86000004). docs/uefi.md P2, board/annapurna/alpine/alpine.c.
+    log(f"=== bootedk2 {FD_ADDR} - transferring control to EDK2 SEC ===")
+    s.sendall(f"bootedk2 {FD_ADDR}\r".encode())
     buf = b""
     start = time.monotonic()
     last_key = -1.0
+    verdict = None
     while time.monotonic() - start < SHELL_TIMEOUT_S:
         try:
             d = s.recv(4096)
@@ -211,14 +263,30 @@ def main() -> int:
         except TimeoutError:
             pass
         now = time.monotonic() - start
+        text = buf.decode(errors="replace")
+
+        # Abort on PROOF the jump failed, not on slowness. Without this the
+        # hotkeys below get typed at the still-live awto-nas# prompt, echo
+        # back as "sssssss...", and the run then sits out SHELL_TIMEOUT_S.
+        verdict = _console.jump_failed(text, "s", PROMPT)
+        if verdict:
+            break
+        if now > JUMP_BANNER_S and _console.jump_banner_missing(text):
+            verdict = f"bootedk2 never announced itself within {JUMP_BANNER_S}s"
+            break
+
         if now < HOTKEY_SPAM_S and now - last_key > HOTKEY_INTERVAL_S:
             s.sendall(b"s")
             last_key = now
-        text = buf.decode(errors="replace")
         if SHELL_MARK in text or any(p in text for p in CRASHES):
             break
     text = buf.decode(errors="replace")
     log(text[-4000:])
+    if verdict:
+        log(f"RESULT: {verdict} (aborted after {time.monotonic() - start:.1f}s).")
+        if "Unknown command" in text:
+            log("  -> this awto-uboot predates `bootedk2` (0c2b4d4); reflash it.")
+        return 1
     if any(p in text for p in CRASHES):
         log("RESULT: EDK2 crashed (exception/abort).")
         return 1
@@ -250,11 +318,13 @@ def main() -> int:
         log("--no-boot: stopping at the Shell prompt.")
         return 0
 
+    shell_prompt = a.fs + SHELL_PROMPT_SUFFIX
     cmdline = f"{a.image} dtb={a.dtb} {a.root} {a.args}"
     log(f"\n=== launching: {cmdline}\n")
     s.sendall(cmdline.encode() + b"\r")
     buf = b""
     start = time.monotonic()
+    returned = False
     while time.monotonic() - start < BOOT_LIMIT_S:
         try:
             d = s.recv(4096)
@@ -265,8 +335,25 @@ def main() -> int:
         text = buf.decode(errors="replace")
         if any(m in text for _, m in FAILURES) or "login:" in text:
             break
+        # The Shell re-prompting is proof the launch returned instead of
+        # taking over - same class as the U-Boot case above. Conservative on
+        # both sides: the prompt must be the LAST thing on the line (trace
+        # lines mentioning the shell do not end with it), and no stub stage
+        # may have been reached, since the stub cannot hand control back.
+        if text.rstrip().endswith(shell_prompt) and not any(
+            m in text for _, m in STAGES
+        ):
+            returned = True
+            break
     text = buf.decode(errors="replace")
     log(text)
+    if returned:
+        log(
+            f"RESULT: {shell_prompt} came back with no stub output - "
+            f"{a.image} exited immediately (aborted after "
+            f"{time.monotonic() - start:.1f}s)."
+        )
+        return 1
     reached = [n for n, m in STAGES if m in text]
     failed = [n for n, m in FAILURES if m in text]
     log(f"\nRESULT: reached={reached or ['nothing']} failed={failed or ['none']}")
