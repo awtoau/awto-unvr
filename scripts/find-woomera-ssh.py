@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""Find woomera (or any Ubiquiti box) on the LAN without the serial console.
+"""Survey the LAN for woomera without the serial console.
 
-Discriminator is the **MAC OUI**, not the SSH banner: Fedora does not tag its
-banner, so `SSH-2.0-OpenSSH_10.2` is indistinguishable from any other modern
-distro. Ubiquiti's OUI is unambiguous. Banner is still reported as a hint.
+Discriminator is the box's exact MACs (_box.WOOMERA_MACS), not the SSH
+banner: Fedora does not tag its banner, so `SSH-2.0-OpenSSH_10.2` is
+indistinguishable from any other modern distro. Banner is still reported as
+a hint. Every live host is listed, so this doubles as a LAN survey.
 
 Found the box at .149 when the docs said .140 - see
 docs/unvr-access-research.md.
@@ -21,32 +22,13 @@ import sys
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
+from _box import WOOMERA_MACS
 from _net import LAN_SUBNET
 
 # TCP connect on a LAN is sub-millisecond and sshd sends its banner immediately on
 # accept; ICMP likewise. 2.0 s is ~3 orders of magnitude over that - generous for a
 # host that is up but loaded. On expiry: host reported as down/no-banner, not retried.
 PROBE_TIMEOUT_S = 2.0
-
-# Ubiquiti Networks OUIs (subset covering current gear; extend as needed).
-UBNT_OUIS = {
-    "00:15:6d",
-    "00:27:22",
-    "04:18:d6",
-    "18:e8:29",
-    "24:5a:4c",
-    "44:d9:e7",
-    "68:72:51",
-    "74:83:c2",
-    "74:ac:b9",
-    "78:8a:20",
-    "80:2a:a8",
-    "b4:fb:e4",
-    "dc:9f:db",
-    "e0:63:da",
-    "f0:9f:c2",
-    "fc:ec:da",
-}
 
 log = logging.getLogger("find-woomera")
 
@@ -109,25 +91,25 @@ def main() -> int:
     with ThreadPoolExecutor(max_workers=args.workers) as pool:
         live = [r for r in pool.map(survey, hosts) if r]
 
-    ubnt = []
+    found = []
     for ip, mac, ban in sorted(live, key=lambda t: ipaddress.ip_address(t[0])):
-        is_ubnt = bool(mac) and mac[:8] in UBNT_OUIS
-        if is_ubnt:
-            ubnt.append(ip)
+        is_box = mac in WOOMERA_MACS
+        if is_box:
+            found.append(ip)
         log.info(
             "  %-15s %-17s %-28s%s",
             ip,
             mac or "-",
             ban or "(no ssh)",
-            "  <-- Ubiquiti" if is_ubnt else "",
+            "  <-- woomera" if is_box else "",
         )
 
     log.info("%d host(s) up", len(live))
-    if ubnt:
-        log.info("RESULT: Ubiquiti host(s): %s", ubnt)
-        log.info("  try: ssh root@%s", ubnt[0])
+    if found:
+        log.info("RESULT: woomera at %s", found)
+        log.info("  try: ssh root@%s", found[0])
         return 0
-    log.info("RESULT: no Ubiquiti OUI on this subnet - box is off or elsewhere")
+    log.info("RESULT: neither woomera MAC on this subnet - box is off or elsewhere")
     return 1
 
 
