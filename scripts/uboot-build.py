@@ -49,6 +49,9 @@ FILES = {
     "board/annapurna/alpine/MAINTAINERS": "board/annapurna/alpine/MAINTAINERS",
     "board/annapurna/alpine/alpine.c": "board/annapurna/alpine/alpine.c",
     "board/annapurna/alpine/pl061.c": "board/annapurna/alpine/pl061.c",
+    # #140: `cpuon` PSCI CPU_ON test command (does powering cluster1 change
+    # the xHCI Enable-Slot timeout?).
+    "board/annapurna/alpine/al_cpuon.c": "board/annapurna/alpine/al_cpuon.c",
     "include/configs/alpine.h": "include/configs/alpine.h",
     "configs/alpine_v2_unvr_defconfig": "configs/alpine_v2_unvr_defconfig",
     "arch/dts/awto-alpine-v2-unvr-uboot.dts": "arch/arm/dts/awto-alpine-v2-unvr-uboot.dts",

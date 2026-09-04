@@ -486,19 +486,36 @@ enclosure previously, this RTL8153 now). EDK2 retries a few times then
 continues gracefully (reaches the Shell fine, unlike U-Boot's long
 `usb start` retry loop).
 
-**Correction, caught right after the initial "silicon-level" framing
-was posted to #140**: Linux's own xHCI driver works fine on this exact
-hardware (#157), so this can't be a plain hardware defect - two drivers
-failing only rules out "bug in one driver's protocol implementation,"
-not the chip. The better-fitting, already-open #140 hypothesis: AL-324
-is a 2x2 A57 cluster part; Linux brings up both clusters via SMP,
-neither U-Boot nor EDK2 does (`PcdCoreCount|1` here, matching U-Boot's
-own single-core execution at this stage) - if the CCU cluster1/slave4
-snoop-routing path is gated on cluster1 actually being powered, that
-explains both bootloader failures and Linux's success with one
-variable. Untested, cheap, decisive next step: bring up EDK2's second
-core cluster (PSCI `cpu_on`, §6's other still-unconfirmed item) and see
-if that alone changes the SLOT_ID result. Full writeup: issue #140.
+**RESOLVED — the cause was devfn aliasing, fixed by `98094ec`.** The
+external port aliased its single device across all 32 devfns, so
+`usb start` bound 32 xhci-pci instances to ONE register block, each
+reprogramming CRCR/DCBAAP/ERSTBA/ERDP over the last. The command
+executed; its completion landed in another instance's ring. That
+reproduces as an Enable-Slot timeout, is device-class-independent, and
+hits any driver without a DesignWare-style devfn guard — which is why
+EDK2's independent XhciDxe failed identically and made it look like
+silicon. `pci 1` now shows exactly one function.
+
+- **Verified 2026-09-04**: `usb start` → `Bus xhci_pci: 8 USB Device(s)
+  found`, full 8-device tree through a dock, including a Realtek USB
+  GbE — the same class as the RTL8153 that previously failed.
+- **The cluster/SMP theory below is DISPROVEN**, twice: Enable Slot
+  succeeds on a single core (cpu1/2/3 confirmed OFF via
+  `AFFINITY_INFO`), and `CCU_SLAVE4_SNOOP` reads `0x00000000` on that
+  working boot — cluster1 snoop is off while xHCI works, so the
+  proposed mechanism is not merely unnecessary but provably not in
+  effect.
+- **PSCI on this SoC does not validate the target MPIDR**: `CPU_ON`
+  returns SUCCESS and `AFFINITY_INFO` flips to ON for MPIDRs that do
+  not exist, while a signature-writing stub never executes. Treat a
+  PSCI SUCCESS here as meaningless. Raising `PcdCoreCount` would hand
+  EDK2 cores that PSCI claims to have started and that never arrive.
+- Still open: EDK2's `PciSegmentLib` fork made the device appear once
+  to `PciBusDxe`, yet XhciDxe reportedly still failed on 2026-09-03.
+  U-Boot's fix worked at the config-access layer and removed the
+  multi-bind outright. Whether an XhciDxe instance still binds, or
+  EDK2's failure is a different bug, is the question worth spending on
+  — not coherency.
 
 **Also confirmed working, from the earlier crash-chasing rounds, still
 correct**: LTSSM-gated root bridge addition (never retrains an

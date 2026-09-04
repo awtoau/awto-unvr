@@ -42,6 +42,9 @@ CONFIG_DM=y
 CONFIG_DM_SERIAL=y
 CONFIG_SYS_NS16550=y
 CONFIG_GIC_V3=y
+# SMCCC: arm_smccc_smc() for the `cpuon` PSCI test command (#140 - does
+# powering cluster1 change xHCI Enable-Slot?). live.dts psci method="smc".
+CONFIG_ARM_SMCCC=y
 # --- Networking: al_eth 1G RJ45 (RGMII), ping/tftp/dhcp. PCI-bound (1c36:0001),
 # real MAC/UDMA/EC regs at the PCI BARs off 0xfe000000 — NOT the unused fc-range
 # platform node. DM_ETH driver + curated Annapurna HAL subset (drivers/net/al_eth).
