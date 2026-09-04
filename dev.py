@@ -116,9 +116,17 @@ STEPS: dict[str, tuple[str, list[str], bool]] = {
         [sys.executable, "scripts/dt-drift-check.py"],
         True,
     ),
+    # The rootfs builder's guard only sees a FRESH installroot. This catches a
+    # marker on a rootfs built before that guard existed and still running -
+    # which is what #217 turned out to be. Skips when the box is unreachable.
+    "box-container": (
+        "stale container markers on the live box that fool systemd (#164, #217)",
+        [sys.executable, "scripts/check-box-container-markers.py"],
+        True,
+    ),
 }
 
-GATE = ["fmt-check", "lint", "test", "hal-drift", "dt-drift"]
+GATE = ["fmt-check", "lint", "test", "hal-drift", "dt-drift", "box-container"]
 CI = ["fmt-check", "lint", "test", "hal-drift", "dt-drift"]
 
 # --------------------------------------------------------------------------
