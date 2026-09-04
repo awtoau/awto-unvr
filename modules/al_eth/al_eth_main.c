@@ -4607,7 +4607,11 @@ al_eth_get_rxnfc(struct net_device *netdev, struct ethtool_rxnfc *info,
 		return bnx2x_get_rss_flags(bp, info);
 */
 	default:
-		netdev_err(netdev, "Command parameters not supported\n");
+		/* debug, not error: ethtool probes several commands and takes
+		 * -EOPNOTSUPP as "not supported", so netdev_err made routine
+		 * probing look like a fault in dmesg. */
+		netdev_dbg(netdev, "get_rxnfc: cmd 0x%x not supported\n",
+			   info->cmd);
 		return -EOPNOTSUPP;
 	}
 }
