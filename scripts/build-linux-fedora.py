@@ -221,6 +221,18 @@ def configure():
             "MD_RAID456",
             "--enable",
             "RAID6_PQ_BENCHMARK",
+            # A57 Crypto Extensions. These were set only in build-linux-ea16.py,
+            # which is NOT the deployed path - publish-fedora runs THIS script,
+            # so the daily driver ran SHA in software. CRCT10DIF_CE accelerates
+            # the T10-DIF CRC used by md/RAID and SCSI DIF.
+            "--enable",
+            "CRYPTO_SHA1_ARM64_CE",
+            "--enable",
+            "CRYPTO_SHA2_ARM64_CE",
+            "--enable",
+            "CRYPTO_SHA512_ARM64_CE",
+            "--enable",
+            "CRYPTO_CRCT10DIF_ARM64_CE",
             # WERROR on: a warning in our own OOT drivers is a defect, and the
             # repo rule is zero warnings. DEBUG_INFO_NONE is NOT set - full
             # DWARF is deliberate (#214), and enabling both would contradict.
