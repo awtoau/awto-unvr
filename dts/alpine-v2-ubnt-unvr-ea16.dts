@@ -1089,20 +1089,16 @@
 };
 
 /*
- * SP804 timer0: unused. Linux clocksource/clockevent is the ARMv8 arch timer
- * (armv8-timer), not SP804. The dtsi enables timer0 with clocks=<&sbclk> but no
- * clock-names="apb_pclk", so the arm,primecell/AMBA pclk lookup never resolves
- * and the device defers probe forever ("deferred probe pending: reason
- * unknown"). Disable it to match timer1/2/3 (already disabled in the dtsi).
+ * SP804 timer0. Linux's clocksource/clockevent is the ARMv8 arch timer, not
+ * SP804, but timer0 is named rather than disabled - see the node comment.
  */
 &timer0 {
 	/*
-	 * SP804 deferred forever because an arm,primecell device needs "apb_pclk"
-	 * BY NAME for the AMBA bus-clock lookup; the dtsi node has clocks=<&sbclk>
-	 * with no clock-names. Fix (not disable): name it. One clock named apb_pclk
-	 * is used for both the timer and the bus (valid per the sp804 binding).
-	 * UNVERIFIED on hardware — confirm the timer probes once the boot-source
-	 * (which kernel+DTB U-Boot actually loads) is resolved so DTB changes test.
+	 * An arm,primecell device needs "apb_pclk" BY NAME for the AMBA bus-clock
+	 * lookup; the dtsi node has clocks=<&sbclk> with no clock-names, so it
+	 * deferred forever. Name it rather than disable it - one clock named
+	 * apb_pclk serves both timer and bus (valid per the sp804 binding).
+	 * Verified on hardware (#69): boot logs "clocksource: arm,sp804".
 	 */
 	clock-names = "apb_pclk";
 };
