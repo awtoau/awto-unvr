@@ -15,7 +15,9 @@
  * reg-names nb/ctrl/phy) via ofnode — NEVER hardcoded (#84). docs/hardware.md /
  * docs/uboot-ddr-port.md §4 (nb-service 0xf0070000, uMCTL2 ctrl 0xf0080000,
  * PUB PHY 0xf0088000; ddrc NULL on V2, channel 0).
- * Safe from a chainloaded U-Boot: no retrain, LOOPBACK BIST is PHY-internal.
+ * info/training/ecc are read-only and safe from a chainloaded U-Boot.
+ * `bist` is NOT: its _pre() stops DRAM auto-refresh under the running
+ * U-Boot and hangs the box (#244). Guarded below, needs stage-0/SRAM.
  */
 
 #include <command.h>
@@ -196,12 +198,34 @@ static int do_ddr_training(void)
  * only) and may fault a live U-Boot — opt in explicitly. VT calc is disabled
  * around the run via the _pre/_post pair as the HAL requires.
  */
+/* True only if this code is NOT executing out of DRAM - i.e. a stage-0/SRAM
+ * caller that can survive refresh being stopped. From a relocated U-Boot,
+ * gd->relocaddr is in DRAM, so this is false and the BIST is refused (#244).
+ * No such caller exists yet; the predicate is the hook for one. */
+static bool ddr_bist_caller_is_off_dram(void)
+{
+	return false;
+}
+
 static int do_ddr_bist(int dram_mode)
 {
 	struct al_ddr_cfg cfg;
 	struct al_ddr_bist_params p;
 	struct al_ddr_bist_err_status st;
 	int err;
+
+	/* al_ddr_phy_datx_bist_pre() -> al_ddr_ctrl_stop() disables DRAM
+	 * auto-refresh, so a DRAM-resident U-Boot dies mid-BIST - a hard hang
+	 * needing a power cycle, in BOTH loopback and dram mode (#244). The
+	 * vendor calls this family from S2, which runs out of on-chip SRAM.
+	 * Refuse rather than hang; the read-only subcommands stay usable. */
+	if (!ddr_bist_caller_is_off_dram()) {
+		printf("ddr bist: refusing - U-Boot is running from DRAM and the\n"
+		       "          BIST setup stops DRAM refresh, which would hang\n"
+		       "          the box (#244). Needs a stage-0/SRAM caller.\n"
+		       "          `ddr info`, `ddr training` and `ddr ecc` are safe.\n");
+		return CMD_RET_FAILURE;
+	}
 
 	if (ddr_cfg_open(&cfg))
 		return CMD_RET_FAILURE;
@@ -271,5 +295,5 @@ U_BOOT_CMD(
 	"info               - dump controller/PHY config + mode registers\n"
 	"ddr training           - print PHY training results (per-octet)\n"
 	"ddr ecc [clear]        - ECC status counters (optionally clear)\n"
-	"ddr bist [dram]        - PHY DATX BIST; loopback (default) or dram mode"
+	"ddr bist [dram]        - PHY DATX BIST - REFUSED from DRAM, see #244"
 );
