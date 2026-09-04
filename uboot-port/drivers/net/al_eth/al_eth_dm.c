@@ -39,6 +39,7 @@
 
 #include "al_eth_boardparams.h"
 #include "al_eth_hwaddr.h"
+#include "al_eth_rxfwd.h"
 
 /* A PCI endpoint on the internal PCIe, not a DT device - the eth0..3 nodes at
  * 0xfc000000+ are unused (docs/hardware.md). THREE non-contiguous BARs, so the
@@ -329,6 +330,11 @@ static int al_eth_dm_dma_init(struct udevice *dev)
 	al_eth_queue_enable(&priv->adapter, UDMA_RX, 0);
 	al_udma_q_handle_get(&priv->adapter.tx_udma, 0, &priv->tx_q);
 	al_udma_q_handle_get(&priv->adapter.rx_udma, 0, &priv->rx_q);
+
+	/* Steer RX to UDMA0/Q0. Without it the EC drops every frame before the
+	 * S2M ring - TX went out, replies never arrived (#234). */
+	al_eth_rxfwd_config(&priv->adapter);
+
 	if (IS_ENABLED(CONFIG_AL_ETH_DEBUG))
 		al_eth_dm_dump_tx(priv, "post-init");
 
@@ -525,7 +531,12 @@ static int al_eth_dm_free_pkt(struct udevice *dev, uchar *packet, int length)
 	/* this buffer will be DMA-written again: drop stale lines before re-posting. */
 	al_eth_cache_inval(priv->rx_buf[priv->rx_head], PKTSIZE_ALIGN);
 
-	err = al_eth_rx_buffer_add(priv->rx_q, &buf, AL_ETH_RX_FLAGS_INT, NULL);
+	/* Same flags as the initial priming above - a recycled buffer that
+	 * dropped NO_SNOOP would be written back through a different path
+	 * than the one our invalidate assumes. */
+	err = al_eth_rx_buffer_add(priv->rx_q, &buf,
+				   AL_ETH_RX_FLAGS_INT |
+				   AL_ETH_RX_FLAGS_NO_SNOOP, NULL);
 	if (err) {
 		dev_err(dev, "rx_buffer_add (recycle) failed: %d\n", err);
 		return err;
@@ -630,7 +641,11 @@ static int al_eth_dm_probe(struct udevice *dev)
 
 	/* PHY on the internal MDIO bus - confirmed hardware-of-record: RGMII,
 	 * AR8031/8033 (at803x) @ addr 4. No DT node backs this PCI endpoint. */
-	priv->phy_if = PHY_INTERFACE_MODE_RGMII;
+	/* RGMII_ID, not plain RGMII: the AR8033 must apply its internal RX/TX
+	 * clock delays. Without them the MAC samples RX on the wrong edge and
+	 * rejects every frame - mac.pkts counted 213 in, if_in_errors 213, with
+	 * fcs_errors 0. Linux uses RGMII_ID here too (#234). */
+	priv->phy_if = PHY_INTERFACE_MODE_RGMII_ID;
 	priv->phy_addr = AL_ETH_DEFAULT_PHY_ADDR;
 
 	/* descriptor rings + RX buffers + TX bounce - MUST be low DRAM (the al_udma

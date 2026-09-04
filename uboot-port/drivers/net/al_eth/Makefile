@@ -25,6 +25,7 @@ obj-$(CONFIG_AL_ETH) += al_eth_boardparams.o	# MAC scratchpad seed + edit
 obj-$(CONFIG_AL_ETH) += al_eth_hwaddr.o		# NOR MAC -> per-port EC filter
 obj-$(CONFIG_AL_ETH) += al_eth_stats.o		# `eth stats` counter dump
 obj-$(CONFIG_AL_ETH) += al_eth_diag.o		# `eth diag` bring-up block
+obj-$(CONFIG_AL_ETH) += al_eth_rxfwd.o		# EC RX forwarding -> UDMA0/Q0 (#234)
 # 10G SFP+ (eth2, 1c36:0002) - DRAFT front-end; same HAL subset, no new objects.
 obj-$(CONFIG_AL_ETH_10G) += al_eth_dm_10g.o
 

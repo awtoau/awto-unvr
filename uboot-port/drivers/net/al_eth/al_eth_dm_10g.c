@@ -40,6 +40,7 @@
 
 #include "al_eth_boardparams.h"
 #include "al_eth_hwaddr.h"
+#include "al_eth_rxfwd.h"
 
 /* eth2 = the "advanced" al_eth function on the internal PCIe (vendor 0x1c36 dev
  * 0x0002). Same three-BAR layout as eth1 (UDMA=BAR0, EC=BAR4, MAC=BAR2). */
@@ -303,6 +304,10 @@ static int al_eth_10g_dma_init(struct udevice *dev)
 	al_udma_q_handle_get(&priv->adapter.tx_udma, 0, &priv->tx_q);
 	al_udma_q_handle_get(&priv->adapter.rx_udma, 0, &priv->rx_q);
 
+	/* Steer RX to UDMA0/Q0. Without it the EC drops every frame before the
+	 * S2M ring - TX went out, replies never arrived (#234). */
+	al_eth_rxfwd_config(&priv->adapter);
+
 	/* MAC mode 10GbE_Serial, served entirely by al_hal_eth_mac_v1_v2.c - no
 	 * serdes/KR closure. NOT al_eth_mac_link_config: stock skips it here (that
 	 * path is SGMII AN only) and speed is fixed, driven by the SerDes/PCS. */
@@ -457,7 +462,12 @@ static int al_eth_10g_free_pkt(struct udevice *dev, uchar *packet, int length)
 
 	al_eth_cache_inval(priv->rx_buf[priv->rx_head], PKTSIZE_ALIGN);
 
-	err = al_eth_rx_buffer_add(priv->rx_q, &buf, AL_ETH_RX_FLAGS_INT, NULL);
+	/* Same flags as the initial priming above - a recycled buffer that
+	 * dropped NO_SNOOP would be written back through a different path
+	 * than the one our invalidate assumes. */
+	err = al_eth_rx_buffer_add(priv->rx_q, &buf,
+				   AL_ETH_RX_FLAGS_INT |
+				   AL_ETH_RX_FLAGS_NO_SNOOP, NULL);
 	if (err) {
 		dev_err(dev, "rx_buffer_add (recycle) failed: %d\n", err);
 		return err;
