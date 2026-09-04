@@ -96,6 +96,21 @@ def main() -> int:
         print(ip)
         return 0
 
+    # A FAILED neighbour entry on the NIC the route picks gives "No route to
+    # host" even though the box is up and other NICs resolved it fine - both
+    # ports are on one subnet (#170). Drop the bad entry so ssh re-ARPs.
+    for line in subprocess.run(
+        ["ip", "neigh", "show", ip], capture_output=True, text=True, check=False
+    ).stdout.splitlines():
+        if "FAILED" in line or "INCOMPLETE" in line:
+            dev = line.split(" dev ", 1)[1].split()[0] if " dev " in line else None
+            if dev:
+                subprocess.run(
+                    ["ip", "neigh", "del", ip, "dev", dev],
+                    capture_output=True,
+                    check=False,
+                )
+
     print(f"# woomera at {ip}", file=sys.stderr)
     os.execvp(
         "ssh",
@@ -103,6 +118,19 @@ def main() -> int:
             "ssh",
             "-o",
             "StrictHostKeyChecking=accept-new",
+            # Keep the pipe open. The box has two NICs on one subnet and picks
+            # its egress per-reply (#170), so a session goes quiet and the
+            # default no-keepalive ssh sits until TCP gives up. 15s x 8 = 2 min
+            # before we call it dead, which outlasts a reboot's link flap.
+            "-o",
+            "ServerAliveInterval=15",
+            "-o",
+            "ServerAliveCountMax=8",
+            # Reconnect fast rather than hanging on a stale ARP entry.
+            "-o",
+            "ConnectTimeout=8",
+            "-o",
+            "TCPKeepAlive=yes",
             f"{args.user}@{ip}",
             *args.cmd,
         ],
