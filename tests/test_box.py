@@ -101,6 +101,13 @@ def test_locate_rescans_and_rewrites_a_stale_cache(monkeypatch, tmp_path):
     assert cache.read_text().strip() == IP
 
 
+def test_cache_lives_under_the_repo_not_the_cwd():
+    # Was Path("tmp/woomera-addr"): a caller run from any other directory
+    # got a fresh, empty cache and a full /24 rescan every time.
+    assert _box.CACHE.is_absolute()
+    assert _box.CACHE == REPO / "tmp" / "woomera-addr"
+
+
 def test_locate_returns_none_when_absent(monkeypatch, tmp_path):
     monkeypatch.setattr(_box, "CACHE", tmp_path / "absent")
     monkeypatch.setattr(_box, "scan", lambda subnet: None)

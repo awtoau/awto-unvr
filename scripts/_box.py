@@ -37,7 +37,8 @@ DEFAULT_SUBNET = "192.168.25.0/24"
 # magnitude over that. On expiry: host treated as down and skipped.
 PING_TIMEOUT_S = 1
 
-CACHE = Path("tmp/woomera-addr")  # regenerable: last address that answered
+# Regenerable: last address that answered. Repo-relative, not cwd-relative.
+CACHE = Path(__file__).resolve().parent.parent / "tmp" / "woomera-addr"
 
 # ssh options for an interactive/long-lived session to the box. Keepalives
 # because the box has two NICs on one subnet and picks its egress per reply
