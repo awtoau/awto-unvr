@@ -22,11 +22,10 @@ import os
 import subprocess
 import sys
 import tarfile
-from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from _repo import LOGS, REPO
+from _repo import REPO, make_log
 
 BASE = "https://archive.org/download/unifi-udr-gpl-archives"
 TARBALLS = REPO / "sources" / "gpl"
@@ -66,14 +65,7 @@ FILES = [
 ]
 
 
-def log(m: str) -> None:
-    line = (
-        f"{datetime.now(timezone.utc).astimezone().isoformat(timespec='seconds')}  {m}"
-    )
-    print(line, flush=True)
-    LOGS.mkdir(parents=True, exist_ok=True)
-    with (LOGS / "fetch-gpl-sources.log").open("a") as fh:
-        fh.write(line + "\n")
+log = make_log("fetch-gpl-sources")
 
 
 def free_gb(path="/mnt/2tb") -> float:

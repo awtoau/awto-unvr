@@ -24,7 +24,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import _box
-from _repo import IMAGES, REPO, kernel_build_out, kernel_build_ver, log_path
+from _repo import IMAGES, REPO, kernel_build_out, kernel_build_ver, make_log
 
 OUT = kernel_build_out()
 DTS_NAME = "alpine-v2-ubnt-unvr-ea16"
@@ -63,17 +63,7 @@ TFTP_DIMG = TFTP_DIR / f"{DTS_NAME}-{VER}-fedora.dtb"
 ROOT_PASSWORD = "unvr"  # documented default, see docs/fedora-on-ssd.md
 SSH_OPTS = _box.SSH_PASSWORD_E  # rsync -e form
 
-LOG = log_path("fedora-deploy")
-
-
-def log(m: str) -> None:
-    from datetime import datetime, timezone
-
-    line = (
-        f"{datetime.now(timezone.utc).astimezone().isoformat(timespec='seconds')}  {m}"
-    )
-    print(line, flush=True)
-    LOG.open("a").write(line + "\n")
+log = make_log("fedora-deploy")
 
 
 def publish_artifacts() -> None:

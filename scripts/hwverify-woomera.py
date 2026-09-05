@@ -11,23 +11,13 @@ bus, ttyS2) appear. Output -> tmp/logs/hwverify-woomera.log.
 from __future__ import annotations
 
 import sys
-from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import _console as con
-from _repo import LOGS
+from _repo import make_log
 
-LOG = LOGS / "hwverify-woomera.log"
-
-
-def log(m):
-    line = (
-        f"{datetime.now(timezone.utc).astimezone().isoformat(timespec='seconds')}  {m}"
-    )
-    print(line, flush=True)
-    LOGS.mkdir(parents=True, exist_ok=True)
-    LOG.open("a").write(line + "\n")
+log = make_log("hwverify-woomera")
 
 
 # label -> shell command. All read-only.

@@ -23,6 +23,7 @@ import sys
 import time
 import zlib
 
+import _repo
 from _repo import (
     NPROC,
     REPO,
@@ -89,13 +90,12 @@ def log(m):
 
 
 def run(cmd, **kw):
-    log("+ " + (cmd if isinstance(cmd, str) else " ".join(cmd)))
     # stdin=DEVNULL: a kernel bump adds new Kconfig symbols, and localmodconfig
     # then PROMPTS for each one. With an inherited tty that blocks forever -
     # indistinguishable from a hang. On EOF Kconfig takes the default, which is
     # what olddefconfig below would pick anyway.
     kw.setdefault("stdin", subprocess.DEVNULL)
-    subprocess.run(cmd, check=True, env=ENV, **kw)
+    _repo.run(cmd, log=log, env=ENV, **kw)
 
 
 LSMOD_KNOWN_GOOD = os.path.join(REPO, "scripts", "woomera-lsmod-known-good.txt")

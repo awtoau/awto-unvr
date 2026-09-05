@@ -23,7 +23,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import _box
-from _repo import REPO, log_path
+from _repo import REPO, log_path, make_log
 
 ROOTFS_TAR = REPO / "tmp" / "fedora-rootfs-ea16.tar"
 EXTRACT_DIR = REPO / "tmp" / "fedora-rootfs-extracted"
@@ -53,14 +53,7 @@ EXCLUDES = [
 LOG = log_path("sync-fedora-rootfs")
 
 
-def log(m: str) -> None:
-    from datetime import datetime, timezone
-
-    line = (
-        f"{datetime.now(timezone.utc).astimezone().isoformat(timespec='seconds')}  {m}"
-    )
-    print(line, flush=True)
-    LOG.open("a").write(line + "\n")
+log = make_log("sync-fedora-rootfs")
 
 
 def main() -> int:

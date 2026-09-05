@@ -12,21 +12,13 @@ Assumes the console is at a Fedora shell (root) or login prompt.
 from __future__ import annotations
 
 import sys
-from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import _console
-from _repo import LOGS
+from _repo import make_log
 
-
-def log(m):
-    line = (
-        f"{datetime.now(timezone.utc).astimezone().isoformat(timespec='seconds')}  {m}"
-    )
-    print(line, flush=True)
-    LOGS.mkdir(parents=True, exist_ok=True)
-    (LOGS / "i2c-spi-scan.log").open("a").write(line + "\n")
+log = make_log("i2c-spi-scan")
 
 
 def sh(s, cmd, timeout=30):

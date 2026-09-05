@@ -38,7 +38,7 @@ REPO = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO / "scripts"))
 os.environ.setdefault("AWTO_ALLOW_DIRECT_SCRIPT", "1")
 import _console  # noqa: E402
-from _repo import LOGS  # noqa: E402
+from _repo import make_log  # noqa: E402
 
 FD = Path("/mnt/2tb/unvr-port-refs/edk2/Build/UNVR/DEBUG_GCC/FV/UNVR.fd")
 FD_ADDR = "0x20000000"
@@ -116,16 +116,7 @@ FAILURES = [
 ]
 
 
-def make_log():
-    LOGS.mkdir(parents=True, exist_ok=True)
-    f = (LOGS / "uefi-p4-boot.log").open("a")
-
-    def log(m: str) -> None:
-        print(m, flush=True)
-        f.write(m + "\n")
-        f.flush()
-
-    return log
+log = make_log("uefi-p4-boot", stamped=False)
 
 
 def expect(s, cmd: str, want: str, limit_s: float, *, or_prompt: bool = False) -> str:
@@ -193,7 +184,6 @@ def main() -> int:
     ap.add_argument("--no-boot", action="store_true", help="stop at the Shell prompt")
     a = ap.parse_args()
 
-    log = make_log()
     log(f"\n=== uefi-p4-boot {time.strftime('%Y-%m-%dT%H:%M:%S%z')}")
     if not FD.exists():
         log(f"FATAL: {FD} missing - run ./dev.py build-uefi-p0")

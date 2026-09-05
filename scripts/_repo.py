@@ -21,6 +21,7 @@ from __future__ import annotations
 import os
 import subprocess
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 
 
@@ -84,6 +85,30 @@ def log_path(name: str) -> Path:
     """tmp/logs/<name>.log, directory created."""
     LOGS.mkdir(parents=True, exist_ok=True)
     return LOGS / f"{name}.log"
+
+
+def make_log(name: str, *, stamped: bool = True):
+    """The one script logger: log(msg) prints and appends to tmp/logs/<name>.log.
+    stamped: prefix ISO 8601 local time with offset (the repo rule)."""
+    path = log_path(name)
+
+    def log(msg: str) -> None:
+        if stamped:
+            now = datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds")
+            msg = f"{now}  {msg}"
+        print(msg, flush=True)
+        with path.open("a") as fh:
+            fh.write(msg + "\n")
+
+    return log
+
+
+def run(cmd, *, log=print, **kw) -> subprocess.CompletedProcess:
+    """Log the command line, then subprocess.run(check=True) - the build
+    scripts' shared shape. Pass env=/cwd=/stdin= through kw."""
+    log("+ " + (cmd if isinstance(cmd, str) else " ".join(str(c) for c in cmd)))
+    kw.setdefault("check", True)
+    return subprocess.run(cmd, **kw)
 
 
 def rel(p: Path | str) -> str:

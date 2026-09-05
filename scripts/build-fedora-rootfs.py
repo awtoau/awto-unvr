@@ -37,11 +37,11 @@ import argparse
 import os
 import subprocess
 import sys
-from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from _repo import LOGS, REPO, TMP
+import _repo
+from _repo import REPO, TMP, make_log
 
 REL = "44"
 ARCH = "aarch64"
@@ -211,17 +211,11 @@ rm -f /etc/machine-id
 """
 
 
-def log(msg: str) -> None:
-    line = f"{datetime.now(timezone.utc).astimezone().isoformat(timespec='seconds')}  {msg}"
-    print(line, flush=True)
-    LOGS.mkdir(parents=True, exist_ok=True)
-    with (LOGS / "build-fedora-rootfs.log").open("a") as fh:
-        fh.write(line + "\n")
+log = make_log("build-fedora-rootfs")
 
 
 def run(*cmd: str, **kw) -> subprocess.CompletedProcess:
-    log("+ " + " ".join(cmd))
-    return subprocess.run(cmd, check=True, **kw)
+    return _repo.run(cmd, log=log, **kw)
 
 
 def sudo_run(*cmd: str, **kw) -> subprocess.CompletedProcess:

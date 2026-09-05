@@ -22,24 +22,17 @@ from __future__ import annotations
 import argparse
 import re
 import sys
-from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import _console as con
-from _repo import LOGS
+from _repo import LOGS, make_log
 
 login, sh = con.login, con.sh  # console driver lives in scripts/_console.py
 SPD_ADDR = 0x57
 
 
-def log(m):
-    line = (
-        f"{datetime.now(timezone.utc).astimezone().isoformat(timespec='seconds')}  {m}"
-    )
-    print(line, flush=True)
-    LOGS.mkdir(parents=True, exist_ok=True)
-    (LOGS / "read-ddr-spd.log").open("a").write(line + "\n")
+log = make_log("read-ddr-spd")
 
 
 # ---------- DDR4 SPD decode (JEDEC 4.1.2.12; byte offsets per spec) ----------

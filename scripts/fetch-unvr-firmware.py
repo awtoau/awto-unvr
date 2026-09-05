@@ -44,6 +44,8 @@ MAX_TIME = 3600
 
 
 def log(msg):
+    # Not _repo.make_log: this fetch script runs standalone (no dev.py
+    # command) and must not import _repo's direct-invocation guard.
     line = f"{datetime.now(timezone.utc).astimezone().isoformat(timespec='seconds')}  {msg}"
     print(line, flush=True)
     LOGS.mkdir(parents=True, exist_ok=True)

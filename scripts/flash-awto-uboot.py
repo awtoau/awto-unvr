@@ -26,7 +26,6 @@ import os
 import socket
 import sys
 import time
-from datetime import datetime, timezone
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
@@ -34,7 +33,7 @@ sys.path.insert(0, str(REPO / "scripts"))
 os.environ.setdefault("AWTO_ALLOW_DIRECT_SCRIPT", "1")
 from _net import UNVR_IPADDR as IPADDR  # noqa: E402
 from _net import detect_server_ip  # noqa: E402
-from _repo import LOGS  # noqa: E402
+from _repo import make_log  # noqa: E402
 
 # tmp/tftp, matching dev.py's TFTP_ROOT and what the running tftpd serves.
 # images/tftp is the deploy-artifact dir and is NOT the server root (#dev.py:1012).
@@ -62,13 +61,7 @@ U_SPAN = "0x100000"
 BOOTCMD = f"nand read {TEXT_BASE} {U_NAND} {U_SPAN}; go {TEXT_BASE}"
 
 
-def log(m):
-    line = (
-        f"{datetime.now(timezone.utc).astimezone().isoformat(timespec='seconds')}  {m}"
-    )
-    print(line, flush=True)
-    LOGS.mkdir(parents=True, exist_ok=True)
-    (LOGS / "flash-awto-uboot.log").open("a").write(line + "\n")
+log = make_log("flash-awto-uboot")
 
 
 def step(s, cmd, needle, limit, label):

@@ -28,9 +28,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 os.environ.setdefault("AWTO_ALLOW_DIRECT_SCRIPT", "1")
-from _repo import REPO, build_ident, log_path  # noqa: E402
+from _repo import REPO, build_ident, make_log  # noqa: E402
 
-LOG = log_path("build-uefi-p0")
 EDK2_OUT = Path(os.environ.get("AWTO_EDK2_SRC", "/mnt/2tb/unvr-port-refs/edk2"))
 EDK2_TAG = "edk2-stable202608"
 # Small (<25MB each) submodules actually needed by the DEC files our P0
@@ -44,11 +43,7 @@ SUBMODULES = [
 ]
 
 
-def log(msg: str) -> None:
-    print(msg, flush=True)
-    LOG.parent.mkdir(parents=True, exist_ok=True)
-    with LOG.open("a") as f:
-        f.write(msg + "\n")
+log = make_log("build-uefi-p0", stamped=False)
 
 
 def run(

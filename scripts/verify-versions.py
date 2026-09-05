@@ -57,9 +57,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 os.environ.setdefault("AWTO_ALLOW_DIRECT_SCRIPT", "1")
-from _repo import LOGS, build_ident, log_path, rel  # noqa: E402
+from _repo import LOGS, build_ident, make_log, rel  # noqa: E402
 
-LOG = log_path("verify-versions")
 CONSOLE_LOG = LOGS / "unvr-console.log"
 
 # Only the tail is scanned: the console log is a rolling multi-MB capture of
@@ -110,11 +109,7 @@ STAGES = {
 }
 
 
-def log(msg: str) -> None:
-    print(msg, flush=True)
-    LOG.parent.mkdir(parents=True, exist_ok=True)
-    with LOG.open("a") as f:
-        f.write(msg + "\n")
+log = make_log("verify-versions", stamped=False)
 
 
 def scan(text: str, stage: str) -> tuple[str | None, str | None]:

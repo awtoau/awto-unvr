@@ -18,11 +18,10 @@ import os
 import socket
 import sys
 import time
-from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from _repo import LOGS
+from _repo import make_log
 
 SOCK = Path(os.environ.get("XDG_RUNTIME_DIR", "/tmp")) / "tio-unvr.sock"
 
@@ -36,12 +35,7 @@ STOPPED_HINTS = (b"ALPINE_UBNT_NAS_ALL>", b"ALPINE_UBNT_NAS>")
 ESC_INTERVAL = 0.05
 
 
-def log(msg):
-    line = f"{datetime.now(timezone.utc).astimezone().isoformat(timespec='seconds')}  {msg}"
-    print(line, flush=True)
-    LOGS.mkdir(parents=True, exist_ok=True)
-    with (LOGS / "catch-uboot.log").open("a") as fh:
-        fh.write(line + "\n")
+log = make_log("catch-uboot")
 
 
 def main() -> int:

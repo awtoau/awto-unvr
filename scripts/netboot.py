@@ -20,12 +20,11 @@ import os
 import socket
 import sys
 import time
-from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from _net import UNVR_IPADDR, detect_server_ip
-from _repo import LOGS
+from _repo import make_log
 
 SOCK = Path(os.environ.get("XDG_RUNTIME_DIR", "/tmp")) / "tio-unvr.sock"
 
@@ -33,12 +32,7 @@ PROMPT = b"ALPINE_UBNT_NAS_ALL>"
 ESC_INTERVAL = 0.05  # 20 ESC/s across the bootdelay=2 window
 
 
-def log(msg: str) -> None:
-    line = f"{datetime.now(timezone.utc).astimezone().isoformat(timespec='seconds')}  {msg}"
-    print(line, flush=True)
-    LOGS.mkdir(parents=True, exist_ok=True)
-    with (LOGS / "netboot.log").open("a") as fh:
-        fh.write(line + "\n")
+log = make_log("netboot")
 
 
 def send(s: socket.socket, line: str) -> None:

@@ -42,7 +42,7 @@ sys.path.insert(0, str(REPO / "scripts"))
 os.environ.setdefault("AWTO_ALLOW_DIRECT_SCRIPT", "1")
 
 import _box  # noqa: E402
-from _repo import LOGS  # noqa: E402
+from _repo import make_log  # noqa: E402
 
 BUILD_OUT = Path("/mnt/2tb/unvr-port-refs/build-out-fedora")
 KERNEL = BUILD_OUT / "Image"
@@ -52,10 +52,7 @@ MNT = "/mnt/awto-esp"
 SSH_OPTS = _box.SSH_OPTS_BATCH
 
 
-def log(m: str) -> None:
-    print(m, flush=True)
-    LOGS.mkdir(parents=True, exist_ok=True)
-    (LOGS / "uefi-esp-stage.log").open("a").write(m + "\n")
+log = make_log("uefi-esp-stage", stamped=False)
 
 
 def box_ip() -> str:

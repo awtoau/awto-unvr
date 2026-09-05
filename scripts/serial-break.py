@@ -56,11 +56,10 @@ import fcntl
 import os
 import sys
 import time
-from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from _repo import log_path
+from _repo import make_log
 
 DEV = "/dev/serial/by-id/usb-Silicon_Labs_CP2102_USB_to_UART_Bridge_Controller_0001-if00-port0"
 BREAK_HOLD_S = 0.25  # see module docstring for reasoning
@@ -74,15 +73,7 @@ BREAK_HOLD_S = 0.25  # see module docstring for reasoning
 TIOCSBRK = 0x5427
 TIOCCBRK = 0x5428
 
-LOG = log_path("serial-break")
-
-
-def log(m: str) -> None:
-    line = (
-        f"{datetime.now(timezone.utc).astimezone().isoformat(timespec='seconds')}  {m}"
-    )
-    print(line, flush=True)
-    LOG.open("a").write(line + "\n")
+log = make_log("serial-break")
 
 
 def main() -> int:

@@ -31,7 +31,7 @@ os.environ.setdefault("AWTO_ALLOW_DIRECT_SCRIPT", "1")
 from _fedora_deploy import KVER, TFTP_DIMG, TFTP_KIMG  # noqa: E402
 
 import _box  # noqa: E402
-from _repo import LOGS  # noqa: E402
+from _repo import make_log  # noqa: E402
 
 # The gzipped uImage + DTB that publish-fedora produces - the same artifacts
 # awto-uboot loads. Modules are synced by publish-fedora itself.
@@ -39,10 +39,7 @@ KERNEL = TFTP_KIMG
 DTB = TFTP_DIMG
 
 
-def log(m: str) -> None:
-    print(m, flush=True)
-    LOGS.mkdir(parents=True, exist_ok=True)
-    (LOGS / "deploy-ssd.log").open("a").write(m + "\n")
+log = make_log("deploy-ssd", stamped=False)
 
 
 def run(cmd: list[str], label: str) -> None:

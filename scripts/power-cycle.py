@@ -21,15 +21,9 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from _power import power_cycle_verified, power_set_verified
-from _repo import log_path
+from _repo import make_log
 
-LOG = log_path("power-cycle")
-
-
-def log(msg: str) -> None:
-    print(msg, flush=True)
-    with LOG.open("a") as fh:
-        fh.write(msg + "\n")
+log = make_log("power-cycle", stamped=False)
 
 
 def main() -> int:

@@ -28,7 +28,6 @@ import re
 import socketserver
 import sys
 import threading
-from datetime import datetime, timezone
 from functools import partial
 from pathlib import Path
 
@@ -37,7 +36,7 @@ import _fedora_deploy as fd
 
 import _console
 from _net import detect_server_ip
-from _repo import LOGS
+from _repo import make_log
 
 # fd.OUT/fd.KVER are the single source of truth (kernel_build_out() +
 # the modroot's own real kernelrelease) - a hardcoded copy here silently
@@ -47,13 +46,7 @@ MODS = ["al_eth.ko", "al_ssm.ko"]  # the two with fixes; al_dma/al_sgpo unchange
 HTTP_PORT = 8099
 
 
-def log(m):
-    line = (
-        f"{datetime.now(timezone.utc).astimezone().isoformat(timespec='seconds')}  {m}"
-    )
-    print(line, flush=True)
-    LOGS.mkdir(parents=True, exist_ok=True)
-    (LOGS / "deploy-modules-woomera.log").open("a").write(line + "\n")
+log = make_log("deploy-modules-woomera")
 
 
 def sh(s, cmd, timeout=20, label=None):

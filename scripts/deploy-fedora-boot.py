@@ -20,14 +20,13 @@ import http.server
 import socketserver
 import sys
 import threading
-from datetime import datetime, timezone
 from functools import partial
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import _console as con
 from _net import detect_server_ip
-from _repo import LOGS, kernel_build_out, kernel_build_ver
+from _repo import kernel_build_out, kernel_build_ver, make_log
 
 OUT = kernel_build_out()
 _VER = kernel_build_ver()
@@ -40,16 +39,8 @@ FILES = [
         f"alpine-v2-ubnt-unvr-ea16-{_VER}-fedora.dtb",
     ),
 ]
-LOG = LOGS / "deploy-fedora-boot.log"
 
-
-def log(m):
-    line = (
-        f"{datetime.now(timezone.utc).astimezone().isoformat(timespec='seconds')}  {m}"
-    )
-    print(line, flush=True)
-    LOGS.mkdir(parents=True, exist_ok=True)
-    LOG.open("a").write(line + "\n")
+log = make_log("deploy-fedora-boot")
 
 
 def sha256(p):

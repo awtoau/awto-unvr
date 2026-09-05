@@ -32,6 +32,7 @@ import sys
 import time
 import zlib
 
+import _repo
 from _repo import (
     NPROC,
     REPO,
@@ -80,8 +81,7 @@ def log(msg):
 
 
 def run(cmd, **kw):
-    log("+ " + (cmd if isinstance(cmd, str) else " ".join(cmd)))
-    subprocess.run(cmd, check=True, env=ENV, **kw)
+    _repo.run(cmd, log=log, env=ENV, **kw)
 
 
 def check_space():
