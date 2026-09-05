@@ -9,17 +9,17 @@
  * kernel-tree variant (drivers/soc/alpine/al_hal_plat_services.h) shipped in
  * the Ubiquiti GPL kernel.
  *
- * ONE shim for all three HAL ports (DDR, al_eth, al_serdes). Superset of the
- * three agents' shims:
+ * ONE shim for all HAL ports here (DDR, al_eth, al_serdes, al_ssm). Implements
+ * hal/al_hal_plat_contract.h, which is included at the bottom and fails the
+ * build naming any primitive this file forgets.
  *  - reg accessors: MACRO form (untyped) — the HAL passes both void __iomem*
  *    (DDR/serdes) and typed uintN_t* (eth) addresses; a macro accepts either,
  *    a typed inline would reject the void* under -Wincompatible-pointer-types.
- *  - barriers: explicit AArch64 dsb/dmb inline asm (from the eth shim).
- *  - al_dbg -> debug() (compiled out unless DEBUG), from the eth shim.
+ *  - barriers: explicit AArch64 dsb/dmb inline asm.
+ *  - al_dbg -> debug() (compiled out unless DEBUG).
  *  - endianness: compiler builtins (no byteorder-header dependency).
- *  - al_assert: NON-fatal (print-and-continue) — the HAL runs as a diagnostic
- *    against a live/already-trained block; a fired assert must be loud but must
- *    NOT wedge the running console (unlike the kernel BUG_ON / sample exit()).
+ *  - al_assert: NON-fatal on every host, per the contract (#245). Fatal is the
+ *    separately-named al_assert_fatal(), which no shared HAL code calls.
  */
 
 #ifndef __PLAT_SERVICES_H__
@@ -32,6 +32,8 @@
 #include <linux/string.h>	/* memset, memcpy, memcmp, strcmp */
 #include <asm/io.h>		/* readX/writeX */
 #include <vsprintf.h>		/* sprintf */
+#include <hang.h>		/* hang() — al_assert_fatal */
+#include <linux/bitops.h>	/* hweight32 — al_popcount */
 
 #ifdef __cplusplus
 extern "C" {
@@ -76,7 +78,19 @@ extern "C" {
 		}							\
 	} while (0)
 
-/* --- Memory barriers (AArch64). */
+/* Fatal variant: explicitly named, so a caller choosing to die says so.
+ * No shared HAL code calls it. U-Boot has no panic() — hang() is the halt. */
+#define al_assert_fatal(COND)						\
+	do {								\
+		if (!(COND)) {						\
+			printf("%s:%d:%s: FATAL assert: (%s)\n",	\
+			       __FILE__, __LINE__, __func__, #COND);	\
+			hang();						\
+		}							\
+	} while (0)
+
+/* --- Memory barriers (AArch64). Contract requires all four; ack below. */
+#define AL_PLAT_BARRIERS_PROVIDED
 static inline void al_data_memory_barrier(void)
 {
 	asm volatile("dsb sy" : : : "memory");
@@ -124,6 +138,7 @@ static inline void al_smp_write_data_memory_barrier(void)
 #define al_memcpy(d, s, cnt)	memcpy(d, s, cnt)
 #define al_memcmp(p1, p2, cnt)	memcmp(p1, p2, cnt)
 #define al_strcmp(s1, s2)	strcmp(s1, s2)
+#define al_popcount(x)		hweight32(x)
 
 /* Single-CPU context for HAL bring-up code. */
 #define al_get_cpu_id()		0
@@ -132,5 +147,8 @@ static inline void al_smp_write_data_memory_barrier(void)
 #ifdef __cplusplus
 }
 #endif
+
+/* Last: verifies this file defined every primitive the contract requires. */
+#include "al_hal_plat_contract.h"
 
 #endif /* __PLAT_SERVICES_H__ */

@@ -185,6 +185,15 @@ def stage():
         shutil.copytree(s, d)
         log(f"staged {dst}/ ({sum(len(f) for _, _, f in os.walk(s))} files)")
 
+    # Shared HAL platform contract (hal/al_hal_plat_contract.h): the list of
+    # primitives every host must provide. Staged NEXT TO the shim that includes
+    # it, after the DIRS loop, which rmtree's al_hal_shim/ first.
+    shutil.copy2(
+        os.path.join(REPO, "hal/al_hal_plat_contract.h"),
+        os.path.join(TREE, "drivers/net/al_hal_shim/al_hal_plat_contract.h"),
+    )
+    log("staged drivers/net/al_hal_shim/al_hal_plat_contract.h (shared, from hal/)")
+
     # arch/arm/Kconfig — board TARGET + board Kconfig source
     txt = Path(KCONFIG).read_text()
     changed = False

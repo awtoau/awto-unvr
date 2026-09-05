@@ -54,18 +54,37 @@
  *    performance-critical paths and must never be used to order a DMA handoff.
  * ---------------------------------------------------------------------------
  */
-#if !defined(al_reg_read8) || !defined(al_reg_read16) ||			\
-    !defined(al_reg_read32) || !defined(al_reg_read64)
-#error "plat_services must define al_reg_read{8,16,32,64}(addr)"
+#if !defined(al_reg_read8)
+#error "plat_services must define al_reg_read8(addr)"
+#endif
+#if !defined(al_reg_read16)
+#error "plat_services must define al_reg_read16(addr)"
+#endif
+#if !defined(al_reg_read32)
+#error "plat_services must define al_reg_read32(addr)"
+#endif
+#if !defined(al_reg_read64)
+#error "plat_services must define al_reg_read64(addr)"
 #endif
 
-#if !defined(al_reg_write8) || !defined(al_reg_write16) ||			\
-    !defined(al_reg_write32) || !defined(al_reg_write64)
-#error "plat_services must define al_reg_write{8,16,32,64}(addr, val)"
+#if !defined(al_reg_write8)
+#error "plat_services must define al_reg_write8(addr, val)"
+#endif
+#if !defined(al_reg_write16)
+#error "plat_services must define al_reg_write16(addr, val)"
+#endif
+#if !defined(al_reg_write32)
+#error "plat_services must define al_reg_write32(addr, val)"
+#endif
+#if !defined(al_reg_write64)
+#error "plat_services must define al_reg_write64(addr, val)"
 #endif
 
-#if !defined(al_reg_read32_relaxed) || !defined(al_reg_write32_relaxed)
-#error "plat_services must define al_reg_{read,write}32_relaxed"
+#if !defined(al_reg_read32_relaxed)
+#error "plat_services must define al_reg_read32_relaxed(addr)"
+#endif
+#if !defined(al_reg_write32_relaxed)
+#error "plat_services must define al_reg_write32_relaxed(addr, val)"
 #endif
 
 /*
@@ -77,9 +96,20 @@
  *    per-register bring-up trace, thousands of lines per boot.
  * ---------------------------------------------------------------------------
  */
-#if !defined(al_print) || !defined(al_err) || !defined(al_warn) ||		\
-    !defined(al_info) || !defined(al_dbg)
-#error "plat_services must define al_print/al_err/al_warn/al_info/al_dbg"
+#if !defined(al_print)
+#error "plat_services must define al_print(fmt, ...)"
+#endif
+#if !defined(al_err)
+#error "plat_services must define al_err(fmt, ...)"
+#endif
+#if !defined(al_warn)
+#error "plat_services must define al_warn(fmt, ...)"
+#endif
+#if !defined(al_info)
+#error "plat_services must define al_info(fmt, ...)"
+#endif
+#if !defined(al_dbg)
+#error "plat_services must define al_dbg(fmt, ...)"
 #endif
 
 #if !defined(al_sprintf)
@@ -109,8 +139,11 @@
  *    Never redefine al_assert to be fatal.
  * ---------------------------------------------------------------------------
  */
-#if !defined(al_assert) || !defined(al_assert_msg)
-#error "plat_services must define al_assert(cond) and al_assert_msg(cond, ...)"
+#if !defined(al_assert)
+#error "plat_services must define al_assert(cond) - non-fatal, see the contract"
+#endif
+#if !defined(al_assert_msg)
+#error "plat_services must define al_assert_msg(cond, fmt, ...) - non-fatal"
 #endif
 
 /*
@@ -153,8 +186,11 @@
  *    not assume either, and must not call it from an atomic context.
  * ---------------------------------------------------------------------------
  */
-#if !defined(al_udelay) || !defined(al_msleep)
-#error "plat_services must define al_udelay(us) and al_msleep(ms)"
+#if !defined(al_udelay)
+#error "plat_services must define al_udelay(us)"
+#endif
+#if !defined(al_msleep)
+#error "plat_services must define al_msleep(ms)"
 #endif
 
 /*
@@ -165,16 +201,42 @@
  *    the next HAL file that uses one fail at a random later date.
  * ---------------------------------------------------------------------------
  */
-#if !defined(swap16_to_le) || !defined(swap32_to_le) || !defined(swap64_to_le) ||\
-    !defined(swap16_from_le) || !defined(swap32_from_le) ||			\
-    !defined(swap64_from_le)
-#error "plat_services must define swap{16,32,64}_{to,from}_le"
+#if !defined(swap16_to_le)
+#error "plat_services must define swap16_to_le(x)"
+#endif
+#if !defined(swap32_to_le)
+#error "plat_services must define swap32_to_le(x)"
+#endif
+#if !defined(swap64_to_le)
+#error "plat_services must define swap64_to_le(x)"
+#endif
+#if !defined(swap16_from_le)
+#error "plat_services must define swap16_from_le(x)"
+#endif
+#if !defined(swap32_from_le)
+#error "plat_services must define swap32_from_le(x)"
+#endif
+#if !defined(swap64_from_le)
+#error "plat_services must define swap64_from_le(x)"
 #endif
 
-#if !defined(swap16_to_be) || !defined(swap32_to_be) || !defined(swap64_to_be) ||\
-    !defined(swap16_from_be) || !defined(swap32_from_be) ||			\
-    !defined(swap64_from_be)
-#error "plat_services must define swap{16,32,64}_{to,from}_be"
+#if !defined(swap16_to_be)
+#error "plat_services must define swap16_to_be(x)"
+#endif
+#if !defined(swap32_to_be)
+#error "plat_services must define swap32_to_be(x)"
+#endif
+#if !defined(swap64_to_be)
+#error "plat_services must define swap64_to_be(x)"
+#endif
+#if !defined(swap16_from_be)
+#error "plat_services must define swap16_from_be(x)"
+#endif
+#if !defined(swap32_from_be)
+#error "plat_services must define swap32_from_be(x)"
+#endif
+#if !defined(swap64_from_be)
+#error "plat_services must define swap64_from_be(x)"
 #endif
 
 /*
@@ -182,9 +244,17 @@
  * 7. Memory and string operations - C library semantics.
  * ---------------------------------------------------------------------------
  */
-#if !defined(al_memset) || !defined(al_memcpy) || !defined(al_memcmp) ||	\
-    !defined(al_strcmp)
-#error "plat_services must define al_memset/al_memcpy/al_memcmp/al_strcmp"
+#if !defined(al_memset)
+#error "plat_services must define al_memset(p, val, cnt)"
+#endif
+#if !defined(al_memcpy)
+#error "plat_services must define al_memcpy(dst, src, cnt)"
+#endif
+#if !defined(al_memcmp)
+#error "plat_services must define al_memcmp(p1, p2, cnt)"
+#endif
+#if !defined(al_strcmp)
+#error "plat_services must define al_strcmp(s1, s2)"
 #endif
 
 /* al_popcount(x) - number of set bits in a 32-bit value. */
@@ -197,8 +267,11 @@
  * 8. CPU identity.  A host with no SMP concept returns 0 from both.
  * ---------------------------------------------------------------------------
  */
-#if !defined(al_get_cpu_id) || !defined(al_get_cluster_id)
-#error "plat_services must define al_get_cpu_id() and al_get_cluster_id()"
+#if !defined(al_get_cpu_id)
+#error "plat_services must define al_get_cpu_id()"
+#endif
+#if !defined(al_get_cluster_id)
+#error "plat_services must define al_get_cluster_id()"
 #endif
 
 #endif /* __AL_HAL_PLAT_CONTRACT_H__ */
