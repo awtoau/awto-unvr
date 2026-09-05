@@ -53,8 +53,12 @@
 		 * later NAND/rootfs boot appends root= via the U-Boot bootargs.
 		 * iommu.passthrough=1 MUST live here AND in the U-Boot bootargs
 		 * (U-Boot's `setenv bootargs` overrides the DTB value at boot).
+		 *
+		 * panic=15 + reboot=cold match awto-uboot's CONFIG_BOOTARGS. This
+		 * line is only used when nothing overrides it - netboot, recovery -
+		 * which is exactly when nobody is watching to power-cycle it (#259).
 		 */
-		bootargs = "pci=pcie_bus_perf console=ttyS0,115200 sysid=ea16 ubnthal.sysid=ea16 reboot=warm rw iommu.passthrough=1";
+		bootargs = "pci=pcie_bus_perf console=ttyS0,115200 sysid=ea16 ubnthal.sysid=ea16 reboot=cold panic=15 rw iommu.passthrough=1";
 		stdout-path = "serial0:115200n8";
 		linux,pci-probe-only = <1>;
 	};
