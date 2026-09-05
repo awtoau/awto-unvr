@@ -85,7 +85,14 @@ def test_the_homes_still_hold_them():
     assert IP_RE.fullmatch(_net.UNVR_IPADDR)
     assert _net.LAN_SUBNET.startswith("192.168.25.")
     assert MAC_RE.match(_box.MAC_1G) and MAC_RE.match(_box.MAC_10G)
-    assert _box.WOOMERA_MACS == {_box.MAC_1G, _box.MAC_10G}
+    # The USB NICs are Realtek OUIs, outside MAC_RE - still homed here.
+    assert _box.WOOMERA_MACS == {
+        _box.MAC_1G,
+        _box.MAC_10G,
+        _box.MAC_USB1,
+        _box.MAC_USB2,
+    }
+    assert len(_box.WOOMERA_MACS) == 4
 
 
 def test_dev_describe_reports_the_1g_mac_from_box():

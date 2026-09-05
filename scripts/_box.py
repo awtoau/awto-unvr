@@ -24,7 +24,7 @@ from pathlib import Path
 
 from _net import LAN_SUBNET
 
-# The box's two al_eth MACs, from the NOR identity blob at 0x1f0000
+# The box's four NICs. The two al_eth MACs come from the NOR identity blob at 0x1f0000
 # (docs/identity-partitions.md). Stock's `mac: [base] + [2]` is a COUNT of two
 # allocated MACs (#222/#223): base+0 = 1G RJ45 (eth0), base+1 = 10G SFP+.
 # EXACT MACs, never the OUI: other UBNT gear shares 74:AC:B9 and an OUI match
@@ -33,7 +33,11 @@ from _net import LAN_SUBNET
 # routinely names the 10G MAC for an IP the 1G port also answers.
 MAC_1G = "74:ac:b9:41:a8:11"
 MAC_10G = "74:ac:b9:41:a8:12"
-WOOMERA_MACS = frozenset({MAC_1G, MAC_10G})
+# The two r8152 USB NICs (Realtek OUIs, read off the box with `ip -o link`).
+# The fallback when both al_eth ports are down - CLAUDE.md's old ".100".
+MAC_USB1 = "60:7d:09:4c:39:7b"  # enP1p1s0u1u1
+MAC_USB2 = "80:6d:97:13:a5:6b"  # enP1p1s0u1u3
+WOOMERA_MACS = frozenset({MAC_1G, MAC_10G, MAC_USB1, MAC_USB2})
 
 # ICMP on a LAN answers in well under a millisecond; 1 s is ~3 orders of
 # magnitude over that. On expiry: host treated as down and skipped.
