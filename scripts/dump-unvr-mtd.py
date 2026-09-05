@@ -24,7 +24,6 @@ from __future__ import annotations
 
 import argparse
 import hashlib
-import os
 import re
 import socket
 import subprocess
@@ -34,9 +33,10 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import _console  # noqa: E402
 from _repo import IMAGES, LOGS, rel
 
-SOCK = Path(os.environ.get("XDG_RUNTIME_DIR", "/tmp")) / "tio-unvr.sock"
+SOCK = _console.SOCK
 
 # Run identity. Compact sortable stamp for paths (house rule: YYYYMMDD-HHMMSS in
 # filenames, full ISO 8601 with offset in content). Every dump is named for the

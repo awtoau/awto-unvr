@@ -28,7 +28,7 @@ sys.path.insert(0, str(REPO / "scripts"))
 os.environ.setdefault("AWTO_ALLOW_DIRECT_SCRIPT", "1")
 import _console
 
-PROMPT = b"awto-nas#"
+PROMPT = _console.AWTO_PROMPT.encode()
 # bootm -> "Starting kernel" was ~1s after the 148ms ext4load; 40s covers a
 # full scsi scan (4 disks, ~10s) plus load with wide margin. Past that, the
 # bootcmd fell through and we are back at the prompt - report it.

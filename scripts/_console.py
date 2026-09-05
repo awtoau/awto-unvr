@@ -19,13 +19,23 @@ SOCK = Path(os.environ.get("XDG_RUNTIME_DIR", "/tmp")) / "tio-unvr.sock"
 PROMPT = "@@P@@"
 USER, PASSWD = "root", "unvr"
 
+# The two bootloader prompts on this box's console - one home each.
+AWTO_PROMPT = "awto-nas#"  # our U-Boot (NAND 0x1300000, #216)
+STOCK_PROMPT = "ALPINE_UBNT_NAS_ALL>"  # UBNT's 2015.07 stock U-Boot
+# EDK2: only Shell.efi itself prints this; BDS's boot-option dump also says
+# "UEFI Shell", which is a false positive. Prompt is "<FSn>:\>" after `fsN:`.
+UEFI_SHELL_MARK = "UEFI Interactive Shell"
+UEFI_SHELL_PROMPT_SUFFIX = ":\\>"
+UEFI_CRASH_MARKS = ("Synchronous Exception", "Data Abort", "Instruction Abort")
 
-def connect():
-    """Connect to the console socket. Raises if tio isn't running."""
+
+def connect(timeout: float = 0.2):
+    """Connect to the console socket. Raises if tio isn't running.
+    `timeout` is the recv() poll interval each caller's read loop turns on."""
     if not SOCK.exists():
         raise FileNotFoundError(f"console socket absent: {SOCK} (start tio)")
     s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-    s.settimeout(0.2)
+    s.settimeout(timeout)
     s.connect(str(SOCK))
     return s
 

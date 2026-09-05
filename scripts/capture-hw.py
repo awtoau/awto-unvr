@@ -21,9 +21,10 @@ from datetime import datetime
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import _console  # noqa: E402
 from _repo import REPO
 
-SOCK = Path("/run/user/1000/tio-unvr.sock")
+SOCK = _console.SOCK
 LOGS = REPO / "tmp" / "logs"
 LOG = LOGS / "capture-hw.log"
 RUN_ID = datetime.now().astimezone().strftime("%Y%m%d-%H%M%S")

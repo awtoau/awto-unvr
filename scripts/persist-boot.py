@@ -14,16 +14,16 @@ SAFETY: if `scsi init` finds no disk, it aborts WITHOUT saveenv (env untouched).
 from __future__ import annotations
 
 import os
-import socket
 import sys
 import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import _console
 from _repo import make_log
 
-SOCK = Path(os.environ.get("XDG_RUNTIME_DIR", "/tmp")) / "tio-unvr.sock"
-PROMPT = b"ALPINE_UBNT_NAS_ALL>"
+SOCK = _console.SOCK
+PROMPT = _console.STOCK_PROMPT.encode()
 ESC_INTERVAL = 0.05
 
 PARTUUID = "dcdc291e-9956-48cd-9d7c-48219877881a"
@@ -66,9 +66,7 @@ def read_until(s, needle, limit_s, capture=False):
 def main():
     if not SOCK.exists():
         sys.exit(f"console socket absent: {SOCK}")
-    s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-    s.settimeout(0.05)
-    s.connect(str(SOCK))
+    s = _console.connect(timeout=0.05)
 
     # catch U-Boot
     catch_s = float(os.environ.get("CATCH_S", "1800"))

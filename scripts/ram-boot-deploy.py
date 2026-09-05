@@ -38,6 +38,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import tftpd as _tftpd
 
+from _console import STOCK_PROMPT
 from _net import UNVR_IPADDR as IPADDR
 from _net import detect_server_ip
 from _power import power_cycle_verified
@@ -305,14 +306,14 @@ def main() -> int:
     def boot_to_login() -> None:
         run_devpy(
             "--expect",
-            "ALPINE_UBNT_NAS_ALL>",
+            STOCK_PROMPT,
             "--timeout",
             "8",
             f"setenv ipaddr {IPADDR}",
         )
         run_devpy(
             "--expect",
-            "ALPINE_UBNT_NAS_ALL>",
+            STOCK_PROMPT,
             "--timeout",
             "8",
             f"setenv serverip {server_ip}",
@@ -324,7 +325,7 @@ def main() -> int:
         if a.bootargs:
             run_devpy(
                 "--expect",
-                "ALPINE_UBNT_NAS_ALL>",
+                STOCK_PROMPT,
                 "--timeout",
                 "8",
                 f"setenv bootargs '{a.bootargs}'",

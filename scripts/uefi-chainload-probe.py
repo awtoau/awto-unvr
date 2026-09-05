@@ -63,8 +63,8 @@ FD_ADDR = "0x20000000"
 # launches and runs - unlike "UEFI Shell"/"Shell>" text, which also
 # appears (as a false-positive match) in BDS's own boot-options-dump
 # debug trace ("Boot0001: UEFI Shell") before anything has launched.
-SUCCESS_PATTERN = "UEFI Interactive Shell"
-CRASH_PATTERN = "Synchronous Exception|Data Abort|Instruction Abort|Kernel panic"
+SUCCESS_PATTERN = _console.UEFI_SHELL_MARK
+CRASH_PATTERNS = (*_console.UEFI_CRASH_MARKS, "Kernel panic")
 
 # Confirmed live: BdsDxe's own boot timeout (PcdPlatformBootTimeOut=3 in
 # Unvr.dsc) opens the hotkey window; "[Bds]BdsWait(3)/(2)/(1)" spans
@@ -94,7 +94,7 @@ PROBE_TIMEOUT_S = 60
 JUMP_BANNER_S = 1.5
 # Stock's prompt. `go` returning to it after the jump command is proof the
 # jump did not take (bad address, or the payload returned).
-STOCK_PROMPT = "ALPINE_UBNT_NAS_ALL>"
+STOCK_PROMPT = _console.STOCK_PROMPT
 
 
 def main() -> int:
@@ -156,14 +156,14 @@ def main() -> int:
 
     _rbd.run_devpy(
         "--expect",
-        "ALPINE_UBNT_NAS_ALL>",
+        STOCK_PROMPT,
         "--timeout",
         "8",
         f"setenv ipaddr {_rbd.IPADDR}",
     )
     _rbd.run_devpy(
         "--expect",
-        "ALPINE_UBNT_NAS_ALL>",
+        STOCK_PROMPT,
         "--timeout",
         "8",
         f"setenv serverip {server_ip}",
@@ -180,7 +180,7 @@ def main() -> int:
     # authority for both the length and the expected value.
     out = _rbd.run_devpy(
         "--expect",
-        "ALPINE_UBNT_NAS_ALL>",
+        STOCK_PROMPT,
         "--timeout",
         "10",
         f"crc32 {FD_ADDR} 0x{args.fd.stat().st_size:x}",
@@ -224,7 +224,7 @@ def main() -> int:
         if hotkey and now < HOTKEY_SPAM_S and now - last_key_send > HOTKEY_INTERVAL_S:
             s.sendall(hotkey.encode())
             last_key_send = now
-        if SUCCESS_PATTERN in text or any(p in text for p in CRASH_PATTERN.split("|")):
+        if SUCCESS_PATTERN in text or any(p in text for p in CRASH_PATTERNS):
             break
 
     text = buf.decode(errors="replace")
@@ -233,7 +233,7 @@ def main() -> int:
     if verdict:
         print(f"\nRESULT: {verdict} (aborted after {time.monotonic() - start:.1f}s).")
         return 1
-    if any(p in text for p in CRASH_PATTERN.split("|")):
+    if any(p in text for p in CRASH_PATTERNS):
         print("\nRESULT: EDK2 crashed (exception/abort).")
         return 1
     if SUCCESS_PATTERN in text:

@@ -38,6 +38,9 @@ from pathlib import Path
 PROJECT = "awto-unvr"
 
 REPO = Path(__file__).resolve().parent
+sys.path.insert(0, str(REPO / "scripts"))
+import _console  # noqa: E402  - console socket path + the bootloader prompts
+
 TMP = REPO / "tmp"
 LOGS = TMP / "logs"
 LOG = LOGS / "dev.log"
@@ -64,7 +67,7 @@ CONSOLE_PORTS = [
         "/dev/serial/by-id/usb-Silicon_Labs_CP2102_USB_to_UART_Bridge_Controller_0001-if00-port0",
     ),
 ]
-CONSOLE_SOCK = Path(os.environ.get("XDG_RUNTIME_DIR", "/tmp")) / "tio-unvr.sock"
+CONSOLE_SOCK = _console.SOCK
 CONSOLE_LOG = LOGS / "unvr-console.log"
 CONSOLE_TAIL = LOGS / "unvr-console-tail.log"
 CONSOLE_PID = TMP / "tio-unvr.pid"
@@ -80,8 +83,7 @@ CONSOLE_ROLL_KEEP = 3
 CONSOLE_PEEK_LINES = 500
 
 BOARD_SYSID = "0xea16"
-sys.path.insert(0, str(REPO / "scripts"))
-from _box import MAC_1G as BOARD_MAC  # noqa: E402  - both MACs live in _box.py
+from _box import MAC_1G as BOARD_MAC  # noqa: E402  - all the box MACs live in _box.py
 
 # --------------------------------------------------------------------------
 # STEPS - the only project-specific build table. This repo has no compiled
@@ -1248,7 +1250,7 @@ def _probe_awto_nas(timeout_s: float = 4.0) -> bool:
                     buf += d
             except TimeoutError:
                 continue
-            if b"awto-nas#" in buf:
+            if _console.AWTO_PROMPT.encode() in buf:
                 return True
         return False
     finally:

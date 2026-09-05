@@ -47,7 +47,7 @@ FD_ON_SSD = "/boot/UNVR.fd"
 # letters shift across boots, but U-Boot's own scsi numbering is stable
 # for this disk set - `scsi scan` output is checked before use).
 SSD_PART = "1:2"
-PROMPT = "awto-nas#"
+PROMPT = _console.AWTO_PROMPT
 
 # Same root the working awto-uboot chain passes (uboot-port/configs/
 # alpine_v2_unvr_defconfig CONFIG_BOOTARGS). Only the LOADER changes in
@@ -58,12 +58,12 @@ DEFAULT_ARGS = (
     "reboot=cold ahci.mask_port_map=0x5 ahci_alpine.mask_port_map=0x5"
 )
 
-SHELL_MARK = "UEFI Interactive Shell"
+SHELL_MARK = _console.UEFI_SHELL_MARK
 # The Shell's prompt after `fs0:` selects a filesystem, e.g. "fs0:\>". Matched
 # only at end-of-transcript: an image that exits drops straight back to it.
 # Built from --fs so it tracks the mapping actually used.
-SHELL_PROMPT_SUFFIX = ":\\>"
-CRASHES = ("Synchronous Exception", "Data Abort", "Instruction Abort")
+SHELL_PROMPT_SUFFIX = _console.UEFI_SHELL_PROMPT_SUFFIX
+CRASHES = _console.UEFI_CRASH_MARKS
 
 # BdsWait's hotkey window is ~3s but starts at an unfixed point once the
 # full driver set is dispatching; spam well past it. Extra 's' after the

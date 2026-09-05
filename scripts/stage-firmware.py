@@ -32,7 +32,9 @@ from _repo import REPO, TFTP_ROOT
 LOGS = REPO / "tmp" / "logs"
 LOG = LOGS / "stage-firmware.log"
 SOURCES = REPO / "sources"
-SOCK = Path("/run/user/1000/tio-unvr.sock")
+import _console  # noqa: E402
+
+SOCK = _console.SOCK
 TFTP_PORT = 69
 
 API = (

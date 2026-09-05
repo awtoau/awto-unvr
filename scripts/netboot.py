@@ -16,19 +16,19 @@ Run (device must be power-cycling or about to reboot):
 from __future__ import annotations
 
 import argparse
-import os
 import socket
 import sys
 import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import _console
 from _net import UNVR_IPADDR, detect_server_ip
 from _repo import make_log
 
-SOCK = Path(os.environ.get("XDG_RUNTIME_DIR", "/tmp")) / "tio-unvr.sock"
+SOCK = _console.SOCK
 
-PROMPT = b"ALPINE_UBNT_NAS_ALL>"
+PROMPT = _console.STOCK_PROMPT.encode()
 ESC_INTERVAL = 0.05  # 20 ESC/s across the bootdelay=2 window
 
 
@@ -107,9 +107,7 @@ def main() -> int:
     if not SOCK.exists():
         sys.exit(f"console socket absent: {SOCK}\nStart it with ./dev.py console")
 
-    s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-    s.settimeout(0.05)
-    s.connect(str(SOCK))
+    s = _console.connect(timeout=0.05)
 
     # --- Phase 1: stream ESC until the U-Boot prompt ---
     log(

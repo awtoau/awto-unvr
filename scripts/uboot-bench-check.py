@@ -25,6 +25,7 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO / "scripts"))
 os.environ.setdefault("AWTO_ALLOW_DIRECT_SCRIPT", "1")
+import _console  # noqa: E402
 from _power import power_cycle_verified  # noqa: E402
 
 _rbd_spec = importlib.util.spec_from_file_location(
@@ -57,7 +58,7 @@ def main() -> int:
 
     for cmd in COMMANDS:
         print(f"=== {cmd} ===")
-        out = _rbd.run_devpy("--expect", "ALPINE_UBNT_NAS_ALL>", "--timeout", "10", cmd)
+        out = _rbd.run_devpy("--expect", _console.STOCK_PROMPT, "--timeout", "10", cmd)
         print(out)
     return 0
 

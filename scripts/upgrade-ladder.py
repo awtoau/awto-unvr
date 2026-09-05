@@ -30,9 +30,10 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import _console  # noqa: E402
 from _repo import LOGS, REPO, SOURCES, rel
 
-SOCK = Path(os.environ.get("XDG_RUNTIME_DIR", "/tmp")) / "tio-unvr.sock"
+SOCK = _console.SOCK
 TFTP_PORT = 6969
 TFTP_BLKSIZE = 1400
 TFTP_ROOT = REPO / "images" / "tftp"

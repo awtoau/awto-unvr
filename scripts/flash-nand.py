@@ -30,8 +30,6 @@ Layout (NAND offsets):
 
 from __future__ import annotations
 
-import os
-import socket
 import sys
 import time
 from pathlib import Path
@@ -39,12 +37,13 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from _fedora_deploy import TFTP_DIMG, TFTP_KIMG, assert_fresh
 
+import _console
+from _console import STOCK_PROMPT
 from _net import UNVR_IPADDR as IPADDR
 from _net import detect_server_ip
 from _repo import make_log
 
-SOCK = Path(os.environ.get("XDG_RUNTIME_DIR", "/tmp")) / "tio-unvr.sock"
-PROMPT = b"ALPINE_UBNT_NAS_ALL>"
+SOCK = _console.SOCK
 
 KIMG = TFTP_KIMG.name
 DIMG = TFTP_DIMG.name
@@ -95,14 +94,12 @@ def main():
         sys.exit(f"console socket absent: {SOCK}")
     server_ip = detect_server_ip()
     log(f"tftp server IP (auto-detected): {server_ip}")
-    s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-    s.settimeout(0.1)
-    s.connect(str(SOCK))
+    s = _console.connect(timeout=0.1)
     # confirm we're at the prompt
-    step(s, "", "ALPINE_UBNT_NAS_ALL>", 5, "at U-Boot prompt")
+    step(s, "", STOCK_PROMPT, 5, "at U-Boot prompt")
     log("=== flashing Fedora kernel+DTB to NAND (stock kernel @0x300000 preserved) ===")
-    step(s, f"setenv ipaddr {IPADDR}", "ALPINE_UBNT_NAS_ALL>", 5, "set ipaddr")
-    step(s, f"setenv serverip {server_ip}", "ALPINE_UBNT_NAS_ALL>", 5, "set serverip")
+    step(s, f"setenv ipaddr {IPADDR}", STOCK_PROMPT, 5, "set ipaddr")
+    step(s, f"setenv serverip {server_ip}", STOCK_PROMPT, 5, "set serverip")
     # kernel
     step(s, f"tftpboot {K_RAM} {KIMG}", "Bytes transferred", 60, f"tftp {KIMG}")
     step(s, f"nand erase {K_NAND} {K_SPAN}", "OK", 30, "erase kernel region")
@@ -112,7 +109,7 @@ def main():
     step(s, f"nand erase {D_NAND} {D_ERASE}", "OK", 15, "erase dtb block")
     step(s, f"nand write {D_RAM} {D_NAND} {D_ERASE}", "OK", 15, "write dtb")
     # bootcmd + save
-    step(s, f"setenv bootcmd '{BOOTCMD}'", "ALPINE_UBNT_NAS_ALL>", 5, "set bootcmd")
+    step(s, f"setenv bootcmd '{BOOTCMD}'", STOCK_PROMPT, 5, "set bootcmd")
     step(s, "saveenv", "done", 15, "saveenv")
     log("DONE — kernel+DTB in NAND, bootcmd set + saved. 'boot' or reset to verify.")
     s.close()

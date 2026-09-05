@@ -34,7 +34,7 @@ sys.path.insert(0, str(REPO / "scripts"))
 os.environ.setdefault("AWTO_ALLOW_DIRECT_SCRIPT", "1")
 import _console
 
-PROMPT = b"awto-nas#"
+PROMPT = _console.AWTO_PROMPT.encode()
 LOG = REPO / "tmp" / "logs" / "cpuon-xhci-test.log"
 
 # `usb start` on this box: the xHCI Enable-Slot path retries internally and the

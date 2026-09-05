@@ -14,21 +14,20 @@ Run: ./scripts/catch-uboot.py            # then power-cycle the unit
 from __future__ import annotations
 
 import argparse
-import os
-import socket
 import sys
 import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import _console
 from _repo import make_log
 
-SOCK = Path(os.environ.get("XDG_RUNTIME_DIR", "/tmp")) / "tio-unvr.sock"
+SOCK = _console.SOCK
 
 # The device prints this during the countdown; seeing it means we are in.
 PROMPT_HINTS = (b"ALPINE_UBNT_NAS", b"=>", b"Autobooting", b'press "<Esc><Esc>"')
 # Confirmation that autoboot was actually stopped rather than merely announced.
-STOPPED_HINTS = (b"ALPINE_UBNT_NAS_ALL>", b"ALPINE_UBNT_NAS>")
+STOPPED_HINTS = (_console.STOCK_PROMPT.encode(), b"ALPINE_UBNT_NAS>")
 
 # 20 ESC/s. U-Boot polls its console during the countdown; at bootdelay=2 that
 # is ~40 chances to land inside the window.
@@ -50,9 +49,7 @@ def main() -> int:
     if not SOCK.exists():
         sys.exit(f"console socket absent: {SOCK}\nStart it with ./dev.py console")
 
-    s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-    s.settimeout(0.05)
-    s.connect(str(SOCK))
+    s = _console.connect(timeout=0.05)
     log(f"streaming ESC to {SOCK} - POWER-CYCLE THE UNVR NOW")
 
     buf = b""

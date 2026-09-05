@@ -43,14 +43,14 @@ import _console  # noqa: E402
 
 EDK2_OUT = Path("/mnt/2tb/unvr-port-refs/edk2")
 FD_ADDR = "0x20000000"
-PROMPT = "awto-nas#"
+PROMPT = _console.AWTO_PROMPT
 # The FD is read off the SSD's ext4 root (scsi device 1, partition 2 - the
 # same device/part docs/fedora-on-ssd.md boots from), not over the network.
 SSD_PART = "1:2"
 FD_ON_SSD = "/boot/UNVR.fd"
 
-SUCCESS_PATTERN = "UEFI Interactive Shell"
-CRASH_PATTERNS = ("Synchronous Exception", "Data Abort", "Instruction Abort")
+SUCCESS_PATTERN = _console.UEFI_SHELL_MARK
+CRASH_PATTERNS = _console.UEFI_CRASH_MARKS
 
 # Same numbers uefi-chainload-probe.py justifies: BdsWait's hotkey window
 # is ~3s but starts at an unfixed point once PciBus/Xhci/Ahci dispatch is

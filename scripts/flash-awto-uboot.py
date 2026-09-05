@@ -23,7 +23,6 @@ direct-NAND kernel boot.
 from __future__ import annotations
 
 import os
-import socket
 import sys
 import time
 from pathlib import Path
@@ -31,6 +30,8 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO / "scripts"))
 os.environ.setdefault("AWTO_ALLOW_DIRECT_SCRIPT", "1")
+import _console  # noqa: E402
+from _console import STOCK_PROMPT  # noqa: E402
 from _net import UNVR_IPADDR as IPADDR  # noqa: E402
 from _net import detect_server_ip  # noqa: E402
 from _repo import make_log  # noqa: E402
@@ -39,7 +40,7 @@ from _repo import make_log  # noqa: E402
 # images/tftp is the deploy-artifact dir and is NOT the server root (#dev.py:1012).
 TFTP_DIR = REPO / "tmp/tftp"
 
-SOCK = Path(os.environ.get("XDG_RUNTIME_DIR", "/tmp")) / "tio-unvr.sock"
+SOCK = _console.SOCK
 
 UBOOT_BIN = REPO / "tmp/uboot-build/u-boot.bin"
 TFTP_NAME = "u-boot-awto.bin"
@@ -102,14 +103,12 @@ def main():
     server_ip = detect_server_ip()
     log(f"tftp server IP (auto-detected): {server_ip}")
 
-    s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-    s.settimeout(0.1)
-    s.connect(str(SOCK))
+    s = _console.connect(timeout=0.1)
 
-    step(s, "", "ALPINE_UBNT_NAS_ALL>", 5, "at stock U-Boot prompt")
+    step(s, "", STOCK_PROMPT, 5, "at stock U-Boot prompt")
     log("=== flashing awto-uboot to NAND (stock kernel @0x300000 preserved) ===")
-    step(s, f"setenv ipaddr {IPADDR}", "ALPINE_UBNT_NAS_ALL>", 5, "set ipaddr")
-    step(s, f"setenv serverip {server_ip}", "ALPINE_UBNT_NAS_ALL>", 5, "set serverip")
+    step(s, f"setenv ipaddr {IPADDR}", STOCK_PROMPT, 5, "set ipaddr")
+    step(s, f"setenv serverip {server_ip}", STOCK_PROMPT, 5, "set serverip")
     step(
         s, f"tftpboot {STAGE} {TFTP_NAME}", "Bytes transferred", 60, f"tftp {TFTP_NAME}"
     )
@@ -122,7 +121,7 @@ def main():
     # this proves the read succeeds, not that the bytes match.
     step(s, f"nand read {TEXT_BASE} {U_NAND} {U_SPAN}", "OK", 30, "read back")
 
-    step(s, f"setenv bootcmd '{BOOTCMD}'", "ALPINE_UBNT_NAS_ALL>", 5, "set bootcmd")
+    step(s, f"setenv bootcmd '{BOOTCMD}'", STOCK_PROMPT, 5, "set bootcmd")
     step(s, "saveenv", "done", 15, "saveenv")
     log("DONE — awto-uboot in NAND, stock bootcmd chainloads it. Reset to verify.")
     log("If it fails to come up: <Esc><Esc> at stock, then `run bootnand`.")
