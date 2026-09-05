@@ -35,11 +35,12 @@ stock U-Boot → NAND 0x1300000 (awto-uboot, raw, `go`) → ext4load /boot/uImag
 
 ## Reaching the box
 
-- `./dev.py ssh [-- cmd]` — resolves by the **1G MAC**, never a hardcoded IP. DHCP has
-  moved this box across .129/.136/.140.
+- `./dev.py ssh [-- cmd]` — resolves by **MAC**, never a hardcoded IP. DHCP has moved
+  this box across .129/.136/.140. All four NICs (both al_eth, both USB) are in
+  `scripts/_box.py`, so it finds the box even when only a USB NIC is up — no IP
+  fallback needed. A guard test fails on any IP/MAC literal elsewhere (#260).
 - If it reports "No route to host": `ping -c1 <ip>` to re-ARP, then retry. Both al_eth
   ports are on one subnet, so neighbour entries go stale (#170).
-- Fallback when al_eth is down: `root@192.168.25.100` (a USB NIC).
 - Recovery if it will not boot: `<Esc><Esc>` at stock, then netboot - stock is the
   only stage with working networking. **`run bootnand` is NOT a recovery path**: the
   NAND recovery image at `0x300000` is not genuine stock firmware and does not boot
