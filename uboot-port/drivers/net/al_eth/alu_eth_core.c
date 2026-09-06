@@ -307,15 +307,14 @@ int alu_eth_core_init(struct udevice *dev, struct alu_eth_priv *priv)
 	alu_eth_q_params(&txp, base, 0, 1);
 	alu_eth_q_params(&rxp, base, 2, 3);
 
+	/* al_eth_queue_enable() is a HAL stub that always returns -EPERM; the
+	 * queue is live after queue_config(). The old glue called it and
+	 * discarded the result, so the no-op was invisible. */
 	rc = al_eth_queue_config(&priv->adapter, UDMA_TX, 0, &txp);
 	if (!rc)
-		rc = al_eth_queue_enable(&priv->adapter, UDMA_TX, 0);
-	if (!rc)
 		rc = al_eth_queue_config(&priv->adapter, UDMA_RX, 0, &rxp);
-	if (!rc)
-		rc = al_eth_queue_enable(&priv->adapter, UDMA_RX, 0);
 	if (rc) {
-		dev_err(dev, "queue config/enable failed: %d\n", rc);
+		dev_err(dev, "queue config failed: %d\n", rc);
 		return rc;
 	}
 
