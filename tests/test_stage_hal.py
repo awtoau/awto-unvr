@@ -27,11 +27,14 @@ import stage_hal  # noqa: E402
 
 
 def test_stages_the_expected_file_set() -> None:
-    """Shared HAL only: al_hal_*/al_init_*, never the Linux driver beside it."""
+    """Shared HAL only: never the Linux driver beside it."""
     names = [p.name for p in stage_hal.hal_sources()]
     assert names, "no HAL sources found - the glob or the source dir moved"
     for n in names:
-        assert n.startswith(("al_hal_", "al_init_")), n
+        assert n.startswith(("al_hal_", "al_init_", "al_serdes.")), n
+    # al_serdes.h is shared HAL despite the name: al_init_eth_{kr,lm}.h include
+    # it, and without it those two are the only files that fail to compile.
+    assert "al_serdes.h" in names
     # The Linux driver and its kernel glue are host-specific, never shared.
     for host_only in (
         "al_eth_main.c",

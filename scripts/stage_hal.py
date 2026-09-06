@@ -39,7 +39,18 @@ SOURCE = REPO / "modules" / "al_eth"
 # The shared HAL: vendor al_hal_*/al_init_* sources only. The Linux DRIVER
 # alongside them (al_eth_main.c, al_eth_phylink.c, kcompat.*, Makefile) is
 # host-specific and is NOT shared - a host writes its own glue.
-GLOB_PATTERNS = ("al_hal_*.c", "al_hal_*.h", "al_init_*.c", "al_init_*.h")
+# al_serdes.[ch] carries no al_hal_ prefix but is shared HAL: a thin vendor
+# abstraction over al_hal_serdes_interface.h that al_init_eth_{kr,lm}.h include
+# by name. Omitting it made those two the only staged files that would not
+# compile under U-Boot (scripts/hal-host-portability.py).
+GLOB_PATTERNS = (
+    "al_hal_*.c",
+    "al_hal_*.h",
+    "al_init_*.c",
+    "al_init_*.h",
+    "al_serdes.c",
+    "al_serdes.h",
+)
 
 # Linux-only HAL files: real HAL by name, but they depend on Linux subsystems a
 # bare-metal host has no answer for. Excluded with the reason, so a host hitting
