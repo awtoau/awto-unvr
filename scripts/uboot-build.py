@@ -32,6 +32,8 @@ import sys
 import time
 from pathlib import Path
 
+import stage_hal  # shared Linux al_eth HAL -> build-tree staging (#256)
+
 from _repo import NPROC, build_ident  # -j28 host build parallelism (#146)
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -41,6 +43,10 @@ BUILDDIR = os.path.join(REPO, "tmp", "uboot-build")
 LOG = os.path.join(REPO, "tmp", "logs", "uboot-port.log")
 CROSS = "aarch64-linux-gnu-"
 BUILD_TIMEOUT_S = 900  # see module docstring
+
+# Where the shared Linux al_eth HAL is staged inside TREE. Build artifact:
+# never checked in, rewritten every build (scripts/stage_hal.py).
+HAL_STAGE_DIR = "drivers/net/al_hal_shared"
 
 # scaffold rel-path -> tree rel-path (individual files)
 FILES = {
@@ -193,6 +199,12 @@ def stage():
         os.path.join(TREE, "drivers/net/al_hal_shim/al_hal_plat_contract.h"),
     )
     log("staged drivers/net/al_hal_shim/al_hal_plat_contract.h (shared, from hal/)")
+
+    # Shared Linux al_eth HAL, staged as a build artifact (#256). Single source
+    # is modules/al_eth/; no host keeps a checked-in copy. Read-only and
+    # rewritten every build, so it cannot drift or hold a local edit.
+    staged = stage_hal.stage(Path(TREE) / HAL_STAGE_DIR)
+    log(f"staged {HAL_STAGE_DIR}/ ({len(staged)} HAL files, from modules/al_eth/)")
 
     # arch/arm/Kconfig — board TARGET + board Kconfig source
     txt = Path(KCONFIG).read_text()
@@ -379,6 +391,11 @@ def unstage():
             if line in content:
                 Path(f).write_text(content.replace(line, ""))
                 log(f"reverted {os.path.relpath(f, TREE)}")
+
+    # staged shared HAL (read-only files, so stage_hal.clean() chmods first)
+    n = stage_hal.clean(Path(TREE) / HAL_STAGE_DIR)
+    if n:
+        log(f"reverted {HAL_STAGE_DIR}/ ({n} staged HAL files)")
 
     # staged directories (board/annapurna covers al_ddr)
     for dst in DIRS.values():
