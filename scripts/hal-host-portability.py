@@ -39,7 +39,7 @@ STAGE = "drivers/net/al_hal_shared"
 SHIM = "drivers/net/al_hal_shim"
 CROSS = "aarch64-linux-gnu-"
 
-log = make_log(__file__)
+log = make_log("hal-host-portability")
 
 # 1.25x a cold cross-cc1 syntax pass on this host (~1.5 s worst case observed);
 # a hang means the toolchain wedged, and the file it was on is named.

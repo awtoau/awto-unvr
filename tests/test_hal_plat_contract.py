@@ -125,7 +125,12 @@ def test_uboot_shim_satisfies_the_contract() -> None:
     A compile of the shim itself needs the U-Boot tree; the build does that.
     Here we only pin that the include is present and last-ish."""
     shim = (
-        REPO / "uboot-port" / "drivers" / "net" / "al_hal_shim" / "al_hal_plat_services.h"
+        REPO
+        / "uboot-port"
+        / "drivers"
+        / "net"
+        / "al_hal_shim"
+        / "al_hal_plat_services.h"
     )
     txt = shim.read_text()
     assert '#include "al_hal_plat_contract.h"' in txt, (
