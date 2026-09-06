@@ -1,75 +1,70 @@
-# al_eth — Annapurna Labs 1G RGMII Ethernet for modern U-Boot (#83)
+# alu_eth — Annapurna Labs Ethernet for modern U-Boot
 
-DM_ETH driver + curated Annapurna HAL subset for the UNVR's **1G RJ45** (eth1,
-`ethernet@fc100000`, PCI `1c36:0001`, RGMII, AR8033 PHY). **RGMII 1G only** — no
-serdes / KR / PCS / link-management (that is the 10G SFP+ eth2 path, out of scope).
+DM_ETH drivers for the UNVR's two al_eth ports, written against the **shared
+Linux HAL** — `modules/al_eth/`, staged into the build tree by
+`scripts/stage_hal.py`. There is no HAL copy in this directory (#256).
 
-## Provenance
-- **HAL:** `delroth-alpine_hal` @ eb6b9f1 — files copied verbatim into `hal/`,
-  original Annapurna Labs headers (GPLv2 OR BSD-3-Clause) preserved untouched.
-- **Glue reference:** vendor U-Boot 2015 `al_eth.c` (UNVR-1.3.35-GPL) — its
-  init/send/recv HAL call sequence, re-expressed as DM `eth_ops` in `al_eth_dm.c`.
-- **Register map:** `platform/alpine_v2` `al_hal_iomap.h`.
+| port | PCI id | media | front end |
+|---|---|---|---|
+| eth1 | `1c36:0001` | 1G RJ45, RGMII | AR8033 @ MDIO addr 4, via phylib |
+| eth2 | `1c36:0002` | 10G SFP+ | HSSP SerDes lane + 10GBASE-R PCS, no PHY |
+
+## Why one HAL
+
+U-Boot and UEFI kept re-hitting bugs Linux had already fixed. Every fix in
+`modules/al_eth/` — `__must_check` on the HAL entry points, the MDIO BUSY race,
+the eye-size MSB, the `sch_mode` field, the V3-only 40G path on rev-2 silicon,
+clear-on-read counters, board-param-preserving FLR — is now a fix here too,
+with nothing to re-apply.
 
 ## Layout
-- `al_eth_dm.c` — the DM_ETH driver (UCLASS_ETH). New file (Awto).
-- `al_eth_stubs.c` — MAC v3/v4 (10G/25G) handle-init stubs; the rev-id dispatch in
-  `al_hal_eth_mac.c` references them but RGMII (rev 2) never calls them, so we stub
-  rather than drag in the serdes closure. New file (Awto).
-- `shim/al_hal_plat_services.h`, `shim/al_hal_plat_types.h` — the **plat_api shim**:
-  maps the HAL's platform services onto U-Boot primitives (regs→read/write*,
-  udelay/mdelay, dsb/dmb barriers, printf, string/mem). Header-only (all static
-  inline / macros), so no shim `.c`. Reconcile with the #80 DDR agent's shim — this
-  layer is generic (no eth deps). New files (Awto).
-- `hal/include/` — flattened HAL headers (one `-I`).
-- `hal/{eth,udma,iofic}/` — curated HAL `.c` subset (copied verbatim).
 
-## HAL .c subset compiled (RGMII MAC + UDMA + MDIO)
-udma: `al_hal_udma_main.c`, `al_hal_udma_config.c`, `al_hal_udma_iofic.c`;
-iofic: `al_hal_iofic.c`;
-eth: `al_hal_eth_main.c`, `al_hal_eth_mac.c`, `al_hal_eth_mac_internal.c`,
-`al_hal_eth_mac_v1_v2.c`, `al_hal_eth_common.c`, `al_hal_eth_epe.c`,
-`al_hal_eth_field.c`, `al_hal_eth_rfw.c`.
-**Excluded** (10G/25G/serdes): `al_hal_eth_mac_v3.c`, `al_hal_eth_mac_v4.c`,
-`al_hal_eth_kr.c`, all `serdes/`, and the `services/eth` LM/KR/retimer layer.
-`AL_ETH_EX` is left **undefined** — the extended/ex-internal (serdes-adjacent)
-code paths compile out.
+- `alu_eth.h` — the glue's one header: ports, MAC addresses, board params.
+- `alu_eth_core.[ch]` — rings, adapter init, FLR, send, recv, cache
+  maintenance, unit-adapter setup. Both ports share all of it.
+- `alu_eth_1g.c` / `alu_eth_10g.c` — the front ends, ~200 lines each.
+- `alu_eth_port.c` — port index → PCI function → the three BARs.
+- `alu_eth_boardparams.c` — DT `board-cfg` → the MAC scratchpad Linux reads.
+- `alu_eth_hwaddr.c` — SPI-NOR base MAC → per-port address → EC filter.
+- `alu_eth_rxfwd.c` — EC RX forwarding to UDMA0/Q0.
+- `alu_eth_stats.c` / `alu_eth_diag.c` — the `eth` command.
+
+`al_*` is the shared HAL; `alu_*` is this glue. A symbol's prefix says which
+tree owns it.
 
 ## Binding + register windows (PCI, not DT)
-al_eth is a **PCI-enumerated endpoint** on the internal PCIe (bus 0). The driver
-binds by **PCI ID** (`U_BOOT_PCI_DEVICE`, vendor `0x1c36` dev `0x0001` = eth1 1G),
-**not** a DT compatible — the bare `eth0..3` platform nodes at `0xfc000000+` in the
-stock DT are unused (docs/hardware.md). It maps **three separate BARs** (the UDMA
-and MAC live in non-contiguous windows; there is no single base + offset):
 
-| BAR | reg offset | window | vendor macro |
-|-----|-----------|--------|--------------|
-| BAR0 | `PCI_BASE_ADDRESS_0` | UDMA regs | `AL_ETH_UDMA_BAR = 0` |
-| BAR4 | `PCI_BASE_ADDRESS_4` | EC regs   | `AL_ETH_EC_BAR   = 4` |
-| BAR2 | `PCI_BASE_ADDRESS_2` | MAC regs  | `AL_ETH_MAC_BAR  = 2` |
+Both ports are PCI endpoints on the internal PCIe, bound by `U_BOOT_PCI_DEVICE`
+— the bare `eth0..3` platform nodes at `0xfc000000+` in the stock DT are unused
+(`docs/hardware.md`). Three **non-contiguous** BARs, so there is no single base
+plus offsets, and the order is not ascending:
 
-(Indices from the vendor `al_hal_eth.h`, matched by `drivers/net/al_eth_pci.c`.
-Note EC=BAR4 / MAC=BAR2, i.e. **not** ascending.) Probe enables `PCI_COMMAND_MEMORY
-| PCI_COMMAND_MASTER` for DMA. PHY details (RGMII, at803x @ addr 4, MDIO 1000 kHz,
-ref clk 500 MHz) are set **explicitly** — not read from the MAC scratchpad
-(`al_eth_board_params_get`) nor DT — robust for chainload and standalone.
+| BAR | window | vendor macro |
+|-----|--------|--------------|
+| 0 | UDMA regs | `AL_ETH_UDMA_BAR` |
+| 2 | MAC regs | `AL_ETH_MAC_BAR` |
+| 4 | EC regs | `AL_ETH_EC_BAR` |
 
-## DMA coherency
-Relies on the **#74 AXI SMCC snoop fix** (applied in `board_late_init`) that makes
-the internal-PCIe units cache-coherent — so no explicit cache flush/invalidate,
-same as the vendor driver on this coherent SoC. If HW bring-up shows stale
-descriptors/buffers, add flush(TX submit)/invalidate(RX consume).
+## Board facts that cost real debugging
+
+- **`PHY_INTERFACE_MODE_RGMII_ID`, not `RGMII`.** Without the AR8033's internal
+  RX/TX clock delays the MAC samples RX on the wrong edge and drops every frame
+  — 213 in, 213 `ifInErrors`, 0 FCS errors (`30e7c65`). Linux uses `RGMII_ID`
+  here too.
+- **FLR must preserve board params + the EC MAC.** Raw `al_eth_flr_rmn()` wipes
+  both; `al_eth_flr_rmn_restore_params()` is the wrapper that does not (#253).
+- **MAC derivation: base+0 = 1G, base+1 = 10G.** Stock's printed `[2]` is a
+  COUNT of allocated addresses, not an offset (#222/#223).
+- **EC counters are clear-on-read** (`5be0d9b`); `eth stats` accumulates them.
+  The Clause-49 PCS counters have exactly one reader, `al_eth_link_status_get()`
+  (#196).
+- **al_udma-visible memory must be low DRAM.** The master decodes only the low
+  window, and U-Boot's heap relocates to the top of the 3GB bank (#90).
 
 ## Diagnostics
-- `eth diag [<port>]` — PCI BDF, the three BARs, MAC + its source, board params
-  decoded, and link state (1G: PHY id + AN result; 10G: PCS block-lock, SerDes
-  grp/lane, TX equalisation taps in force). Read-only; safe on a live port.
-- `eth stats [<port>]` — every MAC/EC/UDMA counter, drops first.
-- `CONFIG_AL_ETH_DEBUG` — `-DDEBUG` across al_eth + al_serdes: the full HAL
-  register trace. Off by default; thousands of lines per boot.
 
-## Status
-Compile-clean, wired to the HAL. Traffic blocked on #90 (UDMA M2S descriptor
-read hangs, both ports). Board params confirmed (PHY addr 4, MDIO 1000 kHz, ref
-clk 500 MHz, RGMII). The TX completion poll bound is still ~8000x worst case —
-it cannot be tightened until #90 makes a completion observable.
+- `eth diag [<port>]` — PCI BDF, the three BARs, MAC + its source, board params
+  decoded, and link state.
+- `eth stats [<port>]` — every MAC/EC/UDMA counter, drops first.
+- `CONFIG_AL_ETH_DEBUG` — `-DDEBUG` across al_eth and al_serdes: the full HAL
+  register trace, thousands of lines per boot.

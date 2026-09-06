@@ -33,15 +33,14 @@ Also checks hal/pcie-al-alpine-regs.h - the one header that is genuinely shared
 baseline model above cannot see it, so it is compared by #define value against
 the Linux fork's canonical copy instead. See check_shared_header().
 
-Scope after #256 phase 1. The al_eth HAL is now STAGED from modules/al_eth/ at
-build time (scripts/stage_hal.py), so a host needs no copy of it. The U-Boot
-al_eth copy nonetheless still exists and is still policed here, because
-deleting it is blocked on the alu_* glue rewrite: U-Boot's HAL is a NEWER
-vendor generation than Linux's (struct al_hal_eth_adapter has 30 members
-against Linux's 23, and 33 of its 56 files have no Linux counterpart), so the
-two cannot be mixed in one link and the glue does not compile against Linux's.
-See the #256 thread. Until that lands, five copies is the true state and this
-baseline is what keeps a fix in one from being lost in the others.
+Scope after #256 phase 2. The al_eth HAL is STAGED from modules/al_eth/ at
+build time (scripts/stage_hal.py) and the U-Boot copy is GONE - its glue was
+rewritten as alu_* against the shared HAL, so U-Boot no longer keeps one.
+Four copies remain: three Linux modules plus the EDK2 one, which phase 3
+removes the same way.
+
+The U-Boot tree still appears below for al_serdes and al_ssm, which carry HAL
+files of their own that phase 2 did not touch.
 
 check_no_staged_copy() adds the other direction: a STAGED tree that gets
 checked in re-creates the drift by a new route, so it fails.
@@ -71,7 +70,6 @@ TREES: dict[str, list[str]] = {
     "al_dma": ["modules/al_dma"],
     "al_ssm": ["modules/al_ssm"],
     "uboot": [
-        "uboot-port/drivers/net/al_eth/hal",
         "uboot-port/drivers/phy/al_serdes",
         "uboot-port/drivers/crypto/al_ssm",
     ],
