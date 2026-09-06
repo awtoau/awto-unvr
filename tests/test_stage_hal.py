@@ -128,6 +128,19 @@ ALLOWLIST: dict[str, str] = {
         "UEFI platform is rewritten; re-basing it against a tree that is "
         "itself being replaced would be done twice."
     ),
+    "uboot-port/drivers/net/al_eth/hal": (
+        "BLOCKED, not exempt (#256). This copy is meant to be deleted and is "
+        "the point of phase 1 - but U-Boot's HAL is a NEWER vendor generation "
+        "than Linux's, not the same code at another vintage: struct "
+        "al_hal_eth_adapter has 30 members against Linux's 23, and 33 of its "
+        "56 files have no Linux counterpart (7 of 12 compiled objects, incl. "
+        "the whole al_hal_eth_mac* dispatch layer). Mixing them in one link is "
+        "an ODR violation, not a build error. The existing glue does not "
+        "compile against the Linux HAL - al_eth_dm.c wants dev_id, "
+        "mac_common_regs, eth_common_regs_base, unit_adapter, common_mode. "
+        "Deleting it therefore requires the alu_* glue rewrite, which is a "
+        "later phase. Until then hal-drift-check.py keeps policing it."
+    ),
 }
 
 
@@ -174,11 +187,19 @@ def test_allowlist_has_no_dead_entries() -> None:
         )
 
 
-def test_al_eth_hal_is_never_allowlisted() -> None:
-    """The al_eth HAL is the whole point of phase 1. If a future edit tries to
-    buy back a green test by allowlisting it, fail instead."""
-    for a in ALLOWLIST:
-        assert "al_eth" not in a, (
-            f"{a}: the al_eth HAL must be staged from modules/al_eth/, never "
-            "allowlisted as a checked-in copy"
-        )
+def test_al_eth_hal_entry_is_marked_blocked_not_exempt() -> None:
+    """The al_eth HAL copy is the one this phase exists to delete.
+
+    It is allowlisted only because the deletion is BLOCKED on the alu_* glue
+    rewrite (U-Boot's HAL is a newer vendor generation; see the entry). That
+    is a scope statement with an owner, not an exemption - so require the
+    entry to keep saying so. A future edit that quietly downgrades it to a
+    normal exemption fails here."""
+    entries = [a for a in ALLOWLIST if "al_eth" in a]
+    assert len(entries) == 1, "expected exactly one al_eth HAL allowlist entry"
+    reason = ALLOWLIST[entries[0]]
+    assert "BLOCKED" in reason, (
+        "the al_eth HAL copy must stay marked BLOCKED - it is scheduled for "
+        "deletion, not exempt from it"
+    )
+    assert "alu_" in reason, "the entry must name what unblocks it"
