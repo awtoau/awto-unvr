@@ -854,7 +854,12 @@ static int al_dma_pci_probe(struct pci_dev *pdev,
 
 	dma_cap_set(DMA_MEMCPY, dma->cap_mask);
 	dma_cap_set(DMA_XOR, dma->cap_mask);
-	dma_cap_set(DMA_PQ, dma->cap_mask);
+	/*
+	 * DMA_PQ NOT advertised: the PQ engine returns wrong Q parity ~53% of
+	 * the time (#169, measured). MD_RAID456 is now built (#236), so
+	 * advertising it would let a RAID6 create/scrub/rebuild offload here
+	 * and write corrupt parity silently. Restore only when #169 is fixed.
+	 */
 
 	dma->device_alloc_chan_resources = al_dma_alloc_chan_resources;
 	dma->device_free_chan_resources = al_dma_free_chan_resources;
