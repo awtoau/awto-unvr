@@ -116,6 +116,9 @@ static int alu_eth_10g_probe(struct udevice *dev)
 	strlcpy(p->core.name, dev->name, sizeof(p->core.name));
 	p->core.port = ALU_ETH_PORT_10G;
 	p->core.mac_mode = AL_ETH_MAC_MODE_10GbE_Serial;
+	/* FLR before adapter init: the previous stage may leave the 10G function
+	 * mid-configuration, and U-Boot never activates this port otherwise. */
+	p->core.want_flr = true;
 
 	rc = alu_eth_port_regs_get(ALU_ETH_PORT_10G, &regs);
 	if (rc)

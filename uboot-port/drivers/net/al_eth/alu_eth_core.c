@@ -199,12 +199,15 @@ static int alu_eth_cfg_write(void *handle, int where, uint32_t val)
 	return dm_pci_write_config32((struct udevice *)handle, where, val);
 }
 
-/* al_eth_flr_rmn() alone WIPES the MAC scratchpad board params and the EC MAC
- * filter, leaving Linux with "board info not available" and the wrong address
- * (#253). The HAL's own restore wrapper saves and restores both, which is what
- * Linux's al_eth_function_reset() does. */
+/* Raw al_eth_flr_rmn() WIPES the MAC scratchpad board params and the EC MAC
+ * filter (#253). This wrapper saves and restores both, as Linux's
+ * al_eth_function_reset() does. Per-port because the 1G path passes traffic
+ * today with no FLR at all - see priv->want_flr. */
 static int alu_eth_flr(struct udevice *dev, struct alu_eth_priv *priv)
 {
+	if (!priv->want_flr)
+		return 0;
+
 	return al_eth_flr_rmn_restore_params(alu_eth_cfg_read, alu_eth_cfg_write,
 					     dev, priv->mac_regs, priv->ec_regs,
 					     1);

@@ -44,6 +44,10 @@ struct alu_eth_priv {
 
 	int				port;		/* ALU_ETH_PORT_* */
 	enum al_eth_mac_mode		mac_mode;
+	/* FLR before adapter init, as Linux does at probe. Set on 10G only: the
+	 * 1G path passes traffic today without one, and adding it there would
+	 * change the only path currently proven on hardware. */
+	bool				want_flr;
 	bool				started;
 	char				name[16];
 };
