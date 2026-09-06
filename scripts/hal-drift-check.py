@@ -33,6 +33,19 @@ Also checks hal/pcie-al-alpine-regs.h - the one header that is genuinely shared
 baseline model above cannot see it, so it is compared by #define value against
 the Linux fork's canonical copy instead. See check_shared_header().
 
+Scope after #256 phase 1. The al_eth HAL is now STAGED from modules/al_eth/ at
+build time (scripts/stage_hal.py), so a host needs no copy of it. The U-Boot
+al_eth copy nonetheless still exists and is still policed here, because
+deleting it is blocked on the alu_* glue rewrite: U-Boot's HAL is a NEWER
+vendor generation than Linux's (struct al_hal_eth_adapter has 30 members
+against Linux's 23, and 33 of its 56 files have no Linux counterpart), so the
+two cannot be mixed in one link and the glue does not compile against Linux's.
+See the #256 thread. Until that lands, five copies is the true state and this
+baseline is what keeps a fix in one from being lost in the others.
+
+check_no_staged_copy() adds the other direction: a STAGED tree that gets
+checked in re-creates the drift by a new route, so it fails.
+
 Usage:
     ./scripts/hal-drift-check.py            # check against the baseline
     ./scripts/hal-drift-check.py --update   # re-record after an INTENDED change
@@ -45,6 +58,7 @@ import argparse
 import hashlib
 import json
 import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -85,9 +99,39 @@ SHARED_HEADER_CONSUMERS = [
     "Platform/Ubiquiti/UNVR/Drivers/AlPcieSnoopFixDxe/AlPcieSnoopFixDxe.c",
 ]
 
+# Where scripts/stage_hal.py stages the shared Linux HAL inside a build tree
+# (#256). It is a BUILD ARTIFACT: if a copy of it ever appears under version
+# control, someone has checked in a derived tree and the drift this script
+# exists to catch is back, by a new route. Checked by path, so it fires even
+# on files whose basenames the baseline does not already know.
+STAGED_DIR_NAME = "al_hal_shared"
+
 DEFINE_RE = re.compile(
     r"^\s*#\s*define\s+(\w+)(?:\([^)]*\))?\s+(.*?)\s*(?:/\*.*)?$", re.M
 )
+
+
+def check_no_staged_copy() -> list[str]:
+    """Fail if a staged (derived) HAL tree has been checked in.
+
+    stage_hal.py writes it read-only into the build tree and rewrites it every
+    build; a tracked copy means that was bypassed."""
+    tracked = subprocess.run(
+        ["git", "ls-files"],
+        cwd=REPO,
+        capture_output=True,
+        text=True,
+        check=True,
+        timeout=60,
+    ).stdout.split()
+    offenders = [f for f in tracked if f"/{STAGED_DIR_NAME}/" in f]
+    if not offenders:
+        return []
+    return [
+        f"  CHECKED-IN STAGED HAL: {f}\n"
+        f"      {STAGED_DIR_NAME}/ is a build artifact - stage it, do not commit it"
+        for f in sorted(offenders)
+    ]
 
 
 def defines(text: str) -> dict[str, str]:
@@ -231,6 +275,12 @@ def main() -> int:
         print("\n".join(shared))
         print()
 
+    staged = check_no_staged_copy()
+    if staged:
+        print(f"STAGED HAL COMMITTED: {len(staged)} file(s)\n")
+        print("\n".join(staged))
+        print()
+
     if problems:
         print(f"HAL DRIFT: {len(problems)} change(s) vs the baseline (#218)\n")
         print("\n".join(problems))
@@ -240,12 +290,13 @@ def main() -> int:
         )
         return 1
 
-    if shared:
+    if shared or staged:
         return 1
 
     print(
         f"HAL drift: OK ({len(cur)} vendored files unchanged,"
-        f" {SHARED_HEADER} matches the Linux fork)"
+        f" {SHARED_HEADER} matches the Linux fork,"
+        f" no checked-in {STAGED_DIR_NAME}/)"
     )
     return 0
 
