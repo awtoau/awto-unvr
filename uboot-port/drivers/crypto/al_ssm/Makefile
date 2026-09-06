@@ -2,12 +2,17 @@
 # Annapurna al_ssm (crypto/RAID) UDMA mem-to-mem test + minimal SSM/RAID HAL.
 # Copyright (C) 2026 Awto / Daniel Tyrrell <dan@awto.au>
 
-# Shared plat_api shim + common HAL headers, then the al_eth-flattened HAL
-# headers (udma/iofic/m2m). REUSE al_eth's udma/iofic HAL objects at link -
-# only the SSM/RAID/m2m glue is compiled here (see Kconfig: depends on AL_ETH).
+# Shared plat_api shim + the STAGED Linux HAL (udma/iofic), then this dir for
+# the SSM/RAID/m2m headers. al_eth compiles the shared udma/iofic objects and
+# this reuses them at link (see Kconfig: depends on AL_ETH).
 ccflags-y += -I$(srctree)/drivers/net/al_hal_shim
-ccflags-y += -I$(srctree)/drivers/net/al_eth/hal/include
+ccflags-y += -I$(srctree)/drivers/net/al_hal_shared
 ccflags-y += -I$(srctree)/drivers/crypto/al_ssm
+
+# al_ssm's vendor sources are a NEWER HAL generation than modules/al_eth. Six
+# symbols they need are expressed over the shared HAL in al_ssm_hal_compat.h,
+# force-included so the vendor sources stay untouched. Phase 3 of #256.
+ccflags-y += -include $(srctree)/drivers/crypto/al_ssm/al_ssm_hal_compat.h
 
 # HAL is third-party; silence its (non-fatal) style/unused warnings.
 ccflags-y += -Wno-unused-variable -Wno-unused-function -Wno-sign-compare

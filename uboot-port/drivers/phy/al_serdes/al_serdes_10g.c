@@ -316,11 +316,11 @@ static int do_serdes_tx(int argc, char *const argv[])
 
 #define AL_SERDES_BP_PORT	2		/* the SFP+ port */
 
-extern int al_eth_bp_dump(int port);
-extern int al_eth_bp_write(int port);
-extern int al_eth_bp_freeze_set(int port, int enable);
-extern int al_eth_bp_mac_mode_set(int port, unsigned int mode);
-extern int al_eth_bp_retimer_set(int port, int exist, int bus_id, int i2c_addr,
+extern int alu_eth_bp_dump(int port);
+extern int alu_eth_bp_write(int port);
+extern int alu_eth_bp_freeze_set(int port, int enable);
+extern int alu_eth_bp_mac_mode_set(int port, unsigned int mode);
+extern int alu_eth_bp_retimer_set(int port, int exist, int bus_id, int i2c_addr,
 				 int channel);
 
 /* Optional trailing <port>; defaults to the SFP+ port. */
@@ -332,10 +332,10 @@ static int serdes_port_arg(int argc, char *const argv[], int idx)
 static int do_serdes_boardparams(int argc, char *const argv[])
 {
 	if (argc > 2 && !strcmp(argv[2], "write"))
-		return al_eth_bp_write(serdes_port_arg(argc, argv, 3)) ?
+		return alu_eth_bp_write(serdes_port_arg(argc, argv, 3)) ?
 			CMD_RET_FAILURE : CMD_RET_SUCCESS;
 
-	return al_eth_bp_dump(serdes_port_arg(argc, argv, 2)) ?
+	return alu_eth_bp_dump(serdes_port_arg(argc, argv, 2)) ?
 		CMD_RET_FAILURE : CMD_RET_SUCCESS;
 }
 
@@ -352,7 +352,7 @@ static int do_serdes_freeze(int argc, char *const argv[])
 	else
 		return CMD_RET_USAGE;
 
-	return al_eth_bp_freeze_set(serdes_port_arg(argc, argv, 3), enable) ?
+	return alu_eth_bp_freeze_set(serdes_port_arg(argc, argv, 3), enable) ?
 		CMD_RET_FAILURE : CMD_RET_SUCCESS;
 }
 
@@ -361,7 +361,7 @@ static int do_serdes_macmode(int argc, char *const argv[])
 	if (argc < 3)
 		return CMD_RET_USAGE;
 
-	return al_eth_bp_mac_mode_set(serdes_port_arg(argc, argv, 3),
+	return alu_eth_bp_mac_mode_set(serdes_port_arg(argc, argv, 3),
 				      (unsigned int)dectoul(argv[2], NULL)) ?
 		CMD_RET_FAILURE : CMD_RET_SUCCESS;
 }
@@ -391,7 +391,7 @@ static int do_serdes_retimer(int argc, char *const argv[])
 	if (i != argc)
 		return CMD_RET_USAGE;
 
-	return al_eth_bp_retimer_set(port, exist, bus, addr, ch) ?
+	return alu_eth_bp_retimer_set(port, exist, bus, addr, ch) ?
 		CMD_RET_FAILURE : CMD_RET_SUCCESS;
 }
 #endif /* CONFIG_AL_ETH */

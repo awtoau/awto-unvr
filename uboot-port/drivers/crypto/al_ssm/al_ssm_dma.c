@@ -10,12 +10,12 @@
  * descriptor read completes (drhp advances, copy verifies) where al_eth's hangs
  * (#90), the fault is specific to the eth function, not the al_udma fabric path.
  *
- * Reuses the al_eth-built HAL objects (udma/iofic) - depends on CONFIG_AL_ETH
- * (al_unit_adapter_init stub + udma/iofic HAL live in the al_eth module).
+ * Reuses the shared HAL's udma/iofic objects, which al_eth compiles - depends
+ * on CONFIG_AL_ETH.
  *
  * Ring + buffers MUST be low DRAM: the al_udma master can't reach U-Boot's ~3GB
- * relocated heap (mirror of al_eth_dm.c al_eth_dma_low_alloc - see that file's
- * long comment). Separate window from al_eth's 0x02000000 so the two never clash.
+ * relocated heap (mirror of alu_eth_core.c alu_eth_dma_low_alloc - see that
+ * file). Separate window from alu_eth's 0x02000000 so the two never clash.
  */
 
 #include <command.h>
@@ -31,6 +31,16 @@
 #include <al_hal_ssm.h>
 #include <al_hal_ssm_raid.h>
 #include <al_hal_udma.h>
+#include "al_hal_unit_adapter.h"
+
+/* al_ssm_dma_init() emits a call to this in its (unit_adapter != NULL) branch.
+ * We always pass NULL - board_late_init has already done the PCI/snoop init -
+ * so it is referenced but never called. Defined here rather than pulling in the
+ * whole io_fabric/unit_adapter closure for a call that cannot happen. */
+void al_unit_adapter_init(struct al_unit_adapter *unit_adapter)
+{
+	printf("al_ssm: al_unit_adapter_init stub reached (unexpected)\n");
+}
 
 #define AL_SSM_PCI_VENDOR	0x1c36
 #define AL_SSM_PCI_DEV_SSMAE	0x0022	/* Alpine V2 SSM crypto/RAID */

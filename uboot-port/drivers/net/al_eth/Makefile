@@ -1,11 +1,12 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
-# Annapurna al_eth 1G RGMII driver + curated HAL subset (MAC + UDMA + MDIO).
+# alu_eth - U-Boot glue for the Annapurna al_eth MAC, on the SHARED Linux HAL.
 # Copyright (C) 2026 Awto / Daniel Tyrrell <dan@awto.au>
 
-# Shared plat_api shim + common HAL headers (al_hal_shim), then the eth-specific
-# flattened HAL headers.
+# Shared plat_api shim + common HAL headers, then the STAGED Linux HAL
+# (scripts/stage_hal.py writes it from modules/al_eth/ every build). There is
+# no second checked-in copy of the HAL - that is the point of #256.
 ccflags-y += -I$(srctree)/drivers/net/al_hal_shim
-ccflags-y += -I$(srctree)/drivers/net/al_eth/hal/include
+ccflags-y += -I$(srctree)/drivers/net/al_hal_shared
 
 # HAL is third-party; silence its (non-fatal) style/unused warnings so our
 # build stays clean without -Werror games. Applies to this directory only.
@@ -13,32 +14,27 @@ ccflags-y += -Wno-unused-variable -Wno-unused-function -Wno-sign-compare
 ccflags-y += -Wno-unused-but-set-variable -Wno-missing-prototypes
 
 # VERBOSE TRACE, off by default: -DDEBUG makes al_dbg()->debug() and the
-# driver's debug()/dev_dbg() print for every eth object (driver + eth/UDMA HAL)
-# - the full UDMA descriptor-fetch / adapter bring-up trace, thousands of lines
-# per boot. `eth diag` covers the normal question; this is for a live trace.
+# driver's debug()/dev_dbg() print for every eth object - the full UDMA
+# descriptor-fetch and adapter bring-up trace, thousands of lines per boot.
 ccflags-$(CONFIG_AL_ETH_DEBUG) += -DDEBUG
 
-obj-$(CONFIG_AL_ETH) += al_eth_dm.o
-obj-$(CONFIG_AL_ETH) += al_eth_stubs.o
-obj-$(CONFIG_AL_ETH) += al_eth_port.o		# port idx -> PCI fn -> BARs
-obj-$(CONFIG_AL_ETH) += al_eth_boardparams.o	# MAC scratchpad seed + edit
-obj-$(CONFIG_AL_ETH) += al_eth_hwaddr.o		# NOR MAC -> per-port EC filter
-obj-$(CONFIG_AL_ETH) += al_eth_stats.o		# `eth stats` counter dump
-obj-$(CONFIG_AL_ETH) += al_eth_diag.o		# `eth diag` bring-up block
-obj-$(CONFIG_AL_ETH) += al_eth_rxfwd.o		# EC RX forwarding -> UDMA0/Q0 (#234)
-# 10G SFP+ (eth2, 1c36:0002) - DRAFT front-end; same HAL subset, no new objects.
-obj-$(CONFIG_AL_ETH_10G) += al_eth_dm_10g.o
+# --- U-Boot glue (alu_*) ---
+obj-$(CONFIG_AL_ETH) += alu_eth_core.o		# rings, adapter, send/recv
+obj-$(CONFIG_AL_ETH) += alu_eth_1g.o		# RGMII front end (1c36:0001)
+obj-$(CONFIG_AL_ETH) += alu_eth_port.o		# port idx -> PCI fn -> BARs
+obj-$(CONFIG_AL_ETH) += alu_eth_boardparams.o	# MAC scratchpad seed + edit
+obj-$(CONFIG_AL_ETH) += alu_eth_hwaddr.o	# NOR MAC -> per-port EC filter
+obj-$(CONFIG_AL_ETH) += alu_eth_rxfwd.o		# EC RX forwarding -> UDMA0/Q0
+obj-$(CONFIG_AL_ETH) += alu_eth_stats.o		# `eth stats` + the `eth` command
+obj-$(CONFIG_AL_ETH) += alu_eth_diag.o		# `eth diag`
+obj-$(CONFIG_AL_ETH_10G) += alu_eth_10g.o	# SFP+ front end (1c36:0002)
 
-# --- curated HAL subset (delroth-alpine_hal), RGMII 1G path only ---
-obj-$(CONFIG_AL_ETH) += hal/iofic/al_hal_iofic.o
-obj-$(CONFIG_AL_ETH) += hal/udma/al_hal_udma_main.o
-obj-$(CONFIG_AL_ETH) += hal/udma/al_hal_udma_config.o
-obj-$(CONFIG_AL_ETH) += hal/udma/al_hal_udma_iofic.o
-obj-$(CONFIG_AL_ETH) += hal/eth/al_hal_eth_main.o
-obj-$(CONFIG_AL_ETH) += hal/eth/al_hal_eth_mac.o
-obj-$(CONFIG_AL_ETH) += hal/eth/al_hal_eth_mac_internal.o
-obj-$(CONFIG_AL_ETH) += hal/eth/al_hal_eth_mac_v1_v2.o
-obj-$(CONFIG_AL_ETH) += hal/eth/al_hal_eth_common.o
-obj-$(CONFIG_AL_ETH) += hal/eth/al_hal_eth_epe.o
-obj-$(CONFIG_AL_ETH) += hal/eth/al_hal_eth_field.o
-obj-$(CONFIG_AL_ETH) += hal/eth/al_hal_eth_rfw.o
+# --- shared Linux HAL, compiled from the staged tree ---
+# Built here rather than in the staged directory: the staged tree is a build
+# artifact with no Makefile of its own, so kbuild never descends into it.
+AL_HAL_SHARED := ../al_hal_shared
+obj-$(CONFIG_AL_ETH) += $(AL_HAL_SHARED)/al_hal_iofic.o
+obj-$(CONFIG_AL_ETH) += $(AL_HAL_SHARED)/al_hal_udma_main.o
+obj-$(CONFIG_AL_ETH) += $(AL_HAL_SHARED)/al_hal_udma_config.o
+obj-$(CONFIG_AL_ETH) += $(AL_HAL_SHARED)/al_hal_udma_iofic.o
+obj-$(CONFIG_AL_ETH) += $(AL_HAL_SHARED)/al_hal_eth_main.o
