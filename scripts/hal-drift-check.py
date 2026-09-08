@@ -33,17 +33,17 @@ Also checks hal/pcie-al-alpine-regs.h - the one header that is genuinely shared
 baseline model above cannot see it, so it is compared by #define value against
 the Linux fork's canonical copy instead. See check_shared_header().
 
-Scope after #256 phase 2. The al_eth HAL is STAGED from modules/al_eth/ at
-build time (scripts/stage_hal.py) and the U-Boot copy is GONE - its glue was
-rewritten as alu_* against the shared HAL, so U-Boot no longer keeps one.
-Four copies remain: three Linux modules plus the EDK2 one, which phase 3
-removes the same way.
+Scope after #256 phase 3. The al_eth HAL is STAGED from modules/al_eth/ at
+build time (scripts/stage_hal.py); both the U-Boot copy (phase 2) and the EDK2
+one (phase 3, 61 files) are GONE. Three vendored copies remain, all Linux
+modules.
 
 The U-Boot tree still appears below for al_serdes and al_ssm, which carry HAL
-files of their own that phase 2 did not touch.
+files of their own that neither phase touched.
 
-check_no_staged_copy() adds the other direction: a STAGED tree that gets
-checked in re-creates the drift by a new route, so it fails.
+Two checks cover the other direction - a copy coming BACK:
+  check_no_staged_copy()   - a staged tree that gets checked in
+  check_no_edk2_hal_copy() - a HAL file re-copied into the EDK2 package
 
 Usage:
     ./scripts/hal-drift-check.py            # check against the baseline
@@ -73,12 +73,16 @@ TREES: dict[str, list[str]] = {
         "uboot-port/drivers/phy/al_serdes",
         "uboot-port/drivers/crypto/al_ssm",
     ],
-    # Fifth copy, added deliberately for the EDK2 al_eth SNP driver (P3,
-    # docs/uefi.md). Copied from the uboot tree, so it starts identical to it -
-    # EDK2 INFs cannot reference sources outside their own package, so sharing
-    # the uboot copy in place was not an option.
-    "edk2": ["Platform/Ubiquiti/UNVR/Library/AlpineHalLib"],
 }
+
+# EDK2 kept a fifth copy (61 files, df19434) until #256 phase 3. It is gone:
+# AlpineHalLib now compiles the STAGED shared HAL. A checked-in HAL file
+# reappearing under this directory means someone re-copied it, so it fails -
+# checked by path, so it fires on names the baseline does not know.
+# The two files that legitimately live here are the host shim, verified against
+# hal/al_hal_plat_contract.h at compile time, not vendored HAL.
+EDK2_HAL_DIR = "Platform/Ubiquiti/UNVR/Library/AlpineHalLib"
+EDK2_SHIM_FILES = {"al_hal_plat_services.h", "al_hal_plat_types.h"}
 
 # hal/pcie-al-alpine-regs.h is the one header genuinely SHARED (one file,
 # #include'd) rather than vendored per tree, so the basename check above
@@ -128,6 +132,30 @@ def check_no_staged_copy() -> list[str]:
     return [
         f"  CHECKED-IN STAGED HAL: {f}\n"
         f"      {STAGED_DIR_NAME}/ is a build artifact - stage it, do not commit it"
+        for f in sorted(offenders)
+    ]
+
+
+def check_no_edk2_hal_copy() -> list[str]:
+    """Fail if a checked-in HAL file reappears in the EDK2 package (#256 p3)."""
+    tracked = subprocess.run(
+        ["git", "ls-files", EDK2_HAL_DIR],
+        cwd=REPO,
+        capture_output=True,
+        text=True,
+        check=True,
+        timeout=60,
+    ).stdout.split()
+    offenders = [
+        f
+        for f in tracked
+        if Path(f).name.startswith(("al_hal_", "al_init_", "al_serdes"))
+        and Path(f).name not in EDK2_SHIM_FILES
+    ]
+    return [
+        f"  CHECKED-IN EDK2 HAL: {f}\n"
+        "      AlpineHalLib builds the STAGED shared HAL"
+        " - stage it, do not commit it"
         for f in sorted(offenders)
     ]
 
@@ -273,7 +301,7 @@ def main() -> int:
         print("\n".join(shared))
         print()
 
-    staged = check_no_staged_copy()
+    staged = check_no_staged_copy() + check_no_edk2_hal_copy()
     if staged:
         print(f"STAGED HAL COMMITTED: {len(staged)} file(s)\n")
         print("\n".join(staged))
