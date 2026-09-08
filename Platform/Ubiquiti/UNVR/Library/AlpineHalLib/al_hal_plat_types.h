@@ -1,9 +1,10 @@
 /** @file
-  UEFI platform types for the Annapurna Labs HAL.
+  UEFI platform types for the Annapurna Labs HAL (#256 phase 3).
 
   - Maps HAL basic types onto EDK2 Base.h types.
   - Supplies errno / inttypes / NULL that UEFI has no libc for.
-  - Adapted from imbushuo/ccr2004-uefi's AlpineHalLib for the UNVR (AL-324).
+  - __must_check: the shared HAL marks 100 al_hal_eth.h prototypes with it
+    (Linux commit 8da5af7); Linux gets it from <linux/compiler.h>, UEFI does not.
 
   Copyright (c) 2024, MikroTik. All rights reserved.
   Copyright (c) 2026, Awto / Daniel Tyrrell. All rights reserved.
@@ -36,6 +37,12 @@ typedef UINT32  uint32_t;
 typedef UINT64  uint64_t;
 typedef UINTN   uintptr_t;
 typedef UINTN   size_t;
+
+/* Discarding an al_* return is the bug class #256 exists to stop; keep the
+ * warning rather than defining this away. */
+#ifndef __must_check
+#define __must_check  __attribute__ ((warn_unused_result))
+#endif
 
 /* errno values used by HAL code (no <errno.h> in UEFI) */
 #ifndef EPERM

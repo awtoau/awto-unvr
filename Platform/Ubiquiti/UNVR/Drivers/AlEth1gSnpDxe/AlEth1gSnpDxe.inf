@@ -22,7 +22,6 @@
 [Sources]
   AlEth1gSnpDxe.c
   AlEth1gSnpDxe.h
-  AlEth1gHalStubs.c
 
 [Packages]
   MdePkg/MdePkg.dec
@@ -56,4 +55,4 @@
   # The HAL's own headers, plus its two force-included platform shims. Same
   # $(MODULE_DIR)-relative form AlpineHalLib.inf uses - this repo is on
   # PACKAGES_PATH, not under WORKSPACE (scripts/build-uefi-p0.py).
-  GCC:*_*_AARCH64_CC_FLAGS = -I$(MODULE_DIR)/../../Library/AlpineHalLib -I$(MODULE_DIR)/../../Library/AlpineHalLib/include -include al_hal_plat_types.h -include al_hal_plat_services.h
+  GCC:*_*_AARCH64_CC_FLAGS = -I$(MODULE_DIR)/../../Library/AlpineHalLib -I$(MODULE_DIR)/../../Library/AlpineHalLib/al_hal_shared -include al_hal_plat_types.h -include al_hal_plat_services.h

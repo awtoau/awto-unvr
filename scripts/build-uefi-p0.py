@@ -28,9 +28,17 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 os.environ.setdefault("AWTO_ALLOW_DIRECT_SCRIPT", "1")
+import stage_hal  # shared Linux al_eth HAL -> package staging (#256)  # noqa: E402
+
 from _repo import REPO, build_ident, make_log  # noqa: E402
 
 EDK2_OUT = Path(os.environ.get("AWTO_EDK2_SRC", "/mnt/2tb/unvr-port-refs/edk2"))
+
+# Where the shared Linux al_eth HAL is staged. INSIDE the package: an EDK2 INF
+# cannot name sources outside its own package directory, which is why the old
+# tree carried 61 checked-in copies (df19434). Build artifact - gitignored,
+# rewritten every build (scripts/stage_hal.py).
+HAL_STAGE_DIR = REPO / "Platform/Ubiquiti/UNVR/Library/AlpineHalLib/al_hal_shared"
 EDK2_TAG = "edk2-stable202608"
 # Small (<25MB each) submodules actually needed by the DEC files our P0
 # component list pulls in - not the large ones (openssl/mbedtls/libspdm's
@@ -99,6 +107,9 @@ def main() -> int:
     args = ap.parse_args()
 
     ensure_edk2()
+
+    staged = stage_hal.stage(HAL_STAGE_DIR, contract=True)
+    log(f"staged {len(staged)} HAL files from modules/al_eth/ -> {HAL_STAGE_DIR}")
 
     env = dict(os.environ)
     env["WORKSPACE"] = str(EDK2_OUT)

@@ -1,14 +1,11 @@
 /** @file
-  UEFI platform services for the Annapurna Labs HAL.
+  UEFI platform services for the Annapurna Labs HAL (#256 phase 3).
 
-  - Maps HAL MMIO / barriers / delays / mem ops / logging onto MdePkg calls.
-  - Adapted from imbushuo/ccr2004-uefi's AlpineHalLib for the UNVR (AL-324).
-  - Reg accessors are MACROS, not typed inlines (unlike the ccr2004 original):
-    our HAL vintage passes both `void __iomem *` and typed `uintN_t *`, which a
-    typed inline rejects under -Wincompatible-pointer-types. Same choice as our
-    U-Boot shim (uboot-port/drivers/net/al_hal_shim/al_hal_plat_services.h).
-  - al_assert is NON-fatal (print and continue), matching the U-Boot shim: a
-    fired assert must be loud but must not wedge a live console.
+  - Implements hal/al_hal_plat_contract.h on MdePkg calls; the contract is
+    included last and #errors on any primitive this file forgot.
+  - Reg accessors are MACROS, not typed inlines: the HAL passes both
+    `void __iomem *` and typed `uintN_t *` to the same primitive.
+  - al_assert is NON-fatal on every host (#245); fatal is al_assert_fatal().
 
   Copyright (c) 2024, MikroTik. All rights reserved.
   Copyright (c) 2026, Awto / Daniel Tyrrell. All rights reserved.
@@ -109,11 +106,25 @@ AlHalPrint (
     }                                                            \
   } while (AL_FALSE)
 
+/* Fatal variant: explicitly named, so a caller choosing to die says so.
+ * No shared HAL code calls it. CpuDeadLoop() is UEFI's halt. */
+#define al_assert_fatal(COND)                                    \
+  do {                                                           \
+    if (!(COND)) {                                               \
+      DEBUG ((DEBUG_ERROR, "%a:%d:%a: FATAL assert: (%a)\n",     \
+              __FILE__, __LINE__, __func__, #COND));             \
+      CpuDeadLoop ();                                            \
+    }                                                            \
+  } while (AL_FALSE)
+
 /*
  * Memory barriers. AArch64 asm rather than MemoryFence(): MemoryFence() on
  * GCC/AARCH64 is a compiler barrier only, which is not enough between a
  * descriptor write and the doorbell MMIO write.
+ * Contract requires all four; inlines are invisible to #if defined, so ack.
  */
+#define AL_PLAT_BARRIERS_PROVIDED
+
 static inline void
 al_data_memory_barrier (
   void
@@ -177,8 +188,30 @@ al_smp_write_data_memory_barrier (
 
 #define al_strcmp(s1, s2)  ((int)AsciiStrCmp ((s1), (s2)))
 
+/*
+ * Linux kernel idioms the shared HAL uses directly, outside the contract.
+ * modules/al_eth is a Linux module, so it gets these from <linux/printk.h> and
+ * <linux/compiler_attributes.h>; U-Boot inherits both transitively. UEFI has
+ * neither, so the shim supplies them - 158 pr_* call sites, 8 fallthrough.
+ */
+#define pr_err(...)    AlHalPrint (DEBUG_ERROR, __VA_ARGS__)
+#define pr_warn(...)   AlHalPrint (DEBUG_WARN, __VA_ARGS__)
+#define pr_info(...)   AlHalPrint (DEBUG_INFO, __VA_ARGS__)
+#define pr_debug(...)  AlHalPrint (DEBUG_VERBOSE, __VA_ARGS__)
+
+#ifndef fallthrough
+#define fallthrough  __attribute__ ((__fallthrough__))
+#endif
+
+/* al_popcount: __builtin_popcount, not a MdePkg call - BaseLib has no
+ * population-count primitive. */
+#define al_popcount(x)  ((int)__builtin_popcount ((unsigned int)(x)))
+
 /* Single-CPU context from a UEFI boot-services perspective. */
 #define al_get_cpu_id()      0
 #define al_get_cluster_id()  0
+
+/* Last: verifies this file defined every primitive the contract requires. */
+#include "al_hal_plat_contract.h"
 
 #endif /* __PLAT_SERVICES_H__ */

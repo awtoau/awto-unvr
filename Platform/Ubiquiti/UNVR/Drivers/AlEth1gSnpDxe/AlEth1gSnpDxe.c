@@ -100,7 +100,11 @@ AlEth1gPhyInit (
     ));
 
   /* Software reset; BMCR bit 15 self-clears when done. */
-  al_eth_mdio_write (&Ctx->HalAdapter, Ctx->PhyAddr, 0, 0, BIT15);
+  Err = al_eth_mdio_write (&Ctx->HalAdapter, Ctx->PhyAddr, 0, 0, BIT15);
+  if (Err != 0) {
+    DEBUG ((DEBUG_ERROR, "AlEth1g: PHY reset write failed: %d\n", Err));
+    return EFI_DEVICE_ERROR;
+  }
 
   for (Polls = 0; Polls < AL_ETH_PHY_RESET_MAX_POLLS; Polls++) {
     MicroSecondDelay (AL_ETH_PHY_RESET_POLL_MS * 1000);
@@ -122,9 +126,17 @@ AlEth1gPhyInit (
   }
 
   /* Advertise 10/100 (ANAR) and 1000BASE-T full (GBCR), then restart AN. */
-  al_eth_mdio_write (&Ctx->HalAdapter, Ctx->PhyAddr, 0, 4, 0x01E1);
-  al_eth_mdio_write (&Ctx->HalAdapter, Ctx->PhyAddr, 0, 9, 0x0200);
-  al_eth_mdio_write (&Ctx->HalAdapter, Ctx->PhyAddr, 0, 0, 0x1200);
+  Err = al_eth_mdio_write (&Ctx->HalAdapter, Ctx->PhyAddr, 0, 4, 0x01E1);
+  if (Err == 0) {
+    Err = al_eth_mdio_write (&Ctx->HalAdapter, Ctx->PhyAddr, 0, 9, 0x0200);
+  }
+  if (Err == 0) {
+    Err = al_eth_mdio_write (&Ctx->HalAdapter, Ctx->PhyAddr, 0, 0, 0x1200);
+  }
+  if (Err != 0) {
+    DEBUG ((DEBUG_ERROR, "AlEth1g: PHY autoneg setup failed: %d\n", Err));
+    return EFI_DEVICE_ERROR;
+  }
 
   Ctx->PhyPresent = TRUE;
   return EFI_SUCCESS;
@@ -198,12 +210,12 @@ AlEth1gQuiesceStaleState (
   struct al_hal_eth_adapter     TmpAdapter;
   struct al_eth_adapter_params  TmpParams;
   struct al_udma_q              *TmpQ;
+  int                           Err;
 
   ZeroMem (&TmpAdapter, sizeof (TmpAdapter));
   ZeroMem (&TmpParams, sizeof (TmpParams));
 
   TmpParams.rev_id           = AL_ETH_REV_ID_2;
-  TmpParams.dev_id           = AL_ETH_DEV_ID_STANDARD;
   TmpParams.udma_id          = 0;
   TmpParams.enable_rx_parser = 0;
   TmpParams.udma_regs_base   = (void *)(UINTN)Ctx->UdmaBase;
@@ -214,17 +226,27 @@ AlEth1gQuiesceStaleState (
     return;
   }
 
-  al_eth_mac_stop (&TmpAdapter);
+  /* Best-effort teardown of someone else's leftovers: report, never abort -
+   * the fresh init that follows is the actual bring-up. */
+  Err = al_eth_mac_stop (&TmpAdapter);
+  if (Err != 0) {
+    DEBUG ((DEBUG_WARN, "AlEth1g: quiesce mac_stop: %d\n", Err));
+  }
+
   MicroSecondDelay (10);
 
   if (al_udma_q_handle_get (&TmpAdapter.tx_udma, 0, &TmpQ) == 0) {
     al_udma_q_reset (TmpQ);
   }
+
   if (al_udma_q_handle_get (&TmpAdapter.rx_udma, 0, &TmpQ) == 0) {
     al_udma_q_reset (TmpQ);
   }
 
-  al_eth_adapter_stop (&TmpAdapter);
+  Err = al_eth_adapter_stop (&TmpAdapter);
+  if (Err != 0) {
+    DEBUG ((DEBUG_WARN, "AlEth1g: quiesce adapter_stop: %d\n", Err));
+  }
 }
 
 STATIC
@@ -268,12 +290,14 @@ AlEth1gHwInitialize (
   ZeroMem (&AdapterParams, sizeof (AdapterParams));
 
   AdapterParams.rev_id           = AL_ETH_REV_ID_2;
-  AdapterParams.dev_id           = AL_ETH_DEV_ID_STANDARD;
   AdapterParams.udma_id          = 0;
   AdapterParams.enable_rx_parser = 0;
   AdapterParams.udma_regs_base   = (void *)(UINTN)Ctx->UdmaBase;
   AdapterParams.ec_regs_base     = (void *)(UINTN)Ctx->EcBase;
   AdapterParams.mac_regs_base    = (void *)(UINTN)Ctx->MacBase;
+  AdapterParams.name             = "AlEth1g";
+  /* RGMII: no SerDes lane in use. */
+  AdapterParams.serdes_lane      = 0;
 
   Err = al_eth_adapter_init (&Ctx->HalAdapter, &AdapterParams);
   if (Err != 0) {
@@ -295,9 +319,6 @@ AlEth1gHwInitialize (
     return EFI_DEVICE_ERROR;
   }
 
-  /* Stub returning -EPERM in this HAL vintage; U-Boot ignores it too. */
-  al_eth_queue_enable (&Ctx->HalAdapter, UDMA_TX, 0);
-
   ZeroMem (&RxQParams, sizeof (RxQParams));
   RxQParams.size           = AL_ETH_DESCS_PER_Q;
   RxQParams.desc_base      = (union al_udma_desc *)((UINTN)Ctx->DescRingBase + RX_SDESC_OFFSET);
@@ -312,8 +333,8 @@ AlEth1gHwInitialize (
     return EFI_DEVICE_ERROR;
   }
 
-  al_eth_queue_enable (&Ctx->HalAdapter, UDMA_RX, 0);
-
+  /* No al_eth_queue_enable(): the HAL function is a stub that always returns
+   * -EPERM. The queue is live after queue_config() (77da515, #256). */
   al_udma_q_handle_get (&Ctx->HalAdapter.tx_udma, 0, &Ctx->TxDmaQ);
   al_udma_q_handle_get (&Ctx->HalAdapter.rx_udma, 0, &Ctx->RxDmaQ);
 
@@ -324,7 +345,11 @@ AlEth1gHwInitialize (
     return EFI_DEVICE_ERROR;
   }
 
-  al_eth_rx_pkt_limit_config (&Ctx->HalAdapter, 30, AL_ETH_MAX_PKT_SIZE);
+  Err = al_eth_rx_pkt_limit_config (&Ctx->HalAdapter, 30, AL_ETH_MAX_PKT_SIZE);
+  if (Err != 0) {
+    DEBUG ((DEBUG_ERROR, "AlEth1g: rx_pkt_limit_config failed: %d\n", Err));
+    return EFI_DEVICE_ERROR;
+  }
 
   Err = al_eth_mdio_config (
           &Ctx->HalAdapter,
@@ -345,11 +370,15 @@ AlEth1gHwInitialize (
     DEBUG ((DEBUG_WARN, "AlEth1g: PHY init failed (%r), continuing\n", Status));
   }
 
-  al_eth_mac_addr_store (
-    (void *)(UINTN)Ctx->EcBase,
-    0,
-    (uint8_t *)&Ctx->SnpMode.CurrentAddress
-    );
+  Err = al_eth_mac_addr_store (
+          (void *)(UINTN)Ctx->EcBase,
+          0,
+          (uint8_t *)&Ctx->SnpMode.CurrentAddress
+          );
+  if (Err != 0) {
+    DEBUG ((DEBUG_ERROR, "AlEth1g: mac_addr_store failed: %d\n", Err));
+    return EFI_DEVICE_ERROR;
+  }
 
   for (Idx = 0; Idx < AL_ETH_NUM_RX_DESC; Idx++) {
     struct al_buf  Buf;
@@ -367,7 +396,11 @@ AlEth1gHwInitialize (
   Ctx->RxBufTailIdx = 0;
   al_eth_rx_buffer_action (Ctx->RxDmaQ, AL_ETH_NUM_RX_DESC);
 
-  al_eth_mac_start (&Ctx->HalAdapter);
+  Err = al_eth_mac_start (&Ctx->HalAdapter);
+  if (Err != 0) {
+    DEBUG ((DEBUG_ERROR, "AlEth1g: mac_start failed: %d\n", Err));
+    return EFI_DEVICE_ERROR;
+  }
 
   Ctx->SnpMode.MediaPresent =
     ((MacRead32 (Ctx, MAC_GEN_RGMII_STAT) & RGMII_STAT_LINK) != 0);
@@ -389,8 +422,13 @@ AlEth1gHwShutdown (
   )
 {
   UINT32  Idx;
+  int     Err;
 
-  al_eth_mac_stop (&Ctx->HalAdapter);
+  Err = al_eth_mac_stop (&Ctx->HalAdapter);
+  if (Err != 0) {
+    DEBUG ((DEBUG_WARN, "AlEth1g: shutdown mac_stop: %d\n", Err));
+  }
+
   MicroSecondDelay (10);
 
   if (Ctx->TxDmaQ != NULL) {
@@ -400,7 +438,11 @@ AlEth1gHwShutdown (
     al_udma_q_reset (Ctx->RxDmaQ);
   }
 
-  al_eth_adapter_stop (&Ctx->HalAdapter);
+  Err = al_eth_adapter_stop (&Ctx->HalAdapter);
+  if (Err != 0) {
+    DEBUG ((DEBUG_WARN, "AlEth1g: shutdown adapter_stop: %d\n", Err));
+  }
+
   MicroSecondDelay (100);
 
   for (Idx = 0; Idx < AL_ETH_NUM_RX_DESC; Idx++) {
@@ -436,13 +478,17 @@ AlEth1gExitBootServices (
   )
 {
   AL_ETH_1G_CONTEXT  *Ctx = (AL_ETH_1G_CONTEXT *)Context;
+  int                Err;
 
   if (Ctx->SnpMode.State != EfiSimpleNetworkInitialized) {
     return;
   }
 
-  al_eth_mac_stop (&Ctx->HalAdapter);
-  al_eth_adapter_stop (&Ctx->HalAdapter);
+  /* Both run regardless: stopping the DMA matters more than either result.
+   * No DEBUG() here - printing from an ExitBootServices callback is not safe. */
+  Err = al_eth_mac_stop (&Ctx->HalAdapter);
+  Err = al_eth_adapter_stop (&Ctx->HalAdapter);
+  (void)Err;
 }
 
 /* ---------- SNP methods ---------- */
@@ -631,11 +677,14 @@ AlEth1gSnpStationAddress (
     return EFI_INVALID_PARAMETER;
   }
 
-  al_eth_mac_addr_store (
-    (void *)(UINTN)Ctx->EcBase,
-    0,
-    (uint8_t *)&Ctx->SnpMode.CurrentAddress
-    );
+  if (al_eth_mac_addr_store (
+        (void *)(UINTN)Ctx->EcBase,
+        0,
+        (uint8_t *)&Ctx->SnpMode.CurrentAddress
+        ) != 0)
+  {
+    return EFI_DEVICE_ERROR;
+  }
 
   return EFI_SUCCESS;
 }
@@ -1056,8 +1105,12 @@ AlEth1gReadMacAddress (
   BOOLEAN  IsZero;
   UINT64   Counter;
 
+  /* On failure MacAddr stays zeroed, which the all-zero branch below already
+   * handles by synthesising one. */
   ZeroMem (MacAddr, sizeof (EFI_MAC_ADDRESS));
-  al_eth_mac_addr_read ((void *)(UINTN)Ctx->EcBase, 0, (uint8_t *)MacAddr);
+  if (al_eth_mac_addr_read ((void *)(UINTN)Ctx->EcBase, 0, (uint8_t *)MacAddr) != 0) {
+    DEBUG ((DEBUG_WARN, "AlEth1g: mac_addr_read failed\n"));
+  }
 
   IsZero = TRUE;
   for (Idx = 0; Idx < NET_ETHER_ADDR_LEN; Idx++) {

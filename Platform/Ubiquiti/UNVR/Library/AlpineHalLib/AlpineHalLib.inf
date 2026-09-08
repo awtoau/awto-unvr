@@ -1,11 +1,14 @@
 ## @file
 #  Annapurna Labs HAL (eth + UDMA + IOFIC) compiled as an EDK2 BASE library.
 #
-#  - Sources are our own maintained HAL copy, byte-identical to
-#    uboot-port/drivers/net/al_eth/hal/ - keep the two in sync.
-#  - include/ is FLAT (one -I), unlike the nested imbushuo/ccr2004-uefi tree.
+#  - Sources are STAGED from modules/al_eth/ by scripts/stage_hal.py into
+#    al_hal_shared/ - a build artifact, gitignored, rewritten every build.
+#    modules/al_eth is the single source (#256); EDK2 keeps no copy.
+#  - Staged inside the package because an EDK2 INF cannot name sources outside
+#    its own package directory.
 #  - al_hal_plat_types.h / al_hal_plat_services.h in this dir are the UEFI
-#    porting layer, force-included ahead of everything via -include.
+#    porting layer, force-included ahead of everything via -include; the
+#    contract they satisfy is al_hal_shared/al_hal_plat_contract.h.
 #  - $(MODULE_DIR) is used for -I because this repo sits on PACKAGES_PATH, not
 #    under WORKSPACE (scripts/build-uefi-p0.py), so $(WORKSPACE)/... would not
 #    resolve.
@@ -25,23 +28,14 @@
   LIBRARY_CLASS                  = AlpineHalLib
 
 [Sources]
-  # Ethernet
-  drivers/eth/al_hal_eth_main.c
-  drivers/eth/al_hal_eth_mac.c
-  drivers/eth/al_hal_eth_mac_v1_v2.c
-  drivers/eth/al_hal_eth_mac_internal.c
-  drivers/eth/al_hal_eth_common.c
-  drivers/eth/al_hal_eth_epe.c
-  drivers/eth/al_hal_eth_rfw.c
-  drivers/eth/al_hal_eth_field.c
-
-  # UDMA
-  drivers/udma/al_hal_udma_main.c
-  drivers/udma/al_hal_udma_config.c
-  drivers/udma/al_hal_udma_iofic.c
-
-  # IOFIC
-  drivers/iofic/al_hal_iofic.c
+  # The five shared HAL objects, staged from modules/al_eth/. The MAC/EPE/
+  # FIELD/RFW dispatch layer the old vendored copy compiled is not here: the
+  # SNP driver never reached it (#256 phase 3).
+  al_hal_shared/al_hal_eth_main.c
+  al_hal_shared/al_hal_udma_main.c
+  al_hal_shared/al_hal_udma_config.c
+  al_hal_shared/al_hal_udma_iofic.c
+  al_hal_shared/al_hal_iofic.c
 
 [Packages]
   MdePkg/MdePkg.dec
@@ -56,4 +50,4 @@
 
 [BuildOptions]
   # -Wno-*: vendor C, not our style to fix; suppress rather than patch the HAL.
-  GCC:*_*_*_CC_FLAGS = -I$(MODULE_DIR) -I$(MODULE_DIR)/include -include al_hal_plat_types.h -include al_hal_plat_services.h -Wno-unused-parameter -Wno-sign-compare -Wno-unused-variable -Wno-unused-function -Wno-unused-but-set-variable -Wno-maybe-uninitialized -Wno-parentheses -Wno-missing-braces -Wno-type-limits
+  GCC:*_*_*_CC_FLAGS = -I$(MODULE_DIR) -I$(MODULE_DIR)/al_hal_shared -include al_hal_plat_types.h -include al_hal_plat_services.h -Wno-unused-parameter -Wno-sign-compare -Wno-unused-variable -Wno-unused-function -Wno-unused-but-set-variable -Wno-maybe-uninitialized -Wno-parentheses -Wno-missing-braces -Wno-type-limits
