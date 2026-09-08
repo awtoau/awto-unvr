@@ -625,16 +625,20 @@ AlEth1g: SNP installed on 1c36:0001
 
 Two new pieces, both inside `Platform/Ubiquiti/UNVR/`:
 
-- **`Library/AlpineHalLib/`** — the HAL compiled for EDK2. 12 `.c` (eth + UDMA +
-  IOFIC) and 47 headers, copied **byte-identical from our own U-Boot tree**
-  (`uboot-port/drivers/net/al_eth/hal/` plus 3 from `al_hal_shim/`), not from the
-  CCR2004 reference: same board, our maintained fixes, and the exact subset the
-  1G path needs (no v3/v4 MAC, no serdes/KR closure). The porting layer is the two
-  force-included shims `al_hal_plat_types.h` / `al_hal_plat_services.h`, adapted
-  from the reference's — MMIO, barriers, delays, `al_memset`, logging onto MdePkg.
-  - EDK2 INFs cannot reference sources outside their own package, so sharing the
-    U-Boot copy in place was impossible. This is a **fifth** HAL copy (#218) and is
-    now a registered `hal-drift-check.py` tree (`edk2`), starting at zero drift.
+- **`Library/AlpineHalLib/`** — the shared HAL compiled for EDK2. 5 `.c`
+  (`al_hal_eth_main`, `al_hal_udma_{main,config,iofic}`, `al_hal_iofic`) built
+  from `al_hal_shared/`, which `scripts/stage_hal.py` writes from
+  `modules/al_eth/` every build — read-only, gitignored, never checked in.
+  EDK2 keeps no HAL copy (#256 phase 3; the 61 checked-in files are gone).
+  - Staged **inside** the package because an EDK2 INF cannot name sources
+    outside its own — the constraint that produced those copies in the first
+    place. `hal-drift-check.py` fails if a HAL file reappears there.
+  - The porting layer is the two force-included shims `al_hal_plat_types.h` /
+    `al_hal_plat_services.h`. They implement `hal/al_hal_plat_contract.h` and
+    include it last, so a missing primitive is an `#error` naming it. Beyond
+    the contract they also supply what the shared HAL uses as a Linux module:
+    `pr_err/warn/info/debug` (158 call sites), `fallthrough` (8) and
+    `__must_check` (100 prototypes, `8da5af7`).
 - **`Drivers/AlEth1gSnpDxe/`** — the SNP driver. Binds `1c36:0001` only.
 
 Board deltas vs the CCR2004 reference, each traceable to our working U-Boot driver
@@ -648,9 +652,14 @@ Board deltas vs the CCR2004 reference, each traceable to our working U-Boot driv
 | MAC from the **EC filter register** | No MikroTik BoardInfo protocol, and EDK2 has no SPI-NOR driver. U-Boot writes it at probe from NOR `0x1f0000` (`al_eth_hwaddr.c`); a zero reading falls back to a locally-administered address |
 | **No** EmbeddedGpio PHY reset | No PL061/GPIO driver on this platform |
 
-- `AlEth1gHalStubs.c` stubs `al_eth_mac_v3/v4_handle_init` and
-  `al_unit_adapter_init` — the same three symbols, for the same reason, as
-  U-Boot's own `al_eth_stubs.c`. Avoids dragging in the SerDes/KR closure.
+- **No HAL stubs.** The shared HAL has no MAC-object vtable — it selects the
+  MAC path from `mac_mode` at each call — so `al_eth_mac_v3/v4_handle_init` and
+  `al_unit_adapter_init` have nothing to satisfy. `AlEth1gHalStubs.c` is gone
+  (#256 phase 3), as is U-Boot's `al_eth_stubs.c`.
+- **Every `al_*` return is checked.** `__must_check` turned 19 discarded
+  returns into build errors the old vendored copy carried none of.
+  `al_eth_queue_enable()` is not called at all: it is a stub returning
+  `-EPERM`, and the queue is live after `queue_config()` (`77da515`).
 - DMA is **uncached + explicit cache maintenance**: `AlPcieSnoopFixDxe`
   deliberately excludes both al_eth functions from the AXI snoop fixup (applying
   it broke UDMA TX, #74/#90), so the device is not coherent with CPU caches.

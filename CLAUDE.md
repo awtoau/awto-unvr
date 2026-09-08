@@ -49,7 +49,7 @@ stock U-Boot → NAND 0x1300000 (awto-uboot, raw, `go`) → ext4load /boot/uImag
 ## Verifying, not assuming
 
 - **`./dev.py gate` before calling anything done.** It runs fmt, lint, pytest, `hal-drift`
-  (4 vendored HAL copies, #218) and `dt-drift` (board facts shared by the Linux and U-Boot
+  (3 vendored HAL copies, #218) and `dt-drift` (board facts shared by the Linux and U-Boot
   DTs, #221).
 - **A config symbol is not a working driver.** `CONFIG_RTC_DRV_S35390A=y` did nothing
   because the DTS node is `status="disabled"` (#232). `CONFIG_EDAC_AL_MC=m` bound nothing
