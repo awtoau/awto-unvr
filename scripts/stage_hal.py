@@ -88,17 +88,26 @@ def clean(dest: Path) -> int:
     return n
 
 
-def stage(dest: Path) -> list[str]:
+CONTRACT = REPO / "hal" / "al_hal_plat_contract.h"
+
+
+def stage(dest: Path, contract: bool = False) -> list[str]:
     """Delete any previous staging and copy the HAL in fresh.
 
     Read-only (0444) on purpose: the staged copy is derived, and an edit to it
     is a mistake that must fail at the edit, not be silently reverted next
     build. Returns the staged basenames.
+
+    contract=True also stages hal/al_hal_plat_contract.h here. EDK2 needs it:
+    an INF cannot name sources outside its own package, so the host shim's
+    `#include "al_hal_plat_contract.h"` must resolve inside the package. U-Boot
+    stages it next to its shim instead (scripts/uboot-build.py).
     """
     clean(dest)
     dest.mkdir(parents=True, exist_ok=True)
     names = []
-    for src in hal_sources():
+    srcs = list(hal_sources()) + ([CONTRACT] if contract else [])
+    for src in srcs:
         dst = dest / src.name
         shutil.copyfile(src, dst)
         dst.chmod(stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH)
@@ -110,6 +119,11 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--dest", required=True, help="directory to stage into")
     ap.add_argument("--clean", action="store_true", help="remove staged tree")
+    ap.add_argument(
+        "--contract",
+        action="store_true",
+        help="also stage hal/al_hal_plat_contract.h (EDK2 needs it in-package)",
+    )
     args = ap.parse_args()
 
     dest = Path(args.dest)
@@ -121,7 +135,7 @@ def main() -> int:
         print(f"stage_hal: source HAL missing: {SOURCE}", file=sys.stderr)
         return 1
 
-    names = stage(dest)
+    names = stage(dest, contract=args.contract)
     print(f"stage_hal: staged {len(names)} HAL files from {SOURCE} -> {dest}")
     return 0
 

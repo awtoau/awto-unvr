@@ -57,3 +57,7 @@ __pycache__/
 
 # Ignition MCP writes this per-session with a local port — machine-local, not shared
 .vscode/mcp.json
+
+# Staged shared al_eth HAL (#256): built from modules/al_eth/ by
+# scripts/stage_hal.py into the EDK2 package, never checked in.
+Platform/Ubiquiti/UNVR/Library/AlpineHalLib/al_hal_shared/
