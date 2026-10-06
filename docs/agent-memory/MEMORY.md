@@ -1,0 +1,38 @@
+# Memory index
+
+- [Scripted not hacked](scripted-not-hacked.md) — extend scripts/*.py, never inline python3 -c, for anything repeatable (power, console, network)
+- [No long passive waits](no-long-passive-waits.md) — poll short/often or actively unblock, never a long blind sleep on a slow timeout
+- [RE methodology in docs/ghidra.md](re-methodology-ghidra-md.md) — read before any Ghidra/decompile work; NOT auto-loaded (project doc, not global chain)
+- [Docs: terse, no history](docs-terse-no-history.md) — bullets over prose; no legacy/changelog narration in docs, state current-only
+- [Storage repurpose plan](storage-repurpose-plan.md) — UNVR's two 8TB SATA disks: analyse read-only → wipe → one becomes Linux boot drive, other the work store
+- [Granular commits per fix](granular-commits-per-fix.md) — one small reviewable commit per kernel bug fix, real fixes not shortcuts/suppressions
+- [Never delete — move to debris](never-delete-move-to-debris.md) — retired files go to debris/ (scripts → debris/scripts/), never rm; overrides global regenerable-delete
+- [No redacting MACs/IPs](no-redact-macs-ips.md) — awto-unvr: leave device MACs, LAN IPs, PARTUUIDs in committed docs/logs (owner: not a risk)
+- [Test every change, never assert](test-every-change-never-assert.md) — never call a woomera change "fixed" until booted+verified on the box
+- [Box testing over SSH](box-testing-over-ssh.md) — test over SSH or a 2nd tio, keep the shared serial console clean for the user to watch
+- [Own the box — reset without approval](own-the-box-reset-no-approval.md) — reset the box + take the shared console freely; don't gate box tests on a "go"
+- [Never kill shared tio](never-kill-shared-tio.md) — NEVER pkill/stop a tio you didn't start (it's the user's console); use Ignition MCP console tasks + attach via socket
+- [Code copyright header](code-copyright-header.md) — new files = Awto/Daniel Tyrrell + GPL-2.0-or-later; copied vendor/HAL files keep their original headers
+- [Reboot works; SP805 is the only SoC reset](no-plain-reboot-use-watchdog.md) — plain `reboot` FIXED 2026-09-03 (#51); PSCI SYSTEM_RESET is dead, watchdog is for a wedged box
+- [NAND boot layout + recovery](nand-boot-layout-recovery.md) — since #216: awto-uboot@NAND 0x1300000, kernel on SSD; `run bootnand` is NOT recovery (#166); deploy = publish-fedora + deploy-ssd, never chained
+- [SSD boot works via awto-uboot](ssd-boot-blocked-stock-uboot-sata.md) — #97 handoff hang FIXED (CCU coherency); awto-uboot boots SSD every boot since #216; stock 2015.07 still has no SATA at all
+- [Our U-Boot: assume nothing](our-uboot-assume-nothing.md) — our U-Boot does ALL init itself (PCIe/BAR/snoop/AHCI); never rely on stock/inbuilt U-Boot; chainload pre-state is a crutch
+- [File issues directly (awto-unvr)](file-issues-directly-awto-unvr.md) — file/edit/close GitHub issues on this repo without asking; NO scrubbing (user, 2026-09-05)
+- [i2c RTC wedge = dropped SDA-hold](i2c-rtc-sda-hold.md) — s35390a holds SDA/wedges pld bus; root cause = DTB dropped i2c-sda-hold-time-ns=300ns; build footgun (fedora.py didn't stage dts/)
+- [Don't blame hardware — assume our code](dont-blame-hardware-assume-our-code.md) — never conclude faulty chip/dead cell/physical fix; if a working reference exists (stock fw), hardware is good, fix the code delta
+- [eth TX hang: 1G fixed, 10G open](eth-udma-tx-hang.md) — 1G was RX not TX (RGMII_ID, 30e7c65); 10G real TX fail #253 (raw FLR wipes board params); #90 closed; eliminated list — peer tcpdump FIRST, compare stock U-Boot too
+- [Gate via dev.py](gate-via-devpy.md) — run `./dev.py gate` before calling any awto-unvr task done, per 2026-08-20 user directive
+- [Chainload vs stock boot state](chainload-vs-stock-boot-state.md) — default boot passes THROUGH awto-nas# since #216; `uboot-test --cold` to land there; prompt is NOT sticky
+- [Thorough code review, no blind vendor trust](thorough-code-review-no-vendor-blind-trust.md) — check every line when diffing Linux vs U-Boot driver code; verify vendor HAL correctness + git tracking, don't skim
+- [UNVR power-cycle via Home Assistant](unvr-power-cycle-via-hass.md) — remote cold-reboot the box via Sonoff TH `so-th-1` smart outlet, no physical presence needed
+- [Kernel/module mismatch recurring](kernel-module-mismatch-recurring.md) — `./dev.py verify-versions` FIRST (#258, every stage stamped); module mtimes lie (rsync), compare srcversion; costly recurring bug (#105/#131/#161/#242)
+- [al_dma UDMA state survives reload](al-dma-udma-state-survives-reload.md) — rmmod/modprobe does NOT reset the al_dma HAL queue's hardware state; only a reboot does; invalidates any A/B test done via reload-only
+- [bench-all.py benchmark suite](bench-all-benchmark-suite.md) — scripts/bench-all.py: A/B regression suite (eth/crypto/sata/usb) with JSON snapshots + --compare; use instead of ad-hoc iperf3/hdparm
+- [Genuine stock firmware won't boot](genuine-stock-firmware-wont-boot.md) — recovery NAND partition is corrupted (not genuine UBNT anymore); pristine stock kernel hangs silently on RAM-boot (#166); pristine MTD backups live in git_debris/woomera-mtd/...-164356/
+- [mmio_dump conflicting-mapping crash](mmio-dump-conflicting-mapping-crash.md) — never point scripts/mmio-dump/ at a region a loaded driver already ioremap'd/pci_iomap'd — dual-mapping crashed the kernel; use kprobes on the driver's own pointer instead
+- [No untracked files left behind](no-untracked-files-left-behind.md) — never just note an untracked/uncommitted file and move on; commit or delete it, every session
+- [Track latest mainline, port forward](track-latest-mainline-port-forward.md) — kernel tree deliberately tracks torvalds/linux HEAD directly (not a stable base); pulling forward + fixing OOT drivers is the normal workflow, not a risky one-off
+- [Expose driver state via debugfs/devlink](expose-driver-state-debugfs.md) — add visibility while writing driver code, not after it's undiagnosable
+- [Agents code, I coordinate](agents-code-i-coordinate.md) — dispatch programming work to subagents; I integrate, build, test on the box
+- [Stale issues: drop unreproducible](stale-issues-drop-unreproducible.md) — can't reproduce + project moved on → close it; quick test and move on, don't go deep; keep only if the defect is still visible in code
+- [awto-uboot / awto-uefi forks](awto-uboot-uefi-forks.md) — public forks at /mnt/2tb/git/github.com/awto-au/{awto-uboot,awto-uefi}; u-boot v2026.10-rc3, edk2-stable202608; `upstream` remote kept; #256 rewrite lands there

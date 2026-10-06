@@ -2,6 +2,9 @@ extend-exclude = [
     "tmp",
     "debris",
     ".claude/worktrees",
+    # Agent memory mirrored from ~/.claude (scripts/memory-sync.py). Verbatim
+    # record; some files quote Python, which ruff would reformat.
+    "docs/agent-memory",
 ]
 
 # Rule selection. Without this ruff runs its default set, which nobody chose:
