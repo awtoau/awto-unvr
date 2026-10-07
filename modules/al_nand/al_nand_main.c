@@ -296,7 +296,6 @@ static void al_nand_read_buf(struct nand_chip *chip, u8 *buf, int len)
 {
 	struct al_nand_data *nand = to_al_nand(chip);
 	u32 cw_size = nand->cw_size;
-	void __iomem *data_buff;
 	u32 cw_count;
 
 	/* The controller moves whole 4-byte words, and a pending read_byte()
@@ -319,8 +318,21 @@ static void al_nand_read_buf(struct nand_chip *chip, u8 *buf, int len)
 		if (al_nand_wait_for_irq(nand, AL_NAND_INTR_STATUS_BUF_RDRDY))
 			return;
 
-		data_buff = al_nand_data_buff_base_get(&nand->nand_obj);
-		memcpy(buf, data_buff, cw_size);
+		/* al_nand_data_buff_read(), NOT a memcpy from
+		 * al_nand_data_buff_base_get(). The data buffer is a FIFO
+		 * REGISTER at one fixed address, not a memory window: the HAL
+		 * reads it with repeated al_reg_read32() on the same address
+		 * and tracks cw_size_remaining/cw_count_remaining itself. The
+		 * vendor driver's memcpy walks ascending addresses instead,
+		 * which reads past the register - on the box that returned the
+		 * same `d0 ad d0 ba` for every address. */
+		if (al_nand_data_buff_read(&nand->nand_obj, cw_size, 0, 0,
+					   buf)) {
+			dev_err(nand->dev, "data_buff_read failed (cw %u)\n",
+				cw_size);
+			return;
+		}
+
 		dev_dbg(nand->dev, "read_buf: cw %u, first %*ph\n", cw_size,
 			min(cw_size, 8U), buf);
 		buf += cw_size;
@@ -351,7 +363,6 @@ static void al_nand_write_buf(struct nand_chip *chip, const u8 *buf, int len)
 {
 	struct al_nand_data *nand = to_al_nand(chip);
 	u32 cw_size = chip->ecc.size;
-	void __iomem *data_buff;
 	u32 cw_count;
 
 	al_nand_tx_set_enable(&nand->nand_obj, 1);
@@ -370,8 +381,12 @@ static void al_nand_write_buf(struct nand_chip *chip, const u8 *buf, int len)
 					 AL_NAND_INTR_STATUS_BUF_WRRDY))
 			return;
 
-		data_buff = al_nand_data_buff_base_get(&nand->nand_obj);
-		memcpy(data_buff, buf, cw_size);
+		/* FIFO register, not a memory window - see al_nand_read_buf(). */
+		if (al_nand_data_buff_write(&nand->nand_obj, cw_size, buf)) {
+			dev_err(nand->dev, "data_buff_write failed (cw %u)\n",
+				cw_size);
+			return;
+		}
 		buf += cw_size;
 		len -= cw_size;
 	}
