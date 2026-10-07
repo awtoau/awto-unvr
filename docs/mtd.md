@@ -16,7 +16,11 @@ is a pure software convention in the **Device Tree** (`fixed-partitions` nodes,
   a DTB with fewer partition nodes — nothing was erased, the nodes were just dropped.
 - Boot chain: compiled DTB (multi-DT container) → **U-Boot selects by sysid**
   (`0xea16 → index 0`) → **kernel reads `fixed-partitions`** → `/dev/mtdN` (numbers =
-  registration order; NOR probes before NAND).
+  registration order).
+- **`mtdN` numbers are NOT stable — address partitions by LABEL.** With `al_nand`
+  bound (#208) NAND probes FIRST, so the NOR partitions are **mtd5-12** and NAND is
+  **mtd0-4** — the inverse of the stock order the table below is numbered for.
+  Both orders are real; which one you get depends on probe timing, not on the layout.
 - **How we know this layout:** live `/proc/mtd` + live DTB (`docs/hw-reference/.../
   live.dts`) + reversed U-Boot DTB-selection (`docs/uboot-update-path.md`).
 - **We ship our own DTB/U-Boot**, so the layout — and our env offset — is ours to
@@ -56,7 +60,7 @@ before the kernel.
 | mtd8 | al_boot | NAND | 0x000000 | 0x200000 | 2 MB | **erased (0xFF)** | no | empty on this unit — real al_boot/S2 is in the **NOR** preboot region (0x0–0x80000), not here |
 | — | *(hole)* | NAND | 0x200000 | 0x100000 | 1 MB | unpart. | — | reserved gap before kernel |
 | mtd9 | linux_kernel | NAND | 0x300000 | 0x1000000 | 16 MB | image | no | stock main kernel |
-| mtd10 | rootfs | NAND | 0x1300000 | 0x3ec00000 | ~1005 MB | filesystem | no | root FS (1004 MB, 10× GitHub limit) |
+| mtd10 | rootfs | NAND | 0x1300000 | 0x3ec00000 | ~1005 MB | **awto-uboot** + stock rootfs | no | **First 1 MB is awto-uboot since #216** — the label is stock's and now lies. With `al_nand` bound this appears as a ~1 GB writable partition whose first MB *is the bootloader*; a `dd` to its start bricks the box. Fix the DT label before any write path lands (#208). |
 | mtd11 | chike | NAND | 0x3ff00000 | 0x100000 | 1 MB | raw | **yes** | UBNT-specific tail region |
 
 NOR sum = `0x2000000` = 32 MB (no gaps). Board-id is read at flash `0x1f000c` =
@@ -121,44 +125,41 @@ mtd4+0x0000 via `read_rom_hwaddr`. Full field map: `docs/identity-partitions.md`
 Our Fedora-on-NAND layout **differs** from stock (kernel@0x1300000, dtb@0x2800000,
 factory recovery@0x300000) — see the `nand-boot-layout-recovery` memory / flash flow.
 
-## Our running Linux (mainline 7.1.8) does NOT see the NAND — confirmed 2026-08-20
+## Linux sees the NAND — `modules/al_nand` (#208)
 
-`/proc/mtd` on the live box (Fedora on SSD, `uname -r 7.1.8-dirty`) lists only
-**8 partitions, all SPI-NOR** (`spi0.0`, erasesize `0x10000`/`0x1000`-family) —
-mtd0–7 above. **None of the 4 NAND partitions appear.** This is expected, not a
-fault, and does not contradict the NAND chip being real:
+There is no mainline AL-NAND driver; `modules/al_nand/` is ours, ported from the
+vendor 4.1.37 BSP to the v7.3 nand subsystem. Needs `CONFIG_MTD_RAW_NAND=m`
+(forced after `localmodconfig` in `scripts/build-linux-fedora.py`).
 
-- The DT node is present and enabled: `/proc/device-tree/soc/nand@fa100000/status`
-  = `okay`, `compatible` = `annapurna-labs,al-nand`. The platform device
-  registers (`/sys/bus/platform/devices/fa100000.nand/` exists, `uevent` shows
-  `OF_COMPATIBLE_0=annapurna-labs,al-nand`) — but **no driver binds** (no
-  `driver` symlink in that sysfs dir).
-- **No driver exists for it.** `grep -rn "annapurna-labs,al-nand"` across
-  `linux-v7.1.8/drivers/` (the mainline kernel.org tree this project builds)
-  returns zero hits — the Annapurna AL-NAND MTD controller driver was **never
-  upstreamed to mainline Linux**. It only exists in Ubiquiti's own out-of-tree
-  GPL BSP kernel (4.1.37-ubnt, the one that ships stock 1.3.35 firmware).
-- The deployed kernel config (`unvr-ea16-7.1.config`) has
-  **`CONFIG_MTD_RAW_NAND is not set`** — the raw-NAND subsystem itself is
-  disabled, so even a driver wouldn't attach without a rebuild.
-- Consequence: zero probe attempts logged anywhere — not dmesg, not the full
-  boot `journalctl -b` (59k lines) — because nothing ever tries to bind. Only
-  `spi-nor spi0.0` (the generic mainline `m25p80`/`spi-nor` driver, which the
-  chip is generic enough to match) attaches, producing exactly the 8
-  SPI-NOR-only partitions seen.
-- SPI-NOR still binding while NAND doesn't is exactly the giveaway that these
-  are two separate physical chips — the same distinction `docs/mtd.md` already
-  makes by erase size (§ "Two devices").
+Bound, on the box:
 
-**The NAND chip's physical existence is independently proven**, not assumed:
-`docs/hardware.md` "CPU / NAND / identity extras" records a **live JEDEC ID
-read under stock 1.3.35** (`Manufacturer ID 0x2c, Chip ID 0xa3` → Micron
-MT29F8G08ABBCAH4, 1024 MiB SLC, erase 256 KiB, page 4096, OOB 224) plus **active
-ECC correction on real kernel-partition reads** — that's the vendor's own
-NAND driver, in its own kernel, actually reading the chip. Two disjoint
-software stacks (stock 4.1.37-ubnt kernel: sees+uses NAND; our mainline
-7.1.8: NAND node present but undriven) is consistent, not contradictory —
-mainline simply never gained this vendor driver.
+```
+nand: device found, Manufacturer ID: 0x2c, Chip ID: 0xa3
+nand: Micron MT29F8G08ABBCAH4
+nand: 1024 MiB, SLC, erase size: 256 KiB, page size: 4096, OOB size: 224
+al-nand fa100000.nand: Annapurna Labs NAND: 1024 MiB, page 4096, oob 224, erase 262144
+mtd0..mtd4   erasesize 00040000   al_boot device_tree linux_kernel rootfs chike
+mtd5..mtd12  erasesize 00001000   the 8 NOR partitions
+```
+
+**Reads are proven, writes are not.** `scripts/verify-nand-reads.py` compares the
+whole 16 MiB `linux_kernel` partition against the U-Boot-taken backup
+(`-212945-post-5.1.25-final`) and it matches byte for byte — two independent
+driver implementations, same bytes. Writing is untested and deliberately not
+exercised: NAND `0x1300000` holds awto-uboot.
+
+Two gotchas the port cost hours on, both worth knowing before touching this code:
+
+- **The data buffer is a FIFO register at one address, not a memory window.** The
+  vendor driver `memcpy`s from `al_nand_data_buff_base_get()` across ascending
+  addresses, which is wrong — use `al_nand_data_buff_read/write()`, which read the
+  same address repeatedly and track the code-word accounting.
+- **awto-uboot leaves `sdr_timing_params_0/1` at zero.** Stock's bootloader left
+  working timings behind and the vendor driver relied on that; ours must program
+  them before `nand_scan()`.
+
+The chip's identity was independently known beforehand from a live JEDEC read under
+stock 1.3.35 (`docs/hardware.md`), and our driver now reports the same IDs.
 
 ### `scripts/flash-nand.py` operates below Linux entirely — verified safe
 
