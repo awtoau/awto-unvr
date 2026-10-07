@@ -743,8 +743,23 @@ static int al_nand_attach_chip(struct nand_chip *chip)
 		chip->ecc.read_subpage = al_nand_ecc_read_subpage;
 		chip->ecc.write_page = al_nand_ecc_write_page;
 		chip->ecc.strength = req->strength;
-		chip->ecc.size = req->step_size;
-		chip->ecc.bytes = nand->ecc_bytes;
+		chip->ecc.size = nand->cw_size;
+		chip->ecc.steps = mtd->writesize / nand->cw_size;
+
+		/*
+		 * ecc.bytes is PER STEP in v7.3; the vendor's
+		 * nand_ecclayout.eccbytes was the TOTAL over the page. Setting
+		 * the total here gave steps(8) * 220 = 1760 > oobsize(224) and
+		 * nand_scan_tail() refused with "Total number of ECC bytes
+		 * exceeded oobsize".
+		 *
+		 * ecc.total is set explicitly as well. The controller lays the
+		 * whole ECC region out itself as one contiguous block at
+		 * ecc_offset rather than per-step, so steps * bytes is not the
+		 * real total and the core must not derive it.
+		 */
+		chip->ecc.total = nand->ecc_bytes;
+		chip->ecc.bytes = nand->ecc_bytes / chip->ecc.steps;
 		mtd_set_ooblayout(mtd, &al_nand_ooblayout_ops);
 	} else {
 		chip->ecc.engine_type = NAND_ECC_ENGINE_TYPE_NONE;
