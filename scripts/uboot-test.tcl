@@ -39,15 +39,27 @@ if {!$ok} { puts "NO-UBOOT (reset didn't reach the NAND awto-nas# in ~60s; power
 # Stop the 2s countdown before typing anything: it expired mid-setenv and the
 # next expect waited 6s at a Linux console. RAM env only - no saveenv, so a
 # reset reverts it and stock's own env is untouched.
-send "setenv bootdelay -1";       expect "awto-nas#" 6
-send "setenv ipaddr $IPADDR";     expect "awto-nas#" 6
-send "setenv serverip $SERVERIP"; expect "awto-nas#" 6
+# Each step names itself on failure: a bare `expect` raise aborted the script
+# with just "tcl error:" and no indication of which command was lost, which
+# cost a round of console archaeology to work out.
+proc step {cmd needle secs what} {
+    send $cmd
+    if {[catch {expect $needle $secs}]} {
+        puts "STEP-FAILED ($what): '$needle' not seen in ${secs}s after '$cmd'"
+        return 0
+    }
+    return 1
+}
+if {![step "setenv bootdelay -1" "awto-nas#" 6 "stop autoboot"]} { return }
+if {![step "setenv ipaddr $IPADDR" "awto-nas#" 6 "set ipaddr"]} { return }
+if {![step "setenv serverip $SERVERIP" "awto-nas#" 6 "set serverip"]} { return }
 # 0x1100000 is the RUNNING bootloader's load/entry (nor-boot-chain.md:56)
 # AND our CONFIG_TEXT_BASE - must run there, cannot be written there.
 # Stage elsewhere, copy, jump: same shape as flash-awto-uboot.py.
-send "tftpboot 0x02000000 u-boot-chainload.bin"; catch {expect "Bytes transferred" 30}
-expect "awto-nas#" 6
-send "cp.b 0x02000000 0x1100000 \$filesize"; expect "awto-nas#" 10
+# tftp bound: 820KB over a 100Mb link is <1s; 30s is ~30x, and covers the
+# ARP retries that precede a transfer on a cold neighbour table.
+if {![step "tftpboot 0x02000000 u-boot-chainload.bin" "Bytes transferred" 30 "tftp the image"]} { return }
+if {![step "cp.b 0x02000000 0x1100000 \$filesize" "awto-nas#" 10 "copy to TEXT_BASE"]} { return }
 send "go 0x1100000"
 # Our own U-Boot also autoboots (CONFIG_BOOTDELAY=2) - nothing sets the
 # CANARY that would make it stay at the prompt on its own, so a passive
