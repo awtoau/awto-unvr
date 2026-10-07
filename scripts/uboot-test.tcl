@@ -36,8 +36,14 @@ for {set i 0} {$i < 60} {incr i} { send_raw ESC; if {[catch {expect "ALPINE_UBNT
 if {!$ok} { puts "NO-STOCK (SP805 reset didn't reach stock in ~60s; a power-cycle may be needed)"; return }
 send "setenv ipaddr $IPADDR";     expect "ALPINE_UBNT_NAS_ALL>" 6
 send "setenv serverip $SERVERIP"; expect "ALPINE_UBNT_NAS_ALL>" 6
-send "tftpboot 0x1100000 u-boot-chainload.bin"; catch {expect "Bytes transferred" 30}
+# 0x1100000 is STOCK's own load/entry (nor-boot-chain.md:56) AND our
+# CONFIG_TEXT_BASE - we must RUN there but cannot tftp there, as that
+# overwrites the executing bootloader (#265: the write was discarded and
+# stock's bootcmd then chainloaded NAND, which prints the same prompt).
+# Stage elsewhere, copy, jump - same shape as flash-awto-uboot.py.
+send "tftpboot 0x02000000 u-boot-chainload.bin"; catch {expect "Bytes transferred" 30}
 expect "ALPINE_UBNT_NAS_ALL>" 6
+send "cp.b 0x02000000 0x1100000 \$filesize"; expect "ALPINE_UBNT_NAS_ALL>" 10
 send "go 0x1100000"
 # Our own U-Boot also autoboots (CONFIG_BOOTDELAY=2) - nothing sets the
 # CANARY that would make it stay at the prompt on its own, so a passive
