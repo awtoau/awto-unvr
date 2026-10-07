@@ -15,6 +15,13 @@ Global rules: `/home/dan/.claude/CLAUDE.md`. This file is the project layer on t
     driver-shaped test is `i2ctransfer -y <bus> r1@0x30`.
 - **NEVER run `./dev.py flash` casually.** NAND `0x1300000` holds awto-uboot since #216;
   flashing a kernel there destroys the bootloader. It refuses without an explicit flag.
+- **ASK before any flash WRITE — NAND or NOR, any partition, however dead it looks.**
+  Reads and surveys need no permission; `flash_erase`, `nandwrite`, `nand write`,
+  `sf write` do. "I verified it was erased" is not the same as being told to write to
+  flash, and a wrong partition has no recovery path (#166). This was violated
+  2026-10-08: `device_tree` was erased and written to test #208's write path without
+  asking. No harm (it was erased, and the write failed) — but that was luck, not
+  process.
 - **Never kill or restart a `tio` you did not start** — it is the user's console.
 - **Never `pkill` Chrome** (shared, and it loses the cleared Turnstile session).
 

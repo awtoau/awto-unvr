@@ -37,3 +37,4 @@
 - [Stale issues: drop unreproducible](stale-issues-drop-unreproducible.md) — can't reproduce + project moved on → close it; quick test and move on, don't go deep; keep only if the defect is still visible in code
 - [awto-uboot / awto-uefi forks](awto-uboot-uefi-forks.md) — public forks at /mnt/2tb/git/github.com/awto-au/{awto-uboot,awto-uefi}; u-boot v2026.10-rc3, edk2-stable202608; `upstream` remote kept; #256 rewrite lands there
 - [4 NICs, one subnet: weak-host routing](four-nics-one-subnet-weak-host.md) — an IP that answers does NOT say which port carried it; check the MAC in `ip neigh`, iperf3 needs --bind-dev not -B, tcpdump silence on a MAC is expected (#170); 3 wrong conclusions in one day
+- [Ask before flash writes](ask-before-flash-writes.md) — NAND/NOR erase+write needs the user's OK, however dead the partition looks; reads do not. Violated 2026-10-08 on device_tree
