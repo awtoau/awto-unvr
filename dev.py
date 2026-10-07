@@ -1048,6 +1048,17 @@ def cmd_verify_versions(extra: list[str]) -> int:
 
 
 @command(
+    "how far behind upstream is each external reference tree? Kernel base, "
+    "U-Boot, EDK2, vendor HALs. --fetch for a network check "
+    "(docs/kernel-rebase.md, scripts/refs-check.py)",
+    args="[--fetch] [--only TREE]",
+    kind="query",
+)
+def cmd_refs_check(extra: list[str]) -> int:
+    return _run_script("scripts/refs-check.py", extra)
+
+
+@command(
     "docs/uefi.md §5's dry chainload probe: tftp+crc32-verify+`go` the P0 "
     "UNVR.fd, watch for the UEFI Shell prompt (scripts/uefi-chainload-probe.py)",
     kind="action",
