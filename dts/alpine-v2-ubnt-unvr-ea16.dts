@@ -824,14 +824,13 @@
 			};
 
 			/* awto-uboot, 1 MiB, raw (#216). Stock's bootcmd does
-			 * `nand read 0x1100000 0x1300000 0x100000; go` from here, so
-			 * writing it destroys the bootloader. Split out and read-only:
-			 * it used to be the first MiB of a ~1 GB writable "rootfs"
-			 * partition, invisible while Linux had no NAND driver (#208). */
+			 * `nand read 0x1100000 0x1300000 0x100000; go` from here.
+			 * Split out so it is not the first MiB of a ~1 GB partition
+			 * labelled "rootfs" (#208). Deliberately NOT read-only:
+			 * `mtd write` from Linux is the point of having the driver. */
 			partition@1300000 {
 				reg = <0x01300000 0x00100000>;
 				label = "awto-uboot";
-				read-only;
 			};
 
 			/* Stock's squashfs root, less the awto-uboot MiB above. Unused:
