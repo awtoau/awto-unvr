@@ -662,6 +662,12 @@ class _ConsoleTcl:
         self.tcl.register("expect", self._expect)
 
     def _send(self, a: list[str]) -> str:
+        # Drop anything already buffered: self.buf persists across expects, so
+        # a prompt left over from an EARLIER boot satisfied the next expect
+        # instantly - the script then typed into a booting kernel while
+        # believing it held the prompt (#265). A match must mean "arrived
+        # after this command", so the pre-send backlog goes.
+        self.buf = b""
         self.s.sendall(" ".join(a).encode() + b"\r")
         return ""
 

@@ -33,6 +33,17 @@ stock U-Boot → NAND 0x1300000 (awto-uboot, raw, `go`) → ext4load /boot/uImag
 - Stock's console is 115200 and cannot change (closed binary). Ours can, but a stale saved
   env in mtd3 overrides compiled `CONFIG_*` — `env default -a; saveenv` (#229).
 
+## Watching the console
+
+- `./dev.py console` starts `tio` (socket + log). One instance owns the port;
+  everything else attaches to the socket.
+- **`./dev.py console-attach` to watch live** — same socket the scripts drive, so you
+  see exactly what they see. Ctrl-C detaches; `tio` survives.
+- `./dev.py console-peek [-n N]` for a bounded tail without attaching.
+- Log: `tmp/logs/unvr-console.log`, rolled at 20 MB (`.log.1`, `.log.2`…). A run that
+  spans a roll needs both files — `cat tmp/logs/unvr-console.log.1 tmp/logs/unvr-console.log`.
+- Timestamps in the log lag the command; use `time` on the box for real durations.
+
 ## Reaching the box
 
 - `./dev.py ssh [-- cmd]` — resolves by **MAC**, never a hardcoded IP. DHCP has moved
