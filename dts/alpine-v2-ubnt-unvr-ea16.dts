@@ -823,10 +823,22 @@
 				label = "linux_kernel";
 			};
 
-			/* Root filesystem (~1004 MiB; squashfs on stock). bootargs root=
-			 * target only — the kernel mounts it; U-Boot never reads it. */
+			/* awto-uboot, 1 MiB, raw (#216). Stock's bootcmd does
+			 * `nand read 0x1100000 0x1300000 0x100000; go` from here, so
+			 * writing it destroys the bootloader. Split out and read-only:
+			 * it used to be the first MiB of a ~1 GB writable "rootfs"
+			 * partition, invisible while Linux had no NAND driver (#208). */
 			partition@1300000 {
-				reg = <0x01300000 0x3ec00000>;
+				reg = <0x01300000 0x00100000>;
+				label = "awto-uboot";
+				read-only;
+			};
+
+			/* Stock's squashfs root, less the awto-uboot MiB above. Unused:
+			 * we boot ext4 from the SSD. bootargs root= target on stock only;
+			 * U-Boot never reads it. */
+			partition@1400000 {
+				reg = <0x01400000 0x3eb00000>;
 				label = "rootfs";
 			};
 
