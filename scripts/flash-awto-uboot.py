@@ -27,6 +27,7 @@ from __future__ import annotations
 import os
 import sys
 import time
+import zlib
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
@@ -117,11 +118,21 @@ def main():
     step(s, f"nand erase {U_NAND} {U_SPAN}", "OK", 30, "erase awto-uboot region")
     step(s, f"nand write {STAGE} {U_NAND} {U_SPAN}", "OK", 60, "write awto-uboot")
 
-    # Read back to TEXT_BASE before committing bootcmd: a bad write that only
-    # surfaces at the next cold boot would leave the box in stock with no
-    # kernel path. `cmp` is not confirmed present in this 2015.07 build, so
-    # this proves the read succeeds, not that the bytes match.
+    # Read back and CRC-VERIFY before committing bootcmd: a bad write that
+    # only surfaces at the next cold boot leaves the box in stock with no
+    # kernel path. crc32 is present in this 2015.07 build (used by the UEFI
+    # chainload path), so compare the readback against the staged image
+    # rather than only proving the read returned OK.
     step(s, f"nand read {TEXT_BASE} {U_NAND} {U_SPAN}", "OK", 30, "read back")
+    want = zlib.crc32(UBOOT_BIN.read_bytes()) & 0xFFFFFFFF
+    size = UBOOT_BIN.stat().st_size
+    step(
+        s,
+        f"crc32 {TEXT_BASE} 0x{size:x}",
+        f"{want:08x}",
+        20,
+        f"verify readback crc32 == {want:08x}",
+    )
 
     step(s, f"setenv bootcmd '{BOOTCMD}'", STOCK_PROMPT, 5, "set bootcmd")
     step(s, "saveenv", "done", 15, "saveenv")
