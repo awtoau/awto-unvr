@@ -160,22 +160,42 @@ static irqreturn_t al_nand_isr(int irq, void *dev_id)
 	return IRQ_HANDLED;
 }
 
-/* Wait for any of irq_mask. See AL_NAND_IRQ_TIMEOUT_MS for the bound. */
+/*
+ * Wait until one of irq_mask is actually asserted.
+ *
+ * The ISR is shared and completes on ANY NAND interrupt, so a bare
+ * wait_for_completion() returns on the wrong one. Observed: a 4-byte READID
+ * returned success with status 0x145 (CMD_BUF_EMPTY | DATA_BUF_EMPTY |
+ * BUF_WRRDY | WRRD_DONE) - BUF_RDRDY clear and the data buffer EMPTY - so the
+ * caller memcpy'd a stale buffer and read the same 4 bytes for every address.
+ * The status register is the truth; the completion is only a wakeup.
+ */
 static int al_nand_wait_for_irq(struct al_nand_data *nand, u32 irq_mask)
 {
-	unsigned long left;
+	unsigned long deadline =
+		jiffies + msecs_to_jiffies(AL_NAND_IRQ_TIMEOUT_MS);
+	u32 status;
 
 	al_nand_int_enable(&nand->nand_obj, irq_mask);
-	left = wait_for_completion_timeout(
-		&nand->complete, msecs_to_jiffies(AL_NAND_IRQ_TIMEOUT_MS));
-	if (!left) {
-		dev_err(nand->dev, "irq timeout after %u ms, mask 0x%x\n",
-			AL_NAND_IRQ_TIMEOUT_MS, irq_mask);
-		al_nand_int_disable(&nand->nand_obj, irq_mask);
-		return -ETIMEDOUT;
+
+	for (;;) {
+		status = al_nand_int_status_get(&nand->nand_obj);
+		if (status & irq_mask)
+			return 0;
+
+		if (time_after(jiffies, deadline))
+			break;
+
+		wait_for_completion_timeout(&nand->complete,
+					    max(1UL, deadline - jiffies));
 	}
 
-	return 0;
+	dev_err(nand->dev,
+		"irq timeout after %u ms: wanted 0x%x, status 0x%x\n",
+		AL_NAND_IRQ_TIMEOUT_MS, irq_mask, status);
+	al_nand_int_disable(&nand->nand_obj, irq_mask);
+
+	return -ETIMEDOUT;
 }
 
 /******************************************************************************/
@@ -238,6 +258,9 @@ static void al_nand_cmd_ctrl(struct nand_chip *chip, int dat,
 		       AL_NAND_COMMAND_TYPE_ADDRESS;
 
 	cmd = AL_NAND_CMD_SEQ_ENTRY(type, dat & 0xff);
+	dev_dbg(nand->dev, "cmd_ctrl: %s 0x%02x (ctrl 0x%x)\n",
+		type == AL_NAND_COMMAND_TYPE_CMD ? "CMD" : "ADDR",
+		dat & 0xff, ctrl);
 	al_nand_cmd_single_execute(&nand->nand_obj, cmd);
 	al_nand_wait_cmd_fifo_empty(nand);
 
@@ -290,12 +313,16 @@ static void al_nand_read_buf(struct nand_chip *chip, u8 *buf, int len)
 			AL_NAND_COMMAND_TYPE_DATA_READ_COUNT, cw_size);
 
 	while (len > 0) {
-		if (al_nand_wait_for_irq(nand,
-					 AL_NAND_INTR_STATUS_BUF_RDRDY))
+		/* Returning without copying on failure is deliberate: the
+		 * buffer is stale, and handing the core stale bytes reads as a
+		 * wrong chip rather than as a failed read. */
+		if (al_nand_wait_for_irq(nand, AL_NAND_INTR_STATUS_BUF_RDRDY))
 			return;
 
 		data_buff = al_nand_data_buff_base_get(&nand->nand_obj);
 		memcpy(buf, data_buff, cw_size);
+		dev_dbg(nand->dev, "read_buf: cw %u, first %*ph\n", cw_size,
+			min(cw_size, 8U), buf);
 		buf += cw_size;
 		len -= cw_size;
 	}
@@ -865,6 +892,45 @@ static int al_nand_probe(struct platform_device *pdev)
 		 nand->ext_props.eccIsEnabled ? "on" : "off",
 		 nand->ecc_config.spareAreaOffset, nand->ext_props.pageSize,
 		 nand->ecc_config.algorithm);
+
+	/*
+	 * Apply the decoded device config BEFORE nand_scan(), not only in
+	 * attach_chip(). al_nand_dev_config_basic() configures from a ZEROED
+	 * dev_properties, which leaves sdr_timing_params_0/1 at 0 - no setup,
+	 * hold or pulse width on the NAND bus at all. Verified on the box:
+	 * both registers read 0x0 and every READID returned the same
+	 * `d0 ad d0 ba` regardless of address, ~800 ms per 4-byte read.
+	 *
+	 * The vendor driver has the same gap and gets away with it because the
+	 * 4.1.37 bootloader left working timings in the registers. awto-uboot
+	 * does not touch them, so we must program them ourselves - "our U-Boot
+	 * does all init itself; chainload pre-state is a crutch".
+	 *
+	 * Timing mode comes from the device's own ONFI data, which needs the
+	 * chip talking first, so attach_chip() still re-runs dev_config with
+	 * the ONFI-chosen mode. This pass only has to be good enough to read
+	 * the ID, and the PBS-decoded timing set is the bootloader's own.
+	 */
+	/* The PBS carries timing SET 0 with the manual fields zero, so the
+	 * mode-0 ONFI values have to be filled in from the table. Mode 0 is
+	 * the slowest and every ONFI device supports it, which is what makes
+	 * it the right choice before the device has been identified. */
+	nand->dev_props.timingMode = AL_NAND_DEVICE_TIMING_MODE_MANUAL;
+	ret = al_nand_timing_params_set(&nand->dev_props.timing, 0);
+	if (ret)
+		goto err_terminate;
+
+	ret = al_nand_dev_config(&nand->nand_obj, &nand->dev_props,
+				 &nand->ecc_config);
+	if (ret) {
+		dev_err(dev, "pre-scan dev_config failed\n");
+		ret = -EIO;
+		goto err_terminate;
+	}
+
+	/* dev_config re-enables HW ECC from ecc_config; READID must not go
+	 * through the BCH engine. Re-enabled per page by the ecc hooks. */
+	al_nand_ecc_set_enabled(&nand->nand_obj, 0);
 
 	/* RESET before the first READID, per al_hal_nand.h's init flow: the
 	 * device may be mid-operation from the bootloader's last access. */
