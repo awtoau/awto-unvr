@@ -150,25 +150,38 @@ exercised: NAND `0x1300000` holds awto-uboot.
 
 Two gotchas the port cost hours on, both worth knowing before touching this code:
 
-- **The data buffer has TWO access modes, and the HAL picks one at init.**
-  `al_hal_nand.c` sets `obj->data_buff_base` from two different bases:
+- **Both data paths are FIFOs at a single address. There is no ascending-address
+  mode, so `memcpy` is wrong on either.** This is the bug that cost the port
+  hours, and the naming invites it: `DATA_BUFF_OFFSET` sounds like a buffer.
 
-  | mode | set at | address | correct access |
+  Sub-blocks within the one 0x202000 DT reg (`al_hal_nand.c:49-52`):
+
+  | offset | block | use |
+  |---|---|---|
+  | `+0x000000` | data FIFO, wrapper side | `DATA_BUFF_OFFSET` |
+  | `+0x100000` | command FIFO, wrapper side | `CMD_BUFF_OFFSET` |
+  | `+0x200000` | wrapper regs (DMA, interrupts) | `WRAP_BASE_OFFSET` |
+  | `+0x201000` | control regs | `CTRL_BASE_OFFSET`; `data_buffer_reg` `+0x424`, `command_buffer_reg` `+0x420` |
+
+  **The selector is which init you call, not a register bit** — it chooses whether
+  the wrapper block does flow control for you:
+
+  | init | `obj->no_wrapper` | data/cmd base | flow control |
   |---|---|---|---|
-  | window | `al_hal_nand.c:154` | `nand_base_ptr + DATA_BUFF_OFFSET` (`0x0`) | ascending `memcpy` |
-  | FIFO register | `al_hal_nand.c:183` | `&regs_base->data_buffer_reg` (`0x0424`) | re-read one address |
+  | `al_nand_init()` (`:154`) | `AL_FALSE` | the `+0x0` / `+0x100000` FIFOs | wrapper handles it |
+  | `al_nand_init_no_wrapper()` (`:183`) | `AL_TRUE` | `data_buffer_reg` / `command_buffer_reg` | caller polls `_al_nand_cmd_buf_wait_for_vacancy()` / `_al_nand_data_buf_wait_for_cw_data()` |
 
-  `al_hal_nand_regs.h:62` shows the second is a single 32-bit register with
-  `nflash_spare_offset` at `0x0428` right after it — so an ascending `memcpy`
-  from there reads config registers as page data. The vendor driver's
-  `memcpy(buf, al_nand_data_buff_base_get(...), cw_size)` targets the **window**
-  and is correct for it; it is not correct on the FIFO path.
-  Use `al_nand_data_buff_read/write()`: they follow whichever base is set and
-  track the code-word accounting. **Which mode our init lands on, and whether the
-  window is usable, is unresolved (#208)** — it matters because the window is a
-  block copy while the FIFO is one 32-bit read per word (~800 ms per 4-byte
-  READID was observed during the port). `al_nand_data_buff_read_dma()` exists and
-  is not imported.
+  Our driver calls `al_nand_init(&obj, base, NULL, 0)` (`al_nand_main.c:833`) — the
+  wrapper path. Always use `al_nand_data_buff_read/write()`: they read the one
+  address in a loop and track code-word accounting, and they branch on
+  `no_wrapper` so the same call is correct either way. The vendor's
+  `memcpy(buf, al_nand_data_buff_base_get(...), cw_size)` walks ascending
+  addresses and is wrong on both paths — it reads the first FIFO word, then
+  whatever follows in that aperture.
+
+  Unmeasured: whether the wrapper's DMA path (`al_nand_data_buff_read_dma()`, not
+  imported) is faster than the per-word loop. Page reads are currently one 32-bit
+  read per 4 bytes.
 - **awto-uboot leaves `sdr_timing_params_0/1` at zero.** Stock's bootloader left
   working timings behind and the vendor driver relied on that; ours must program
   them before `nand_scan()`.
