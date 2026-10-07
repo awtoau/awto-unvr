@@ -79,6 +79,7 @@ struct al_nand_data {
 	struct al_nand_ctrl_obj nand_obj;
 	struct al_nand_ecc_config ecc_config;
 	struct al_nand_dev_properties dev_props;
+	struct al_nand_extra_dev_properties ext_props;
 	void __iomem *pbs_base;
 
 	/* read_byte() emulation: the controller has no byte read, so a 4-byte
@@ -652,23 +653,18 @@ static int al_nand_onfi_config_set(struct nand_chip *chip)
  */
 static int al_nand_attach_chip(struct nand_chip *chip)
 {
+	struct al_nand_extra_dev_properties *ext_props;
 	struct al_nand_data *nand = to_al_nand(chip);
 	struct mtd_info *mtd = nand_to_mtd(chip);
-	struct al_nand_extra_dev_properties ext_props;
 	const struct nand_ecc_props *req;
 	int ret;
+
+	ext_props = &nand->ext_props;
 
 	if (mtd->oobsize > AL_NAND_MAX_OOB_SIZE) {
 		dev_err(nand->dev, "oobsize %u exceeds the %u byte buffer\n",
 			mtd->oobsize, (unsigned int)AL_NAND_MAX_OOB_SIZE);
 		return -EINVAL;
-	}
-
-	ret = al_nand_properties_decode(nand->pbs_base, &nand->dev_props,
-					&nand->ecc_config, &ext_props);
-	if (ret) {
-		dev_err(nand->dev, "nand_properties_decode failed\n");
-		return -EIO;
 	}
 
 	ret = al_nand_onfi_config_set(chip);
@@ -679,14 +675,14 @@ static int al_nand_attach_chip(struct nand_chip *chip)
 	 * the page and the spare-area offset the controller was programmed with
 	 * - the bootloader's layout, which must be matched exactly to read what
 	 * it wrote. */
-	if (nand->ecc_config.spareAreaOffset < ext_props.pageSize) {
+	if (nand->ecc_config.spareAreaOffset < ext_props->pageSize) {
 		dev_err(nand->dev,
 			"spare offset %u below page size %u\n",
-			nand->ecc_config.spareAreaOffset, ext_props.pageSize);
+			nand->ecc_config.spareAreaOffset, ext_props->pageSize);
 		return -EINVAL;
 	}
 	nand->ecc_offset =
-		nand->ecc_config.spareAreaOffset - ext_props.pageSize;
+		nand->ecc_config.spareAreaOffset - ext_props->pageSize;
 	if (nand->ecc_offset >= mtd->oobsize) {
 		dev_err(nand->dev, "ecc offset %u outside %u byte OOB\n",
 			nand->ecc_offset, mtd->oobsize);
@@ -696,7 +692,7 @@ static int al_nand_attach_chip(struct nand_chip *chip)
 
 	req = nanddev_get_ecc_requirements(&chip->base);
 
-	if (ext_props.eccIsEnabled) {
+	if (ext_props->eccIsEnabled) {
 		chip->ecc.engine_type = NAND_ECC_ENGINE_TYPE_ON_HOST;
 		chip->ecc.algo =
 			nand->ecc_config.algorithm == AL_NAND_ECC_ALGORITHM_BCH ?
@@ -784,12 +780,24 @@ static int al_nand_probe(struct platform_device *pdev)
 		goto err_unmap_pbs;
 	}
 
+	/* al_hal_nand.h's documented init flow is select -> config_basic ->
+	 * RESET -> READID. The vendor driver skipped select and RESET and got
+	 * away with it on a controller the 4.1.37 bootloader had already left
+	 * configured; we must not assume that. */
+	al_nand_dev_select(&nand->nand_obj, 0);
+
 	ret = al_nand_dev_config_basic(&nand->nand_obj);
 	if (ret) {
 		dev_err(dev, "dev_config_basic failed\n");
 		ret = -EIO;
 		goto err_terminate;
 	}
+
+	/* The bootloader leaves HW ECC ON. Leaving it on through READID feeds
+	 * the ID bytes to the BCH engine, which returns them mangled - the
+	 * 0xd0/0xad seen instead of Micron's 0x2c/0xd3. ECC is turned back on
+	 * per-page by the read/write_page hooks. */
+	al_nand_ecc_set_enabled(&nand->nand_obj, 0);
 
 	/* NAND_CLK_CYCLES() converts the ONFI timings to controller clocks, so
 	 * a wrong rate here silently mistimes every transfer. */
@@ -835,10 +843,39 @@ static int al_nand_probe(struct platform_device *pdev)
 	chip->legacy.dev_ready = al_nand_dev_ready;
 	chip->legacy.select_chip = al_nand_select_chip;
 
-	/* Must precede nand_scan(): ident reads IDs through read_buf(), which
-	 * sizes its transfers from cw_size. */
+	/* Must precede nand_scan(), not be deferred to attach_chip(): ident
+	 * reads the chip ID through read_buf(), which sizes its transfers from
+	 * cw_size, and cw_size comes from ecc_config.messageSize. */
+	ret = al_nand_properties_decode(nand->pbs_base, &nand->dev_props,
+					&nand->ecc_config, &nand->ext_props);
+	if (ret) {
+		dev_err(dev, "nand_properties_decode failed\n");
+		ret = -EIO;
+		goto err_terminate;
+	}
+
 	nand->cw_size = 512 << nand->ecc_config.messageSize;
 	chip->ecc.size = nand->cw_size;
+
+	/* The bootloader's layout, which reads must match exactly. Logged
+	 * because a silently-wrong decode shows up as a garbled chip ID. */
+	dev_info(dev,
+		 "pbs config: cw %u, ecc %s, spare off %d, page %u, algo %d\n",
+		 nand->cw_size,
+		 nand->ext_props.eccIsEnabled ? "on" : "off",
+		 nand->ecc_config.spareAreaOffset, nand->ext_props.pageSize,
+		 nand->ecc_config.algorithm);
+
+	/* RESET before the first READID, per al_hal_nand.h's init flow: the
+	 * device may be mid-operation from the bootloader's last access. */
+	al_nand_cmd_single_execute(
+		&nand->nand_obj,
+		AL_NAND_CMD_SEQ_ENTRY(AL_NAND_COMMAND_TYPE_CMD,
+				      NAND_CMD_RESET));
+	al_nand_cmd_single_execute(
+		&nand->nand_obj,
+		AL_NAND_CMD_SEQ_ENTRY(AL_NAND_COMMAND_TYPE_WAIT_FOR_READY, 0));
+	al_nand_wait_cmd_fifo_empty(nand);
 
 	/* One CS wired on this board. */
 	ret = nand_scan(chip, 1);
