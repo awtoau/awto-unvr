@@ -49,16 +49,39 @@
 #define NAND_SET_FEATURES_ADDR 0xfa
 
 /*
- * Command-FIFO drain poll.
+ * Command-FIFO drain poll - CMD/ADDRESS entries only.
  *   waits for:  the controller's command FIFO to go empty
- *   expected:   one FIFO entry is a few controller clocks at 375 MHz, so even
- *               a full FIFO drains in well under 1 us
+ *   expected:   a 32-entry FIFO (AL_NAND_CMD_FIFO_DEPTH) at 375 MHz drains in
+ *               well under 1 us; the device-side cycle is tWH/tWRP, tens of ns
  *   limit:      64 us (64 x 1 us polls) - ~64x the worst case, the floor at
  *               which udelay(1) granularity is still meaningful
- *   on expiry:  dev_err naming the elapsed limit; caller continues (the
- *               subsequent HW access reports the real failure)
+ *   on expiry:  -ETIMEDOUT, logged; the caller aborts the operation
+ *
+ * NOT the bound for a FIFO holding a WAIT_FOR_READY entry: the controller
+ * retires that one only once the DEVICE asserts ready, so its duration is
+ * tPROG/tBERS, orders of magnitude larger. See AL_NAND_RDY_POLL_FLOOR_MS.
  */
 #define AL_NAND_CMD_FIFO_POLL_US 64
+
+/*
+ * Device ready/busy poll - a FIFO containing a WAIT_FOR_READY entry.
+ *   waits for:  the device to finish PROGRAM or ERASE and assert ready, which
+ *               is what retires the WAIT_FOR_READY entry and empties the FIFO
+ *   expected:   tPROG/tBERS, read from the chip's OWN ONFI parameter page into
+ *               chip->parameters.onfi (us) - self-reporting, so it cannot go
+ *               stale against a datasheet. Logged at attach.
+ *   limit:      per chip, 1.25x the larger of the two; this 10 ms floor covers
+ *               a non-ONFI device that reports neither. Mainline's own legacy
+ *               nand_wait() uses a flat 400 ms for the same wait.
+ *   on expiry:  -ETIMEDOUT naming the operation, the limit and the elapsed
+ *               time; the caller aborts and the error reaches the MTD core
+ */
+#define AL_NAND_RDY_POLL_FLOOR_MS 10
+
+/* 1.25x the worst case per CLAUDE.md - tight enough that an expiry means a
+ * real fault, not a slow chip. */
+#define AL_NAND_RDY_MARGIN_NUM 5
+#define AL_NAND_RDY_MARGIN_DEN 4
 
 /*
  * Data-buffer interrupt wait.
@@ -96,6 +119,10 @@ struct al_nand_data {
 
 	struct completion complete;
 	int irq;
+
+	/* Ready/busy bound, derived from the chip's ONFI tPROG/tBERS in
+	 * attach_chip(). See AL_NAND_RDY_POLL_FLOOR_MS. */
+	unsigned int rdy_poll_ms;
 
 	u8 oob[AL_NAND_MAX_OOB_SIZE];
 };
@@ -226,19 +253,47 @@ static void al_nand_send_byte_count_cmd(struct al_nand_ctrl_obj *obj,
 		obj, AL_NAND_CMD_SEQ_ENTRY(cmd_id, (len >> 8) & 0xff));
 }
 
-/* Drain the command FIFO. See AL_NAND_CMD_FIFO_POLL_US for the bound. */
-static void al_nand_wait_cmd_fifo_empty(struct al_nand_data *nand)
+/* Drain a FIFO of CMD/ADDRESS entries. See AL_NAND_CMD_FIFO_POLL_US. */
+static int al_nand_wait_cmd_fifo_empty(struct al_nand_data *nand)
 {
 	unsigned int i;
 
 	for (i = 0; i < AL_NAND_CMD_FIFO_POLL_US; i++) {
 		if (al_nand_cmd_buff_is_empty(&nand->nand_obj))
-			return;
+			return 0;
 		udelay(1);
 	}
 
 	dev_err(nand->dev, "command FIFO still busy after %u us\n",
 		AL_NAND_CMD_FIFO_POLL_US);
+
+	return -ETIMEDOUT;
+}
+
+/*
+ * Drain a FIFO whose last entry is WAIT_FOR_READY, i.e. wait out tPROG/tBERS.
+ * Separate from the above because the two differ by ~4 orders of magnitude.
+ * See AL_NAND_RDY_POLL_FLOOR_MS.
+ */
+static int al_nand_wait_dev_ready(struct al_nand_data *nand, const char *op)
+{
+	unsigned long start = jiffies;
+	unsigned long deadline = start + msecs_to_jiffies(nand->rdy_poll_ms) + 1;
+
+	do {
+		if (al_nand_cmd_buff_is_empty(&nand->nand_obj))
+			return 0;
+		cond_resched();
+	} while (time_before(jiffies, deadline));
+
+	if (al_nand_cmd_buff_is_empty(&nand->nand_obj))
+		return 0;
+
+	dev_err(nand->dev,
+		"%s: device not ready after %u ms (elapsed %u ms)\n", op,
+		nand->rdy_poll_ms, jiffies_to_msecs(jiffies - start));
+
+	return -ETIMEDOUT;
 }
 
 static void al_nand_cmd_ctrl(struct nand_chip *chip, int dat,
@@ -262,13 +317,18 @@ static void al_nand_cmd_ctrl(struct nand_chip *chip, int dat,
 		type == AL_NAND_COMMAND_TYPE_CMD ? "CMD" : "ADDR",
 		dat & 0xff, ctrl);
 	al_nand_cmd_single_execute(&nand->nand_obj, cmd);
+
+	/* Submission only - the entry is a CMD/ADDRESS cycle. */
 	al_nand_wait_cmd_fifo_empty(nand);
 
 	if (dat == NAND_CMD_PAGEPROG && (ctrl & NAND_CLE)) {
 		cmd = AL_NAND_CMD_SEQ_ENTRY(
 			AL_NAND_COMMAND_TYPE_WAIT_FOR_READY, 0);
 		al_nand_cmd_single_execute(&nand->nand_obj, cmd);
-		al_nand_wait_cmd_fifo_empty(nand);
+
+		/* tPROG, not FIFO drain - the controller holds this entry
+		 * until the device asserts ready. */
+		al_nand_wait_dev_ready(nand, "PAGEPROG");
 
 		al_nand_wp_set_enable(&nand->nand_obj, 1);
 		al_nand_tx_set_enable(&nand->nand_obj, 0);
@@ -610,8 +670,8 @@ static int al_nand_page_size_convert(unsigned int bytes,
 }
 
 /* Tell the device which SDR timing mode to use, via ONFI SET FEATURES. */
-static void al_nand_set_timing_mode(struct al_nand_data *nand,
-				    enum al_nand_device_timing_mode timing)
+static int al_nand_set_timing_mode(struct al_nand_data *nand,
+				   enum al_nand_device_timing_mode timing)
 {
 	const u32 cmds[] = {
 		AL_NAND_CMD_SEQ_ENTRY(AL_NAND_COMMAND_TYPE_CMD,
@@ -626,7 +686,8 @@ static void al_nand_set_timing_mode(struct al_nand_data *nand,
 	};
 
 	al_nand_cmd_seq_execute(&nand->nand_obj, cmds, ARRAY_SIZE(cmds));
-	al_nand_wait_cmd_fifo_empty(nand);
+
+	return al_nand_wait_cmd_fifo_empty(nand);
 }
 
 /* Pick the highest SDR mode the device and AL_NAND_MAX_ONFI_TIMING_MODE both
@@ -658,7 +719,11 @@ static int al_nand_onfi_config_set(struct nand_chip *chip)
 		return ret;
 	}
 
-	al_nand_set_timing_mode(nand, props->timingMode);
+	ret = al_nand_set_timing_mode(nand, props->timingMode);
+	if (ret) {
+		dev_err(nand->dev, "SET FEATURES (timing mode) timed out\n");
+		return ret;
+	}
 
 	props->num_col_cyc = chip->page_shift;
 	props->num_row_cyc = chip->chip_shift;
@@ -712,6 +777,23 @@ static int al_nand_attach_chip(struct nand_chip *chip)
 	ret = al_nand_onfi_config_set(chip);
 	if (ret)
 		return ret;
+
+	/* Ready/busy bound from the chip's OWN ONFI parameter page (us), at
+	 * 1.25x the larger of tPROG/tBERS. A non-ONFI chip reports neither and
+	 * keeps the floor. See AL_NAND_RDY_POLL_FLOOR_MS. */
+	if (chip->parameters.onfi) {
+		unsigned int worst_us = max(chip->parameters.onfi->tPROG,
+					    chip->parameters.onfi->tBERS);
+		unsigned int ms = DIV_ROUND_UP(worst_us * AL_NAND_RDY_MARGIN_NUM,
+					       AL_NAND_RDY_MARGIN_DEN * 1000);
+
+		nand->rdy_poll_ms = max(ms, (unsigned int)
+					AL_NAND_RDY_POLL_FLOOR_MS);
+		dev_info(nand->dev,
+			 "onfi tPROG %u us, tBERS %u us -> ready bound %u ms\n",
+			 chip->parameters.onfi->tPROG,
+			 chip->parameters.onfi->tBERS, nand->rdy_poll_ms);
+	}
 
 	/* ECC region is whatever the boot-time config left between the end of
 	 * the page and the spare-area offset the controller was programmed with
@@ -820,6 +902,9 @@ static int al_nand_probe(struct platform_device *pdev)
 
 	nand->dev = dev;
 	nand->cache_pos = -1;
+	/* Floor until attach_chip() reads the chip's ONFI tPROG/tBERS; the
+	 * pre-scan RESET below already needs a ready bound. */
+	nand->rdy_poll_ms = AL_NAND_RDY_POLL_FLOOR_MS;
 	platform_set_drvdata(pdev, nand);
 
 	nand_base = devm_platform_ioremap_resource(pdev, 0);
@@ -971,7 +1056,12 @@ static int al_nand_probe(struct platform_device *pdev)
 	al_nand_cmd_single_execute(
 		&nand->nand_obj,
 		AL_NAND_CMD_SEQ_ENTRY(AL_NAND_COMMAND_TYPE_WAIT_FOR_READY, 0));
-	al_nand_wait_cmd_fifo_empty(nand);
+
+	/* tRST, not FIFO drain - the WAIT_FOR_READY entry retires on the
+	 * device, and tRST after a PROGRAM is on the order of tPROG. */
+	ret = al_nand_wait_dev_ready(nand, "RESET");
+	if (ret)
+		goto err_terminate;
 
 	/* One CS wired on this board. */
 	ret = nand_scan(chip, 1);
