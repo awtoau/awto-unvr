@@ -124,6 +124,10 @@ struct al_nand_data {
 	 * attach_chip(). See AL_NAND_RDY_POLL_FLOOR_MS. */
 	unsigned int rdy_poll_ms;
 
+	/* write_buf() and cmd_ctrl() are void but can fail. They record here;
+	 * al_nand_ecc_write_page() checks it so the error reaches the core. */
+	int write_err;
+
 	u8 oob[AL_NAND_MAX_OOB_SIZE];
 };
 
@@ -302,6 +306,7 @@ static void al_nand_cmd_ctrl(struct nand_chip *chip, int dat,
 	struct al_nand_data *nand = to_al_nand(chip);
 	enum al_nand_command_type type;
 	u32 cmd;
+	int ret;
 
 	if (!(ctrl & (NAND_CLE | NAND_ALE)))
 		return;
@@ -319,7 +324,9 @@ static void al_nand_cmd_ctrl(struct nand_chip *chip, int dat,
 	al_nand_cmd_single_execute(&nand->nand_obj, cmd);
 
 	/* Submission only - the entry is a CMD/ADDRESS cycle. */
-	al_nand_wait_cmd_fifo_empty(nand);
+	ret = al_nand_wait_cmd_fifo_empty(nand);
+	if (ret)
+		nand->write_err = ret;
 
 	if (dat == NAND_CMD_PAGEPROG && (ctrl & NAND_CLE)) {
 		cmd = AL_NAND_CMD_SEQ_ENTRY(
@@ -328,7 +335,9 @@ static void al_nand_cmd_ctrl(struct nand_chip *chip, int dat,
 
 		/* tPROG, not FIFO drain - the controller holds this entry
 		 * until the device asserts ready. */
-		al_nand_wait_dev_ready(nand, "PAGEPROG");
+		ret = al_nand_wait_dev_ready(nand, "PAGEPROG");
+		if (ret)
+			nand->write_err = ret;
 
 		al_nand_wp_set_enable(&nand->nand_obj, 1);
 		al_nand_tx_set_enable(&nand->nand_obj, 0);
@@ -424,6 +433,7 @@ static void al_nand_write_buf(struct nand_chip *chip, const u8 *buf, int len)
 	struct al_nand_data *nand = to_al_nand(chip);
 	u32 cw_size = chip->ecc.size;
 	u32 cw_count;
+	int ret;
 
 	al_nand_tx_set_enable(&nand->nand_obj, 1);
 	al_nand_wp_set_enable(&nand->nand_obj, 0);
@@ -437,14 +447,21 @@ static void al_nand_write_buf(struct nand_chip *chip, const u8 *buf, int len)
 			AL_NAND_COMMAND_TYPE_DATA_WRITE_COUNT, cw_size);
 
 	while (len > 0) {
-		if (al_nand_wait_for_irq(nand,
-					 AL_NAND_INTR_STATUS_BUF_WRRDY))
+		/* write_buf() is void, so a failure here is recorded for
+		 * al_nand_ecc_write_page() to turn into the core's error. */
+		ret = al_nand_wait_for_irq(nand, AL_NAND_INTR_STATUS_BUF_WRRDY);
+		if (ret) {
+			nand->write_err = ret;
 			return;
+		}
 
-		/* FIFO register, not a memory window - see al_nand_read_buf(). */
+		/* al_nand_data_buff_write(), NOT a memcpy - and only correct
+		 * since the HAL fix that pointed it at obj->data_buff_base
+		 * instead of the no-wrapper register. See al_nand_read_buf(). */
 		if (al_nand_data_buff_write(&nand->nand_obj, cw_size, buf)) {
 			dev_err(nand->dev, "data_buff_write failed (cw %u)\n",
 				cw_size);
+			nand->write_err = -EIO;
 			return;
 		}
 		buf += cw_size;
@@ -592,21 +609,35 @@ static int al_nand_ecc_read_subpage(struct nand_chip *chip, u32 offs, u32 len,
 	return -ENOTSUPP;
 }
 
-/* page is unused: the core has already issued SEQIN with the page address via
- * cmdfunc by the time write_page() is called. */
+/*
+ * The core's nand_write_page() calls this and NOTHING else - it issues no SEQIN
+ * and no PAGEPROG of its own, so the whole program sequence belongs here. The
+ * port had dropped both halves and written only the data buffer, which is why
+ * nandwrite exited 0 on a page that stayed erased (#208).
+ */
 static int al_nand_ecc_write_page(struct nand_chip *chip, const u8 *buf,
 				  int oob_required, int page)
 {
 	struct al_nand_data *nand = to_al_nand(chip);
 	struct mtd_info *mtd = nand_to_mtd(chip);
 	u32 cmd;
+	int ret;
 
 	if (WARN_ON(oob_required))
 		return -EINVAL;
 
 	al_nand_ecc_set_enabled(&nand->nand_obj, 1);
 
-	al_nand_write_buf(chip, buf, mtd->writesize);
+	/* SEQIN + write_buf. al_nand_write_buf() records any failure in
+	 * nand->write_err, which is checked below - write_buf() is void. */
+	nand->write_err = 0;
+	ret = nand_prog_page_begin_op(chip, page, 0, buf, mtd->writesize);
+	if (ret)
+		goto out;
+
+	ret = nand->write_err;
+	if (ret)
+		goto out;
 
 	chip->legacy.cmdfunc(chip, NAND_CMD_RNDIN,
 			     mtd->writesize + nand->ecc_offset, -1);
@@ -617,17 +648,24 @@ static int al_nand_ecc_write_page(struct nand_chip *chip, const u8 *buf,
 	al_nand_wp_set_enable(&nand->nand_obj, 0);
 	al_nand_cmd_single_execute(&nand->nand_obj, cmd);
 
+	/* Hand the controller's ECC bytes to the device's OOB. */
 	al_nand_send_byte_count_cmd(&nand->nand_obj,
 				    AL_NAND_COMMAND_TYPE_SPARE_WRITE_COUNT,
 				    nand->ecc_bytes);
 
-	al_nand_wait_cmd_fifo_empty(nand);
+	ret = al_nand_wait_cmd_fifo_empty(nand);
 
+out:
 	al_nand_wp_set_enable(&nand->nand_obj, 1);
 	al_nand_tx_set_enable(&nand->nand_obj, 0);
 	al_nand_ecc_set_enabled(&nand->nand_obj, 0);
 
-	return 0;
+	if (ret)
+		return ret;
+
+	/* PAGEPROG + waitfunc; -EIO on NAND_STATUS_FAIL. This is what makes a
+	 * failed program visible to nandwrite's exit status. */
+	return nand_prog_page_end_op(chip);
 }
 
 /******************************************************************************/
