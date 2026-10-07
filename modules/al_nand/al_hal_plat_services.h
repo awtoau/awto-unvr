@@ -102,6 +102,20 @@ extern "C" {
 #define al_reg_write32_relaxed(l,v)	writel(v,l)
 #endif
 
+/*
+ * AWTO (#208): the logging macros, restored from the vendor's own
+ * al_hal_plat_services.h. The al_eth/al_dma HALs never call them so their
+ * copies dropped them; al_hal_nand.c does. Definitions verbatim from the
+ * 4.1.37 GPL drop, and they satisfy hal/al_hal_plat_contract.h.
+ * al_dbg -> pr_debug, so the per-register decode trace is compiled out
+ * unless DEBUG/dyndbg asks for it.
+ */
+#define al_print(fmt, ...)	printk(KERN_INFO fmt, ##__VA_ARGS__)
+#define al_err(...)		pr_err(__VA_ARGS__)
+#define al_warn(...)		pr_info(__VA_ARGS__)
+#define al_info(...)		pr_info(__VA_ARGS__)
+#define al_dbg(...)		pr_debug(__VA_ARGS__)
+
 /**
  * Assertion
  *

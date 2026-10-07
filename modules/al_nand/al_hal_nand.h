@@ -85,11 +85,19 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define __AL_HAL_NAND_H__
 
 #include "al_hal_common.h"
-/* AWTO: was #include "al_hal_ssm{,_raid}.h". struct al_ssm_dma is only ever
- * stored as an opaque pointer here (al_nand_init() takes NULL on the non-DMA
- * path), so a forward declaration suffices - importing those two HAL files
- * would add vendored copies that nothing in this module compiles (#208). */
+/* AWTO (#208): was #include "al_hal_ssm{,_raid}.h", which pulled al_hal_udma.h
+ * for these two. Declared here instead - importing those three HAL files would
+ * add vendored copies that nothing in this module compiles.
+ *   al_ssm_dma - only stored as an opaque pointer (al_nand_init() takes NULL
+ *                on the non-DMA path), so a forward declaration suffices.
+ *   al_buf     - needs the complete type: it appears as an array parameter in
+ *                the al_hal_nand_dma.c prototypes below. Verbatim from
+ *                al_hal_udma.h; al_hal_nand.c itself never touches it. */
 struct al_ssm_dma;
+struct al_buf {
+	al_phys_addr_t addr; /**< Buffer physical address */
+	uint32_t len; /**< Buffer lenght in bytes */
+};
 #include "al_hal_nand_defs.h"
 
 /* *INDENT-OFF* */
