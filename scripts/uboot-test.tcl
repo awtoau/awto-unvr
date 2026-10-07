@@ -50,4 +50,18 @@ for {set i 0} {$i < 20} {incr i} {
     if {[catch {expect "awto-nas#" 1}] == 0} { set ok2 1; break }
 }
 if {!$ok2} { puts "NO-UNVR (go failed — check the tftp'd image)"; return }
+# WHICH U-Boot answered? The NAND copy at 0x1300000 prints the same awto-nas#
+# prompt, and stock's bootcmd loads it to the same 0x1100000 we tftp to - so
+# matching the prompt alone passed for a month while running an old build
+# (#265). `version` echoes the banner, which carries the ident build-uboot
+# stamped in (#258). No match = we are NOT on the fresh image; say so.
+if {[info exists WANTSHA]} {
+    send "version"
+    if {[catch {expect "awto-$WANTSHA" 6}]} {
+        puts "WRONG-UBOOT (prompt answered but banner is not awto-$WANTSHA —"
+        puts "  the NAND copy won the race, or the tftp'd image never ran. #265)"
+        return
+    }
+    puts "verified: running awto-$WANTSHA"
+}
 puts "=== LIVE at awto-nas# — fresh build on hardware, box is yours to test ==="

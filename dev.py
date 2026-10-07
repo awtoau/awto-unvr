@@ -26,6 +26,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import shutil
 import socket
 import subprocess
@@ -1324,8 +1325,26 @@ def cmd_uboot_test(_extra: list[str]) -> int:
         )
     log("uboot-test: reset+catch+tftp+go, then STOP at awto-nas# (no auto-tests)")
     cold_line = "set COLD 1\n" if cold else ""
+    # The NAND copy prints the same awto-nas# prompt as the chainloaded image,
+    # so matching the prompt alone passed while running a month-old build
+    # (#265). Inject the SHA build-uboot stamped in, and verify the banner.
+    # Read from the binary rather than re-deriving it: that is the ident that
+    # actually shipped, and it cannot drift from the image under test.
+    want_sha = ""
+    try:
+        blob = UBOOT_BIN.read_bytes()
+        m = re.search(rb"awto-([0-9a-f]{7,}(?:-dirty)?)", blob)
+        if m:
+            want_sha = m.group(1).decode()
+    except OSError:
+        pass
+    if not want_sha:
+        log(
+            "uboot-test: u-boot.bin carries no awto- ident; skipping the #265 check",
+            "WARN",
+        )
     script = (
-        f"set SERVERIP {server_ip}\n{cold_line}"
+        f"set SERVERIP {server_ip}\nset WANTSHA {want_sha}\n{cold_line}"
         + Path("scripts/uboot-test.tcl").read_text()
     )
     rc = cmd_console_tcl(["-e", script])
