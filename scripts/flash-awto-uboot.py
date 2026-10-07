@@ -10,7 +10,9 @@ bootargs say 115200 and cannot be changed; they win on the direct-NAND path.
 
 Layout (NAND offsets):
   awto-uboot @ 0x1300000  (start of the unused rootfs partition, 1 MiB span)
-  stock kernel @ 0x300000 is left intact - `run bootnand` still recovers it.
+  stock kernel @ 0x300000 is left intact, but is NOT a recovery path: that
+  image is not genuine stock firmware and does not boot (#166). Recovery is
+  netboot from stock, which needs working 1G.
 
 Stock loads it as a RAW image at awto-uboot's link address (CONFIG_TEXT_BASE
 0x01100000) and jumps with `go`, not bootm: u-boot.bin has no uImage header.
