@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-2.0-or-later
 # Copyright (C) 2026 Awto / Daniel Tyrrell
-"""Detect NEW divergence between the four vendored copies of the Annapurna HAL.
+"""Detect NEW divergence between the five vendored copies of the Annapurna HAL.
 
-Why: the `al_*` HAL is vendored four times at three different vintages, with
+Why: the `al_*` HAL is vendored five times at three different vintages, with
 nothing keeping them in step (#218). Two examples found by hand:
 
   - UDMA AXI timeout is 5M in modules/al_ssm and uboot-port, 1M in
@@ -35,8 +35,9 @@ the Linux fork's canonical copy instead. See check_shared_header().
 
 Scope after #256 phase 3. The al_eth HAL is STAGED from modules/al_eth/ at
 build time (scripts/stage_hal.py); both the U-Boot copy (phase 2) and the EDK2
-one (phase 3, 61 files) are GONE. Three vendored copies remain, all Linux
-modules.
+one (phase 3, 61 files) are GONE. Four vendored copies remain, all Linux
+modules - the fourth is modules/al_nand (#208), a disjoint file set with one
+consumer, so registered here rather than staged.
 
 The U-Boot tree still appears below for al_serdes and al_ssm, which carry HAL
 files of their own that neither phase touched.
@@ -69,6 +70,11 @@ TREES: dict[str, list[str]] = {
     "al_eth": ["modules/al_eth"],
     "al_dma": ["modules/al_dma"],
     "al_ssm": ["modules/al_ssm"],
+    # #208. NOT staged from modules/al_eth: the NAND HAL is a disjoint file set
+    # with one consumer, so staging it would mean putting NAND sources under
+    # al_eth. It is registered here instead, which is what keeps its copies of
+    # al_hal_plat_services.h and friends in the drift baseline.
+    "al_nand": ["modules/al_nand"],
     "uboot": [
         "uboot-port/drivers/phy/al_serdes",
         "uboot-port/drivers/crypto/al_ssm",

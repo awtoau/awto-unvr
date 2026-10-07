@@ -2,6 +2,7 @@
  "al_hal_common.h": {
   "al_dma": "4c755175ed2ac966",
   "al_eth": "4c755175ed2ac966",
+  "al_nand": "4c755175ed2ac966",
   "al_ssm": "27ec8eeabfa8418a"
  },
  "al_hal_iofic.c": {
@@ -32,16 +33,19 @@
  "al_hal_plat_services.h": {
   "al_dma": "e48b477de1f9c1b4",
   "al_eth": "e48b477de1f9c1b4",
+  "al_nand": "cb43cc7c323b71c6",
   "al_ssm": "8130611da1bf42f2"
  },
  "al_hal_plat_types.h": {
   "al_dma": "9183ddbad9aa1734",
   "al_eth": "9183ddbad9aa1734",
+  "al_nand": "9183ddbad9aa1734",
   "al_ssm": "f386e9fb8039d96d"
  },
  "al_hal_reg_utils.h": {
   "al_dma": "28f2d15d16d77eb9",
   "al_eth": "28f2d15d16d77eb9",
+  "al_nand": "28f2d15d16d77eb9",
   "al_ssm": "bd9f363a2d393ed1"
  },
  "al_hal_serdes_25g.c": {
@@ -108,6 +112,7 @@
  "al_hal_types.h": {
   "al_dma": "663c7766a8211ebf",
   "al_eth": "663c7766a8211ebf",
+  "al_nand": "663c7766a8211ebf",
   "al_ssm": "2e2eaedb59ac9d26"
  },
  "al_hal_udma.h": {
