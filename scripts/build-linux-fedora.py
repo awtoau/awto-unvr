@@ -352,6 +352,13 @@ def configure():
             # amazon,al-mc-edac - the symbol alone will not bind (#208).
             "--module",
             "EDAC_AL_MC",
+            # Raw-NAND core, for our OOT al_nand.ko (#208). An external module
+            # cannot supply nand_scan()/nand_cleanup() - they live in
+            # nand_base.o inside this symbol. localmodconfig drops it by
+            # construction (the build host has no raw NAND). MTD_OF_PARTS is
+            # already =m and is what turns the DT fixed-partitions into mtd8+.
+            "--module",
+            "MTD_RAW_NAND",
             # #92: per-port MSI-X for the two Alpine AHCI controllers instead
             # of board_ahci_al's one shared INTx. Needs
             # patches/ahci-alpine-per-port-msix.patch applied in the kernel
@@ -534,6 +541,10 @@ def configure():
         "CONFIG_PCS_XPCS",
         "CONFIG_MDIO_I2C",
         "CONFIG_I2C_MUX_PCA954x",
+        # #208: al_nand.ko links against nand_scan()/nand_cleanup() from the
+        # raw-NAND core. Without it the module builds with unresolved symbols
+        # and NAND stays invisible - exactly the gap it exists to close.
+        "CONFIG_MTD_RAW_NAND",
     ):
         if f"{sym}=y" not in dotcfg and f"{sym}=m" not in dotcfg:
             log(f"FATAL: {sym} not set (y or m) after olddefconfig")
@@ -697,6 +708,8 @@ def build():
     # at "Restarting system". It was written but never added here.
     # ubnt_hdd_pwrctl binds the ui,hdd-pwrctl DT node (#208) - bay presence and
     # the amber fault LEDs, which had no driver at all.
+    # al_nand binds annapurna-labs,al-nand (#208): without it /proc/mtd stops
+    # at the NOR partitions and every NAND access has to go through U-Boot.
     for m in (
         "al_eth",
         "al_dma",
@@ -705,6 +718,7 @@ def build():
         "al_thermal",
         "al_reboot",
         "ubnt_hdd_pwrctl",
+        "al_nand",
     ):
         mpath = os.path.join(OUT, m)
         if os.path.exists(mpath):
