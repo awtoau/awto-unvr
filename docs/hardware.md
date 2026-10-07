@@ -278,7 +278,7 @@ a separate MMIO peripheral.
 | memctl | `0xf0080000` | 0x10000 | `annapurna-labs,alpine-mc` — internally split uMCTL2 ctrl `+0x0`/0x8000 (`AL_NB_DDR_CTL_BASE`) + PUB PHY `+0x8000`/0x8000 (`AL_NB_DDR_PHY_BASE`), per `al_hal_iomap.h` ([uboot-ddr-port.md](uboot-ddr-port.md) §4) |
 | ccu | `0xf0090000` | 0x10000 | `annapurna-labs,al-ccu` — **CCU (Cache Coherency Unit)**. **Corrected — was mislabeled "preboot agent mailbox"**; full decompile + HAL cross-ref proves it's the coherency block. See sub-offsets below |
 | msix | `0xfbe00000` | 0x100000 | `annapurna-labs,alpine-msix`,`al,alpine-msix` |
-| al-nand | `0xfa100000` | 0x202000 | `annapurna-labs,al-nand` (custom driver) |
+| al-nand | `0xfa100000` | 0x202000 | `annapurna-labs,al-nand` — `modules/al_nand` since #208. Sub-blocks: data-buffer **window** `+0x0`, command buffer `+0x100000`, wrapper `+0x200000`, control regs `+0x201000` (`data_buffer_reg` at `+0x201424`). Two data access modes — [mtd.md](mtd.md) |
 | tdm | `0xf2300000` | 0x11000 | `annapurna-labs,al-tdm` |
 
 > **CCU (`0xf0090000`) sub-offsets** — confirmed by full Ghidra decompile of both
@@ -404,7 +404,7 @@ Block | mainline driver | compatible / PCI ID | evidence file.
 | Fan/hwmon | adt7475 | `adi,adt7475` @ i2c 0x2e | hwmon.txt, dmesg (rev 1) |
 | Watchdog ×4 | sp805_wdt | `arm,sp805` @ 0xfd88c000+ | live.dts |
 | Thermal | (custom) al_thermal | `annapurna-labs,al-thermal` @ 0xfd860a00 | thermal.txt (zone0 50°C) |
-| NAND | (custom) al_nand | `annapurna-labs,al-nand` @ 0xfa100000; Micron MT29F8G08ABBCAH4 | dmesg, modules.txt |
+| NAND | `al_nand` (OOT, #208) | `annapurna-labs,al-nand` @ 0xfa100000; Micron MT29F8G08ABBCAH4, 1 GiB SLC, 256 KiB erase, 4096 B page, 224 B OOB. Binds; 5 MTD partitions; reads verified, writes untested | dmesg, `/proc/mtd` |
 | SGPO (bay LEDs) | (custom) al-sgpo | `annapurna-labs,alpine-sgpo` @ 0xfd8b4000 | gpio.txt (gpiochip8, 64 lines) |
 | SerDes | (custom) al-serdes | `annapurna-labs,al-serdes` @ 0xfd8c0000 | live.dts |
 

@@ -150,10 +150,25 @@ exercised: NAND `0x1300000` holds awto-uboot.
 
 Two gotchas the port cost hours on, both worth knowing before touching this code:
 
-- **The data buffer is a FIFO register at one address, not a memory window.** The
-  vendor driver `memcpy`s from `al_nand_data_buff_base_get()` across ascending
-  addresses, which is wrong — use `al_nand_data_buff_read/write()`, which read the
-  same address repeatedly and track the code-word accounting.
+- **The data buffer has TWO access modes, and the HAL picks one at init.**
+  `al_hal_nand.c` sets `obj->data_buff_base` from two different bases:
+
+  | mode | set at | address | correct access |
+  |---|---|---|---|
+  | window | `al_hal_nand.c:154` | `nand_base_ptr + DATA_BUFF_OFFSET` (`0x0`) | ascending `memcpy` |
+  | FIFO register | `al_hal_nand.c:183` | `&regs_base->data_buffer_reg` (`0x0424`) | re-read one address |
+
+  `al_hal_nand_regs.h:62` shows the second is a single 32-bit register with
+  `nflash_spare_offset` at `0x0428` right after it — so an ascending `memcpy`
+  from there reads config registers as page data. The vendor driver's
+  `memcpy(buf, al_nand_data_buff_base_get(...), cw_size)` targets the **window**
+  and is correct for it; it is not correct on the FIFO path.
+  Use `al_nand_data_buff_read/write()`: they follow whichever base is set and
+  track the code-word accounting. **Which mode our init lands on, and whether the
+  window is usable, is unresolved (#208)** — it matters because the window is a
+  block copy while the FIFO is one 32-bit read per word (~800 ms per 4-byte
+  READID was observed during the port). `al_nand_data_buff_read_dma()` exists and
+  is not imported.
 - **awto-uboot leaves `sdr_timing_params_0/1` at zero.** Stock's bootloader left
   working timings behind and the vendor driver relied on that; ours must program
   them before `nand_scan()`.
