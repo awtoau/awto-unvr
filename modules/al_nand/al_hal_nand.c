@@ -1700,7 +1700,9 @@ int al_nand_data_buff_write(
 		int word_bytes;
 
 		if (0 == cw_size_remaining) {
-			_al_nand_data_buf_wait_for_cw_vacancy(obj);
+			if (obj->no_wrapper)
+				_al_nand_data_buf_wait_for_cw_vacancy(obj);
+
 			cw_size_remaining = cw_size;
 			cw_count_remaining--;
 		}
@@ -1721,8 +1723,13 @@ int al_nand_data_buff_write(
 			word >>= 8;
 		}
 
+		/* AWTO FIX: obj->data_buff_base, not &regs_base->data_buffer_reg.
+		 * Vendor hardcoded the no-wrapper register while the read path
+		 * at :1636 honours data_buff_base - so on the wrapper path
+		 * (al_nand_init(), ours) every write landed at +0x201424 instead
+		 * of +0x0 and page programs silently no-op'd. #208. */
 		al_reg_write32(
-			&obj->regs_base->data_buffer_reg,
+			(uint32_t *)obj->data_buff_base,
 			word);
 
 		cw_size_remaining -= 4;
