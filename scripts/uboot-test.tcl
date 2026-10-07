@@ -51,7 +51,14 @@ proc step {cmd needle secs what} {
     return 1
 }
 if {![step "setenv bootdelay -1" "awto-nas#" 6 "stop autoboot"]} { return }
-if {![step "setenv ipaddr $IPADDR" "awto-nas#" 6 "set ipaddr"]} { return }
+# DHCP, not the $IPADDR static: that address is inside the lease pool and the
+# box has held it as a lease before, so ARP for it never resolved and every
+# transfer died at "ARP Retry count exceeded" (#252). A lease needs no
+# knowledge of the pool bounds. serverip is still ours - the DHCP server
+# hands out a gateway, not our tftpd.
+# Bound: a lease on a quiet LAN is well under 1s; 15s is ~15x and covers
+# CONFIG_NET_RETRY_COUNT=5. On expiry: STEP-FAILED names it.
+if {![step "dhcp" "DHCP client bound" 15 "get a DHCP lease"]} { return }
 if {![step "setenv serverip $SERVERIP" "awto-nas#" 6 "set serverip"]} { return }
 # 0x1100000 is the RUNNING bootloader's load/entry (nor-boot-chain.md:56)
 # AND our CONFIG_TEXT_BASE - must run there, cannot be written there.
