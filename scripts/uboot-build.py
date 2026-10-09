@@ -17,7 +17,7 @@ Single-source layout (no per-driver plat_api duplication):
 
 Usage:
   scripts/uboot-build.py            # stage + configure + build, log to tmp/logs
-  scripts/uboot-build.py --clean    # distclean build + un-stage + revert hooks
+  scripts/uboot-build.py --clean    # distclean + un-stage, then a full rebuild
 
 Disk is tight (~40 GB free). Build goes to an out-of-tree O= dir under tmp/ so a
 single rm reclaims it; --clean also runs distclean and removes staged sources.
@@ -25,10 +25,12 @@ Timeout: build wall-clock cap = 900 s (~1.25x an observed worst-case full arm64
 U-Boot build of ~12 min on this host); on expiry the make is killed and logged.
 """
 
+import collections
 import os
 import shutil
 import subprocess
 import sys
+import threading
 import time
 from pathlib import Path
 
@@ -43,6 +45,7 @@ BUILDDIR = os.path.join(REPO, "tmp", "uboot-build")
 LOG = os.path.join(REPO, "tmp", "logs", "uboot-port.log")
 CROSS = "aarch64-linux-gnu-"
 BUILD_TIMEOUT_S = 900  # see module docstring
+TAIL_LINES = 40  # make output re-logged on failure
 
 # Where the shared Linux al_eth HAL is staged inside TREE. Build artifact:
 # never checked in, rewritten every build (scripts/stage_hal.py).
@@ -417,25 +420,42 @@ def unstage():
 
 
 def run(cmd):
+    """Run cmd in TREE, teeing output to the terminal and LOG line by line.
+    On non-zero exit, the last TAIL_LINES lines are re-logged. Returns rc."""
     env = dict(os.environ, CROSS_COMPILE=CROSS, ARCH="arm")
     log("run: " + " ".join(cmd))
+    t0 = time.time()
+    tail = collections.deque(maxlen=TAIL_LINES)
+    p = subprocess.Popen(
+        cmd,
+        cwd=TREE,
+        env=env,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        errors="replace",
+    )
+    # Wall-clock cap enforced by a timer so a silent hang still expires.
+    timer = threading.Timer(BUILD_TIMEOUT_S, p.kill)
+    timer.start()
     with open(LOG, "a") as f:
-        t0 = time.time()
-        try:
-            p = subprocess.run(
-                cmd,
-                cwd=TREE,
-                env=env,
-                stdout=f,
-                stderr=subprocess.STDOUT,
-                timeout=BUILD_TIMEOUT_S,
-                check=False,
-            )
-        except subprocess.TimeoutExpired:
-            log(f"TIMEOUT after {BUILD_TIMEOUT_S}s: {' '.join(cmd)}")
-            return 124
-    log(f"exit {p.returncode} ({time.time() - t0:.0f}s)")
-    return p.returncode
+        for line in p.stdout:
+            sys.stdout.write(line)
+            f.write(line)
+            tail.append(line)
+        sys.stdout.flush()
+    rc = p.wait()
+    expired = not timer.is_alive() and rc < 0
+    timer.cancel()
+    if expired:
+        log(f"TIMEOUT after {BUILD_TIMEOUT_S}s: {' '.join(cmd)}")
+        return 124
+    log(f"exit {rc} ({time.time() - t0:.0f}s)")
+    if rc != 0:
+        log(f"FAILED rc={rc}: {' '.join(cmd)}; last {len(tail)} lines:")
+        for line in tail:
+            log("  | " + line.rstrip("\n"))
+    return rc
 
 
 def stamp_ident():
@@ -524,8 +544,7 @@ if __name__ == "__main__":
     os.makedirs(os.path.dirname(LOG), exist_ok=True)
     if "--clean" in sys.argv:
         clean()
-    else:
-        check_dts_shared()
-        stage()
-        verify_patch_state()
-        sys.exit(build())
+    check_dts_shared()
+    stage()
+    verify_patch_state()
+    sys.exit(build())
