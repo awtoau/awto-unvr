@@ -933,7 +933,7 @@
 		led-ulogo-blue {
 			label = "ulogo_blue";
 			gpios = <&gpio3 7 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "default-on";
+			linux,default-trigger = "disk-activity";
 		};
 
 		led-ulogo-white {
