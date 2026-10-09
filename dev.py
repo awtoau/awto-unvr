@@ -1014,6 +1014,17 @@ def cmd_bench_all(extra: list[str]) -> int:
 
 
 @command(
+    "always-on iperf3 server on THIS host for woomera throughput tests - a "
+    "systemd user unit on :5701, all interfaces. Which port is measured is a "
+    "client-side --bind-dev choice (#170, scripts/iperf-server.py)",
+    args="[--install]",
+    kind="action",
+)
+def cmd_iperf_server(extra: list[str]) -> int:
+    return _run_script("scripts/iperf-server.py", extra)
+
+
+@command(
     "concurrent long-duration soak: iperf3 both al_eth ports + fio --direct=1 "
     "reads on every SATA and USB disk, all at once, sampling dmesg/ethtool/"
     "interrupts throughout - finds the faults that only appear under sustained "
