@@ -17,9 +17,9 @@ Layout (NAND offsets):
 Stock loads it as a RAW image at awto-uboot's link address (CONFIG_TEXT_BASE
 0x01100000) and jumps with `go`, not bootm: u-boot.bin has no uImage header.
 
-Recovery if this goes wrong: interrupt stock with <Esc><Esc> and either
-`run bootnand` (factory kernel) or re-run ./dev.py flash to restore the
-direct-NAND kernel boot.
+Recovery if this goes wrong: interrupt stock with <Esc><Esc>, then NETBOOT.
+`run bootnand` is NOT a recovery path - the NAND image at 0x300000 is not
+genuine stock firmware and does not boot (#166). Needs working 1G.
 """
 
 from __future__ import annotations
@@ -137,7 +137,10 @@ def main():
     step(s, f"setenv bootcmd '{BOOTCMD}'", STOCK_PROMPT, 5, "set bootcmd")
     step(s, "saveenv", "done", 15, "saveenv")
     log("DONE — awto-uboot in NAND, stock bootcmd chainloads it. Reset to verify.")
-    log("If it fails to come up: <Esc><Esc> at stock, then `run bootnand`.")
+    log("If it fails to come up: <Esc><Esc> at stock, then NETBOOT (needs 1G).")
+    log(
+        "NOT `run bootnand` - that image is not genuine stock and does not boot (#166)."
+    )
     log("")
     log("NEXT, and it is REQUIRED: awto-uboot has a saved env in mtd3 pinning")
     log("baudrate=115200, and a saved env beats compiled CONFIG_BAUDRATE. At the")
