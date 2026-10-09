@@ -63,17 +63,26 @@ stock U-Boot → NAND 0x1300000 (awto-uboot, raw, `go`) → ext4load /boot/uImag
 ### All four NICs are on ONE subnet — this invalidates the obvious measurement (#170)
 
 The box has 4 NICs (`enp0s1` 1G, `enp0s2` 10G, two USB r8152) all on
-`192.168.25.0/24`, all with DHCP leases. **Weak-host routing means the box replies
-on whichever interface the ROUTE picks, not the one the address belongs to.** It has
-cost this project three wrong conclusions in one day. Before concluding anything
-about a port:
+`192.168.25.0/24`, all with DHCP leases. Linux's default weak-host behaviour made
+the box reply on whichever interface the ROUTE picked, not the one owning the
+address — three wrong conclusions in one day.
 
-- **`ip neigh show <ip>` and CHECK THE MAC.** `.133` is `enp0s1`'s address but answers
-  from `74:ac:b9:41:a8:12` — the **10G** MAC. An IP that pings proves nothing about
-  which port carried it.
-- **iperf3 needs `--bind-dev <iface>`. `-B <addr>` is NOT enough** — it selects a
+**FIXED 2026-10-10: `scripts/fix-multihome-routing.py --persist`.** Strict ARP
+(`arp_ignore=1`, `arp_announce=2`) plus one route table per NIC with
+`ip rule from <addr>`. Persisted via
+`/etc/NetworkManager/dispatcher.d/90-awto-multihome`, re-applied on every
+interface up, so a DHCP renew or link flap cannot undo it. Verified: `.133`
+answers from `a8:11` (1G), `.127` from `a8:12` (10G) — each address on its own
+port. `-B <addr>` now selects the right port and read 6.64 Gbit/s on the 10G.
+
+On a box WITHOUT that fix applied, all of the following still holds:
+
+- **`ip neigh show <ip>` and CHECK THE MAC.** An IP that pings proves nothing
+  about which port carried it.
+- **iperf3 needs `--bind-dev <iface>`; `-B <addr>` is not enough** — it selects a
   source address, not an egress port. `-B` on the 10G address measured **94 Mb/s**
-  because the traffic left via a USB NIC.
+  because the traffic left via a USB NIC. `--bind-dev` is still the safer habit:
+  it constrains the port directly rather than relying on the rules being in place.
 - **`tcpdump -e 'ether host <mac>'` seeing nothing does NOT mean the port is dead.**
   Zero frames from the 1G MAC is the *expected* result of weak-host routing. Confirm
   with the port's own counters (`ip -s link show <iface>`) and its own neighbour table
