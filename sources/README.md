@@ -153,3 +153,19 @@ Other mirrors tried and blocked/dead: mouser.com (HTML block page), fpga.world
 ### Telling a good copy from a bad one
 
 - 14 pages. `pdftotext` output is near-empty — that is correct for this file, not a truncation.
+
+## MT29F8G08ABBCAH4-micron-m71m-datasheet.pdf
+
+| | |
+|---|---|
+| URL | <https://media.digikey.com/PDF/Data%20Sheets/Micron%20Technology%20Inc%20PDFs/MT29F8(16)G08(16)Azzzz.pdf> |
+| Doc | Micron `m71m_8Gb_nand.pdf`, "8Gb,16Gb: x8, x16 NAND Flash Memory" (M71M family, covers MT29F8G08ABBCA / -H4 63-ball VFBGA) |
+| Revision | Rev. L, 2/12 (PDF id 09005aef83ea4f61); micron.com copy is login-gated, Digi-Key mirror is the public one |
+| Retrieved | 2026-10-10 (via playwrong `pdf`; the Mouser mirror returned an HTML block page, discarded) |
+| Size | 1287842 bytes |
+| Why | Authoritative command set (80h-10h program, 05h-E0h random read, 85h random input), timing, ECC/Error Management, parameter page. |
+
+### Telling a good copy from a bad one
+
+- 122 pages; TOC on p3-4 ends with "Revision History ... 121".
+- Contains `m71m_8Gb_nand.pdf – Rev. L 1/12` footer and "Page size x8: 4320 bytes (4096 + 224 bytes)".
