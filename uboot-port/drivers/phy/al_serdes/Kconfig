@@ -7,8 +7,7 @@ config AL_SERDES
 	  Bring up the Annapurna Labs (AL-324 / Alpine V2) 25G SerDes lane for
 	  the UNVR's 10G SFP+ port at a FIXED 10.3125 Gbps (10GBASE-R), with KR
 	  auto-neg and link-training DISABLED. Adds the `serdes` command to run
-	  the init and read lane status (PLL lock, signal-detect, CDR lock,
-	  rx-valid, PCS block-lock). Base addresses come from the device tree.
+	  the init and read lane status (group version, PMA signal-detect). Base addresses come from the device tree.
 
 	  This is the SerDes/PCS (PMA) half of 10G ethernet only; the MAC/UDMA
 	  come from the al_eth driver. Compile-only — the lane bring-up needs

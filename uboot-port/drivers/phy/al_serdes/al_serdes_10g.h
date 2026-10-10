@@ -16,7 +16,7 @@
 int al_serdes_10g_init(void);
 
 /* Print group-D lane status (version, PMA signal-detect). No HW side effects.
- * PCS block-lock is the MAC driver's - see `eth diag 2`. */
+ * PCS status is the MAC driver's - see `eth diag 2`. */
 void al_serdes_10g_status(void);
 
 /* Readback for `eth diag`: the TX taps and lane state ACTUALLY in force, not

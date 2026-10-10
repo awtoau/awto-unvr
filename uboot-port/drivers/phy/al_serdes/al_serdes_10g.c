@@ -200,8 +200,7 @@ void al_serdes_10g_status(void)
 	printf("  signal_detect: %s (pma rxrandet=0x%02x)\n",
 	       (rxdet & AL_HSSP_RXRANDET_STAT) ? "yes" : "no", rxdet);
 
-	/* PCS block-lock / FEC is read by the MAC driver, not here - the "pcs"
-	 * MAC-adapter window aborts on direct read (0xfe120a04). See al_eth_dm_10g. */
+	/* PCS status is read by the MAC driver (`eth diag 2`), not here. */
 }
 
 /* ---- readback for `eth diag` (al_eth_diag.c, extern - no cross-dir -I) ----
@@ -431,7 +430,7 @@ static int do_serdes(struct cmd_tbl *cmdtp, int flag, int argc,
 U_BOOT_CMD(serdes, 12, 0, do_serdes,
 	   "SFP+ SerDes lane bring-up, status, and the al_eth board params",
 	   "init    - configure the lane for fixed 10GBASE-R (KR/AN/LT off)\n"
-	   "serdes status  - group-D version + PMA signal-detect. PCS block-lock\n"
+	   "serdes status  - group-D version + PMA signal-detect. PCS link state\n"
 	   "                 and the taps in force are in `eth diag 2`.\n"
 	   "serdes tx      - show the optic TX equaliser params\n"
 	   "serdes tx <field> <hex>  - set one and re-init the lane\n"

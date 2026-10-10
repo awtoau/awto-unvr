@@ -11,7 +11,7 @@ see **Open** below.
 ## Files
 
 Authored (Awto, GPLv2-or-later; on U-Boot primitives):
-- `al_serdes_10g.c` / `.h` — DT base lookup, fixed-10G init, 10GBASE-R PCS,
+- `al_serdes_10g.c` / `.h` — DT base lookup, fixed-10G init,
   `serdes` U-Boot command.
 - `al_hal_plat_services.h`, `al_hal_plat_types.h` — U-Boot shims for the HAL.
   Byte-identical to the DDR port's shims — **dedupe at merge** (move to a shared
@@ -38,14 +38,9 @@ U-Boot shims; every other vendor file is unmodified.
   hardware-of-record). Node `serdes@fd8c0000`, compatible
   `annapurna-labs,al-serdes-25g`, read by reg-name via `ofnode`:
   - `serdes` — 25G SerDes PMA (`0xfd8c0000`, size `0x2400`). Required.
-  - `pcs` — eth2 MAC-adapter window holding the 10GBASE-R PCS sub-block.
-    Optional; **shared with the eth/MAC agent's node**.
 - Fixed 10G = the HAL's "KR" electrical mode (10.3125G NRZ, `gen.ctrl` speed
   field 9). Clause-73 AN / Clause-72 LT live in the MAC-KR FSM and are **never
   invoked** — the lane comes up at a fixed rate by construction.
-- PCS offsets are transcribed from `al_hal_eth_mac_regs.h` (KR-PCS indirect
-  `kr.pcs_addr`/`pcs_data` @ `0xa00/0xa04`; `gen_v3.pcs_10g_ll_cfg`/`_status` @
-  `0xe38/0xe3c`) so the MAC HAL is **not** pulled in.
 
 ## Command
 
@@ -54,22 +49,18 @@ U-Boot shims; every other vendor file is unmodified.
     serdes tx       # show the optic TX equaliser params (set one to re-init)
     serdes          # init then status
 
-PCS block-lock and the taps **actually in force** are in `eth diag 2`
-(`drivers/net/al_eth/al_eth_diag.c`) — the MAC owns the PCS window, and reading
-it from here external-aborts.
+PCS link state and the taps **actually in force** are in `eth diag 2`
+(`drivers/net/al_eth/alu_eth_diag.c`) — the MAC driver owns the PCS.
 
 ## On-box verification (the human test)
 
-After `serdes init`, `serdes status` reads (via the HAL vtable + PCS regs):
-- **PLL lock** — `al_serdes_25g_pll_lock_get` (SerDes CMU PLL).
-- **signal-detect** — `al_serdes_25g_signal_is_detected(lane)` (RX signal present).
-- **CDR lock** — `al_serdes_25g_cdr_is_locked(lane)`.
-- **rx-valid** — `al_serdes_25g_rx_valid(lane)`.
-- **PCS block-lock** — KR-PCS BASE-R Status 2 (reg `0x21`) bit 15, via the
-  indirect `kr.pcs_addr/data`. This is the 10GBASE-R link-up gate.
+After `serdes init`, `serdes status` prints (HSSP group D, lane 0):
+- **gen.version** — group register read, proves the PMA window is mapped.
+- **signal_detect** — PMA rxrandet status (RX signal present).
 
-Good link with an optic/DAC inserted: PLL LOCKED, signal yes, CDR LOCKED,
-rx-valid yes, **pcs_block_lock LOCKED**.
+PCS link state is `eth diag 2`: link up/down, local/remote fault,
+`errored_blocks` / `ber_count` (clear-on-read), taps in force. There is no
+separate block-lock readout.
 
 ## Open
 
