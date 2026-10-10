@@ -1284,6 +1284,19 @@ static int al_nand_probe(struct platform_device *pdev)
 		goto err_terminate;
 	}
 
+	/*
+	 * The scan reads the ID, the ONFI page and every block's bad-block
+	 * marker through the latching callbacks, none of which report here. A
+	 * poisoned read of 0xff is a GOOD marker, so a latched error means the
+	 * bad-block table may be wrong: do not register a device built on it.
+	 */
+	ret = al_nand_err_report(nand, 0);
+	if (ret) {
+		dev_err(dev, "error during nand_scan: %d, not registering\n",
+			ret);
+		goto err_cleanup;
+	}
+
 	ret = mtd_device_register(mtd, NULL, 0);
 	if (ret) {
 		dev_err(dev, "mtd_device_register failed: %d\n", ret);
