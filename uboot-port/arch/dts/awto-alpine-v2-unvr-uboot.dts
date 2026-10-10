@@ -448,8 +448,8 @@
 
 			/* PCA9546 i2c mux @0x71 as real child buses so `i2c bus` /
 			 * `i2c dev <n>; i2c probe` scan each channel (needs I2C_MUX +
-			 * I2C_MUX_PCA954x). ch0 -> s35390a RTC @0x30 + SFP EEPROM @0x50;
-			 * ch3 -> adt7475 FAN CONTROLLER @0x2e; ch1/ch2 empty. The mux
+			 * I2C_MUX_PCA954x). ch0 -> s35390a RTC @0x30; ch1 -> SFP EEPROM
+			 * @0x50; ch3 -> adt7475 FAN CONTROLLER @0x2e; ch2 empty. The mux
 			 * uclass deselects (writes 0x00) after every access, so a wedged
 			 * ch0 can't hold the parent bus between transfers. Only touch ch0
 			 * deliberately — the s35390a can still hold SDA mid-transfer. */
