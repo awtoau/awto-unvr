@@ -8,15 +8,19 @@ Reads are verified (scripts/verify-nand-reads.py). Writes silently no-oped:
 `ecc_write_page()` never issued SEQIN/PAGEPROG. This exercises the fix and
 proves nothing else moved.
 
-Three things a bare `nandwrite` does not establish, and this does:
+What a bare `nandwrite` does not establish, and this does:
 
   1. the bytes actually land     - write a random pattern, read back, sha256
-  2. a FAILED write is DETECTED  - write to a non-erased block, expect non-zero
-                                   exit. The pre-fix defect was exit 0 on a
-                                   write that never happened, which is worse
-                                   than failing loudly
+  2. (informational) re-programming a programmed block. NAND reports no FAIL
+                                 for identical data (NOP=4, pass status), so
+                                 rc 0 is the CORRECT outcome; this cannot show
+                                 that a failed write is detected (docs/nand-study.md s7)
   3. nothing else was touched    - sha256 every NAND partition before and
                                    after, and stock U-Boot must still boot
+  4. the ECC bytes are right     - scripts/nand-survey.py ecc re-derives the
+                                   BCH parity independently of the controller;
+                                   sha256 + 0 corrected_bits only shows the
+                                   controller agrees with itself
 
 Write target is mtd1 "device_tree" ONLY: verified all-0xff, and U-Boot takes
 the DTB from the NOR TOC, not from here. mtd3 is awto-uboot (the live
@@ -49,7 +53,10 @@ log = make_log("nand-write-test")
 TARGET_LABEL = "device_tree"
 PROTECTED_LABEL = "awto-uboot"
 BLOCK = 262144  # 256 KiB erase block (Micron MT29F8G08ABBCAH4)
-PATH = "export PATH=/usr/sbin:$PATH; "  # mtd-utils live in /usr/sbin
+# mtd-utils live in /usr/sbin. pipefail: every command below that ends in
+# `| tail` would otherwise report tail's exit status, so `nandwrite` failing
+# looked like rc=0 and criteria [1]/[2] could not observe the one thing they test.
+PATH = "set -o pipefail; export PATH=/usr/sbin:$PATH; "
 
 # Bounds: a 256 KiB erase is ~2 ms and a block program ~tens of ms on this
 # chip, so these only catch a hang. sha256 of a 1 GiB partition dominates
@@ -135,6 +142,29 @@ def main() -> int:
         return 1
     log(f"mtd{tgt} confirmed erased (0 non-0xff bytes)")
 
+    # The check above goes through the ECC engine, which reports a page that
+    # was programmed WITHOUT parity as 0xff (docs/nand-study.md s5). Raw check.
+    raw = subprocess.run(
+        [
+            str(REPO / "scripts" / "nand-survey.py"),
+            "ecc",
+            "--label",
+            TARGET_LABEL,
+            "--pages",
+            "all",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=60,
+    )
+    if raw.returncode != 0 or "erased 256," not in raw.stdout:
+        log(
+            f"ABORT: raw check of '{TARGET_LABEL}' is not all-0xff: {raw.stdout[-200:]}"
+        )
+        return 1
+    log(f"mtd{tgt} raw (no-ECC) check: all 256 pages erased")
+
     log("--- BEFORE")
     before = checksums(host, parts)
     for k, v in before.items():
@@ -162,13 +192,12 @@ def main() -> int:
     crit1 = want == got and write_rc == 0
     log(f"  [1] bytes land, write exits 0: {'PASS' if crit1 else 'FAIL'}")
 
-    # Induced failure: the block now holds data, so a second write to it must
-    # be rejected. Pre-fix this exited 0 - the defect that made a dead write
-    # indistinguishable from a live one.
+    # Identical data over a programmed page: AND of equal bits, same parity, and
+    # NAND returns pass status, so rc 0 is expected. NOT an induced failure.
     rc, o = box_sh(host, f"nandwrite -p /dev/mtd{tgt} /tmp/pat.bin 2>&1 | tail -1")
-    crit2 = rc != 0
-    log(f"  [2] write to non-erased block fails loudly: {'PASS' if crit2 else 'FAIL'}")
-    log(f"      rc={rc} {o[-70:]}")
+    log(
+        f"  [2] re-program identical data (info only, rc 0 expected): rc={rc} {o[-70:]}"
+    )
 
     _, ecc = box_sh(
         host,
@@ -177,6 +206,29 @@ def main() -> int:
     crit3 = ecc.split() == ["0", "0"]
     log(
         f"  [3] ECC clean after write/read: {'PASS' if crit3 else 'FAIL'} ({ecc.split()})"
+    )
+
+    # Independent of the controller: 64 pages = the 256 KiB just written.
+    surv = subprocess.run(
+        [
+            str(REPO / "scripts" / "nand-survey.py"),
+            "ecc",
+            "--label",
+            TARGET_LABEL,
+            "--pages",
+            str(BLOCK // 4096),
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=60,
+    )
+    crit4 = surv.returncode == 0 and f"parity ok {BLOCK // 4096}," in surv.stdout
+    log(
+        f"  [4] parity matches the independent BCH model: {'PASS' if crit4 else 'FAIL'}"
+    )
+    log(
+        f"      {surv.stdout.strip().splitlines()[-1] if surv.stdout.strip() else surv.stderr[-200:]}"
     )
 
     # Leave the target as we found it.
@@ -196,7 +248,12 @@ def main() -> int:
         log(
             f"*** {PROTECTED_LABEL} CHANGED - the bootloader was modified. Do not reboot."
         )
-    ok = crit1 and crit2 and crit3 and not moved
+    # The erase above is the first erase of a PROGRAMMED block (the earlier
+    # device_tree erase was of an already-erased one): the target must be back to
+    # its pre-test checksum or erase is unproven.
+    erased_back = after.get(TARGET_LABEL) == before.get(TARGET_LABEL)
+    log(f"  [5] erase restored {TARGET_LABEL}: {'PASS' if erased_back else 'FAIL'}")
+    ok = crit1 and crit3 and crit4 and erased_back and not moved
     log(
         f"RESULT: {'PASS' if ok else 'FAIL'}"
         + (f" - collateral change in {moved}" if moved else "")
