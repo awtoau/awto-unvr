@@ -91,6 +91,10 @@ Tracking: #208 (driver), #268 (exec_op / references), #166 (recovery), #30 (layo
 
 ### Where a failure is swallowed
 
+STATUS: W1-W5, W7, R1, R2 FIXED in code (latch + checked hooks, `0bb1fbc` `bad84b2` `9a2c4ff` `9fb865d`, HAL `88b0c7a`); **no hardware run yet**. Rows below describe the pre-fix defect and the line it was at.
+- Design: `cmd_ctrl`/`read_buf`/`read_byte`/`write_buf` latch into `op_err` (`al_nand_err_set`); every int hook (`ecc.{read,write}_page{,_raw}`, `ecc.{read,write}_oob`, wrapped `waitfunc`) reports + clears it (`al_nand_err_report`). Failed reads return `0xff` (has `NAND_STATUS_FAIL`), never a stale word.
+- Not fixed: W6 (entry still has no error path; the FIFO-drain wait after it, `:656`, catches a stuck FIFO), W8 (readback cannot tell "no parity" from "never programmed"), W9 (WP# order), erased-page test (s5), #275 layout.
+
 | # | point | file:line | effect |
 |---|---|---|---|
 | W1 | PAGEPROG ready timeout stored in `write_err`, never read | `al_nand_main.c:338-340`, return at :668 | the 13 ms bound is advisory; `nand_wait()` is the backstop. **Review defect 1 confirmed** |
@@ -267,7 +271,7 @@ Tracking: #208 (driver), #268 (exec_op / references), #166 (recovery), #30 (layo
 `W` = flash write, needs the user's explicit approval. All others are read-only or host-only.
 
 1. **Done here:** independent ECC model, bad-block/ECC survey tool, `nand-write-test.py` repaired. No `W`.
-2. Fix W1-W3, W6, W7, R1 in the legacy driver: carry one error code through the op (reset per operation, checked after `nand_prog_page_end_op` and in `ecc_read_page`), make `read_byte`/`read_buf` poison on failure (return `0x00`/fail status, never a stale word), set `ecc.write_page_raw`/`ecc.write_oob` to checked wrappers, store HAL accounting back. Small, local. Needs a build and a module reload (or reboot) on the box (`al_nand` only). Risk: low; a mistake loses NAND in Linux, not the bootloader. No `W`.
+2. **Done (unverified on hardware):** fix W1-W5, W7, R1 in the legacy driver: carry one error code through the op (reset per operation, checked after `nand_prog_page_end_op` and in `ecc_read_page`), make `read_byte`/`read_buf` poison on failure (return `0x00`/fail status, never a stale word), set `ecc.write_page_raw`/`ecc.write_oob` to checked wrappers, store HAL accounting back. Small, local. Needs a build and a module reload (or reboot) on the box (`al_nand` only). Risk: low; a mistake loses NAND in Linux, not the bootloader. No `W`.
 3. Fix reporting (s5): return a conservative `max_bitflips` on `CORR_ERR`; replace the empty-page test with `nand_check_erased_ecc_chunk()` over data + parity; `ecc_bytes` = 128 for `SPARE_*_COUNT` (the HAL's own generator uses 8 x 16, `al_hal_nand.c:1110`) and in the ooblayout (free OOB `[2,4)` + `[132,224)`). That the controller accepts 128 is UNPROVEN and it changes what is written, so land it with the first write test, not before. No `W`.
 4. Mark `awto-uboot` and `linux_kernel` `read-only` in the DT for the bring-up (needs a DTB deploy + reboot; the box is busy with the rsync). Cuts the blast radius of any address bug to `al_boot` / `device_tree` / `chike`. No `W`.
 5. **`W`**: `python3 scripts/nand-write-test.py --write` (target `device_tree`, 1 block erase + 64 pages, pre-verified raw all-0xff). Pass = [1],[3],[4],[5] and `awto-uboot` checksum unchanged. Risk: lowest practical (driver does no address arithmetic; `device_tree` is 16 MiB of `linux_kernel` below `awto-uboot`; U-Boot takes the DTB from NOR). Failure modes: nothing lands (W9 WP ordering, first suspect), controller hang (cold power cycle). Do step 2 first or the failure will read as success.
