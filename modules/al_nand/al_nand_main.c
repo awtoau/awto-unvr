@@ -686,6 +686,15 @@ static int al_nand_ecc_read_page(struct nand_chip *chip, u8 *buf,
 	if (corr) {
 		mtd->ecc_stats.corrected++;
 		dev_dbg(nand->dev, "corrected ECC error in page %d\n", page);
+
+		/*
+		 * CORR_ERR is one sticky bit per page, not a count, so the real
+		 * flip count is unknown (1..strength). Report the worst case:
+		 * it is >= mtd->bitflip_threshold, so the core returns -EUCLEAN
+		 * and UBI scrubs the block. ecc_stats.corrected is therefore
+		 * pages, not bits.
+		 */
+		return chip->ecc.strength;
 	}
 
 	return 0;
