@@ -435,8 +435,16 @@ def run(cmd):
         text=True,
         errors="replace",
     )
-    # Wall-clock cap enforced by a timer so a silent hang still expires.
-    timer = threading.Timer(BUILD_TIMEOUT_S, p.kill)
+    # Wall-clock cap enforced by a timer so a silent hang still expires. The
+    # callback records the kill: inferring it from timer.is_alive() races the
+    # callback's own return, so a real expiry leaked rc=-9 instead of 124 (#269).
+    killed = threading.Event()
+
+    def _expire() -> None:
+        killed.set()
+        p.kill()
+
+    timer = threading.Timer(BUILD_TIMEOUT_S, _expire)
     timer.start()
     with open(LOG, "a") as f:
         for line in p.stdout:
@@ -445,9 +453,8 @@ def run(cmd):
             tail.append(line)
         sys.stdout.flush()
     rc = p.wait()
-    expired = not timer.is_alive() and rc < 0
     timer.cancel()
-    if expired:
+    if killed.is_set():
         log(f"TIMEOUT after {BUILD_TIMEOUT_S}s: {' '.join(cmd)}")
         return 124
     log(f"exit {rc} ({time.time() - t0:.0f}s)")
