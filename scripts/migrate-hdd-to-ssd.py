@@ -90,16 +90,24 @@ def box_sh(host: str, cmd: str, timeout: int = 300) -> tuple[int, str]:
 
 
 def mount_ro(host: str, dev: str, mnt: str, ntfs: bool = False) -> bool:
-    """Mount dev read-only at mnt. NTFS goes via the kernel ntfs3 driver."""
+    """Mount dev read-only at mnt.
+
+    NTFS prefers the kernel `ntfs3` driver and falls back to ntfs-3g (fuseblk).
+    This kernel has no ntfs3, so the fallback is the live path - slower, but a
+    read-only copy source does not need more.
+    """
     rc, _ = box_sh(host, f"mountpoint -q {mnt}")
     if rc == 0:
         return True
-    opt = "-t ntfs3 -o ro" if ntfs else "-o ro"
-    rc, o = box_sh(host, f"mkdir -p {mnt} && mount {opt} {dev} {mnt}")
-    if rc != 0:
-        log(f"cannot mount {dev} at {mnt}: {o}")
-        return False
-    return True
+    box_sh(host, f"mkdir -p {mnt}")
+    attempts = ["-t ntfs3 -o ro", "-o ro"] if ntfs else ["-o ro"]
+    for opt in attempts:
+        rc, o = box_sh(host, f"mount {opt} {dev} {mnt}")
+        if rc == 0:
+            return True
+        log(f"  mount {opt} {dev} failed: {o[:120]}")
+    log(f"cannot mount {dev} at {mnt}")
+    return False
 
 
 def rsync_flags(ntfs: bool) -> str:
