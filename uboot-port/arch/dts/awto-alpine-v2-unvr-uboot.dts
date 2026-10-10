@@ -176,11 +176,7 @@
 		 * Consumed by CONFIG_AL_SERDES (drivers/phy/al_serdes); the `serdes`
 		 * command reads both bases by reg-name via ofnode, never hardcoded.
 		 * docs/hardware.md: serdes PMA @ 0xfd8c0000 size 0x2400.
-		 *
-		 * "pcs" = the eth2 MAC-adapter window that also holds the 10GBASE-R
-		 * PCS sub-block (0xfe120000/0x10000) — SHARED with the eth/MAC path;
-		 * optional (absent -> PCS left to the MAC agent). HW: confirm the
-		 * exact PCS base on the box and reconcile with the eth MAC datapath.
+		 * No PCS window: the MAC driver owns the PCS, via its own PCI BAR.
 		 */
 		/* "25g" is a MISNOMER kept only because the driver matches on it.
 		 * The SFP+ is HSSP group D at +0xc00; group E (+0x2000) is the
@@ -188,9 +184,8 @@
 		 * 8051 firmware never loads (#246, docs/blob57-identified.md). */
 		serdes: serdes@fd8c0000 {
 			compatible = "annapurna-labs,al-serdes-25g";
-			reg = <0x0 0xfd8c0000 0x0 0x00002400>,	/* serdes PMA */
-			      <0x0 0xfe120000 0x0 0x00010000>;	/* pcs (MAC adapter) */
-			reg-names = "serdes", "pcs";
+			reg = <0x0 0xfd8c0000 0x0 0x00002400>;	/* serdes PMA */
+			reg-names = "serdes";
 			status = "okay";
 		};
 
