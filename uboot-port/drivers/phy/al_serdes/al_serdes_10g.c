@@ -102,6 +102,19 @@ static void __iomem *al_serdes_dt_base(const char *reg_name)
  * the reserved window (#110). Compiler-computed, so it cannot drift again. */
 #define AL_HSSP_GEN(grp)	(&((struct al_serdes_regs __iomem *)(grp))->gen)
 
+/* gen.octl_multi_synthready/synthstatus: direct reads, bit0 "A" only.
+ * Polarity and the ready/status split come from names alone - no vendor reader
+ * exists (#118), so the guard reports rather than gates. */
+static u32 al_hssp_synthready(void __iomem *grp)
+{
+	return readl(&AL_HSSP_GEN(grp)->octl_multi_synthready);
+}
+
+static u32 al_hssp_synthstatus(void __iomem *grp)
+{
+	return readl(&AL_HSSP_GEN(grp)->octl_multi_synthstatus);
+}
+
 /* Group-D base (SFP+ lane) from the DT complex "serdes" base. */
 static void __iomem *al_hssp_grp_d_base(void)
 {
@@ -148,6 +161,7 @@ int al_serdes_10g_init(void)
 {
 	struct al_serdes_grp_obj obj;
 	void __iomem *grp;
+	u32 synthready;
 	u8 rxdet;
 	int rc;
 
@@ -159,6 +173,15 @@ int al_serdes_10g_init(void)
 	 * base is right (the wrong 25G target external-aborts on this first read). */
 	printf("serdes: HSSP group D (SFP+ lane %d) @ %p, gen.version=0x%08x\n",
 	       AL_SFP_LANE, grp, readl(&AL_HSSP_GEN(grp)->version));
+
+	/* Single check, no poll: PLL lock time is not established (#118). Does
+	 * not skip EQ - polarity unverified, so an error return only. */
+	synthready = al_hssp_synthready(grp);
+	if (!(synthready & SERDES_GEN_OCTL_MULTI_SYNTHREADY_A)) {
+		printf("serdes: ERROR group D synth NOT READY (octl_multi_synthready=0x%08x synthstatus=0x%08x) - SerDes PLL/clock not initialised? (#118)\n",
+		       synthready, al_hssp_synthstatus(grp));
+		rc = -EIO;
+	}
 
 	/* preboot already ran group_cfg_eth_kr_mode(156MHz) here, so the lane is
 	 * in fixed-10G KR - we do not re-init, only read PMA signal-detect. */
@@ -180,7 +203,7 @@ int al_serdes_10g_init(void)
 	 * configures it. Poking the MAC-adapter window from here external-aborts
 	 * and is redundant, so this driver does not touch it. */
 	printf("serdes: 10G init done (HSSP group D); PCS owned by the MAC driver\n");
-	return 0;
+	return rc;
 }
 
 void al_serdes_10g_status(void)
@@ -194,6 +217,8 @@ void al_serdes_10g_status(void)
 
 	printf("serdes: HSSP group D @ %p, SFP+ lane %d:\n", grp, AL_SFP_LANE);
 	printf("  gen.version  : 0x%08x\n", readl(&AL_HSSP_GEN(grp)->version));
+	printf("  synthready   : 0x%08x\n", al_hssp_synthready(grp));
+	printf("  synthstatus  : 0x%08x\n", al_hssp_synthstatus(grp));
 
 	rxdet = al_hssp_reg_read(&obj, AL_SFP_LANE, AL_SRDS_REG_TYPE_PMA,
 				 AL_HSSP_RXRANDET_REG);
@@ -430,7 +455,7 @@ static int do_serdes(struct cmd_tbl *cmdtp, int flag, int argc,
 U_BOOT_CMD(serdes, 12, 0, do_serdes,
 	   "SFP+ SerDes lane bring-up, status, and the al_eth board params",
 	   "init    - configure the lane for fixed 10GBASE-R (KR/AN/LT off)\n"
-	   "serdes status  - group-D version + PMA signal-detect. PCS link state\n"
+	   "serdes status  - group-D version, synth ready/status, PMA signal-detect. PCS link state\n"
 	   "                 and the taps in force are in `eth diag 2`.\n"
 	   "serdes tx      - show the optic TX equaliser params\n"
 	   "serdes tx <field> <hex>  - set one and re-init the lane\n"
