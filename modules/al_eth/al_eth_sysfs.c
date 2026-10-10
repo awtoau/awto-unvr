@@ -192,6 +192,42 @@ static struct device_attribute dev_attr_force_1000_base_x = {
 	.store = al_eth_store_force_1000_base_x,
 };
 
+/* Per-field maxima, from the field widths documented in
+ * al_hal_serdes_interface.h (#271). amp's minimum is 1: its 000 encoding is
+ * documented "Not Supported". precal_code_sel has no documented range, so it
+ * stays byte-wide. */
+static u8 al_eth_serdes_tx_param_max(uintptr_t offset)
+{
+	switch (offset) {
+	case offsetof(struct al_serdes_adv_tx_params, amp):
+		return 7;
+	case offsetof(struct al_serdes_adv_tx_params, slew_rate):
+		return 3;
+	default:
+		return 0xff;	/* driver-unit taps are byte-valued */
+	}
+}
+
+static u8 al_eth_serdes_rx_param_max(uintptr_t offset)
+{
+	switch (offset) {
+	case offsetof(struct al_serdes_adv_rx_params, dcgain):
+	case offsetof(struct al_serdes_adv_rx_params, dfe_3db_freq):
+	case offsetof(struct al_serdes_adv_rx_params, dfe_gain):
+	case offsetof(struct al_serdes_adv_rx_params, low_freq_agc_gain):
+		return 7;
+	case offsetof(struct al_serdes_adv_rx_params, dfe_first_tap_ctrl):
+	case offsetof(struct al_serdes_adv_rx_params, dfe_secound_tap_ctrl):
+	case offsetof(struct al_serdes_adv_rx_params, dfe_third_tap_ctrl):
+	case offsetof(struct al_serdes_adv_rx_params, dfe_fourth_tap_ctrl):
+		return 15;
+	case offsetof(struct al_serdes_adv_rx_params, high_freq_agc_boost):
+		return 31;
+	default:
+		return 0xff;
+	}
+}
+
 static ssize_t al_eth_store_serdes_tx_param(struct device *dev,
 					    struct device_attribute *attr,
 					    const char *buf, size_t len)
@@ -201,11 +237,22 @@ static ssize_t al_eth_store_serdes_tx_param(struct device *dev,
 	uintptr_t offset = (uintptr_t)ea->var;
 	struct al_serdes_adv_tx_params	tx_params;
 	unsigned long param;
+	u8 max, min;
 	int err;
 
 	err = kstrtoul(buf, 16, &param);
 	if (err < 0)
 		return err;
+
+	/* Check before the narrowing store: param is unsigned long, the field is
+	 * u8, so 0x100 used to land as 0 and return success (#271). */
+	max = al_eth_serdes_tx_param_max(offset);
+	min = (offset == offsetof(struct al_serdes_adv_tx_params, amp)) ? 1 : 0;
+	if (param > max || param < min) {
+		netdev_err(adapter->netdev, "%s: 0x%lx out of range [0x%x..0x%x]\n",
+			   attr->attr.name, param, min, max);
+		return -EINVAL;
+	}
 
 	spin_lock(&adapter->serdes_config_lock);
 
@@ -261,11 +308,19 @@ static ssize_t al_eth_store_serdes_rx_param(struct device *dev,
 	uintptr_t offset = (uintptr_t)ea->var;
 	struct al_serdes_adv_rx_params	rx_params;
 	unsigned long param;
+	u8 max;
 	int err;
 
 	err = kstrtoul(buf, 16, &param);
 	if (err < 0)
 		return err;
+
+	max = al_eth_serdes_rx_param_max(offset);
+	if (param > max) {
+		netdev_err(adapter->netdev, "%s: 0x%lx out of range [0x0..0x%x]\n",
+			   attr->attr.name, param, max);
+		return -EINVAL;
+	}
 
 	spin_lock(&adapter->serdes_config_lock);
 
