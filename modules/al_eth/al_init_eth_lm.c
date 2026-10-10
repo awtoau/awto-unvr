@@ -2448,23 +2448,34 @@ int al_eth_lm_static_parameters_get(struct al_eth_lm_context	*lm_context,
 				    struct al_serdes_adv_rx_params *rx_params)
 {
 	if (tx_params) {
-		if (lm_context->serdes_tx_params_valid)
+		if (lm_context->serdes_tx_params_valid) {
 			*tx_params = lm_context->tx_params_override;
-		else
+		} else {
+			/* NULL on a port with no SerDes (1G is RGMII+external
+			 * PHY). Dereferencing it oopsed a plain sysfs read
+			 * (#277). The _set path already guards this way. */
+			if (!lm_context->serdes_obj ||
+			    !lm_context->serdes_obj->tx_advanced_params_get)
+				return -ENODEV;
 			lm_context->serdes_obj->tx_advanced_params_get(
 							lm_context->serdes_obj,
 							lm_context->lane,
 							tx_params);
+		}
 	}
 
 	if (rx_params) {
-		if (lm_context->serdes_rx_params_valid)
+		if (lm_context->serdes_rx_params_valid) {
 			*rx_params = lm_context->rx_params_override;
-		else
+		} else {
+			if (!lm_context->serdes_obj ||
+			    !lm_context->serdes_obj->rx_advanced_params_get)
+				return -ENODEV;
 			lm_context->serdes_obj->rx_advanced_params_get(
 							lm_context->serdes_obj,
 							lm_context->lane,
 							rx_params);
+		}
 	}
 
 	return 0;

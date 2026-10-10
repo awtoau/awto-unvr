@@ -256,9 +256,13 @@ static ssize_t al_eth_store_serdes_tx_param(struct device *dev,
 
 	spin_lock(&adapter->serdes_config_lock);
 
-	al_eth_lm_static_parameters_get(&adapter->lm_context,
-					&tx_params,
-					NULL);
+	err = al_eth_lm_static_parameters_get(&adapter->lm_context,
+					     &tx_params,
+					     NULL);
+	if (err) {
+		spin_unlock(&adapter->serdes_config_lock);
+		return err;
+	}
 
 	*(((uint8_t *)&tx_params) + offset) = param;
 
@@ -290,9 +294,11 @@ static ssize_t al_eth_show_serdes_tx_param(struct device *dev,
 	struct al_serdes_adv_tx_params	tx_params;
 	uint8_t val;
 
-	al_eth_lm_static_parameters_get(&adapter->lm_context,
-					&tx_params,
-					NULL);
+	int err = al_eth_lm_static_parameters_get(&adapter->lm_context,
+						 &tx_params, NULL);
+
+	if (err)
+		return err;
 
 	val = *(((uint8_t *)&tx_params) + offset);
 
@@ -324,9 +330,13 @@ static ssize_t al_eth_store_serdes_rx_param(struct device *dev,
 
 	spin_lock(&adapter->serdes_config_lock);
 
-	al_eth_lm_static_parameters_get(&adapter->lm_context,
-					NULL,
-					&rx_params);
+	err = al_eth_lm_static_parameters_get(&adapter->lm_context,
+					     NULL,
+					     &rx_params);
+	if (err) {
+		spin_unlock(&adapter->serdes_config_lock);
+		return err;
+	}
 
 	*(((uint8_t *)&rx_params) + offset) = param;
 
@@ -356,9 +366,11 @@ static ssize_t al_eth_show_serdes_rx_param(struct device *dev,
 	struct al_serdes_adv_rx_params	rx_params;
 	uint8_t val;
 
-	al_eth_lm_static_parameters_get(&adapter->lm_context,
-					NULL,
-					&rx_params);
+	int err = al_eth_lm_static_parameters_get(&adapter->lm_context,
+						 NULL, &rx_params);
+
+	if (err)
+		return err;
 
 	val = *(((uint8_t *)&rx_params) + offset);
 
@@ -519,6 +531,7 @@ static struct dev_ext_attribute dev_attr_intr_moderation[] = {
 int al_eth_sysfs_init(
 	struct device *dev)
 {
+	struct al_eth_adapter *adapter = dev_get_drvdata(dev);
 	int status = 0;
 
 	int i;
@@ -544,7 +557,14 @@ int al_eth_sysfs_init(
 	if (device_create_file(dev, &dev_attr_intr_moderation_restore_default))
 		dev_info(dev, "failed to create intr_moderation_restore_default");
 
-	for (i = 0 ; i < ARRAY_SIZE(dev_attr_serdes_params) ; i++) {
+	/* Only on a port that has a SerDes. The 1G MAC drives an external PHY
+	 * over RGMII and leaves serdes_obj NULL, so these knobs would oops the
+	 * reader rather than fail (#277). A knob that cannot work is not created. */
+	if (!adapter->serdes_obj)
+		dev_info(dev, "no serdes on this port - serdes_* knobs not created\n");
+
+	for (i = 0; adapter->serdes_obj &&
+		    i < ARRAY_SIZE(dev_attr_serdes_params); i++) {
 		status = sysfs_create_file(
 					&dev->kobj,
 					&dev_attr_serdes_params[i].attr.attr);
