@@ -757,6 +757,70 @@ out:
 	return al_nand_err_report(nand, nand_prog_page_end_op(chip));
 }
 
+/*
+ * Raw page and OOB hooks. The core defaults (nand_{read,write}_page_raw,
+ * nand_{read,write}_oob_std) run the same read_buf()/write_buf() that latch
+ * their failures but never look at the latch, so MTD_OPS_RAW access, OOB
+ * writes and bad-block marking would succeed regardless. These check it, so
+ * every path into the data FIFO is covered.
+ */
+static int al_nand_ecc_read_page_raw(struct nand_chip *chip, u8 *buf,
+				     int oob_required, int page)
+{
+	return al_nand_err_report(
+		to_al_nand(chip),
+		nand_read_page_raw(chip, buf, oob_required, page));
+}
+
+static int al_nand_ecc_read_oob(struct nand_chip *chip, int page)
+{
+	return al_nand_err_report(to_al_nand(chip),
+				  nand_read_oob_std(chip, page));
+}
+
+/*
+ * Finish a program whose data phase is already in the chip: PAGEPROG and
+ * waitfunc if ret is 0, else undo write_buf()'s TX enable/WP disable (PAGEPROG
+ * would have done it) and do NOT program a half-loaded page.
+ */
+static int al_nand_prog_page_finish(struct nand_chip *chip, int ret)
+{
+	struct al_nand_data *nand = to_al_nand(chip);
+
+	ret = al_nand_err_report(nand, ret);
+	if (ret) {
+		al_nand_wp_set_enable(&nand->nand_obj, 1);
+		al_nand_tx_set_enable(&nand->nand_obj, 0);
+		return ret;
+	}
+
+	return al_nand_err_report(nand, nand_prog_page_end_op(chip));
+}
+
+static int al_nand_ecc_write_page_raw(struct nand_chip *chip, const u8 *buf,
+				      int oob_required, int page)
+{
+	struct mtd_info *mtd = nand_to_mtd(chip);
+	int ret;
+
+	ret = nand_prog_page_begin_op(chip, page, 0, buf, mtd->writesize);
+	if (!ret && oob_required)
+		ret = nand_write_data_op(chip, chip->oob_poi, mtd->oobsize,
+					 false);
+
+	return al_nand_prog_page_finish(chip, ret);
+}
+
+/* Reached by bad-block marking (nand_block_markbad_lowlevel) and OOB writes. */
+static int al_nand_ecc_write_oob(struct nand_chip *chip, int page)
+{
+	struct mtd_info *mtd = nand_to_mtd(chip);
+
+	return al_nand_prog_page_finish(
+		chip, nand_prog_page_begin_op(chip, page, mtd->writesize,
+					      chip->oob_poi, mtd->oobsize));
+}
+
 /******************************************************************************/
 /***************************** configuration **********************************/
 /******************************************************************************/
@@ -961,6 +1025,10 @@ static int al_nand_attach_chip(struct nand_chip *chip)
 		chip->ecc.read_page = al_nand_ecc_read_page;
 		chip->ecc.read_subpage = al_nand_ecc_read_subpage;
 		chip->ecc.write_page = al_nand_ecc_write_page;
+		chip->ecc.read_page_raw = al_nand_ecc_read_page_raw;
+		chip->ecc.write_page_raw = al_nand_ecc_write_page_raw;
+		chip->ecc.read_oob = al_nand_ecc_read_oob;
+		chip->ecc.write_oob = al_nand_ecc_write_oob;
 		chip->ecc.strength = req->strength;
 		chip->ecc.size = nand->cw_size;
 		chip->ecc.steps = mtd->writesize / nand->cw_size;
