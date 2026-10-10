@@ -44,11 +44,94 @@ TABLES = [
         "al_eth_rx_gpd_cam_entry",
         "AL_ETH_RX_PROTOCOL_DETECT_ENTRIES_NUM",
     ),
+    (
+        "al_eth_generic_tx_crc_gcp",
+        "al_eth_tx_gcp_table_entry",
+        "AL_ETH_TX_GENERIC_CRC_ENTRIES_NUM",
+    ),
+    (
+        "al_eth_generic_rx_crc_gcp",
+        "al_eth_rx_gcp_table_entry",
+        "AL_ETH_RX_PROTOCOL_DETECT_ENTRIES_NUM",
+    ),
 ]
 
+# Array members (one nested brace group per entry): name -> element count
+ARRAY_MEMBERS = {"gcp_mask": 6}
+
+
+# Fix 2: value -> enumerator, only where al_hal_eth.h's enum defines that exact
+# value (matches UBNT 4.1.37 al_hal_eth.h). 0 and unnamed ids (l4 idx 2, tunnel 5)
+# stay numeric.
+PROTO_IDS = {
+    8: "AL_ETH_PROTO_ID_IPv4",
+    11: "AL_ETH_PROTO_ID_IPv6",
+    12: "AL_ETH_PROTO_ID_TCP",
+    13: "AL_ETH_PROTO_ID_UDP",
+    21: "AL_ETH_PROTO_ID_FCOE",
+    22: "AL_ETH_PROTO_ID_GRH",
+    23: "AL_ETH_PROTO_ID_BTH",
+}
+NAMED_FIELDS = {
+    re.compile(r"(outer_|inner_)?l[34]_proto_idx"): PROTO_IDS,
+    re.compile(r"tunnel_control"): {3: "AL_ETH_TUNNEL_WITH_UDP"},
+}
+FIELD_LINE = re.compile(r"^(\t\t\.)(\w+)( = )(\d+)(,)$", re.M)
+
+
+def name_ids(src: str, sym: str, fh) -> str:
+    head = src.index(f"{sym}[")
+    start = src.index("= {", head)
+    end = src.index("\n};", start)
+
+    def sub(m: re.Match) -> str:
+        for pat, table in NAMED_FIELDS.items():
+            if pat.fullmatch(m.group(2)) and int(m.group(4)) in table:
+                return (
+                    m.group(1)
+                    + m.group(2)
+                    + m.group(3)
+                    + table[int(m.group(4))]
+                    + m.group(5)
+                )
+        return m.group(0)
+
+    body = FIELD_LINE.sub(sub, src[start:end])
+    log(f"{sym}: classification ids named", fh)
+    return src[:start] + body + src[end:]
+
+
+def split_top(text: str) -> list[str]:
+    """Split on commas outside braces."""
+    parts, depth, cur = [], 0, ""
+    for ch in text:
+        if ch == "{":
+            depth += 1
+        elif ch == "}":
+            depth -= 1
+        if ch == "," and depth == 0:
+            parts.append(cur.strip())
+            cur = ""
+        else:
+            cur += ch
+    parts.append(cur.strip())
+    return parts
+
+
+def nested(name: str, val: str) -> str:
+    if not (val.startswith("{") and val.endswith("}")):
+        raise SystemExit(f"{name}: expected nested brace value, got {val!r}")
+    elems = [e.strip() for e in val[1:-1].split(",")]
+    if elems and elems[-1] == "":
+        elems.pop()
+    if len(elems) != ARRAY_MEMBERS[name]:
+        raise SystemExit(f"{name}: {len(elems)} elements != {ARRAY_MEMBERS[name]}")
+    return "{ " + ", ".join(elems) + " }"
+
+
 COMMENT = re.compile(r"/\*.*?\*/", re.S)
-MEMBER = re.compile(r"(\w+)\s*(?::\s*\d+)?\s*;\s*$")
-ENTRY = re.compile(r"(?P<c>/\*.*?\*/\s*)?\{(?P<v>[^{}]*)\}", re.S)
+MEMBER = re.compile(r"(\w+)\s*(?::\s*\d+|\[\d+\])?\s*;\s*$")
+ENTRY = re.compile(r"(?P<c>/\*.*?\*/\s*)?\{(?P<v>(?:[^{}]|\{[^{}]*\})*)\}", re.S)
 
 
 def log(msg: str, fh) -> None:
@@ -86,6 +169,9 @@ def convert_table(src: str, sym: str, tag: str, count_macro: str, hdr: str, fh) 
     body_start = src.index("= {", head) + len("= {")
     body_end = src.index("\n};", body_start)
     raw = src[body_start:body_end]
+    if re.search(r"^\s*\.\w+\s*=", raw, re.M):
+        log(f"{sym}: already designated, skipped", fh)
+        return src
 
     total_comments = raw.count("/*")
     out = []
@@ -93,7 +179,7 @@ def convert_table(src: str, sym: str, tag: str, count_macro: str, hdr: str, fh) 
     matched_comments = 0
     for m in ENTRY.finditer(raw):
         entries += 1
-        values = [v.strip() for v in m.group("v").split(",")]
+        values = split_top(m.group("v"))
         if values and values[-1] == "":
             values.pop()
         if len(values) != len(fields):
@@ -107,6 +193,8 @@ def convert_table(src: str, sym: str, tag: str, count_macro: str, hdr: str, fh) 
             out.append("\t" + comment.strip())
         out.append("\t{")
         for name, val in zip(fields, values):
+            if name in ARRAY_MEMBERS:
+                val = nested(name, val)
             out.append(f"\t\t.{name} = {val},")
         out.append("\t},")
 
@@ -134,6 +222,8 @@ def main() -> int:
         src = SRC.read_text()
         for sym, tag, count_macro in TABLES:
             src = convert_table(src, sym, tag, count_macro, hdr, fh)
+        for sym in ("al_eth_generic_tx_crc_gpd", "al_eth_generic_rx_crc_gpd"):
+            src = name_ids(src, sym, fh)
         if args.check:
             log("check only: nothing written", fh)
             return 0
