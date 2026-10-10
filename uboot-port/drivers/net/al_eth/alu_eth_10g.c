@@ -27,9 +27,9 @@
 #include "alu_eth_sfp.h"
 
 /* PCS block lock after lane bring-up: 1ms per iteration. Matches stock's link
- * budget (~30 x 100ms) against a partner already up. On expiry: warn and
- * continue - a later start() retries, and a port with nothing plugged must
- * still probe. */
+ * budget (~30 x 100ms) against a partner already up. On expiry start() warns
+ * and continues (#227): eth_ops.start has no "ok but no link" return, and
+ * -errno makes eth_init() rotate to the next ethact (#254). */
 #define ALU_ETH_10G_LINK_POLL_MAX	3000
 
 /* SerDes lane bring-up lives in drivers/phy/al_serdes (CONFIG_AL_SERDES),
@@ -62,7 +62,6 @@ static int alu_eth_10g_wait_link(struct udevice *dev)
 		udelay(1000);
 	} while (++poll < ALU_ETH_10G_LINK_POLL_MAX);
 
-	dev_warn(dev, "no 10G link after %d ms (PCS block lock not set)\n", poll);
 	return -ETIMEDOUT;
 }
 
@@ -110,7 +109,10 @@ static int alu_eth_10g_start(struct udevice *dev)
 		return rc;
 
 	if (alu_eth_10g_wait_link(dev))
-		dev_warn(dev, "10G link not up (no SFP/partner?) - continuing\n");
+		dev_warn(dev, "NO LINK: 10G PCS block lock not set after %d ms; "
+			 "port is up but nothing will transfer. Check SFP+ seated, "
+			 "cable/partner powered, partner at 10GBASE-R\n",
+			 ALU_ETH_10G_LINK_POLL_MAX);
 	else if (IS_ENABLED(CONFIG_AL_SERDES))
 		al_serdes_10g_status();
 
