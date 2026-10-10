@@ -27,6 +27,7 @@ obj-$(CONFIG_AL_ETH) += alu_eth_hwaddr.o	# NOR MAC -> per-port EC filter
 obj-$(CONFIG_AL_ETH) += alu_eth_rxfwd.o		# EC RX forwarding -> UDMA0/Q0
 obj-$(CONFIG_AL_ETH) += alu_eth_stats.o		# `eth stats` + the `eth` command
 obj-$(CONFIG_AL_ETH) += alu_eth_diag.o		# `eth diag`
+obj-$(CONFIG_AL_ETH_10G) += alu_eth_sfp.o	# SFP+ EEPROM read (#108)
 obj-$(CONFIG_AL_ETH_10G) += alu_eth_10g.o	# SFP+ front end (1c36:0002)
 
 # --- shared Linux HAL, compiled from the staged tree ---

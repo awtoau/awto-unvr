@@ -24,6 +24,7 @@
 
 #include "alu_eth.h"
 #include "alu_eth_core.h"
+#include "alu_eth_sfp.h"
 
 /* PCS block lock after lane bring-up: 1ms per iteration. Matches stock's link
  * budget (~30 x 100ms) against a partner already up. On expiry: warn and
@@ -65,6 +66,26 @@ static int alu_eth_10g_wait_link(struct udevice *dev)
 	return -ETIMEDOUT;
 }
 
+/* Detection is advisory: the lane stays fixed 10GBASE-R whatever is read
+ * (#108); a failed read or odd module only logs. */
+static void alu_eth_10g_sfp_check(struct udevice *dev)
+{
+	struct alu_eth_sfp_info sfp;
+	int rc = alu_eth_sfp_probe(&sfp);
+
+	if (rc) {
+		dev_warn(dev, "SFP EEPROM unreadable (%d): no module? assuming 10GBASE-R\n",
+			 rc);
+		return;
+	}
+	dev_info(dev, "SFP module: %s %s -> %s\n", sfp.vendor, sfp.part,
+		 alu_eth_sfp_media_name(sfp.media));
+	if (sfp.media == ALU_SFP_1000BASE_X)
+		dev_warn(dev, "1G-only module cannot link at 10G\n");
+	else if (sfp.media == ALU_SFP_UNKNOWN)
+		dev_warn(dev, "unrecognised module, assuming 10GBASE-R\n");
+}
+
 /* ---- eth_ops ----------------------------------------------------------- */
 
 static int alu_eth_10g_start(struct udevice *dev)
@@ -78,6 +99,8 @@ static int alu_eth_10g_start(struct udevice *dev)
 	/* SerDes lane before the core's MAC config, so the electrical lane is
 	 * live when the MAC selects the KR mux - stock's order. The PCS has a
 	 * single owner (al_eth_mac_config); this call does the lane only. */
+	alu_eth_10g_sfp_check(dev);
+
 	rc = al_serdes_10g_init();
 	if (rc)
 		dev_warn(dev, "al_serdes_10g_init failed: %d (continuing)\n", rc);

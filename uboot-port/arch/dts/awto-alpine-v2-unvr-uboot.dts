@@ -237,6 +237,8 @@
 					i2c-id = <0x02>;
 					serdes-grp = <0x03>;
 					serdes-lane = <0x00>;
+					/* EEPROM bus by phandle (#108); mux ch1, not the RTC's ch0 */
+					sfp-i2c-bus = <&sfp_i2c>;
 
 					10g-serial {
 						dac = "enabled";
