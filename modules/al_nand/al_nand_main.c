@@ -124,9 +124,14 @@ struct al_nand_data {
 	 * attach_chip(). See AL_NAND_RDY_POLL_FLOOR_MS. */
 	unsigned int rdy_poll_ms;
 
-	/* write_buf() and cmd_ctrl() are void but can fail. They record here;
-	 * al_nand_ecc_write_page() checks it so the error reaches the core. */
-	int write_err;
+	/* Per-operation error latch. cmd_ctrl(), read_buf(), read_byte() and
+	 * write_buf() cannot return an error to the core; they record it here
+	 * with al_nand_err_set() and the hooks that CAN return one report it
+	 * with al_nand_err_report(). See "error latch" below. */
+	int op_err;
+
+	/* The core's nand_wait(), wrapped by al_nand_waitfunc(). */
+	int (*core_waitfunc)(struct nand_chip *chip);
 
 	u8 oob[AL_NAND_MAX_OOB_SIZE];
 };
@@ -174,6 +179,42 @@ static int al_nand_timing_params_set(struct al_nand_device_timing *timing,
 
 	return 0;
 }
+
+/******************************************************************************/
+/******************************* error latch **********************************/
+/******************************************************************************/
+
+/*
+ * The core's legacy callbacks cmd_ctrl(), read_buf(), read_byte() and
+ * write_buf() return void/u8, so a failure inside them has nowhere to go. It is
+ * latched here instead, and EVERY hook that does return an int reports it:
+ * ecc.{read,write}_page{,_raw}, ecc.{read,write}_oob and waitfunc (which ends
+ * every PROGRAM and ERASE).
+ *
+ * - First error wins; reporting clears the latch.
+ * - Not reset at the start of an op: the status read in nand_check_wp() runs
+ *   before the page hook and its failure must still be reported.
+ * - The chip lock serialises ops, so one latch per chip is enough.
+ */
+static void al_nand_err_set(struct al_nand_data *nand, int err)
+{
+	if (err && !nand->op_err)
+		nand->op_err = err;
+}
+
+/* Fold the latch into ret: a latched error beats a "success" ret. */
+static int al_nand_err_report(struct al_nand_data *nand, int ret)
+{
+	int err = nand->op_err;
+
+	nand->op_err = 0;
+
+	return err ? err : ret;
+}
+
+/* What a failed read hands back instead of stale bytes. 0xff has
+ * NAND_STATUS_FAIL set, so a status read fails the PROGRAM/ERASE it checks. */
+#define AL_NAND_READ_POISON 0xff
 
 /******************************************************************************/
 /******************************* interrupts ***********************************/
@@ -306,7 +347,6 @@ static void al_nand_cmd_ctrl(struct nand_chip *chip, int dat,
 	struct al_nand_data *nand = to_al_nand(chip);
 	enum al_nand_command_type type;
 	u32 cmd;
-	int ret;
 
 	if (!(ctrl & (NAND_CLE | NAND_ALE)))
 		return;
@@ -324,9 +364,7 @@ static void al_nand_cmd_ctrl(struct nand_chip *chip, int dat,
 	al_nand_cmd_single_execute(&nand->nand_obj, cmd);
 
 	/* Submission only - the entry is a CMD/ADDRESS cycle. */
-	ret = al_nand_wait_cmd_fifo_empty(nand);
-	if (ret)
-		nand->write_err = ret;
+	al_nand_err_set(nand, al_nand_wait_cmd_fifo_empty(nand));
 
 	if (dat == NAND_CMD_PAGEPROG && (ctrl & NAND_CLE)) {
 		cmd = AL_NAND_CMD_SEQ_ENTRY(
@@ -335,9 +373,7 @@ static void al_nand_cmd_ctrl(struct nand_chip *chip, int dat,
 
 		/* tPROG, not FIFO drain - the controller holds this entry
 		 * until the device asserts ready. */
-		ret = al_nand_wait_dev_ready(nand, "PAGEPROG");
-		if (ret)
-			nand->write_err = ret;
+		al_nand_err_set(nand, al_nand_wait_dev_ready(nand, "PAGEPROG"));
 
 		al_nand_wp_set_enable(&nand->nand_obj, 1);
 		al_nand_tx_set_enable(&nand->nand_obj, 0);
@@ -361,16 +397,23 @@ static int al_nand_dev_ready(struct nand_chip *chip)
 	return al_nand_dev_is_ready(&nand->nand_obj);
 }
 
-static void al_nand_read_buf(struct nand_chip *chip, u8 *buf, int len)
+/*
+ * Fetch len bytes (a multiple of 4) from the data FIFO. On failure the error is
+ * latched and the rest of buf is poisoned, never left holding whatever the
+ * caller had there.
+ */
+static int al_nand_read_words(struct al_nand_data *nand, u8 *buf, int len)
 {
-	struct al_nand_data *nand = to_al_nand(chip);
 	u32 cw_size = nand->cw_size;
 	u32 cw_count;
+	int ret;
 
 	/* The controller moves whole 4-byte words, and a pending read_byte()
 	 * cache would make this read start mid-word. */
-	if (WARN_ON(len & 3) || WARN_ON(nand->cache_pos != -1))
-		return;
+	if (WARN_ON(len & 3) || WARN_ON(nand->cache_pos != -1)) {
+		ret = -EINVAL;
+		goto fail;
+	}
 
 	al_nand_cw_size_get(len, &cw_size, &cw_count);
 	al_nand_cw_config(&nand->nand_obj, cw_size, cw_count);
@@ -381,11 +424,9 @@ static void al_nand_read_buf(struct nand_chip *chip, u8 *buf, int len)
 			AL_NAND_COMMAND_TYPE_DATA_READ_COUNT, cw_size);
 
 	while (len > 0) {
-		/* Returning without copying on failure is deliberate: the
-		 * buffer is stale, and handing the core stale bytes reads as a
-		 * wrong chip rather than as a failed read. */
-		if (al_nand_wait_for_irq(nand, AL_NAND_INTR_STATUS_BUF_RDRDY))
-			return;
+		ret = al_nand_wait_for_irq(nand, AL_NAND_INTR_STATUS_BUF_RDRDY);
+		if (ret)
+			goto fail;
 
 		/* al_nand_data_buff_read(), NOT a memcpy from
 		 * al_nand_data_buff_base_get(). The data buffer is a FIFO
@@ -399,7 +440,8 @@ static void al_nand_read_buf(struct nand_chip *chip, u8 *buf, int len)
 					   buf)) {
 			dev_err(nand->dev, "data_buff_read failed (cw %u)\n",
 				cw_size);
-			return;
+			ret = -EIO;
+			goto fail;
 		}
 
 		dev_dbg(nand->dev, "read_buf: cw %u, first %*ph\n", cw_size,
@@ -407,6 +449,20 @@ static void al_nand_read_buf(struct nand_chip *chip, u8 *buf, int len)
 		buf += cw_size;
 		len -= cw_size;
 	}
+
+	return 0;
+
+fail:
+	memset(buf, AL_NAND_READ_POISON, len);
+	al_nand_err_set(nand, ret);
+
+	return ret;
+}
+
+static void al_nand_read_buf(struct nand_chip *chip, u8 *buf, int len)
+{
+	/* void by the core's contract; the error is latched by the callee. */
+	al_nand_read_words(to_al_nand(chip), buf, len);
 }
 
 /* The controller has no byte read; fetch a 4-byte word and hand it out. */
@@ -416,8 +472,11 @@ static u8 al_nand_read_byte(struct nand_chip *chip)
 	u8 ret;
 
 	if (nand->cache_pos == -1) {
-		al_nand_read_buf(chip, nand->word_cache,
-				 sizeof(nand->word_cache));
+		/* On failure leave the cache empty: handing out cache[0] would
+		 * be the previous read's byte, e.g. an old "ready, pass". */
+		if (al_nand_read_words(nand, nand->word_cache,
+				       sizeof(nand->word_cache)))
+			return AL_NAND_READ_POISON;
 		nand->cache_pos = 0;
 	}
 
@@ -435,6 +494,12 @@ static void al_nand_write_buf(struct nand_chip *chip, const u8 *buf, int len)
 	u32 cw_count;
 	int ret;
 
+	/* Whole 4-byte words only, as read_buf(): the HAL steps 4 at a time. */
+	if (WARN_ON(len & 3)) {
+		al_nand_err_set(nand, -EINVAL);
+		return;
+	}
+
 	al_nand_tx_set_enable(&nand->nand_obj, 1);
 	al_nand_wp_set_enable(&nand->nand_obj, 0);
 
@@ -447,11 +512,10 @@ static void al_nand_write_buf(struct nand_chip *chip, const u8 *buf, int len)
 			AL_NAND_COMMAND_TYPE_DATA_WRITE_COUNT, cw_size);
 
 	while (len > 0) {
-		/* write_buf() is void, so a failure here is recorded for
-		 * al_nand_ecc_write_page() to turn into the core's error. */
+		/* write_buf() is void: latch the failure, see "error latch". */
 		ret = al_nand_wait_for_irq(nand, AL_NAND_INTR_STATUS_BUF_WRRDY);
 		if (ret) {
-			nand->write_err = ret;
+			al_nand_err_set(nand, ret);
 			return;
 		}
 
@@ -461,7 +525,7 @@ static void al_nand_write_buf(struct nand_chip *chip, const u8 *buf, int len)
 		if (al_nand_data_buff_write(&nand->nand_obj, cw_size, buf)) {
 			dev_err(nand->dev, "data_buff_write failed (cw %u)\n",
 				cw_size);
-			nand->write_err = -EIO;
+			al_nand_err_set(nand, -EIO);
 			return;
 		}
 		buf += cw_size;
@@ -470,6 +534,22 @@ static void al_nand_write_buf(struct nand_chip *chip, const u8 *buf, int len)
 
 	/* WP re-enable and TX disable happen in al_nand_cmd_ctrl() after
 	 * PAGEPROG + WAIT_FOR_READY, so all data is known written first. */
+}
+
+/*
+ * Ends every PROGRAM and ERASE, so a latched error reaches the core on any of
+ * them - including PAGEPROG's own ready timeout, which is latched by cmd_ctrl()
+ * and nowhere else. A latched error returns at once: the chip is not going to
+ * be ready any sooner for a further 400 ms of nand_wait().
+ */
+static int al_nand_waitfunc(struct nand_chip *chip)
+{
+	struct al_nand_data *nand = to_al_nand(chip);
+
+	if (nand->op_err)
+		return al_nand_err_report(nand, 0);
+
+	return al_nand_err_report(nand, nand->core_waitfunc(chip));
 }
 
 /******************************************************************************/
@@ -542,7 +622,7 @@ static int al_nand_ecc_read_page(struct nand_chip *chip, u8 *buf,
 {
 	struct al_nand_data *nand = to_al_nand(chip);
 	struct mtd_info *mtd = nand_to_mtd(chip);
-	int uncorr, corr;
+	int uncorr, corr, ret;
 
 	/* oob_required needs a raw OOB alongside the corrected data, which this
 	 * controller cannot produce in one pass - the OOB is consumed by the
@@ -574,11 +654,21 @@ static int al_nand_ecc_read_page(struct nand_chip *chip, u8 *buf,
 
 	al_nand_ecc_set_enabled(&nand->nand_obj, 0);
 
+	/* A command or data-FIFO failure above means buf is poison and the
+	 * ECC flags describe nothing. Report it, don't interpret them. */
+	ret = al_nand_err_report(nand, 0);
+	if (ret)
+		return ret;
+
 	if (uncorr) {
 		bool real = true;
 
 		if (nand->ecc_config.algorithm == AL_NAND_ECC_ALGORITHM_BCH) {
 			chip->legacy.read_buf(chip, nand->oob, mtd->oobsize);
+			ret = al_nand_err_report(nand, 0);
+			if (ret)
+				return ret;
+
 			if (al_nand_oob_is_empty(nand->oob, mtd->oobsize)) {
 				real = false;
 				memset(buf, 0xff, mtd->writesize);
@@ -628,14 +718,9 @@ static int al_nand_ecc_write_page(struct nand_chip *chip, const u8 *buf,
 
 	al_nand_ecc_set_enabled(&nand->nand_obj, 1);
 
-	/* SEQIN + write_buf. al_nand_write_buf() records any failure in
-	 * nand->write_err, which is checked below - write_buf() is void. */
-	nand->write_err = 0;
+	/* SEQIN + address cycles + write_buf(); failures there are latched. */
 	ret = nand_prog_page_begin_op(chip, page, 0, buf, mtd->writesize);
-	if (ret)
-		goto out;
-
-	ret = nand->write_err;
+	ret = al_nand_err_report(nand, ret);
 	if (ret)
 		goto out;
 
@@ -654,6 +739,8 @@ static int al_nand_ecc_write_page(struct nand_chip *chip, const u8 *buf,
 				    nand->ecc_bytes);
 
 	ret = al_nand_wait_cmd_fifo_empty(nand);
+	/* RNDIN's own FIFO drain is latched by cmd_ctrl(). */
+	ret = al_nand_err_report(nand, ret);
 
 out:
 	al_nand_wp_set_enable(&nand->nand_obj, 1);
@@ -663,9 +750,11 @@ out:
 	if (ret)
 		return ret;
 
-	/* PAGEPROG + waitfunc; -EIO on NAND_STATUS_FAIL. This is what makes a
-	 * failed program visible to nandwrite's exit status. */
-	return nand_prog_page_end_op(chip);
+	/* PAGEPROG + waitfunc: a PAGEPROG ready timeout is latched by
+	 * cmd_ctrl() and reported by al_nand_waitfunc(); -EIO comes from
+	 * NAND_STATUS_FAIL. Either makes a failed program visible to
+	 * nandwrite's exit status. */
+	return al_nand_err_report(nand, nand_prog_page_end_op(chip));
 }
 
 /******************************************************************************/
@@ -815,6 +904,16 @@ static int al_nand_attach_chip(struct nand_chip *chip)
 	ret = al_nand_onfi_config_set(chip);
 	if (ret)
 		return ret;
+
+	/* nand_scan_ident() has installed the core's nand_wait() by now; wrap
+	 * it so the error latch is reported at the end of every PROGRAM/ERASE.
+	 * The guard keeps a repeat attach from wrapping the wrapper. */
+	if (WARN_ON(!chip->legacy.waitfunc))
+		return -EINVAL;
+	if (chip->legacy.waitfunc != al_nand_waitfunc) {
+		nand->core_waitfunc = chip->legacy.waitfunc;
+		chip->legacy.waitfunc = al_nand_waitfunc;
+	}
 
 	/* Ready/busy bound from the chip's OWN ONFI parameter page (us), at
 	 * 1.25x the larger of tPROG/tBERS. A non-ONFI chip reports neither and
