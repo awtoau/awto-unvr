@@ -114,6 +114,7 @@ static int alu_eth_10g_start(struct udevice *dev)
 	else if (IS_ENABLED(CONFIG_AL_SERDES))
 		al_serdes_10g_status();
 
+	p->core.link_mbps = 10000;	/* fixed 10GBASE-R */
 	p->core.started = true;
 	return 0;
 }

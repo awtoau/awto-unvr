@@ -116,6 +116,7 @@ static int alu_eth_1g_start(struct udevice *dev)
 
 	/* No al_eth_mac_link_config: the external AR8033 drives the link and the
 	 * MAC follows via RGMII in-band. Forcing it wedged the UDMA TX. */
+	p->core.link_mbps = p->phy->speed;
 	p->core.started = true;
 	return 0;
 }

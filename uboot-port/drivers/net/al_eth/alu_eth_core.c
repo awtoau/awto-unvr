@@ -32,11 +32,13 @@
 #include "alu_eth.h"
 #include "alu_eth_core.h"
 
-/* One TX completion, 1us per spin. A 1518B frame drains in ~12us at 1Gbps and
- * ~1.2us at 10Gbps, so this is far past the 1.25x rule; it stays only while
- * #253 keeps a 10G completion from being observable enough to measure.
- * On expiry: log descs-left + elapsed, dump the M2S state, fail the send. */
-#define ALU_ETH_TX_POLL_MAX	100000
+/* TX completion budget = 1.25 x (wire time + fixed DMA allowance), per frame and
+ * link speed. Wire = (len + 24 preamble/FCS/IFG) * 8 / Mbps us: 1538B = 12.3us
+ * @1G, 123us @100M, 1.23ms @10M, 1.23us @10G. The allowance is an unmeasured
+ * estimate (#226). On expiry: log descs-left + elapsed, dump M2S, fail send. */
+#define ALU_ETH_TX_WIRE_OVERHEAD	24
+#define ALU_ETH_TX_DMA_ALLOW_US		10
+#define ALU_ETH_TX_MARGIN_PCT		125
 
 /* RX frame length window handed to the EC. 30 is the vendor minimum; 1518 is a
  * standard untagged frame with FCS. */
@@ -372,7 +374,9 @@ int alu_eth_core_send(struct udevice *dev, void *packet, int length)
 {
 	struct alu_eth_priv *priv = dev_get_priv(dev);
 	struct al_eth_pkt pkt;
-	int ndesc, done, poll = 0;
+	int ndesc, done;
+	unsigned int mbps;
+	unsigned long wire_us, limit_us, start_us, elapsed_us;
 
 	memset(&pkt, 0, sizeof(pkt));
 	pkt.num_of_bufs = 1;
@@ -399,20 +403,26 @@ int alu_eth_core_send(struct udevice *dev, void *packet, int length)
 	alu_eth_cache_flush(priv->desc_block, ALU_ETH_DESC_BLOCK_SIZE);
 	al_eth_tx_dma_action(priv->tx_q, ndesc);
 
+	mbps = priv->link_mbps ? priv->link_mbps : 10;	/* unknown: slowest */
+	wire_us = DIV_ROUND_UP((length + ALU_ETH_TX_WIRE_OVERHEAD) * 8, mbps);
+	limit_us = (wire_us + ALU_ETH_TX_DMA_ALLOW_US) * ALU_ETH_TX_MARGIN_PCT / 100;
+	start_us = timer_get_us();
+
 	while (ndesc) {
 		alu_eth_cache_inval(priv->desc_block, ALU_ETH_DESC_BLOCK_SIZE);
 		done = al_eth_comp_tx_get(priv->tx_q);
 		ndesc -= done;
 		if (!ndesc)
 			break;
-		udelay(1);
-		if (++poll >= ALU_ETH_TX_POLL_MAX) {
-			dev_err(dev, "TX completion timeout: %d descs left after %d us\n",
-				ndesc, poll);
+		elapsed_us = timer_get_us() - start_us;
+		if (elapsed_us >= limit_us) {
+			dev_err(dev, "TX completion timeout: %d descs left after %lu us (limit %lu us, %uB @ %u Mbps)\n",
+				ndesc, elapsed_us, limit_us, length, mbps);
 			alu_eth_dump_tx(priv, "timeout");
 			alu_eth_dump_axi_err(dev);
 			return -ETIMEDOUT;
 		}
+		udelay(1);
 	}
 
 	return 0;

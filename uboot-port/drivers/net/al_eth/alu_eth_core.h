@@ -43,6 +43,7 @@ struct alu_eth_priv {
 	unsigned int			rx_head;
 
 	int				port;		/* ALU_ETH_PORT_* */
+	unsigned int			link_mbps;	/* negotiated rate; bounds TX poll */
 	enum al_eth_mac_mode		mac_mode;
 	/* FLR before adapter init, as Linux does at probe. Set on 10G only: the
 	 * 1G path passes traffic today without one, and adding it there would
