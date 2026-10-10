@@ -49,6 +49,9 @@ FACTS: dict[str, tuple[str, str]] = {
     "10G force-1000base-x": ("force-1000base-x", "force-1000base-x"),
     "1G phy address": ("phy-addr", "phy-addr"),
     "1G auto-neg mode": ("auto-neg-mode", "auto-neg-mode"),
+    # Linux self-seeds mdio_freq from this (al_eth_boardparams.c); U-Boot
+    # spells it "1.0Mhz", normalised to kHz in values_of().
+    "1G mdio freq (kHz)": ("mdio-freq-khz", "mdc-mdio-freq"),
 }
 
 
@@ -65,7 +68,9 @@ def values_of(text: str, prop: str) -> list[str]:
             nums = re.findall(r"0x[0-9a-fA-F]+|\d+", raw)
             out.append(" ".join(str(int(n, 0)) for n in nums))
         else:
-            out.append(raw.strip('"'))
+            val = raw.strip('"')
+            mhz = re.fullmatch(r"([\d.]+)\s*[Mm]hz", val)
+            out.append(str(round(float(mhz.group(1)) * 1000)) if mhz else val)
     return out
 
 
