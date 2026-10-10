@@ -22,6 +22,8 @@ import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+from _firewall import ensure_tftp_open
+
 import _console
 from _net import UNVR_IPADDR, detect_server_ip
 from _repo import make_log
@@ -95,6 +97,7 @@ def main() -> int:
     if a.server is None:
         a.server = detect_server_ip()
         log(f"tftp server IP (auto-detected): {a.server}")
+    ensure_tftp_open(server_ip=a.server, log=log)
 
     uimage = a.uimage or f"uImage-unvr-ea16-{a.tag}"
     dtb = a.dtb or f"alpine-v2-ubnt-unvr-ea16-{a.tag}.dtb"

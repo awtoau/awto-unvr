@@ -30,6 +30,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+from _firewall import ensure_tftp_open  # noqa: E402
+
 import _console  # noqa: E402
 from _repo import LOGS, REPO, SOURCES, rel
 
@@ -426,6 +428,7 @@ def hop(row: dict, ver: str) -> bool:
     img = fetch(row)
 
     ensure_tftpd()
+    ensure_tftp_open(TFTP_PORT, log=log)
     hostip, devip = host_ip()
     log(f"  device {devip}, host {hostip}")
 

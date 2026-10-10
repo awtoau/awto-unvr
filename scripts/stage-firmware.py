@@ -27,6 +27,8 @@ import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+from _firewall import ensure_tftp_open
+
 from _repo import REPO, TFTP_ROOT
 
 LOGS = REPO / "tmp" / "logs"
@@ -254,6 +256,7 @@ if __name__ == "__main__":
         sys.exit(0)
 
     ensure_tftpd()
+    ensure_tftp_open(TFTP_PORT, log=log)
     host, dev = host_ip()
     log(f"device {dev}, host {host}")
 

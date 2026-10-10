@@ -1186,6 +1186,9 @@ def _ensure_tftpd(port: int = 69, root: str = "tmp/tftp") -> None:
     the NAND-flash workflow's only server out from under it. Fix: whichever
     command STAGES a file for a root now also explicitly (re)starts that
     root's server, so it's never implicit/manual again."""
+    from _firewall import ensure_tftp_open  # scripts/ is on sys.path (#136)
+
+    ensure_tftp_open(port, log=log)
     _kill_stale_tftpd(port)
     root_path = REPO / root
     root_path.mkdir(parents=True, exist_ok=True)

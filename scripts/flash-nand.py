@@ -36,6 +36,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from _fedora_deploy import TFTP_DIMG, TFTP_KIMG, assert_fresh
+from _firewall import ensure_tftp_open
 
 import _console
 from _console import STOCK_PROMPT
@@ -94,6 +95,7 @@ def main():
         sys.exit(f"console socket absent: {SOCK}")
     server_ip = detect_server_ip()
     log(f"tftp server IP (auto-detected): {server_ip}")
+    ensure_tftp_open(server_ip=server_ip, log=log)
     s = _console.connect(timeout=0.1)
     # confirm we're at the prompt
     step(s, "", STOCK_PROMPT, 5, "at U-Boot prompt")

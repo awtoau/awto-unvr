@@ -33,6 +33,8 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO / "scripts"))
 os.environ.setdefault("AWTO_ALLOW_DIRECT_SCRIPT", "1")
+from _firewall import ensure_tftp_open  # noqa: E402
+
 import _console  # noqa: E402
 from _console import STOCK_PROMPT  # noqa: E402
 from _net import UNVR_IPADDR as IPADDR  # noqa: E402
@@ -105,6 +107,7 @@ def main():
         sys.exit(f"console socket absent: {SOCK}")
     server_ip = detect_server_ip()
     log(f"tftp server IP (auto-detected): {server_ip}")
+    ensure_tftp_open(server_ip=server_ip, log=log)
 
     s = _console.connect(timeout=0.1)
 
