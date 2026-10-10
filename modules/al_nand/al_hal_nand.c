@@ -1735,6 +1735,12 @@ int al_nand_data_buff_write(
 		cw_size_remaining -= 4;
 	}
 
+	/* AWTO FIX: store the accounting back, as the read path does. Without
+	 * it the "Not enough CW data" guard above sees the cw_config() values
+	 * on every call and can never fire. #208. */
+	obj->cw_size_remaining = cw_size_remaining;
+	obj->cw_count_remaining = cw_count_remaining;
+
 done:
 
 	return status;
