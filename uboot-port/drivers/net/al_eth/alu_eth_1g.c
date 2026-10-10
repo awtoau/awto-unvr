@@ -60,7 +60,7 @@ static int alu_eth_1g_mdio_write(struct mii_dev *bus, int addr, int devad,
 
 /* ---- eth_ops ----------------------------------------------------------- */
 
-static int alu_eth_1g_start(struct udevice *dev)
+static int alu_eth_1g_do_start(struct udevice *dev)
 {
 	struct alu_eth_1g_priv *p = dev_get_priv(dev);
 	int rc;
@@ -128,6 +128,11 @@ static void alu_eth_1g_stop(struct udevice *dev)
 	if (p->phy)
 		phy_shutdown(p->phy);
 	alu_eth_core_stop(dev);
+}
+
+static int alu_eth_1g_start(struct udevice *dev)
+{
+	return alu_eth_start_result(dev, alu_eth_1g_do_start(dev));
 }
 
 static const struct eth_ops alu_eth_1g_ops = {

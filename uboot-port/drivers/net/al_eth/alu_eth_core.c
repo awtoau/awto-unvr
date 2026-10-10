@@ -20,6 +20,8 @@
 #include <pci.h>
 #include <stdio.h>
 #include <cpu_func.h>
+#include <env.h>
+#include <env_callback.h>
 #include <linux/delay.h>
 #include <linux/kernel.h>
 #include <linux/string.h>
@@ -367,6 +369,36 @@ int alu_eth_core_init(struct udevice *dev, struct alu_eth_priv *priv)
 
 	return 0;
 }
+
+/* ---- ethact rotation notice (#254, #227, #170) ------------------------- */
+
+/* A failed start() makes eth_init() silently rotate ethact to the next NIC.
+ * start() records the failure; the ethact callback announces the switch. */
+static char alu_eth_failed[16];
+
+int alu_eth_start_result(struct udevice *dev, int rc)
+{
+	const char *rotate = env_get("ethrotate");
+
+	if (!rc)
+		alu_eth_failed[0] = '\0';
+	else if (!rotate || strcmp(rotate, "no"))
+		strlcpy(alu_eth_failed, dev->name, sizeof(alu_eth_failed));
+	return rc;
+}
+
+static int on_ethact(const char *name, const char *value, enum env_op op,
+		     int flags)
+{
+	if (alu_eth_failed[0] && value && strcmp(value, alu_eth_failed)) {
+		printf("\n>>> ETHACT ROTATED: %s FAILED TO START, now using %s."
+		       " This transfer runs on %s, NOT %s. <<<\n\n",
+		       alu_eth_failed, value, value, alu_eth_failed);
+		alu_eth_failed[0] = '\0';
+	}
+	return 0;
+}
+U_BOOT_ENV_CALLBACK(ethact, on_ethact);
 
 /* ---- eth_ops ------------------------------------------------------------ */
 

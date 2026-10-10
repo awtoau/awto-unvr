@@ -87,7 +87,7 @@ static void alu_eth_10g_sfp_check(struct udevice *dev)
 
 /* ---- eth_ops ----------------------------------------------------------- */
 
-static int alu_eth_10g_start(struct udevice *dev)
+static int alu_eth_10g_do_start(struct udevice *dev)
 {
 	struct alu_eth_10g_priv *p = dev_get_priv(dev);
 	int rc;
@@ -119,6 +119,11 @@ static int alu_eth_10g_start(struct udevice *dev)
 	p->core.link_mbps = 10000;	/* fixed 10GBASE-R */
 	p->core.started = true;
 	return 0;
+}
+
+static int alu_eth_10g_start(struct udevice *dev)
+{
+	return alu_eth_start_result(dev, alu_eth_10g_do_start(dev));
 }
 
 static const struct eth_ops alu_eth_10g_ops = {

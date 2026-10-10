@@ -77,6 +77,10 @@ void alu_eth_unit_adapter_setup(struct udevice *dev, bool err_track);
  * <mac_mode> selects RGMII or 10GbE_Serial. */
 int alu_eth_core_init(struct udevice *dev, struct alu_eth_priv *priv);
 
+/* Wrap every port's start() return: records a failure so the ethact change
+ * that eth_init() makes next is announced. Returns <rc> unchanged. */
+int alu_eth_start_result(struct udevice *dev, int rc);
+
 /* eth_ops bodies, shared verbatim by both ports. */
 int alu_eth_core_send(struct udevice *dev, void *packet, int length);
 int alu_eth_core_recv(struct udevice *dev, int flags, uchar **packetp);
