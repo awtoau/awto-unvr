@@ -27,26 +27,8 @@ const DEFAULT_IFACE: &str = "enp0s2";
 const DEFAULT_IPERF_PORT: u16 = 5701;
 
 const VALUE_OPTS: [&str; 20] = [
-    "csv",
-    "set",
-    "host",
-    "password",
-    "iface",
-    "via",
-    "i2c-bus",
-    "save",
-    "diff",
-    "to",
-    "window",
-    "param",
-    "values",
-    "metric",
-    "duration",
-    "repeat",
-    "streams",
-    "server",
-    "port",
-    "udp-mbit",
+    "csv", "set", "host", "password", "iface", "via", "i2c-bus", "save", "diff", "to", "window",
+    "param", "values", "metric", "duration", "repeat", "streams", "server", "port", "udp-mbit",
 ];
 
 const KNOWN_FLAGS: [&str; 10] = [
@@ -94,6 +76,9 @@ counters   read link-quality counters (pcs_*, ec_*, generic PHY)
 params     show the serdes_tx_* knobs and the derived main cursor
   --set <param>=<value>    write one (value is DECIMAL here, hex on the wire)
   --no-bounce              do not bounce the link (the write then does nothing)
+  --dry-run                print the write/verify/bounce plan, write nothing
+  exit 1 = error or readback mismatch (no bounce), 5 = link lost after bounce,
+       6 = no link before or after the bounce (effect unverifiable)
 
 sweep      sweep one serdes_tx_* parameter and score every setting
   --param <name>           amp|total_driver_units|c_minus_1|c_plus_1|c_plus_2|slew_rate
@@ -239,40 +224,56 @@ fn cmd_params(a: &Args, r: &Runner) -> Result<i32, String> {
     let iface = a.str_or("iface", DEFAULT_IFACE);
     let port = serdes::Port::resolve(r, &iface)?;
 
+    let mut code = 0;
     if let Some(spec) = a.opt("set") {
         let (param, val) = spec
             .split_once('=')
             .ok_or_else(|| format!("--set {spec}: expected <param>=<value>"))?;
-        if !serdes::TX_PARAMS.contains(&param) {
-            return Err(format!(
-                "{param}: expected one of {:?}",
-                serdes::TX_PARAMS
-            ));
-        }
         let v: u32 = val
             .parse()
             .map_err(|_| format!("{val}: not a decimal value"))?;
-        let back = port.write_param(r, param, v)?;
-        println!("serdes_tx_{param} <- {v} (wrote 0x{v:x}), readback {back}");
-        if back != v {
-            println!("READBACK MISMATCH - the store parses hex, the show prints decimal");
+        serdes::validate_value(param, v)?;
+        let before = port.read_params(r)?;
+        let old = before.get(param).copied().unwrap_or(0);
+        let mut proj = before.clone();
+        proj.insert(param.to_string(), v);
+        if serdes::main_cursor(&proj) <= 0 {
+            return Err(format!(
+                "REFUSING serdes_tx_{param}={v}: main cursor would be {} (<= 0), the lane cannot drive",
+                serdes::main_cursor(&proj)
+            ));
         }
-        if a.flag("no-bounce") {
+        let bounce = !a.flag("no-bounce");
+        if a.flag("dry-run") {
+            print!(
+                "{}",
+                serdes::plan_text(&iface, &port.sysfs, param, &before, v, bounce)
+            );
+            return Ok(0);
+        }
+        if bounce {
+            port.check_not_control_path(r)?;
+        }
+        port.write_verified(r, param, v, old)?;
+        println!("serdes_tx_{param} <- {v} (wrote 0x{v:x}), readback verified");
+        if bounce {
+            let out = port.bounce(r)?;
+            println!("{}", out.message());
+            code = out.exit_code();
+        } else {
             println!(
                 "--no-bounce: the override is staged but NOT applied; it takes effect at the \
                  next link event (al_eth_serdes_static_tx_params_set from pcs_config)."
             );
-        } else {
-            port.check_not_control_path(r)?;
-            let up = port.bounce(r)?;
-            println!("link bounced, carrier {}", if up { "up" } else { "DOWN" });
         }
+    } else if a.flag("dry-run") {
+        return Err("--dry-run needs --set <param>=<value>".into());
     }
 
     let cur = port.read_params(r)?;
     println!("{} -> {}", iface, port.sysfs);
     print!("{}", serdes::describe(&cur));
-    Ok(0)
+    Ok(code)
 }
 
 fn cmd_sweep(a: &Args, r: &Runner) -> Result<i32, String> {

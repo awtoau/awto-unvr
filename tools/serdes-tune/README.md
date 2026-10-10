@@ -49,7 +49,7 @@ is resolved from it, never hardcoded.
 | `env` | — (exit 4 if an expected counter is missing) |
 | `sfp` | `--via auto\|ethtool\|i2c`, `--i2c-bus <n>` (default 2), `--hex` (exit 3 on checksum mismatch) |
 | `counters` | `--json`, `--save <file>`, `--diff <file>`, `--diff <a> --to <b>`, `--window <secs>` |
-| `params` | `--set <param>=<value>` (decimal in, hex on the wire), `--no-bounce` |
+| `params` | `--set <param>=<value>` (decimal in, hex on the wire; readback verified), `--no-bounce`, `--dry-run` (exit 5 link lost, 6 no link before/after) |
 | `sweep` | `--param`, `--values`, `--metric`, `--duration`, `--repeat`, `--streams`, `--server`, `--port`, `--udp-mbit`, `--no-load`, `--csv <file>`, `--no-restore`, `--dry-run`, `--allow-control-path` |
 
 ## Scoring metrics

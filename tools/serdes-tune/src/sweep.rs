@@ -32,7 +32,11 @@ impl Metric {
             "ec" => Metric::Ec,
             "udp-loss" => Metric::UdpLoss,
             "throughput" => Metric::Throughput,
-            _ => return Err(format!("--metric {s}: expected pcs, ec, udp-loss or throughput")),
+            _ => {
+                return Err(format!(
+                    "--metric {s}: expected pcs, ec, udp-loss or throughput"
+                ))
+            }
         })
     }
 
@@ -353,12 +357,18 @@ pub fn run(r: &Runner, cfg: &Cfg) -> Result<i32, String> {
         }
 
         let readback = port.write_param(r, &cfg.param, v)?;
-        let linked = port.bounce(r)?;
+        let mismatch = serdes::verify_readback(&cfg.param, v, readback).err();
         let mut note = String::new();
-        if readback != v {
-            note.push_str(&format!("READBACK {readback} != {v} (hex/dec confusion?) "));
+        // A point measured at a value other than the one intended is bad data.
+        let linked = if mismatch.is_some() {
+            false
+        } else {
+            port.bounce(r)?.exit_code() == 0
+        };
+        if let Some(m) = &mismatch {
+            note.push_str(&format!("{m} - NOT bounced, NOT measured "));
         }
-        if !linked {
+        if !linked && mismatch.is_none() {
             note.push_str("LANE DID NOT LINK ");
         }
 
@@ -395,9 +405,14 @@ pub fn run(r: &Runner, cfg: &Cfg) -> Result<i32, String> {
     if cfg.restore {
         let want = orig.get(&cfg.param).copied().unwrap_or(0);
         let back = port.write_param(r, &cfg.param, want)?;
-        let up = port.bounce(r)?;
+        if let Err(e) = serdes::verify_readback(&cfg.param, want, back) {
+            return Err(format!(
+                "restore failed, box left at the last swept value: {e}"
+            ));
+        }
+        let up = port.bounce(r)?.exit_code() == 0;
         println!(
-            "\nrestored serdes_tx_{}={want} (readback {back}), link {}",
+            "\nrestored serdes_tx_{}={want}, link {}",
             cfg.param,
             if up { "up" } else { "DOWN - check the box" }
         );
