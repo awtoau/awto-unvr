@@ -142,13 +142,27 @@ mtd0..mtd4   erasesize 00040000   al_boot device_tree linux_kernel rootfs chike
 mtd5..mtd12  erasesize 00001000   the 8 NOR partitions
 ```
 
-**Reads are proven, writes are not.** `scripts/verify-nand-reads.py` compares the
-whole 16 MiB `linux_kernel` partition against the U-Boot-taken backup
+**Reads are proven.** `scripts/verify-nand-reads.py` compares the whole 16 MiB
+`linux_kernel` partition against the U-Boot-taken backup
 (`-212945-post-5.1.25-final`) and it matches byte for byte — two independent
-driver implementations, same bytes. Writing is untested and deliberately not
-exercised: NAND `0x1300000` holds awto-uboot.
+driver implementations, same bytes.
 
-Two gotchas the port cost hours on, both worth knowing before touching this code:
+**Writes: three defects found and fixed, hardware verification pending (#208).**
+The first write test silently no-op'd — `nandwrite` exited 0 on a page that
+stayed erased. Causes, in order of importance:
+
+1. `ecc_write_page()` issued neither SEQIN nor PAGEPROG. The core's
+   `nand_write_page()` issues neither itself, so the whole sequence belongs in
+   the driver; the port had dropped both. Restored via
+   `nand_prog_page_begin_op()` / `nand_prog_page_end_op()`.
+2. The HAL wrote to the wrong address — see the table below.
+3. One 64 us timeout covered both FIFO drain and device-ready-after-PROGRAM.
+   Now two bounds; the ready one comes from the chip's own ONFI tPROG/tBERS.
+
+A failed program now returns `-EIO` to the MTD core, so `nandwrite` exits
+non-zero.
+
+Three gotchas the port cost hours on, all worth knowing before touching this code:
 
 - **Both data paths are FIFOs at a single address. There is no ascending-address
   mode, so `memcpy` is wrong on either.** This is the bug that cost the port
@@ -171,13 +185,31 @@ Two gotchas the port cost hours on, both worth knowing before touching this code
   | `al_nand_init()` (`:154`) | `AL_FALSE` | the `+0x0` / `+0x100000` FIFOs | wrapper handles it |
   | `al_nand_init_no_wrapper()` (`:183`) | `AL_TRUE` | `data_buffer_reg` / `command_buffer_reg` | caller polls `_al_nand_cmd_buf_wait_for_vacancy()` / `_al_nand_data_buf_wait_for_cw_data()` |
 
-  Our driver calls `al_nand_init(&obj, base, NULL, 0)` (`al_nand_main.c:833`) — the
-  wrapper path. Always use `al_nand_data_buff_read/write()`: they read the one
-  address in a loop and track code-word accounting, and they branch on
-  `no_wrapper` so the same call is correct either way. The vendor's
+  Our driver calls `al_nand_init(&obj, base, NULL, 0)` (`al_nand_main.c`) — the
+  wrapper path. Use `al_nand_data_buff_read/write()`: they hit the one address in
+  a loop and track code-word accounting. The vendor's
   `memcpy(buf, al_nand_data_buff_base_get(...), cw_size)` walks ascending
-  addresses and is wrong on both paths — it reads the first FIFO word, then
-  whatever follows in that aperture.
+  addresses — on the box that returned the same `d0 ad d0 ba` for every address.
+
+  **The HAL's two directions are NOT symmetric, and the write side was broken
+  (#208).** Read honours `obj->data_buff_base`; write hardcoded
+  `&regs_base->data_buffer_reg`:
+
+  | | address used | correct on wrapper path? |
+  |---|---|---|
+  | `al_nand_data_buff_read()` | `obj->data_buff_base` → `+0x0` | yes |
+  | `al_nand_data_buff_write()` *before the fix* | `&regs_base->data_buffer_reg` → `+0x201424` | **no — writes vanished** |
+
+  Present in all four vendored HAL copies, so it is a vendor bug. Fixed locally
+  to use `obj->data_buff_base`; `_al_nand_data_buf_wait_for_cw_vacancy()`
+  likewise now guarded by `no_wrapper`, matching read.
+
+  Stock U-Boot sidesteps the HAL for both directions with an ascending-address
+  loop on `al_nand_data_buff_base_get()`
+  (`u-boot/board/annapurna-labs/common/al_nand.c:405-410`) and writes NAND
+  correctly — so whether the `+0x0` aperture is genuinely ascending-addressable
+  is **open**, not settled. Our read path re-reads one address and verifies
+  byte-identical, which is sufficient but does not decide the question.
 
   Unmeasured: whether the wrapper's DMA path (`al_nand_data_buff_read_dma()`, not
   imported) is faster than the per-word loop. Page reads are currently one 32-bit
