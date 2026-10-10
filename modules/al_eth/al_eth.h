@@ -582,6 +582,10 @@ struct al_eth_adapter {
 	/* MAC cross-check reporting (#222), out of band - never used by probe. */
 	struct devlink			*devlink;
 	struct devlink_health_reporter	*mac_hr;
+
+	/* Board params provenance + debugfs dump (#221). */
+	const char			*bp_origin;
+	struct dentry			*bp_dbg;
 };
 
 /* SFP+ port (Linux eth1). Stock's "mac: [<base>] + [2]" is a COUNT of the MACs
@@ -623,5 +627,14 @@ int al_eth_mac_verify(struct al_eth_adapter *adapter,
 		      struct al_eth_mac_check *out);
 int al_eth_devlink_init(struct al_eth_adapter *adapter);
 void al_eth_devlink_fini(struct al_eth_adapter *adapter);
+
+/* Board params (#221), al_eth_boardparams.c. Load = read regs, validate,
+ * else seed regs from DT. al_eth_mac_of_node() is in al_eth_main.c. */
+struct al_eth_board_params;
+struct device_node *al_eth_mac_of_node(struct pci_dev *pdev);
+int al_eth_board_params_load(struct al_eth_adapter *adapter,
+			     struct al_eth_board_params *p);
+void al_eth_bp_debugfs_init(struct al_eth_adapter *adapter);
+void al_eth_bp_debugfs_fini(struct al_eth_adapter *adapter);
 
 #endif /* !(AL_ETH_H) */

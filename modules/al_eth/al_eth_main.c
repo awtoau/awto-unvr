@@ -616,7 +616,7 @@ static int al_eth_get_serdes_25g_speed(struct al_eth_adapter *adapter, uint *spe
  * node on port-id == PCI slot, same rule as al_eth_phylink.c (which is
  * compiled out without CONFIG_PHYLINK, hence the second copy).
  */
-static struct device_node *al_eth_mac_of_node(struct pci_dev *pdev)
+struct device_node *al_eth_mac_of_node(struct pci_dev *pdev)
 {
 	struct device_node *np = NULL;
 	u32 port_id;
@@ -858,17 +858,10 @@ static int al_eth_board_params_init(struct al_eth_adapter *adapter)
 		adapter->link_config.active_duplex = DUPLEX_FULL;
 		adapter->link_config.autoneg = AUTONEG_DISABLE;
 
-		rc = al_eth_board_params_get(adapter->mac_base, &params);
-		if (rc) {
-			/* -ENOENT here means board params reg 1 read 0, i.e. no
-			 * bootloader ever wrote them. Propagate the real errno -
-			 * -1 is -EPERM and misdescribes it. See
-			 * docs/board-params-handoff.md. */
-			dev_err(&adapter->pdev->dev,
-				"board params not initialised by the bootloader (%d)\n",
-				rc);
+		/* Absent/invalid regs are seeded from DT (#221). */
+		rc = al_eth_board_params_load(adapter, &params);
+		if (rc)
 			return rc;
-		}
 
 		adapter->phy_if = params.phy_if;
 
@@ -894,17 +887,10 @@ static int al_eth_board_params_init(struct al_eth_adapter *adapter)
 
 		adapter->auto_speed = false;
 
-		rc = al_eth_board_params_get(adapter->mac_base, &params);
-		if (rc) {
-			/* -ENOENT here means board params reg 1 read 0, i.e. no
-			 * bootloader ever wrote them. Propagate the real errno -
-			 * -1 is -EPERM and misdescribes it. See
-			 * docs/board-params-handoff.md. */
-			dev_err(&adapter->pdev->dev,
-				"board params not initialised by the bootloader (%d)\n",
-				rc);
+		/* Absent/invalid regs are seeded from DT (#221). */
+		rc = al_eth_board_params_load(adapter, &params);
+		if (rc)
 			return rc;
-		}
 
 		adapter->phy_exist = params.phy_exist == AL_TRUE;
 		adapter->phy_addr = params.phy_mdio_addr;
@@ -6081,6 +6067,7 @@ al_eth_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 	rc = al_eth_devlink_init(adapter);
 	if (rc)
 		dev_warn(&pdev->dev, "no devlink MAC reporter (%d)\n", rc);
+	al_eth_bp_debugfs_init(adapter);
 
 	adapter->adaptive_intr_rate = adaptive_int_moderation;
 	al_eth_init_intr_default_moderation_table_intervals(adapter);
@@ -6123,6 +6110,7 @@ al_eth_remove(struct pci_dev *pdev)
 
 	al_eth_phylink_teardown(adapter);
 
+	al_eth_bp_debugfs_fini(adapter);
 	al_eth_devlink_fini(adapter);
 	al_eth_sysfs_terminate(&pdev->dev);
 	free_netdev(dev);
