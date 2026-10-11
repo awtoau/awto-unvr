@@ -9,6 +9,8 @@ Subtests (each is a function taking a Report; metrics land in the snapshot and
   counters, adaptive RX moderation off (#304), driver-side drops and RX refill shortfalls (#296, #305), kernel-log trouble lines. (test-eth.py's non-throughput half.)
 - eth: bidirectional iperf3, 4 streams, per port (1G, 10G, any USB NIC), bound
   with SO_BINDTODEVICE (`-B ip%iface`); a plain -B bind picks the wrong NIC (#121).
+  Also per al_eth port: UDP/IPv6 with and without a hop-by-hop header, received
+  here; a lost header-carrying datagram is a TX checksum-offload fault (#297).
 - crypto: AES-256-XTS via AF_ALG. It binds by generic name, so it measures
   whichever driver wins on priority; /proc/crypto names it. al_ssm cannot win:
   AF_ALG masks it by design (#267), so these are CE numbers.
@@ -100,6 +102,7 @@ import os
 import re
 import secrets
 import signal
+import socket
 import subprocess
 import sys
 import threading
@@ -377,9 +380,134 @@ def discover_usb_eth_pairs(host: str, password: str, report: Report) -> list[dic
     return pairs
 
 
+# ---- TX checksum offload with an IPv6 extension header (#297) ----
+# End-to-end guard, not a discriminator: the core already sends IPv6 extension
+# headers to software checksum for a device with NETIF_F_IPV6_CSUM
+# (skb_csum_hwoffload_help(), net/core/dev.c), so this passes on a driver
+# without the #297 backstop too (measured 2026-10-11, build a2e0f98-dirty: 100/100
+# arrived, no "l4 protocol isn't TCP or UDP" in dmesg). It fails if a future
+# change lets a header-carrying packet reach the MAC with HW checksum on.
+# The box sends UDP/IPv6 datagrams with and without a hop-by-hop header; the
+# receiver is this host, and UDP/IPv6 checksums are mandatory, so "arrived"
+# means "checksum valid".
+V6_EXTHDR_COUNT = 100  # per class; 100 x ~100 B stays inside the default 208 KiB rcvbuf
+V6_HBH_HEX = "0000010400000000"  # next-hdr (kernel fills in), hdrlen 0 = 8 B, PadN(4)
+
+
+def v6_sender_script(dest: str, port: int, iface: str, count: int) -> str:
+    """Remote python that sends `count` plain then `count` hop-by-hop datagrams."""
+    return f"""python3 - <<'PY'
+import socket
+s = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
+s.setsockopt(socket.SOL_SOCKET, socket.SO_BINDTODEVICE, {iface!r}.encode())
+sent = {{"ctl": 0, "hbh": 0}}
+try:
+    for cls in ("ctl", "hbh"):
+        if cls == "hbh":
+            s.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_HOPOPTS, bytes.fromhex({V6_HBH_HEX!r}))
+        for i in range({count}):
+            s.sendto(("%s|%d|" % (cls, i)).encode() + b"x" * 40, ({dest!r}, {port}))
+            sent[cls] += 1
+except OSError as e:
+    print("SENDERR", e)
+print("SENT ctl=%d hbh=%d" % (sent["ctl"], sent["hbh"]))
+PY"""
+
+
+def parse_v6_sent(text: str) -> dict[str, int] | None:
+    m = re.search(r"^SENT ctl=(\d+) hbh=(\d+)", text, re.M)
+    return {"ctl": int(m[1]), "hbh": int(m[2])} if m else None
+
+
+def judge_v6_exthdr(
+    label: str, sent: dict[str, int], got: dict[str, int]
+) -> list[tuple[str, bool, str]]:
+    """Pure. The plain datagrams are the control: if they are lost the link is
+    at fault and the extension-header result says nothing about the offload."""
+    ctl_ok = sent["ctl"] > 0 and got["ctl"] == sent["ctl"]
+    checks = [
+        (
+            f"eth {label} v6 control udp",
+            ctl_ok,
+            f"{got['ctl']}/{sent['ctl']} arrived",
+        )
+    ]
+    if ctl_ok:
+        checks.append(
+            (
+                f"eth {label} v6 hop-by-hop udp csum",
+                sent["hbh"] > 0 and got["hbh"] == sent["hbh"],
+                f"{got['hbh']}/{sent['hbh']} arrived (lost ones failed the checksum)",
+            )
+        )
+    return checks
+
+
+def _local_ip6(iface: str) -> str | None:
+    result = subprocess.run(
+        ["ip", "-6", "-o", "addr", "show", "dev", iface, "scope", "global"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    for line in result.stdout.splitlines():
+        m = re.search(r"inet6 ([0-9a-f:]+)/", line)
+        if m and "temporary" not in line and "deprecated" not in line:
+            return m[1]
+    return None
+
+
+def bench_v6_exthdr(host: str, password: str, pair: dict, report: Report) -> None:
+    label = pair["label"]
+    dest = _local_ip6(pair["dev_iface"])
+    if dest is None:  # a dev-host NIC without IPv6 is not a driver fault
+        report.info[f"eth {label} v6 exthdr"] = (
+            f"skipped: no global IPv6 on {pair['dev_iface']}"
+        )
+        return
+    sock = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
+    try:
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 1 << 20)
+        sock.bind((dest, pair["port"] + 100))
+        sock.setblocking(False)
+        # Waits for: one ssh round trip; the sends take milliseconds.
+        rc, out = run_remote(
+            host,
+            password,
+            v6_sender_script(
+                dest, pair["port"] + 100, pair["box_iface"], V6_EXTHDR_COUNT
+            ),
+            timeout=DMA_SSH_CONNECT_S + DMA_SLACK_S,
+        )
+        sent = parse_v6_sent(out)
+        if rc != 0 or sent is None or "SENDERR" in out:
+            report.add(
+                f"eth {label} v6 control udp",
+                False,
+                f"sender rc={rc}: {out.strip()[-200:]}",
+            )
+            return
+        # Everything is queued in the socket by the time ssh returns (in-flight
+        # time on a LAN is microseconds against an ssh round trip): drain, no wait.
+        got = {"ctl": 0, "hbh": 0}
+        while True:
+            try:
+                data, _addr = sock.recvfrom(2048)
+            except BlockingIOError:
+                break
+            cls = data.split(b"|", 1)[0].decode(errors="replace")
+            if cls in got:
+                got[cls] += 1
+    finally:
+        sock.close()
+    for name, ok, detail in judge_v6_exthdr(label, sent, got):
+        report.add(name, ok, detail)
+
+
 def bench_ethernet(host: str, password: str, duration: int, report: Report) -> None:
     for pair in ETH_PAIRS:
         bench_eth_pair(host, password, pair, duration, report)
+        bench_v6_exthdr(host, password, pair, report)
     for pair in discover_usb_eth_pairs(host, password, report):
         bench_eth_pair(host, password, pair, duration, report)
 

@@ -461,3 +461,50 @@ def test_idle_runner_says_so_once_when_idle_is_never_reached():
     for _ in range(5):
         run.step()
     assert len(emitted) == 1 and emitted[0].startswith("STARVED not idle for 3")
+
+
+# ---- v6 hop-by-hop csum offload (#297) --------------------------------------
+
+
+def test_v6_sender_script_is_valid_python_and_names_the_target():
+    m = _mod()
+    script = m.v6_sender_script("fd6a::1", 5703, "enp0s2", 100)
+    body = script.split("<<'PY'\n", 1)[1].rsplit("\nPY", 1)[0]
+    compile(body, "<remote>", "exec")
+    assert "'fd6a::1', 5703" in body and "'enp0s2'.encode()" in body
+    assert "IPV6_HOPOPTS" in body and "range(100)" in body
+
+
+def test_v6_exthdr_all_arrive_passes():
+    m = _mod()
+    checks = m.judge_v6_exthdr(
+        "10G", {"ctl": 100, "hbh": 100}, {"ctl": 100, "hbh": 100}
+    )
+    assert all(ok for _, ok, _ in checks) and len(checks) == 2
+
+
+def test_v6_exthdr_lost_headers_fail_only_the_csum_check():
+    m = _mod()
+    by = {
+        n: ok
+        for n, ok, _ in m.judge_v6_exthdr(
+            "10G", {"ctl": 100, "hbh": 100}, {"ctl": 100, "hbh": 0}
+        )
+    }
+    assert by == {
+        "eth 10G v6 control udp": True,
+        "eth 10G v6 hop-by-hop udp csum": False,
+    }
+
+
+def test_v6_exthdr_lost_control_does_not_blame_the_offload():
+    m = _mod()
+    checks = m.judge_v6_exthdr("1G", {"ctl": 100, "hbh": 100}, {"ctl": 60, "hbh": 60})
+    assert [n for n, _, _ in checks] == ["eth 1G v6 control udp"]
+    assert checks[0][1] is False
+
+
+def test_v6_sent_parse():
+    m = _mod()
+    assert m.parse_v6_sent("junk\nSENT ctl=100 hbh=99\n") == {"ctl": 100, "hbh": 99}
+    assert m.parse_v6_sent("Traceback...") is None
