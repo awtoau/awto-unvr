@@ -221,3 +221,20 @@ def test_a_stop_that_times_out_is_reported_as_a_wedge():
     m.bench_dma("h", "pw", 20000, r)
     stop = [c for c in r.checks if c[0] == "dma stop"]
     assert stop and stop[0][1] is False and "wedged" in stop[0][2]
+
+
+def test_dmesg_marker_is_unique_per_run():
+    m = _mod()
+    seen = []
+
+    def fake(host, pw, script, timeout=60):
+        if "HAVE_CHAN" in script:
+            return 0, "HAVE_CHAN\nRUN=N\nINUSE=0\n"
+        if "/dev/kmsg" in script:
+            seen.append([ln for ln in script.splitlines() if "/dev/kmsg" in ln][0])
+        return 0, CLEAN
+
+    m.run_remote = fake
+    m.bench_dma("h", "pw", 20000, m.Report(echo=False))
+    m.bench_dma("h", "pw", 20000, m.Report(echo=False))
+    assert len(seen) == 4 and len(set(seen)) == 4  # no marker is ever reused

@@ -883,7 +883,9 @@ def _dma_phase(
     refused_fraction=0.0,
     metrics=False,
 ) -> bool:
-    marker = f"bench-all dma {name} buf={buf}"
+    # Unique per call: `sed -n '/marker/,$p'` starts at the FIRST match, so a
+    # marker reused by an earlier run replays that run's lines into this one.
+    marker = f"bench-all dma {name} buf={buf} t={time.time_ns()}"
     rc, out = run_remote(
         host,
         password,
@@ -1725,12 +1727,14 @@ def probe_reasons(
     return why + local_busy_reasons(ps, ss, {os.getpid()})
 
 
-def idle_cleanup(host: str, password: str) -> None:
-    """Leave nothing running: stop dmatest (frees the channel) and our iperf3
-    servers. Each call is bounded; failures are logged, not raised."""
-    ok, why = _dma_stop(host, password)
-    if not ok:
-        log_line(f"cleanup: dmatest would not stop ({why}); engine presumed wedged")
+def idle_cleanup(host: str, password: str, dma: bool) -> None:
+    """Leave nothing running: stop dmatest (frees the channel; only when this
+    cycle was to run it, never someone else's run) and our iperf3 servers.
+    Each call is bounded; failures are logged, not raised."""
+    if dma:
+        ok, why = _dma_stop(host, password)
+        if not ok:
+            log_line(f"cleanup: dmatest would not stop ({why}); engine presumed wedged")
     run_remote(
         host,
         password,
@@ -1783,7 +1787,7 @@ def run_idle(args) -> int:
                 take_over=False,
             )
         finally:
-            idle_cleanup(host, args.password)
+            idle_cleanup(host, args.password, not args.skip_dma)
         mark_dmesg(host, args.password, health_state, now_iso())
         Path("tmp").mkdir(exist_ok=True)
         Path("tmp/bench-idle-last.json").write_text(
