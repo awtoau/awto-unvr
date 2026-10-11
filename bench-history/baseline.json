@@ -1,0 +1,16 @@
+{
+  "kind": "baseline",
+  "timestamp": "2026-10-11",
+  "kernel": "7.3.0-rc6-6bd513f+",
+  "conditions": "box woomera, 4 cores, dev host enp5s0/enp7s0 paired; see docstring of scripts/bench-all.py",
+  "metrics": {
+    "dma dma0chan0 copy iops": 13716.0,
+    "dma dma0chan0 xor iops": 12743.0,
+    "eth 10G host->box": 8590.0,
+    "eth 10G box->host": 8590.0,
+    "eth 1G host->box": 93.9,
+    "eth 1G box->host": 93.9,
+    "link enp0s1 speed Mbps": 100.0,
+    "link enp0s2 speed Mbps": 10000.0
+  }
+}

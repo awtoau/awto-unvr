@@ -27,7 +27,7 @@
 - [UNVR power-cycle via Home Assistant](unvr-power-cycle-via-hass.md) — remote cold-reboot the box via Sonoff TH `so-th-1` smart outlet, no physical presence needed
 - [Kernel/module mismatch recurring](kernel-module-mismatch-recurring.md) — `./dev.py verify-versions` FIRST (#258, every stage stamped); module mtimes lie (rsync), compare srcversion; costly recurring bug (#105/#131/#161/#242)
 - [al_dma UDMA state survives reload](al-dma-udma-state-survives-reload.md) — rmmod/modprobe does NOT reset the al_dma HAL queue's hardware state; only a reboot does; invalidates any A/B test done via reload-only
-- [bench-all.py benchmark suite](bench-all-benchmark-suite.md) — scripts/bench-all.py: A/B regression suite (eth/crypto/sata/usb) with JSON snapshots + --compare; use instead of ad-hoc iperf3/hdparm
+- [bench-all.py is THE test harness](bench-all-benchmark-suite.md) — extend scripts/bench-all.py (health/eth/crypto/disk/usb/dma, opt-in ssm/stress, `--idle` errors-only loop); never add another test script
 - [Genuine stock firmware won't boot](genuine-stock-firmware-wont-boot.md) — recovery NAND partition is corrupted (not genuine UBNT anymore); pristine stock kernel hangs silently on RAM-boot (#166); pristine MTD backups live in git_debris/woomera-mtd/...-164356/
 - [mmio_dump conflicting-mapping crash](mmio-dump-conflicting-mapping-crash.md) — never point scripts/mmio-dump/ at a region a loaded driver already ioremap'd/pci_iomap'd — dual-mapping crashed the kernel; use kprobes on the driver's own pointer instead
 - [No untracked files left behind](no-untracked-files-left-behind.md) — never just note an untracked/uncommitted file and move on; commit or delete it, every session

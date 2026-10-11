@@ -126,7 +126,7 @@ def test_bench_dma_skips_when_previous_run_cannot_be_stopped():
 
     def fake(host, pw, script, timeout=60):
         if "HAVE_CHAN" in script:
-            return 0, "HAVE_CHAN\nY\n"
+            return 0, "HAVE_CHAN\nRUN=Y\nINUSE=1\n"
         return 124, "ssh call timed out"
 
     m.run_remote = fake
@@ -142,7 +142,7 @@ def test_bench_dma_records_iops_metrics_and_fails_on_failures():
 
     def fake(host, pw, script, timeout=60):
         if "HAVE_CHAN" in script:
-            return 0, "HAVE_CHAN\nN\n"
+            return 0, "HAVE_CHAN\nRUN=N\nINUSE=0\n"
         return 0, CLEAN.replace("0 failures 12743.00", "3 failures 12743.00")
 
     m.run_remote = fake
@@ -151,3 +151,73 @@ def test_bench_dma_records_iops_metrics_and_fails_on_failures():
     assert r.metrics["dma dma0chan0 copy iops"] == 10050.25
     assert r.metrics["dma dma0chan0 xor iops"] == 12743.0
     assert r.checks[0][0] == "dma copy+xor" and r.checks[0][1] is False
+
+
+def test_channel_state_parses_the_probe():
+    m = _mod()
+    st = m.dma_channel_state("HAVE_CHAN\nRUN=N\nINUSE=1\n")
+    assert st == {"have": True, "run": "N", "in_use": 1}
+    assert m.dma_channel_state("junk")["have"] is False
+
+
+def test_leaked_client_is_a_clear_skip_not_a_hang():
+    m = _mod()
+    r = m.dma_skip_reason({"have": True, "run": "N", "in_use": 1}, True)
+    assert "leaked client" in r and "reboot" in r
+    assert m.dma_skip_reason({"have": True, "run": "N", "in_use": 0}, True) is None
+    assert m.dma_skip_reason({"have": True, "run": "N", "in_use": None}, True) is None
+
+
+def test_someone_elses_run_is_left_alone_when_not_taking_over():
+    m = _mod()
+    st = {"have": True, "run": "Y", "in_use": 1}
+    assert "in progress" in m.dma_skip_reason(st, False)
+    assert m.dma_skip_reason(st, True) is None  # one-shot stops it first
+
+
+def test_bench_dma_does_not_stop_a_foreign_run_when_not_taking_over():
+    m = _mod()
+    calls = []
+
+    def fake(host, pw, script, timeout=60):
+        calls.append(script)
+        return 0, "HAVE_CHAN\nRUN=Y\nINUSE=1\n"
+
+    m.run_remote = fake
+    r = m.Report(echo=False)
+    m.bench_dma("h", "pw", 20000, r, take_over=False)
+    assert "SKIPPED" in r.checks[0][2] and "in progress" in r.checks[0][2]
+    assert not any("echo 0 >" in c for c in calls)  # never touched the run
+
+
+def test_bench_dma_always_stops_dmatest_afterwards():
+    m = _mod()
+    calls = []
+
+    def fake(host, pw, script, timeout=60):
+        calls.append(script)
+        if "HAVE_CHAN" in script:
+            return 0, "HAVE_CHAN\nRUN=N\nINUSE=0\n"
+        return 0, CLEAN
+
+    m.run_remote = fake
+    m.bench_dma("h", "pw", 20000, m.Report(echo=False))
+    assert calls[-1].endswith("/run")  # the final `echo 0 > run`
+    assert "echo 0 >" in calls[-1]
+
+
+def test_a_stop_that_times_out_is_reported_as_a_wedge():
+    m = _mod()
+
+    def fake(host, pw, script, timeout=60):
+        if "HAVE_CHAN" in script:
+            return 0, "HAVE_CHAN\nRUN=N\nINUSE=0\n"
+        if script.startswith("echo 0 >"):
+            return 124, "ssh call timed out"
+        return 0, CLEAN
+
+    m.run_remote = fake
+    r = m.Report(echo=False)
+    m.bench_dma("h", "pw", 20000, r)
+    stop = [c for c in r.checks if c[0] == "dma stop"]
+    assert stop and stop[0][1] is False and "wedged" in stop[0][2]

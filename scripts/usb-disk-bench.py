@@ -16,6 +16,10 @@ Answers three questions U-Boot cannot:
      faults a throughput number hides: truncated transfers, wrapped offsets and
      stuck address lines. Standard tool, better tested than a hand-rolled loop.
 
+Read-only link speed and a quick read throughput are also in `scripts/bench-all.py`
+(usb subtest); this script stays for the destructive `badblocks -w` pass and the
+large-read sweep.
+
 Read-only by default. The write test needs --write and a device with no
 mounted filesystem - it DESTROYS the target's contents.
 

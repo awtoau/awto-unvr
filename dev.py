@@ -1003,10 +1003,11 @@ def cmd_serdes_tx_sweep(extra: list[str]) -> int:
 
 
 @command(
-    "A/B regression benchmark suite: iperf3 on every ethernet port (1G, 10G, "
-    "and any USB-attached), crypto, SATA disks, USB disk - JSON snapshot, "
-    "--compare diffs two (scripts/bench-all.py)",
-    args="[--skip-eth|--skip-crypto|--skip-disk|--skip-usb] [--compare A B]",
+    "the one test/benchmark harness: health, iperf3 per ethernet port, crypto, "
+    "SATA/USB disks, al_dma dmatest - JSON snapshot, --compare diffs two, "
+    "--idle runs it unattended and prints only errors (scripts/bench-all.py)",
+    args="[--skip-health|--skip-eth|--skip-crypto|--skip-disk|--skip-usb|--skip-dma] "
+    "[--compare A B] [--idle] [--save-baseline]",
     kind="action",
 )
 def cmd_bench_all(extra: list[str]) -> int:

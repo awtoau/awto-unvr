@@ -4,7 +4,7 @@
 Talks to the `tio` unix-domain socket that bridges the serial console, logs in
 (root/unvr — owner's LAN device, self-set weak default, see improvements-audit.md),
 and runs shell commands with a return-code fence. Used by read-ddr-spd.py,
-mem-stress-woomera.py, etc. so the console contract lives in ONE place.
+reboot-verify-woomera.py, etc. so the console contract lives in ONE place.
 """
 
 from __future__ import annotations

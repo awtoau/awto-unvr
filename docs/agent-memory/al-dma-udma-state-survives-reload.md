@@ -35,8 +35,6 @@ that has nothing to do with the code change under test.
 - Fix `al_dma_free_chan_resources()` to actually tell the HAL to disable/
   reset the queue before it's safe to skip the reboot-between-runs
   discipline — not done as of this writing.
-- [[bench-all-benchmark-suite]] deliberately excludes al_dma/dmatest for
-  exactly this reason — every other subsystem it covers (eth/crypto/disk)
-  is safely re-runnable without a reboot; al_dma is not.
+- [[bench-all-benchmark-suite]] covers al_dma/dmatest since 2026-10-11; the "survives reload" cause was al_dma never resetting its HAL queues (#289).
 - Relates to [[eth-udma-tx-hang]] (same UDMA IP family, different failure
   mode) and [[test-every-change-never-assert]].
