@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """A/B regression benchmark suite for woomera: ethernet, crypto, SATA disk,
-USB. One run produces a comparable JSON snapshot; --compare diffs two
+USB, DMA engine (al_dma via dmatest). One run produces a comparable JSON snapshot; --compare diffs two
 snapshots and flags regressions. Meant to be run before and after any driver/
 kernel change to catch a regression in a subsystem you weren't even touching
 (see #121: an ethernet queue-selection change was investigated for weeks
@@ -26,17 +26,26 @@ Disk/USB: hdparm -t --direct (O_DIRECT sequential read, bypasses page
 cache) on every SATA-attached disk and the USB-attached SSD. Read-only,
 non-destructive - safe to run against the root device too.
 
-Known limitation (see #23, 2026-08-29): al_dma/dmatest is NOT included.
-Its hardware queue state was found to survive a module reload (rmmod/
-modprobe doesn't reset the UDMA queue state machine), so back-to-back runs
-without a reboot between them silently corrupt later results - not safe to
-fold into a suite meant to be run repeatedly without a reboot each time.
+DMA (al_dma): dmatest on dma0chan0, copy and xor threads, 20000 iterations.
+A failure count above 0 is a FAIL check; iops are --compare metrics. Further
+phases in the same function: an oversize run (test_buf_size 131072; only
+'prep error' may fail, #290) and, behind flags, an rmmod/modprobe cycle
+(--dma-reload) and PQ at 8 KiB / 16 KiB (--dma-pq, #169). Every run starts
+with `echo 0 > run`, which releases the channel, so two bench runs in a row
+exercise free/alloc (#289). dmatest is never unloaded: a dmatest thread
+outlives the module and wedges the channel until reboot. If the previous
+run's threads cannot be stopped the DMA subtest reports a skip, not a fail.
+Excluded until 2026-10-11 on the belief that the UDMA state survives a module
+reload as a hardware property (#23); that was al_dma never resetting its HAL
+queues (#289). Until #289 is verified on hardware, reboot between a
+--dma-reload run and anything else.
 
   ./scripts/bench-all.py                            # full run, ~2min, snapshot
                                                        # committed to bench-history/
   ./scripts/bench-all.py --out tmp/before.json        # throwaway snapshot instead
   ./scripts/bench-all.py --compare bench-history/bench-20260829-142901.json bench-history/bench-20260829-144540.json
-  ./scripts/bench-all.py --skip-eth --skip-crypto --skip-disk --skip-usb
+  ./scripts/bench-all.py --skip-eth --skip-crypto --skip-disk --skip-usb   # DMA only
+  ./scripts/bench-all.py --skip-eth --skip-crypto --skip-disk --skip-usb --dma-reload --i-accept-a-reboot
   ./scripts/bench-all.py --eth-duration 5 --crypto-mb 16   # faster, noisier
 
 Snapshots default to bench-history/ (git-tracked, NOT tmp/) so there's a
@@ -491,6 +500,234 @@ def bench_disks(
         report.add(f"{label} {dev}", ok, detail, metric=mbps)
 
 
+# ======== DMA engine (al_dma, via dmatest) ========
+
+DMA_CHAN = "dma0chan0"
+DMATEST_SYSFS = "/sys/module/dmatest/parameters"
+# dmatest per-op completion timeout (ms). Waits for: one op's completion
+# callback. Expected ~1 ms/op (#23); the driver aborts a stalled op at
+# AL_DMA_STALL_MS = 50 (#288), so the abort lands first: 100 ms = 2x that.
+# On expiry dmatest counts 'test timed out' and the check fails.
+DMATEST_OP_TIMEOUT_MS = 100
+# Slowest rate any dmatest thread has measured: pq 1998 iops, xor 2130 iops
+# before the #286 fix (#23, 2026-08-29); xor 12743 / copy 13716 after.
+DMA_MIN_IOPS = 2000
+# dmatest sleeps 100 ms after every 'prep error' (dmatest.c, `if (!tx)`), so
+# runs that expect refusals use few iterations: 300 x ~0.9 x 0.1 s ~= 27 s.
+DMATEST_PREP_ERROR_SLEEP_S = 0.1
+DMA_REFUSAL_ITERATIONS = 300
+DMA_SSH_CONNECT_S = 8  # ConnectTimeout in _box.sshpass_argv
+DMA_SLACK_S = 5  # dmatest thread start + dmesg grep over ssh
+# Stopping a finished run is kthread_stop on idle threads (~ms). 15 s = far
+# above that; expiry means a thread is stuck in the engine: skip, reboot.
+DMA_STOP_TIMEOUT_S = 15
+
+_DMATEST_SUMMARY = re.compile(
+    r"dmatest: (?P<thr>\S+): summary (?P<tests>\d+) tests, (?P<fail>\d+) failures "
+    r"(?P<iops>[\d.]+) iops (?P<kbs>\d+) KB/s"
+)
+_DMATEST_RESULT = re.compile(r"dmatest: (?P<thr>\S+): result #\d+: '(?P<what>[^']+)'")
+_DMA_BAD_KERNEL = re.compile(
+    r"Failed to init DMA queue|BUG:|Oops|WARNING:|never completed|queue reset failed"
+    r"|completion error|rejected"
+)
+
+
+def dma_run_limit_s(iterations: int, refused_fraction: float = 0.0) -> int:
+    """Wait limit for one blocking dmatest run: slowest expected thread
+    (DMA_MIN_IOPS) plus dmatest's sleep per refused op, x 1.25, plus ssh
+    connect and slack. Expiry: engine presumed wedged, the phase FAILs."""
+    work = (
+        iterations / DMA_MIN_IOPS
+        + iterations * refused_fraction * DMATEST_PREP_ERROR_SLEEP_S
+    )
+    return int(work * 1.25) + DMA_SSH_CONNECT_S + DMA_SLACK_S
+
+
+def parse_dmatest(text: str) -> dict:
+    """Per-thread summaries, failure kinds, and kernel-log trouble."""
+    summaries = {
+        m["thr"]: {
+            "tests": int(m["tests"]),
+            "failures": int(m["fail"]),
+            "iops": float(m["iops"]),
+        }
+        for m in _DMATEST_SUMMARY.finditer(text)
+    }
+    kinds: dict[str, dict[str, int]] = {}
+    for m in _DMATEST_RESULT.finditer(text):
+        k = kinds.setdefault(m["thr"], {})
+        k[m["what"]] = k.get(m["what"], 0) + 1
+    return {
+        "summaries": summaries,
+        "failure_kinds": kinds,
+        "kernel_trouble": _DMA_BAD_KERNEL.findall(text),
+    }
+
+
+def judge_dmatest(parsed: dict, iterations: int, allow_kinds=frozenset()) -> list[str]:
+    """Failure strings for one run; empty = pass. `allow_kinds`: dmatest
+    result strings that may account for failures (e.g. 'prep error')."""
+    fails: list[str] = []
+    if not parsed["summaries"]:
+        fails.append("no dmatest summary lines (did the run start?)")
+    for thr, s in parsed["summaries"].items():
+        kinds = parsed["failure_kinds"].get(thr, {})
+        bad = {k: n for k, n in kinds.items() if k not in allow_kinds}
+        if s["failures"] and (bad or not kinds):
+            fails.append(f"{thr}: {s['failures']} failures {bad or '(kinds unknown)'}")
+        elif kinds and s["failures"] != sum(kinds.values()):
+            fails.append(f"{thr}: {s['failures']} failures but {kinds}")
+        if s["tests"] != iterations:
+            fails.append(f"{thr}: ran {s['tests']} of {iterations} tests")
+    # 'rejected' is the driver's warning for a refused length: expected when
+    # the run allows prep errors, a bug otherwise.
+    trouble = [
+        t
+        for t in parsed["kernel_trouble"]
+        if not (t == "rejected" and "prep error" in allow_kinds)
+    ]
+    if trouble:
+        fails.append(f"kernel log: {sorted(set(trouble))}")
+    return fails
+
+
+def _dmatest_script(marker: str, iterations: int, buf: int) -> str:
+    """Stop the previous run (releases the channel), configure, run, block on
+    `wait`, print the dmesg since the marker. dmatest starts one thread per
+    capability the channel advertises (copy0, xor0, and pq0 with enable_pq)."""
+    return f"""set -e
+cd {DMATEST_SYSFS}
+echo 0 > run
+echo '{marker}' > /dev/kmsg
+echo {iterations} > iterations
+echo {buf} > test_buf_size
+echo {DMATEST_OP_TIMEOUT_MS} > timeout
+echo 1 > threads_per_chan
+echo {DMA_CHAN} > channel
+echo 1 > run
+cat wait > /dev/null
+dmesg | sed -n '/{marker}/,$p'
+"""
+
+
+def _dma_phase(
+    host,
+    password,
+    report,
+    name,
+    iterations,
+    buf,
+    allow_kinds=frozenset(),
+    refused_fraction=0.0,
+    metrics=False,
+) -> bool:
+    marker = f"bench-all dma {name} buf={buf}"
+    rc, out = run_remote(
+        host,
+        password,
+        _dmatest_script(marker, iterations, buf),
+        timeout=dma_run_limit_s(iterations, refused_fraction),
+    )
+    if rc != 0:
+        report.add(
+            f"dma {name}",
+            False,
+            f"rc={rc}: {out.strip()[-300:]} (rc 124 = engine presumed wedged: reboot)",
+        )
+        return False
+    parsed = parse_dmatest(out)
+    fails = judge_dmatest(parsed, iterations, allow_kinds)
+    detail = ", ".join(
+        f"{t.split('-', 1)[-1]} {s['tests']} tests {s['failures']} fail "
+        f"{s['iops']:.0f} iops"
+        for t, s in sorted(parsed["summaries"].items())
+    )
+    report.add(f"dma {name}", not fails, "; ".join(fails) if fails else detail)
+    if metrics:
+        for t, s in parsed["summaries"].items():
+            report.metrics[
+                f"dma {DMA_CHAN} {t.split('-', 1)[-1].rstrip('0123456789')} iops"
+            ] = s["iops"]
+    return not fails
+
+
+def bench_dma(
+    host: str,
+    password: str,
+    iterations: int,
+    report: Report,
+    reload: bool = False,
+    pq: bool = False,
+) -> None:
+    # Waits for: modprobe + sysfs reads, ms. Limit = connect + slack.
+    quick = DMA_SSH_CONNECT_S + DMA_SLACK_S
+    rc, out = run_remote(
+        host,
+        password,
+        "modprobe dmatest 2>&1; "
+        f"test -d /sys/class/dma/{DMA_CHAN} && echo HAVE_CHAN; "
+        f"cat {DMATEST_SYSFS}/run",
+        timeout=quick,
+    )
+    if "HAVE_CHAN" not in out:
+        report.add(
+            "dma",
+            True,
+            f"SKIPPED: no {DMA_CHAN} (al_dma not loaded?): {out.strip()[-200:]}",
+        )
+        return
+    if out.strip().splitlines()[-1].strip() == "Y":
+        rc, out = run_remote(
+            host, password, f"echo 0 > {DMATEST_SYSFS}/run", timeout=DMA_STOP_TIMEOUT_S
+        )
+        if rc != 0:
+            report.add(
+                "dma",
+                True,
+                f"SKIPPED: could not stop the previous dmatest run in {DMA_STOP_TIMEOUT_S}s "
+                f"(rc={rc}); a thread is stuck in the engine, reboot. Do not modprobe -r "
+                "al_dma (#289)",
+            )
+            return
+    ok = _dma_phase(host, password, report, "copy+xor", iterations, 16384, metrics=True)
+    ok = ok and _dma_phase(
+        host,
+        password,
+        report,
+        "oversize",
+        min(iterations, DMA_REFUSAL_ITERATIONS),
+        131072,
+        allow_kinds={"prep error"},
+        refused_fraction=0.9,  # xor: 87.5% of lengths 1..131072 exceed 16 KiB
+    )
+    if ok and reload:
+        # Waits for: rmmod/modprobe, ~ms each. Limit = connect + slack.
+        opt = "enable_pq=1" if pq else ""
+        rc, out = run_remote(
+            host,
+            password,
+            f"echo 0 > {DMATEST_SYSFS}/run; rmmod al_dma && modprobe al_dma {opt}",
+            timeout=quick,
+        )
+        report.add("dma reload", rc == 0, out.strip()[-200:] or "rmmod+modprobe ok")
+        ok = rc == 0 and _dma_phase(
+            host, password, report, "after-reload", iterations, 16384
+        )
+    if ok and pq:
+        ok = _dma_phase(host, password, report, "pq-8k", iterations, 8192)
+        ok = ok and _dma_phase(
+            host,
+            password,
+            report,
+            "pq-16k",
+            min(iterations, DMA_REFUSAL_ITERATIONS),
+            16384,
+            allow_kinds={"prep error"},
+            refused_fraction=0.5,  # pq: lengths over 8 KiB are half of 1..16384
+        )
+
+
 # ======== Orchestration ========
 
 
@@ -507,6 +744,15 @@ def run_suite(args) -> dict:
         bench_disks(host, args.password, SATA_DEVICES, "sata", report)
     if not args.skip_usb:
         bench_disks(host, args.password, USB_DEVICES, "usb", report)
+    if not args.skip_dma:
+        bench_dma(
+            host,
+            args.password,
+            args.dma_iterations,
+            report,
+            reload=args.dma_reload,
+            pq=args.dma_pq,
+        )
 
     stamp = datetime.datetime.now().astimezone().isoformat(timespec="seconds")
     commit = subprocess.run(
@@ -569,6 +815,24 @@ def main() -> int:
     ap.add_argument("--skip-crypto", action="store_true")
     ap.add_argument("--skip-disk", action="store_true")
     ap.add_argument("--skip-usb", action="store_true")
+    ap.add_argument("--skip-dma", action="store_true")
+    ap.add_argument(
+        "--dma-iterations",
+        type=int,
+        default=20000,
+        help="dmatest iterations per thread",
+    )
+    ap.add_argument(
+        "--dma-reload",
+        action="store_true",
+        help="also rmmod/modprobe al_dma and run again (#289/#23); can wedge the engine",
+    )
+    ap.add_argument(
+        "--dma-pq",
+        action="store_true",
+        help="with --dma-reload: reload with enable_pq=1 and run PQ at 8/16 KiB (#169)",
+    )
+    ap.add_argument("--i-accept-a-reboot", action="store_true")
     ap.add_argument(
         "--eth-duration", type=int, default=8, help="seconds per direction per port"
     )
@@ -588,6 +852,12 @@ def main() -> int:
         help="skip running, just diff two prior snapshots",
     )
     args = ap.parse_args()
+    if (args.dma_reload or args.dma_pq) and not args.i_accept_a_reboot:
+        sys.exit(
+            "--dma-reload/--dma-pq can wedge the engine (#23): add --i-accept-a-reboot"
+        )
+    if args.dma_pq and not args.dma_reload:
+        sys.exit("--dma-pq needs --dma-reload (enable_pq is a module parameter)")
 
     if args.compare:
         return do_compare(Path(args.compare[0]), Path(args.compare[1]))
