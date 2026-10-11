@@ -77,8 +77,6 @@ int al_thermal_sensor_handle_init(
 		thermal_sensor_handle->multiplier = MULTIPLIER_V2;
 	}
 
-	thermal_sensor_handle->ever_valid = 0;
-
 	return 0;
 }
 
@@ -278,16 +276,17 @@ int al_thermal_sensor_readout_is_valid(
 		(status_reg_val & THERMAL_SENSE_UNIT_STATUS_T_INIT_DONE) &&
 		(status_reg_val & THERMAL_SENSE_UNIT_STATUS_T_VALID));
 
-	if (is_valid)
-		thermal_sensor_handle->ever_valid = is_valid;
-
-	if (thermal_sensor_handle->ever_valid) {
+	/*
+	 * T_VALID is clear-on-read and RESULT is stale after a power cycle, so
+	 * RESULT counts only on the read that also returned T_VALID.
+	 */
+	if (is_valid) {
 		thermal_sensor_handle->readout_raw = (status_reg_val &
 			THERMAL_SENSE_UNIT_STATUS_T_RESULT_MASK) >>
 			THERMAL_SENSE_UNIT_STATUS_T_RESULT_SHIFT;
 	}
 
-	return thermal_sensor_handle->ever_valid;
+	return is_valid;
 }
 
 /******************************************************************************

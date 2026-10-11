@@ -32,6 +32,8 @@ pytestmark = pytest.mark.skipif(
 
 CASES = [
     "steady_state",
+    "stale_result_after_resume",
+    "no_conversion_is_eio",
     "wait_sleeps_and_is_bounded",
     "remove_unregisters_once",
     "sensor_off_after_zone",

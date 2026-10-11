@@ -295,6 +295,46 @@ static int t_steady_state(void)
 	return 0;
 }
 
+/* #294: after a power cycle RESULT is stale; it must not become a reading. */
+static int t_stale_result_after_resume(void)
+{
+	const struct dev_pm_ops *pm = al_thermal_driver.driver.pm;
+	int t = 0, ret;
+
+	if (do_probe())
+		return 1;
+	read_temp(&t);
+	pm->suspend(&pdev.dev);
+
+	sens.stale_result = 0x7ff; /* what a power cycle leaves: reads as ~66 C */
+	pm->resume(&pdev.dev);
+	ret = read_temp(&t);
+
+	CHECK(ret == 0, "reading after resume succeeds once a conversion completes");
+	CHECK(t == 59000, "...and is the NEW conversion, not the stale RESULT (66000 mC)");
+	return 0;
+}
+
+static int t_no_conversion_is_eio(void)
+{
+	int t = 1234, ret;
+
+	if (do_probe())
+		return 1;
+	read_temp(&t);
+	sens.conv_period_us = NEVER; /* sensor stops converting */
+	sens.running = 0;
+	k_now_us += 1000000;
+	t = 1234;
+	quiet = 1;
+	ret = read_temp(&t);
+	quiet = 0;
+
+	CHECK(ret == -EIO, "no valid conversion -> -EIO, not the last RESULT");
+	CHECK(t == 1234, "...and *temp is untouched");
+	return 0;
+}
+
 /* #280.4: the wait must sleep, and be bounded well under the vendor's 1 s. */
 static int t_wait_sleeps_and_is_bounded(void)
 {
@@ -388,6 +428,8 @@ static const struct {
 	int (*fn)(void);
 } tests[] = {
 	{ "steady_state", t_steady_state },
+	{ "stale_result_after_resume", t_stale_result_after_resume },
+	{ "no_conversion_is_eio", t_no_conversion_is_eio },
 	{ "wait_sleeps_and_is_bounded", t_wait_sleeps_and_is_bounded },
 	{ "remove_unregisters_once", t_remove_unregisters_once },
 	{ "sensor_off_after_zone", t_sensor_off_after_zone },

@@ -67,7 +67,6 @@ struct al_thermal_sensor_handle {
 	uint32_t readout_raw;
 	uint32_t offset;
 	uint32_t multiplier;
-	int ever_valid;
 };
 
 /************************************* API ***********************************/
