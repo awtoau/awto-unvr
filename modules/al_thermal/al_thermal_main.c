@@ -71,13 +71,12 @@ static inline int thermal_get_temp(struct thermal_zone_device *thermal, int *tem
 		return -ETIME;
 	}
 
+	/* Sensor reads degrees C; the thermal core wants millidegrees. The
+	 * vendor's >= 100 branch returned 100000 + temp1, capping the reported
+	 * value near 100.25 C - which made the DT's 105 C critical trip
+	 * unreachable (#279). */
 	temp1 = al_thermal_sensor_readout_get(&al_dev->handle);
-	// when temperature >= 100, alway return 100, but can get real temp with last three digits
-	// cat /sys/class/thermal/thermal_zone0/temp
-	if ( temp1 >= 100 )
-		*temp = 100000 + temp1;
-	else
-		*temp = 1000 * temp1;
+	*temp = 1000 * temp1;
 
 	return 0;
 }

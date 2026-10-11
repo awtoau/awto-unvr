@@ -57,26 +57,25 @@ static int alpine_serdes_thermal_get(void)
 	struct thermal_zone_device *thermal;
 	int temp;
 
+	/* Returns degrees C. Both paths must divide: the core reports
+	 * millidegrees and the fallback used to return them raw, so a fallback
+	 * reading came out 1000x high (#283). */
 	thermal = thermal_zone_get_zone_by_name("cpu-thermal");
-
-	if (!IS_ERR(thermal)) {
-		thermal_zone_get_temp(thermal, &temp);
-		temp /= 1000;
-		return (int)temp;
-	}
-
-	pr_info("%s: Falling back to al_thermal-thermal-zone\n", __func__);
-
-	thermal = thermal_zone_get_zone_by_name("al_thermal");
-
 	if (IS_ERR(thermal)) {
-		pr_err("%s: thermal sensor driver must be available!\n", __func__);
-		BUG();
+		pr_info("%s: falling back to the al_thermal zone\n", __func__);
+		thermal = thermal_zone_get_zone_by_name("al_thermal");
+	}
+	/* No zone or a failed read: report 25 C rather than BUG(). The sensor is
+	 * optional and the only consumer is the 25G HAL's eye-tuning
+	 * compensation, so a nominal value degrades accuracy, not function. */
+	if (IS_ERR(thermal) ||
+	    thermal_zone_get_temp(thermal, &temp)) {
+		pr_warn_once("%s: no usable thermal zone; assuming 25 C\n",
+			     __func__);
+		return 25;
 	}
 
-	thermal_zone_get_temp(thermal, &temp);
-
-	return (int)temp;
+	return (int)(temp / 1000);
 }
 
 void __iomem *alpine_serdes_resource_get(u32 group)
