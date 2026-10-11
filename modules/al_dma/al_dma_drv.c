@@ -139,7 +139,16 @@ static enum dma_status al_dma_tx_status(struct dma_chan *c,
 					dma_cookie_t cookie,
 					struct dma_tx_state *txstate)
 {
-	return dma_cookie_status(c, cookie, txstate);
+	enum dma_status st = dma_cookie_status(c, cookie, txstate);
+
+	/* #285 instrumentation: log the failing comparison itself. Remove once
+	 * diagnosed. */
+	if (st != DMA_COMPLETE)
+		trace_printk("al_dma c%d: tx_status NOT_COMPLETE cookie=%d completed=%d used=%d st=%d\n",
+			     to_al_dma_chan(c)->idx, cookie,
+			     c->completed_cookie, c->cookie, st);
+
+	return st;
 }
 
 static dma_cookie_t al_dma_tx_submit(struct dma_async_tx_descriptor *txd)
@@ -249,6 +258,18 @@ static void al_dma_cleanup_tasklet(struct tasklet_struct *t)
 			 * woken by the callback that calls tx_status must not
 			 * read it stale - dmatest's "completion busy status"
 			 * (#285). */
+			/* #285 instrumentation: capture the exact numbers whose
+			 * comparison dmatest fails on. Remove once diagnosed. */
+			{
+				dma_cookie_t ck = desc->txd.cookie;
+				dma_cookie_t prev = ch->chan.completed_cookie;
+				dma_cookie_t used = ch->chan.cookie;
+
+				if (ck != prev + 1)
+					trace_printk("al_dma c%d: OUT-OF-ORDER cookie=%d prev_completed=%d used=%d slot=%u\n",
+						     ch->idx, ck, prev, used,
+						     ch->completed);
+			}
 			dma_cookie_complete(&desc->txd);
 			spin_unlock_irqrestore(&ch->lock, flags);
 
