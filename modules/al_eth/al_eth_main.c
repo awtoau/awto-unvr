@@ -1220,16 +1220,16 @@ static int al_eth_hw_init_adapter(struct al_eth_adapter *adapter)
 			al_udma_gen_tgtid_msix_conf_set(adapter->udma_base, &msix_conf);
 
 			unit_regs = (struct unit_regs __iomem *)params->udma_regs_base;
-			al_iofic_msix_tgtid_attributes_config(
+			WARN_ON_ONCE(al_iofic_msix_tgtid_attributes_config(
 				&unit_regs->gen.interrupt_regs.main_iofic,
-				AL_INT_GROUP_A, 0, tgtid, AL_TRUE);
+				AL_INT_GROUP_A, 0, tgtid, AL_TRUE));
 			for (i = 0; i < DMA_MAX_Q; i++) {
-				al_iofic_msix_tgtid_attributes_config(
+				WARN_ON_ONCE(al_iofic_msix_tgtid_attributes_config(
 					&unit_regs->gen.interrupt_regs.main_iofic,
-					AL_INT_GROUP_B, i, tgtid, AL_TRUE);
-				al_iofic_msix_tgtid_attributes_config(
+					AL_INT_GROUP_B, i, tgtid, AL_TRUE));
+				WARN_ON_ONCE(al_iofic_msix_tgtid_attributes_config(
 					&unit_regs->gen.interrupt_regs.main_iofic,
-					AL_INT_GROUP_C, i, tgtid, AL_TRUE);
+					AL_INT_GROUP_C, i, tgtid, AL_TRUE));
 			}
 		}
 	}
@@ -1715,12 +1715,14 @@ static void al_eth_update_intr_moderation(struct al_eth_adapter *adapter, unsign
 
 	if (direction == AL_ETH_TX) {
 		pr_debug("new tx interval:%d\n", smoothed_interval);
-		al_iofic_msix_moder_interval_config(&udma_base->gen.interrupt_regs.main_iofic,
-				AL_INT_GROUP_C, qid, smoothed_interval);
+		WARN_ON_ONCE(al_iofic_msix_moder_interval_config(
+				&udma_base->gen.interrupt_regs.main_iofic,
+				AL_INT_GROUP_C, qid, smoothed_interval));
 	} else { /* RX */
 		pr_debug("interval:%d\n", smoothed_interval);
-		al_iofic_msix_moder_interval_config(&udma_base->gen.interrupt_regs.main_iofic,
-				AL_INT_GROUP_B, qid, smoothed_interval);
+		WARN_ON_ONCE(al_iofic_msix_moder_interval_config(
+				&udma_base->gen.interrupt_regs.main_iofic,
+				AL_INT_GROUP_B, qid, smoothed_interval));
 	}
 	return;
 }
@@ -1764,9 +1766,9 @@ static void al_eth_set_coalesce(
 				sb_clk_freq) / 1000;
 
 		for (qid = 0; qid < adapter->num_tx_queues; qid++)
-			al_iofic_msix_moder_interval_config(
+			WARN_ON_ONCE(al_iofic_msix_moder_interval_config(
 				&udma_base->gen.interrupt_regs.main_iofic,
-				AL_INT_GROUP_C, qid, interval);
+				AL_INT_GROUP_C, qid, interval));
 	}
 	if (adapter->rx_usecs != rx_usecs) {
 		int qid;
@@ -1779,9 +1781,9 @@ static void al_eth_set_coalesce(
 				sb_clk_freq) / 1000;
 
 		for (qid = 0; qid < adapter->num_rx_queues; qid++)
-			al_iofic_msix_moder_interval_config(
+			WARN_ON_ONCE(al_iofic_msix_moder_interval_config(
 				&udma_base->gen.interrupt_regs.main_iofic,
-				AL_INT_GROUP_B, qid, interval);
+				AL_INT_GROUP_B, qid, interval));
 	}
 }
 
@@ -1828,12 +1830,15 @@ static int al_eth_configure_int_mode(struct al_eth_adapter *adapter)
 	/* set interrupt moderation resolution */
 	intr_mod_res = AL_ETH_INTR_MODERATION_RESOLUTION;
 
-	al_iofic_moder_res_config(
+	if (al_iofic_moder_res_config(
 		&((struct unit_regs *)(adapter->udma_base))->gen.interrupt_regs.main_iofic,
-			AL_INT_GROUP_B, intr_mod_res);
-	al_iofic_moder_res_config(
+			AL_INT_GROUP_B, intr_mod_res) ||
+	    al_iofic_moder_res_config(
 		&((struct unit_regs *)(adapter->udma_base))->gen.interrupt_regs.main_iofic,
-		AL_INT_GROUP_C, intr_mod_res);
+		AL_INT_GROUP_C, intr_mod_res)) {
+		netdev_err(adapter->netdev, "al_iofic_moder_res_config failed!\n");
+		return -EIO;
+	}
 
 	if (adapter->adaptive_intr_rate) {
 		/* set initial moderation settings */

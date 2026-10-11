@@ -768,12 +768,22 @@ static void al_eth_kr_pcs_reg_write(
 	       adapter->name, __func__, reg_addr, reg_data);
 }
 
+/* al_iofic_config() fails only on a bad group, which al_assert() already traps. */
+static void al_eth_iofic_config(const struct al_hal_eth_adapter *adapter,
+				void __iomem *regs_base, int group, uint32_t flags)
+{
+	if (al_iofic_config(regs_base, group, flags))
+		pr_err("eth [%s]: al_iofic_config failed (group %d)\n",
+		       adapter->name, group);
+}
+
 static void al_eth_ec_error_ints_unmask(struct al_hal_eth_adapter *adapter)
 {
 	uint32_t ec_a_mask;
 	uint32_t ec_b_mask;
 	uint32_t ec_c_mask;
 	uint32_t ec_d_mask;
+	int grp;
 
 	al_assert(adapter->ec_ints_base);
 	al_assert(adapter->udma_regs_base);
@@ -809,30 +819,19 @@ static void al_eth_ec_error_ints_unmask(struct al_hal_eth_adapter *adapter)
 	}
 
 	/* EC IOFIC config */
-	al_iofic_config(adapter->ec_ints_base,
-			AL_INT_GROUP_A,
-			INT_CONTROL_GRP_MASK_MSI_X |
-			INT_CONTROL_GRP_CLEAR_ON_READ);
-	al_iofic_config(adapter->ec_ints_base,
-			AL_INT_GROUP_B,
-			INT_CONTROL_GRP_MASK_MSI_X |
-			INT_CONTROL_GRP_CLEAR_ON_READ);
-	al_iofic_config(adapter->ec_ints_base,
-			AL_INT_GROUP_C,
-			INT_CONTROL_GRP_MASK_MSI_X |
-			INT_CONTROL_GRP_CLEAR_ON_READ);
-	al_iofic_config(adapter->ec_ints_base,
-			AL_INT_GROUP_D,
-			INT_CONTROL_GRP_MASK_MSI_X |
-			INT_CONTROL_GRP_CLEAR_ON_READ);
+	for (grp = AL_INT_GROUP_A; grp <= AL_INT_GROUP_D; grp++)
+		al_eth_iofic_config(adapter, adapter->ec_ints_base, grp,
+				    INT_CONTROL_GRP_MASK_MSI_X |
+				    INT_CONTROL_GRP_CLEAR_ON_READ);
 
 	/* UDMA IOFIC config */
-	al_iofic_config(al_udma_iofic_reg_base_get(adapter->udma_regs_base,
-						   AL_UDMA_IOFIC_LEVEL_PRIMARY),
-			AL_INT_GROUP_D,
-			INT_CONTROL_GRP_SET_ON_POSEDGE |
-			INT_CONTROL_GRP_MASK_MSI_X |
-			INT_CONTROL_GRP_CLEAR_ON_READ);
+	al_eth_iofic_config(adapter,
+			    al_udma_iofic_reg_base_get(adapter->udma_regs_base,
+						       AL_UDMA_IOFIC_LEVEL_PRIMARY),
+			    AL_INT_GROUP_D,
+			    INT_CONTROL_GRP_SET_ON_POSEDGE |
+			    INT_CONTROL_GRP_MASK_MSI_X |
+			    INT_CONTROL_GRP_CLEAR_ON_READ);
 
 	/* clear old unvalid parity interrupts */
 	al_iofic_clear_cause(adapter->ec_ints_base,
@@ -944,19 +943,39 @@ int al_eth_adapter_init(struct al_hal_eth_adapter *adapter, struct al_eth_adapte
 	/* set max packet size to 1M (for TSO) */
 	conf.encode_64k_as_zero = AL_TRUE;
 	conf.max_pkt_size = 0xfffff;
-	al_udma_m2s_packet_size_cfg_set(&adapter->tx_udma, &conf);
+	rc = al_udma_m2s_packet_size_cfg_set(&adapter->tx_udma, &conf);
+	if (rc) {
+		pr_err("eth [%s]: failed to set max packet size (rc %d)\n",
+		       params->name, rc);
+		return rc;
+	}
 
 	/* set m2s (tx) max descriptors to max data buffers number and one for
 	 * meta descriptor
 	 */
-	al_udma_m2s_max_descs_set(&adapter->tx_udma, AL_ETH_PKT_MAX_BUFS + 1);
+	rc = al_udma_m2s_max_descs_set(&adapter->tx_udma, AL_ETH_PKT_MAX_BUFS + 1);
+	if (rc) {
+		pr_err("eth [%s]: failed to set tx max descriptors (rc %d)\n",
+		       params->name, rc);
+		return rc;
+	}
 
 	/* set s2m (rx) max descriptors to max data buffers */
-	al_udma_s2m_max_descs_set(&adapter->rx_udma, AL_ETH_PKT_MAX_BUFS);
+	rc = al_udma_s2m_max_descs_set(&adapter->rx_udma, AL_ETH_PKT_MAX_BUFS);
+	if (rc) {
+		pr_err("eth [%s]: failed to set rx max descriptors (rc %d)\n",
+		       params->name, rc);
+		return rc;
+	}
 
 	/* set s2m burst lenght when writing completion descriptors to 64 bytes
 	 */
-	al_udma_s2m_compl_desc_burst_config(&adapter->rx_udma, 64);
+	rc = al_udma_s2m_compl_desc_burst_config(&adapter->rx_udma, 64);
+	if (rc) {
+		pr_err("eth [%s]: failed to set rx completion burst (rc %d)\n",
+		       params->name, rc);
+		return rc;
+	}
 
 	/* if pointer to ec regs provided, then init the tx meta cache of this udma*/
 	if (adapter->ec_regs_base != NULL) {
@@ -1117,6 +1136,8 @@ int al_eth_adapter_init(struct al_hal_eth_adapter *adapter, struct al_eth_adapte
  */
 int al_eth_ec_mac_ints_config(struct al_hal_eth_adapter *adapter)
 {
+	int grp;
+
 
 	pr_debug("eth [%s]: enable ethernet and mac interrupts\n", adapter->name);
 
@@ -1125,27 +1146,19 @@ int al_eth_ec_mac_ints_config(struct al_hal_eth_adapter *adapter)
 		return -EPERM;
 
 	/* enable mac ints */
-	al_iofic_config(adapter->ec_ints_base, AL_INT_GROUP_A,
-		INT_CONTROL_GRP_SET_ON_POSEDGE | INT_CONTROL_GRP_CLEAR_ON_READ);
-	al_iofic_config(adapter->ec_ints_base, AL_INT_GROUP_B,
-		INT_CONTROL_GRP_SET_ON_POSEDGE | INT_CONTROL_GRP_CLEAR_ON_READ);
-	al_iofic_config(adapter->ec_ints_base, AL_INT_GROUP_C,
-		INT_CONTROL_GRP_SET_ON_POSEDGE | INT_CONTROL_GRP_CLEAR_ON_READ);
-	al_iofic_config(adapter->ec_ints_base, AL_INT_GROUP_D,
-		INT_CONTROL_GRP_SET_ON_POSEDGE | INT_CONTROL_GRP_CLEAR_ON_READ);
+	for (grp = AL_INT_GROUP_A; grp <= AL_INT_GROUP_D; grp++)
+		al_eth_iofic_config(adapter, adapter->ec_ints_base, grp,
+				    INT_CONTROL_GRP_SET_ON_POSEDGE |
+				    INT_CONTROL_GRP_CLEAR_ON_READ);
 
 	/* unmask MAC int */
 	al_iofic_unmask(adapter->ec_ints_base, AL_INT_GROUP_A, 8);
 
 	/* enable ec interrupts */
-	al_iofic_config(adapter->mac_ints_base, AL_INT_GROUP_A,
-		INT_CONTROL_GRP_SET_ON_POSEDGE | INT_CONTROL_GRP_CLEAR_ON_READ);
-	al_iofic_config(adapter->mac_ints_base, AL_INT_GROUP_B,
-		INT_CONTROL_GRP_SET_ON_POSEDGE | INT_CONTROL_GRP_CLEAR_ON_READ);
-	al_iofic_config(adapter->mac_ints_base, AL_INT_GROUP_C,
-		INT_CONTROL_GRP_SET_ON_POSEDGE | INT_CONTROL_GRP_CLEAR_ON_READ);
-	al_iofic_config(adapter->mac_ints_base, AL_INT_GROUP_D,
-		INT_CONTROL_GRP_SET_ON_POSEDGE | INT_CONTROL_GRP_CLEAR_ON_READ);
+	for (grp = AL_INT_GROUP_A; grp <= AL_INT_GROUP_D; grp++)
+		al_eth_iofic_config(adapter, adapter->mac_ints_base, grp,
+				    INT_CONTROL_GRP_SET_ON_POSEDGE |
+				    INT_CONTROL_GRP_CLEAR_ON_READ);
 
 	/* eee active */
 	al_iofic_unmask(adapter->mac_ints_base, AL_INT_GROUP_B, AL_BIT(14));
@@ -3250,10 +3263,8 @@ int al_eth_rx_header_split_force_len_config(struct al_hal_eth_adapter *adapter,
 					uint32_t qid,
 					uint32_t header_len)
 {
-	al_udma_s2m_q_compl_hdr_split_config(&(adapter->rx_udma.udma_q[qid]), enable,
-					     AL_TRUE, header_len);
-
-	return 0;
+	return al_udma_s2m_q_compl_hdr_split_config(&(adapter->rx_udma.udma_q[qid]),
+						    enable, AL_TRUE, header_len);
 }
 
 
