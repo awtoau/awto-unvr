@@ -9,6 +9,7 @@
 #define __AL_SSM_DRV_H__
 
 #include <linux/atomic.h>
+#include <linux/kref.h>
 #include <linux/list.h>
 #include <linux/pci.h>
 #include <linux/spinlock.h>
@@ -89,6 +90,7 @@ struct al_ssm_chan {
 	dma_addr_t rx_cdesc_dma;
 	struct list_head pending;
 	int pending_count;
+	bool stopping;		/* chan->lock: remove started, refuse new work (#301) */
 };
 
 struct al_ssm_ctx {
@@ -101,6 +103,7 @@ struct al_ssm_ctx {
 };
 
 struct al_ssm_dev {
+	struct kref ref;	/* probe + one per live tfm; last put frees (#301) */
 	struct pci_dev *pdev;
 	struct device *dev;
 	void __iomem *bar0;
@@ -112,6 +115,7 @@ struct al_ssm_dev {
 	struct al_ssm_chan channel;
 	bool crypto_registered;
 	spinlock_t backlog_lock;
+	bool backlog_closed;	/* backlog_lock: remove started (#301) */
 	struct list_head backlog;
 	atomic_t backlog_count;
 	struct workqueue_struct *wq;

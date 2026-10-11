@@ -48,10 +48,41 @@
 #define AL_SSM_DEVICE_ID	0x0022
 #define AL_SSM_CLASS_CRYPTO	0x100000
 
+/*
+ * g_ssm_dev is the only way a new tfm finds the device; g_ssm_lock makes
+ * "look up + take a reference" atomic against remove (#301). Every live tfm
+ * holds a reference, so the memory outlives a PCI unbind.
+ */
 static struct al_ssm_dev *g_ssm_dev;
+static DEFINE_SPINLOCK(g_ssm_lock);
+/* Live tfms: the static al_ssm_algs[] cannot be re-registered under them. */
+static atomic_t g_ssm_tfms = ATOMIC_INIT(0);
+
+static struct al_ssm_dev *al_ssm_dev_get(void)
+{
+	struct al_ssm_dev *dev;
+
+	spin_lock(&g_ssm_lock);
+	dev = g_ssm_dev;
+	if (dev)
+		kref_get(&dev->ref);
+	spin_unlock(&g_ssm_lock);
+	return dev;
+}
+
+static void al_ssm_dev_release(struct kref *ref)
+{
+	kfree(container_of(ref, struct al_ssm_dev, ref));
+}
+
+static void al_ssm_dev_put(struct al_ssm_dev *dev)
+{
+	kref_put(&dev->ref, al_ssm_dev_release);
+}
 
 static void al_ssm_poll_completions(struct work_struct *work);
 static void al_ssm_complete_one(struct al_ssm_reqctx *rctx, int err);
+static void al_ssm_schedule_poll(struct al_ssm_dev *dev, unsigned long delay);
 
 /* ── DMA resource management ──────────────────────────────────────────── */
 
@@ -204,6 +235,12 @@ static int al_ssm_submit_and_poll(struct al_ssm_reqctx *rctx)
 
 	spin_lock_irqsave(&chan->lock, flags);
 
+	/* Checked under the lock remove takes to set it: no HW access after. */
+	if (chan->stopping) {
+		spin_unlock_irqrestore(&chan->lock, flags);
+		return -ESHUTDOWN;
+	}
+
 	if (chan->pending_count >= AL_SSM_MAX_IN_FLIGHT) {
 		spin_unlock_irqrestore(&chan->lock, flags);
 		return -ENOSPC;
@@ -241,6 +278,10 @@ static int al_ssm_submit_and_poll(struct al_ssm_reqctx *rctx)
 
 	while (ktime_before(ktime_get(), deadline)) {
 		struct al_ssm_reqctx *done;
+
+		/* The lock was dropped around a completion; remove may have run. */
+		if (chan->stopping)
+			break;
 
 		rc = al_crypto_dma_completion(&dev->ssm_dma, 0, &comp_status);
 		if (rc <= 0) {
@@ -418,10 +459,9 @@ static void al_ssm_poll_completions(struct work_struct *work)
 
 	dev_dbg(dev->dev, "poll_work: completed=%d pending=%d\n", completed, pending);
 
-	if (pending > 0) {
-		mod_delayed_work(dev->wq, &dev->poll_work,
-				 completed > 0 ? 0 : usecs_to_jiffies(AL_SSM_POLL_INTERVAL_US));
-	}
+	if (pending > 0)
+		al_ssm_schedule_poll(dev, completed > 0 ? 0 :
+				     usecs_to_jiffies(AL_SSM_POLL_INTERVAL_US));
 	/*
 	 * If pending == 0, we stop polling. New requests will restart
 	 * via al_ssm_schedule_poll() in al_ssm_enqueue().
@@ -431,9 +471,17 @@ static void al_ssm_poll_completions(struct work_struct *work)
 	 */
 }
 
-static void al_ssm_schedule_poll(struct al_ssm_dev *dev)
+/* dev->wq is destroyed by remove after it sets chan->stopping under
+ * chan->lock; arming the work under that lock never touches a dead wq. */
+static void al_ssm_schedule_poll(struct al_ssm_dev *dev, unsigned long delay)
 {
-	mod_delayed_work(dev->wq, &dev->poll_work, 0);
+	struct al_ssm_chan *chan = &dev->channel;
+	unsigned long flags;
+
+	spin_lock_irqsave(&chan->lock, flags);
+	if (!chan->stopping)
+		mod_delayed_work(dev->wq, &dev->poll_work, delay);
+	spin_unlock_irqrestore(&chan->lock, flags);
 }
 
 /* ── Async crypto entry ───────────────────────────────────────────────── */
@@ -447,7 +495,7 @@ static int al_ssm_enqueue(struct al_ssm_ctx *ctx, struct skcipher_request *req,
 	unsigned long flags;
 	int rc;
 
-	if (!dev || !dev->bar0)
+	if (!dev)
 		return -ENODEV;
 
 	memcpy(iv, req->iv, AES_BLOCK_SIZE);
@@ -469,13 +517,18 @@ static int al_ssm_enqueue(struct al_ssm_ctx *ctx, struct skcipher_request *req,
 
 	if (rc == -EINPROGRESS) {
 		/* Submitted but not yet complete — workqueue will finish it */
-		al_ssm_schedule_poll(dev);
+		al_ssm_schedule_poll(dev, 0);
 		return -EINPROGRESS;
 	}
 
 	if (rc == -ENOSPC) {
 		/* HW queue full — software backlog */
 		spin_lock_irqsave(&dev->backlog_lock, flags);
+		if (dev->backlog_closed) {
+			spin_unlock_irqrestore(&dev->backlog_lock, flags);
+			al_ssm_free_resources(rctx);
+			return -ENODEV;
+		}
 		if (atomic_read(&dev->backlog_count) >= AL_SSM_MAX_BACKLOG) {
 			spin_unlock_irqrestore(&dev->backlog_lock, flags);
 			al_ssm_free_resources(rctx);
@@ -484,13 +537,13 @@ static int al_ssm_enqueue(struct al_ssm_ctx *ctx, struct skcipher_request *req,
 		list_add_tail(&rctx->list, &dev->backlog);
 		atomic_inc(&dev->backlog_count);
 		spin_unlock_irqrestore(&dev->backlog_lock, flags);
-		al_ssm_schedule_poll(dev);
+		al_ssm_schedule_poll(dev, 0);
 		return -EINPROGRESS;
 	}
 
-	/* Real error */
+	/* Real error; a device removed under us is -ENODEV to the caller */
 	al_ssm_free_resources(rctx);
-	return rc;
+	return rc == -ESHUTDOWN ? -ENODEV : rc;
 }
 
 /* ── Crypto algorithm callbacks ───────────────────────────────────────── */
@@ -498,9 +551,11 @@ static int al_ssm_enqueue(struct al_ssm_ctx *ctx, struct skcipher_request *req,
 static int al_ssm_init_tfm(struct crypto_skcipher *tfm)
 {
 	struct al_ssm_ctx *ctx = crypto_skcipher_ctx(tfm);
-	if (!g_ssm_dev)
+
+	ctx->dev = al_ssm_dev_get();
+	if (!ctx->dev)
 		return -ENODEV;
-	ctx->dev = g_ssm_dev;
+	atomic_inc(&g_ssm_tfms);
 	crypto_skcipher_set_reqsize(tfm, sizeof(struct al_ssm_reqctx));
 	return 0;
 }
@@ -510,6 +565,8 @@ static void al_ssm_exit_tfm(struct crypto_skcipher *tfm)
 	struct al_ssm_ctx *ctx = crypto_skcipher_ctx(tfm);
 	memzero_explicit(ctx->key, sizeof(ctx->key));
 	memzero_explicit(ctx->xts_key, sizeof(ctx->xts_key));
+	al_ssm_dev_put(ctx->dev);
+	atomic_dec(&g_ssm_tfms);
 }
 
 static int al_ssm_xts_setkey(struct crypto_skcipher *tfm, const u8 *key, unsigned int keylen)
@@ -697,10 +754,18 @@ static int al_ssm_pci_probe(struct pci_dev *pdev, const struct pci_device_id *en
 	dev_info(&pdev->dev, "Alpine V2 SSM crypto engine found (vendor=%04x dev=%04x class=%06x rev=%d)\n",
 		 pdev->vendor, pdev->device, pdev->class, rev_id);
 
+	/* Tfms from a previous bind still point at the static al_ssm_algs[]. */
+	if (atomic_read(&g_ssm_tfms)) {
+		dev_err(&pdev->dev, "%d tfm(s) from a previous bind still live\n",
+			atomic_read(&g_ssm_tfms));
+		return -EBUSY;
+	}
+
 	dev = kzalloc(sizeof(*dev), GFP_KERNEL);
 	if (!dev)
 		return -ENOMEM;
 
+	kref_init(&dev->ref);
 	dev->pdev = pdev;
 	dev->dev = &pdev->dev;
 	spin_lock_init(&dev->backlog_lock);
@@ -778,7 +843,9 @@ static int al_ssm_pci_probe(struct pci_dev *pdev, const struct pci_device_id *en
 		goto err_destroy_wq;
 
 	pci_set_drvdata(pdev, dev);
+	spin_lock(&g_ssm_lock);
 	g_ssm_dev = dev;
+	spin_unlock(&g_ssm_lock);
 
 	rc = crypto_register_skciphers(al_ssm_algs, ARRAY_SIZE(al_ssm_algs));
 	if (rc)
@@ -792,7 +859,9 @@ static int al_ssm_pci_probe(struct pci_dev *pdev, const struct pci_device_id *en
 	return 0;
 
 err_devlink:
+	spin_lock(&g_ssm_lock);
 	g_ssm_dev = NULL;
+	spin_unlock(&g_ssm_lock);
 	al_ssm_devlink_fini(dev);
 err_destroy_wq:
 	destroy_workqueue(dev->wq);
@@ -814,44 +883,98 @@ err_free:
 	return rc;
 }
 
+/*
+ * Stop the engine before anything it may still write to is reclaimed (#301).
+ * q_pause stops fetch and waits for completions to catch up with prefetch
+ * (al_udma_q_pause: dcp == crhp). Bus-mastering off afterwards is the hard
+ * stop: it holds even when the pause timed out on a stuck engine.
+ */
+static void al_ssm_quiesce(struct al_ssm_dev *dev)
+{
+	struct al_udma_q *tx_q = al_ssm_dma_tx_queue_handle_get(&dev->ssm_dma, 0);
+	struct al_udma_q *rx_q = al_ssm_dma_rx_queue_handle_get(&dev->ssm_dma, 0);
+
+	if (tx_q && al_udma_q_pause(tx_q))
+		dev_err(dev->dev, "tx queue did not pause on remove\n");
+	if (rx_q && al_udma_q_pause(rx_q))
+		dev_err(dev->dev, "rx queue did not pause on remove\n");
+	pci_clear_master(dev->pdev);
+}
+
+/* Engine is stopped: what it finished is reaped normally, the rest and the
+ * whole backlog fail with -ESHUTDOWN. Callbacks run with no lock held. */
+static void al_ssm_fail_outstanding(struct al_ssm_dev *dev)
+{
+	struct al_ssm_chan *chan = &dev->channel;
+	struct al_ssm_reqctx *rctx, *tmp;
+	LIST_HEAD(rest);
+	unsigned long flags;
+
+	al_ssm_poll_channel(dev);
+
+	spin_lock_irqsave(&dev->backlog_lock, flags);
+	dev->backlog_closed = true;
+	list_splice_init(&dev->backlog, &rest);
+	atomic_set(&dev->backlog_count, 0);
+	spin_unlock_irqrestore(&dev->backlog_lock, flags);
+
+	spin_lock_irqsave(&chan->lock, flags);
+	list_splice_tail_init(&chan->pending, &rest);
+	chan->pending_count = 0;
+	atomic_set(&dev->total_pending, 0);
+	spin_unlock_irqrestore(&chan->lock, flags);
+
+	list_for_each_entry_safe(rctx, tmp, &rest, list) {
+		list_del(&rctx->list);
+		al_ssm_complete_one(rctx, -ESHUTDOWN);
+	}
+}
+
 static void al_ssm_pci_remove(struct pci_dev *pdev)
 {
 	struct al_ssm_dev *dev = pci_get_drvdata(pdev);
-	struct al_ssm_reqctx *rctx, *tmp;
+	struct al_ssm_chan *chan;
+	struct al_udma_q *tx_q, *rx_q;
+	unsigned long flags;
 
 	if (!dev)
 		return;
+	chan = &dev->channel;
+
+	/* No new tfm can find the device. Live tfms keep it alive by refcount. */
+	spin_lock(&g_ssm_lock);
+	g_ssm_dev = NULL;
+	spin_unlock(&g_ssm_lock);
+
 	if (dev->crypto_registered) {
 		crypto_unregister_skciphers(al_ssm_algs, ARRAY_SIZE(al_ssm_algs));
 		dev->crypto_registered = false;
 	}
-	cancel_delayed_work_sync(&dev->poll_work);
+
+	/* From here every submit path returns -ESHUTDOWN/-ENODEV under chan->lock. */
+	spin_lock_irqsave(&chan->lock, flags);
+	chan->stopping = true;
+	spin_unlock_irqrestore(&chan->lock, flags);
+
+	/* disable, not cancel: the worker re-arms itself. */
+	disable_delayed_work_sync(&dev->poll_work);
 	destroy_workqueue(dev->wq);
 	/* After this no fault can still be in flight to a live reporter. */
 	al_ssm_devlink_fini(dev);
 
-	list_for_each_entry_safe(rctx, tmp, &dev->backlog, list) {
-		list_del(&rctx->list);
-		al_ssm_complete_one(rctx, -ESHUTDOWN);
-	}
-	list_for_each_entry_safe(rctx, tmp, &dev->channel.pending, list) {
-		list_del(&rctx->list);
-		al_ssm_complete_one(rctx, -ESHUTDOWN);
-	}
+	al_ssm_quiesce(dev);
+	al_ssm_fail_outstanding(dev);
 
 	/* UDMA_DISABLE below only pauses new-descriptor fetch, it doesn't
 	 * drain/reset the queue - without this a live reload hung forever on
 	 * stale hardware state (#167). Matches vendor al_eth's own
 	 * al_eth_hw_stop(). See docs/kernel-boot-fixes.md Bug 6. */
-	{
-		struct al_udma_q *tx_q = al_ssm_dma_tx_queue_handle_get(&dev->ssm_dma, 0);
-		struct al_udma_q *rx_q = al_ssm_dma_rx_queue_handle_get(&dev->ssm_dma, 0);
-
-		if (tx_q && al_udma_q_reset(tx_q))
-			dev_err(&pdev->dev, "failed to reset tx queue on remove\n");
-		if (rx_q && al_udma_q_reset(rx_q))
-			dev_err(&pdev->dev, "failed to reset rx queue on remove\n");
-	}
+	tx_q = al_ssm_dma_tx_queue_handle_get(&dev->ssm_dma, 0);
+	rx_q = al_ssm_dma_rx_queue_handle_get(&dev->ssm_dma, 0);
+	if (tx_q && al_udma_q_reset(tx_q))
+		dev_err(&pdev->dev, "failed to reset tx queue on remove\n");
+	if (rx_q && al_udma_q_reset(rx_q))
+		dev_err(&pdev->dev, "failed to reset rx queue on remove\n");
 
 	al_ssm_free_channel(dev);
 	if (al_ssm_dma_state_set(&dev->ssm_dma, UDMA_DISABLE))
@@ -860,9 +983,8 @@ static void al_ssm_pci_remove(struct pci_dev *pdev)
 	if (dev->bar0) pci_iounmap(pdev, dev->bar0);
 	pci_release_regions(pdev);
 	pci_disable_device(pdev);
-	g_ssm_dev = NULL;
-	kfree(dev);
 	dev_info(&pdev->dev, "Alpine V2 SSM crypto engine removed\n");
+	al_ssm_dev_put(dev);
 }
 
 static struct pci_driver al_ssm_pci_driver = {
