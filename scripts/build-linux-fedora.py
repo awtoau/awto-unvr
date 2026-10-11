@@ -203,6 +203,26 @@ def configure():
             "DEBUG_OBJECTS_WORK",
             "--enable",
             "DEBUG_OBJECTS_TIMERS",
+            # Fault injection, so a driver's error path can be PROVEN rather
+            # than closed on code review. Each targets paths that cannot be
+            # reached by normal load:
+            #   FAILSLAB + FAIL_PAGE_ALLOC - #305 rx refill shortfall
+            #   FAIL_MAKE_REQUEST          - block-layer error paths
+            #   DEBUG_FS + FAULT_INJECTION_DEBUG_FS - the /sys/kernel/debug knobs
+            # NETCONSOLE gives netpoll, which is the only caller that hands
+            # rx_poll a zero budget (#314).
+            "--enable",
+            "FAULT_INJECTION",
+            "--enable",
+            "FAULT_INJECTION_DEBUG_FS",
+            "--enable",
+            "FAILSLAB",
+            "--enable",
+            "FAIL_PAGE_ALLOC",
+            "--enable",
+            "FAIL_MAKE_REQUEST",
+            "--module",
+            "NETCONSOLE",
             "--disable",
             "MODULE_SIG",
             "--disable",
