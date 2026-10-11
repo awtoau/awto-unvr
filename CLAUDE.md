@@ -5,6 +5,12 @@ Mainline Linux + our own U-Boot + out-of-tree `al_*` drivers.
 
 Global rules: `/home/dan/.claude/CLAUDE.md`. This file is the project layer on top.
 
+**House LAN IPs come from the registry:** `awto-dan` repo (private, clone alongside this one)
+-> `docs/network/ip-registry.toml`, rules in `docs/network/README.md`. Use woomera's `[[block]]`
+(`.40-.47`); never ping-scan for a free IP, never static inside the DHCP pool `.100-.179`.
+Static values: `/24`, gateway/DNS `.254`, domain `dnt.com.au`. Multi-NIC-on-one-subnet
+weak-host/ARP-flux notes: `docs/agent-memory/four-nics-one-subnet-weak-host.md`.
+
 ## Hard "do not" list — every one of these has cost hours
 
 - ~~NEVER scan i2c~~ — **fixed 2026-09-04 (#86).** Scanning is safe on a kernel whose DTB
