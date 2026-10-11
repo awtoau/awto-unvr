@@ -57,9 +57,10 @@
  *               which udelay(1) granularity is still meaningful
  *   on expiry:  -ETIMEDOUT, logged; the caller aborts the operation
  *
- * NOT the bound for a FIFO holding a WAIT_FOR_READY entry: the controller
- * retires that one only once the DEVICE asserts ready, so its duration is
- * tPROG/tBERS, orders of magnitude larger. See AL_NAND_RDY_POLL_FLOOR_MS.
+ * NOT the bound while an array operation is in flight (nand->array_busy): an
+ * entry behind it retires only once the DEVICE asserts ready, so its duration
+ * is tPROG/tBERS, orders of magnitude larger. See AL_NAND_RDY_POLL_FLOOR_MS
+ * and al_nand_wait_cmd_fifo_empty() (#276).
  */
 #define AL_NAND_CMD_FIFO_POLL_US 64
 
@@ -132,6 +133,11 @@ struct al_nand_data {
 
 	/* The core's nand_wait(), wrapped by al_nand_waitfunc(). */
 	int (*core_waitfunc)(struct nand_chip *chip);
+
+	/* A PROGRAM or ERASE has been started and waitfunc() has not yet seen
+	 * it finish. While set, the command FIFO may hold an entry that retires
+	 * only when the DEVICE is ready - see al_nand_wait_cmd_fifo_empty(). */
+	bool array_busy;
 
 	u8 oob[AL_NAND_MAX_OOB_SIZE];
 };
@@ -298,27 +304,10 @@ static void al_nand_send_byte_count_cmd(struct al_nand_ctrl_obj *obj,
 		obj, AL_NAND_CMD_SEQ_ENTRY(cmd_id, (len >> 8) & 0xff));
 }
 
-/* Drain a FIFO of CMD/ADDRESS entries. See AL_NAND_CMD_FIFO_POLL_US. */
-static int al_nand_wait_cmd_fifo_empty(struct al_nand_data *nand)
-{
-	unsigned int i;
-
-	for (i = 0; i < AL_NAND_CMD_FIFO_POLL_US; i++) {
-		if (al_nand_cmd_buff_is_empty(&nand->nand_obj))
-			return 0;
-		udelay(1);
-	}
-
-	dev_err(nand->dev, "command FIFO still busy after %u us\n",
-		AL_NAND_CMD_FIFO_POLL_US);
-
-	return -ETIMEDOUT;
-}
-
 /*
  * Drain a FIFO whose last entry is WAIT_FOR_READY, i.e. wait out tPROG/tBERS.
- * Separate from the above because the two differ by ~4 orders of magnitude.
- * See AL_NAND_RDY_POLL_FLOOR_MS.
+ * Separate from the CMD/ADDRESS drain because the two differ by ~4 orders of
+ * magnitude. See AL_NAND_RDY_POLL_FLOOR_MS.
  */
 static int al_nand_wait_dev_ready(struct al_nand_data *nand, const char *op)
 {
@@ -341,12 +330,40 @@ static int al_nand_wait_dev_ready(struct al_nand_data *nand, const char *op)
 	return -ETIMEDOUT;
 }
 
+/*
+ * Drain the FIFO after a CMD/ADDRESS entry. See AL_NAND_CMD_FIFO_POLL_US.
+ *
+ * While an array operation is in flight the entry cannot retire before the
+ * device is ready, so the ready bound applies instead. Applying the 64 us bound
+ * there latched a timeout on every erase (#276), which waitfunc() then reported
+ * while tBERS was still running (#302).
+ */
+static int al_nand_wait_cmd_fifo_empty(struct al_nand_data *nand)
+{
+	unsigned int i;
+
+	if (nand->array_busy)
+		return al_nand_wait_dev_ready(nand, "command behind array op");
+
+	for (i = 0; i < AL_NAND_CMD_FIFO_POLL_US; i++) {
+		if (al_nand_cmd_buff_is_empty(&nand->nand_obj))
+			return 0;
+		udelay(1);
+	}
+
+	dev_err(nand->dev, "command FIFO still busy after %u us\n",
+		AL_NAND_CMD_FIFO_POLL_US);
+
+	return -ETIMEDOUT;
+}
+
 static void al_nand_cmd_ctrl(struct nand_chip *chip, int dat,
 			     unsigned int ctrl)
 {
 	struct al_nand_data *nand = to_al_nand(chip);
 	enum al_nand_command_type type;
 	u32 cmd;
+	int ret;
 
 	if (!(ctrl & (NAND_CLE | NAND_ALE)))
 		return;
@@ -361,9 +378,15 @@ static void al_nand_cmd_ctrl(struct nand_chip *chip, int dat,
 	dev_dbg(nand->dev, "cmd_ctrl: %s 0x%02x (ctrl 0x%x)\n",
 		type == AL_NAND_COMMAND_TYPE_CMD ? "CMD" : "ADDR",
 		dat & 0xff, ctrl);
+
+	/* ERASE2 and PAGEPROG start the array operation; cleared by waitfunc(). */
+	if (type == AL_NAND_COMMAND_TYPE_CMD &&
+	    (dat == NAND_CMD_ERASE2 || dat == NAND_CMD_PAGEPROG))
+		nand->array_busy = true;
+
 	al_nand_cmd_single_execute(&nand->nand_obj, cmd);
 
-	/* Submission only - the entry is a CMD/ADDRESS cycle. */
+	/* The entry is a CMD/ADDRESS cycle; bound chosen by array_busy. */
 	al_nand_err_set(nand, al_nand_wait_cmd_fifo_empty(nand));
 
 	if (dat == NAND_CMD_PAGEPROG && (ctrl & NAND_CLE)) {
@@ -373,7 +396,10 @@ static void al_nand_cmd_ctrl(struct nand_chip *chip, int dat,
 
 		/* tPROG, not FIFO drain - the controller holds this entry
 		 * until the device asserts ready. */
-		al_nand_err_set(nand, al_nand_wait_dev_ready(nand, "PAGEPROG"));
+		ret = al_nand_wait_dev_ready(nand, "PAGEPROG");
+		al_nand_err_set(nand, ret);
+		if (!ret)
+			nand->array_busy = false;
 
 		al_nand_wp_set_enable(&nand->nand_obj, 1);
 		al_nand_tx_set_enable(&nand->nand_obj, 0);
@@ -539,17 +565,20 @@ static void al_nand_write_buf(struct nand_chip *chip, const u8 *buf, int len)
 /*
  * Ends every PROGRAM and ERASE, so a latched error reaches the core on any of
  * them - including PAGEPROG's own ready timeout, which is latched by cmd_ctrl()
- * and nowhere else. A latched error returns at once: the chip is not going to
- * be ready any sooner for a further 400 ms of nand_wait().
+ * and nowhere else.
+ *
+ * core_waitfunc() runs even with an error latched: it is what waits out the
+ * device. Returning first would end nand_erase_op() mid-tBERS with the chip
+ * still busy for the next command (#302).
  */
 static int al_nand_waitfunc(struct nand_chip *chip)
 {
 	struct al_nand_data *nand = to_al_nand(chip);
+	int status = nand->core_waitfunc(chip);
 
-	if (nand->op_err)
-		return al_nand_err_report(nand, 0);
+	nand->array_busy = false;
 
-	return al_nand_err_report(nand, nand->core_waitfunc(chip));
+	return al_nand_err_report(nand, status);
 }
 
 /******************************************************************************/

@@ -175,26 +175,34 @@ def main() -> int:
         return 0
 
     log("--- WRITE TEST")
-    rc, o = box_sh(host, f"flash_erase /dev/mtd{tgt} 0 1 2>&1 | tail -1")
-    log(f"  erase: rc={rc} {o[-60:]}")
+    # No `| tail`: a pipeline returns the LAST command's status, so a failing
+    # flash_erase read as success (#302).
+    erase_rc, o = box_sh(host, f"flash_erase /dev/mtd{tgt} 0 1 2>&1")
+    log(f"  erase: rc={erase_rc} {o.splitlines()[-1][-60:] if o else ''}")
+    erase1_ok = erase_rc == 0
+    log(f"  [0] erase exits 0: {'PASS' if erase1_ok else 'FAIL'}")
 
     box_sh(host, f"head -c {BLOCK} /dev/urandom > /tmp/pat.bin")
     _, want = box_sh(host, "sha256sum /tmp/pat.bin | cut -c1-24")
 
-    rc, o = box_sh(host, f"nandwrite -p /dev/mtd{tgt} /tmp/pat.bin 2>&1 | tail -2")
+    rc, o = box_sh(host, f"nandwrite -p /dev/mtd{tgt} /tmp/pat.bin 2>&1")
     log(f"  write: rc={rc} {o[-70:]}")
     write_rc = rc
 
-    box_sh(host, f"nanddump -l {BLOCK} -f /tmp/rb.bin /dev/mtd{tgt} >/dev/null 2>&1")
+    dump_rc, _ = box_sh(
+        host, f"nanddump -l {BLOCK} -f /tmp/rb.bin /dev/mtd{tgt} >/dev/null 2>&1"
+    )
+    if dump_rc != 0:
+        log(f"  nanddump failed: rc={dump_rc}")
     _, got = box_sh(host, "sha256sum /tmp/rb.bin | cut -c1-24")
     log(f"  written  {want}")
     log(f"  readback {got}")
-    crit1 = want == got and write_rc == 0
+    crit1 = want == got and write_rc == 0 and dump_rc == 0
     log(f"  [1] bytes land, write exits 0: {'PASS' if crit1 else 'FAIL'}")
 
     # Identical data over a programmed page: AND of equal bits, same parity, and
     # NAND returns pass status, so rc 0 is expected. NOT an induced failure.
-    rc, o = box_sh(host, f"nandwrite -p /dev/mtd{tgt} /tmp/pat.bin 2>&1 | tail -1")
+    rc, o = box_sh(host, f"nandwrite -p /dev/mtd{tgt} /tmp/pat.bin 2>&1")
     log(
         f"  [2] re-program identical data (info only, rc 0 expected): rc={rc} {o[-70:]}"
     )
@@ -232,7 +240,8 @@ def main() -> int:
     )
 
     # Leave the target as we found it.
-    box_sh(host, f"flash_erase /dev/mtd{tgt} 0 1 >/dev/null 2>&1")
+    restore_rc, o = box_sh(host, f"flash_erase /dev/mtd{tgt} 0 1 2>&1")
+    log(f"  restore erase: rc={restore_rc} {o.splitlines()[-1][-60:] if o else ''}")
     box_sh(host, "rm -f /tmp/pat.bin /tmp/rb.bin")
 
     log("--- AFTER")
@@ -253,7 +262,9 @@ def main() -> int:
     # its pre-test checksum or erase is unproven.
     erased_back = after.get(TARGET_LABEL) == before.get(TARGET_LABEL)
     log(f"  [5] erase restored {TARGET_LABEL}: {'PASS' if erased_back else 'FAIL'}")
-    ok = crit1 and crit3 and crit4 and erased_back and not moved
+    erases_ok = erase1_ok and restore_rc == 0
+    log(f"  [6] both erases exited 0: {'PASS' if erases_ok else 'FAIL'}")
+    ok = crit1 and crit3 and crit4 and erased_back and erases_ok and not moved
     log(
         f"RESULT: {'PASS' if ok else 'FAIL'}"
         + (f" - collateral change in {moved}" if moved else "")
