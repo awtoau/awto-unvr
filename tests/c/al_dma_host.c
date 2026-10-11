@@ -649,6 +649,47 @@ static int t_pq_cap_gate(void)
 	return fails;
 }
 
+/* While a completion callback runs, its ring slot is still the client's:
+ * prep must not hand it out again (the callback would be clearing fields of
+ * a descriptor already re-prepped for someone else). */
+static int g_in_cb_prep_ok;
+static struct dma_async_tx_descriptor *g_in_cb_tx;
+
+static void try_prep_in_cb(struct client *c)
+{
+	(void)c;
+	if (g_in_cb_tx || g_in_cb_prep_ok)
+		return;
+	g_in_cb_tx = D->dma_dev.device_prep_dma_memcpy(&chan(0)->chan, 0x1000, 0x2000, 64, 0);
+	if (g_in_cb_tx) {
+		g_in_cb_prep_ok = 1;
+		finish(g_in_cb_tx);
+	}
+}
+
+static int t_slot_held_through_callback(void)
+{
+	static struct client cl[AL_DMA_MAX_SRCS * 64];
+	int n = 0, i;
+
+	quiet = 1;
+	env_init();
+	alloc_chan(0);
+	emu[0].hold = 1;
+	while (n < (int)ARRAY_SIZE(cl) && submit_copy(0, &cl[n], 64, false) >= 0)
+		n++;
+	quiet = 0;
+	CHECK(n > 1000, "ring filled");
+	cl[0].in_cb = try_prep_in_cb;
+	D->dma_dev.device_issue_pending(&chan(0)->chan);
+	emu_release(0);
+	for (i = 0; i < 50; i++)
+		run_tasklet(0, 4);
+	CHECK(cl[0].cb == 1, "first callback ran");
+	CHECK(!g_in_cb_prep_ok, "full ring: prep inside the callback finds no free slot");
+	return fails;
+}
+
 struct test { const char *name; int (*fn)(void); };
 static const struct test tests[] = {
 	{ "smoke", t_smoke },
@@ -656,6 +697,7 @@ static const struct test tests[] = {
 	{ "cookie_zero_skipped", t_cookie_zero_skipped },
 	{ "len_limits", t_len_limits },
 	{ "pq_cap_gate", t_pq_cap_gate },
+	{ "slot_held_through_callback", t_slot_held_through_callback },
 };
 
 int main(int argc, char **argv)

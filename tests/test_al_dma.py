@@ -46,6 +46,7 @@ CASES = [
     "cookie_zero_skipped",
     "len_limits",
     "pq_cap_gate",
+    "slot_held_through_callback",
 ]
 
 

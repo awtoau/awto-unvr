@@ -253,7 +253,6 @@ static void al_dma_cleanup_tasklet(struct tasklet_struct *t)
 				break;
 			}
 			desc = &ch->sw_ring[ch->completed];
-			ch->completed = (ch->completed + 1) % ch->sw_ring_count;
 			ch->stall_start = 0;
 			ch->stall_reported = false;
 			ch->last_completion = jiffies;
@@ -267,23 +266,28 @@ static void al_dma_cleanup_tasklet(struct tasklet_struct *t)
 				dma_cookie_complete(&desc->txd);
 			spin_unlock_irqrestore(&ch->lock, flags);
 
-			/* Slot prepped but never submitted (cookie 0): no
-			 * client to tell, completed_cookie must not move.
-			 * ioat/dma.c:625 skips these too. */
-			if (cookie < DMA_MIN_COOKIE)
-				continue;
+			/* Cookie 0: slot prepped but never submitted, no client
+			 * to tell and completed_cookie must not move
+			 * (ioat/dma.c:625). */
+			if (cookie >= DMA_MIN_COOKIE) {
+				/* Unmap before the callback, then clear the
+				 * fields: a recycled slot otherwise keeps the
+				 * last op's callback and async_tx's unmap
+				 * refcount leaks (#278). Pattern: ioat/dma.c:627. */
+				dma_descriptor_unmap(&desc->txd);
+				if (desc->txd.callback)
+					desc->txd.callback(desc->txd.callback_param);
+				desc->txd.callback = NULL;
+				desc->txd.callback_result = NULL;
+				dma_run_dependencies(&desc->txd);
+			}
 
-			/* Unmap before the callback, then clear the fields: a
-			 * recycled ring slot otherwise keeps the previous op's
-			 * callback and unmap data, and async_tx's unmap refcount
-			 * leaks per descriptor (#278). dma_async_tx_descriptor_init()
-			 * only resets ->chan. Pattern from ioat/dma.c:627. */
-			dma_descriptor_unmap(&desc->txd);
-			if (desc->txd.callback)
-				desc->txd.callback(desc->txd.callback_param);
-			desc->txd.callback = NULL;
-			desc->txd.callback_result = NULL;
-			dma_run_dependencies(&desc->txd);
+			/* Free the slot only now: prep sees it as taken while the
+			 * callback runs, so a full ring cannot re-prep it under
+			 * the callback's feet (ioat advances tail after, too). */
+			spin_lock_irqsave(&ch->lock, flags);
+			ch->completed = (ch->completed + 1) % ch->sw_ring_count;
+			spin_unlock_irqrestore(&ch->lock, flags);
 		}
 	} while (ret > 0);
 
