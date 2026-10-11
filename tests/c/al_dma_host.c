@@ -503,10 +503,51 @@ static int t_cookie_order_stress(void)
 	return fails;
 }
 
+/* A slot prepped and then dropped without tx_submit() carries cookie 0.
+ * Completing it must not set completed_cookie to 0 (mainline BUG_ONs). */
+static int t_cookie_zero_skipped(void)
+{
+	struct client c1 = { 0 }, c2 = { 0 };
+	struct dma_async_tx_descriptor *tx;
+	struct al_dma_chan *ch;
+	dma_cookie_t ck1, ck2;
+	int unmaps;
+
+	env_init();
+	alloc_chan(0);
+	ch = chan(0);
+	ck1 = submit_copy(0, &c1, 4096, false);
+	D->dma_dev.device_issue_pending(&ch->chan);
+	run_tasklet(0, 4);
+	CHECK(c1.cb == 1 && ch->chan.completed_cookie == ck1, "first op completed");
+	unmaps = k_unmap_calls;
+
+	tx = D->dma_dev.device_prep_dma_memcpy(&ch->chan, 0x1000, 0x2000, 4096, 0);
+	CHECK(tx != NULL, "prep ok");
+	/* the client drops the descriptor: release the lock as tx_submit would,
+	 * but assign no cookie */
+	spin_unlock_irqrestore(&ch->lock, ch->prep_flags);
+	CHECK(tx->cookie == 0, "dropped slot has cookie 0");
+	D->dma_dev.device_issue_pending(&ch->chan);
+	run_tasklet(0, 4);
+	CHECK(ch->chan.completed_cookie == ck1, "completed_cookie did not move to 0");
+	CHECK(status_of(0, ck1) == DMA_COMPLETE, "cookie 1 still reads COMPLETE");
+	CHECK(k_unmap_calls == unmaps, "no unmap for a slot nobody submitted");
+	CHECK(ch->completed == ch->tail, "slot was consumed");
+
+	ck2 = submit_copy(0, &c2, 4096, false);
+	D->dma_dev.device_issue_pending(&ch->chan);
+	run_tasklet(0, 4);
+	CHECK(ck2 == ck1 + 1 && c2.cb == 1, "next real op completes");
+	CHECK(ch->chan.completed_cookie == ck2, "completed_cookie == next cookie");
+	return fails;
+}
+
 struct test { const char *name; int (*fn)(void); };
 static const struct test tests[] = {
 	{ "smoke", t_smoke },
 	{ "cookie_order_stress", t_cookie_order_stress },
+	{ "cookie_zero_skipped", t_cookie_zero_skipped },
 };
 
 int main(int argc, char **argv)

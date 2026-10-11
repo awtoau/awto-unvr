@@ -50,6 +50,10 @@ static inline dma_cookie_t dma_cookie_assign(struct dma_async_tx_descriptor *tx)
 
 static inline void dma_cookie_complete(struct dma_async_tx_descriptor *tx)
 {
+	/* mainline BUG_ONs here; a cookie-0 completion would otherwise set
+	 * completed_cookie to 0 and make finished cookies read IN_PROGRESS. */
+	if (WARN_ON_ONCE(tx->cookie < DMA_MIN_COOKIE))
+		return;
 	tx->chan->completed_cookie = tx->cookie;
 	tx->cookie = 0;
 }
@@ -213,6 +217,7 @@ static void al_dma_cleanup_tasklet(struct tasklet_struct *t)
 					     &comp_status);
 		if (ret > 0) {
 			struct al_dma_sw_desc *desc;
+			dma_cookie_t cookie;
 
 			/* Matches vendor al_dma_cleanup_fn's barrier between
 			 * seeing a completion and reading the descriptor it
@@ -253,8 +258,16 @@ static void al_dma_cleanup_tasklet(struct tasklet_struct *t)
 			 * woken by the callback that calls tx_status must not
 			 * read it stale - dmatest's "completion busy status"
 			 * (#285). */
-			dma_cookie_complete(&desc->txd);
+			cookie = desc->txd.cookie;
+			if (cookie >= DMA_MIN_COOKIE)
+				dma_cookie_complete(&desc->txd);
 			spin_unlock_irqrestore(&ch->lock, flags);
+
+			/* Slot prepped but never submitted (cookie 0): no
+			 * client to tell, completed_cookie must not move.
+			 * ioat/dma.c:625 skips these too. */
+			if (cookie < DMA_MIN_COOKIE)
+				continue;
 
 			/* Unmap before the callback, then clear the fields: a
 			 * recycled ring slot otherwise keeps the previous op's
@@ -537,8 +550,10 @@ al_dma_prep_dma_xor(struct dma_chan *c, dma_addr_t dest,
 	struct al_dma_device *dev = ch->device;
 	struct al_dma_sw_desc *sw_desc;
 	struct al_raid_transaction xaction;
-	struct al_block *src_blocks;
-	struct al_buf *src_bufs;
+	/* On the stack: prep runs in atomic context and keeps ->lock held on
+	 * return, so no allocation or free belongs on this path. */
+	struct al_block src_blocks[AL_DMA_MAX_XOR];
+	struct al_buf src_bufs[AL_DMA_MAX_XOR];
 	struct al_block dst_block;
 	struct al_buf dst_buf;
 	unsigned long irqflags;
@@ -547,15 +562,6 @@ al_dma_prep_dma_xor(struct dma_chan *c, dma_addr_t dest,
 
 	if (src_cnt > AL_DMA_MAX_XOR)
 		return NULL;
-
-	src_blocks = kcalloc(src_cnt, sizeof(*src_blocks), GFP_ATOMIC);
-	if (!src_blocks)
-		return NULL;
-	src_bufs = kcalloc(src_cnt, sizeof(*src_bufs), GFP_ATOMIC);
-	if (!src_bufs) {
-		kfree(src_blocks);
-		return NULL;
-	}
 
 	for (i = 0; i < src_cnt; i++) {
 		src_bufs[i].addr = src[i];
@@ -575,8 +581,6 @@ al_dma_prep_dma_xor(struct dma_chan *c, dma_addr_t dest,
 	sw_desc = al_dma_get_sw_desc(ch);
 	if (!sw_desc) {
 		spin_unlock_irqrestore(&ch->lock, irqflags);
-		kfree(src_bufs);
-		kfree(src_blocks);
 		return NULL;
 	}
 
@@ -602,8 +606,6 @@ al_dma_prep_dma_xor(struct dma_chan *c, dma_addr_t dest,
 		spin_unlock_irqrestore(&ch->lock, irqflags);
 		atomic64_inc(&dev->stat_errors);
 		al_dma_fault(dev, AL_DMA_FAULT_SUBMIT);
-		kfree(src_bufs);
-		kfree(src_blocks);
 		return NULL;
 	}
 
@@ -616,9 +618,6 @@ al_dma_prep_dma_xor(struct dma_chan *c, dma_addr_t dest,
 
 	/* Lock stays HELD - tx_submit() releases it (#286). */
 	ch->prep_flags = irqflags;
-
-	kfree(src_bufs);
-	kfree(src_blocks);
 
 	return &sw_desc->txd;
 }
@@ -633,32 +632,17 @@ al_dma_prep_dma_pq(struct dma_chan *c, dma_addr_t *dst,
 	struct al_dma_device *dev = ch->device;
 	struct al_dma_sw_desc *sw_desc;
 	struct al_raid_transaction xaction;
-	struct al_block *src_blocks;
-	struct al_buf *src_bufs;
+	struct al_block src_blocks[AL_DMA_MAX_XOR];
+	struct al_buf src_bufs[AL_DMA_MAX_XOR];
+	uint8_t coefs[AL_DMA_MAX_XOR];
 	struct al_block dst_blocks[2];
 	struct al_buf dst_bufs[2];
-	uint8_t *coefs;
 	unsigned long irqflags;
 	unsigned int i, num_dsts;
 	int rc;
 
 	if (src_cnt > AL_DMA_MAX_XOR)
 		return NULL;
-
-	src_blocks = kcalloc(src_cnt, sizeof(*src_blocks), GFP_ATOMIC);
-	if (!src_blocks)
-		return NULL;
-	src_bufs = kcalloc(src_cnt, sizeof(*src_bufs), GFP_ATOMIC);
-	if (!src_bufs) {
-		kfree(src_blocks);
-		return NULL;
-	}
-	coefs = kcalloc(src_cnt, sizeof(*coefs), GFP_ATOMIC);
-	if (!coefs) {
-		kfree(src_bufs);
-		kfree(src_blocks);
-		return NULL;
-	}
 
 	for (i = 0; i < src_cnt; i++) {
 		src_bufs[i].addr = src[i];
@@ -695,7 +679,7 @@ al_dma_prep_dma_pq(struct dma_chan *c, dma_addr_t *dst,
 	sw_desc = al_dma_get_sw_desc(ch);
 	if (!sw_desc) {
 		spin_unlock_irqrestore(&ch->lock, irqflags);
-		goto err_free;
+		return NULL;
 	}
 
 	memset(&xaction, 0, sizeof(xaction));
@@ -729,7 +713,7 @@ al_dma_prep_dma_pq(struct dma_chan *c, dma_addr_t *dst,
 		spin_unlock_irqrestore(&ch->lock, irqflags);
 		atomic64_inc(&dev->stat_errors);
 		al_dma_fault(dev, AL_DMA_FAULT_SUBMIT);
-		goto err_free;
+		return NULL;
 	}
 
 	sw_desc->tx_descs_count = xaction.tx_descs_count;
@@ -742,17 +726,7 @@ al_dma_prep_dma_pq(struct dma_chan *c, dma_addr_t *dst,
 	/* Lock stays HELD - tx_submit() releases it (#286). */
 	ch->prep_flags = irqflags;
 
-	kfree(coefs);
-	kfree(src_bufs);
-	kfree(src_blocks);
-
 	return &sw_desc->txd;
-
-err_free:
-	kfree(coefs);
-	kfree(src_bufs);
-	kfree(src_blocks);
-	return NULL;
 }
 
 /* ======== PCI Probe / Remove ======== */

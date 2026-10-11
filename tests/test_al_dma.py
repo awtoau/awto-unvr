@@ -43,6 +43,7 @@ HAL_C = [
 CASES = [
     "smoke",
     "cookie_order_stress",
+    "cookie_zero_skipped",
 ]
 
 
