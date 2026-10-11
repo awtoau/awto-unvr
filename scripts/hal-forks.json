@@ -91,10 +91,9 @@
   }
  },
  "al_hal_udma.h": {
-  "reason": "being merged into modules/al_hal in this series (#264)",
+  "reason": "al_ssm keeps the gen B UDMA (AL SDK 4.19, API v5: V3/V4 register structs, handle_init, q_pause, state_set_wait(flush), AXI timeout 5M). modules/al_hal holds gen A (4.1.37) for al_dma + al_eth. Type- and API-incompatible; see docs/vendor-code-modernisation.md item 10.",
   "trees": {
-   "al_dma": "87f2fe6300271603",
-   "al_eth": "87f2fe6300271603",
+   "al_hal": "87f2fe6300271603",
    "al_ssm": "d6e96ea3142631b9"
   }
  },
@@ -115,18 +114,16 @@
   }
  },
  "al_hal_udma_debug.c": {
-  "reason": "being merged into modules/al_hal in this series (#264)",
+  "reason": "al_ssm keeps the gen B UDMA (AL SDK 4.19, API v5: V3/V4 register structs, handle_init, q_pause, state_set_wait(flush), AXI timeout 5M). modules/al_hal holds gen A (4.1.37) for al_dma + al_eth. Type- and API-incompatible; see docs/vendor-code-modernisation.md item 10.",
   "trees": {
-   "al_dma": "8f648aa4dc23d677",
-   "al_eth": "8f648aa4dc23d677",
+   "al_hal": "8f648aa4dc23d677",
    "al_ssm": "fc003f64b9ec9365"
   }
  },
  "al_hal_udma_debug.h": {
-  "reason": "being merged into modules/al_hal in this series (#264)",
+  "reason": "al_ssm keeps the gen B UDMA (AL SDK 4.19, API v5: V3/V4 register structs, handle_init, q_pause, state_set_wait(flush), AXI timeout 5M). modules/al_hal holds gen A (4.1.37) for al_dma + al_eth. Type- and API-incompatible; see docs/vendor-code-modernisation.md item 10.",
   "trees": {
-   "al_dma": "7fbc934cef9fddb4",
-   "al_eth": "7fbc934cef9fddb4",
+   "al_hal": "7fbc934cef9fddb4",
    "al_ssm": "93b1b32e5e5f8f9d"
   }
  },
@@ -154,34 +151,30 @@
   }
  },
  "al_hal_udma_regs.h": {
-  "reason": "being merged into modules/al_hal in this series (#264)",
+  "reason": "al_ssm keeps the gen B UDMA (AL SDK 4.19, API v5: V3/V4 register structs, handle_init, q_pause, state_set_wait(flush), AXI timeout 5M). modules/al_hal holds gen A (4.1.37) for al_dma + al_eth. Type- and API-incompatible; see docs/vendor-code-modernisation.md item 10.",
   "trees": {
-   "al_dma": "84ac4ae13049694d",
-   "al_eth": "84ac4ae13049694d",
+   "al_hal": "84ac4ae13049694d",
    "al_ssm": "eac4b9a437100c8c"
   }
  },
  "al_hal_udma_regs_gen.h": {
-  "reason": "being merged into modules/al_hal in this series (#264)",
+  "reason": "al_ssm keeps the gen B UDMA (AL SDK 4.19, API v5: V3/V4 register structs, handle_init, q_pause, state_set_wait(flush), AXI timeout 5M). modules/al_hal holds gen A (4.1.37) for al_dma + al_eth. Type- and API-incompatible; see docs/vendor-code-modernisation.md item 10.",
   "trees": {
-   "al_dma": "7db82a929777b64f",
-   "al_eth": "7db82a929777b64f",
+   "al_hal": "7db82a929777b64f",
    "al_ssm": "0222af361847b61f"
   }
  },
  "al_hal_udma_regs_m2s.h": {
-  "reason": "being merged into modules/al_hal in this series (#264)",
+  "reason": "al_ssm keeps the gen B UDMA (AL SDK 4.19, API v5: V3/V4 register structs, handle_init, q_pause, state_set_wait(flush), AXI timeout 5M). modules/al_hal holds gen A (4.1.37) for al_dma + al_eth. Type- and API-incompatible; see docs/vendor-code-modernisation.md item 10.",
   "trees": {
-   "al_dma": "39cd0f19183c7e8e",
-   "al_eth": "39cd0f19183c7e8e",
+   "al_hal": "39cd0f19183c7e8e",
    "al_ssm": "011b8e3aba9fd14c"
   }
  },
  "al_hal_udma_regs_s2m.h": {
-  "reason": "being merged into modules/al_hal in this series (#264)",
+  "reason": "al_ssm keeps the gen B UDMA (AL SDK 4.19, API v5: V3/V4 register structs, handle_init, q_pause, state_set_wait(flush), AXI timeout 5M). modules/al_hal holds gen A (4.1.37) for al_dma + al_eth. Type- and API-incompatible; see docs/vendor-code-modernisation.md item 10.",
   "trees": {
-   "al_dma": "524a521379cecea6",
-   "al_eth": "524a521379cecea6",
+   "al_hal": "524a521379cecea6",
    "al_ssm": "98d15f32586c6a40"
   }
  },
