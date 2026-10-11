@@ -1,277 +1,119 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 # Copyright (C) 2026 Awto / Daniel Tyrrell
-"""al_eth on the host: pieces of the REAL modules/al_eth/al_eth_main.c.
+"""al_eth source-shape invariants (#296-#299, #304, #305, #314).
 
-al_eth_main.c is 6k lines of netdev/phylink/page_pool and cannot be linked on
-the host whole. Each case cuts the function (or preprocessor paragraph) under
-test out of the real file by name and compiles it against a few stub types
-in tests/c/al_eth_host.c. A function that starts touching a field the stub
-lacks fails to compile: the stub tracks the code, not the other way round.
+al_eth_main.c cannot run on the host, so these pin the SHAPE that makes each
+defect impossible, as checks on the source text (same approach as
+tests/test_al_nand_error_paths.py). They stop a later edit undoing a fix; they
+do not prove behaviour on the box. Behaviour is checked on hardware by
+bench-all's health subtest (ethtool -S drop / refill counters, adaptive
+moderation off) and by the kernel's own checks.
 
-AL_ETH_MAIN_C=<path> points the cases at another copy of the file (used to
-run them against the parent commit's source).
-Build dir: tmp/test-al-eth/ (not system /tmp). Needs a host cc.
+AL_ETH_MAIN_C=<path> points the checks at another copy of the file.
 """
 
 from __future__ import annotations
 
 import os
 import re
-import shutil
-import subprocess
 from pathlib import Path
 
-import pytest
-
 REPO = Path(__file__).resolve().parent.parent
-MAIN_C = Path(
-    os.environ.get("AL_ETH_MAIN_C", REPO / "modules" / "al_eth" / "al_eth_main.c")
-)
-CDIR = REPO / "tests" / "c"
-BUILD = REPO / "tmp" / "test-al-eth"
-
-pytestmark = pytest.mark.skipif(
-    shutil.which("cc") is None, reason="needs a host C compiler"
-)
+MAIN_C = Path(os.environ.get("AL_ETH_MAIN_C", REPO / "modules/al_eth/al_eth_main.c"))
+HAL_UDMA_H = REPO / "modules/al_eth/al_hal_udma.h"
+SRC = MAIN_C.read_text()
 
 
-def main_c() -> str:
-    return MAIN_C.read_text()
-
-
-def extract_function(src: str, name: str) -> str:
-    """Text of the function `name` (return type line through closing brace)."""
-    m = re.search(rf"^[A-Za-z_][^;\n]*\b{re.escape(name)}\(", src, re.M)
-    if not m:
-        # return type on the previous line: "static int\nname(...)"
-        m = re.search(rf"^{re.escape(name)}\(", src, re.M)
-        assert m, f"function {name} not found in {MAIN_C}"
-        start = src.rfind("\n", 0, src.rfind("\n", 0, m.start())) + 1
-    else:
-        start = m.start()
-        prev = src.rfind("\n", 0, start - 1) + 1
-        if re.fullmatch(
-            r"(static\s+)?(inline\s+)?\w+(\s+\w+)*\s*\*?\s*\n?", src[prev:start]
-        ):
-            start = prev
-    brace = src.index("{", m.end())
-    depth, i = 0, brace
-    while True:
-        c = src[i]
-        if c == "{":
-            depth += 1
-        elif c == "}":
-            depth -= 1
+def body(name: str) -> str:
+    """Text of the C function `name`, signature to closing brace (not a prototype)."""
+    pat = rf"^(?:{re.escape(name)}\(|[A-Za-z_][^;\n]*\b{re.escape(name)}\()"
+    for m in re.finditer(pat, SRC, re.M):
+        i = SRC.index("{", m.end())
+        if ";" in SRC[m.end() : i]:
+            continue
+        depth = 0
+        for j in range(i, len(SRC)):
+            depth += (SRC[j] == "{") - (SRC[j] == "}")
             if depth == 0:
-                return src[start : i + 1]
-        i += 1
+                return SRC[m.start() : j + 1]
+    raise AssertionError(f"function {name} not found")
 
 
-def build(
-    tag: str, harness: str, parts: dict[str, str], flags: list[str] | None = None
-) -> Path:
-    """Compile tests/c/<harness> with `parts` written as <name>.inc beside it."""
-    d = BUILD / tag
-    shutil.rmtree(d, ignore_errors=True)
-    d.mkdir(parents=True)
-    for k, v in parts.items():
-        (d / f"{k}.inc").write_text(v)
-    exe = d / "t"
-    r = subprocess.run(
-        [
-            "cc",
-            "-std=gnu11",
-            "-O1",
-            "-Wall",
-            "-Werror",
-            "-Wno-unused",
-            "-I",
-            str(d),
-            "-I",
-            str(CDIR),
-            *(flags or []),
-            str(CDIR / harness),
-            "-o",
-            str(exe),
-        ],
-        capture_output=True,
-        text=True,
+# ---- #304: adaptive interrupt moderation defaults off -------------------------
+
+
+def test_adaptive_moderation_default_is_unconditionally_off():
+    m = re.search(r"^#define AL_ETH_DEFAULT_ADAPTIVE_INT_MODERATION\s+(\w+)", SRC, re.M)
+    assert m and m[1] == "AL_FALSE"
+    window = SRC[max(0, m.start() - 400) : m.end() + 200]
+    # a bare #ifdef falls back to the TRUE arm when the symbol is absent
+    assert not re.search(r"^#(if|ifdef|else)\b", window, re.M)
+
+
+# ---- #305 / #314: rx_poll leaves polling mode on every path -------------------
+
+
+def test_rx_poll_never_schedules_itself():
+    for fn in ("al_eth_rx_poll", "al_eth_rx_poll_finish"):
+        assert "napi_schedule(" not in body(fn), fn
+
+
+def test_rx_poll_finish_completes_and_unmasks_when_under_budget():
+    b = body("al_eth_rx_poll_finish")
+    # the completion must not sit behind the refill outcome
+    assert re.search(r"if \(budget_left > 0\) \{\s*napi_complete\(napi\);", b)
+    assert "unmask_reg_offset" in b
+
+
+def test_rx_poll_has_one_work_return_and_hands_off_to_finish():
+    b = body("al_eth_rx_poll")
+    returns = re.findall(r"\breturn\b[^;]*;", b)
+    assert returns == ["return 0;", "return work_done;"], returns
+    assert b.index("al_eth_rx_poll_finish(") < b.rindex("return work_done;")
+
+
+def test_rx_poll_ignores_a_zero_budget():
+    # netpoll polls with budget 0 for TX only; `while (budget)` would wrap (#314)
+    b = body("al_eth_rx_poll")
+    assert re.search(r"if \(unlikely\(budget <= 0\)\)\s*return 0;", b)
+    assert b.index("budget <= 0") < b.index("al_eth_pkt_rx(")
+
+
+def test_empty_rx_ring_watchdog_is_wired():
+    assert "napi_schedule(rx_ring->napi)" in body("al_eth_check_for_empty_rx_ring")
+    assert "al_eth_check_for_empty_rx_ring(adapter)" in body("al_eth_rx_watchdog")
+    assert "timer_shutdown_sync(&adapter->rx_watchdog)" in body("al_eth_down")
+    up = body("al_eth_up")
+    assert up.index("adapter->up = true") < up.index("mod_timer(&adapter->rx_watchdog")
+
+
+# ---- #299: probe -----------------------------------------------------------------
+
+
+def test_register_netdev_is_the_last_fallible_probe_step():
+    b = body("al_eth_probe")
+    after = b[b.index("rc = register_netdev(") :]
+    after = after[after.index("}") :]  # past the register failure branch
+    tail = after[: after.index("return 0;")]
+    assert not re.search(r"\bgoto\b|\breturn\b", tail), tail
+    assert "al_eth_sysfs_init(" in b[: b.index("rc = register_netdev(")]
+
+
+def test_probe_error_tail_unwinds_everything_it_created():
+    b = body("al_eth_probe")
+    tail = b[b.index("err_register:") :]
+    assert tail.index("al_eth_sysfs_terminate(") < tail.index(
+        "al_eth_phylink_teardown("
     )
-    assert r.returncode == 0, r.stderr
-    return exe
+    assert tail.index("al_eth_phylink_teardown(") < tail.index("free_netdev(netdev)")
+    assert tail.index("err_hw_init:") > tail.index("al_eth_sysfs_terminate(")
 
 
-def run(exe: Path, *args: str) -> str:
-    r = subprocess.run([str(exe), *args], capture_output=True, text=True)
-    assert r.returncode == 0, r.stdout + r.stderr
-    return r.stdout
+# ---- #298: UDMA HAL errors are not discarded -------------------------------------
 
 
-# ---- #304: adaptive interrupt moderation default ----------------------------
-
-
-def _moderation_paragraph(src: str) -> str:
-    idx = src.index("#define AL_ETH_DEFAULT_ADAPTIVE_INT_MODERATION")
-    start = src.rfind("\n\n", 0, idx) + 2
-    end = src.index("\n", src.index("static int adaptive_int_moderation", idx)) + 1
-    return src[start:end]
-
-
-@pytest.mark.parametrize(
-    "alpine", [True, False], ids=["CONFIG_ARCH_ALPINE", "no-ARCH_ALPINE"]
-)
-def test_adaptive_moderation_defaults_off(alpine):
-    # vendor al_eth.c:274-278 picks AL_FALSE under CONFIG_ARCH_ALPINE; the port
-    # kept only the AL_TRUE arm. Off must hold whether or not the symbol is set.
-    exe = build(
-        f"moder-{int(alpine)}",
-        "al_eth_moderation_host.c",
-        {"moderation": _moderation_paragraph(main_c())},
-        ["-DCONFIG_ARCH_ALPINE=1"] if alpine else [],
-    )
-    assert run(exe).strip() == "0"
-
-
-# ---- #305: rx_poll completes NAPI whatever the refill did --------------------
-
-
-def _header_defines(*names: str) -> str:
-    hdr = (MAIN_C.parent / "al_eth.h").read_text()
-    out = []
-    for n in names:
-        m = re.search(rf"^#define\s+{n}\b.*$", hdr, re.M)
-        assert m, f"{n} not defined in al_eth.h"
-        out.append(m.group(0))
-    return "\n".join(out) + "\n"
-
-
-RX_CASES = [
-    "short_refill_completes",
-    "zero_refill_completes",
-    "full_refill_completes",
-    "budget_exhausted_stays_scheduled",
-    "moderation_follows_the_flag",
-    "watchdog_kicks_after_threshold",
-    "watchdog_nonempty_resets_count",
-    "watchdog_full_ring_never_kicks",
-    "watchdog_queues_independent",
-    "watchdog_rearms_only_while_up",
-    "poll_error_frames_counted_as_dropped",
-    "poll_clean_frames_not_dropped",
-    "poll_zero_budget_does_nothing",
-]
-
-
-@pytest.fixture(scope="module")
-def rx_harness() -> Path:
-    src = main_c()
-    funcs = "\n\n".join(
-        extract_function(src, n)
-        for n in (
-            "al_eth_rx_poll_finish",
-            "al_eth_check_for_empty_rx_ring",
-            "al_eth_rx_watchdog",
-        )
-    )
-    consts = _header_defines(
-        "AL_ETH_DEFAULT_RX_DESCS",
-        "AL_ETH_EMPTY_RX_REFILL",
-        "AL_ETH_RX_WATCHDOG_PERIOD",
-        "AL_ETH_RX_RING_IDX_ADD",
-    )
-    return build(
-        "rx",
-        "al_eth_rx_host.c",
-        {
-            "rx_funcs": funcs,
-            "consts": consts,
-            "rx_poll": extract_function(src, "al_eth_rx_poll"),
-        },
-    )
-
-
-@pytest.mark.parametrize("case", RX_CASES)
-def test_rx_ring_recovery(rx_harness, case):
-    assert f"PASS {case}" in run(rx_harness, case)
-
-
-# ---- #299: a failed probe leaves nothing behind -----------------------------
-
-PROBE_STEPS = [
-    "none",
-    "board_params",
-    "hal_init",
-    "serdes",
-    "phylink",
-    "hw_init",
-    "rings",
-    "sysfs",
-    "register",
-]
-
-
-@pytest.fixture(scope="module")
-def probe_harness() -> Path:
-    return build(
-        "probe",
-        "al_eth_probe_host.c",
-        {"probe": extract_function(main_c(), "al_eth_probe")},
-    )
-
-
-@pytest.mark.parametrize("phylink", [False, True], ids=["1g-rgmii", "10g-phylink"])
-@pytest.mark.parametrize("step", PROBE_STEPS)
-def test_probe_failure_leaves_nothing(probe_harness, step, phylink):
-    if not phylink and step in ("serdes", "phylink"):
-        pytest.skip("only reached on the phylink port")
-    env = dict(os.environ)
-    if phylink:
-        env["USE_PHYLINK"] = "1"
-    else:
-        env.pop("USE_PHYLINK", None)
-    r = subprocess.run(
-        [str(probe_harness), step], capture_output=True, text=True, env=env
-    )
-    assert r.returncode == 0 and f"PASS {step}" in r.stdout, r.stdout + r.stderr
-
-
-# ---- #298: UDMA HAL errors reach the caller -----------------------------------
-
-UDMA_CASES = [
-    "reset_all_clean",
-    "reset_all_reports_timeout_and_keeps_going",
-    "reset_all_rx_failure",
-    "reset_all_skips_unmapped_queue",
-    "hal_init_handle_get_failure",
-    "hal_init_udma_init_failure",
-    "hal_init_clean",
-    "init_rings_handle_get_failure",
-    "init_rings_clean",
-]
-
-
-@pytest.fixture(scope="module")
-def udma_harness() -> Path:
-    src = main_c()
-    funcs = "\n\n".join(
-        extract_function(src, n)
-        for n in (
-            "al_eth_udma_queues_reset_all",
-            "al_eth_hal_adapter_init",
-            "al_eth_init_rings",
-        )
-    )
-    return build("udma", "al_eth_udma_host.c", {"udma_funcs": funcs})
-
-
-@pytest.mark.parametrize("case", UDMA_CASES)
-def test_udma_errors_reach_the_caller(udma_harness, case):
-    assert f"PASS {case}" in run(udma_harness, case)
-
-
-def test_al_eth_udma_hal_header_marks_must_check():
-    # the compiler flags a discarded result only if the prototype says so (#298)
-    hdr = (MAIN_C.parent / "al_hal_udma.h").read_text()
+def test_udma_hal_header_marks_must_check():
+    hdr = HAL_UDMA_H.read_text()
     for fn in (
         "al_udma_init",
         "al_udma_q_init",
@@ -279,75 +121,86 @@ def test_al_eth_udma_hal_header_marks_must_check():
         "al_udma_q_handle_get",
         "al_udma_state_set",
     ):
-        assert re.search(rf"__must_check\s+int\s+{fn}\(", hdr), (
-            f"{fn} lacks __must_check"
-        )
+        assert re.search(rf"__must_check\s+int\s+{fn}\(", hdr), fn
 
 
-# ---- #297: TX csum/TSO offload only for what the MAC can do -------------------
-
-TXCSUM_CASES = [
-    "v4_tcp_offloaded",
-    "v4_udp_offloaded",
-    "v6_tcp_offloaded",
-    "v4_tso_offloaded",
-    "v6_exthdr_falls_back_to_software",
-    "unknown_l4_falls_back",
-    "encapsulated_falls_back",
-    "fallback_failure_is_reported",
-    "gso_unsupported_is_dropped",
-    "no_offload_wanted_is_untouched",
-    "fc_keeps_features_for_supported",
-    "fc_strips_csum_and_gso_for_unsupported",
-]
+def test_no_discarded_udma_results_in_the_driver():
+    for fn in ("al_udma_q_reset", "al_udma_q_handle_get", "al_udma_init"):
+        assert not re.search(rf"^\s*{fn}\(", SRC, re.M), f"{fn} result discarded"
 
 
-@pytest.fixture(scope="module")
-def txcsum_harness() -> Path:
-    src = main_c()
-    funcs = "\n\n".join(
-        extract_function(src, n)
-        for n in ("al_eth_tx_l4_proto", "al_eth_features_check", "al_eth_tx_csum")
+def test_probe_checks_the_hal_setup_calls():
+    b = body("al_eth_probe")
+    assert re.search(r"rc = al_eth_hal_adapter_init\(adapter\);\s*if \(rc\)", b)
+    assert re.search(r"rc = al_eth_init_rings\(adapter\);\s*if \(rc\)", b)
+
+
+def test_queue_reset_failure_reaches_hw_stop():
+    assert re.search(
+        r"if \(al_eth_udma_queues_reset_all\(adapter\)\)\s*rc = -EIO;",
+        body("al_eth_hw_stop"),
     )
-    return build("txcsum", "al_eth_txcsum_host.c", {"txcsum_funcs": funcs})
+    assert "return rc;" in body("al_eth_udma_queues_reset_all")
 
 
-@pytest.mark.parametrize("case", TXCSUM_CASES)
-def test_tx_offload_only_for_supported_protocols(txcsum_harness, case):
-    assert f"PASS {case}" in run(txcsum_harness, case)
+# ---- #297: TX checksum offload ---------------------------------------------------
 
 
-def test_features_check_is_wired_into_netdev_ops():
-    ops = re.search(
-        r"struct net_device_ops al_eth_netdev_ops = \{.*?\};", main_c(), re.S
+def test_features_check_is_wired_and_strips_csum_and_gso():
+    ops = re.search(r"struct net_device_ops al_eth_netdev_ops = \{.*?\};", SRC, re.S)
+    assert ops and ".ndo_features_check" in ops[0]
+    assert "~(NETIF_F_CSUM_MASK | NETIF_F_GSO_MASK)" in body("al_eth_features_check")
+
+
+def test_tx_csum_falls_back_before_setting_hw_flags():
+    b = body("al_eth_tx_csum")
+    assert "skb_checksum_help(skb)" in b
+    assert b.index("al_eth_tx_l4_proto(skb)") < b.index("hal_pkt->flags |=")
+    assert 'pr_warn("%s: l4 protocol' not in b
+
+
+# ---- #296 / #313: drops are counted ---------------------------------------------
+
+
+def test_every_tx_drop_in_start_xmit_is_counted():
+    b = body("al_eth_start_xmit")
+    for reason in ("pad_err", "dma_mapping_err", "csum_err", "frag_err"):
+        assert f"al_eth_tx_drop(tx_ring, &tx_ring->tx_stats.{reason})" in b, reason
+    # the three error labels each count before they free
+    for label in ("tx_csum_error:", "dma_error:"):
+        assert "al_eth_tx_drop(" in b[b.index(label) : b.index(label) + 400], label
+    head = b[b.index("dma_mapping_error(tx_ring->dev, dma)") :]
+    assert "al_eth_tx_drop(" in head[: head.index("return")]
+
+
+def test_freed_skb_is_not_left_in_the_tx_slot():
+    b = body("al_eth_start_xmit")
+    for m in re.finditer(r"dev_kfree_skb\(skb\);", b):
+        assert "tx_info->skb = NULL;" in b[max(0, m.start() - 900) : m.start()]
+
+
+def test_head_map_failure_clears_the_slot_before_freeing():
+    b = body("al_eth_start_xmit")
+    assert re.search(
+        r"tx_info->skb = NULL;\s*dev_kfree_skb\(skb\);\s*al_eth_tx_drop", b
     )
-    assert ops and ".ndo_features_check" in ops.group(0)
 
 
-# ---- #296: dropped packets are counted ----------------------------------------
-
-XMIT_CASES = [
-    "sends_ok",
-    "pad_failure_counted",
-    "csum_failure_counted",
-    "head_map_failure_counted_and_slot_cleared",
-    "frag_map_failure_unwinds_and_counts",
-    "frag_overflow_counted_as_frag_err",
-    "ring_full_is_busy_not_a_drop",
-    "ring_drops_sums_every_queue",
-]
+def test_netdev_stats_use_the_driver_counters():
+    b = body("al_eth_get_stats64")
+    assert "al_eth_ring_drops(" in b
+    assert not re.search(r"rx_dropped\s*=\s*0", b)
 
 
-@pytest.fixture(scope="module")
-def xmit_harness() -> Path:
-    src = main_c()
-    funcs = "\n\n".join(
-        extract_function(src, n)
-        for n in ("al_eth_tx_drop", "al_eth_ring_drops", "al_eth_start_xmit")
-    )
-    return build("xmit", "al_eth_xmit_host.c", {"xmit_funcs": funcs})
+def test_rx_error_completions_are_counted_not_received():
+    b = body("al_eth_rx_poll")
+    assert "rx_dropped++" in b
+    assert "rx_stats.packets += work_done - rx_dropped" in b
+    assert "rx_stats.dropped += rx_dropped" in b
 
 
-@pytest.mark.parametrize("case", XMIT_CASES)
-def test_tx_drops_are_counted(xmit_harness, case):
-    assert f"PASS {case}" in run(xmit_harness, case)
+def test_drop_counters_are_exposed_through_ethtool():
+    for name in ("dropped", "pad_err", "dma_mapping_err", "csum_err", "frag_err"):
+        assert f"AL_ETH_ETHTOOL_STAT_TX_ENTRY({name})" in SRC, name
+    for name in ("dropped", "refill_fail", "empty_ring"):
+        assert f"AL_ETH_ETHTOOL_STAT_RX_ENTRY({name})" in SRC, name
