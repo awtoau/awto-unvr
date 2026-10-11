@@ -86,6 +86,7 @@ def harness() -> Path:
             "-O1",
             "-g",
             "-w",
+            "-DAL_UDMA_POLL_BARRIER",
             f"-I{BUILD}",
             f"-I{BUILD / 'kshim'}",
             str(BUILD / "harness.c"),

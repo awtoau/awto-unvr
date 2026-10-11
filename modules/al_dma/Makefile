@@ -35,6 +35,8 @@ al_dma-y += al_hal_udma_main.o \
 # Extra CFLAGS for the module
 ccflags-y += -I$(src)
 ccflags-y += -DAL_DMA_REVISION=2
+# al_hal_udma_main.c: barrier before polling completions (#23)
+ccflags-y += -DAL_UDMA_POLL_BARRIER
 
 .PHONY: all clean modules_install
 
