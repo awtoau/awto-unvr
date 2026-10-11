@@ -336,3 +336,102 @@ Method: three-way diff of the vendor 4.1.37 `drivers/crypto/al`, the 6.12 port (
 - Engine behaviour with no metadata descriptor for lengths not a multiple of 16 or above 64 KiB (#291).
 - Whether 64 in-flight ops ever occur on real load (#300 reachability).
 - Anything dynamic: no module was loaded, no counter read.
+
+## al_nand / al_thermal / al_sgpo / al_reboot / ubnt_hdd_pwrctl port review
+
+Method: three-way diff where a vendor original exists. Vendor = UBNT GPL 4.1.37 (`UNVR-1.3.35-GPL/linux-arm64-unvr-4.1.37-ubnt/`). Port = whatever the module actually came from (below). Ours = `modules/<name>/` at `6bd513f`. Question per change: did the port/rework keep an invariant the vendor relied on (the al_dma question, #285/#286). Static only; no box, no flash; reviewed 2026-10-11.
+
+### Provenance: only one of the five is from `linux-alpine-v2`
+| Module | Origin | Evidence |
+|---|---|---|
+| al_sgpo | `linux-alpine-v2` `42d10e9` (KevinKickass, 2026-03-21), unchanged to `e9762bc` | ours differs only by `set()` returning `int` (`4a188c6`) |
+| al_thermal | `mornepousse/al_thermal-standalone` `5a6ba59` (2026-03-20), **not** Kevin | `modules/al_thermal/` = that tree byte-for-byte (glue and HAL; `al_hal_plat_services.h` differs by the `al_err` removal, `46af96a`); vendored `b0f84ff` (2026-08-28) |
+| al_nand | delroth HAL copy (`21e45bf`) + glue ported by us (`926fb37`..`bac8230`, 2026-10-07..11) | no NAND driver in `linux-alpine-v2` (DT node only, `dts/alpine-v2-ubnt-unvr.dts:580`, disabled) |
+| al_reboot | ours (`e3380fd`), from vendor `drivers/power/reset/alpine-reboot.c` | `linux-alpine-v2` declares the DT node (`dts/alpine-v2-ubnt-unvr.dts:182`) with **no driver**; the clone's `al_reboot` commits are ours (`f6b4cde`, `176ef7c`) |
+| ubnt_hdd_pwrctl | ours (`725adaf`), not a port of vendor `drivers/power/ubnt-hdd-pwrctl.c` | commit message |
+
+- al_thermal chain: vendor `drivers/thermal/al/` (`al_thermal.c`, HAL byte-identical to the GPL drop) -> mornepousse (README: "extracted from a Linux kernel source drop from QNAP", tested on QNAP TS-431P AL-212, 6.12.77) -> `b0f84ff`. The AL-212 is Alpine V1; the V2 branch (`al_hal_thermal_sensor.c:73-78`, our AL-324) was never exercised by the port's test (`test/run_tests.sh`).
+- `linux-alpine-v2` also ships a thermal-zone with a 105 C critical trip (`dts/alpine-v2-ubnt-unvr.dts:593-607`) and a thermal node, but no thermal driver; same for the reboot node. Both are port omissions: protection declared, nothing behind it.
+- The task note "al_thermal was excluded from the original vendoring" matches `b0f84ff`: first added 2026-08-28 from mornepousse, not from the vendor tree or Kevin.
+
+### Split-invariant count (headline)
+| Module | Strict (vendor one section -> port/ours two) | Adjacent (ordering now conditional/timing) | Where |
+|---|---|---|---|
+| al_nand | 0 | 1 | #302: `al_nand_main.c:367` latches, `:549-550` consumes without the ready wait (ours, `0bb1fbc`) |
+| al_thermal | 0 | 0 | see below |
+| al_sgpo | 0 | 0 | one hardware-order note, below |
+| al_reboot | 0 | 0 | |
+| ubnt_hdd_pwrctl | 0 | 0 | |
+| **Total** | **0** | **1** | |
+
+- Vendor-original, carried over unchanged, not counted: unlocked `nfc_int_en` read-modify-write shared by ISR and process context (#303; vendor `irq_lock` declared `al_nand.c:78`, never taken).
+
+### al_nand (vendor `drivers/mtd/nand/al/al_nand.c` -> `al_nand_main.c`)
+- Error latch (`op_err`; the vendor has none: `wait_for_irq()` returns `-EINVAL` as `uint32_t` and every caller drops it, `al_nand.c:330,408,628-644`):
+  - Set in `cmd_ctrl` (`:367,376`), `read_words` (`:457`), `write_buf` (`:499,518,528`); consumed in `ecc_read_page` (`:672`), `ecc_write_page` (`:738,758,772`), `prog_page_finish` (`:805`), raw/oob hooks (`:785,792`), `waitfunc` (`:549-552`), probe (`:1299`).
+  - Not one critical section by construction, but the MTD chip lock (`nand_get_device()`) spans every entry (`nand_erase_nand` `nand_base.c:4524`, read/write/oob paths), so single-slot sharing is sound. Probe runs single-threaded.
+  - No stale-latch producer found: every hook that can latch is followed by a consumer in the same op, except the nested raw re-read in `al_nand_erased_or_bad()` (#292).
+- Waitfunc early return (#302): the guard comment (`:542-543`) holds only for a ready-wait timeout. `nand_prog_page_end_op`/`nand_erase_op` treat `ret < 0` as final (`nand_base.c:1669-1671,1993-1995`), so a latched CMD-FIFO timeout (#276) on ERASE2 returns `-ETIMEDOUT` while tBERS is running. `0bb1fbc` made that live; before it the result of `:367` was dropped.
+- `nand-write-test.py` cannot see it: `:178` `| tail -1`, `:235` `>/dev/null 2>&1`, verdict from a content hash (`:254`).
+- Write sequence kept as vendor: `write_buf` (TX on, WP off) -> RNDIN -> SPARE_WRITE_COUNT -> FIFO drain -> WP/TX/ECC restore -> PAGEPROG + WAIT_FOR_READY (`al_nand.c:556-584` vs `:723-773`). The restore happens before PAGEPROG in both; `cmd_ctrl` repeats it after.
+- Our HAL edits (`2d202d5`, `88b0c7a`) are consistent: `data_buff_write` honours `data_buff_base` and stores `cw_*_remaining` back as the read path does (`al_hal_nand.c:1636-1650,1726-1741`). Vendor `data_buff_write` hard-coded the no-wrapper register and never stored the accounting; both are fixes, not regressions.
+- Attach ordering (not a defect): SET FEATURES (`:928`) runs before the controller timings are reprogrammed (`:1070`); device told first, controller slower than the device in between. Safe direction.
+- Vendor-original, already filed: SET FEATURES `0xfa`/payload (`al_nand.c:54,703-715`, #281), `is_empty_oob` (`:427-450`, #274), clk fallback / ISR `IRQ_HANDLED` / `BUG_ON(oob_required)` (#293).
+- Whether the vendor's `wait_for_irq` stale-completion behaviour matters: ours re-reads the status each wake (`:253-263`), so a stale `complete()` only costs one loop.
+
+### al_thermal (vendor `drivers/thermal/al/al_thermal.c` -> mornepousse `al_thermal_main.c` -> ours)
+- Diff vendor -> mornepousse, glue only (HAL identical):
+  - `__thermal_get_temp` (void* devdata, `*temp = 1000 * readout`, `al_thermal.c:54-73`) rewritten to the 6.x ops signature with a new branch: `readout >= 100 -> *temp = 100000 + readout` (mornepousse `:74-80`, comment `:75` "alway return 100"). Vendor, and UBNT 4.19 `drivers/thermal/al_thermal_v2.c:70`, both use `1000 * readout`. **#279 is port-introduced** (fixed `92077bb`). The origin of the quirk is not in any local reference tree (`linux-qnap-tsx32x` has no al_thermal).
+  - Registration moved to `devm_thermal_of_zone_register()` but the manual `thermal_zone_device_unregister()` kept, plus new `thermal_add_hwmon_sysfs()`/`thermal_remove_hwmon_sysfs()` calls with hand-written prototypes (mornepousse `:28-29,184,191,207-208`). **#280 (double unregister) is port-introduced.** The vendor pairing was non-devm register + manual unregister (`al_thermal.c:193,219`), which was correct.
+  - The vendor's legacy fallback ops divide by 1000 (`thermal_get_temp` `:75-88`, degrees in a millidegree API) and the port dropped them; the vendor `of_ops` path was already millidegrees.
+  - Compatible strings changed (`"annapurna-labs,al-thermal"` -> `"al,alpine-thermal"`, `"annapurna-labs,al-pbs"` -> `"al,alpine-pbs"`); `b0f84ff` aligned the DT.
+- Not port-caused: #294 (`ever_valid` latch, HAL `al_hal_thermal_sensor.c:280-290`, identical in the GPL drop); the 1000 x `udelay(1000)` poll (`:42,62` vendor), the `of_iomap` leak (`:164` vendor), `SIMPLE_DEV_PM_OPS`.
+- Split invariant: `readout_is_valid()` stores `readout_raw` and `readout_get()` converts it (two calls, shared handle state, `al_hal_thermal_sensor.c:263-307`). Both vendor and port call them back to back from `get_temp`. Serialised by the zone lock in both: vendor `thermal_zone_get_temp` takes `tz->lock` (4.1.37 `thermal_core.c:437`), 7.3 `guard(thermal_zone)` (`thermal_helpers.c:134`). A second caller (`alpine_serdes.c`) goes through the same function. Sound by construction.
+- Suspend/resume (`:89-120`) are unserialised against `get_temp`: `enable_set(0)` can race a poll. The core stops zone polling around suspend (`thermal_pm_notify`, `thermal_core.c:1364` comment); a userspace hwmon read in the window is the only reachable case.
+
+### al_sgpo (vendor `drivers/gpio/gpio-alpine-sgpo.c` + `drivers/soc/alpine/al_hal_sgpo.c` -> Kevin `42d10e9`)
+- Not a port: a from-scratch rewrite (header: "reverse-engineered from the Annapurna HAL", author "secfirst contributors") replacing the vendor driver's `al_hal_sgpo` calls with raw register writes. 340 lines vs 106 + HAL.
+- Constants checked against the vendor headers (`al_hal_sgpo_common_regs.h:99-169`, `al_hal_sgpo_pergroup_regs.h:59-128`, `al_hal_sgpo_regs.h:57`): control fields, `OUT_EN_*`, `CPU_VDD_CTRL` mask 0x7, group stride 0x1000, `conf_vec` at +0x400 indexed `1 << bit`, mode 2 bits/pin, USER = 3. All match.
+- Behavioural differences from the vendor driver:
+  - Vendor never calls `al_sgpo_hw_init()`, never changes pin mode, and has no `get` (`gpio-alpine-sgpo.c:21-36`); it relies on the bootloader's `sgpo_init`. Port runs `hw_init` at probe (`al_sgpo.c:297`, body `:232-258`) and switches a pin to USER in `direction_output` (`:152-179`).
+  - Port programs only CNTR_SCALE, `OUT_EN`, `CPU_VDD_EN`, `SGI_ENABLE`; group mode, SATA LED select, invert, blink, stretch stay as the bootloader left them (`dt-gaps-hardware-of-record.md` C1).
+- Strict split: none. `direction_output` mode RMW and value write share one `spin_lock_irqsave` (`:163-176`); `set()` is a single indexed write with no RMW, so lock-free is correct.
+- Hardware-order note, not filed (no failure scenario): `direction_output` switches to USER (`:166-168`) before writing the value (`:173-174`), so the pin drives whatever `conf_vec` held for one serial frame. Value-then-mode would avoid it. LED pins only; no effect observed or expected.
+
+### al_reboot (vendor `drivers/power/reset/alpine-reboot.c`)
+- Register sequence identical to the vendor handler: unlock, `LOAD=1`, `CONTROL=INT|RESET` (`al_reboot.c:54-56` vs `alpine-reboot.c:38-41`). Validated on hardware (#51 fixed 2026-09-03).
+- One behavioural change: vendor spins forever after arming (`while (1);`, `:44-45`); ours `mdelay(50)` then returns `NOTIFY_DONE` (`:58-59`), so the chain continues to PSCI if the SP805 did not reset. Intended and stated at `:49-53`; the SP805 resets after two WDOGCLK periods (LOAD=1: interrupt, then reset), so 50 ms covers any WDOGCLK above ~100 Hz; a failed reset falls through rather than hanging.
+- Port-caused? Yes, by omission: `linux-alpine-v2` carries the DT node and no driver, so #51 (hang at "Restarting system") exists in the port as shipped.
+- Split invariant: none (single function, no shared state).
+
+### ubnt_hdd_pwrctl (vendor `drivers/power/ubnt-hdd-pwrctl.c`)
+- Independent rewrite. Vendor coupled presence to power: on a presence change `msleep(pwren_delay)` then `gpio_direction_output(pwren, present)`, then update `present_state` (`:58-66`). Ours drops the power half deliberately (header `:8-12`, regulators own pins 0-3, #104).
+- Strict split: none. `present_state` is written by the poll work and read by `present_show()` with no lock; each is a single `bool` and the uevent is raised after the loop (`:101-114`), so a reader cannot see a half-updated set that matters.
+- Not port-caused: #295 (new code).
+- Vendor extras not carried: sysfs `hdd_force_poweron/off`, `hdd_fault_led<N>` store, exported `ubnt_hdd_fault_led_enabled()`. No caller of the export in the vendor tree.
+
+### Do the filed issues trace to the port
+| Issue | Port-caused | By whom / where |
+|---|---|---|
+| #279 al_thermal 100 C quirk | Yes | mornepousse `5a6ba59` `al_thermal_main.c:74-80`; absent in vendor and UBNT 4.19 |
+| #280 al_thermal double unregister | Yes | mornepousse: devm registration + kept manual unregister |
+| #294 al_thermal `ever_valid` | No | vendor HAL |
+| #281 SET FEATURES `0xfa`/6 | No | vendor `al_nand.c:54,703-715` |
+| #274 erased-page test | No | vendor `is_empty_oob` |
+| #292, #276, #302 | No | ours (`0bb1fbc` and later); #276's bound is ours, `:367` is made live by `0bb1fbc` |
+| #293 | No | vendor (clk, ISR, `BUG_ON`) |
+| #295 | No | ours |
+| #51 reboot hang | Yes (omission) | `linux-alpine-v2` DT node with no driver |
+
+### Verdict on "systemic across the 6.12 port"
+- In these five modules: no. Strict split-invariants: 0. The one adjacent instance (#302) is in our own rework, not the port.
+- Port footprint here is small: Kevin contributed only al_sgpo (a faithful rewrite). The thermal defects come from a second third-party port (mornepousse), and the reboot hang is an omission.
+- Defect shape in this group: not a split critical section; it is the new-glue-over-old-hardware kind (an invented unit quirk, a kept manual teardown beside devm, a latch consumed too early).
+
+### Not established
+- Whether the `command FIFO still busy` warning is ERASE2 and not another entry (#302 rests on count, not identity).
+- That a write to a busy chip is dropped silently (#302 consequence 2): ONFI rule only.
+- Origin of the `>= 100` branch: mornepousse cites a QNAP drop that is not among the local references.
+- Whether `nfc_int_en` races have ever fired (#303): no counter exists.
+- al_sgpo `get()` on a pin still in HW mode returns the last written `conf_vec`, not the driven level (not checked against hardware).
+- Whether mainline `sp805_wdt` restart resets AL-324 (unchanged from the plan above).
