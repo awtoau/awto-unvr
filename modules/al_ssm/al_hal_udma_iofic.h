@@ -827,7 +827,7 @@ __must_check static INLINE uint32_t al_udma_iofic_read_and_clear_cause_adv(
 	uint32_t			mask)
 {
 	al_assert(al_udma_iofic_level_and_group_valid(udma, level, group));
-	return al_iofic_read_and_clear_cause(
+	return al_iofic_read_and_clear_cause_mask(
 		al_udma_iofic_reg_base_get_adv(udma, level), group, mask);
 }
 

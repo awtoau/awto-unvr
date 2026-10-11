@@ -76,17 +76,6 @@ enum al_udma_iofic_level {
 	AL_UDMA_IOFIC_LEVEL_SECONDARY
 };
 
-/*
- * The next four groups represents the standard 4 groups in the primary
- * interrupt controller of each bus-master unit in the I/O Fabric.
- * The first two groups can be used when accessing the secondary interrupt
- * controller as well.
- */
-#define AL_INT_GROUP_A		0 /**< summary of the below events */
-#define AL_INT_GROUP_B		1 /**< RX completion queues */
-#define AL_INT_GROUP_C		2 /**< TX completion queues */
-#define AL_INT_GROUP_D		3 /**< Misc */
-
 /*******************************************************************************
  * Primary interrupt controller, group A bits
  ******************************************************************************/
