@@ -130,11 +130,14 @@ static inline struct al_dma_sw_desc *al_dma_get_sw_desc(struct al_dma_chan *ch)
 {
 	struct al_dma_sw_desc *desc;
 
+	if (ch->dead || ch->recovering || ch->need_reset)
+		return NULL;
+
 	/* #23: must check against `completed`, not `tail` - tail catches up
 	 * to head on every issue_pending() regardless of hardware progress,
 	 * so it never actually protected an in-flight descriptor from reuse. */
-	if (((ch->head + 1) % ch->sw_ring_count) == ch->completed)
-		return NULL;  /* ring full */
+	if (al_dma_ring_full(ch->head, ch->completed, ch->sw_ring_count))
+		return NULL;
 
 	desc = &ch->sw_ring[ch->head];
 	ch->head = (ch->head + 1) % ch->sw_ring_count;
@@ -208,24 +211,26 @@ static void al_dma_issue_pending(struct dma_chan *c)
 	struct al_dma_sw_desc *desc;
 	unsigned long flags;
 	int submitted = 0;
-	int start;
 
 	spin_lock_irqsave(&ch->lock, flags);
 
-	start = ch->tail;
 	while (ch->tail != ch->head) {
 		desc = &ch->sw_ring[ch->tail];
 		if (desc->tx_descs_count > 0) {
 			int rc = al_raid_dma_action(&dev->hal_dma, ch->idx,
 						     desc->tx_descs_count);
 			if (rc) {
+				/* The descriptors are already in the HW rings
+				 * and cannot be taken back: reset the channel
+				 * from the tasklet (#288). */
 				pr_err("al_dma: failed to trigger dma action on ch %d (rc %d)\n",
 				       ch->idx, rc);
 				atomic64_inc(&dev->stat_errors);
 				al_dma_fault(dev, AL_DMA_FAULT_SUBMIT);
-			} else {
-				atomic64_inc(&dev->stat_submitted);
+				ch->need_reset = true;
+				break;
 			}
+			atomic64_inc(&dev->stat_submitted);
 			submitted++;
 		}
 		ch->tail = (ch->tail + 1) % ch->sw_ring_count;
@@ -233,8 +238,162 @@ static void al_dma_issue_pending(struct dma_chan *c)
 
 	spin_unlock_irqrestore(&ch->lock, flags);
 
-	if (submitted)
+	if (submitted || ch->need_reset)
 		tasklet_schedule(&ch->cleanup_task);
+}
+
+/* ======== Channel lifecycle ======== */
+
+/* Reset the channel's tx and rx HAL queues. Only enabled ones: a queue that
+ * never initialised has no q_regs, and a disabled one is already stopped.
+ * Without this the HAL keeps "queue already enabled" and the next
+ * alloc_chan_resources() fails -EIO (#289). Returns the first error. */
+static int al_dma_hw_queue_stop(struct al_dma_chan *ch)
+{
+	struct al_dma_device *dev = ch->device;
+	struct al_udma_q *q[2] = {
+		al_ssm_dma_tx_queue_handle_get(&dev->hal_dma, ch->idx),
+		al_ssm_dma_rx_queue_handle_get(&dev->hal_dma, ch->idx),
+	};
+	int i, rc = 0;
+
+	for (i = 0; i < 2; i++) {
+		int r;
+
+		if (!q[i] || q[i]->status != AL_QUEUE_ENABLED)
+			continue;
+		r = al_udma_q_reset(q[i]);
+		if (r) {
+			dev_err(&dev->pdev->dev, "chan %d: %s queue reset failed: %d\n",
+				ch->idx, i ? "rx" : "tx", r);
+			rc = rc ? rc : r;
+		}
+	}
+	return rc;
+}
+
+/* Complete every submitted-but-unfinished slot as `res` and empty the ring.
+ * The HW queues must already be stopped and no prep may be running (free
+ * path: no client left). Returns how many slots were completed. */
+static int al_dma_abort_outstanding(struct al_dma_chan *ch,
+				    enum al_dma_result res)
+{
+	int n = 0;
+
+	for (;;) {
+		struct al_dma_sw_desc *desc;
+		dma_cookie_t cookie;
+		unsigned long flags;
+
+		spin_lock_irqsave(&ch->lock, flags);
+		if (ch->completed == ch->head) {
+			ch->tail = ch->head;
+			spin_unlock_irqrestore(&ch->lock, flags);
+			return n;
+		}
+		desc = &ch->sw_ring[ch->completed];
+		cookie = desc->txd.cookie;
+		if (cookie >= DMA_MIN_COOKIE)
+			dma_cookie_complete(&desc->txd);
+		spin_unlock_irqrestore(&ch->lock, flags);
+
+		if (cookie >= DMA_MIN_COOKIE)
+			al_dma_desc_finish(desc, res);
+
+		spin_lock_irqsave(&ch->lock, flags);
+		ch->completed = (ch->completed + 1) % ch->sw_ring_count;
+		spin_unlock_irqrestore(&ch->lock, flags);
+		n++;
+	}
+}
+
+/* Program both HAL queues of the channel from its rings and turn off S2M
+ * completion coalescing. Used by alloc and by recovery. */
+static int al_dma_hw_queue_start(struct al_dma_chan *ch)
+{
+	struct al_dma_device *dev = ch->device;
+	struct al_udma_q_params tx_params, rx_params;
+	struct al_udma *rx_udma;
+	struct al_udma_q *rx_q;
+	int rc;
+
+	memset(&tx_params, 0, sizeof(tx_params));
+	tx_params.size = ch->sw_ring_count;
+	tx_params.desc_base = ch->tx_ring;
+	tx_params.desc_phy_base = ch->tx_ring_dma;
+	/* #23: no TX completion ring - vendor's al_dma_core.c never allocates
+	 * chan->tx_dma_cdesc_virt either (confirmed by reading it directly),
+	 * matching that here. */
+	tx_params.cdesc_base = NULL;
+	tx_params.cdesc_phy_base = 0;
+
+	memset(&rx_params, 0, sizeof(rx_params));
+	rx_params.size = ch->sw_ring_count;
+	rx_params.desc_base = ch->rx_ring;
+	rx_params.desc_phy_base = ch->rx_ring_dma;
+	rx_params.cdesc_base = ch->rx_cring;
+	rx_params.cdesc_phy_base = ch->rx_cring_dma;
+	rx_params.cdesc_size = AL_DMA_RAID_RX_CDESC_SIZE;
+
+	rc = al_ssm_dma_q_init(&dev->hal_dma, ch->idx,
+				&tx_params, &rx_params, AL_RAID_Q);
+	if (rc)
+		return rc;
+
+	/* No interrupt, only polling: a nonzero coalescing timeout/threshold
+	 * could buffer a completion past when polling looks for it. Disable
+	 * outright rather than rely on the power-on default. */
+	if (al_m2m_udma_handle_get(&dev->hal_dma.m2m_udma, UDMA_RX, &rx_udma) == 0 &&
+	    al_udma_q_handle_get(rx_udma, ch->idx, &rx_q) == 0) {
+		int coal_rc = al_udma_s2m_q_compl_coal_config(rx_q, AL_FALSE, 0);
+
+		if (coal_rc)
+			dev_warn(&dev->pdev->dev,
+				 "chan %d: failed to disable S2M completion coalescing, rc=%d\n",
+				 ch->idx, coal_rc);
+	}
+	return 0;
+}
+
+/* Wedged channel (stall or failed doorbell): stop the engine, complete all
+ * outstanding work as ABORTED, clear the rings, restart the queues. prep
+ * returns NULL meanwhile; a failed stop or restart marks the channel dead.
+ * The reset busy-waits: AL_UDMA_Q_RST_TOUT, 10 ms worst case per queue. */
+static void al_dma_recover(struct al_dma_chan *ch)
+{
+	struct al_dma_device *dev = ch->device;
+	size_t desc_bytes = ch->sw_ring_count * sizeof(union al_udma_desc);
+	unsigned long flags;
+	int rc, n;
+
+	spin_lock_irqsave(&ch->lock, flags);
+	ch->recovering = true;
+	ch->need_reset = false;
+	rc = al_dma_hw_queue_stop(ch);
+	ch->tail = ch->head;	/* nothing left for issue_pending to ring */
+	spin_unlock_irqrestore(&ch->lock, flags);
+
+	n = al_dma_abort_outstanding(ch, AL_DMA_RES_ABORTED);
+	dev_warn(&dev->pdev->dev, "chan %d: wedged, queues reset, %d descriptors aborted\n",
+		 ch->idx, n);
+
+	if (!rc) {
+		memset(ch->tx_ring, 0, desc_bytes);
+		memset(ch->rx_ring, 0, desc_bytes);
+		memset(ch->rx_cring, 0, ch->sw_ring_count * AL_DMA_RAID_RX_CDESC_SIZE);
+		rc = al_dma_hw_queue_start(ch);
+	}
+	if (rc)
+		dev_err(&dev->pdev->dev, "chan %d: queues did not restart (%d), channel dead\n",
+			ch->idx, rc);
+	al_dma_fault(dev, AL_DMA_FAULT_RESET);
+
+	spin_lock_irqsave(&ch->lock, flags);
+	ch->dead = rc != 0;
+	ch->stall_start = 0;
+	ch->stall_reported = false;
+	ch->recovering = false;
+	spin_unlock_irqrestore(&ch->lock, flags);
 }
 
 static void al_dma_cleanup_tasklet(struct tasklet_struct *t)
@@ -243,6 +402,7 @@ static void al_dma_cleanup_tasklet(struct tasklet_struct *t)
 	struct al_dma_device *dev = ch->device;
 	uint32_t comp_status;
 	int ret;
+	bool need_reset;
 	unsigned long flags;
 
 	atomic64_inc(&dev->stat_poll_cycles);
@@ -321,107 +481,40 @@ static void al_dma_cleanup_tasklet(struct tasklet_struct *t)
 	 * port. */
 	smp_mb();
 
-	/* No hardware interrupt (no request_irq anywhere in this driver) -
-	 * this tasklet only ever runs from issue_pending() or its own
-	 * reschedule below, so it must re-arm itself while work remains
-	 * outstanding or nothing will ever poll again. Bounded at 50ms
-	 * (~50x a real completion's ~1ms) so a genuinely dead descriptor
-	 * logs and gives up instead of pegging a core forever. */
+	/* No interrupt: re-arm while work is outstanding or nothing polls
+	 * again. After AL_DMA_STALL_MS without a completion, reset the channel
+	 * and abort its work rather than leave it pending forever (#288). */
 	spin_lock_irqsave(&ch->lock, flags);
 	if (ch->completed != ch->tail) {
 		if (ch->stall_start == 0)
 			ch->stall_start = jiffies;
 		if (time_after(jiffies, ch->stall_start + msecs_to_jiffies(AL_DMA_STALL_MS))) {
-			if (!ch->stall_reported) {
-				dev_warn(&dev->pdev->dev,
-					 "DMA chan %d: descriptor(s) never completed "
-					 "after %dms (completed=%d tail=%d) - giving "
-					 "up polling, not spinning forever\n",
-					 ch->idx, AL_DMA_STALL_MS,
-					 ch->completed, ch->tail);
-				ch->stall_reported = true;
-				al_dma_fault(dev, AL_DMA_FAULT_STALL);
-			}
-		} else {
+			dev_warn(&dev->pdev->dev,
+				 "DMA chan %d: descriptor(s) never completed "
+				 "after %dms (completed=%d tail=%d)\n",
+				 ch->idx, AL_DMA_STALL_MS,
+				 ch->completed, ch->tail);
+			ch->stall_reported = true;
+			ch->need_reset = true;
+			al_dma_fault(dev, AL_DMA_FAULT_STALL);
+		} else if (!ch->need_reset) {
 			tasklet_schedule(&ch->cleanup_task);
 		}
 	} else {
 		ch->stall_start = 0;
 		ch->stall_reported = false;
 	}
+	need_reset = ch->need_reset;
 	spin_unlock_irqrestore(&ch->lock, flags);
-}
 
-/* ======== Channel lifecycle ======== */
-
-/* Reset the channel's tx and rx HAL queues. Only enabled ones: a queue that
- * never initialised has no q_regs, and a disabled one is already stopped.
- * Without this the HAL keeps "queue already enabled" and the next
- * alloc_chan_resources() fails -EIO (#289). Returns the first error. */
-static int al_dma_hw_queue_stop(struct al_dma_chan *ch)
-{
-	struct al_dma_device *dev = ch->device;
-	struct al_udma_q *q[2] = {
-		al_ssm_dma_tx_queue_handle_get(&dev->hal_dma, ch->idx),
-		al_ssm_dma_rx_queue_handle_get(&dev->hal_dma, ch->idx),
-	};
-	int i, rc = 0;
-
-	for (i = 0; i < 2; i++) {
-		int r;
-
-		if (!q[i] || q[i]->status != AL_QUEUE_ENABLED)
-			continue;
-		r = al_udma_q_reset(q[i]);
-		if (r) {
-			dev_err(&dev->pdev->dev, "chan %d: %s queue reset failed: %d\n",
-				ch->idx, i ? "rx" : "tx", r);
-			rc = rc ? rc : r;
-		}
-	}
-	return rc;
-}
-
-/* Complete every submitted-but-unfinished slot as `res` and empty the ring.
- * The HW queues must already be stopped and no prep may be running (free
- * path: no client left). Returns how many slots were completed. */
-static int al_dma_abort_outstanding(struct al_dma_chan *ch,
-				    enum al_dma_result res)
-{
-	int n = 0;
-
-	for (;;) {
-		struct al_dma_sw_desc *desc;
-		dma_cookie_t cookie;
-		unsigned long flags;
-
-		spin_lock_irqsave(&ch->lock, flags);
-		if (ch->completed == ch->head) {
-			ch->tail = ch->head;
-			spin_unlock_irqrestore(&ch->lock, flags);
-			return n;
-		}
-		desc = &ch->sw_ring[ch->completed];
-		cookie = desc->txd.cookie;
-		if (cookie >= DMA_MIN_COOKIE)
-			dma_cookie_complete(&desc->txd);
-		spin_unlock_irqrestore(&ch->lock, flags);
-
-		if (cookie >= DMA_MIN_COOKIE)
-			al_dma_desc_finish(desc, res);
-
-		spin_lock_irqsave(&ch->lock, flags);
-		ch->completed = (ch->completed + 1) % ch->sw_ring_count;
-		spin_unlock_irqrestore(&ch->lock, flags);
-		n++;
-	}
+	if (need_reset)
+		al_dma_recover(ch);
 }
 
 static int al_dma_alloc_chan_resources(struct dma_chan *c)
 {
 	struct al_dma_chan *ch = to_al_dma_chan(c);
 	struct al_dma_device *dev = ch->device;
-	struct al_udma_q_params tx_params, rx_params;
 	int ring_size;
 	int rc = 0;	/* stays 0 on the alloc-failure paths below */
 
@@ -460,27 +553,7 @@ static int al_dma_alloc_chan_resources(struct dma_chan *c)
 	if (!ch->rx_cring)
 		goto err_rx_cring;
 
-	/* Initialize HAL queue */
-	memset(&tx_params, 0, sizeof(tx_params));
-	tx_params.size = ring_size;
-	tx_params.desc_base = ch->tx_ring;
-	tx_params.desc_phy_base = ch->tx_ring_dma;
-	/* #23: no TX completion ring - vendor's al_dma_core.c never allocates
-	 * chan->tx_dma_cdesc_virt either (confirmed by reading it directly),
-	 * matching that here. */
-	tx_params.cdesc_base = NULL;
-	tx_params.cdesc_phy_base = 0;
-
-	memset(&rx_params, 0, sizeof(rx_params));
-	rx_params.size = ring_size;
-	rx_params.desc_base = ch->rx_ring;
-	rx_params.desc_phy_base = ch->rx_ring_dma;
-	rx_params.cdesc_base = ch->rx_cring;
-	rx_params.cdesc_phy_base = ch->rx_cring_dma;
-	rx_params.cdesc_size = AL_DMA_RAID_RX_CDESC_SIZE;
-
-	rc = al_ssm_dma_q_init(&dev->hal_dma, ch->idx,
-				&tx_params, &rx_params, AL_RAID_Q);
+	rc = al_dma_hw_queue_start(ch);
 	if (rc) {
 		dev_err(&dev->pdev->dev,
 			"Failed to init DMA queue %d: %d\n", ch->idx, rc);
@@ -490,28 +563,11 @@ static int al_dma_alloc_chan_resources(struct dma_chan *c)
 		goto err_q_init;
 	}
 
-	/* This driver has no interrupt, only polling - a nonzero coalescing
-	 * timeout/threshold could buffer a completion past when polling
-	 * checks for it. Disable outright rather than rely on hardware's
-	 * power-on default. */
-	{
-		struct al_udma *rx_udma_for_coal;
-		struct al_udma_q *rx_q_for_coal;
-
-		if (al_m2m_udma_handle_get(&dev->hal_dma.m2m_udma, UDMA_RX, &rx_udma_for_coal) == 0 &&
-		    al_udma_q_handle_get(rx_udma_for_coal, ch->idx, &rx_q_for_coal) == 0) {
-			int coal_rc = al_udma_s2m_q_compl_coal_config(rx_q_for_coal, AL_FALSE, 0);
-
-			if (coal_rc)
-				dev_warn(&dev->pdev->dev,
-					 "chan %d: failed to disable S2M completion coalescing, rc=%d\n",
-					 ch->idx, coal_rc);
-		}
-	}
-
 	ch->head = 0;
 	ch->tail = 0;
 	ch->completed = 0;
+	ch->recovering = false;
+	ch->need_reset = false;
 	ch->stall_start = 0;
 	ch->stall_reported = false;
 	ch->last_completion = jiffies;
@@ -593,6 +649,14 @@ static void al_dma_free_chan_resources(struct dma_chan *c)
 
 /* ======== DMA Operation Preparation ======== */
 
+static void al_dma_prep_failed(struct al_dma_device *dev, int rc)
+{
+	if (!al_dma_prep_rc_is_fault(rc))
+		return;
+	atomic64_inc(&dev->stat_errors);
+	al_dma_fault(dev, AL_DMA_FAULT_SUBMIT);
+}
+
 static struct dma_async_tx_descriptor *
 al_dma_prep_dma_memcpy(struct dma_chan *c, dma_addr_t dest,
 		       dma_addr_t src, size_t len, unsigned long flags)
@@ -652,8 +716,7 @@ al_dma_prep_dma_memcpy(struct dma_chan *c, dma_addr_t dest,
 		/* Undo sw_desc allocation */
 		ch->head = (ch->head - 1 + ch->sw_ring_count) % ch->sw_ring_count;
 		spin_unlock_irqrestore(&ch->lock, irqflags);
-		atomic64_inc(&dev->stat_errors);
-		al_dma_fault(dev, AL_DMA_FAULT_SUBMIT);
+		al_dma_prep_failed(dev, rc);
 		return NULL;
 	}
 
@@ -738,8 +801,7 @@ al_dma_prep_dma_xor(struct dma_chan *c, dma_addr_t dest,
 	if (rc) {
 		ch->head = (ch->head - 1 + ch->sw_ring_count) % ch->sw_ring_count;
 		spin_unlock_irqrestore(&ch->lock, irqflags);
-		atomic64_inc(&dev->stat_errors);
-		al_dma_fault(dev, AL_DMA_FAULT_SUBMIT);
+		al_dma_prep_failed(dev, rc);
 		return NULL;
 	}
 
@@ -845,8 +907,7 @@ al_dma_prep_dma_pq(struct dma_chan *c, dma_addr_t *dst,
 	if (rc) {
 		ch->head = (ch->head - 1 + ch->sw_ring_count) % ch->sw_ring_count;
 		spin_unlock_irqrestore(&ch->lock, irqflags);
-		atomic64_inc(&dev->stat_errors);
-		al_dma_fault(dev, AL_DMA_FAULT_SUBMIT);
+		al_dma_prep_failed(dev, rc);
 		return NULL;
 	}
 

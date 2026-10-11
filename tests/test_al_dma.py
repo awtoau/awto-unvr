@@ -52,6 +52,9 @@ CASES = [
     "free_aborts_inflight",
     "alloc_failure",
     "remove_resets",
+    "enospc_not_a_fault",
+    "stall_recovery",
+    "doorbell_failure",
 ]
 
 
@@ -88,6 +91,7 @@ def harness() -> Path:
             str(BUILD / "harness.c"),
             *[str(BUILD / c) for c in HAL_C],
             "-Wl,--wrap=al_udma_q_init",
+            "-Wl,--wrap=al_raid_dma_action",
             "-lpthread",
             "-o",
             str(exe),

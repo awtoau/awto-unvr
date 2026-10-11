@@ -84,4 +84,16 @@ static inline enum al_dma_result al_dma_status_result(unsigned int status)
 	return AL_DMA_RES_OK;
 }
 
+/* -ENOSPC from the HAL is back-pressure (ring full), not a fault (#288). */
+static inline bool al_dma_prep_rc_is_fault(int rc)
+{
+	return rc != 0 && rc != -ENOSPC;
+}
+
+/* SW ring: one slot stays free so full and empty differ. */
+static inline bool al_dma_ring_full(int head, int completed, int count)
+{
+	return ((head + 1) % count) == completed;
+}
+
 #endif /* __AL_DMA_LOGIC_H__ */

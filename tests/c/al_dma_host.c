@@ -125,6 +125,16 @@ int __wrap_al_udma_q_init(struct al_udma *udma, uint32_t qid,
 	return __real_al_udma_q_init(udma, qid, q_params);
 }
 
+/* Fail the Nth al_raid_dma_action() (doorbell) call, 1-based, 0 = never. */
+static int g_action_calls, g_action_fail_at;
+int __real_al_raid_dma_action(struct al_ssm_dma *raid_dma, uint32_t qid, uint32_t tx_descs);
+int __wrap_al_raid_dma_action(struct al_ssm_dma *raid_dma, uint32_t qid, uint32_t tx_descs)
+{
+	if (++g_action_calls == g_action_fail_at)
+		return -EIO;
+	return __real_al_raid_dma_action(raid_dma, qid, tx_descs);
+}
+
 /* ----------------------------------------------------- fake UDMA engine */
 #define NQ DMA_MAX_Q
 #define MAXPEND 2048
@@ -854,6 +864,132 @@ static int t_remove_resets(void)
 	return fails;
 }
 
+/* #288: HAL back-pressure (-ENOSPC) is not a fault. 31-source xors use 31 of
+ * the 1023 usable tx descriptors each, so the HW ring fills after 33 ops
+ * while the SW ring (1023 slots) still has room. */
+static int t_enospc_not_a_fault(void)
+{
+	static struct client c[64];
+	int n = 0, head;
+
+	quiet = 1;
+	env_init();
+	alloc_chan(0);
+	emu[0].hold = 1;
+	while (n < 64 && submit_xor(0, &c[n], AL_DMA_MAX_XOR, 4096) >= 0)
+		n++;
+	head = chan(0)->head;
+	quiet = 0;
+	CHECK(n == 33, "HW tx ring holds 33 31-source xors");
+	CHECK(n < 64 && !k_spin_held(&chan(0)->lock), "the refused prep left the lock released");
+	CHECK(head == n, "refused prep took no ring slot");
+	CHECK(atomic64_read(&D->stat_errors) == 0, "back-pressure is not counted as an error");
+	CHECK(g_fault[AL_DMA_FAULT_SUBMIT] == 0, "back-pressure raises no devlink fault");
+	return fails;
+}
+
+static int g_nested_prep_null;
+static void prep_during_recovery(struct client *c)
+{
+	struct dma_async_tx_descriptor *tx;
+
+	(void)c;
+	tx = D->dma_dev.device_prep_dma_memcpy(&chan(0)->chan, 0x1000, 0x2000, 64, 0);
+	if (!tx)
+		g_nested_prep_null++;
+	else
+		finish(tx);
+}
+
+/* Drive jiffies past the stall bound a few ms at a time, running the tasklet. */
+static void run_until_stall_handled(int i)
+{
+	int k;
+
+	for (k = 0; k < 30; k++) {
+		run_tasklet(i, 1);
+		jiffies += AL_DMA_STALL_MS / 4;
+	}
+}
+
+/* #288: descriptors that never complete are aborted and the queue is reset,
+ * instead of the tasklet giving up with cookies assigned forever (which
+ * leaves async_xor spinning and async_tx_quiesce panicking). */
+static int t_stall_recovery(void)
+{
+	static struct client c[4], after;
+	dma_cookie_t ck[4];
+	int i, bad = 0;
+
+	quiet = 1;
+	env_init();
+	alloc_chan(0);
+	emu[0].hold = 1;
+	for (i = 0; i < 3; i++)
+		ck[i] = submit_copy(0, &c[i], 4096, true);
+	ck[3] = submit_copy(0, &c[3], 4096, false);
+	c[0].in_cb = prep_during_recovery;
+	D->dma_dev.device_issue_pending(&chan(0)->chan);
+	run_until_stall_handled(0);
+	quiet = 0;
+
+	for (i = 0; i < 3; i++)
+		bad += !(c[i].cb_result == 1 && c[i].last_result == DMA_TRANS_ABORTED);
+	CHECK(bad == 0, "stalled ops completed as ABORTED");
+	CHECK(c[3].cb == 1, "legacy callback called for the aborted op");
+	for (i = 0; i < 4; i++)
+		bad += status_of(0, ck[i]) != DMA_COMPLETE;
+	CHECK(bad == 0, "no cookie left assigned forever");
+	CHECK(emu[0].rst_tx == 1 && emu[0].rst_rx == 1, "both HW queues reset");
+	CHECK(g_fault[AL_DMA_FAULT_STALL] >= 1 && g_fault[AL_DMA_FAULT_RESET] == 1,
+	      "stall and reset faults raised");
+	CHECK(g_nested_prep_null == 1, "prep refuses work while the queues are being reset");
+	CHECK(chan(0)->completed == chan(0)->head && chan(0)->tail == chan(0)->head,
+	      "ring is empty");
+	CHECK(!chan(0)->dead, "channel usable again");
+
+	/* the engine works again after the reset */
+	emu[0].hold = 0;
+	CHECK(submit_copy(0, &after, 4096, true) >= 0, "prep after recovery");
+	D->dma_dev.device_issue_pending(&chan(0)->chan);
+	run_tasklet(0, 4);
+	CHECK(after.cb_result == 1 && after.last_result == DMA_TRANS_NOERROR,
+	      "op after recovery completes normally");
+	return fails;
+}
+
+/* #288: a doorbell that fails cannot be unwound (descriptors are already in
+ * the HW rings), so the channel is reset and everything aborted. */
+static int t_doorbell_failure(void)
+{
+	static struct client c[2], after;
+	int bad = 0;
+
+	quiet = 1;
+	env_init();
+	alloc_chan(0);
+	submit_copy(0, &c[0], 4096, true);
+	submit_copy(0, &c[1], 4096, true);
+	g_action_fail_at = 1;
+	D->dma_dev.device_issue_pending(&chan(0)->chan);
+	run_tasklet(0, 4);
+	quiet = 0;
+
+	bad += !(c[0].cb_result == 1 && c[0].last_result == DMA_TRANS_ABORTED);
+	bad += !(c[1].cb_result == 1 && c[1].last_result == DMA_TRANS_ABORTED);
+	CHECK(bad == 0, "both ops aborted after the doorbell failed");
+	CHECK(emu[0].rst_tx == 1 && emu[0].rst_rx == 1, "queues reset");
+	CHECK(g_fault[AL_DMA_FAULT_SUBMIT] == 1 && g_fault[AL_DMA_FAULT_RESET] == 1,
+	      "submit and reset faults raised");
+	g_action_fail_at = 0;
+	CHECK(submit_copy(0, &after, 4096, true) >= 0, "prep after recovery");
+	D->dma_dev.device_issue_pending(&chan(0)->chan);
+	run_tasklet(0, 4);
+	CHECK(after.cb_result == 1 && after.last_result == DMA_TRANS_NOERROR,
+	      "op after recovery completes normally");
+	return fails;
+}
+
 struct test { const char *name; int (*fn)(void); };
 static const struct test tests[] = {
 	{ "smoke", t_smoke },
@@ -867,6 +1003,9 @@ static const struct test tests[] = {
 	{ "free_aborts_inflight", t_free_aborts_inflight },
 	{ "alloc_failure", t_alloc_failure },
 	{ "remove_resets", t_remove_resets },
+	{ "enospc_not_a_fault", t_enospc_not_a_fault },
+	{ "stall_recovery", t_stall_recovery },
+	{ "doorbell_failure", t_doorbell_failure },
 };
 
 int main(int argc, char **argv)

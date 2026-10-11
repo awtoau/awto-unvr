@@ -26,6 +26,7 @@ static const char * const al_dma_fault_msg[AL_DMA_FAULT_COUNT] = {
 	[AL_DMA_FAULT_DMA_ALLOC]	= "dma allocation failed: coherent buffer unavailable",
 	[AL_DMA_FAULT_SPURIOUS]		= "spurious completion: no submitted descriptor for it",
 	[AL_DMA_FAULT_QUEUE_INIT]	= "queue init failed: HAL refused the ring setup",
+	[AL_DMA_FAULT_RESET]		= "queue reset: wedged channel reset, outstanding work aborted",
 };
 
 static const char *al_dma_udma_state_str(enum al_udma_state state)

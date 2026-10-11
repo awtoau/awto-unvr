@@ -22,8 +22,10 @@
 
 #define AL_DMA_MAX_XOR		AL_DMA_MAX_SRCS
 
-/* Stall bound shared by the cleanup tasklet's give-up check and the devlink
- * health reporter: ~50x a real completion's ~1ms. */
+/* Waits for any completion on a channel with work outstanding. Expected
+ * ~1 ms per op (#23); the 50x margin is the original bound, not re-derived.
+ * On expiry the channel is reset and its work aborted (#288). Also the
+ * devlink reporter's stall threshold. */
 #define AL_DMA_STALL_MS		50
 
 struct devlink;
@@ -38,6 +40,7 @@ enum al_dma_fault {
 	AL_DMA_FAULT_DMA_ALLOC,		/* coherent DMA buffer allocation failed */
 	AL_DMA_FAULT_SPURIOUS,		/* completion with no submitted descriptor */
 	AL_DMA_FAULT_QUEUE_INIT,	/* HAL queue setup failed */
+	AL_DMA_FAULT_RESET,		/* wedged queue reset; outstanding work aborted */
 	AL_DMA_FAULT_COUNT
 };
 
@@ -65,9 +68,13 @@ struct al_dma_chan {
 	 * plx_dma.c's ring_lock (__acquires in prep, __releases in submit)
 	 * and the vendor's al_dma_tx_submit_sw_cond_unlock(). */
 	unsigned long			prep_flags;
-	/* A HW queue reset failed: the rings may still be written by the
-	 * engine, so they are leaked and the channel refuses new work until
-	 * reboot (#289). */
+	/* Under ->lock; prep returns NULL while any is set. recovering: HW
+	 * queues are being reset. need_reset: issue_pending could not ring
+	 * the doorbell, the tasklet resets (#288). dead: a queue reset
+	 * failed and the engine may still write the rings, so they are
+	 * leaked and the channel is unusable until reboot (#289). */
+	bool				recovering;
+	bool				need_reset;
 	bool				dead;
 	struct tasklet_struct		cleanup_task;
 	/* #23: bounds the tasklet's self-reschedule loop below - a
