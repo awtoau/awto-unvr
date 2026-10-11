@@ -4227,19 +4227,11 @@ static void al_eth_down(struct al_eth_adapter *adapter)
 	al_eth_free_all_rx_resources(adapter);
 }
 
-static unsigned int al_eth_systime_msec_get(void)
-{
-	struct timespec64 ts;
-	ktime_get_real_ts64(&ts);
-	return (unsigned int)((ts.tv_sec * 1000) + (ts.tv_nsec / 1000000));
-}
-
 /*
  * Minimal al_eth_lm_context init for the 10G SFP+ phylink port: fills only
  * what al_eth_serdes_static_tx_params_set()/_rx_params_set() (called from
  * al_eth_phylink.c's pcs_config) read - serdes_obj/lane/mode and the static
- * tables. No sfp_detection/i2c/retimer/led_config/gpio_present - sfp.c and
- * phylink own SFP presence, EEPROM and carrier now.
+ * tables. sfp.c and phylink own SFP presence, EEPROM and carrier.
  * docs: debris/code/al_eth-phylink-wip/eth-10g-phylink.md
  */
 static void al_eth_lm_static_init(struct al_eth_adapter *adapter)
@@ -4249,15 +4241,9 @@ static void al_eth_lm_static_init(struct al_eth_adapter *adapter)
 	params.adapter = &adapter->hal_adapter;
 	params.serdes_obj = adapter->serdes_obj;
 	params.lane = adapter->serdes_lane;
-	params.max_speed = adapter->max_speed;
-	params.default_mode = AL_ETH_LM_MODE_10G_OPTIC;
 	params.static_values = !adapter->dont_override_serdes;
-	params.kr_fec_enable = adapter->kr_fec_enable;
-	params.get_msec = al_eth_systime_msec_get;
 
 	al_eth_lm_init(&adapter->lm_context, &params);
-	/* lm_debug()'s pr_warn promotion needs this wired up, or it's
-	 * unreachable; ties it to the existing `debug` param. */
 	al_eth_lm_debug_mode_set(&adapter->lm_context, debug > 0);
 }
 

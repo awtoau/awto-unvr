@@ -104,8 +104,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "al_serdes.h"
 #include "al_hal_eth.h"
-#include "al_init_eth_kr.h"
-
 
 enum al_eth_lm_link_mode {
 	AL_ETH_LM_MODE_DISCONNECTED,
@@ -122,60 +120,10 @@ enum al_eth_lm_max_speed {
 	AL_ETH_LM_MAX_SPEED_1G,
 };
 
-enum al_eth_lm_link_state {
-	AL_ETH_LM_LINK_DOWN,
-	AL_ETH_LM_LINK_DOWN_RF,
-	AL_ETH_LM_LINK_UP,
-};
-
-enum al_eth_lm_led_config_speed {
-	AL_ETH_LM_LED_CONFIG_1G,
-	AL_ETH_LM_LED_CONFIG_10G,
-	AL_ETH_LM_LED_CONFIG_25G,
-};
-
-struct al_eth_lm_led_config_data {
-	enum al_eth_lm_led_config_speed	speed;
-};
-
-enum al_auto_fec_state {
-	AL_ETH_LM_AUTO_FEC_DISABLED,
-	AL_ETH_LM_AUTO_FEC_ENABLED,
-	AL_ETH_LM_AUTO_FEC_INIT,		/* state we init Auto FEC internal variables
-						 * (also after SFP disconnect)
-						 */
-	AL_ETH_LM_AUTO_FEC_INIT_ENABLED,	/* the actual initial cycle of the toggling
-						 * mechanism, where the FEC should be enabled
-						 */
-};
-
-struct al_eth_lm_step_retimer_data {
-	int		rx_adap_state;
-	int		slc_state;
-	int		wfl_state;
-	unsigned int	wfl_last_time_checked;
-};
-
-struct al_eth_lm_step_data {
-	int	detection_state;
-	int	establish_state;
-	struct al_eth_lm_step_retimer_data retimer_data;
-	/* start_time field is used for all stages since they are sequential (for the same port)*/
-	unsigned int start_time; /*in msec*/
-};
-
-struct al_eth_lm_retimer_channel_status {
-	al_bool signal_detect;
-	al_bool cdr_lock;
-	al_bool first_check;
-};
-
 struct al_eth_lm_context {
 	struct al_hal_eth_adapter	*adapter;
 	struct al_serdes_grp_obj	*serdes_obj;
 	enum al_serdes_lane		lane;
-
-	uint32_t			link_training_failures;
 
 	al_bool				tx_param_dirty;
 	al_bool				serdes_tx_params_valid;
@@ -184,82 +132,9 @@ struct al_eth_lm_context {
 	al_bool				serdes_rx_params_valid;
 	struct al_serdes_adv_rx_params	rx_params_override;
 
-	struct al_eth_an_adv		local_adv;
-	struct al_eth_an_adv		partner_adv;
-
 	enum al_eth_lm_link_mode	mode;
-	uint8_t				da_len;
 	al_bool				debug;
-
-	/* configurations */
-	al_bool				sfp_detection;
-	uint8_t				sfp_bus_id;
-	uint8_t				sfp_i2c_addr;
-
-	enum al_eth_lm_link_mode	default_mode;
-	uint8_t				default_dac_len;
-	al_bool				link_training;
-	al_bool				rx_equal;
 	al_bool				static_values;
-
-	al_bool				retimer_exist;
-	enum al_eth_retimer_type	retimer_type;
-	uint8_t				retimer_bus_id;
-	uint8_t				retimer_i2c_addr;
-	enum al_eth_retimer_channel	retimer_channel;
-
-	al_bool				auto_fec_enable;
-	unsigned int			auto_fec_initial_timeout;
-	unsigned int			auto_fec_toggle_timeout;
-
-	/* services */
-	int (*i2c_read)(void *handle, uint8_t bus_id, uint8_t i2c_addr,
-			uint8_t reg_addr, uint8_t *val);
-	int (*i2c_write)(void *handle, uint8_t bus_id, uint8_t i2c_addr,
-			 uint8_t reg_addr, uint8_t val);
-	void				*i2c_context;
-	uint8_t (*get_random_byte)(void);
-
-	int (*gpio_get)(unsigned int gpio);
-	uint32_t			gpio_present;
-
-	enum al_eth_retimer_channel	retimer_tx_channel;
-	al_bool				retimer_configured;
-
-	enum al_eth_lm_max_speed	max_speed;
-
-	al_bool				sfp_detect_force_mode;
-	al_bool				speed_detection;
-
-	enum al_eth_lm_link_state	link_state;
-
-	al_bool (*lm_pause)(void *handle);
-
-	void (*led_config)(void *handle, struct al_eth_lm_led_config_data *data);
-
-	unsigned int (*get_msec)(void);
-
-	/* Auto-FEC workaround internal variables */
-	/* saves the current FEC state */
-	enum al_auto_fec_state		auto_fec_state;
-	/* saves the last time (in msec) the FEC state was toggled */
-	unsigned int			fec_state_last_time_toggled;
-	/* saves the time (in msec) to wait unit next toggle */
-	unsigned int			auto_fec_wait_to_toggle;
-
-	/* Used in Auto-FEC to remember that a link was previously up
-	 * so we know to start the toggling from the previous FEC state
-	 * instead for first toggling to opposite FEC state
-	 */
-	al_bool				link_prev_up;
-
-	enum al_eth_lm_link_mode	last_detected_mode;
-	al_bool				speed_change;
-
-	struct al_eth_lm_step_data	step_data;
-
-	struct al_eth_lm_retimer_channel_status retimer_rx_channel_last_status;
-	struct al_eth_lm_retimer_channel_status retimer_tx_channel_last_status;
 };
 
 struct al_eth_lm_init_params {
@@ -269,138 +144,20 @@ struct al_eth_lm_init_params {
 	struct al_serdes_grp_obj	*serdes_obj;
 	/* serdes lane for this port */
 	enum al_serdes_lane		lane;
-
-	/*
-	 * set to true to perform sfp detection if the link is down.
-	 * when set to true, eeprom_read below should NOT be NULL.
-	 */
-	al_bool				sfp_detection;
-	/* i2c bus id of the SFP for this port */
-	uint8_t				sfp_bus_id;
-	/* i2c addr of the SFP for this port */
-	uint8_t				sfp_i2c_addr;
-	/*
-	 * default mode, and dac length will be used in case sfp_detection
-	 * is not set or in case the detection failed.
-	 */
-	enum al_eth_lm_link_mode	default_mode;
-	uint8_t				default_dac_len;
-
-	/* the i2c bus id and addr of the retimer in case it exist */
-	uint8_t				retimer_bus_id;
-	uint8_t				retimer_i2c_addr;
-	/* retimer channel connected to this port */
-	enum al_eth_retimer_channel	retimer_channel;
-	enum al_eth_retimer_channel	retimer_tx_channel;
-	/* retimer type if exist */
-	enum al_eth_retimer_type	retimer_type;
-
-	/*
-	 * the following parameters control what mechanisms to run
-	 * on link_establish with the following steps:
-	 * - if retimer_exist is set, the retimer will be configured based on DA len.
-	 * - if link_training is set and DA detected run link training. if succeed return 0
-	 * - if rx_equal is set serdes equalization will be run to configure the rx parameters.
-	 * - if static_values is set, tx and rx values will be set based on static values.
-	 */
-	al_bool				retimer_exist;
-	al_bool				link_training;
-	al_bool				rx_equal;
+	/* apply the static TX/RX tables when no override is set */
 	al_bool				static_values;
-
-	/* enable / disable fec capabilities in AN */
-	al_bool				kr_fec_enable;
-
-	/*
-	 * pointer to function that's read 1 byte from eeprom
-	 * in case no eeprom is connected should return -ETIMEDOUT
-	 */
-	int (*i2c_read)(void *handle, uint8_t bus_id, uint8_t i2c_addr,
-			uint8_t reg_addr, uint8_t *val);
-	int (*i2c_write)(void *handle, uint8_t bus_id, uint8_t i2c_addr,
-			 uint8_t reg_addr, uint8_t val);
-	void				*i2c_context;
-	/* pointer to function that return 1 rand byte */
-	uint8_t (*get_random_byte)(void);
-
-	/* pointer to function that gets GPIO value - if NULL gpio present won't be used */
-	int (*gpio_get)(unsigned int gpio);
-	/* gpio number connected to the SFP present pin */
-	uint32_t			gpio_present;
-
-	enum al_eth_lm_max_speed	max_speed;
-
-	/* in case force mode is true - the default mode will be set regardless to
-	 * the SFP EEPROM content */
-	al_bool				sfp_detect_force_mode;
-
-	/* if true and speed detection is supported in the retimer the speed will be
-	 * changed according to the link partner speed */
-	al_bool				speed_detection;
-
-	/* lm pause callback - in case it return true the LM will try to preserve
-	 * the current link status and will not try to establish new link (and will not
-	 * access to i2c bus) */
-	al_bool (*lm_pause)(void *handle);
-
-	/* config ethernet LEDs according to data. can be NULL if no configuration needed */
-	void (*led_config)(void *handle, struct al_eth_lm_led_config_data *data);
-
-	/* pointer to a function which returns the value of a system clock in millisecond.
-	 * NOTICE: the time is REQUIRED to wraparound over the full range of uint, or else the
-	 * behavior is undefined.
-	 */
-	unsigned int (*get_msec)(void);
-
-	/*
-	 * the following parameters are used for Auto-FEC workaround mode
-	 * time units for timeout parameters are 1msec
-	 */
-	/* enable/disable Auto-FEC mode */
-	al_bool				auto_fec_enable;
-	/* Initial timeout (in msec) to wait in FEC_ENABLED mode for link establishment */
-	unsigned int			auto_fec_initial_timeout;
-	/* Toggle timeout (in msec) to wait before toggling FEC state */
-	unsigned int			auto_fec_toggle_timeout;
 };
 
 /**
- * initialize link management context and set configuration
+ * initialize the context (SerDes object, lane, static-table switch)
  *
  * @param  lm_context pointer to link management context
  * @param  params  parameters passed from upper layer
  *
- * @return 0 in case of success. otherwise on failure.
+ * @return 0
  */
 int al_eth_lm_init(struct al_eth_lm_context	*lm_context,
 		   struct al_eth_lm_init_params	*params);
-
-/**
- * perform link status check. in case link is down perform sfp detection
- *
- * @param lm_context pointer to link management context
- * @param link_fault indicate if the link is down
- * @param old_mode the last working mode
- * @param new_mode the new mode detected in this call
- *
- * @return  0 in case of success. otherwise on failure.
- */
-int al_eth_lm_link_detection(struct al_eth_lm_context	*lm_context,
-			     al_bool			*link_fault,
-			     enum al_eth_lm_link_mode	*old_mode,
-			     enum al_eth_lm_link_mode	*new_mode);
-
-/**
- * run LT, rx equalization and static values override according to configuration
- * This function MUST be called inside a lock as it using common serdes registers
- *
- * @param lm_context pointer to link management context
- * @param link_up set to true in case link is establish successfully
- *
- * @return < 0 in case link was failed to be established
- */
-int al_eth_lm_link_establish(struct al_eth_lm_context	*lm_context,
-			     al_bool			*link_up);
 
 /**
  * override the default static parameters
@@ -414,20 +171,6 @@ int al_eth_lm_link_establish(struct al_eth_lm_context	*lm_context,
 int al_eth_lm_static_parameters_override(struct al_eth_lm_context	*lm_context,
 					 struct al_serdes_adv_tx_params *tx_params,
 					 struct al_serdes_adv_rx_params *rx_params);
-
-/**
- * disable serdes parameters override
- *
- * @param lm_context pointer to link management context
- * @param tx_params set to true to disable override of tx params
- * @param rx_params set to true to disable override of rx params
- *
- * @return  0 in case of success. otherwise on failure.
- **/
-int al_eth_lm_static_parameters_override_disable(
-					struct al_eth_lm_context *lm_context,
-					al_bool			 tx_params,
-					al_bool			 rx_params);
 
 /**
  * get the static parameters that are being used
@@ -445,16 +188,8 @@ int al_eth_lm_static_parameters_get(struct al_eth_lm_context	*lm_context,
 				    struct al_serdes_adv_rx_params *rx_params);
 
 /**
- * convert link management mode to string
- *
- * @param  val link management mode
- *
- * @return     string of the mode
- */
-const char *al_eth_lm_mode_convert_to_str(enum al_eth_lm_link_mode val);
-
-/**
- * print all debug messages
+ * set the debug flag (read back by nothing since the detect/establish
+ * state machine was retired; kept for the lm_debug sysfs attribute)
  *
  * @param lm_context pointer to link management context
  * @param enable     set to true to enable debug mode
@@ -463,80 +198,9 @@ void al_eth_lm_debug_mode_set(struct al_eth_lm_context	*lm_context,
 			      al_bool			enable);
 
 /**
- * return the state of retimer tx cdr lock
- *
- * @param  lm_context pointer to link management context
- *
- * @return  retimer tx cdr lock status. AL_FALSE if retimer not available or no cdr_lock implementation
- */
-al_bool al_eth_lm_retimer_tx_cdr_lock_get(struct al_eth_lm_context *lm_context);
-
-/**
- * perform link status check. in case link is down perform sfp detection
- * uses an internal state machine to overcome long delays which can degrade performance.
- * NOTICE: MUST retain old_mode and new_mode values until done is true
- *
- * @param lm_context pointer to link management context
- * @param link_fault indicate if the link is down
- * @param old_mode the last working mode
- * @param new_mode the new mode detected in this call
- *
- * @return  0 in case of success. -EINPROGRESS (-115) if the state machine is still in progress. otherwise on failure.
- */
-int al_eth_lm_link_detection_step(struct al_eth_lm_context	*lm_context,
-				al_bool				*link_fault,
-				enum al_eth_lm_link_mode	*old_mode,
-				enum al_eth_lm_link_mode	*new_mode);
-
-/**
- * run LT, rx equalization and static values override according to configuration
- * uses an internal state machine to overcome long delays which can degrade performance
- * This function MUST be called inside a lock as it uses common serdes registers
- *
- * @param lm_context pointer to link management context
- * @param link_up set to true in case link is establish successfully
- *
- * @return 0 in case of success. -EINPROGRESS (-115) if the state machine is still in progress. otherwise in case
- * link was failed to be established
- */
-int al_eth_lm_link_establish_step(struct al_eth_lm_context	*lm_context,
-				al_bool			*link_up);
-
-/**
- * getter function for link state
- *
- * @param lm_context pointer to link management context
- *
- * @return link state
- */
-enum al_eth_lm_link_state al_eth_lm_link_state_get(struct al_eth_lm_context *lm_context);
-
-/**
- * checks new link status and returns it through a parameter.
- * NOTICE: the internal state of lm_context isn't updated when calling this function.
- *
- * @param lm_context pointer to link management context
- * @param link_state pointer to link_state
- *
- * @return 0 in case of success reading the link status. otherwise on failure
- */
-int al_eth_lm_link_check(struct al_eth_lm_context *lm_context,
-			enum al_eth_lm_link_state *link_state);
-
-/**
- * check lm_pause current status.
- *
- * @param lm_context pointer to link management context
- *
- * @return TRUE indicates we must pause. otherwise FALSE.
- */
-al_bool al_eth_lm_pause_check(struct al_eth_lm_context *lm_context);
-
-/**
  * apply the lane's static/override TX and RX SerDes tuning tables.
- * Used directly by al_eth_phylink.c's pcs_config (10G SFP+ port) now that
- * the detect/establish step-machine that used to be their only caller is
- * dead code. No-ops unless *_param_dirty is set.
+ * Called by al_eth_phylink.c's pcs_config (10G SFP+ port).
+ * No-ops unless *_param_dirty is set.
  *
  * @param lm_context pointer to link management context
  */
