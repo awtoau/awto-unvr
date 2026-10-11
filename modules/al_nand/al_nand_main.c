@@ -110,6 +110,7 @@ struct al_nand_data {
 	int cache_pos;
 
 	u32 cw_size;
+	unsigned long clk_khz;
 
 	/* HW ECC occupies oobsize-ecc_offset bytes starting at ecc_offset.
 	 * v7.3 dropped struct nand_ecclayout, so the driver keeps them. */
@@ -157,11 +158,10 @@ static inline struct al_nand_data *to_al_nand(struct nand_chip *chip)
  * The controller's non-manual NAND timing parameters are wrong and cost
  * performance, so the driver programs them by hand from the ONFI mode.
  */
-static unsigned long clk_freq_khz = 375000;
-#define NAND_CLK_CYCLES(nsec) ((nsec) * clk_freq_khz / 1000000)
+#define NAND_CLK_CYCLES(khz, nsec) ((nsec) * (khz) / 1000000)
 
 static int al_nand_timing_params_set(struct al_nand_device_timing *timing,
-				     u8 mode)
+				     u8 mode, unsigned long khz)
 {
 	/* Per-mode ONFI SDR timings in ns, converted to controller clocks.
 	 * Columns: tSETUP tHOLD tWRP tRR tWB tWH tINTCMD. readDelay is 3 ns
@@ -178,14 +178,14 @@ static int al_nand_timing_params_set(struct al_nand_device_timing *timing,
 	if (mode >= ARRAY_SIZE(ns))
 		return -EINVAL;
 
-	timing->tSETUP = NAND_CLK_CYCLES(ns[mode][0]);
-	timing->tHOLD = NAND_CLK_CYCLES(ns[mode][1]);
-	timing->tWRP = NAND_CLK_CYCLES(ns[mode][2]);
-	timing->tRR = NAND_CLK_CYCLES(ns[mode][3]);
-	timing->tWB = NAND_CLK_CYCLES(ns[mode][4]);
-	timing->tWH = NAND_CLK_CYCLES(ns[mode][5]);
-	timing->tINTCMD = NAND_CLK_CYCLES(ns[mode][6]);
-	timing->readDelay = NAND_CLK_CYCLES(3);
+	timing->tSETUP = NAND_CLK_CYCLES(khz, ns[mode][0]);
+	timing->tHOLD = NAND_CLK_CYCLES(khz, ns[mode][1]);
+	timing->tWRP = NAND_CLK_CYCLES(khz, ns[mode][2]);
+	timing->tRR = NAND_CLK_CYCLES(khz, ns[mode][3]);
+	timing->tWB = NAND_CLK_CYCLES(khz, ns[mode][4]);
+	timing->tWH = NAND_CLK_CYCLES(khz, ns[mode][5]);
+	timing->tINTCMD = NAND_CLK_CYCLES(khz, ns[mode][6]);
+	timing->readDelay = NAND_CLK_CYCLES(khz, 3);
 
 	return 0;
 }
@@ -265,7 +265,8 @@ static irqreturn_t al_nand_isr(int irq, void *dev_id)
 	}
 	spin_unlock(&nand->irq_lock);
 
-	return IRQ_HANDLED;
+	/* IRQF_SHARED: not ours unless a bit we armed is asserted. */
+	return pending ? IRQ_HANDLED : IRQ_NONE;
 }
 
 /*
@@ -704,13 +705,6 @@ static int al_nand_ecc_read_page(struct nand_chip *chip, u8 *buf,
 	struct mtd_info *mtd = nand_to_mtd(chip);
 	int uncorr, corr, ret;
 
-	/* oob_required needs a raw OOB alongside the corrected data, which this
-	 * controller cannot produce in one pass - the OOB is consumed by the
-	 * ECC engine. nand->options sets NAND_NO_SUBPAGE_WRITE, and the core
-	 * only asks for oob_required on a path we do not offer. */
-	if (WARN_ON(oob_required))
-		return -EINVAL;
-
 	/* Toggle TX to clear the TX/RX ECC state machine. */
 	al_nand_tx_set_enable(&nand->nand_obj, 1);
 	al_nand_tx_set_enable(&nand->nand_obj, 0);
@@ -739,6 +733,16 @@ static int al_nand_ecc_read_page(struct nand_chip *chip, u8 *buf,
 	ret = al_nand_err_report(nand, 0);
 	if (ret)
 		return ret;
+
+	/* The ECC engine consumed the OOB above; a caller that wants it gets a
+	 * separate raw read, as al_nand_erased_or_bad() does. */
+	if (oob_required) {
+		ret = nand_read_oob_op(chip, page, 0, chip->oob_poi,
+				       mtd->oobsize);
+		ret = al_nand_err_report(nand, ret);
+		if (ret)
+			return ret;
+	}
 
 	if (uncorr) {
 		int flips = al_nand_erased_or_bad(chip, buf, page);
@@ -799,8 +803,10 @@ static int al_nand_ecc_write_page(struct nand_chip *chip, const u8 *buf,
 	u32 cmd;
 	int ret;
 
-	if (WARN_ON(oob_required))
-		return -EINVAL;
+	/* The controller generates the OOB parity itself and has no pass that
+	 * also merges caller OOB bytes: refuse a request for it, quietly. */
+	if (oob_required)
+		return -ENOTSUPP;
 
 	al_nand_ecc_set_enabled(&nand->nand_obj, 1);
 
@@ -983,7 +989,7 @@ static int al_nand_setup_interface(struct nand_chip *chip, int chipnr,
 	/* Addressing RMN: 2903 - manual timing, see al_nand_timing_params_set(). */
 	nand->dev_props.timingMode = AL_NAND_DEVICE_TIMING_MODE_MANUAL;
 	ret = al_nand_timing_params_set(&nand->dev_props.timing,
-					conf->timings.mode);
+					conf->timings.mode, nand->clk_khz);
 	if (ret)
 		return ret;
 
@@ -1242,13 +1248,19 @@ static int al_nand_probe(struct platform_device *pdev)
 	al_nand_ecc_set_enabled(&nand->nand_obj, 0);
 
 	/* NAND_CLK_CYCLES() converts the ONFI timings to controller clocks, so
-	 * a wrong rate here silently mistimes every transfer. */
+	 * a guessed or zero rate silently mistimes every transfer. */
 	clk = devm_clk_get(dev, NULL);
-	if (IS_ERR(clk))
-		dev_warn(dev, "no clock in the DT, assuming %lu kHz\n",
-			 clk_freq_khz);
-	else
-		clk_freq_khz = clk_get_rate(clk) / 1000;
+	if (IS_ERR(clk)) {
+		ret = dev_err_probe(dev, PTR_ERR(clk), "no controller clock\n");
+		goto err_terminate;
+	}
+
+	nand->clk_khz = clk_get_rate(clk) / 1000;
+	if (!nand->clk_khz) {
+		dev_err(dev, "controller clock reports 0 Hz\n");
+		ret = -EINVAL;
+		goto err_terminate;
+	}
 
 	nand->irq = platform_get_irq(pdev, 0);
 	if (nand->irq < 0) {
@@ -1333,7 +1345,8 @@ static int al_nand_probe(struct platform_device *pdev)
 	 * the slowest and every ONFI device supports it, which is what makes
 	 * it the right choice before the device has been identified. */
 	nand->dev_props.timingMode = AL_NAND_DEVICE_TIMING_MODE_MANUAL;
-	ret = al_nand_timing_params_set(&nand->dev_props.timing, 0);
+	ret = al_nand_timing_params_set(&nand->dev_props.timing, 0,
+					nand->clk_khz);
 	if (ret)
 		goto err_terminate;
 

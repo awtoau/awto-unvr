@@ -48,6 +48,12 @@ CASES = [
     "write_byte_is_a_data_cycle",
     "int_en_rmw_is_locked",
     "wait_leaves_nothing_armed",
+    "probe_fails_without_clock",
+    "probe_rejects_zero_clock",
+    "probe_uses_the_dt_clock",
+    "isr_spurious_returns_none",
+    "read_page_oob_required",
+    "write_page_oob_required",
 ]
 
 

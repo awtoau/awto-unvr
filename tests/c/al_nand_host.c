@@ -84,6 +84,7 @@ static struct {
 	int fail_reads_from; /* page reads numbered >= this deliver no data */
 	int latch_uncorr_on_read; /* page read N sets UNCORR_ERR; 0 = never */
 	uint8_t page_data_byte;
+	uint8_t oob_byte;
 	uint8_t status_fail;
 
 	/* device / FIFO */
@@ -173,7 +174,7 @@ static void rd_fill(unsigned int n)
 			b = i == 0 ? ctl.features[ctl.feat_addr] : 0;
 			break;
 		default: /* page / OOB data */
-			b = (ctl.col + i) < 4096 ? ctl.page_data_byte : 0xff;
+			b = (ctl.col + i) < 4096 ? ctl.page_data_byte : ctl.oob_byte;
 			break;
 		}
 		ctl.rdq[ctl.rd_tail++ % sizeof(ctl.rdq)] = b;
@@ -715,6 +716,7 @@ static int do_probe(void)
 	k_now_us = 1000000;
 	k_err_count = k_warn_count = 0;
 	ctl.page_data_byte = 0xff;
+	ctl.oob_byte = 0xff;
 
 	/* what the bootloader left in the PBS: 4 KiB page, BCH-8 / 512 B, ECC on */
 	xp.pageSize = 4096;
@@ -734,6 +736,8 @@ static int do_probe(void)
 	quiet = 1; /* probe's dev_info chatter */
 	ret = al_nand_probe(&pdev);
 	quiet = 0;
+	k_clk_err = 0;
+	fake_clk.rate = 500000000;
 	return ret;
 }
 
@@ -944,8 +948,8 @@ static int t_setup_interface_programs_controller(void)
 	CHECK(ops->setup_interface(chip, 0, &c) == 0, "mode 1 programmed");
 	fast = nand->dev_props.timing.tWRP;
 
-	CHECK(slow == NAND_CLK_CYCLES(54) && fast == NAND_CLK_CYCLES(27),
-	      "tWRP follows the mode table at the DT clock (54 ns -> 27 ns)");
+	CHECK(slow == 27 && fast == 13,
+	      "tWRP follows the mode table at the 500 MHz DT clock (54 ns -> 27, 27 ns -> 13 cycles)");
 	CHECK(nand->dev_props.timingMode == AL_NAND_DEVICE_TIMING_MODE_MANUAL,
 	      "controller stays in MANUAL timing (RMN 2903)");
 	return 0;
@@ -997,6 +1001,100 @@ static int t_wait_leaves_nothing_armed(void)
 	return 0;
 }
 
+/* #293.1: no clock is an error, not a guessed 375 MHz; a 0 Hz clock too. */
+static int t_probe_fails_without_clock(void)
+{
+	int ret;
+
+	k_clk_err = -EPROBE_DEFER;
+	ret = do_probe();
+	CHECK(ret == -EPROBE_DEFER, "missing clock propagates the error (defer)");
+	return 0;
+}
+
+static int t_probe_rejects_zero_clock(void)
+{
+	int ret;
+
+	fake_clk.rate = 0;
+	ret = do_probe();
+	CHECK(ret < 0, "a clock reporting 0 Hz fails probe");
+	return 0;
+}
+
+static int t_probe_uses_the_dt_clock(void)
+{
+	if (do_probe())
+		return 1;
+	bind();
+	CHECK(nand->dev_props.timing.tWRP == 13,
+	      "timings derive from the clock's real rate (mode 1 tWRP: 13 cycles at 500 MHz)");
+	return 0;
+}
+
+/* #293.2: a shared line that is not ours must say so. */
+static int t_isr_spurious_returns_none(void)
+{
+	int ret, done;
+
+	if (do_probe())
+		return 1;
+	bind();
+	ctl.last_cmd = NAND_CMD_STATUS;
+	rd_fill(4); /* a request is outstanding: BUF_RDRDY is asserted */
+	CHECK(stat_now() & AL_NAND_INTR_STATUS_BUF_RDRDY, "status shows BUF_RDRDY");
+
+	done = nand->complete.done;
+	ret = al_nand_isr(k_irq_ret, nand);
+	CHECK(ret == IRQ_NONE, "asserted status but nothing armed -> IRQ_NONE");
+	CHECK(nand->complete.done == done, "...and no wakeup is generated");
+
+	al_nand_irq_arm(nand, AL_NAND_INTR_STATUS_BUF_RDRDY);
+	ret = al_nand_isr(k_irq_ret, nand);
+	CHECK(ret == IRQ_HANDLED, "an armed bit asserted -> IRQ_HANDLED");
+	CHECK(nand->complete.done == done + 1, "...with a wakeup");
+	CHECK(nand->irq_armed == 0, "...and the bit disarmed");
+	return 0;
+}
+
+/* #293.3: a caller that supplies OOB is served or refused, never WARNed. */
+static int t_read_page_oob_required(void)
+{
+	u8 buf[4096];
+	int ret;
+
+	if (do_probe())
+		return 1;
+	bind();
+	ctl.oob_byte = 0x5c;
+	k_warn_count = 0;
+	ret = al_nand_ecc_read_page(chip, buf, 1, 7);
+
+	CHECK(ret >= 0, "read_page(oob_required) succeeds");
+	CHECK(k_warn_count == 0, "...without a WARN");
+	CHECK(chip->oob_poi[2] == 0x5c && chip->oob_poi[223] == 0x5c,
+	      "...and chip->oob_poi holds the raw OOB");
+	return 0;
+}
+
+static int t_write_page_oob_required(void)
+{
+	u8 buf[4096] = { 0 };
+	int n, ret;
+
+	if (do_probe())
+		return 1;
+	bind();
+	k_warn_count = 0;
+	n = ctl.ncmd;
+	ret = al_nand_ecc_write_page(chip, buf, 1, 7);
+
+	CHECK(ret == -ENOTSUPP, "write_page(oob_required) is refused with -ENOTSUPP");
+	CHECK(k_warn_count == 0, "...without a WARN (not userspace-triggerable)");
+	CHECK(ctl.ncmd == n, "...before anything reaches the device");
+	return 0;
+}
+
 static const struct {
 	const char *name;
 	int (*fn)(void);
@@ -1016,6 +1114,12 @@ static const struct {
 	{ "write_byte_is_a_data_cycle", t_write_byte_is_a_data_cycle },
 	{ "int_en_rmw_is_locked", t_int_en_rmw_is_locked },
 	{ "wait_leaves_nothing_armed", t_wait_leaves_nothing_armed },
+	{ "probe_fails_without_clock", t_probe_fails_without_clock },
+	{ "probe_rejects_zero_clock", t_probe_rejects_zero_clock },
+	{ "probe_uses_the_dt_clock", t_probe_uses_the_dt_clock },
+	{ "isr_spurious_returns_none", t_isr_spurious_returns_none },
+	{ "read_page_oob_required", t_read_page_oob_required },
+	{ "write_page_oob_required", t_write_page_oob_required },
 };
 
 int main(int argc, char **argv)
