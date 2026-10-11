@@ -84,6 +84,7 @@ def build(
             "-O1",
             "-Wall",
             "-Werror",
+            "-Wno-unused",
             "-I",
             str(d),
             "-I",
@@ -178,3 +179,41 @@ def rx_harness() -> Path:
 @pytest.mark.parametrize("case", RX_CASES)
 def test_rx_ring_recovery(rx_harness, case):
     assert f"PASS {case}" in run(rx_harness, case)
+
+
+# ---- #299: a failed probe leaves nothing behind -----------------------------
+
+PROBE_STEPS = [
+    "none",
+    "board_params",
+    "serdes",
+    "phylink",
+    "hw_init",
+    "sysfs",
+    "register",
+]
+
+
+@pytest.fixture(scope="module")
+def probe_harness() -> Path:
+    return build(
+        "probe",
+        "al_eth_probe_host.c",
+        {"probe": extract_function(main_c(), "al_eth_probe")},
+    )
+
+
+@pytest.mark.parametrize("phylink", [False, True], ids=["1g-rgmii", "10g-phylink"])
+@pytest.mark.parametrize("step", PROBE_STEPS)
+def test_probe_failure_leaves_nothing(probe_harness, step, phylink):
+    if not phylink and step in ("serdes", "phylink"):
+        pytest.skip("only reached on the phylink port")
+    env = dict(os.environ)
+    if phylink:
+        env["USE_PHYLINK"] = "1"
+    else:
+        env.pop("USE_PHYLINK", None)
+    r = subprocess.run(
+        [str(probe_harness), step], capture_output=True, text=True, env=env
+    )
+    assert r.returncode == 0 and f"PASS {step}" in r.stdout, r.stdout + r.stderr

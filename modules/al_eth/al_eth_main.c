@@ -6119,26 +6119,29 @@ al_eth_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 
 	u64_stats_init(&adapter->syncp);
 
+	adapter->adaptive_intr_rate = adaptive_int_moderation;
+	al_eth_init_intr_default_moderation_table_intervals(adapter);
+	/* assign initial_moderation_table the accurate interval values,according to SB frequency */
+	al_eth_initial_moderation_table_restore_default();
+
+	/* register_netdev() is the last step that can fail (ena_probe() does
+	 * the same): the netdev is live from the moment it returns, so nothing
+	 * after it may unwind by hand (#299). */
+	rc = al_eth_sysfs_init(&adapter->pdev->dev);
+	if (rc)
+		goto err_sysfs;
+
 	rc = register_netdev(netdev);
 	if (rc) {
 		dev_err(&pdev->dev, "Cannot register net device\n");
 		goto err_register;
 	}
 
-	rc = al_eth_sysfs_init(&adapter->pdev->dev);
-	if (rc)
-		return rc;
-
 	/* Reporting only - a failure here must never cost us the interface. */
 	rc = al_eth_devlink_init(adapter);
 	if (rc)
 		dev_warn(&pdev->dev, "no devlink MAC reporter (%d)\n", rc);
 	al_eth_bp_debugfs_init(adapter);
-
-	adapter->adaptive_intr_rate = adaptive_int_moderation;
-	al_eth_init_intr_default_moderation_table_intervals(adapter);
-	/* assign initial_moderation_table the accurate interval values,according to SB frequency */
-	al_eth_initial_moderation_table_restore_default();
 
 	netdev_info(netdev, "%s found at mem %lx, mac addr %pM\n",
 		board_info[ent->driver_data].name,
@@ -6147,7 +6150,12 @@ al_eth_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 adapters_found++;
 	return 0;
 err_register:
+err_sysfs:
+	/* al_eth_sysfs_init() leaves the files it did create when it fails */
+	al_eth_sysfs_terminate(&pdev->dev);
 err_hw_init:
+	/* NULL-safe: plink is only set once al_eth_phylink_setup() succeeded */
+	al_eth_phylink_teardown(adapter);
 	free_netdev(netdev);
 	return rc;
 }
