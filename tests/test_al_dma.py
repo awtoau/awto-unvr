@@ -44,6 +44,8 @@ CASES = [
     "smoke",
     "cookie_order_stress",
     "cookie_zero_skipped",
+    "len_limits",
+    "pq_cap_gate",
 ]
 
 
@@ -97,3 +99,33 @@ def test_al_dma_host(harness: Path, case: str):
     assert "FAIL" not in r.stdout, out
     assert r.returncode == 0, out
     assert r.stdout.count("PASS") >= 1, out
+
+
+VENDOR = Path(
+    "/mnt/2tb/unvr-port-refs/UBNT-source-code/UNVR-1.3.35-GPL/"
+    "linux-arm64-unvr-4.1.37-ubnt/drivers/dma/al"
+)
+
+
+@pytest.mark.skipif(not VENDOR.exists(), reason="vendor GPL drop not on this host")
+def test_limits_match_vendor():
+    """The per-op length limits are the vendor driver's, not guesses (#290)."""
+    logic = (MOD / "al_dma_logic.h").read_text()
+    ours = {
+        k: 1 << int(n)
+        for k, n in re.findall(r"#define (AL_DMA_MAX_LEN_\w+)\s+\(1u << (\d+)\)", logic)
+    }
+    vh = (VENDOR / "al_dma.h").read_text()
+    shift = {
+        k: int(v) for k, v in re.findall(r"AL_DMA_MAX_SIZE_SHIFT_(\w+)\s+(\d+)", vh)
+    }
+    assert ours["AL_DMA_MAX_LEN_MEMCPY"] == 1 << shift["MEMCPY"]
+    assert ours["AL_DMA_MAX_LEN_P"] == 1 << shift["XOR"]
+    assert ours["AL_DMA_MAX_LEN_Q"] == 1 << shift["PQ"]
+    vr = (VENDOR / "al_hal_ssm_raid.c").read_text()
+    assert ours["AL_DMA_MAX_LEN_P"] == 1 << int(
+        re.search(r"AL_RAID_OP_P_MAX_BLOCK_SIZE\s+\(1 << (\d+)\)", vr).group(1)
+    )
+    assert ours["AL_DMA_MAX_LEN_Q"] == 1 << int(
+        re.search(r"AL_RAID_OP_Q_MAX_BLOCK_SIZE\s+\(1 << (\d+)\)", vr).group(1)
+    )

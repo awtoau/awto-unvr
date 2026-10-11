@@ -15,11 +15,12 @@
 
 #include "al_hal_ssm.h"
 #include "al_hal_ssm_raid.h"
+#include "al_dma_logic.h"
 
 #define DRV_NAME		"al_dma"
 #define DRV_VERSION		"1.0.0-k6.12"
 
-#define AL_DMA_MAX_XOR		31
+#define AL_DMA_MAX_XOR		AL_DMA_MAX_SRCS
 
 /* Stall bound shared by the cleanup tasklet's give-up check and the devlink
  * health reporter: ~50x a real completion's ~1ms. */

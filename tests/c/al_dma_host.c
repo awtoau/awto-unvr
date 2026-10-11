@@ -543,17 +543,126 @@ static int t_cookie_zero_skipped(void)
 	return fails;
 }
 
+/* Tx owned by the test: submit it so the lock taken by prep is released. */
+static void finish(struct dma_async_tx_descriptor *tx) { (void)tx->tx_submit(tx); }
+
+/* #290/#169: a prep the engine cannot encode returns NULL, takes no ring slot,
+ * leaves ->lock released and is no fault; the limits are inclusive. */
+static int prep_rejected(struct dma_async_tx_descriptor *tx, int head0)
+{
+	int ok = tx == NULL && chan(0)->head == head0 && !k_spin_held(&chan(0)->lock);
+
+	if (tx)
+		finish(tx);	/* an accepted prep holds the lock until submit */
+	return ok;
+}
+
+static int t_len_limits(void)
+{
+	struct dma_chan *c;
+	struct dma_async_tx_descriptor *tx;
+	dma_addr_t src[AL_DMA_MAX_XOR + 1], dst[2] = { 0x8000, 0x9000 };
+	unsigned char scf[AL_DMA_MAX_XOR + 1];
+	struct dma_device *dd;
+	int h;
+
+	quiet = 1;
+	env_init();
+	alloc_chan(0);
+	c = &chan(0)->chan;
+	dd = &D->dma_dev;
+	memset(scf, 1, sizeof(scf));
+	for (h = 0; h < AL_DMA_MAX_XOR + 1; h++)
+		src[h] = 0x10000 + h * 0x1000;
+
+	h = chan(0)->head;
+	CHECK(prep_rejected(dd->device_prep_dma_memcpy(c, 0x1000, 0x2000, 0, 0), h),
+	      "memcpy len 0 rejected");
+	CHECK(prep_rejected(dd->device_prep_dma_memcpy(c, 0x1000, 0x2000, 65537, 0), h),
+	      "memcpy 64 KiB + 1 rejected");
+	tx = dd->device_prep_dma_memcpy(c, 0x1000, 0x2000, 65536, 0);
+	CHECK(tx != NULL, "memcpy 64 KiB accepted");
+	if (tx)
+		finish(tx);
+	tx = dd->device_prep_dma_memcpy(c, 0x1000, 0x2000, 1, 0);
+	CHECK(tx != NULL, "memcpy 1 byte accepted");
+	if (tx)
+		finish(tx);
+
+	h = chan(0)->head;
+	CHECK(prep_rejected(dd->device_prep_dma_xor(c, 0x8000, src, 2, 0, 0), h),
+	      "xor len 0 rejected");
+	CHECK(prep_rejected(dd->device_prep_dma_xor(c, 0x8000, src, 2, 16385, 0), h),
+	      "xor 16 KiB + 1 rejected");
+	CHECK(prep_rejected(dd->device_prep_dma_xor(c, 0x8000, src, 0, 4096, 0), h),
+	      "xor 0 sources rejected");
+	CHECK(prep_rejected(dd->device_prep_dma_xor(c, 0x8000, src, AL_DMA_MAX_XOR + 1, 4096, 0), h),
+	      "xor 32 sources rejected");
+	tx = dd->device_prep_dma_xor(c, 0x8000, src, AL_DMA_MAX_XOR, 16384, 0);
+	CHECK(tx != NULL, "xor 31 sources x 16 KiB accepted");
+	if (tx)
+		finish(tx);
+
+	h = chan(0)->head;
+	CHECK(prep_rejected(dd->device_prep_dma_pq(c, dst, src, 3, scf, 8193, 0), h),
+	      "pq 8 KiB + 1 rejected (#169)");
+	CHECK(prep_rejected(dd->device_prep_dma_pq(c, dst, src, 3, scf, 16384, 0), h),
+	      "pq 16 KiB rejected (#169)");
+	CHECK(prep_rejected(dd->device_prep_dma_pq(c, dst, src, 3, scf, 8193,
+						   DMA_PREP_PQ_DISABLE_P), h),
+	      "q-only 8 KiB + 1 rejected");
+	CHECK(prep_rejected(dd->device_prep_dma_pq(c, dst, src, 3, scf, 4096,
+						   DMA_PREP_PQ_DISABLE_P | DMA_PREP_PQ_DISABLE_Q), h),
+	      "pq with P and Q both disabled rejected");
+	CHECK(prep_rejected(dd->device_prep_dma_pq(c, dst, src, 3, scf, 16385,
+						   DMA_PREP_PQ_DISABLE_Q), h),
+	      "p-only 16 KiB + 1 rejected");
+	tx = dd->device_prep_dma_pq(c, dst, src, 3, scf, 8192, 0);
+	CHECK(tx != NULL, "pq 8 KiB accepted");
+	if (tx)
+		finish(tx);
+	tx = dd->device_prep_dma_pq(c, dst, src, 3, scf, 8192, DMA_PREP_PQ_DISABLE_P);
+	CHECK(tx != NULL, "q-only 8 KiB accepted");
+	if (tx)
+		finish(tx);
+	tx = dd->device_prep_dma_pq(c, dst, src, 3, scf, 16384, DMA_PREP_PQ_DISABLE_Q);
+	CHECK(tx != NULL, "p-only 16 KiB accepted");
+	if (tx)
+		finish(tx);
+
+	quiet = 0;
+	CHECK(atomic64_read(&D->stat_errors) == 0, "rejects are not counted as errors");
+	CHECK(g_fault[AL_DMA_FAULT_SUBMIT] == 0, "rejects raise no devlink fault");
+	return fails;
+}
+
+/* #169: DMA_PQ stays withdrawn unless enable_pq=1 */
+static int t_pq_cap_gate(void)
+{
+	env_init();
+	CHECK(!dma_has_cap(DMA_PQ, D->dma_dev.cap_mask), "DMA_PQ not advertised by default");
+	CHECK(dma_has_cap(DMA_MEMCPY, D->dma_dev.cap_mask) &&
+	      dma_has_cap(DMA_XOR, D->dma_dev.cap_mask), "memcpy and xor advertised");
+	enable_pq = true;
+	env_init();
+	CHECK(dma_has_cap(DMA_PQ, D->dma_dev.cap_mask), "enable_pq=1 advertises DMA_PQ");
+	return fails;
+}
+
 struct test { const char *name; int (*fn)(void); };
 static const struct test tests[] = {
 	{ "smoke", t_smoke },
 	{ "cookie_order_stress", t_cookie_order_stress },
 	{ "cookie_zero_skipped", t_cookie_zero_skipped },
+	{ "len_limits", t_len_limits },
+	{ "pq_cap_gate", t_pq_cap_gate },
 };
 
 int main(int argc, char **argv)
 {
 	size_t i;
 
+	setvbuf(stdout, NULL, _IOLBF, 0);	/* keep PASS lines if a BUG_ON aborts */
 	if (argc < 2) {
 		fprintf(stderr, "usage: %s <test>\n", argv[0]);
 		return 2;

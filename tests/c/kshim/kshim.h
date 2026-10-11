@@ -64,6 +64,7 @@ void k_log(const char *lvl, const char *fmt, ...) __attribute__((format(printf, 
 #define dev_err(d, ...)	do { (void)(d); k_err_count++; k_log("ERR", __VA_ARGS__); } while (0)
 #define dev_warn(d, ...) do { (void)(d); k_warn_count++; k_log("WARN", __VA_ARGS__); } while (0)
 #define dev_info(d, ...) do { (void)(d); k_log("INFO", __VA_ARGS__); } while (0)
+#define dev_warn_once(d, ...) do { static int __once; if (!__once) { __once = 1; dev_warn(d, __VA_ARGS__); } } while (0)
 #define dev_dbg(d, ...)	((void)(d))
 #define BUG_ON(c) do { if (c) { k_log("BUG", "BUG_ON(%s) %s:%d", #c, __FILE__, __LINE__); abort(); } } while (0)
 #define WARN_ON_ONCE(c) ({ int __w = !!(c); if (__w) { k_warn_count++; k_log("WARN", "WARN_ON_ONCE(%s) %s:%d", #c, __FILE__, __LINE__); } __w; })

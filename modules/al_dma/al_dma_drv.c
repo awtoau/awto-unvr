@@ -112,6 +112,10 @@ static int ring_alloc_order = 10;  /* 1024 descriptors */
 module_param(ring_alloc_order, int, 0444);
 MODULE_PARM_DESC(ring_alloc_order, "Descriptor ring size as power of 2 (default: 10 = 1024)");
 
+static bool enable_pq;
+module_param(enable_pq, bool, 0444);
+MODULE_PARM_DESC(enable_pq, "Advertise DMA_PQ (default: off, withdrawn since #169)");
+
 static inline struct al_dma_chan *to_al_dma_chan(struct dma_chan *c)
 {
 	return container_of(c, struct al_dma_chan, chan);
@@ -483,6 +487,12 @@ al_dma_prep_dma_memcpy(struct dma_chan *c, dma_addr_t dest,
 	unsigned long irqflags;
 	int rc;
 
+	if (!al_dma_request_ok(AL_RAID_OP_MEM_CPY, len, 1)) {
+		dev_warn_once(&dev->pdev->dev, "memcpy len %zu rejected (1..%u)\n",
+			      len, AL_DMA_MAX_LEN_MEMCPY);
+		return NULL;
+	}
+
 	spin_lock_irqsave(&ch->lock, irqflags);
 	sw_desc = al_dma_get_sw_desc(ch);
 	if (!sw_desc) {
@@ -560,8 +570,12 @@ al_dma_prep_dma_xor(struct dma_chan *c, dma_addr_t dest,
 	unsigned int i;
 	int rc;
 
-	if (src_cnt > AL_DMA_MAX_XOR)
+	if (!al_dma_request_ok(AL_RAID_OP_P_CALC, len, src_cnt)) {
+		dev_warn_once(&dev->pdev->dev,
+			      "xor len %zu / %u srcs rejected (len 1..%u, srcs 1..%u)\n",
+			      len, src_cnt, AL_DMA_MAX_LEN_P, AL_DMA_MAX_SRCS);
 		return NULL;
+	}
 
 	for (i = 0; i < src_cnt; i++) {
 		src_bufs[i].addr = src[i];
@@ -639,10 +653,15 @@ al_dma_prep_dma_pq(struct dma_chan *c, dma_addr_t *dst,
 	struct al_buf dst_bufs[2];
 	unsigned long irqflags;
 	unsigned int i, num_dsts;
-	int rc;
+	int rc, op;
 
-	if (src_cnt > AL_DMA_MAX_XOR)
+	op = al_dma_pq_op(flags & DMA_PREP_PQ_DISABLE_P, flags & DMA_PREP_PQ_DISABLE_Q);
+	if (op < 0 || !al_dma_request_ok(op, len, src_cnt)) {
+		dev_warn_once(&dev->pdev->dev,
+			      "pq len %zu / %u srcs / flags %#lx rejected (Q,PQ len <= %u)\n",
+			      len, src_cnt, flags, AL_DMA_MAX_LEN_Q);
 		return NULL;
+	}
 
 	for (i = 0; i < src_cnt; i++) {
 		src_bufs[i].addr = src[i];
@@ -684,13 +703,7 @@ al_dma_prep_dma_pq(struct dma_chan *c, dma_addr_t *dst,
 
 	memset(&xaction, 0, sizeof(xaction));
 
-	/* Choose operation based on which parity is enabled */
-	if ((flags & DMA_PREP_PQ_DISABLE_P) && !(flags & DMA_PREP_PQ_DISABLE_Q))
-		xaction.op = AL_RAID_OP_Q_CALC;
-	else if (!(flags & DMA_PREP_PQ_DISABLE_P) && (flags & DMA_PREP_PQ_DISABLE_Q))
-		xaction.op = AL_RAID_OP_P_CALC;
-	else
-		xaction.op = AL_RAID_OP_PQ_CALC;
+	xaction.op = op;
 
 	/* No NO_SNOOP (matches al_ssm's known-working driver) - no-snoop
 	 * completions never invalidate the CPU's cached copy of that ring
@@ -849,11 +862,11 @@ static int al_dma_pci_probe(struct pci_dev *pdev,
 	dma_cap_set(DMA_MEMCPY, dma->cap_mask);
 	dma_cap_set(DMA_XOR, dma->cap_mask);
 	/*
-	 * DMA_PQ NOT advertised: the PQ engine returns wrong Q parity ~53% of
-	 * the time (#169, measured). MD_RAID456 is now built (#236), so
-	 * advertising it would let a RAID6 create/scrub/rebuild offload here
-	 * and write corrupt parity silently. Restore only when #169 is fixed.
+	 * DMA_PQ withdrawn (#169): md RAID6 would offload here. Opt in with
+	 * enable_pq=1 to test; make it the default only once #169 is closed.
 	 */
+	if (enable_pq)
+		dma_cap_set(DMA_PQ, dma->cap_mask);
 
 	dma->device_alloc_chan_resources = al_dma_alloc_chan_resources;
 	dma->device_free_chan_resources = al_dma_free_chan_resources;
