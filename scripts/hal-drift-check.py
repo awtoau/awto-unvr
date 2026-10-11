@@ -5,7 +5,7 @@
 
 Model:
   - modules/al_hal/ is the single source for every HAL file shared by two or
-    more Linux modules (al_eth, al_dma, al_ssm, al_nand).
+    more Linux modules (al_eth, al_dma, al_ssm, al_nand, al_thermal).
   - A module consumes a shared file through a relative symlink
     modules/<m>/<name> -> ../al_hal/<name>. Never a copy.
   - A basename that exists as a REGULAR file in two or more trees (modules/al_hal
@@ -58,6 +58,7 @@ LINUX_TREES: dict[str, str] = {
     "al_dma": "modules/al_dma",
     "al_ssm": "modules/al_ssm",
     "al_nand": "modules/al_nand",
+    "al_thermal": "modules/al_thermal",
 }
 
 # U-Boot carries HAL files of its own for al_serdes and al_ssm (#256 phase 2).
