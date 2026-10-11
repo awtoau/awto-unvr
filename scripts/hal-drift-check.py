@@ -132,7 +132,9 @@ def check_shared_tree() -> list[str]:
 
     for p in hal_files(shared_dir) if shared_dir.is_dir() else []:
         if p.is_symlink():
-            problems.append(f"  {SHARED_DIR}/{p.name} is itself a symlink - it must be the source")
+            problems.append(
+                f"  {SHARED_DIR}/{p.name} is itself a symlink - it must be the source"
+            )
 
     for root in LINUX_TREES.values():
         base = REPO / root
@@ -144,14 +146,20 @@ def check_shared_tree() -> list[str]:
             want = f"../al_hal/{p.name}"
             got = os.readlink(p)
             if got != want:
-                problems.append(f"  BAD SYMLINK {root}/{p.name} -> {got} (must be {want})")
+                problems.append(
+                    f"  BAD SYMLINK {root}/{p.name} -> {got} (must be {want})"
+                )
             elif not p.exists():
-                problems.append(f"  BAD SYMLINK {root}/{p.name} dangles: no {SHARED_DIR}/{p.name}")
+                problems.append(
+                    f"  BAD SYMLINK {root}/{p.name} dangles: no {SHARED_DIR}/{p.name}"
+                )
             else:
                 linked.add(p.name)
 
     for name in sorted(shared - linked):
-        problems.append(f"  ORPHAN SHARED FILE {SHARED_DIR}/{name}: no module links to it")
+        problems.append(
+            f"  ORPHAN SHARED FILE {SHARED_DIR}/{name}: no module links to it"
+        )
     return problems
 
 
@@ -161,7 +169,11 @@ def check_shared_tree() -> list[str]:
 def collect_forks() -> dict[str, dict[str, str]]:
     """basename -> {tree: hash} for REGULAR files present in 2+ trees."""
     seen: dict[str, dict[str, str]] = {}
-    trees = {"al_hal": [SHARED_DIR]} | {t: [r] for t, r in LINUX_TREES.items()} | OTHER_TREES
+    trees = (
+        {"al_hal": [SHARED_DIR]}
+        | {t: [r] for t, r in LINUX_TREES.items()}
+        | OTHER_TREES
+    )
     for tree, roots in trees.items():
         for root in roots:
             base = REPO / root
@@ -301,9 +313,17 @@ def main() -> int:
     ap = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
     )
-    ap.add_argument("--update", action="store_true", help="re-record fork hashes after an intended edit")
-    ap.add_argument("--fork", metavar="NAME", help="register NAME as a fork (needs --reason)")
-    ap.add_argument("--reason", help="why the fork cannot be merged into modules/al_hal")
+    ap.add_argument(
+        "--update",
+        action="store_true",
+        help="re-record fork hashes after an intended edit",
+    )
+    ap.add_argument(
+        "--fork", metavar="NAME", help="register NAME as a fork (needs --reason)"
+    )
+    ap.add_argument(
+        "--reason", help="why the fork cannot be merged into modules/al_hal"
+    )
     ap.add_argument("--show", metavar="BASENAME", help="which trees carry this file")
     args = ap.parse_args()
 
@@ -353,7 +373,9 @@ def main() -> int:
     other = []
     shared_hdr = check_shared_header()
     if shared_hdr:
-        other.append(f"SHARED-HEADER DRIFT: {len(shared_hdr)} problem(s) in {SHARED_HEADER}")
+        other.append(
+            f"SHARED-HEADER DRIFT: {len(shared_hdr)} problem(s) in {SHARED_HEADER}"
+        )
         other += shared_hdr
     staged = check_no_staged_copy() + check_no_edk2_hal_copy()
     if staged:
