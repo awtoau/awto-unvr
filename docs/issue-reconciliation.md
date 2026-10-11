@@ -143,7 +143,7 @@ Every open issue against the code, the box and `docs/vendor-code-modernisation.m
 | #261 | `uefi-p4-boot.py` fsN discovery and `uefi-esp-stage.py` free-space check remain; UEFI track | decision #330 |
 | #259 | reset after a corrupting Oops is untested; destructive, needs exclusive box + console and #243's boot-ID cross-check first | do with #60 and plan item 9 (#328) in one reboot session |
 | #255 | PSCI CPU_ON lies; secondaries never start under EDK2; parked requirement on platform code that was carried across, not rewritten; UEFI track | decision #330 |
-| #254 | `al_udma_state_set_wait()` waits for IDLE after requesting NORMAL; HAL half still present in `modules/al_eth/al_hal_eth_main.c:543` and `modules/al_ssm/al_hal_udma_main.c:1066`; vendor identical, fix not choosable without hardware | umbrella #323 step 1; PLAN 10 |
+| #254 | the IDLE wait is a quiescence check, not a wrong target: `state_get()` reads NORMAL while a sub-block is busy (live al_ssm/al_dma enabled-idle read `idle`); waiting for NORMAL would break bring-up. Landed `219eb9a`: timeout warning names the state the engine is stuck in (al_eth and al_ssm copies). Open: why the engine is not quiescent on U-Boot re-activation | umbrella #323 step 1; one U-Boot session: two `tftpboot` in one boot, look for `engine still` |
 | #253 | U-Boot 10G TX completion timeout: no measurement ever exercised the `alu_*` code; retest recipe in the 2026-10-09 comment (module is fitted now) | umbrella #323 step 2 |
 | #251 | one hardware run left (`bootedk2` on the NAND U-Boot, then the three #256 phase-3 checks); UEFI track | decision #330 |
 | #243 | add the boot-ID cross-check rule to CLAUDE.md and a helper that snapshots boot ID + console offset around a test; protects #184, #182, #259, #253 |  |
@@ -212,6 +212,8 @@ Every open issue against the code, the box and `docs/vendor-code-modernisation.m
 
 - Whether #324 is the whole of #315's 864 Mbit/s (addresses at the time of that run were not recorded).
 - #305, #280, #302, #169, #182, #184: the fixes landed but the failure each guards against has not been exercised on hardware.
+- Running kernel (`unvr-ea16-7.3-fedora.config`) has `FAULT_INJECTION`, `FUNCTION_ERROR_INJECTION` and `NETCONSOLE` off, so no failure path is provokable without a rebuild: #313 (`dma_mapping_error`), #314 (zero-budget netpoll), #305 refill failure (real memory pressure only; `stress-ng` not installed on the box), #292 (IRQ timeout), #293 items 1-2 (no DT clock, spurious shared IRQ), #288 doorbell (`al_ssm_dma_action()` always returns 0: dead code).
+- #335 items 1, 3, 6 have no callers in any consumer (`no_desc_cfg_set`, DWRR config, `q_sc_reset`); item 2 is unproven (ifdown under traffic).
 - #287, #288, #311 failure paths (error status, stall, full-ring callback race) are proven only against the fake engine; the box cannot produce them on demand.
 - The 10G figures in `bench-20261011-220943.json` (host->box 3.40, box->host 4.83 Gbit/s) sit below the 01:31 re-baseline in #241 (7.15 / 9.38): routing (#324), the `-dirty` build, or load on the box; not investigated.
 - al_ssm rows describe HEAD; uncommitted edits by another session were not read.

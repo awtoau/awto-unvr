@@ -335,7 +335,7 @@ CLUSTERS: list[dict] = [
         "members": {
             254: (
                 1,
-                "al_udma_state_set_wait() waits for IDLE after requesting NORMAL; HAL half still open",
+                "al_udma_state_set_wait() IDLE wait is a quiescence check; timeout now names the state (219eb9a); U-Boot re-activation retest open",
             ),
             253: (
                 2,
@@ -642,12 +642,9 @@ DUPS: dict[int, tuple[int, str]] = {
 
 NOTES: dict[int, str] = {
     254: (
-        "Fix location moved. `uboot-port/drivers/net/al_eth/hal/` no longer exists (#256). "
-        "The same `expected_state = UDMA_IDLE` for NORMAL/DISABLE is in "
-        "`modules/al_eth/al_hal_eth_main.c:529` (static copy; NORMAL callers :916 :935, "
-        "DISABLE :1211 :1221) and `modules/al_ssm/al_hal_udma_main.c:1034`. U-Boot and EDK2 "
-        "stage the al_eth HAL, so one fix there reaches both. Whether the Linux copy is "
-        "reachable (a second activation without a disable in between) was not checked."
+        "Fix location moved: `uboot-port/.../hal/` no longer exists (#256). The wait is in "
+        "`modules/al_eth/al_hal_eth_main.c` (static) and `modules/al_ssm/al_hal_udma_main.c`; "
+        "U-Boot and EDK2 stage the al_eth copy. Target state left as IDLE (quiescence): see 219eb9a."
     ),
     297: (
         "Disposition: premise wrong on 7.3 - the core already routes IPv6 extension "
