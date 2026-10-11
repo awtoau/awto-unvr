@@ -435,3 +435,108 @@ Method: three-way diff where a vendor original exists. Vendor = UBNT GPL 4.1.37 
 - Whether `nfc_int_en` races have ever fired (#303): no counter exists.
 - al_sgpo `get()` on a pin still in HW mode returns the last written `conf_vec`, not the driven level (not checked against hardware).
 - Whether mainline `sp805_wdt` restart resets AL-324 (unchanged from the plan above).
+
+## al_eth port review (vendor 4.1.37 vs `linux-alpine-v2` @ `42d10e9` vs `modules/al_eth/`)
+
+Question: is the al_dma "split invariant" regression (#284/#285/#286) systemic across the 6.12 port, or was al_dma unlucky.
+
+### Verdict
+
+- **al_eth ring/UDMA paths are not split.** TX submit, TX completion and RX refill/poll are the vendor code verbatim apart from API renames; the vendor already ran each in one critical section (netif_tx_lock for submit, single NAPI context for completion).
+- 0 split-invariant instances in the data path. 0 are attributable to the port. The 4 instances below arrived later, from replacing the vendor link manager (#113) and from our own fixes.
+- What the port did regress is **defaults and fail-stop guarantees**, where it edited rather than copied (table below). All but one are already fixed in our tree.
+- Trust calibration: the port is trustworthy where it left code alone (HAL, rings, completion); check every place it collapsed an `#ifdef` or deleted a call.
+
+### Method
+
+- Three-way diff, `diff -w` after normalising API churn: vendor `al_eth.c` vs port `al_eth_main.c` (1458 diff lines, ~216 hunks), HAL files, `al_init_eth_lm.c`, sysfs.
+- Vendor UDMA HAL lives outside the driver dir: `drivers/soc/alpine/al_hal_udma_*.c`, `include/soc/alpine/al_hal_udma*.h`.
+- Diff sizes, port vs vendor: `al_hal_udma_main.c` 37 lines (debug print + two locals), `al_hal_udma_config.c` 8 (includes), `al_hal_eth_main.c` 40 (see HAL skew), `al_hal_eth_kr.c`/`al_init_eth_kr.c` 0.
+- Ours vs port at `c919d82`: 231 diff lines in `al_eth_main.c`; the port is the direct ancestor.
+- Every `CONFIG_ARCH_ALPINE` conditional in vendor `al_eth.c` checked for which arm the port kept.
+
+### Data path: one critical section or two
+
+| step | vendor `al_eth.c` | ours `al_eth_main.c` | verdict |
+|---|---|---|---|
+| ring slot read, skb recorded | `:5547-5549` | `:5519-5521` | one section: whole `start_xmit` under the core's `HARD_TX_LOCK` (no `NETIF_F_LLTX`, `:6021-6034`) |
+| `next_to_use++`, descriptors built, `tx_descs` recorded | `:5602-5605` | `:5586-5589` | same section |
+| queue stop, doorbell | `:5609-5616` | `:5601-5608` | same section |
+| completion walk | `:3417-3558` | `:3502-3608` | single NAPI instance per queue; reads `tx_descs` only for slots the HW has completed |
+| stop/wake | `:3499-3507` | `:3590-3602` | `smp_mb()` + re-check under txq lock, same as ENA `ena_netdev.c:887` |
+| RX refill: slot claim and post | `refill_rx_bufs` | `:3291-3332` | claim (`next_to_use`) and `al_eth_rx_buffer_add` in one loop, doorbell once, no other writer |
+| RX poll: HAL cdesc index vs `next_to_clean` | `:3567-3690` | `:3659-3769` | both advanced in the same pass; error and alloc-fail paths advance by `descs` (`:3697`, `:3707`) |
+
+- The al_dma shape (claim in `prep`, record in `submit`, two lock acquisitions) does not exist in al_eth: no separate prep/submit callbacks, no cookie.
+- Ours changed the data path in 4 places, all safe: ring-space check at entry (`:5502-5507`, unreachable: queue stops at `:5601` first and wakes at 256 free, `al_eth.h:60-63`); `WARN_ON_ONCE(tx_descs == 0)` (`:5597`); `smp_wmb()` enabled (`:5585`, vendor had it commented out); TX stats accumulated once per poll (`:3582-3583`, vendor accumulated N(N+1)/2).
+- HAL descriptor code is unchanged: `al_eth_tx_pkt_prepare`, `al_eth_comp_tx_get`, `al_eth_pkt_rx`, `al_udma_q_*` have no semantic diff vs vendor.
+
+### Split-invariant instances (strict: atomic in vendor, interleavable now)
+
+| # | where | invariant | broke at | issue |
+|---|---|---|---|---|
+| 1 | `alpine_serdes.c:154-175` (lock, 0 callers); `al_eth_phylink.c:103-112`, `:146-147`, `:167-174` | vendor held the SerDes group lock across mode set + lane params + establish + status (`al_eth.c:4486-4493`, `:4577-4584`; `al_eth_group_lm.c:503-717`); now each is a separate phylink callback | `9d4680e` (moved group-LM to debris, inside an unrelated commit message) | #310 |
+| 2 | `al_hal_eth_main.c:734-770` (addr/data pair); callers `:1585-1590`, `:4400`, `:4497`; poll `al_eth_phylink.c:167,174`; `al_eth_main.c:2749` | KR PCS indirect access is a two-write pair; poll and `reset_task` -> `mac_config` can interleave | `c5dd27d` (PCS reset RMW now on every `up()`); vendor reset_task was already unlocked (`al_eth.c:2497-2505`) | #310 |
+| 3 | `al_init_eth_lm.c:2412-2425` (writer), `:739-784`, `:786-830` (reader); `al_eth_phylink.c:116-118`, `:146-147`; `al_eth_sysfs.c:257-276`, `:331-348` | override struct copy, `dirty`, `valid` must be observed together; writer sets `dirty` before `valid`, reader clears `dirty` before applying and holds no lock | `3a1fdb1` (made the vendor no-op store live) | #308 |
+| 4 | `al_eth_main.c:2749-2769` (no running check), `:4289` (flag cleared before rtnl release), `:1412` (queue site) | "no reset against a closed interface" holds only if the worker starts during close | `db0b860` (#171 fix) | #307 |
+
+Same shape, not strictly lock-splits:
+
+- `al_eth_main.c:6056` vs `:6072-6075`: netdev published before the moderation setup `ndo_open` reads (vendor `al_eth.c:6124-6136`, same order) -> #306.
+- `al_eth_main.c:3920-3941`: `up_complete` failure unwound as if only rings existed; latent, `al_eth_mac_start()` cannot fail on 1G/10G (`al_hal_eth_main.c:1977-2004`) -> #309.
+
+### Port-introduced differences (vendor -> `42d10e9`)
+
+| item | vendor | port | ours now |
+|---|---|---|---|
+| UDMA error IRQ | `panic()` "to prevent potential user data corruption" (`al_eth.c:1150`) | `//panic(...)`, log only (`al_eth_main.c:1085`): fail-stop became ignore | reset via `reset_task` + re-unmask (`al_eth_main.c:1371-1428`, #175); a reset is a weaker guarantee than the vendor's panic |
+| `AL_ETH_DEFAULT_ADAPTIVE_INT_MODERATION` | FALSE on Alpine (`al_eth.c:274-278`) | TRUE (`:257`) | TRUE (`:302`), unfixed -> #304 |
+| PHY lookup | `phy_map[adapter->phy_addr]` (`al_eth.c:886,2274,2402,4918`) | `phy_find_first()`: wrong PHY on a bus with more than one | `mdiobus_get_phy(bus, phy_addr)` (`:2478,2643,2698,4541`) |
+| UDMA state change | silent | `pr_info` + extra MMIO read per change (`al_hal_udma_main.c:480-492`) | `pr_debug` |
+| i2c SFP access | `i2c_put_adapter()` after each transfer (`al_eth.c:3975,4020`) | `i2c_get_adapter()` with no put (`al_eth_main.c:3514,3543`): adapter refcount leak | code removed (sfp.c owns i2c) |
+| `select_queue` | per-CPU `smp_processor_id()` | unchanged | `netdev_pick_tx()` (`:5656`, #121) |
+| `TX_TIMEOUT` | 5 s | 30 s (`:82`); no recorded reason | 30 s (`:97`); 6x slower TX-hang recovery |
+| `al_eth_down`/`up` ordering, napi/irq setup | - | unchanged | unchanged |
+| `HIGHEST` moderation interval | assigned `[HIGHEST]` twice (vendor typo, `al_eth.c:1315-1318`) | assigns `[HIGH]` then `[HIGHEST]` (fixed) | fixed |
+
+### HAL version skew (not edits)
+
+- Port HAL/LM is the older UDM-era Alpine drop; the UNVR 4.1.37 tree is newer. Differences are skew, not port edits.
+- `al_hal_eth.h`: no `AL_ETH_RETIMER_DS_125`; one merged `gpio_spd_1g_10g` field (vendor decodes the same mask into two fields, `al_hal_eth_main.c:5175-5182`, so equivalent).
+- `al_init_eth_lm.c` (479 diff lines): no `lm_context->lock`, no DS125 retimer table, no 1G-DA SerDes tables, byte-wise SFP EEPROM reads, `signal_is_detected` early exit, link-state priority `local_fault` before `link_up` (`al_eth_lm_link_state_get`). Moot: LM is retired for the SFP+ port (phylink, #113); `board-params-handoff.md:73` has `retimer_exist = false` for this board.
+- V2 `ec_c_mask` merged into `AL_ETH_V1_V2_...` (`al_hal_eth_main.c:141-144`) is bit-identical to vendor V2 (`AL_ETH_V2_EC_IOFIC_GROUP_C_ERROR_INTS`): no change on AL-324.
+
+### Filed al_eth issues vs the port
+
+| issue | origin |
+|---|---|
+| #296 rx_dropped always 0 | vendor: `al_eth.c:4798` `stats->rx_dropped = 0` |
+| #297 csum/TSO no fallback | vendor: `al_eth_tx_csum` `al_eth.c:5447-5512` identical |
+| #298 `al_udma_q_reset` result discarded | vendor: `al_eth.c:393,397` |
+| #299 probe leaves live netdev | vendor: `al_eth.c:6124-6131`; phylink leak is ours |
+| #283 `alpine_serdes` `BUG()` | vendor: `drivers/soc/alpine/alpine_serdes.c:55-75`, port copy identical |
+| #237 SFP media type | ours (phylink) |
+| #253 | U-Boot al_eth, not the Linux driver |
+| #188 AXI snoop comment | port wrote a comment citing a non-existent quirk; vendor `hw_init_adapter` has no per-driver snoop either, so no behaviour regression (coherence is DT `dma-coherent`, verified `yes` on both ports) |
+
+None traces to the port.
+
+### New findings in code the port left alone
+
+- #305: `al_eth_rx_poll()` returns under budget without `napi_complete()` when refill falls short (`al_eth_main.c:3752-3759`); NAPI stuck, RX queue dead until down/up. Vendor-original (`al_eth.c:3686`). ENA completes unconditionally (`ena_netdev.c:1491`) and has `check_for_empty_rx_ring` (`:3587`).
+- Style, not filed: `napi_complete()` vs `napi_complete_done()` (`:3605`, `:3762`); `NETDEV_TX_BUSY` entry check is dead code (above).
+
+### Alpine-specific, must stay
+
+- UDMA queue/descriptor mechanics and completion accounting in descriptor units (`al_hal_udma_*`, `al_eth_tx_pkt_prepare`, `al_eth_comp_tx_get`, `al_eth_pkt_rx`, `tx_descs`).
+- TSO MSS fix for the HW minimum frame (`al_eth_tx_tso_mss_fix`, `:5345-5383`) and explicit `eth_skb_pad` (MAC pad not zeroed, `:5512`).
+- EC/MAC/forwarding/RSS-thash table programming, IOFIC moderation registers, board-params scratchpad decode and FLR save/restore (`al_eth_function_reset`, `:2772-2829`).
+- KR PCS indirect window, HSSP/25G SerDes drivers, shared MDIO controller, `AL_ETH_RX_OFFSET`/small-copy RX layout.
+- Replaced or replaceable by mainline: buffer management (page_pool, done), link management (phylink/sfp, done for SFP+), MDIO bus glue, ethtool plumbing, sysfs knobs.
+
+### Not established
+
+- Whether the #305 refill-fail branch has fired on the box, and the width of the #306 open-vs-probe window (no instrumented run).
+- Hardware effect of a misdirected KR PCS `pcs_addr` write (#310).
+- Whether #304's flip is part of #184 (the thread only shows the hypothesis).
+- Static analysis only; no box access this pass.
