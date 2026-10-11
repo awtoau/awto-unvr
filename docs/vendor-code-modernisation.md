@@ -141,3 +141,134 @@ Umbrella issue: #284. No driver code changed by this document.
 - Whether `dmaengine-unmap-*` leaks in practice (#278): `dmatest` not run, box in use.
 - Which SerDes group the 10G port uses (25G HAL retirement depends on it).
 - Whether the PBS coded-properties handoff in al_nand can be replaced by DT under awto-uboot.
+
+## Reference drivers
+
+Method: pick the mainline reference first, diff the contract second (lesson of #285; `724094f` reverted by `22ae409`).
+Measured 2026-10-11 against `/mnt/2tb/unvr-port-refs/linux-v7.3-fresh` (v7.3-rc6), repo at `22ae409`. Static analysis only: no box access, no flash, dmatest was running.
+
+### Reference table
+
+| Module | Reference (7.3 tree) | Lines | Why |
+|---|---|---|---|
+| al_dma | `drivers/dma/ioat/dma.c` | 1062 | ring + head/issued/tail + cleanup tasklet = al_dma's ring model (the vendor code is ioat-derived); only ref with `prep_lock`, `DMA_TRANS_*`, abort/reset |
+| al_dma | `drivers/dma/fsl_raid.c` | 892 | XOR/PQ RAID offload + cleanup tasklet; list-based so it shows the submit-queue shape. #284 comment says 741 |
+| al_dma (2nd) | `drivers/dma/mv_xor_v2.c` | 896 | XOR engine + tasklet; ACK-gated recycle (`:355`). #284 comment says 733 |
+| al_ssm | `drivers/crypto/qce/skcipher.c` + `qce/core.c` | 434 + 353 | async `cbc(aes)`/`xts(aes)`, SG DMA, fallback, `crypto_queue` with backlog; same dm-crypt use case |
+| al_nand | `drivers/mtd/nand/raw/fsl_ifc_nand.c` | 1155 | legacy hooks + on-host HW BCH + `nand_check_erased_ecc_chunk` + `ecc.read_page` using `cmdfunc` = al_nand's exact shape |
+| al_nand (exec_op, `setup_interface`) | `qcom_nandc.c`, `marvell_nand.c` | 2448, 3194 | too large to diff whole; used as patterns only (#268, #281) |
+| al_eth | `drivers/net/ethernet/amazon/ena/ena_netdev.c` | 4398 | same vendor lineage, UDMA-style rings, NAPI, page-based RX; used as a contract checklist, not read whole |
+| al_eth phylink | none | - | `al_eth_phylink.c` (441) checked against `include/linux/phylink.h` only; no small PCS+SFP MAC reference chosen |
+| al_thermal | `drivers/thermal/kirkwood_thermal.c`, `armada_thermal.c` | 116, 969 | valid-bit `-EIO`; bounded valid poll + `devm_thermal_of_zone_register` |
+| al_sgpo | `drivers/gpio/gpio-74x164.c` | 209 | output-only shift-register `gpio_chip` |
+| al_reboot | `drivers/watchdog/sp805_wdt.c` (`wdt_restart` `:137-150`) | 375 | same SP805 restart |
+| ubnt_hdd_pwrctl | `drivers/input/keyboard/gpio_keys_polled.c`, `drivers/leds/leds-gpio.c` | 383, 345 | polled gpio presence; gpio-driven LED |
+
+### New findings, ranked (issues filed 2026-10-11)
+
+| # | Issue | Class | One line |
+|---|---|---|---|
+| 1 | #286 | fabricate | al_dma fills the HW ring at prep; `issue_pending` doorbells unsubmitted slots; ring order != cookie order; cookie copy lost its `BUG_ON`. Fits the #285 residual |
+| 2 | #287 | fabricate | al_dma completion error status completes as success; `callback_result` ignored |
+| 3 | #288 | swallow | al_dma failed doorbell / 50 ms stall: no abort; ring wedges; `async_xor` spins, `async_tx_quiesce` panics |
+| 4 | #295 | fabricate | hdd bay: gpio read error = "empty" + hot-unplug uevent |
+| 5 | #294 | fabricate | al_thermal `ever_valid` latch: stale RESULT converted as temperature (feeds critical trip) |
+| 6 | #292 | fabricate | al_nand erased-page re-read ignores error latch: poisoned `0xff` page returned as success |
+| 7 | #291 | fabricate | al_ssm: CBC/XTS lengths the mode cannot do reach the engine |
+| 8 | #296 | swallow | al_eth drops uncounted; `rx_dropped` constant 0 |
+| 9 | #299 | swallow | al_eth probe unwind: live netdev after failed probe; phylink leak |
+| 10 | #289 | swallow | al_dma `free_chan_resources`/remove never reset the queue: second alloc `-EIO` |
+| 11 | #297 | fabricate | al_eth csum/TSO offload for unsupported L4 (no `skb_checksum_help`) |
+| 12 | #298 | swallow | al_eth `al_udma_q_reset()` result discarded; HAL copy lacks `__must_check` |
+| 13 | #290 | fabricate | al_dma prep accepts lengths the descriptor cannot encode |
+| 14 | #293 | mixed | al_nand: clk fallback, ISR `IRQ_NONE`, `oob_required` WARN_ON |
+
+### al_dma (vs ioat/dma.c, fsl_raid.c)
+
+- Verified matching:
+  - unmap before callback, then clear `callback` (`:255-265`; ioat `:625-631`).
+  - `dma_cookie_complete` before the callback (ioat `:626`, fsl `:138`).
+  - `dma_cookie_status` copy is equivalent to `dma_async_is_complete()` (`include/linux/dmaengine.h:1626`).
+- Divergences:
+  - Prep/submit ordering: #286. ioat `prep_lock` `:463-466`/`:309-334`, completion guard `if (tx->cookie)` `:625`.
+  - Error result: #287. ioat `:721-872`. fsl_raid has the same hole (`:218-222`).
+  - Wedge, no abort/reset: #288. ioat `:721-772`, timer `:902`.
+  - Queue reset on free/remove: #289. ioat `init.c:596-640`; al_ssm `al_ssm_main.c:842-854`.
+  - Length validation: #290. fsl `:331`, `:418`, `:539`.
+  - `-ENOSPC` from `al_raid_dma_prepare()` is back-pressure but counts as `stat_errors` + devlink `AL_DMA_FAULT_SUBMIT` (`:509-510`, `:598-599`, `:724-725`).
+  - PQ (gated off, #169): `DMA_PREP_CONTINUE` ignored. `dma_maxpq()` reserves 3 slots when the device lacks `DMA_HAS_PQ_CONTINUE`, so the driver must add P/Q as sources (fsl `:341-344`, `:458-459`, `:501-512`). `src_cnt == 1` not handled (fsl `:429-444`). Neither explains #169 (dmatest PQ uses small `src_cnt`).
+  - `:397` comment "dma_cookie_init removed in 6.12 - handled automatically" is wrong: `dma_cookie_init()` is still in `drivers/dma/dmaengine.h:15-19` (43 references under `drivers/dma`) and `dmaengine.c` never calls it. Cookies start at 0, not `DMA_MIN_COOKIE`. No effect found.
+  - Latent: `completed` (the ring free pointer) advances at `:243`, before unmap/callback/clear (`:260-265`); ioat advances `tail` after the batch (`:651`). Reachable only with about 1023 outstanding ops (the HW tx ring takes one descriptor per source buffer and memcpy/xor have no meta descriptors, `al_hal_ssm_raid.c:76-80`, `:189-195`); not seen.
+  - No `device_terminate_all`/`device_synchronize`: same as ioat and fsl_raid, so not a divergence; `dmaengine_terminate_sync()` returns `-ENOSYS`, dmatest ignores it.
+  - `dmaengine_desc_get_callback_invoke()` is in the private `drivers/dma/dmaengine.h`, not an exported facility: copy it like the cookie helpers.
+- Corrections to earlier statements:
+  - "no ACK check" (#278, section above): ioat recycles ring slots without an ACK test (`dma.c:624-631`); fsl_raid and mv_xor use ack lists because they keep descriptors on lists. Not a defect for a ring driver.
+  - `22ae409` comment "under the lock, as `fsl_raid.c:185` and `ioat/dma.c:625`": ioat completes under `cleanup_lock`, assigns under `prep_lock` (different locks). The operative change is complete-before-callback; the lock is harmless.
+  - `22ae409` leaves the #285 residual (12/20000 xor) unexplained; #286 is the candidate.
+- Alpine-specific, keep:
+  - `al_raid_dma_prepare/action/completion` and the SSM RAID opcode build (`al_hal_ssm_raid.c`).
+  - GF log/antilog table load (`al_raid_init`).
+  - `AL_DMA_RAID_RX_CDESC_SIZE` 8, no TX completion ring, `flags = 0` (no NO_SNOOP) - hardware facts from #23.
+  - `al_udma_iofic_config(LEGACY ...)` + `al_iofic_abort_mask_clear(S2M_NO_DESC_TO)` at probe.
+  - RX completion coalescing disable (`:375-388`).
+
+## Per-module contract divergences (other modules)
+
+### al_ssm (vs qce/skcipher.c + core.c)
+
+- Known: #282, #267. New: #291 (lengths).
+- Verified matching: setkey + `xts_verify_key`; CBC output IV written back (`:290-297`; qce `:59`); completion status mapped to `-EIO` (`:262`, `:267`, `:341`).
+- Probe fails on queue-init error (`:649-653`): the check al_dma lacks.
+- Alpine-specific, keep: SA build (`al_crypto_hw_sa_init`), `xts_cfg` all-zero swap register (`:767-770`, #70), separate cdesc rings (`:620-631`), FIFO completion assumption on a single queue.
+- Not a defect: `submit_and_poll` returns `0` synchronously from an `ASYNC` alg (allowed).
+
+### al_nand (vs fsl_ifc_nand.c)
+
+- Known: #268, #274, #275, #281. New: #292, #293.
+- Verified matching:
+  - erased check via `nand_check_erased_ecc_chunk` with `ecc_stats.failed`/`corrected` bookkeeping (fsl `:639-666`).
+  - `legacy.waitfunc` wrapped to carry the error latch (fsl `:605` returns status).
+  - `legacy.cmdfunc` inside `ecc.read_page` is a pattern fsl_ifc uses too, so exec_op is not forced by the shape of the read path.
+- Alpine-specific, keep: command FIFO, data-buffer FIFO read (`al_nand_data_buff_read`, not memcpy), code-word config, BCH engine control, OOB-before-data ECC read order (`:655-663`), PBS decode, `ecc_offset` from the bootloader layout, WP/TX toggling around PAGEPROG.
+
+### al_eth (vs ena_netdev.c checklist)
+
+- Known: #170, #177, #237, #283. New: #296, #297, #298, #299.
+- Verified matching: `napi_gro_receive`/`napi_gro_frags`, `skb_mark_for_recycle` with `page_pool`, BQL (`netdev_tx_sent_queue`/`completed_queue`), `u64_stats` on rings, queue stop/wake with `smp_mb()` on the wake side (`:3593-3602`), `dma_mapping_error` unwind (`:5620-5638`).
+- Style, not defects: `napi_complete()` instead of `napi_complete_done()` (`:3605`, `:3762`); `NETDEV_TX_BUSY` after stopping the queue (`:5502-5507`); no re-check after `netif_tx_stop_queue` at `:5604` (ENA re-checks after `smp_mb()`); lost wake needs every in-flight packet to complete inside the window, not reachable with a nearly full ring.
+- `al_eth_pcs_get_state` maps a failed `al_eth_link_status_get()` to link down without logging (`:174-175`); `pcs_pre_config` is void so a failed SerDes mode set (`:103-110`) cannot fail the `pcs_config` that follows.
+- Alpine-specific, keep: MAC/EC programming, UDMA queue mechanics, checksum/TSO descriptor metadata build (the metadata fields; the fallback decision is #297), MDIO controller, PCS status read, board-params decode.
+
+### al_thermal (vs kirkwood/armada)
+
+- Known: #279, #280, #283. New: #294.
+- Alpine-specific, keep: sensor enable/power-down, `T_INIT_DONE`/`T_PWR_OK` readiness, readout conversion (V2 offset 1090, multiplier 3520).
+- `get_temp` busy-waits up to 1 s (`:63-72`); armada waits 100 ms at probe and never in `get_temp` (#280).
+
+### al_sgpo (vs gpio-74x164.c)
+
+- Boundary correct; no vendor HAL. Divergences, none filed (no failure scenario on this board):
+  - `get_direction` reports OUT for pins still in HW mode (`:146-150`); `set()` on such a pin is a silent no-op while `get()` reads the written value back (`:181-215`). Reachable only by a consumer that skips `direction_output` (`GPIOD_ASIS`); the DT users request OUT.
+  - `direction_input` returns `-ENOTSUPP` (errno 524, kernel-internal) (`:217-221`).
+  - No `request`/`free` hook returns the pin to HW mode after a consumer releases it.
+  - `ngpios` rounds up to whole 8-pin groups (`:283-294`).
+- Alpine-specific, keep: `conf_vec` indexed-write scheme (`:88-99`, `:173-174`), `hw_init` sequence.
+
+### al_reboot (vs sp805_wdt.c `wdt_restart`)
+
+- Divergences from `:137-150`: mainline writes `WDTCONTROL = 0` before `WDTLOAD` (ours does not), loads 0 (ours 1, the validated value), and reads `WDTLOCK` back to flush posted writes (ours uses `mdelay(50)`).
+- Not established whether mainline's sequence resets AL-324 (needs a reboot).
+- Alpine-specific, keep: priority above PSCI (`SYS_OFF_PRIO_HIGH`, PSCI SYSTEM_RESET returns on this firmware, #51); non-exclusive mapping of the shared wdt0 region.
+
+### ubnt_hdd_pwrctl (vs gpio_keys_polled.c, leds-gpio.c)
+
+- New: #295.
+- Boundary correct. Poll interval justified in-file (`:34-41`). Bay power stays with the regulators (`:9-13`).
+
+## Not established (this pass)
+
+- Whether #286 is the whole #285 residual: needs xor-only single-thread dmatest on the box (prediction: 0 failures) or a tasklet counter of `txd.cookie == 0` completions.
+- Whether a second `alloc_chan_resources()` really fails `-EIO` (#289) and whether the missing reset is part of "UDMA state survives reload" (#23).
+- Hardware behaviour for any #291 length, for `l4_proto_idx == 0` + `L4_CSUM` (#297), and for `T_VALID` low (#294).
+- What sets a nonzero RX completion status (#287).
+- Whether al_nand overwriting the PBS-decoded BCH strength with the ONFI requirement (`al_nand_main.c:945-958`) can differ from the bootloader on another board (equal on this one: 8 bit / 512 B).
