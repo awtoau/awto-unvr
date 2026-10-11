@@ -15,14 +15,6 @@
    "al_ssm": "02490b8a47b9599c"
   }
  },
- "al_hal_iofic_regs.h": {
-  "reason": "being merged into modules/al_hal in this series (#264)",
-  "trees": {
-   "al_dma": "0fa63826ee40003d",
-   "al_eth": "56f31710e3e22f45",
-   "al_ssm": "0fa63826ee40003d"
-  }
- },
  "al_hal_m2m_udma.c": {
   "reason": "gen B vendor code (al_ssm, U-Boot) vs al_dma's hand-port onto the gen A UDMA API. al_ssm calls al_udma_handle_init and gen B types that gen A does not have.",
   "trees": {
@@ -196,14 +188,6 @@
    "al_dma": "2f60e540d80caa0a",
    "al_eth": "38fb56382138b945",
    "al_ssm": "0b67b854b84fe79a"
-  }
- },
- "al_hal_udma_iofic_regs.h": {
-  "reason": "being merged into modules/al_hal in this series (#264)",
-  "trees": {
-   "al_dma": "801553ed170fcf4a",
-   "al_eth": "dcc4fd3e960de69a",
-   "al_ssm": "801553ed170fcf4a"
   }
  },
  "al_hal_udma_main.c": {
