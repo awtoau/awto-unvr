@@ -3,11 +3,13 @@
 # Copyright (C) 2026 Awto / Daniel Tyrrell
 """Stage the Linux al_eth HAL into a host build tree as a build artifact (#256).
 
-modules/al_eth/al_hal_* is the SINGLE SOURCE. It carries 18 commits of real
-fixes (__must_check on every HAL function, the MDIO BUSY race, the eye-size MSB
-`=+`, the sch_mode register field, the V3-only 40G path on rev-2 silicon, an
-uninit phydev deref, clear-on-read counters) that a second checked-in copy would
-have to re-earn. So no host keeps its own copy: each stages from here.
+modules/al_eth/al_hal_* is the SINGLE SOURCE. The UDMA/IOFIC files in it are
+links into modules/al_hal/ (shared with al_dma; scripts/hal-drift-check.py).
+It carries 18 commits of real fixes (__must_check on every HAL function, the
+MDIO BUSY race, the eye-size MSB `=+`, the sch_mode register field, the V3-only
+40G path on rev-2 silicon, an uninit phydev deref, clear-on-read counters)
+that a second checked-in copy would have to re-earn. So no host keeps its own
+copy: each stages from here.
 
 The staged tree is a BUILD ARTIFACT:
   - never checked in (the destination is gitignored),

@@ -124,6 +124,10 @@ On a box WITHOUT that fix applied, all of the following still holds:
 
 - `dts/alpine-v2-ubnt-unvr-ea16.dts` — Linux DT, built to `/boot/unvr.dtb` on the SSD.
 - `uboot-port/arch/dts/awto-alpine-v2-unvr-uboot.dts` — compiled **into** `u-boot.bin`.
+- `modules/al_hal/` — the one copy of every HAL file two or more modules share; the modules
+  link to it (`modules/<m>/<f> -> ../al_hal/<f>`). Fix a shared file once. A same-named regular
+  file in another module is a fork and needs a reason in `scripts/hal-forks.json`
+  (`./dev.py hal-drift`).
 - `dts/reference/`, `docs/hw-reference/*/live.dts` — vendor hardware-of-record, never built.
 - Reference trees (20 sources, ~9.9 GB) under `/mnt/2tb/unvr-port-refs/` — QNAP, MikroTik
   CCR2004 UEFI, the UBNT GPL drop with the **working 4.1.37 kernel**, delroth's HAL.

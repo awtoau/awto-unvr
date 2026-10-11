@@ -2,7 +2,8 @@
 # Copyright (C) 2026 Awto / Daniel Tyrrell
 """scripts/stage_hal.py - the staged HAL is derived, pristine, and uncommitted.
 
-The point of #256 is that modules/al_eth/al_hal_* is the single source. These
+The point of #256 is that modules/al_eth/al_hal_* (files linked from
+modules/al_hal/ included) is the single source. These
 pin the three properties that make a second copy impossible rather than merely
 discouraged: byte-identical staging, a read-only staged tree (so an edit fails
 at the edit), and no checked-in staged copy anywhere in the repo.

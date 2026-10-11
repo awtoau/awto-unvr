@@ -26,7 +26,7 @@ Status as of 2026-10-11, HEAD `bc79402`, box `7.3.0-rc6-c352697+`. Per-issue dis
 | 7 | al_eth 1G: phylib `adjust_link` -> phylink | one link path for both ports | M | med | #327 | not started |
 | 8 | SerDes as `drivers/phy` provider + DT tuning | #207, `BUG()`s, per-module copies | L | med | #283, #207 | partial: #283 done (`92077bb`); phy provider and DT taps open (#207) |
 | 9 | al_reboot -> `sp805_wdt` restart | one less module; unproven | S (needs reboot) | med | #328 | not started |
-| 10 | One HAL source tree | 4 diverging UDMA copies | L | med | #256, #264 | partial: U-Boot and EDK2 stage from `modules/al_eth` (#256); Linux still has separate al_eth/al_ssm/al_dma/al_nand copies (#264) |
+| 10 | One HAL source tree | 4 diverging UDMA copies | L | med | #256, #264 | partial: `modules/al_hal/` is the single source for 23 files shared by al_eth/al_dma/al_ssm/al_nand/al_thermal; U-Boot and EDK2 stage from `modules/al_eth` (#256). al_ssm keeps the gen B UDMA, 26 registered forks; see "Item 10 evidence". Carries need a box check (#264) |
 
 - 1-4 are the ones that can hide a #274: silent data-path divergence from a generic contract.
 - 5 is first in line for effort/benefit on audit time: nothing in it can be wrong at runtime, but it is ~14k lines every future review has to rule out.
@@ -66,6 +66,53 @@ Kept (dead by the scan, not retired):
 | `al_thermal/al_hal_pbs_utils.c`, `al_hal_thermal_sensor.c` | 77 + 103 | item 2 (PBS HAL removal) |
 | `al_*/al_hal_udma_*`, `al_hal_iofic*`, `al_hal_ssm_raid*`, `al_hal_m2m_udma*` | ~5,800 dead across copies | item 10 (one HAL tree) is merging these |
 | `al_eth/alpine_serdes.c` lock/trylock/unlock | 21 | uncalled; tied to #310 |
+
+## Item 10 evidence (#256, #264)
+
+Measured 2026-10-11 against the repo after `de43519`. Method: every shared basename diffed pairwise; each pair traced to the 6.12 port (`linux-alpine-v2` `42d10e9`, `72f1817`), the vendor 4.1.37 tree and `delroth-alpine_hal`.
+
+- Layout: `modules/al_hal/` holds the shared files; each module links `modules/<m>/<f> -> ../al_hal/<f>` (Kbuild, `copytree`, `rsync -a` need no change).
+- Two UDMA generations, not four copies:
+  - gen A = vendor 4.1.37 (`drivers/soc/alpine`): al_eth, al_dma. At `42d10e9` the al_dma and al_eth copies were byte-identical for all 22 shared names, so every dma/eth difference is a one-sided fix made since.
+  - gen B = AL SDK 4.19 (UDMA API v5): al_ssm. At `42d10e9` its `al_hal_udma_main.c` is within 7 lines of `delroth-alpine_hal/drivers/udma` and its `al_hal_ssm_raid.c` equals delroth's and the U-Boot copy.
+  - gen B types differ: `struct unit_regs` is the V4 layout (`unit_regs_v3` below rev 4), `udma_regs_base` is `void *`, `al_udma_handle_init`/`q_pause`/`state_set_wait(flush)`, `DMA_MAX_Q` 4 vs 16 (`DMA_MAX_Q_V4`), `AL_UDMA_MIN_Q_SIZE` 4 vs 32, AXI timeout 1M vs 5M.
+  - al_dma's `al_hal_ssm*.c`, `m2m_udma.*` are gen B vendor code hand-ported onto the gen A API ("Adapted ... V1/V2 API").
+- Merging gen A and gen B is not a file merge: al_eth has 46 `struct unit_regs` and 103 `udma_regs->` references, al_dma 27 and 101, all against gen A types. It is a port of the live 10G data path.
+- Classes: (a) real per-consumer difference, (b) fix applied to one copy only, (c) other vendor generation, (d) accidental drift.
+
+| file | why it diverged | result | reason |
+|---|---|---|---|
+| `al_hal_common.h`, `al_hal_reg_utils.h` | (c) gen B is a superset (AL_CONCAT, al_static_assert, al_sprintf, AL_REG_FIELD_BIT_*, AL_SHIFT_OF_MASK, ...) | merged, 5 modules (`1d20fb9`, `de43519`) | additions only |
+| `al_hal_plat_types.h`, `al_hal_types.h` | (d) gen B dropped doc comments and the `__GNUC__` guard | merged, 5 modules | same code |
+| `al_hal_plat_services.h` | (b)(c) al_assert_msg (al_ssm), al_print/al_err/... (al_nand, #208) | merged, union, 5 modules | Linux shim only; U-Boot/EDK2 keep theirs |
+| `al_hal_iofic_regs.h`, `al_hal_udma_iofic_regs.h` | (d) al_eth alone kept the UBSAN comments (#52) | merged, 3 modules (`b0b37d6`) | same code |
+| `al_hal_iofic.c/.h` | (c) gen B: `mask` argument, `control_flags_get`, AL_INT_GROUP_* in iofic.h; (b) `__must_check` only in al_dma | merged, 3 modules (`aebef05`) | old signature kept, `_mask` variant added |
+| `al_hal_ssm_raid_regs.h` | (c) gen B register map is a superset | merged, al_dma + al_ssm (`a2d2907`) | additions only |
+| `al_hal_pbs_regs.h` | (d) copy in al_nand and al_thermal | merged | identical |
+| `al_hal_udma.h`, `_debug.h`, `_regs.h`, `_regs_gen.h`, `_regs_m2s.h`, `_regs_s2m.h` | (d) identical copies | merged, al_dma + al_eth (`720dc7e`) | gen B twins stay |
+| `al_hal_udma_debug.c` | (d), then (c): gen B had fixed two bugs | merged, al_dma + al_eth (`720dc7e`, `5ebf341`) | fixes carried, below |
+| `al_hal_udma_config.h`, `al_hal_udma_iofic.h` | (b) `__must_check` only in al_dma | merged, al_dma + al_eth (`74fe9c2`) | carry |
+| `al_hal_udma_iofic.c` | (b) al_dma checks every `al_iofic_config` | merged, al_dma + al_eth (`161b928`) | carry |
+| `al_hal_udma_config.c` | (b) sch_mode fix only in al_eth (6341528) | merged, al_dma + al_eth (`b5f1aef`) | carry |
+| `al_hal_udma_main.c` | (b) #23 changes only in al_dma; (c) q_init log args right in gen B | merged, al_dma + al_eth (`e545f8c`, `26ca5ac`) | packet size carried; barrier is a per-consumer parameter (a) |
+| 12 gen B twins of the rows above (`al_ssm`) | (c) gen B UDMA | forked, registered | types/API differ; port needs the box |
+| `al_hal_unit_adapter_regs.h` | (c) gen A map in al_eth, gen B in al_ssm; al_dma's copy retired in #325 | forked, registered | one gen A consumer left |
+| `al_hal_m2m_udma.c/.h`, `al_hal_ssm.c/.h`, `al_hal_ssm_raid.c/.h` | (c) gen B code vs al_dma's port onto gen A | forked, registered | needs al_dma on the gen B UDMA |
+
+Carried between copies (each in its own commit):
+
+- al_dma -> al_eth: every iofic / udma_config return value checked (`e9ef3bb`, all call sites); `__must_check` (`aebef05`, `74fe9c2`); `al_udma_iofic_config` error handling (`161b928`); M2S max packet size in `al_udma_set_defaults` (`e545f8c`, idempotent: al_eth writes the same value after `al_udma_init`).
+- al_eth -> al_dma: `al_udma_m2s_pref_get` read sch_mode from the descriptor-count field (`b5f1aef`; no caller today).
+- al_ssm (gen B) -> al_dma, al_eth: `al_udma_regs_s2m_q_print` wrote the M2S `indirect_ctrl` (reachable from the S2M `udma_dump` sysfs knob), `data_cfg_1` printed twice (`5ebf341`); `al_udma_q_init` log arguments (`26ca5ac`).
+- Not carried: the read barrier in `al_udma_cdesc_packet_get` stays al_dma-only (`AL_UDMA_POLL_BARRIER`): `mb()` is a `dsb sy` on the al_eth RX poll, and neither al_eth nor al_ssm shows the #23 symptom.
+- Not carried, gen B only: see "Not established" below.
+
+`./dev.py hal-drift` (`scripts/hal-drift-check.py`) now enforces:
+
+- a module symlink must be `../al_hal/<same name>` and resolve; a `modules/al_hal/` file nothing links is an error;
+- a basename that is a regular file in two or more trees (`modules/al_hal` counts) must be in `scripts/hal-forks.json` with a reason; a copy of a shared file is such a fork;
+- a registered fork keeps per-tree hashes: an edit in one copy names the trees that did not change; identical Linux copies, stale entries and entries with no reason fail;
+- no checked-in staged HAL, no HAL copy in the EDK2 package, `hal/pcie-al-alpine-regs.h` values match the Linux fork.
 
 ## Alpine-specific code that stays (all modules)
 
@@ -172,6 +219,8 @@ Kept (dead by the scan, not retired):
 ## Not established
 
 - Why #169 (PQ) gives wrong Q; nothing in the dmaengine contract explains it.
+- Whether al_eth wants the completion-poll barrier al_dma needs (`AL_UDMA_POLL_BARRIER`): needs a bench-all eth A/B.
+- Whether gen B fixes that gen A lacks matter on this board: `al_udma_cdesc_packet_get` drop-trim, `al_udma_state_get` stream-stuck workaround and `state_set_wait(flush)`, `s2m_no_desc_cfg_set` clearing WAIT_FOR_PREF, RAID error-interrupt unmask and buffer-size validation. al_eth/al_dma do not call the drop-mode API today; the rest are untested (issue filed).
 - Whether mainline `sp805_wdt` restart resets AL-324 (needs a reboot).
 - Hardware effect of the SET FEATURES defect (#281): no GET FEATURES read-back run.
 - Whether `dmaengine-unmap-*` leaks in practice (#278): `dmatest` not run, box in use.

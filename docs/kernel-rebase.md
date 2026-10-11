@@ -35,8 +35,9 @@ network check). It reports `ours` / `theirs` per tree and names what is behind.
 3. `./dev.py build-fedora` - the OOT drivers are built against the new headers
    here, and this is where a kernel API change surfaces. `CONFIG_WERROR=y`, so
    a new warning in `modules/al_*` fails the build.
-4. `./dev.py gate` - `hal-drift` confirms the shared HAL still matches across
-   hosts (#256), `dt-drift` the Linux/U-Boot board facts (#221).
+4. `./dev.py gate` - `hal-drift` confirms every shared HAL file is the one in
+   `modules/al_hal/` and every remaining fork is registered (#264), `dt-drift`
+   the Linux/U-Boot board facts (#221).
 5. `./dev.py publish-fedora` then `./dev.py deploy-ssd --reboot` - **two
    separate commands**, never chained: an scp once raced the file being written
    and produced a Bad Data CRC.
