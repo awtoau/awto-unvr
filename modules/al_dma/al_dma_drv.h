@@ -55,6 +55,14 @@ struct al_dma_chan {
 	int				idx;
 
 	spinlock_t			lock;
+	/* prep_*() returns with ->lock HELD and tx_submit() releases it, so
+	 * the ring slot and the cookie are assigned in one critical section.
+	 * Splitting them let a second thread take the next slot and the
+	 * earlier cookie, so completed_cookie moved backwards (#286). This
+	 * field carries the irq flags across that handoff. Same contract as
+	 * plx_dma.c's ring_lock (__acquires in prep, __releases in submit)
+	 * and the vendor's al_dma_tx_submit_sw_cond_unlock(). */
+	unsigned long			prep_flags;
 	struct tasklet_struct		cleanup_task;
 	/* #23: bounds the tasklet's self-reschedule loop below - a
 	 * descriptor that never completes (real hardware bug, confirmed

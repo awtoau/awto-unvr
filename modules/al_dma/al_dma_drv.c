@@ -148,8 +148,12 @@ static dma_cookie_t al_dma_tx_submit(struct dma_async_tx_descriptor *txd)
 	dma_cookie_t cookie;
 	unsigned long flags;
 
-	spin_lock_irqsave(&ch->lock, flags);
+	/* prep_*() returned with ->lock held; assign the cookie in that same
+	 * critical section so cookie order matches ring order, then release
+	 * it (#286). plx_dma.c:300 annotates this as __releases(ring_lock). */
+	lockdep_assert_held(&ch->lock);
 	cookie = dma_cookie_assign(txd);
+	flags = ch->prep_flags;
 	spin_unlock_irqrestore(&ch->lock, flags);
 
 	return cookie;
@@ -518,7 +522,8 @@ al_dma_prep_dma_memcpy(struct dma_chan *c, dma_addr_t dest,
 	sw_desc->txd.tx_submit = al_dma_tx_submit;
 	sw_desc->txd.flags = flags;
 
-	spin_unlock_irqrestore(&ch->lock, irqflags);
+	/* Lock stays HELD - tx_submit() releases it (#286). */
+	ch->prep_flags = irqflags;
 
 	return &sw_desc->txd;
 }
@@ -609,7 +614,8 @@ al_dma_prep_dma_xor(struct dma_chan *c, dma_addr_t dest,
 	sw_desc->txd.tx_submit = al_dma_tx_submit;
 	sw_desc->txd.flags = flags;
 
-	spin_unlock_irqrestore(&ch->lock, irqflags);
+	/* Lock stays HELD - tx_submit() releases it (#286). */
+	ch->prep_flags = irqflags;
 
 	kfree(src_bufs);
 	kfree(src_blocks);
@@ -733,7 +739,8 @@ al_dma_prep_dma_pq(struct dma_chan *c, dma_addr_t *dst,
 	sw_desc->txd.tx_submit = al_dma_tx_submit;
 	sw_desc->txd.flags = flags;
 
-	spin_unlock_irqrestore(&ch->lock, irqflags);
+	/* Lock stays HELD - tx_submit() releases it (#286). */
+	ch->prep_flags = irqflags;
 
 	kfree(coefs);
 	kfree(src_bufs);
