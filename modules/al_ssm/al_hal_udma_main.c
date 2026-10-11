@@ -1062,6 +1062,8 @@ int al_udma_state_set_wait(struct al_udma *dma, enum al_udma_state new_state, al
 		return rc;
 	}
 
+	/* NORMAL and DISABLE both wait for quiescence: state_get() reads NORMAL
+	 * while a sub-block is busy, not while enabled (#254). */
 	if ((new_state == UDMA_NORMAL) || (new_state == UDMA_DISABLE))
 		expected_state = UDMA_IDLE;
 
@@ -1071,8 +1073,9 @@ int al_udma_state_set_wait(struct al_udma *dma, enum al_udma_state new_state, al
 			break;
 		al_udelay(1);
 		if (count-- == 0) {
-			pr_warn("[%s] warn: dma state didn't change to %s\n",
-				 dma->name, al_udma_states_name[new_state]);
+			pr_warn("[%s] warn: dma state didn't change to %s, engine still %s (not quiescent)\n",
+				 dma->name, al_udma_states_name[new_state],
+				 al_udma_states_name[state]);
 			return -ETIMEDOUT;
 		}
 	} while (1);
