@@ -410,18 +410,33 @@ static int al_eth_udma_queues_enable_all(struct al_eth_adapter *adapter)
 	return 0;
 }
 
+/* Resets every queue even after a failure; returns the last error. */
 static int al_eth_udma_queues_reset_all(struct al_eth_adapter *adapter)
 {
-	int i;
+	int i, err, rc = 0;
 
-	for (i = 0; i < adapter->num_tx_queues; i++)
-		if (adapter->tx_ring[i].dma_q && adapter->tx_ring[i].dma_q->q_regs)
-			al_udma_q_reset(adapter->tx_ring[i].dma_q);
+	for (i = 0; i < adapter->num_tx_queues; i++) {
+		if (!adapter->tx_ring[i].dma_q || !adapter->tx_ring[i].dma_q->q_regs)
+			continue;
+		err = al_udma_q_reset(adapter->tx_ring[i].dma_q);
+		if (err) {
+			netdev_err(adapter->netdev, "%s: tx queue %d reset failed (rc %d)\n",
+				   __func__, i, err);
+			rc = err;
+		}
+	}
 
-	for (i = 0; i < adapter->num_rx_queues; i++)
-		if (adapter->rx_ring[i].dma_q && adapter->rx_ring[i].dma_q->q_regs)
-			al_udma_q_reset(adapter->rx_ring[i].dma_q);
-	return 0;
+	for (i = 0; i < adapter->num_rx_queues; i++) {
+		if (!adapter->rx_ring[i].dma_q || !adapter->rx_ring[i].dma_q->q_regs)
+			continue;
+		err = al_udma_q_reset(adapter->rx_ring[i].dma_q);
+		if (err) {
+			netdev_err(adapter->netdev, "%s: rx queue %d reset failed (rc %d)\n",
+				   __func__, i, err);
+			rc = err;
+		}
+	}
+	return rc;
 }
 
 /* init FSM, no tunneling supported yet, if packet is tcp/udp over ipv4/ipv6, use 4 tuple hash */
@@ -1315,12 +1330,14 @@ static int al_eth_hw_stop(struct al_eth_adapter *adapter)
 	 * UDMA to write to the memory
 	 */
 	udelay(100);
-    al_eth_udma_queues_reset_all(adapter);
-    sub_rc = al_eth_adapter_stop(&adapter->hal_adapter);
-    if (sub_rc) {
-	    netdev_err(adapter->netdev, "%s: failed to stop adapter (rc %d)\n", __func__, sub_rc);
-	    rc = -EIO;
-    }
+	/* a queue that would not reset is reported by the call itself */
+	if (al_eth_udma_queues_reset_all(adapter))
+		rc = -EIO;
+	sub_rc = al_eth_adapter_stop(&adapter->hal_adapter);
+	if (sub_rc) {
+		netdev_err(adapter->netdev, "%s: failed to stop adapter (rc %d)\n", __func__, sub_rc);
+		rc = -EIO;
+	}
 	adapter->flags |= AL_ETH_FLAG_RESET_REQUESTED;
 
 	/* disable flow ctrl to avoid pause packets*/
@@ -2830,7 +2847,7 @@ al_eth_function_reset(struct al_eth_adapter *adapter)
 	return rc;
 }
 
-static int
+static __must_check int
 al_eth_hal_adapter_init(struct al_eth_adapter *adapter)
 {
 	struct al_hal_eth_adapter *hal_adapter = &adapter->hal_adapter;
@@ -2879,7 +2896,9 @@ al_eth_hal_adapter_init(struct al_eth_adapter *adapter)
 	for (i = 0; i < adapter->num_tx_queues; i++) {
 		struct al_eth_ring *ring = &adapter->tx_ring[i];
 
-		al_udma_q_handle_get(&hal_adapter->tx_udma, i, &ring->dma_q);
+		rc = al_udma_q_handle_get(&hal_adapter->tx_udma, i, &ring->dma_q);
+		if (rc)
+			return rc;
 		ring->dma_q->q_regs = (union udma_q_regs __iomem *)
 				&hal_adapter->tx_udma.udma_regs->m2s.m2s_q[i];
 		ring->dma_q->qid = i;
@@ -2889,7 +2908,9 @@ al_eth_hal_adapter_init(struct al_eth_adapter *adapter)
 	for (i = 0; i < adapter->num_rx_queues; i++) {
 		struct al_eth_ring *ring = &adapter->rx_ring[i];
 
-		al_udma_q_handle_get(&hal_adapter->rx_udma, i, &ring->dma_q);
+		rc = al_udma_q_handle_get(&hal_adapter->rx_udma, i, &ring->dma_q);
+		if (rc)
+			return rc;
 		ring->dma_q->q_regs = (union udma_q_regs __iomem *)
 				&hal_adapter->rx_udma.udma_regs->s2m.s2m_q[i];
 		ring->dma_q->qid = i;
@@ -2899,10 +2920,10 @@ al_eth_hal_adapter_init(struct al_eth_adapter *adapter)
 	return 0;
 }
 
-static void
+static __must_check int
 al_eth_init_rings(struct al_eth_adapter *adapter)
 {
-	int i;
+	int i, rc;
 	uint sb_clk_freq =  AL_ETH_REF_CLK_FREQ_TO_HZ(adapter->ref_clk_freq) / 1000;
 
 	for (i = 0; i < adapter->num_tx_queues; i++) {
@@ -2910,7 +2931,9 @@ al_eth_init_rings(struct al_eth_adapter *adapter)
 
 		ring->dev = &adapter->pdev->dev;
 		ring->netdev = adapter->netdev;
-		al_udma_q_handle_get(&adapter->hal_adapter.tx_udma, i, &ring->dma_q);
+		rc = al_udma_q_handle_get(&adapter->hal_adapter.tx_udma, i, &ring->dma_q);
+		if (rc)
+			return rc;
 		ring->sw_count = adapter->tx_ring_count;
 		ring->hw_count = adapter->tx_descs_count;
 		ring->unmask_reg_offset = al_udma_iofic_unmask_offset_get(
@@ -2933,7 +2956,9 @@ al_eth_init_rings(struct al_eth_adapter *adapter)
 		ring->netdev = adapter->netdev;
 		ring->napi = &adapter->al_napi[AL_ETH_RXQ_NAPI_IDX(adapter,
 				i)].napi;
-		al_udma_q_handle_get(&adapter->hal_adapter.rx_udma, i, &ring->dma_q);
+		rc = al_udma_q_handle_get(&adapter->hal_adapter.rx_udma, i, &ring->dma_q);
+		if (rc)
+			return rc;
 		ring->sw_count = adapter->rx_ring_count;
 		ring->hw_count = adapter->rx_descs_count;
 		ring->unmask_reg_offset = al_udma_iofic_unmask_offset_get(
@@ -2948,6 +2973,8 @@ al_eth_init_rings(struct al_eth_adapter *adapter)
 		ring->bytes = 0;
 		u64_stats_init(&ring->syncp);
 	}
+
+	return 0;
 }
 
 /**
@@ -6038,7 +6065,9 @@ al_eth_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 		adapter->mac_mode = AL_ETH_MAC_MODE_10GbE_Serial;
 
 	/** Perform HW stop to clean garbage left-overs from PXE / Uboot driver */
-	al_eth_hal_adapter_init(adapter);
+	rc = al_eth_hal_adapter_init(adapter);
+	if (rc)
+		goto err_hw_init;
 	adapter->hal_adapter.mac_mode = adapter->mac_mode;
 	if (al_eth_hw_stop(adapter))
 		dev_err(&pdev->dev, "%s: hw_stop failed\n", __func__);
@@ -6061,7 +6090,9 @@ al_eth_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 	if (rc)
 		goto err_hw_init;
 
-	al_eth_init_rings(adapter);
+	rc = al_eth_init_rings(adapter);
+	if (rc)
+		goto err_hw_init;
 	INIT_WORK(&adapter->reset_task, al_eth_reset_task);
 	timer_setup(&adapter->rx_watchdog, al_eth_rx_watchdog, 0);
 

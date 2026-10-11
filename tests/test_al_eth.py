@@ -186,9 +186,11 @@ def test_rx_ring_recovery(rx_harness, case):
 PROBE_STEPS = [
     "none",
     "board_params",
+    "hal_init",
     "serdes",
     "phylink",
     "hw_init",
+    "rings",
     "sysfs",
     "register",
 ]
@@ -217,3 +219,52 @@ def test_probe_failure_leaves_nothing(probe_harness, step, phylink):
         [str(probe_harness), step], capture_output=True, text=True, env=env
     )
     assert r.returncode == 0 and f"PASS {step}" in r.stdout, r.stdout + r.stderr
+
+
+# ---- #298: UDMA HAL errors reach the caller -----------------------------------
+
+UDMA_CASES = [
+    "reset_all_clean",
+    "reset_all_reports_timeout_and_keeps_going",
+    "reset_all_rx_failure",
+    "reset_all_skips_unmapped_queue",
+    "hal_init_handle_get_failure",
+    "hal_init_udma_init_failure",
+    "hal_init_clean",
+    "init_rings_handle_get_failure",
+    "init_rings_clean",
+]
+
+
+@pytest.fixture(scope="module")
+def udma_harness() -> Path:
+    src = main_c()
+    funcs = "\n\n".join(
+        extract_function(src, n)
+        for n in (
+            "al_eth_udma_queues_reset_all",
+            "al_eth_hal_adapter_init",
+            "al_eth_init_rings",
+        )
+    )
+    return build("udma", "al_eth_udma_host.c", {"udma_funcs": funcs})
+
+
+@pytest.mark.parametrize("case", UDMA_CASES)
+def test_udma_errors_reach_the_caller(udma_harness, case):
+    assert f"PASS {case}" in run(udma_harness, case)
+
+
+def test_al_eth_udma_hal_header_marks_must_check():
+    # the compiler flags a discarded result only if the prototype says so (#298)
+    hdr = (MAIN_C.parent / "al_hal_udma.h").read_text()
+    for fn in (
+        "al_udma_init",
+        "al_udma_q_init",
+        "al_udma_q_reset",
+        "al_udma_q_handle_get",
+        "al_udma_state_set",
+    ):
+        assert re.search(rf"__must_check\s+int\s+{fn}\(", hdr), (
+            f"{fn} lacks __must_check"
+        )

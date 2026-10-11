@@ -146,9 +146,11 @@ static struct al_eth_adapter g_adapter;
 static void *fake_bar[6];
 static char bar_mem[6][0x2000000];
 
-enum { F_NONE, F_BOARD_PARAMS, F_SERDES, F_PHYLINK, F_HW_INIT, F_SYSFS, F_REGISTER };
+enum { F_NONE, F_BOARD_PARAMS, F_HAL_INIT, F_SERDES, F_PHYLINK, F_HW_INIT, F_RINGS, F_SYSFS,
+       F_REGISTER, F_NSTEPS };
 static const char *const step_names[] = {
-	"none", "board_params", "serdes", "phylink", "hw_init", "sysfs", "register",
+	"none", "board_params", "hal_init", "serdes", "phylink", "hw_init", "rings", "sysfs",
+	"register",
 };
 
 static int inject(int step) { return fail_step == step ? -ENOMEM : 0; }
@@ -233,7 +235,7 @@ static int al_eth_board_params_init(struct al_eth_adapter *a)
 	a->mac_addr[0] = 0x02;
 	return inject(F_BOARD_PARAMS);
 }
-static void al_eth_hal_adapter_init(struct al_eth_adapter *a) { (void)a; }
+static int al_eth_hal_adapter_init(struct al_eth_adapter *a) { (void)a; return inject(F_HAL_INIT); }
 static int al_eth_hw_stop(struct al_eth_adapter *a) { (void)a; return 0; }
 static int al_eth_serdes_init(struct al_eth_adapter *a) { (void)a; return inject(F_SERDES); }
 static void al_eth_lm_static_init(struct al_eth_adapter *a) { (void)a; }
@@ -254,7 +256,7 @@ static void al_eth_phylink_teardown(struct al_eth_adapter *a)
 }
 static void al_eth_function_reset(struct al_eth_adapter *a) { (void)a; }
 static int al_eth_hw_init_adapter(struct al_eth_adapter *a) { (void)a; return inject(F_HW_INIT); }
-static void al_eth_init_rings(struct al_eth_adapter *a) { (void)a; }
+static int al_eth_init_rings(struct al_eth_adapter *a) { (void)a; return inject(F_RINGS); }
 static void al_eth_rx_watchdog(struct timer_list *t) { (void)t; }
 static void al_eth_reset_task(struct work_struct *w) { (void)w; }
 static const int al_eth_netdev_ops, al_eth_ethtool_ops;
@@ -282,7 +284,7 @@ int main(int argc, char **argv)
 		fprintf(stderr, "usage: %s <step>\n", argv[0]);
 		return 2;
 	}
-	for (int i = 0; i < 7; i++)
+	for (int i = 0; i < F_NSTEPS; i++)
 		if (!strcmp(argv[1], step_names[i]))
 			step = i;
 	fail_step = step;

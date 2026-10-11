@@ -627,7 +627,9 @@ static const struct mtd_ooblayout_ops al_nand_ooblayout_ops = {
 /* HW BCH calls every blank page uncorrectable (all-0xff has no valid parity),
  * so an uncorrectable verdict must be re-tested. Checks data AND parity per
  * codeword via the core helper - the OOB alone cannot tell a blank page from
- * one written without parity (#274). Returns max bitflips, or -EBADMSG. */
+ * one written without parity (#274). Returns max bitflips, -EBADMSG for a
+ * genuinely uncorrectable page, or the I/O error if the re-read itself failed
+ * (#292). */
 static int al_nand_erased_or_bad(struct nand_chip *chip, u8 *buf, int page)
 {
 	struct al_nand_data *nand = to_al_nand(chip);
@@ -637,11 +639,14 @@ static int al_nand_erased_or_bad(struct nand_chip *chip, u8 *buf, int page)
 	int max_flips = 0;
 	int i, stat, ret;
 
-	/* Raw re-read: the ECC path already rewrote buf and dropped the parity. */
+	/* Raw re-read: the ECC path already rewrote buf and dropped the parity.
+	 * A failed read_buf() leaves 0xff in buf/oob_poi and only latches the
+	 * error, which would pass the check below as a blank page. */
 	ret = nand_read_page_op(chip, page, 0, buf, mtd->writesize);
-	if (ret)
-		return ret;
-	ret = nand_read_oob_op(chip, page, 0, chip->oob_poi, mtd->oobsize);
+	if (!ret)
+		ret = nand_read_oob_op(chip, page, 0, chip->oob_poi,
+				       mtd->oobsize);
+	ret = al_nand_err_report(nand, ret);
 	if (ret)
 		return ret;
 
@@ -704,6 +709,10 @@ static int al_nand_ecc_read_page(struct nand_chip *chip, u8 *buf,
 
 	if (uncorr) {
 		int flips = al_nand_erased_or_bad(chip, buf, page);
+
+		/* The re-read failed: buf is poison, not a blank page. */
+		if (flips < 0 && flips != -EBADMSG)
+			return flips;
 
 		if (flips < 0) {
 			mtd->ecc_stats.failed++;

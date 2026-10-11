@@ -117,7 +117,7 @@
  },
  "al_hal_udma.h": {
   "al_dma": "87f2fe6300271603",
-  "al_eth": "e37edde8dcb71937",
+  "al_eth": "87f2fe6300271603",
   "al_ssm": "d6e96ea3142631b9"
  },
  "al_hal_udma_config.c": {

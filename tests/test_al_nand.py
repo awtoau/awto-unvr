@@ -39,6 +39,9 @@ CASES = [
     "erase_no_stall",
     "stuck_addr_keeps_short_bound",
     "waitfunc_runs_core_with_latched_error",
+    "reread_failure",
+    "reread_blank_page",
+    "reread_parityless_page",
 ]
 
 

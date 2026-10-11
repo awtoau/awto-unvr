@@ -820,6 +820,54 @@ static int t_waitfunc_runs_core_with_latched_error(void)
 	return 0;
 }
 
+/* #292: an uncorrectable page whose raw re-read FAILS is an error, not blank. */
+static void reread_case(int fail_reread, int page_byte, int expect_ret_neg,
+			unsigned int expect_failed, const char *name)
+{
+	u8 buf[4096];
+	char m[160];
+	int ret;
+
+	if (do_probe()) {
+		CHECK(0, "probe");
+		return;
+	}
+	bind();
+	ctl.page_data_byte = page_byte;
+	ctl.latch_uncorr_on_read = 1; /* the ECC read comes back uncorrectable */
+	ctl.fail_reads_from = fail_reread ? 2 : 0; /* ...the re-reads are 2 and 3 */
+	quiet = 1;
+	ret = al_nand_ecc_read_page(chip, buf, 0, 7);
+	quiet = 0;
+
+	snprintf(m, sizeof(m), "%s: ret %d, %s", name, ret, expect_ret_neg ? "negative" : "0");
+	CHECK(expect_ret_neg ? ret < 0 : ret == 0, m);
+	snprintf(m, sizeof(m), "%s: ecc_stats.failed == %u (got %u)", name, expect_failed,
+		 chip->mtd.ecc_stats.failed);
+	CHECK(chip->mtd.ecc_stats.failed == expect_failed, m);
+	snprintf(m, sizeof(m), "%s: latch does not leak into the next page", name);
+	CHECK(nand->op_err == 0, m);
+}
+
+static int t_reread_failure(void)
+{
+	reread_case(1, 0xff, 1, 0, "re-read times out");
+	return 0;
+}
+
+static int t_reread_blank_page(void)
+{
+	reread_case(0, 0xff, 0, 0, "blank page, re-read ok");
+	return 0;
+}
+
+static int t_reread_parityless_page(void)
+{
+	/* #274: data programmed, parity never written -> genuinely uncorrectable */
+	reread_case(0, 0xa5, 0, 1, "data without parity");
+	return 0;
+}
+
 static const struct {
 	const char *name;
 	int (*fn)(void);
@@ -830,6 +878,9 @@ static const struct {
 	{ "erase_no_stall", t_erase_no_stall },
 	{ "stuck_addr_keeps_short_bound", t_stuck_addr_keeps_short_bound },
 	{ "waitfunc_runs_core_with_latched_error", t_waitfunc_runs_core_with_latched_error },
+	{ "reread_failure", t_reread_failure },
+	{ "reread_blank_page", t_reread_blank_page },
+	{ "reread_parityless_page", t_reread_parityless_page },
 };
 
 int main(int argc, char **argv)

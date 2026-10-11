@@ -911,7 +911,8 @@ static INLINE uint32_t al_eth_tx_available_get(struct al_hal_eth_adapter *adapte
 {
 	struct al_udma_q *udma_q;
 
-	al_udma_q_handle_get(&adapter->tx_udma, qid, &udma_q);
+	if (al_udma_q_handle_get(&adapter->tx_udma, qid, &udma_q))
+		return 0;	/* no such queue: nothing available */
 
 	return al_udma_available_get(udma_q);
 }

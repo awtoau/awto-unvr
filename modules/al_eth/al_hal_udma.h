@@ -318,7 +318,7 @@ struct al_udma {
  *
  * @return 0 on success. -EINVAL otherwise.
  */
-int al_udma_init(struct al_udma *udma, struct al_udma_params *udma_params);
+__must_check int al_udma_init(struct al_udma *udma, struct al_udma_params *udma_params);
 
 /**
  * Initialize the udma queue data structure
@@ -332,7 +332,7 @@ int al_udma_init(struct al_udma *udma, struct al_udma_params *udma_params);
  *	   -EIO if queue was already initialized
  */
 
-int al_udma_q_init(struct al_udma *udma, uint32_t qid,
+__must_check int al_udma_q_init(struct al_udma *udma, uint32_t qid,
 		   struct al_udma_q_params *q_params);
 
 /**
@@ -350,7 +350,7 @@ int al_udma_q_init(struct al_udma *udma, uint32_t qid,
  * @return 0 if no error found.
  */
 
-int al_udma_q_reset(struct al_udma_q *udma_q);
+__must_check int al_udma_q_reset(struct al_udma_q *udma_q);
 
 /**
  * return (by reference) a pointer to a specific queue date structure.
@@ -364,7 +364,7 @@ int al_udma_q_reset(struct al_udma_q *udma_q);
  *
  * @return  0 on success. -EINVAL otherwise.
  */
-int al_udma_q_handle_get(struct al_udma *udma, uint32_t qid,
+__must_check int al_udma_q_handle_get(struct al_udma *udma, uint32_t qid,
 		      struct al_udma_q **q_handle);
 
 /**
@@ -375,7 +375,7 @@ int al_udma_q_handle_get(struct al_udma *udma, uint32_t qid,
  *
  * @return 0
  */
-int al_udma_state_set(struct al_udma *udma, enum al_udma_state state);
+__must_check int al_udma_state_set(struct al_udma *udma, enum al_udma_state state);
 
 /**
  * return the current UDMA hardware state
@@ -593,7 +593,7 @@ static INLINE volatile union al_udma_cdesc *al_cdesc_next_update(
  * descriptors when this function returns. the al_udma_cdesc_ack() should be
  * called to inform the udma driver that those descriptors are freed.
  */
-uint32_t al_udma_cdesc_packet_get(
+__must_check uint32_t al_udma_cdesc_packet_get(
 	struct al_udma_q		*udma_q,
 	volatile union al_udma_cdesc	**desc);
 
