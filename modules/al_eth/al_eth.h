@@ -187,6 +187,11 @@ struct al_eth_rx_buffer {
 struct al_eth_stats_tx {
 	u64 packets;
 	u64 bytes;
+	u64 dropped;		/* skbs the driver discarded; sum of the four below */
+	u64 pad_err;		/* eth_skb_pad() failed */
+	u64 dma_mapping_err;	/* head or frag DMA mapping failed */
+	u64 csum_err;		/* checksum/TSO setup failed */
+	u64 frag_err;		/* more frags than the descriptor limit */
 };
 
 struct al_eth_stats_rx {
@@ -195,6 +200,7 @@ struct al_eth_stats_rx {
 	u64 skb_alloc_fail;
 	u64 dma_mapping_err;
 	u64 small_copy_len_pkt;
+	u64 dropped;		/* completions flagged in error, discarded */
 	u64 refill_fail;	/* rx_poll left the ring short of buffers */
 	u64 empty_ring;		/* watchdog found the ring empty and kicked NAPI */
 };

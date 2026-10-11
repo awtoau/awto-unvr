@@ -3767,6 +3767,7 @@ al_eth_rx_poll(struct napi_struct *napi, int budget)
 	u16 next_to_clean = rx_ring->next_to_clean;
 	unsigned int total_len = 0;
 	unsigned int small_copy_len_pkt = 0;
+	unsigned int rx_dropped = 0;
 
 	netdev_dbg(adapter->netdev, "%s qid %d\n", __func__, qid);
 
@@ -3792,6 +3793,7 @@ al_eth_rx_poll(struct napi_struct *napi, int budget)
 		/* ignore if detected dma or eth controller errors */
 		if (hal_pkt->flags & (AL_ETH_RX_ERROR | AL_UDMA_CDESC_ERROR)) {
 			netdev_dbg(adapter->netdev, "receive packet with error. flags = 0x%x\n", hal_pkt->flags);
+			rx_dropped++;
 			next_to_clean = AL_ETH_RX_RING_IDX_ADD(rx_ring, next_to_clean, descs);
 			goto next;
 		}
@@ -3843,7 +3845,8 @@ next:
 
 	u64_stats_update_begin(&rx_ring->syncp);
 	rx_ring->rx_stats.bytes += total_len;
-	rx_ring->rx_stats.packets += work_done;
+	rx_ring->rx_stats.packets += work_done - rx_dropped;
+	rx_ring->rx_stats.dropped += rx_dropped;
 	rx_ring->rx_stats.small_copy_len_pkt += small_copy_len_pkt;
 	u64_stats_update_end(&rx_ring->syncp);
 
@@ -4503,6 +4506,39 @@ static void al_eth_set_msglevel(struct net_device *netdev, u32 value)
 	adapter->msg_enable = value;
 }
 
+/* Driver-side drops, summed over the rings (not in the MAC counters). */
+static void al_eth_ring_drops(struct al_eth_adapter *adapter, u64 *rx_dropped,
+			      u64 *tx_dropped)
+{
+	unsigned int start;
+	int i;
+
+	*rx_dropped = 0;
+	*tx_dropped = 0;
+
+	for (i = 0; i < adapter->num_rx_queues; i++) {
+		struct al_eth_ring *ring = &adapter->rx_ring[i];
+		u64 n;
+
+		do {
+			start = u64_stats_fetch_begin(&ring->syncp);
+			n = ring->rx_stats.dropped + ring->rx_stats.skb_alloc_fail;
+		} while (u64_stats_fetch_retry(&ring->syncp, start));
+		*rx_dropped += n;
+	}
+
+	for (i = 0; i < adapter->num_tx_queues; i++) {
+		struct al_eth_ring *ring = &adapter->tx_ring[i];
+		u64 n;
+
+		do {
+			start = u64_stats_fetch_begin(&ring->syncp);
+			n = ring->tx_stats.dropped;
+		} while (u64_stats_fetch_retry(&ring->syncp, start));
+		*tx_dropped += n;
+	}
+}
+
 static void al_eth_get_stats64(struct net_device *netdev,
 			       struct rtnl_link_stats64 *stats)
 {
@@ -4512,6 +4548,8 @@ static void al_eth_get_stats64(struct net_device *netdev,
 
 	if (!adapter->up)
 		return;
+
+	al_eth_ring_drops(adapter, &stats->rx_dropped, &stats->tx_dropped);
 
 	/* .ndo_get_stats64 is void per the kernel's own net_device_ops
 	 * contract - can't propagate a failure upward, only log it. Rate
@@ -4525,7 +4563,6 @@ static void al_eth_get_stats64(struct net_device *netdev,
 	stats->tx_packets = mac_stats->aFramesTransmittedOK; /* including pause frames */
 	stats->rx_bytes = mac_stats->aOctetsReceivedOK;
 	stats->tx_bytes = mac_stats->aOctetsTransmittedOK;
-	stats->rx_dropped = 0;
 	stats->multicast = mac_stats->ifInMulticastPkts;
 	stats->collisions = 0;
 
@@ -5081,6 +5118,11 @@ static const struct al_eth_ethtool_stats al_eth_ethtool_stats_global_strings[] =
 static const struct al_eth_ethtool_stats al_eth_ethtool_stats_tx_strings[] = {
 	AL_ETH_ETHTOOL_STAT_TX_ENTRY(packets),
 	AL_ETH_ETHTOOL_STAT_TX_ENTRY(bytes),
+	AL_ETH_ETHTOOL_STAT_TX_ENTRY(dropped),
+	AL_ETH_ETHTOOL_STAT_TX_ENTRY(pad_err),
+	AL_ETH_ETHTOOL_STAT_TX_ENTRY(dma_mapping_err),
+	AL_ETH_ETHTOOL_STAT_TX_ENTRY(csum_err),
+	AL_ETH_ETHTOOL_STAT_TX_ENTRY(frag_err),
 };
 
 static const struct al_eth_ethtool_stats al_eth_ethtool_stats_rx_strings[] = {
@@ -5089,6 +5131,7 @@ static const struct al_eth_ethtool_stats al_eth_ethtool_stats_rx_strings[] = {
 	AL_ETH_ETHTOOL_STAT_RX_ENTRY(skb_alloc_fail),
 	AL_ETH_ETHTOOL_STAT_RX_ENTRY(dma_mapping_err),
 	AL_ETH_ETHTOOL_STAT_RX_ENTRY(small_copy_len_pkt),
+	AL_ETH_ETHTOOL_STAT_RX_ENTRY(dropped),
 	AL_ETH_ETHTOOL_STAT_RX_ENTRY(refill_fail),
 	AL_ETH_ETHTOOL_STAT_RX_ENTRY(empty_ring),
 };
@@ -5474,6 +5517,16 @@ static int al_eth_tx_tso_mss_fix(struct sk_buff *skb, u32 orig_mss)
 	return 0;
 }
 
+/* Count a TX skb the driver discarded, and why (reason may be NULL). */
+static void al_eth_tx_drop(struct al_eth_ring *tx_ring, u64 *reason)
+{
+	u64_stats_update_begin(&tx_ring->syncp);
+	tx_ring->tx_stats.dropped++;
+	if (reason)
+		(*reason)++;
+	u64_stats_update_end(&tx_ring->syncp);
+}
+
 /**
  * al_eth_tx_l4_proto - L4 protocol the MAC can checksum for this skb, 0 if none
  *
@@ -5648,6 +5701,7 @@ al_eth_start_xmit(struct sk_buff *skb, struct net_device *dev)
 		netdev_dbg(adapter->netdev, "failed to pad skb to minimum ETH size (60B). skb->len = %d, skb->data_len= %d\n",
 			   skb->len, skb->data_len);
 		/* eth_skb_pad frees skb on error */
+		al_eth_tx_drop(tx_ring, &tx_ring->tx_stats.pad_err);
 		return NETDEV_TX_OK;
 	}
 
@@ -5667,7 +5721,10 @@ al_eth_start_xmit(struct sk_buff *skb, struct net_device *dev)
 	len = skb_headlen(skb);
 	dma = dma_map_single(tx_ring->dev, skb->data, len, DMA_TO_DEVICE);
 	if (dma_mapping_error(tx_ring->dev, dma)) {
+		/* the slot is reused by the next skb; do not leave this one in it */
+		tx_info->skb = NULL;
 		dev_kfree_skb(skb);
+		al_eth_tx_drop(tx_ring, &tx_ring->tx_stats.dma_mapping_err);
 		return NETDEV_TX_OK;
 	}
 	dma_unmap_addr_set(al_buf, addr, dma);
@@ -5708,7 +5765,8 @@ al_eth_start_xmit(struct sk_buff *skb, struct net_device *dev)
 				   hal_pkt->bufs[f].len);
 		/* every frag was mapped by the loop above - unwind all of them */
 		i = last_frag;
-		goto dma_error;
+		al_eth_tx_drop(tx_ring, &tx_ring->tx_stats.frag_err);
+		goto tx_unmap;
 	}
 	netdev_tx_sent_queue(txq, skb->len);
 
@@ -5750,9 +5808,12 @@ tx_csum_error:
 	 * be a double-unmap (#172). Only the ring slot needs releasing. */
 	tx_info->skb = NULL;
 	dev_kfree_skb(skb);
+	al_eth_tx_drop(tx_ring, &tx_ring->tx_stats.csum_err);
 	return NETDEV_TX_OK;
 
 dma_error:
+	al_eth_tx_drop(tx_ring, &tx_ring->tx_stats.dma_mapping_err);
+tx_unmap:
 	/* save value of frag that failed */
 	last_frag = i;
 

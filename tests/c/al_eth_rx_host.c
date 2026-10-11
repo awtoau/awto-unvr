@@ -27,15 +27,30 @@ struct napi_struct {
 	int schedules;
 };
 struct u64_stats_sync { int unused; };
-struct net_device { int unused; };
+struct net_device { u64 features; };
+struct sk_buff { u32 len; };
 struct al_udma_q { unsigned int avail; };
 struct timer_list { int armed; unsigned long expires; };
 
 struct al_eth_stats_rx {
+	u64 packets;
+	u64 bytes;
+	u64 small_copy_len_pkt;
+	u64 dropped;
 	u64 refill_fail;
 	u64 empty_ring;
 };
+struct al_buf { u32 len; };
+struct al_eth_pkt {
+	u32 flags;
+	int l4_proto_idx;
+	u16 rxhash;
+	struct al_buf bufs[2];
+};
 struct al_eth_ring {
+	struct al_eth_pkt hal_pkt;
+	u16 next_to_clean;
+	unsigned int packets;
 	struct al_udma_q *dma_q;
 	struct napi_struct *napi;
 	u8 empty_rx_queue;
@@ -44,7 +59,14 @@ struct al_eth_ring {
 	struct u64_stats_sync syncp;
 	struct al_eth_stats_rx rx_stats;
 };
+struct al_eth_adapter;
+struct al_eth_napi {
+	struct napi_struct napi;
+	struct al_eth_adapter *adapter;
+	unsigned int qid;
+};
 struct al_eth_adapter {
+	unsigned int small_copy_len;
 	struct net_device *netdev;
 	int num_rx_queues;
 	struct al_eth_ring rx_ring[4];
@@ -101,13 +123,57 @@ static void mod_timer(struct timer_list *t, unsigned long exp)
 	t->expires = exp;
 }
 
+#define AL_ETH_RX_ERROR 0x100
+#define AL_UDMA_CDESC_ERROR 0x200
+#define NETIF_F_RXHASH 1
+#define AL_ETH_PROTO_ID_TCP 3
+#define AL_ETH_PROTO_ID_UDP 4
+enum pkt_hash_types { PKT_HASH_TYPE_L3, PKT_HASH_TYPE_L4 };
+#define netdev_dbg(...) ((void)0)
+#define skb_set_hash(skb, h, t) ((void)0)
+#define skb_record_rx_queue(skb, q) ((void)0)
+
+/* scripted receive queue: one entry per descriptor-group the HAL hands over */
+struct rx_script { u32 flags; u32 len; int skb_ok; };
+static struct rx_script script[16];
+static int script_n, script_pos, gro_rx, gro_frags;
+static struct sk_buff the_skb;
+
+static unsigned int al_eth_pkt_rx(struct al_udma_q *q, struct al_eth_pkt *p)
+{
+	(void)q;
+	if (script_pos >= script_n)
+		return 0;
+	p->flags = script[script_pos].flags;
+	p->bufs[0].len = script[script_pos].len;
+	script_pos++;
+	return 1;
+}
+static struct sk_buff *al_eth_rx_skb(struct al_eth_adapter *a, struct al_eth_ring *r,
+				     struct al_eth_pkt *p, unsigned int descs, u16 *ntc)
+{
+	(void)a; (void)r; (void)descs; (void)ntc;
+	if (!script[script_pos - 1].skb_ok)
+		return NULL;
+	the_skb.len = p->bufs[0].len;
+	return &the_skb;
+}
+static void al_eth_rx_checksum(struct al_eth_adapter *a, struct al_eth_pkt *p, struct sk_buff *s)
+{
+	(void)a; (void)p; (void)s;
+}
+static void napi_gro_receive(struct napi_struct *n, struct sk_buff *s) { (void)n; (void)s; gro_rx++; }
+static void napi_gro_frags(struct napi_struct *n) { (void)n; gro_frags++; }
+
 #include "consts.inc"
 #include "rx_funcs.inc"
+#include "rx_poll.inc"
 
 static struct al_eth_adapter ad;
 static struct napi_struct napi[4];
 static struct al_udma_q dq[4];
 static u32 unmask_reg[4];
+static struct al_eth_napi napi_wrap;
 
 static void setup(int nq)
 {
@@ -256,7 +322,61 @@ static void watchdog_rearms_only_while_up(void)
 	CHECK(napi[0].schedules == 0, "kicked NAPI after down");
 }
 
+static void poll_setup(int nq)
+{
+	static struct net_device nd;
+
+	setup(nq);
+	nd.features = 0;
+	ad.netdev = &nd;
+	ad.small_copy_len = 128;
+	script_n = script_pos = gro_rx = gro_frags = 0;
+	memset(script, 0, sizeof(script));
+	memset(&napi_wrap, 0, sizeof(napi_wrap));
+	napi_wrap.adapter = &ad;
+	napi_wrap.qid = 0;
+	ad.rx_ring[0].napi = &napi_wrap.napi;
+}
+
+static void add_pkt(u32 flags, u32 len, int skb_ok)
+{
+	script[script_n++] = (struct rx_script){ flags, len, skb_ok };
+}
+
+/* errored completions are dropped: counted as dropped, not as received */
+static void poll_error_frames_counted_as_dropped(void)
+{
+	int done;
+
+	poll_setup(1);
+	add_pkt(0, 1000, 1);
+	add_pkt(AL_ETH_RX_ERROR, 64, 1);
+	add_pkt(0, 1000, 1);
+	add_pkt(AL_UDMA_CDESC_ERROR, 64, 1);
+	add_pkt(AL_ETH_RX_ERROR | 0, 64, 1);
+	dq[0].avail = 0;
+	done = al_eth_rx_poll(&napi_wrap.napi, 64);
+	CHECK(done == 5, "poll returned %d, want 5 (budget accounting counts every descriptor)", done);
+	CHECK(ad.rx_ring[0].rx_stats.dropped == 3, "dropped=%llu, want 3",
+	      (unsigned long long)ad.rx_ring[0].rx_stats.dropped);
+	CHECK(ad.rx_ring[0].rx_stats.packets == 2, "packets=%llu, want 2 (errored frames are not packets)",
+	      (unsigned long long)ad.rx_ring[0].rx_stats.packets);
+	CHECK(ad.rx_ring[0].rx_stats.bytes == 2000, "bytes=%llu", (unsigned long long)ad.rx_ring[0].rx_stats.bytes);
+	CHECK(napi_wrap.napi.completes == 1, "poll did not complete");
+}
+
+static void poll_clean_frames_not_dropped(void)
+{
+	poll_setup(1);
+	add_pkt(0, 1000, 1);
+	add_pkt(0, 60, 1);
+	al_eth_rx_poll(&napi_wrap.napi, 64);
+	CHECK(ad.rx_ring[0].rx_stats.dropped == 0 && ad.rx_ring[0].rx_stats.packets == 2, "clean frames miscounted");
+}
+
 static const struct { const char *name; void (*fn)(void); } cases[] = {
+	{ "poll_error_frames_counted_as_dropped", poll_error_frames_counted_as_dropped },
+	{ "poll_clean_frames_not_dropped", poll_clean_frames_not_dropped },
 	{ "short_refill_completes", short_refill_completes },
 	{ "zero_refill_completes", zero_refill_completes },
 	{ "full_refill_completes", full_refill_completes },

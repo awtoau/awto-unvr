@@ -156,6 +156,8 @@ RX_CASES = [
     "watchdog_full_ring_never_kicks",
     "watchdog_queues_independent",
     "watchdog_rearms_only_while_up",
+    "poll_error_frames_counted_as_dropped",
+    "poll_clean_frames_not_dropped",
 ]
 
 
@@ -171,9 +173,20 @@ def rx_harness() -> Path:
         )
     )
     consts = _header_defines(
-        "AL_ETH_DEFAULT_RX_DESCS", "AL_ETH_EMPTY_RX_REFILL", "AL_ETH_RX_WATCHDOG_PERIOD"
+        "AL_ETH_DEFAULT_RX_DESCS",
+        "AL_ETH_EMPTY_RX_REFILL",
+        "AL_ETH_RX_WATCHDOG_PERIOD",
+        "AL_ETH_RX_RING_IDX_ADD",
     )
-    return build("rx", "al_eth_rx_host.c", {"rx_funcs": funcs, "consts": consts})
+    return build(
+        "rx",
+        "al_eth_rx_host.c",
+        {
+            "rx_funcs": funcs,
+            "consts": consts,
+            "rx_poll": extract_function(src, "al_eth_rx_poll"),
+        },
+    )
 
 
 @pytest.mark.parametrize("case", RX_CASES)
@@ -308,3 +321,32 @@ def test_features_check_is_wired_into_netdev_ops():
         r"struct net_device_ops al_eth_netdev_ops = \{.*?\};", main_c(), re.S
     )
     assert ops and ".ndo_features_check" in ops.group(0)
+
+
+# ---- #296: dropped packets are counted ----------------------------------------
+
+XMIT_CASES = [
+    "sends_ok",
+    "pad_failure_counted",
+    "csum_failure_counted",
+    "head_map_failure_counted_and_slot_cleared",
+    "frag_map_failure_unwinds_and_counts",
+    "frag_overflow_counted_as_frag_err",
+    "ring_full_is_busy_not_a_drop",
+    "ring_drops_sums_every_queue",
+]
+
+
+@pytest.fixture(scope="module")
+def xmit_harness() -> Path:
+    src = main_c()
+    funcs = "\n\n".join(
+        extract_function(src, n)
+        for n in ("al_eth_tx_drop", "al_eth_ring_drops", "al_eth_start_xmit")
+    )
+    return build("xmit", "al_eth_xmit_host.c", {"xmit_funcs": funcs})
+
+
+@pytest.mark.parametrize("case", XMIT_CASES)
+def test_tx_drops_are_counted(xmit_harness, case):
+    assert f"PASS {case}" in run(xmit_harness, case)

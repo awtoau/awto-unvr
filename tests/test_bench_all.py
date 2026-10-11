@@ -96,14 +96,23 @@ def test_health_counters_judge_growth_not_history():
     assert third["health MAC counters"] is False
 
 
-def test_health_rx_refill_shortfall_fails_and_sums_queues():
+def test_health_tx_drop_counters_fail():
+    bad = HEALTH_OK.replace(
+        "enp0s1 queue_0_rx_refill_fail:0",
+        "enp0s1 queue_0_tx_csum_err:3 queue_0_rx_refill_fail:0",
+    )
+    ok, detail = _health(bad)[0]["health queue drop counters"]
+    assert ok is False and "enp0s1 tx_csum_err 0->3" in detail
+
+
+def test_health_queue_counters_shortfall_fails_and_sums_queues():
     bad = HEALTH_OK.replace("queue_1_rx_empty_ring:0", "queue_1_rx_empty_ring:2")
-    ok, detail = _health(bad)[0]["health rx ring refill"]
+    ok, detail = _health(bad)[0]["health queue drop counters"]
     assert ok is False and "enp0s2 rx_empty_ring 0->2" in detail
-    assert _health(HEALTH_OK)[0]["health rx ring refill"][0] is True
+    assert _health(HEALTH_OK)[0]["health queue drop counters"][0] is True
 
 
-def test_health_rx_refill_growth_only_after_first_look():
+def test_health_queue_counters_growth_only_after_first_look():
     m = _mod()
     state = m.HealthState()
     old = HEALTH_OK.replace(
@@ -111,16 +120,16 @@ def test_health_rx_refill_growth_only_after_first_look():
         "queue_0_rx_refill_fail:5 queue_0_rx_empty_ring:0 queue_1_rx",
         1,
     )
-    assert not _health(old, state)[0]["health rx ring refill"][0]  # one-shot
-    again = _health(old, state)[0]["health rx ring refill"][0]
+    assert not _health(old, state)[0]["health queue drop counters"][0]  # one-shot
+    again = _health(old, state)[0]["health queue drop counters"][0]
     assert again is True  # unchanged: not a new finding
 
 
-def test_health_rx_refill_missing_data_fails():
+def test_health_queue_counters_missing_data_fails():
     gone = HEALTH_OK.replace(
         "queue_0_rx_refill_fail:0 queue_0_rx_empty_ring:0 queue_1_rx_empty_ring:0", ""
     )
-    assert _health(gone)[0]["health rx ring refill"][0] is False
+    assert _health(gone)[0]["health queue drop counters"][0] is False
 
 
 def test_health_adaptive_moderation_on_fails():

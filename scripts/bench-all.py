@@ -6,7 +6,7 @@ another script (see "Not in here", #312). One run writes a comparable JSON snaps
 Subtests (each is a function taking a Report; metrics land in the snapshot and
 --compare / --idle pick them up by name):
 - health: al_eth vermagic vs running kernel, carrier + speed, MAC error
-  counters, adaptive RX moderation off (#304), RX refill shortfalls (#305), kernel-log trouble lines. (test-eth.py's non-throughput half.)
+  counters, adaptive RX moderation off (#304), driver-side drops and RX refill shortfalls (#296, #305), kernel-log trouble lines. (test-eth.py's non-throughput half.)
 - eth: bidirectional iperf3, 4 streams, per port (1G, 10G, any USB NIC), bound
   with SO_BINDTODEVICE (`-B ip%iface`); a plain -B bind picks the wrong NIC (#121).
 - crypto: AES-256-XTS via AF_ALG. It binds by generic name, so it measures
@@ -588,9 +588,19 @@ DMESG_BAD = re.compile(
 DMESG_BENIGN = ("of_irq_parse_pci: failed with rc=-22",)
 # Error counters: any growth between two looks is a finding.
 HEALTH_ERROR_COUNTERS = ("rx_errors", "rx_crc_errors", "tx_errors")
-# Driver-private per-queue counters from `ethtool -S` (summed over queues):
-# a short RX refill and an empty ring the watchdog had to kick (#305).
-HEALTH_QUEUE_COUNTERS = ("rx_refill_fail", "rx_empty_ring")
+# Driver-private per-queue counters from `ethtool -S` (summed over queues): a
+# short RX refill and a ring the watchdog kicked (#305), and every packet the
+# driver itself discarded (#296). Each should stay 0 on a healthy box.
+HEALTH_QUEUE_COUNTERS = (
+    "rx_refill_fail",
+    "rx_empty_ring",
+    "rx_dropped",
+    "tx_dropped",
+    "tx_pad_err",
+    "tx_dma_mapping_err",
+    "tx_csum_err",
+    "tx_frag_err",
+)
 
 
 class HealthState:
@@ -775,7 +785,7 @@ def judge_health(
     qgrown = counter_growth(state.queue_stats, qcur, HEALTH_QUEUE_COUNTERS)
     checks.append(
         (
-            "health rx ring refill",
+            "health queue drop counters",
             not qgrown and set(qcur) >= set(HEALTH_IFACES),
             ", ".join(qgrown) or ("no growth" if qcur else "no queue counters"),
         )
