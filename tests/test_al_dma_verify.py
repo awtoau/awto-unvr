@@ -80,6 +80,14 @@ def test_run_limit_scales_with_iterations():
     assert m.run_limit_s(20000) == int(10 * 1.25) + m.SSH_CONNECT_S + m.SLACK_S
 
 
+def test_refusals_extend_the_limit_by_dmatest_sleep():
+    m = _mod()
+    # 300 iterations, 90% refused, 0.1 s each, plus the 2000 iops floor
+    base = m.run_limit_s(300)
+    assert m.run_limit_s(300, 0.9) == int((300 / 2000 + 300 * 0.9 * 0.1) * 1.25) + 13
+    assert m.run_limit_s(300, 0.9) > base + 25
+
+
 def test_find_bdf():
     m = _mod()
     show = (

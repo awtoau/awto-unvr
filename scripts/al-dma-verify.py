@@ -16,10 +16,13 @@ Phases (a failed phase stops the rest; the log says which):
      'Failed to init DMA queue', devlink in_flight back to 0.
   B  the same again on the same channel without a reload: A's `echo 0 > run`
      released the channel, so B only passes if free/alloc work (#289).
-  C  --reload: rmmod al_dma; modprobe al_dma [enable_pq=1]; run as A. This is
+  C  test_buf_size 131072 (#290): lengths over the engine's limits (memcpy
+     64 KiB, xor 16 KiB) are refused; the only failures allowed are
+     'prep error', never a data error or a timeout.
+  D  --reload: rmmod al_dma; modprobe al_dma [enable_pq=1]; run as A. This is
      the #23 'UDMA state survives reload' claim; if the reload wedges the
      engine only a reboot clears it, hence --i-accept-a-reboot.
-  D  --pq (implies enable_pq=1 on the reload): PQ at test_buf_size 8192 must
+  E  --pq (implies enable_pq=1 on the reload): PQ at test_buf_size 8192 must
      give 0 failures (#169: Q/PQ over 8 KiB are rejected, not mis-computed);
      at 16384 the only failures allowed are 'prep error' (len > 8192 refused).
 
@@ -50,6 +53,12 @@ DMATEST_OP_TIMEOUT_MS = 100
 # Slowest rate any thread has measured on this engine: pq 1998 iops, xor 2130
 # iops before the #286 fix (#23 comment 2026-08-29); 12.7k xor after.
 MIN_IOPS = 2000
+# dmatest sleeps 100 ms after every 'prep error' (drivers/dma/dmatest.c, the
+# `if (!tx)` branch), so a run that expects refusals is paced by them.
+PREP_ERROR_SLEEP_S = 0.1
+# Iterations for runs where most ops are refused on purpose: 300 x ~0.9 x
+# 0.1 s ~= 27 s per thread, versus ~30 min at the default 20000.
+REFUSAL_ITERATIONS = 300
 SSH_CONNECT_S = 8  # _box.SSH_OPTS_PASSWORD ConnectTimeout in sshpass_argv
 SLACK_S = 5  # dmatest thread start + dmesg grep over ssh
 
@@ -70,11 +79,13 @@ def log(msg: str) -> None:
     print(msg)
 
 
-def run_limit_s(iterations: int) -> int:
+def run_limit_s(iterations: int, refused_fraction: float = 0.0) -> int:
     """Subprocess limit for one blocking dmatest run: the slowest expected
-    thread (MIN_IOPS) x 1.25, plus ssh connect and slack. Expiry: the engine
-    is presumed wedged; the phase FAILs and the script stops."""
-    return int(iterations / MIN_IOPS * 1.25) + SSH_CONNECT_S + SLACK_S
+    thread (MIN_IOPS) plus the dmatest sleep per refused op, x 1.25, plus ssh
+    connect and slack. Expiry: the engine is presumed wedged; the phase FAILs
+    and the script stops."""
+    work = iterations / MIN_IOPS + iterations * refused_fraction * PREP_ERROR_SLEEP_S
+    return int(work * 1.25) + SSH_CONNECT_S + SLACK_S
 
 
 def parse_dmesg(text: str) -> dict:
@@ -159,14 +170,16 @@ def find_bdf(show_text: str) -> str | None:
     return m.group(1) if m else None
 
 
-def one_run(host, pw, name, iterations, buf, allow_kinds=frozenset()) -> bool:
+def one_run(
+    host, pw, name, iterations, buf, allow_kinds=frozenset(), refused_fraction=0.0
+) -> bool:
     marker = f"al-dma-verify {name} buf={buf}"
     log(f"== {name}: {iterations} iterations, test_buf_size {buf}, {CHAN}")
     rc, out = ssh(
         host,
         pw,
         dmatest_script(marker, iterations, buf),
-        run_limit_s(iterations),
+        run_limit_s(iterations, refused_fraction),
     )
     log(out)
     if rc != 0:
@@ -212,16 +225,32 @@ def main() -> int:
 
     host = a.host or _box.require()
     n = a.iterations
-    ok = one_run(host, a.password, "A", n, 16384) and one_run(
-        host, a.password, "B-second-run-same-channel", n, 16384
+    ok = (
+        one_run(host, a.password, "A", n, 16384)
+        and one_run(host, a.password, "B-second-run-same-channel", n, 16384)
+        and one_run(
+            host,
+            a.password,
+            "C-oversize",
+            min(n, REFUSAL_ITERATIONS),
+            131072,
+            allow_kinds={"prep error"},
+            refused_fraction=0.9,  # xor: 87.5% of lengths 1..131072 exceed 16 KiB
+        )
     )
     if ok and a.reload:
         ok = reload_module(host, a.password, a.pq) and one_run(
-            host, a.password, "C-after-reload", n, 16384
+            host, a.password, "D-after-reload", n, 16384
         )
     if ok and a.pq:
-        ok = one_run(host, a.password, "D-pq-8k", n, 8192) and one_run(
-            host, a.password, "D-pq-16k", n, 16384, allow_kinds={"prep error"}
+        ok = one_run(host, a.password, "E-pq-8k", n, 8192) and one_run(
+            host,
+            a.password,
+            "E-pq-16k",
+            min(n, REFUSAL_ITERATIONS),
+            16384,
+            allow_kinds={"prep error"},
+            refused_fraction=0.5,  # pq: lengths over 8 KiB are half of 1..16384
         )
     # Waits for: two devlink queries, each ~ms. Limit = connect + slack.
     rc, out = ssh(host, a.password, "devlink health show", SSH_CONNECT_S + SLACK_S)
