@@ -55,7 +55,7 @@ Status as of 2026-10-11, HEAD `bc79402`, box `7.3.0-rc6-c352697+`. Per-issue dis
 | `al_ssm/al_hal_unit_adapter.c`, `.h` | 443 + 261 | 25 of 30 functions uncalled | cut, `al_ssm-unit-adapter/`; kept `_init`, `_snoop_enable`, `_error_track_enable`, `al_pcie_perform_flr`, `_rob_cfg` |
 
 - Module sizes (unstripped `.ko`, bytes): `al_eth_1g` 8,575,008 -> 7,655,152; `al_eth_10g` 8,575,064 -> 7,655,200; `al_ssm` 3,165,488 -> 2,816,128; others unchanged.
-- `hal-drift` baseline: 39 -> 35 tracked files (25G x4 no longer shared with U-Boot; `al_hal_unit_adapter_regs.h` loses al_dma; `al_hal_ssm.h`, `al_hal_unit_adapter.h`, `al_hal_ssm.c` re-hashed).
+- `scripts/hal-forks.json`: the four `al_hal_serdes_25g*` entries dropped (no longer 2+ trees); `al_hal_unit_adapter_regs.h` loses al_dma; `al_hal_ssm.c`, `al_hal_ssm.h`, `al_hal_unit_adapter.h` re-hashed (al_ssm copy).
 
 Kept (dead by the scan, not retired):
 

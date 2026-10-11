@@ -31,34 +31,6 @@
    "uboot": "a8831f18655d573c"
   }
  },
- "al_hal_serdes_25g.c": {
-  "reason": "U-Boot copy of the al_eth SerDes HAL, diverged (al_hal_serdes_25g.c by 176 lines). Merging needs a 10G/SerDes bring-up proof, not a compile (#256 phase 2).",
-  "trees": {
-   "al_eth": "6856873cefdb8b9a",
-   "uboot": "57c406affbbe6b19"
-  }
- },
- "al_hal_serdes_25g.h": {
-  "reason": "U-Boot copy of the al_eth SerDes HAL, diverged (al_hal_serdes_25g.c by 176 lines). Merging needs a 10G/SerDes bring-up proof, not a compile (#256 phase 2).",
-  "trees": {
-   "al_eth": "67c987b28be96c93",
-   "uboot": "67c987b28be96c93"
-  }
- },
- "al_hal_serdes_25g_internal_regs.h": {
-  "reason": "U-Boot copy of the al_eth SerDes HAL, diverged (al_hal_serdes_25g.c by 176 lines). Merging needs a 10G/SerDes bring-up proof, not a compile (#256 phase 2).",
-  "trees": {
-   "al_eth": "1bab69e3cc43a068",
-   "uboot": "1bab69e3cc43a068"
-  }
- },
- "al_hal_serdes_25g_regs.h": {
-  "reason": "U-Boot copy of the al_eth SerDes HAL, diverged (al_hal_serdes_25g.c by 176 lines). Merging needs a 10G/SerDes bring-up proof, not a compile (#256 phase 2).",
-  "trees": {
-   "al_eth": "efdf6da7b1f730b2",
-   "uboot": "efdf6da7b1f730b2"
-  }
- },
  "al_hal_serdes_hssp.c": {
   "reason": "U-Boot copy of the al_eth SerDes HAL, diverged (al_hal_serdes_25g.c by 176 lines). Merging needs a 10G/SerDes bring-up proof, not a compile (#256 phase 2).",
   "trees": {
@@ -98,7 +70,7 @@
   "reason": "gen B vendor code (al_ssm, U-Boot) vs al_dma's hand-port onto the gen A UDMA API. al_ssm calls al_udma_handle_init and gen B types that gen A does not have.",
   "trees": {
    "al_dma": "025c5ed8d80e8f9a",
-   "al_ssm": "44630433227b8677",
+   "al_ssm": "ce1b0a7065da2689",
    "uboot": "5e30882f03d61172"
   }
  },
@@ -106,7 +78,7 @@
   "reason": "gen B vendor code (al_ssm, U-Boot) vs al_dma's hand-port onto the gen A UDMA API. al_ssm calls al_udma_handle_init and gen B types that gen A does not have.",
   "trees": {
    "al_dma": "d0631b48e8413b47",
-   "al_ssm": "16c52a9f874e9601",
+   "al_ssm": "5d0469a570a3fd86",
    "uboot": "cd10badff7f94c44"
   }
  },
@@ -232,14 +204,13 @@
  "al_hal_unit_adapter.h": {
   "reason": "U-Boot al_ssm carrier (gen B); retires with plan item 5 (#325).",
   "trees": {
-   "al_ssm": "f1f873d2b0ae106f",
+   "al_ssm": "c814f880f5fd0f9c",
    "uboot": "6dbf2e10f3b7d3d1"
   }
  },
  "al_hal_unit_adapter_regs.h": {
   "reason": "being merged into modules/al_hal in this series (#264)",
   "trees": {
-   "al_dma": "fb24f7b82f8a54e9",
    "al_eth": "fb24f7b82f8a54e9",
    "al_ssm": "a23051b7a43efd23"
   }
