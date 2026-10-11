@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """The one test/benchmark harness for woomera. Add subtests here; do not add
-another script (see "Not in here"). One run writes a comparable JSON snapshot;
+another script (see "Not in here", #312). One run writes a comparable JSON snapshot;
 --compare diffs two; --idle runs the suite unattended and prints only trouble.
 
 Subtests (each is a function taking a Report; metrics land in the snapshot and
