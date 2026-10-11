@@ -1,55 +1,39 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-2.0-or-later
 # Copyright (C) 2026 Awto / Daniel Tyrrell
-"""Detect NEW divergence between the five vendored copies of the Annapurna HAL.
+"""Enforce the single-source rule for the Annapurna HAL (#256, #264, #218).
 
-Why: the `al_*` HAL is vendored five times at three different vintages, with
-nothing keeping them in step (#218). Two examples found by hand:
+Model:
+  - modules/al_hal/ is the single source for every HAL file shared by two or
+    more Linux modules (al_eth, al_dma, al_ssm, al_nand).
+  - A module consumes a shared file through a relative symlink
+    modules/<m>/<name> -> ../al_hal/<name>. Never a copy.
+  - A basename that exists as a REGULAR file in two or more trees (modules/al_hal
+    counts as a tree) is a fork. It is allowed only if registered in
+    scripts/hal-forks.json WITH A REASON.
 
-  - UDMA AXI timeout is 5M in modules/al_ssm and uboot-port, 1M in
-    modules/al_eth and modules/al_dma. The 5M value arrived WITH the vendor
-    import (c919d82) - it is the vendor's own newer HAL sitting beside two
-    older copies.
-  - al_udma_m2s_pref_get() tested the wrong bit in modules/al_eth until
-    6341528, while uboot-port had been correct all along.
+Checks (all fail the gate):
+  1. BAD SYMLINK           a module symlink that is not ../al_hal/<same name>, or dangles.
+  2. ORPHAN SHARED FILE    a modules/al_hal/ file no module links to.
+  3. UNREGISTERED FORK     a basename that is a regular file in 2+ trees (al_hal counts as a
+                           tree), not in the registry. A copy of a shared file is one.
+  4. STALE FORK ENTRY      a registered fork that is now a regular file in fewer than 2 trees.
+  5. IDENTICAL FORK        a registered fork whose Linux copies are byte-identical: merge it
+                           (U-Boot carriers may equal a module's copy; they cannot be linked).
+  6. FORK EDITED           a registered fork whose content hash changed in some trees and not
+                           others (names the trees that did NOT change: "does the same fix
+                           apply there?"). Record with --update after answering.
+  7. checked-in staged HAL (al_hal_shared/), checked-in HAL in the EDK2 package,
+     hal/pcie-al-alpine-regs.h vs the Linux fork's constants.
 
-So a fix landed in one tree is not a fix everywhere, and the answer differs per
-file. Equality is the WRONG check - these files are legitimately different
-vintages, so a plain diff would fail on every run and be ignored within a day.
-
-Equality is the WRONG check for a second reason: these files differ pairwise
-almost everywhere (comments, includes, vendor vintage), so "which trees agree"
-is nearly always "none" and never changes - an agreement-only check reports OK
-through the very edit it exists to catch. Verified: it did.
-
-So the baseline records the CONTENT HASH PER TREE. Any edit to any shared file
-changes its hash and is reported, naming the file and the trees that did NOT
-change - which is exactly the "you fixed al_eth, check the other three" prompt.
-The cost is that intended edits need --update; that is the point, since it
-forces the sibling question to be answered explicitly.
-
-Also checks hal/pcie-al-alpine-regs.h - the one header that is genuinely shared
-(a single file #include'd by U-Boot and EDK2) rather than vendored per tree. The
-baseline model above cannot see it, so it is compared by #define value against
-the Linux fork's canonical copy instead. See check_shared_header().
-
-Scope after #256 phase 3. The al_eth HAL is STAGED from modules/al_eth/ at
-build time (scripts/stage_hal.py); both the U-Boot copy (phase 2) and the EDK2
-one (phase 3, 61 files) are GONE. Four vendored copies remain, all Linux
-modules - the fourth is modules/al_nand (#208), a disjoint file set with one
-consumer, so registered here rather than staged.
-
-The U-Boot tree still appears below for al_serdes and al_ssm, which carry HAL
-files of their own that neither phase touched.
-
-Two checks cover the other direction - a copy coming BACK:
-  check_no_staged_copy()   - a staged tree that gets checked in
-  check_no_edk2_hal_copy() - a HAL file re-copied into the EDK2 package
+The registry holds the reason each fork exists. --update refuses to record a
+fork that has no reason, so a fork cannot reappear silently.
 
 Usage:
-    ./scripts/hal-drift-check.py            # check against the baseline
-    ./scripts/hal-drift-check.py --update   # re-record after an INTENDED change
-    ./scripts/hal-drift-check.py --show <basename>   # who has it, and do they match
+    ./scripts/hal-drift-check.py                       # check
+    ./scripts/hal-drift-check.py --update              # re-record hashes after an INTENDED fork edit
+    ./scripts/hal-drift-check.py --fork NAME --reason "why"   # register a new fork
+    ./scripts/hal-drift-check.py --show <basename>     # who has it, and do they match
 """
 
 from __future__ import annotations
@@ -57,84 +41,199 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import re
 import subprocess
 import sys
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
-BASELINE = REPO / "scripts" / "hal-drift-baseline.json"
+REGISTRY = REPO / "scripts" / "hal-forks.json"
 
-# Each tree is (label, [roots]). Roots differ because uboot-port nests the HAL.
-TREES: dict[str, list[str]] = {
-    "al_eth": ["modules/al_eth"],
-    "al_dma": ["modules/al_dma"],
-    "al_ssm": ["modules/al_ssm"],
-    # #208. NOT staged from modules/al_eth: the NAND HAL is a disjoint file set
-    # with one consumer, so staging it would mean putting NAND sources under
-    # al_eth. It is registered here instead, which is what keeps its copies of
-    # al_hal_plat_services.h and friends in the drift baseline.
-    "al_nand": ["modules/al_nand"],
+SHARED_DIR = "modules/al_hal"
+
+# Linux modules that consume the shared tree.
+LINUX_TREES: dict[str, str] = {
+    "al_eth": "modules/al_eth",
+    "al_dma": "modules/al_dma",
+    "al_ssm": "modules/al_ssm",
+    "al_nand": "modules/al_nand",
+}
+
+# U-Boot carries HAL files of its own for al_serdes and al_ssm (#256 phase 2).
+# They are fork carriers, not consumers of modules/al_hal.
+OTHER_TREES: dict[str, list[str]] = {
     "uboot": [
         "uboot-port/drivers/phy/al_serdes",
         "uboot-port/drivers/crypto/al_ssm",
     ],
 }
 
-# EDK2 kept a fifth copy (61 files, df19434) until #256 phase 3. It is gone:
-# AlpineHalLib now compiles the STAGED shared HAL. A checked-in HAL file
-# reappearing under this directory means someone re-copied it, so it fails -
-# checked by path, so it fires on names the baseline does not know.
-# The two files that legitimately live here are the host shim, verified against
-# hal/al_hal_plat_contract.h at compile time, not vendored HAL.
 EDK2_HAL_DIR = "Platform/Ubiquiti/UNVR/Library/AlpineHalLib"
 EDK2_SHIM_FILES = {"al_hal_plat_services.h", "al_hal_plat_types.h"}
 
-# hal/pcie-al-alpine-regs.h is the one header genuinely SHARED (one file,
-# #include'd) rather than vendored per tree, so the basename check above
-# cannot see it - it never appears in 2+ trees. Its risk is the other
-# direction: drifting from the Linux fork's canonical copy, which lives
-# outside this repo. Compared by #define VALUES, not bytes: the two copies
-# legitimately carry different file-header prose, and a byte-hash check
-# would fire on that forever and be ignored (this script's own docstring).
+# hal/pcie-al-alpine-regs.h is one file #include'd by U-Boot and EDK2. Compared
+# by #define value against the Linux fork's canonical copy (file-header prose
+# legitimately differs, so a byte hash would fire forever).
 SHARED_HEADER = "hal/pcie-al-alpine-regs.h"
 SHARED_HEADER_CANONICAL = Path(
     "/mnt/2tb/unvr-port-refs/linux-v7.3-fresh/drivers/pci/controller/pcie-al-alpine-regs.h"
 )
-# Consumers that #include it directly - listed so a dropped include is caught.
 SHARED_HEADER_CONSUMERS = [
     "uboot-port/board/annapurna/alpine/alpine.c",
     "Platform/Ubiquiti/UNVR/Drivers/AlPcieSnoopFixDxe/AlPcieSnoopFixDxe.c",
 ]
 
-# Where scripts/stage_hal.py stages the shared Linux HAL inside a build tree
-# (#256). It is a BUILD ARTIFACT: if a copy of it ever appears under version
-# control, someone has checked in a derived tree and the drift this script
-# exists to catch is back, by a new route. Checked by path, so it fires even
-# on files whose basenames the baseline does not already know.
+# scripts/stage_hal.py output. A tracked copy means a derived tree was checked in.
 STAGED_DIR_NAME = "al_hal_shared"
+
+SUFFIXES = (".c", ".h")
 
 DEFINE_RE = re.compile(
     r"^\s*#\s*define\s+(\w+)(?:\([^)]*\))?\s+(.*?)\s*(?:/\*.*)?$", re.M
 )
 
 
-def check_no_staged_copy() -> list[str]:
-    """Fail if a staged (derived) HAL tree has been checked in.
-
-    stage_hal.py writes it read-only into the build tree and rewrites it every
-    build; a tracked copy means that was bypassed."""
-    tracked = subprocess.run(
-        ["git", "ls-files"],
+def git_ls(*paths: str) -> list[str]:
+    return subprocess.run(
+        ["git", "ls-files", *paths],
         cwd=REPO,
         capture_output=True,
         text=True,
         check=True,
         timeout=60,
     ).stdout.split()
-    offenders = [f for f in tracked if f"/{STAGED_DIR_NAME}/" in f]
-    if not offenders:
-        return []
+
+
+def sha(p: Path) -> str:
+    return hashlib.sha256(p.read_bytes()).hexdigest()[:16]
+
+
+def hal_files(root: Path) -> list[Path]:
+    return sorted(p for p in root.iterdir() if p.suffix in SUFFIXES)
+
+
+# ---- shared tree ----------------------------------------------------------
+
+
+def shared_names() -> set[str]:
+    base = REPO / SHARED_DIR
+    if not base.is_dir():
+        return set()
+    return {p.name for p in hal_files(base)}
+
+
+def check_shared_tree() -> list[str]:
+    """Checks 2-3: every module link is ../al_hal/<same name>, no orphan."""
+    problems: list[str] = []
+    shared = shared_names()
+    linked: set[str] = set()
+    shared_dir = REPO / SHARED_DIR
+
+    for p in hal_files(shared_dir) if shared_dir.is_dir() else []:
+        if p.is_symlink():
+            problems.append(f"  {SHARED_DIR}/{p.name} is itself a symlink - it must be the source")
+
+    for root in LINUX_TREES.values():
+        base = REPO / root
+        if not base.is_dir():
+            continue
+        for p in hal_files(base):
+            if not p.is_symlink():
+                continue
+            want = f"../al_hal/{p.name}"
+            got = os.readlink(p)
+            if got != want:
+                problems.append(f"  BAD SYMLINK {root}/{p.name} -> {got} (must be {want})")
+            elif not p.exists():
+                problems.append(f"  BAD SYMLINK {root}/{p.name} dangles: no {SHARED_DIR}/{p.name}")
+            else:
+                linked.add(p.name)
+
+    for name in sorted(shared - linked):
+        problems.append(f"  ORPHAN SHARED FILE {SHARED_DIR}/{name}: no module links to it")
+    return problems
+
+
+# ---- forks ----------------------------------------------------------------
+
+
+def collect_forks() -> dict[str, dict[str, str]]:
+    """basename -> {tree: hash} for REGULAR files present in 2+ trees."""
+    seen: dict[str, dict[str, str]] = {}
+    trees = {"al_hal": [SHARED_DIR]} | {t: [r] for t, r in LINUX_TREES.items()} | OTHER_TREES
+    for tree, roots in trees.items():
+        for root in roots:
+            base = REPO / root
+            if not base.is_dir():
+                continue
+            for p in base.rglob("*"):
+                if p.suffix not in SUFFIXES or p.is_symlink() or not p.is_file():
+                    continue
+                seen.setdefault(p.name, {})[tree] = sha(p)
+    return {k: v for k, v in seen.items() if len(v) > 1}
+
+
+def load_registry() -> dict[str, dict]:
+    if not REGISTRY.exists():
+        return {}
+    return json.loads(REGISTRY.read_text())
+
+
+def check_forks(cur: dict[str, dict[str, str]], reg: dict[str, dict]) -> list[str]:
+    problems: list[str] = []
+    for name in sorted(set(cur) | set(reg)):
+        n, entry = cur.get(name), reg.get(name)
+        if entry is None:
+            problems.append(
+                f"  UNREGISTERED FORK {name}: regular file in {', '.join(sorted(n))}\n"
+                f"      merge it into {SHARED_DIR}/ (one source, symlinks), or register it:\n"
+                f'      ./scripts/hal-drift-check.py --fork {name} --reason "why it cannot be merged"'
+            )
+            continue
+        if not entry.get("reason", "").strip():
+            problems.append(f"  FORK WITHOUT REASON {name}: every fork must say why")
+        if n is None:
+            problems.append(
+                f"  STALE FORK ENTRY {name}: no longer a regular file in 2+ trees "
+                f"- remove it from {REGISTRY.name}"
+            )
+            continue
+        # U-Boot carriers cannot be symlinked, so they may equal a module's copy.
+        linux = {t: h for t, h in n.items() if t not in OTHER_TREES}
+        if len(linux) > 1 and len(set(linux.values())) == 1:
+            problems.append(
+                f"  IDENTICAL FORK {name}: {', '.join(sorted(linux))} are byte-identical "
+                f"- move it to {SHARED_DIR}/ and link it"
+            )
+            continue
+        old = entry.get("trees", {})
+        if old != n:
+            changed = sorted(t for t in n if old.get(t) != n[t])
+            untouched = sorted(t for t in n if t not in changed)
+            problems.append(
+                f"  FORK EDITED in {', '.join(changed)}: {name}\n"
+                f"      NOT changed in: {', '.join(untouched) or '(none)'}"
+                f" - does the same fix apply there?"
+            )
+    return problems
+
+
+def write_registry(cur: dict[str, dict[str, str]], reg: dict[str, dict]) -> None:
+    """Record hashes for REGISTERED forks only; an unregistered fork stays a failure."""
+    out = {
+        name: {"reason": reg[name]["reason"], "trees": dict(sorted(cur[name].items()))}
+        for name in sorted(reg)
+        if name in cur
+    }
+    REGISTRY.write_text(json.dumps(out, indent=1, ensure_ascii=False) + "\n")
+
+
+# ---- unrelated host checks (unchanged by the single-source rule) ------------
+
+
+def check_no_staged_copy() -> list[str]:
+    offenders = [f for f in git_ls() if f"/{STAGED_DIR_NAME}/" in f]
     return [
         f"  CHECKED-IN STAGED HAL: {f}\n"
         f"      {STAGED_DIR_NAME}/ is a build artifact - stage it, do not commit it"
@@ -143,31 +242,20 @@ def check_no_staged_copy() -> list[str]:
 
 
 def check_no_edk2_hal_copy() -> list[str]:
-    """Fail if a checked-in HAL file reappears in the EDK2 package (#256 p3)."""
-    tracked = subprocess.run(
-        ["git", "ls-files", EDK2_HAL_DIR],
-        cwd=REPO,
-        capture_output=True,
-        text=True,
-        check=True,
-        timeout=60,
-    ).stdout.split()
     offenders = [
         f
-        for f in tracked
+        for f in git_ls(EDK2_HAL_DIR)
         if Path(f).name.startswith(("al_hal_", "al_init_", "al_serdes"))
         and Path(f).name not in EDK2_SHIM_FILES
     ]
     return [
         f"  CHECKED-IN EDK2 HAL: {f}\n"
-        "      AlpineHalLib builds the STAGED shared HAL"
-        " - stage it, do not commit it"
+        "      AlpineHalLib builds the STAGED shared HAL - stage it, do not commit it"
         for f in sorted(offenders)
     ]
 
 
 def defines(text: str) -> dict[str, str]:
-    """name -> value, whitespace-normalised. Comments and prose ignored."""
     return {
         m.group(1): " ".join(m.group(2).split())
         for m in DEFINE_RE.finditer(text)
@@ -176,7 +264,6 @@ def defines(text: str) -> dict[str, str]:
 
 
 def check_shared_header() -> list[str]:
-    """Compare the shared header's constants against the canonical Linux copy."""
     problems = []
     local = REPO / SHARED_HEADER
 
@@ -194,7 +281,6 @@ def check_shared_header() -> list[str]:
             )
 
     if not SHARED_HEADER_CANONICAL.is_file():
-        # A missing reference tree is not a failure - it is not in this repo.
         print(
             f"note: canonical copy absent ({SHARED_HEADER_CANONICAL}), value check skipped"
         )
@@ -204,131 +290,89 @@ def check_shared_header() -> list[str]:
     theirs = defines(SHARED_HEADER_CANONICAL.read_text())
     for name in sorted(set(ours) | set(theirs)):
         o, t = ours.get(name), theirs.get(name)
-        if o == t:
-            continue
-        problems.append(
-            f"  VALUE DIFFERS  {name}: {SHARED_HEADER}={o!r} vs Linux fork={t!r}"
-        )
+        if o != t:
+            problems.append(
+                f"  VALUE DIFFERS  {name}: {SHARED_HEADER}={o!r} vs Linux fork={t!r}"
+            )
     return problems
-
-
-def sha(p: Path) -> str:
-    return hashlib.sha256(p.read_bytes()).hexdigest()[:16]
-
-
-def collect() -> dict[str, dict[str, str]]:
-    """basename -> {tree: hash}, for basenames present in 2+ trees."""
-    seen: dict[str, dict[str, str]] = {}
-    for tree, roots in TREES.items():
-        for root in roots:
-            base = REPO / root
-            if not base.is_dir():
-                continue
-            for p in base.rglob("*"):
-                if p.suffix not in (".c", ".h") or not p.is_file():
-                    continue
-                seen.setdefault(p.name, {})[tree] = sha(p)
-    return {k: v for k, v in seen.items() if len(v) > 1}
-
-
-def agreement(hashes: dict[str, str]) -> list[list[str]]:
-    """Which trees agree with which - reported for context, not compared."""
-    by_hash: dict[str, list[str]] = {}
-    for tree, h in hashes.items():
-        by_hash.setdefault(h, []).append(tree)
-    return sorted([sorted(v) for v in by_hash.values()])
 
 
 def main() -> int:
     ap = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
     )
-    ap.add_argument(
-        "--update",
-        action="store_true",
-        help="re-record the baseline after an intended change",
-    )
-    ap.add_argument(
-        "--show",
-        metavar="BASENAME",
-        help="report which trees carry this file and whether they agree",
-    )
+    ap.add_argument("--update", action="store_true", help="re-record fork hashes after an intended edit")
+    ap.add_argument("--fork", metavar="NAME", help="register NAME as a fork (needs --reason)")
+    ap.add_argument("--reason", help="why the fork cannot be merged into modules/al_hal")
+    ap.add_argument("--show", metavar="BASENAME", help="which trees carry this file")
     args = ap.parse_args()
 
-    cur = collect()
+    cur = collect_forks()
+    reg = load_registry()
 
     if args.show:
-        h = cur.get(args.show)
-        if not h:
-            print(f"{args.show}: not shared by 2+ trees")
+        found = {
+            t: (REPO / r / args.show)
+            for t, r in ({"al_hal": SHARED_DIR} | LINUX_TREES).items()
+            if (REPO / r / args.show).exists()
+        }
+        if not found:
+            print(f"{args.show}: not in any Linux module")
             return 1
-        for grp in agreement(h):
-            print(f"  {'  ==  '.join(grp)}")
+        for t, p in found.items():
+            kind = f"-> {os.readlink(p)}" if p.is_symlink() else f"regular {sha(p)}"
+            print(f"  {t:8s} {kind}")
+        return 0
+
+    if args.fork:
+        if not (args.reason or "").strip():
+            print("--fork needs --reason: say why it cannot be merged")
+            return 1
+        if args.fork not in cur:
+            print(f"{args.fork}: not a regular file in 2+ trees - nothing to register")
+            return 1
+        reg[args.fork] = {"reason": args.reason.strip(), "trees": {}}
+        write_registry(cur, reg)
+        print(f"registered fork {args.fork}")
         return 0
 
     if args.update:
-        BASELINE.write_text(
-            json.dumps(
-                {k: dict(sorted(v.items())) for k, v in sorted(cur.items())}, indent=1
-            )
-            + "\n"
-        )
-        print(f"baseline updated: {len(cur)} shared files -> {BASELINE.name}")
+        unregistered = [n for n in cur if n not in reg]
+        if unregistered:
+            print("unregistered forks (merge them, or --fork NAME --reason ...):")
+            print("\n".join(f"  {n}" for n in unregistered))
+            return 1
+        dropped = sorted(n for n in reg if n not in cur)
+        write_registry(cur, reg)
+        print(f"fork registry updated: {len(cur)} forks -> {REGISTRY.name}")
+        if dropped:
+            print(f"dropped (no longer forks): {', '.join(dropped)}")
         return 0
 
-    if not BASELINE.exists():
-        print(f"FATAL: {BASELINE} missing - run --update once to record it")
-        return 1
-
-    old = json.loads(BASELINE.read_text())
-
-    problems = []
-    for name in sorted(set(old) | set(cur)):
-        o, n = old.get(name), cur.get(name)
-        if o == n:
-            continue
-        if o is None:
-            problems.append(f"  NEW SHARED FILE  {name}: {sorted(n)}")
-            continue
-        if n is None:
-            problems.append(f"  NO LONGER SHARED {name}")
-            continue
-        changed = sorted(t_ for t_ in n if o.get(t_) != n[t_])
-        untouched = sorted(t_ for t_ in n if t_ not in changed)
-        problems.append(
-            f"  CHANGED in {', '.join(changed)}: {name}\n"
-            f"      NOT changed in: {', '.join(untouched) or '(none)'}"
-            f" - does the same fix apply there?"
-        )
-
-    shared = check_shared_header()
-    if shared:
-        print(f"SHARED-HEADER DRIFT: {len(shared)} problem(s) in {SHARED_HEADER}\n")
-        print("\n".join(shared))
-        print()
-
+    problems = check_shared_tree() + check_forks(cur, reg)
+    other = []
+    shared_hdr = check_shared_header()
+    if shared_hdr:
+        other.append(f"SHARED-HEADER DRIFT: {len(shared_hdr)} problem(s) in {SHARED_HEADER}")
+        other += shared_hdr
     staged = check_no_staged_copy() + check_no_edk2_hal_copy()
     if staged:
-        print(f"STAGED HAL COMMITTED: {len(staged)} file(s)\n")
-        print("\n".join(staged))
-        print()
+        other.append(f"STAGED HAL COMMITTED: {len(staged)} file(s)")
+        other += staged
 
-    if problems:
-        print(f"HAL DRIFT: {len(problems)} change(s) vs the baseline (#218)\n")
-        print("\n".join(problems))
-        print(
-            "\nAnswer the sibling question for each, then record it:\n"
-            "  ./scripts/hal-drift-check.py --update"
-        )
-        return 1
-
-    if shared or staged:
+    if problems or other:
+        if problems:
+            print(f"HAL single-source violations: {len(problems)}\n")
+            print("\n".join(problems))
+            print()
+        if other:
+            print("\n".join(other))
         return 1
 
     print(
-        f"HAL drift: OK ({len(cur)} vendored files unchanged,"
-        f" {SHARED_HEADER} matches the Linux fork,"
-        f" no checked-in {STAGED_DIR_NAME}/)"
+        f"HAL drift: OK ({len(shared_names())} shared files in {SHARED_DIR}, "
+        f"all linked, no copies; {len(cur)} registered forks unchanged; "
+        f"{SHARED_HEADER} matches the Linux fork; no checked-in {STAGED_DIR_NAME}/)"
     )
     return 0
 

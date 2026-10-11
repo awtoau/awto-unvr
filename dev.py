@@ -102,12 +102,13 @@ STEPS: dict[str, tuple[str, list[str], bool]] = {
     ),
     "fmt": ("reformat in place", ["ruff", "format", "."], False),
     "run": ("build + execute (n/a)", [], True),
-    # The al_* HAL is vendored 4x at 3 vintages (#218); a fix in one tree is
-    # not a fix everywhere. Compares per-tree content hashes against a
-    # baseline, so the known vintage gap stays silent and only NEW divergence
-    # fails. Intended changes: ./scripts/hal-drift-check.py --update
+    # modules/al_hal/ is the single source for every HAL file two or more Linux
+    # modules share; modules link to it. A basename that is a regular file in
+    # 2+ trees is a fork and must be registered with a reason in
+    # scripts/hal-forks.json (#264). Registered forks keep a content hash, so an
+    # edit to one copy names the copies that did not change.
     "hal-drift": (
-        "al_* HAL divergence across the 4 vendored trees (#218)",
+        "al_* HAL single-source rule: shared files linked, forks registered (#264)",
         [sys.executable, "scripts/hal-drift-check.py"],
         True,
     ),
