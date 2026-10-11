@@ -28,6 +28,7 @@
 #include <linux/platform_device.h>
 #include <linux/sizes.h>
 #include <linux/slab.h>
+#include <linux/spinlock.h>
 
 #include "al_hal_nand.h"
 
@@ -117,6 +118,12 @@ struct al_nand_data {
 
 	struct completion complete;
 	int irq;
+
+	/* nfc_int_en is read-modify-written by the ISR and by waiters; irq_lock
+	 * serialises the HAL's int_enable()/int_disable(), irq_armed is the set
+	 * of bits a waiter currently wants. See "interrupts". */
+	spinlock_t irq_lock;
+	u32 irq_armed;
 
 	/* Ready/busy bound, derived from the chip's ONFI tPROG/tBERS in
 	 * attach_chip(). See AL_NAND_RDY_POLL_FLOOR_MS. */
@@ -223,14 +230,40 @@ static int al_nand_err_report(struct al_nand_data *nand, int ret)
 /******************************* interrupts ***********************************/
 /******************************************************************************/
 
+/* The HAL's nfc_int_en update is a read-modify-write: always under irq_lock. */
+static void al_nand_irq_arm(struct al_nand_data *nand, u32 mask)
+{
+	unsigned long flags;
+
+	spin_lock_irqsave(&nand->irq_lock, flags);
+	nand->irq_armed |= mask;
+	al_nand_int_enable(&nand->nand_obj, mask);
+	spin_unlock_irqrestore(&nand->irq_lock, flags);
+}
+
+static void al_nand_irq_disarm(struct al_nand_data *nand, u32 mask)
+{
+	unsigned long flags;
+
+	spin_lock_irqsave(&nand->irq_lock, flags);
+	nand->irq_armed &= ~mask;
+	al_nand_int_disable(&nand->nand_obj, mask);
+	spin_unlock_irqrestore(&nand->irq_lock, flags);
+}
+
 static irqreturn_t al_nand_isr(int irq, void *dev_id)
 {
 	struct al_nand_data *nand = dev_id;
-	u32 irq_status;
+	u32 pending;
 
-	irq_status = al_nand_int_status_get(&nand->nand_obj);
-	al_nand_int_disable(&nand->nand_obj, irq_status);
-	complete(&nand->complete);
+	spin_lock(&nand->irq_lock);
+	pending = al_nand_int_status_get(&nand->nand_obj) & nand->irq_armed;
+	if (pending) {
+		nand->irq_armed &= ~pending;
+		al_nand_int_disable(&nand->nand_obj, pending);
+		complete(&nand->complete);
+	}
+	spin_unlock(&nand->irq_lock);
 
 	return IRQ_HANDLED;
 }
@@ -238,12 +271,9 @@ static irqreturn_t al_nand_isr(int irq, void *dev_id)
 /*
  * Wait until one of irq_mask is actually asserted.
  *
- * The ISR is shared and completes on ANY NAND interrupt, so a bare
- * wait_for_completion() returns on the wrong one. Observed: a 4-byte READID
- * returned success with status 0x145 (CMD_BUF_EMPTY | DATA_BUF_EMPTY |
- * BUF_WRRDY | WRRD_DONE) - BUF_RDRDY clear and the data buffer EMPTY - so the
- * caller memcpy'd a stale buffer and read the same 4 bytes for every address.
- * The status register is the truth; the completion is only a wakeup.
+ * The completion is only a wakeup, for any armed bit. The status register is
+ * the truth: a bare wait_for_completion() once returned a READID with BUF_RDRDY
+ * clear, and the caller read the same stale 4 bytes for every address.
  */
 static int al_nand_wait_for_irq(struct al_nand_data *nand, u32 irq_mask)
 {
@@ -251,12 +281,18 @@ static int al_nand_wait_for_irq(struct al_nand_data *nand, u32 irq_mask)
 		jiffies + msecs_to_jiffies(AL_NAND_IRQ_TIMEOUT_MS);
 	u32 status;
 
-	al_nand_int_enable(&nand->nand_obj, irq_mask);
+	/* Nothing armed can complete() between waits (see disarm below), so a
+	 * count left over from the previous wait is stale. */
+	reinit_completion(&nand->complete);
+	al_nand_irq_arm(nand, irq_mask);
 
 	for (;;) {
 		status = al_nand_int_status_get(&nand->nand_obj);
-		if (status & irq_mask)
+		if (status & irq_mask) {
+			/* Do not leave the bit enabled for the next operation. */
+			al_nand_irq_disarm(nand, irq_mask);
 			return 0;
+		}
 
 		if (time_after(jiffies, deadline))
 			break;
@@ -268,7 +304,7 @@ static int al_nand_wait_for_irq(struct al_nand_data *nand, u32 irq_mask)
 	dev_err(nand->dev,
 		"irq timeout after %u ms: wanted 0x%x, status 0x%x\n",
 		AL_NAND_IRQ_TIMEOUT_MS, irq_mask, status);
-	al_nand_int_disable(&nand->nand_obj, irq_mask);
+	al_nand_irq_disarm(nand, irq_mask);
 
 	return -ETIMEDOUT;
 }
@@ -1221,7 +1257,8 @@ static int al_nand_probe(struct platform_device *pdev)
 	}
 
 	init_completion(&nand->complete);
-	al_nand_int_disable(&nand->nand_obj, 0xffff);
+	spin_lock_init(&nand->irq_lock);
+	al_nand_irq_disarm(nand, 0xffff);
 
 	ret = devm_request_irq(dev, nand->irq, al_nand_isr, IRQF_SHARED,
 			       AL_NAND_NAME, nand);

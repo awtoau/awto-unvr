@@ -19,6 +19,7 @@
 
 /* ------------------------------------------------------------ kshim ---- */
 int k_warn_count, k_err_count;
+static int k_locks_held;
 unsigned long long k_now_us;
 struct nand_ecc_props k_ecc_req = { .strength = 8, .step_size = 512 };
 static int quiet;
@@ -43,6 +44,7 @@ void k_spin_lock(spinlock_t *l)
 		abort();
 	}
 	l->held = 1;
+	k_locks_held++;
 }
 
 void k_spin_unlock(spinlock_t *l)
@@ -52,6 +54,7 @@ void k_spin_unlock(spinlock_t *l)
 		abort();
 	}
 	l->held = 0;
+	k_locks_held--;
 }
 
 int k_spin_held(spinlock_t *l) { return l->held; }
@@ -106,8 +109,10 @@ static struct {
 	int ncmd;
 	int data_requests;
 
-	/* hooks */
-	spinlock_t *int_en_lock; /* if set, writes to nfc_int_en must hold it */
+	/* nfc_int_en accounting: every write must be under some spinlock */
+	int int_en_writes, int_en_unlocked, isr_calls;
+	unsigned int read_delay_us; /* BUF_RDRDY rises this long after the request */
+	unsigned long long data_ready_at_us;
 } ctl;
 
 static irqreturn_t (*k_irq_handler)(int, void *);
@@ -123,7 +128,7 @@ static unsigned int stat_now(void)
 
 	if (k_now_us >= ctl.fifo_retire_us)
 		s |= AL_NAND_INTR_STATUS_CMD_BUF_EMPTY;
-	if (ctl.rd_head != ctl.rd_tail)
+	if (ctl.rd_head != ctl.rd_tail && k_now_us >= ctl.data_ready_at_us)
 		s |= AL_NAND_INTR_STATUS_BUF_RDRDY;
 	s |= AL_NAND_INTR_STATUS_BUF_WRRDY;
 	return s;
@@ -143,6 +148,7 @@ static void rd_fill(unsigned int n)
 	unsigned int i;
 
 	ctl.data_requests++;
+	ctl.data_ready_at_us = k_now_us + ctl.read_delay_us;
 	if (ctl.fail_reads_from && ctl.page_reads >= (unsigned int)ctl.fail_reads_from)
 		return; /* BUF_RDRDY never rises: the irq wait times out */
 
@@ -282,9 +288,10 @@ void host_nand_wr32(volatile void *a, uint32_t v)
 		ctl.latched &= ~v; /* write-1-to-clear */
 		return;
 	}
-	if (off == REG(nfc_int_en) && ctl.int_en_lock && !k_spin_held(ctl.int_en_lock)) {
-		k_log("BUG", "nfc_int_en written without irq_lock");
-		k_err_count += 1000;
+	if (off == REG(nfc_int_en)) {
+		ctl.int_en_writes++;
+		if (!k_locks_held)
+			ctl.int_en_unlocked++;
 	}
 	*(volatile uint32_t *)a = v;
 }
@@ -293,8 +300,10 @@ static void fire_irq_if_pending(void)
 {
 	uint32_t en = *(uint32_t *)(ctl.regs + REG(nfc_int_en));
 
-	if (k_irq_handler && (stat_now() & en))
+	if (k_irq_handler && (stat_now() & en)) {
+		ctl.isr_calls++;
 		k_irq_handler(k_irq_ret, k_irq_dev);
+	}
 }
 
 void udelay(unsigned long us) { k_now_us += us; }
@@ -303,6 +312,10 @@ void complete(struct completion *c) { c->done++; }
 
 unsigned long wait_for_completion_timeout(struct completion *c, unsigned long j)
 {
+	/* sleep until the data arrives (if sooner), then take the interrupt */
+	if (ctl.data_ready_at_us > k_now_us &&
+	    ctl.data_ready_at_us - k_now_us < (unsigned long long)j * 1000)
+		k_now_us = ctl.data_ready_at_us;
 	fire_irq_if_pending(); /* the interrupt the controller would raise */
 	if (c->done) {
 		c->done--;
@@ -702,7 +715,6 @@ static int do_probe(void)
 	k_now_us = 1000000;
 	k_err_count = k_warn_count = 0;
 	ctl.page_data_byte = 0xff;
-	ctl.int_en_lock = NULL;
 
 	/* what the bootloader left in the PBS: 4 KiB page, BCH-8 / 512 B, ECC on */
 	xp.pageSize = 4096;
@@ -952,6 +964,39 @@ static int t_write_byte_is_a_data_cycle(void)
 	return 0;
 }
 
+/* #303: the ISR and the waiter both read-modify-write nfc_int_en. */
+static int t_int_en_rmw_is_locked(void)
+{
+	if (do_probe())
+		return 1;
+	bind();
+	ctl.read_delay_us = 30; /* the ISR path: the bit rises after the wait starts */
+	ctl.int_en_writes = ctl.int_en_unlocked = 0;
+	chip->legacy.cmdfunc(chip, NAND_CMD_STATUS, -1, -1);
+	(void)chip->legacy.read_byte(chip);
+
+	CHECK(ctl.int_en_writes >= 2, "the wait enabled and disabled nfc_int_en");
+	CHECK(ctl.int_en_unlocked == 0, "every nfc_int_en update ran under a lock");
+	CHECK(ctl.isr_calls >= 1, "the interrupt was taken");
+	CHECK(nand->op_err == 0, "the interrupt-driven read succeeded");
+	return 0;
+}
+
+static int t_wait_leaves_nothing_armed(void)
+{
+	uint32_t en;
+
+	if (do_probe())
+		return 1;
+	bind();
+	chip->legacy.cmdfunc(chip, NAND_CMD_STATUS, -1, -1);
+	(void)chip->legacy.read_byte(chip); /* data already there: no interrupt needed */
+	en = *(uint32_t *)(ctl.regs + REG(nfc_int_en));
+
+	CHECK(en == 0, "no interrupt bit stays enabled after a successful wait");
+	return 0;
+}
+
 static const struct {
 	const char *name;
 	int (*fn)(void);
@@ -969,6 +1014,8 @@ static const struct {
 	{ "setup_interface_check_only", t_setup_interface_check_only },
 	{ "setup_interface_programs_controller", t_setup_interface_programs_controller },
 	{ "write_byte_is_a_data_cycle", t_write_byte_is_a_data_cycle },
+	{ "int_en_rmw_is_locked", t_int_en_rmw_is_locked },
+	{ "wait_leaves_nothing_armed", t_wait_leaves_nothing_armed },
 };
 
 int main(int argc, char **argv)

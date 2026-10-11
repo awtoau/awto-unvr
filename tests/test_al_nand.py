@@ -46,6 +46,8 @@ CASES = [
     "setup_interface_check_only",
     "setup_interface_programs_controller",
     "write_byte_is_a_data_cycle",
+    "int_en_rmw_is_locked",
+    "wait_leaves_nothing_armed",
 ]
 
 
