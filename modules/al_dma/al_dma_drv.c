@@ -143,6 +143,40 @@ static inline struct al_dma_sw_desc *al_dma_get_sw_desc(struct al_dma_chan *ch)
 
 /* ======== DMA Engine Callbacks ======== */
 
+static enum dmaengine_tx_result al_dma_tx_result(enum al_dma_result res)
+{
+	switch (res) {
+	case AL_DMA_RES_READ_FAILED:
+		return DMA_TRANS_READ_FAILED;
+	case AL_DMA_RES_ABORTED:
+		return DMA_TRANS_ABORTED;
+	default:
+		return DMA_TRANS_NOERROR;
+	}
+}
+
+/* Unmap, tell the client, drop its references. Unmap first and clear the
+ * callbacks after: a recycled slot otherwise keeps the last op's callback
+ * and async_tx's unmap refcount leaks (#278). callback_result wins over
+ * callback, as dmaengine_desc_callback_invoke() (drivers/dma/dmaengine.h). */
+static void al_dma_desc_finish(struct al_dma_sw_desc *desc,
+			       enum al_dma_result res)
+{
+	struct dmaengine_result result = {
+		.result = al_dma_tx_result(res),
+		.residue = res == AL_DMA_RES_OK ? 0 : desc->len,
+	};
+
+	dma_descriptor_unmap(&desc->txd);
+	if (desc->txd.callback_result)
+		desc->txd.callback_result(desc->txd.callback_param, &result);
+	else if (desc->txd.callback)
+		desc->txd.callback(desc->txd.callback_param);
+	desc->txd.callback = NULL;
+	desc->txd.callback_result = NULL;
+	dma_run_dependencies(&desc->txd);
+}
+
 static enum dma_status al_dma_tx_status(struct dma_chan *c,
 					dma_cookie_t cookie,
 					struct dma_tx_state *txstate)
@@ -269,18 +303,8 @@ static void al_dma_cleanup_tasklet(struct tasklet_struct *t)
 			/* Cookie 0: slot prepped but never submitted, no client
 			 * to tell and completed_cookie must not move
 			 * (ioat/dma.c:625). */
-			if (cookie >= DMA_MIN_COOKIE) {
-				/* Unmap before the callback, then clear the
-				 * fields: a recycled slot otherwise keeps the
-				 * last op's callback and async_tx's unmap
-				 * refcount leaks (#278). Pattern: ioat/dma.c:627. */
-				dma_descriptor_unmap(&desc->txd);
-				if (desc->txd.callback)
-					desc->txd.callback(desc->txd.callback_param);
-				desc->txd.callback = NULL;
-				desc->txd.callback_result = NULL;
-				dma_run_dependencies(&desc->txd);
-			}
+			if (cookie >= DMA_MIN_COOKIE)
+				al_dma_desc_finish(desc, al_dma_status_result(comp_status));
 
 			/* Free the slot only now: prep sees it as taken while the
 			 * callback runs, so a full ring cannot re-prep it under
@@ -544,6 +568,7 @@ al_dma_prep_dma_memcpy(struct dma_chan *c, dma_addr_t dest,
 
 	sw_desc->tx_descs_count = xaction.tx_descs_count;
 	sw_desc->is_memset = false;
+	sw_desc->len = len;
 
 	dma_async_tx_descriptor_init(&sw_desc->txd, c);
 	sw_desc->txd.tx_submit = al_dma_tx_submit;
@@ -629,6 +654,7 @@ al_dma_prep_dma_xor(struct dma_chan *c, dma_addr_t dest,
 
 	sw_desc->tx_descs_count = xaction.tx_descs_count;
 	sw_desc->is_memset = false;
+	sw_desc->len = len;
 
 	dma_async_tx_descriptor_init(&sw_desc->txd, c);
 	sw_desc->txd.tx_submit = al_dma_tx_submit;
@@ -735,6 +761,7 @@ al_dma_prep_dma_pq(struct dma_chan *c, dma_addr_t *dst,
 
 	sw_desc->tx_descs_count = xaction.tx_descs_count;
 	sw_desc->is_memset = false;
+	sw_desc->len = len;
 
 	dma_async_tx_descriptor_init(&sw_desc->txd, c);
 	sw_desc->txd.tx_submit = al_dma_tx_submit;

@@ -47,6 +47,7 @@ struct al_dma_sw_desc {
 	struct list_head		node;
 	int				tx_descs_count;
 	bool				is_memset;
+	size_t				len;	/* residue reported if the op fails */
 };
 
 /* Per-channel data */

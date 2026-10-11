@@ -61,4 +61,27 @@ static inline int al_dma_pq_op(bool disable_p, bool disable_q)
 	return AL_RAID_OP_PQ_CALC;
 }
 
+/* What a completion status means for the client. */
+enum al_dma_result {
+	AL_DMA_RES_OK,
+	AL_DMA_RES_READ_FAILED,
+	AL_DMA_RES_ABORTED,
+};
+
+#define AL_DMA_STATUS_FAIL_MASK \
+	(AL_RAID_BUS_PARITY_ERROR | AL_RAID_SOURCE_LEN_ERROR | \
+	 AL_RAID_CMD_DECODE_ERROR | AL_RAID_INTERNAL_ERROR)
+
+/* P/Q_VAL_ERROR are validate-op mismatches, not failures, and al_dma
+ * advertises no validate op. A rejected command or an internal error leaves
+ * the destination unusable: ABORTED. */
+static inline enum al_dma_result al_dma_status_result(unsigned int status)
+{
+	if (status & AL_RAID_BUS_PARITY_ERROR)
+		return AL_DMA_RES_READ_FAILED;
+	if (status & AL_DMA_STATUS_FAIL_MASK)
+		return AL_DMA_RES_ABORTED;
+	return AL_DMA_RES_OK;
+}
+
 #endif /* __AL_DMA_LOGIC_H__ */

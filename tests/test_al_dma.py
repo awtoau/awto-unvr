@@ -47,6 +47,7 @@ CASES = [
     "len_limits",
     "pq_cap_gate",
     "slot_held_through_callback",
+    "error_status",
 ]
 
 
@@ -97,7 +98,7 @@ def harness() -> Path:
 def test_al_dma_host(harness: Path, case: str):
     r = subprocess.run([str(harness), case], capture_output=True, text=True)
     out = r.stdout + r.stderr
-    assert "FAIL" not in r.stdout, out
+    assert not re.search(r"^FAIL", r.stdout, re.M), out
     assert r.returncode == 0, out
     assert r.stdout.count("PASS") >= 1, out
 

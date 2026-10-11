@@ -690,6 +690,59 @@ static int t_slot_held_through_callback(void)
 	return fails;
 }
 
+/* #287: an error status is reported, not swallowed. callback_result gets the
+ * result and the full length as residue; a legacy callback is still called
+ * (as dmaengine_desc_callback_invoke() does), the cookie still completes. */
+static int t_error_status(void)
+{
+	static struct client c[4];
+	dma_cookie_t ck[4];
+	unsigned int st;
+	int i, bad = 0;
+
+	quiet = 1;
+	env_init();
+	alloc_chan(0);
+	emu_script(0, AL_RAID_CMD_DECODE_ERROR);	/* 0x10: the #169 status */
+	emu_script(0, AL_RAID_BUS_PARITY_ERROR);
+	emu_script(0, AL_RAID_P_VAL_ERROR);	/* validate bit: not a failure */
+	emu_script(0, 0);
+	ck[0] = submit_copy(0, &c[0], 4096, true);
+	ck[1] = submit_copy(0, &c[1], 2048, true);
+	ck[2] = submit_copy(0, &c[2], 1024, false);
+	ck[3] = submit_copy(0, &c[3], 512, true);
+	D->dma_dev.device_issue_pending(&chan(0)->chan);
+	run_tasklet(0, 8);
+	quiet = 0;
+
+	CHECK(c[0].cb_result == 1 && c[0].last_result == DMA_TRANS_ABORTED,
+	      "cmd-decode error: callback_result ABORTED");
+	CHECK(c[0].last_residue == 4096, "failed op reports its length as residue");
+	CHECK(c[1].cb_result == 1 && c[1].last_result == DMA_TRANS_READ_FAILED,
+	      "bus parity: callback_result READ_FAILED");
+	CHECK(c[2].cb == 1, "legacy callback still called on a failed op");
+	CHECK(c[3].cb_result == 1 && c[3].last_result == DMA_TRANS_NOERROR &&
+	      c[3].last_residue == 0, "clean op: NOERROR, residue 0");
+	for (i = 0; i < 4; i++)
+		bad += status_of(0, ck[i]) != DMA_COMPLETE;
+	CHECK(bad == 0, "all four cookies complete");
+	CHECK(chan(0)->chan.completed_cookie == ck[3], "completed_cookie at last op");
+	CHECK(atomic64_read(&D->stat_errors) == 3, "3 non-zero statuses counted");
+	CHECK(g_fault[AL_DMA_FAULT_COMPLETION] == 3, "3 completion faults raised");
+
+	/* the pure mapping, all 64 combinations of the 6 status bits */
+	for (st = 0; st < 64; st++) {
+		enum al_dma_result r = al_dma_status_result(st);
+		int fail = !!(st & AL_DMA_STATUS_FAIL_MASK);
+
+		if ((r != AL_DMA_RES_OK) != fail ||
+		    (r == AL_DMA_RES_READ_FAILED) != !!(st & AL_RAID_BUS_PARITY_ERROR))
+			bad++;
+	}
+	CHECK(bad == 0, "status -> result mapping holds for every status value");
+	return fails;
+}
+
 struct test { const char *name; int (*fn)(void); };
 static const struct test tests[] = {
 	{ "smoke", t_smoke },
@@ -698,6 +751,7 @@ static const struct test tests[] = {
 	{ "len_limits", t_len_limits },
 	{ "pq_cap_gate", t_pq_cap_gate },
 	{ "slot_held_through_callback", t_slot_held_through_callback },
+	{ "error_status", t_error_status },
 };
 
 int main(int argc, char **argv)
