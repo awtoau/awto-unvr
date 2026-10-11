@@ -3769,6 +3769,10 @@ al_eth_rx_poll(struct napi_struct *napi, int budget)
 	unsigned int small_copy_len_pkt = 0;
 	unsigned int rx_dropped = 0;
 
+	/* netpoll polls with budget 0 for TX cleaning only (ena_io_poll()) */
+	if (unlikely(budget <= 0))
+		return 0;
+
 	netdev_dbg(adapter->netdev, "%s qid %d\n", __func__, qid);
 
 	do {

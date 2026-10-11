@@ -374,7 +374,19 @@ static void poll_clean_frames_not_dropped(void)
 	CHECK(ad.rx_ring[0].rx_stats.dropped == 0 && ad.rx_ring[0].rx_stats.packets == 2, "clean frames miscounted");
 }
 
+/* netpoll's budget-0 poll must not drain RX or touch NAPI state (#314) */
+static void poll_zero_budget_does_nothing(void)
+{
+	poll_setup(1);
+	add_pkt(0, 1000, 1);
+	add_pkt(0, 1000, 1);
+	CHECK(al_eth_rx_poll(&napi_wrap.napi, 0) == 0, "work reported on a zero budget");
+	CHECK(script_pos == 0, "consumed %d completions on a zero budget", script_pos);
+	CHECK(napi_wrap.napi.completes == 0 && unmask_writes == 0 && refill_calls == 0, "touched NAPI/ring state");
+}
+
 static const struct { const char *name; void (*fn)(void); } cases[] = {
+	{ "poll_zero_budget_does_nothing", poll_zero_budget_does_nothing },
 	{ "poll_error_frames_counted_as_dropped", poll_error_frames_counted_as_dropped },
 	{ "poll_clean_frames_not_dropped", poll_clean_frames_not_dropped },
 	{ "short_refill_completes", short_refill_completes },

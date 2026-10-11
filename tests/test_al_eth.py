@@ -158,6 +158,7 @@ RX_CASES = [
     "watchdog_rearms_only_while_up",
     "poll_error_frames_counted_as_dropped",
     "poll_clean_frames_not_dropped",
+    "poll_zero_budget_does_nothing",
 ]
 
 
