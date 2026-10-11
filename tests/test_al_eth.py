@@ -268,3 +268,43 @@ def test_al_eth_udma_hal_header_marks_must_check():
         assert re.search(rf"__must_check\s+int\s+{fn}\(", hdr), (
             f"{fn} lacks __must_check"
         )
+
+
+# ---- #297: TX csum/TSO offload only for what the MAC can do -------------------
+
+TXCSUM_CASES = [
+    "v4_tcp_offloaded",
+    "v4_udp_offloaded",
+    "v6_tcp_offloaded",
+    "v4_tso_offloaded",
+    "v6_exthdr_falls_back_to_software",
+    "unknown_l4_falls_back",
+    "encapsulated_falls_back",
+    "fallback_failure_is_reported",
+    "gso_unsupported_is_dropped",
+    "no_offload_wanted_is_untouched",
+    "fc_keeps_features_for_supported",
+    "fc_strips_csum_and_gso_for_unsupported",
+]
+
+
+@pytest.fixture(scope="module")
+def txcsum_harness() -> Path:
+    src = main_c()
+    funcs = "\n\n".join(
+        extract_function(src, n)
+        for n in ("al_eth_tx_l4_proto", "al_eth_features_check", "al_eth_tx_csum")
+    )
+    return build("txcsum", "al_eth_txcsum_host.c", {"txcsum_funcs": funcs})
+
+
+@pytest.mark.parametrize("case", TXCSUM_CASES)
+def test_tx_offload_only_for_supported_protocols(txcsum_harness, case):
+    assert f"PASS {case}" in run(txcsum_harness, case)
+
+
+def test_features_check_is_wired_into_netdev_ops():
+    ops = re.search(
+        r"struct net_device_ops al_eth_netdev_ops = \{.*?\};", main_c(), re.S
+    )
+    assert ops and ".ndo_features_check" in ops.group(0)

@@ -5474,35 +5474,89 @@ static int al_eth_tx_tso_mss_fix(struct sk_buff *skb, u32 orig_mss)
 	return 0;
 }
 
+/**
+ * al_eth_tx_l4_proto - L4 protocol the MAC can checksum for this skb, 0 if none
+ *
+ * IPv6 reads nexthdr, which is an extension header's type when there is one
+ * (no csum offload past extension headers), and tunnels are not parsed.
+ */
+static u8 al_eth_tx_l4_proto(const struct sk_buff *skb)
+{
+	u8 proto;
+
+	if (skb->encapsulation)
+		return 0;
+
+	switch (ip_hdr(skb)->version) {
+	case IPVERSION:
+		proto = ip_hdr(skb)->protocol;
+		break;
+	case 6:
+		proto = ipv6_hdr(skb)->nexthdr;
+		break;
+	default:
+		return 0;
+	}
+
+	return (proto == IPPROTO_TCP || proto == IPPROTO_UDP) ? proto : 0;
+}
+
+/* Offload TCP/UDP csum and TCP segmentation only; anything else is checksummed
+ * (or segmented) by the stack before it gets here, as igb_features_check()
+ * strips features per skb. */
+static netdev_features_t al_eth_features_check(struct sk_buff *skb,
+					       struct net_device *dev,
+					       netdev_features_t features)
+{
+	u8 l4;
+
+	if (skb->ip_summed != CHECKSUM_PARTIAL && !skb_is_gso(skb))
+		return features;
+
+	l4 = al_eth_tx_l4_proto(skb);
+	if (l4 == IPPROTO_TCP || (l4 == IPPROTO_UDP && !skb_is_gso(skb)))
+		return features;
+
+	return features & ~(NETIF_F_CSUM_MASK | NETIF_F_GSO_MASK);
+}
+
 static int
 al_eth_tx_csum(struct al_eth_ring *tx_ring, struct al_eth_tx_buffer *tx_info,
 	struct al_eth_pkt *hal_pkt, struct sk_buff *skb)
 {
 	u32 mss = skb_shinfo(skb)->gso_size;
-	u8 l4_protocol = 0;
+	u8 l4_protocol;
 	int rc;
 
 	if ((skb->ip_summed == CHECKSUM_PARTIAL) || mss) {
 		struct al_eth_meta_data *meta = &tx_ring->hal_meta;
+
+		l4_protocol = al_eth_tx_l4_proto(skb);
+		if (!l4_protocol || (mss && l4_protocol != IPPROTO_TCP)) {
+			/* al_eth_features_check() routes these to the stack, so
+			 * this is the backstop. A GSO skb cannot be checksummed
+			 * here (skb_checksum_help() refuses it): drop it. Same
+			 * fallback as skb_tx_csum() in mv643xx_eth.c. */
+			if (mss)
+				return -EOPNOTSUPP;
+			rc = skb_checksum_help(skb);
+			if (rc)
+				return rc;
+			hal_pkt->meta = NULL;
+			return 0;
+		}
+
 		if (mss)
 			hal_pkt->flags |= AL_ETH_TX_FLAGS_TSO|AL_ETH_TX_FLAGS_L4_CSUM;
 		else
 			hal_pkt->flags |= AL_ETH_TX_FLAGS_L4_CSUM|AL_ETH_TX_FLAGS_L4_PARTIAL_CSUM;
 
-		switch (ip_hdr(skb)->version) {
-		case IPVERSION:
+		if (ip_hdr(skb)->version == IPVERSION) {
 			hal_pkt->l3_proto_idx = AL_ETH_PROTO_ID_IPv4;
 			if (mss)
 				hal_pkt->flags |= AL_ETH_TX_FLAGS_IPV4_L3_CSUM;
-			l4_protocol = ip_hdr(skb)->protocol;
-			break;
-		case 6:
+		} else {
 			hal_pkt->l3_proto_idx = AL_ETH_PROTO_ID_IPv6;
-			/* TODO: add support for csum offloading for ipv6 with options */
-			l4_protocol = ipv6_hdr(skb)->nexthdr;
-			break;
-		default:
-			break;
 		}
 
 		if (l4_protocol == IPPROTO_TCP) {
@@ -5516,12 +5570,9 @@ al_eth_tx_csum(struct al_eth_ring *tx_ring, struct al_eth_tx_buffer *tx_info,
 					return rc;
 				}
 			}
-		} else if (l4_protocol == IPPROTO_UDP)
+		} else {
 			hal_pkt->l4_proto_idx = AL_ETH_PROTO_ID_UDP;
-		else
-			/* TODO: Need to add support for ipv6 when nexthdr is an ipv6 option */
-			pr_warn("%s: l4 protocol isn't TCP(6) or UDP(17). proto:%d\n",
-				__func__, l4_protocol);
+		}
 
 		if (skb->protocol == __constant_htons(ETH_P_8021Q))
 			hal_pkt->source_vlan_count = 1;
@@ -5532,16 +5583,8 @@ al_eth_tx_csum(struct al_eth_ring *tx_ring, struct al_eth_tx_buffer *tx_info,
 		meta->l3_header_len = skb_network_header_len(skb);
 		meta->l3_header_offset = skb_network_offset(skb) -
 			(VLAN_HLEN * hal_pkt->source_vlan_count);
-		/* tcp_hdr(skb)->doff is only meaningful for TCP - UDP's header
-		 * is a fixed 8 bytes with no doff-like field at all, so
-		 * reading it there was reinterpreting bytes 4 bytes INTO the
-		 * UDP payload as a TCP data-offset nibble (found live: this
-		 * fed a payload-content-dependent garbage value straight into
-		 * the HW descriptor's L4-checksum meta bits for every UDP
-		 * packet under checksum offload - see #121). Only TCP needs
-		 * this field (per the original comment, and per its only
-		 * consumer, TSO, which is TCP-only in this driver).
-		 */
+		/* doff is a TCP field; UDP has no such field (reading it fed
+		 * payload bytes into the descriptor, #121). */
 		meta->l4_header_len = (l4_protocol == IPPROTO_TCP) ?
 			tcp_hdr(skb)->doff : 0;
 		meta->mss_idx_sel = 0; /* TODO: check how to select MSS */
@@ -5840,6 +5883,7 @@ static const struct net_device_ops al_eth_netdev_ops = {
 	.ndo_open		= al_eth_open,
 	.ndo_stop		= al_eth_close,
 	.ndo_start_xmit		= al_eth_start_xmit,
+	.ndo_features_check	= al_eth_features_check,
 	.ndo_select_queue	= al_eth_select_queue,
 	.ndo_get_stats64	= al_eth_get_stats64,
 	.ndo_eth_ioctl		= al_eth_ioctl,
