@@ -272,3 +272,67 @@ Measured 2026-10-11 against `/mnt/2tb/unvr-port-refs/linux-v7.3-fresh` (v7.3-rc6
 - Hardware behaviour for any #291 length, for `l4_proto_idx == 0` + `L4_CSUM` (#297), and for `T_VALID` low (#294).
 - What sets a nonzero RX completion status (#287).
 - Whether al_nand overwriting the PBS-decoded BCH strength with the ONFI requirement (`al_nand_main.c:945-958`) can differ from the bootloader on another board (equal on this one: 8 bit / 512 B).
+
+## al_ssm port review
+
+Method: three-way diff of the vendor 4.1.37 `drivers/crypto/al`, the 6.12 port (`linux-alpine-v2` `72f1817` before, `e9762bc` after, 2026-04-15, same author) and `modules/al_ssm/al_ssm_main.c` at `6bd513f`. Question per change: did the rewrite keep an invariant the vendor relied on (the question al_dma failed, #285/#286). Static only; box not touched; reviewed 2026-10-11.
+
+### What `e9762bc` changed
+- Sync driver -> async: one bounce-buffer op per call, 1000 ms spin (`72f1817` `:62`, `:379-403`) -> `ASYNC` alg (`e9762bc` `:597`), 64-deep in-flight cap (`:69`), `pending` list, 4096-deep private backlog, inline 500 us spin (`:224`), delayed-work poller at 100 us (`:59`).
+- Rings: `72f1817` passed `cdesc_base = desc_base` for TX and RX (`:646`, `:655`), so the engine wrote completions over submission descriptors. `e9762bc` allocates four separate rings (`:641-652`). Vendor always had separate rings: this was a port-introduced defect, fixed here.
+- `72f1817` (same day) moved `hw_sa` from the stack to `dma_alloc_coherent` (`:323`).
+- Commit message says "Retry with backoff (10 attempts)". No such code exists in the diff; `AL_SSM_SUBMIT_RETRIES` was defined and unused.
+- Everything after `e9762bc` in the port repo is al_eth / dts / reboot. Our `al_ssm_main.c` is `e9762bc` plus: CBC IV write-back (`:284-298`), stall detector (`:404-417`), devlink counters, xts cfg (#70), queue reset on remove (#167).
+
+### Invariants kept
+- Ring order == completion order, one queue:
+  - `prepare` + `action` + `list_add_tail(pending)` in one `chan->lock` section (`:205-233`); completion pop + `list_first_entry(pending)` in one section (`:245-257`, `:320-334`). The 1:1 FIFO pairing cannot skew. This is the opposite of al_dma's cookie split.
+  - Vendor relied on the same assumption (`desc = get_ring_ent(chan, idx + i)`, `al_crypto_core.c:1089`).
+  - Vendor published `head` before the doorbell (`:1418-1426`); the port reaches the same result through the lock.
+- Every transaction carries its own SA, IV, src, dst; nothing shared between in-flight ops except SA slot 0 (below).
+- Completion error status is mapped to `-EIO` (vendor completes with `0`, `al_crypto_alg.c:635`).
+- `72f1817` had the al_dma bug and `e9762bc` fixed it: submit and each completion poll were separate `chan->lock` sections with no per-request ownership, so thread A could pop thread B's completion and return success before its own output was written, while B timed out. The `pending` list ("FIFO-safe") is the fix.
+
+### Invariants lost or weakened
+| Invariant | Vendor | `e9762bc` / ours | Effect |
+|---|---|---|---|
+| Ring-full decision and backlog insert in one critical section | `al_crypto_alg.c:747-752` (`prep_lock`) | `:205-216` under `chan->lock`, insert `:476-489` under `backlog_lock` | #300 |
+| One function consumes every completion and then drains the backlog | `al_crypto_core.c:1047-1127`, gate `:1126` | two consumers: worker (counted, `:398-400`) and inline sweep (`:251-268`, uncounted, no drain) | #300 |
+| Bounded wait | IRQ-driven; no timeout needed | `72f1817` failed after 1000 ms (`-ETIMEDOUT`); `e9762bc` removed it: a lost completion is a permanent wait. Stall detector (`:409`) only logs and needs `total_pending > 0` | #182 unbounded form |
+| Completion wake-up | MSI-X + tasklet (`al_crypto_core.c:982-1040`, `devm_request_irq` `:465`) | poll only; no `request_irq` | #182 |
+| Reap before free on teardown | `al_crypto_free_chan_resources`: `tasklet_disable` + final cleanup (`:852-856`) | frees in-flight buffers before queue reset (`:833-856`) | #301 |
+| Per-session SA slot, `sa_in` only on miss | LRU cache (`al_crypto_alg.c:793-799`) | `sa_indx = 0`, SA re-sent every request (`:199-201`) | correct only if the engine orders SA update vs earlier in-flight ops; vendor's LRU eviction has the same dependence; not established |
+| Metadata descriptor (enc length) | `src_size = enc_in_len` (`al_crypto_alg.c:693`) | `enc_in_len` unset: no meta desc, 3 TX descs/op (devlink: 180 ops -> `tx_next_desc_idx` 28 = 540 mod 256) | works by engine default (selftest passes); behaviour for odd lengths not established, see #291 |
+
+### Divergences with no lost invariant
+- TX completion ring: vendor none (`al_crypto_core.c:757`, `NO_COMP_UPDATE`); port allocates one and acks it lazily in `al_crypto_dma_prepare()` (`al_hal_ssm_crypto.c:1176-1183`). Extra DMA write per descriptor; consistent.
+- cdesc stride: vendor 8 (`al_crypto.h:44-45`), port 16 (`sizeof(union al_udma_cdesc)`-sized rings). Stride is programmed into the engine (`al_hal_udma_main.c:217`); devlink 2026-10-09: `rx_next_cdesc_idx == rx_hw_comp_head == 180`, consistent.
+- Buffers: vendor `dma_map_sg` on request sg; port bounce copies (#282).
+- Alg flags `ASYNC | KERN_DRIVER_ONLY`: identical to vendor (`al_crypto_alg.c:1397`).
+- `al_crypto_dma_action()` cannot fail (`al_hal_ssm.c:289-300` always returns 0); the `action` error branches in `submit_and_poll` (`:218-224`) are dead.
+- Vendor has no XTS; nothing to diff for `xts(aes)`.
+
+### Does `e9762bc` explain the open issues
+| Issue | Verdict |
+|---|---|
+| #267 | No. `KERN_DRIVER_ONLY` is in the vendor and in `42d10e9`; `72f1817` (sync) is excluded by the 7.2 mask just the same. `ASYNC` and missing `ALLOCATES_MEMORY` are both in the mask; kernel change `7524070f26d8` is the cause |
+| #182 | In part. Poll-only completion and the unbounded wait are `e9762bc` (`72f1817` returned `-ETIMEDOUT` at 1000 ms). The lost completion itself is not explained: single-thread AF_ALG cannot reach the backlog (#300) or remove (#301) paths. 2026-08-30 sighting ran this code on a kernel with mask 0 |
+| #282 | Items 4 (BH), 5 (MAY_BACKLOG), 7 (hand-rolled queue, inline spin) and the `ALLOCATES_MEMORY` gap becoming consequential: `e9762bc`. Items 1-3, 6 (GFP_KERNEL per request, MAY_SLEEP, bounce copies, length limit): inherited from `72f1817`/`42d10e9` |
+| #291 | No. Same `nbytes == 0 || > 256 KiB` check in `72f1817`; vendor never validated lengths either |
+
+### New findings
+- #300: backlog insert split from the ring-full decision; drain gated on the worker's own completions; backlog-only hang invisible to the stall detector. Vendor has a narrower form of the same race (`al_crypto_core.c:1126` reads `qlen` outside `prep_lock`).
+- #301: remove frees in-flight DMA buffers before quiescing the engine, walks lists unlocked, leaves live tfms on a freed `dev` (`crypto/algapi.c:503` only warns).
+
+### Is the al_dma split-invariant pattern present in al_ssm
+- Ring/pending/cookie-style ordering state: no. One lock covers claim, doorbell and list append; one covers pop and list remove.
+- Same class (state decided in one critical section, acted on in another): yes, in the backlog path only (#300). Lower impact: needs 64 requests in flight and a microsecond window; nothing like al_dma's 0.245%.
+- Pre-rewrite `72f1817` had the ordering form (stolen completions). `e9762bc` fixed it.
+- al_dma is therefore not a one-off, but in al_ssm the ordering core is sound and the defects sit in the queueing glue the rewrite added.
+
+### Not established
+- Cause of the 2026-08-30 #182 wedge: nothing in this review reaches it from a single AF_ALG thread.
+- Whether the engine tolerates SA slot 0 being overwritten while earlier ops are in its pipeline (needs a multi-key concurrent test; dm-crypt over two loop devices).
+- Engine behaviour with no metadata descriptor for lengths not a multiple of 16 or above 64 KiB (#291).
+- Whether 64 in-flight ops ever occur on real load (#300 reachability).
+- Anything dynamic: no module was loaded, no counter read.
