@@ -60,6 +60,7 @@ import base64
 import datetime
 import json
 import re
+import secrets
 import subprocess
 import sys
 from pathlib import Path
@@ -937,6 +938,212 @@ def bench_dma(
         )
 
 
+# ======== al_ssm through dm-crypt (opt-in: --ssm) ========
+# The only path AF_ALG cannot mask (#267). Opt-in: it drives the code under
+# open #300 / #182, which can leave a writer in D state until a reboot.
+
+SSM_MAP = "alssm-stress"
+SSM_BACKING = "/var/tmp/alssm-stress.img"
+SSM_PATTERN = "/dev/shm/alssm-stress.pat"
+# Expected: 64 MiB write+read through the engine at the 235 MiB/s CE figure
+# (#182) is ~0.6 s; 8x margin -> 5 s per phase, 120 s for the suite. On expiry
+# the call returns rc 124 and the phase FAILs (a writer may be in D state).
+SSM_SSH_TIMEOUT_S = 120
+# Quiesce: all completions land within the 500 us inline window or one 100 us
+# worker cycle; a 64-deep queue drains in < 100 ms. One poll = one ssh round
+# trip (~50 ms); 40 polls ~ 2 s = 20x. On expiry: FAIL (#300/#182).
+SSM_QUIESCE_POLLS = 40
+
+_SSM_FIELD = re.compile(r"(\w+):\s+(\S+)")
+
+
+def parse_ssm_diag(text: str) -> dict[str, str]:
+    """`key: value` pairs from `devlink health diagnose ... reporter ssm`."""
+    return dict(_SSM_FIELD.findall(text))
+
+
+def find_ssm_bdf(show_text: str) -> str | None:
+    """BDF of the ssm reporter from `devlink health show` output."""
+    m = re.search(r"pci/(\S+):\s+reporter ssm\b", show_text)
+    return m.group(1) if m else None
+
+
+def judge_ssm(before: dict[str, str], after: dict[str, str], cmp_ok: bool) -> list[str]:
+    """Failure strings for one dm-crypt run; empty = pass."""
+    fails = []
+    if not cmp_ok:
+        fails.append("data mismatch or writer failed (cmp)")
+    if after.get("in_flight") != "0" or after.get("backlog") != "0":
+        fails.append(
+            f"no quiesce: in_flight={after.get('in_flight')} "
+            f"backlog={after.get('backlog')} (#300/#182)"
+        )
+    try:
+        delta = {
+            k: int(after[k]) - int(before[k])
+            for k in ("submitted", "completed", "errors")
+        }
+    except (KeyError, ValueError):
+        return [*fails, f"diagnose output lacks counters: {sorted(after)}"]
+    if delta["submitted"] <= 0:
+        fails.append("engine saw no ops: dm-crypt used another driver")
+    if delta["completed"] != delta["submitted"]:
+        fails.append(
+            f"completed {delta['completed']} != submitted {delta['submitted']}"
+        )
+    if delta["errors"] != 0:
+        fails.append(f"engine reported {delta['errors']} errors")
+    return fails
+
+
+def _ssm_setup_script(mib: int, key_hex: str) -> str:
+    return f"""set -e
+head -c {mib * 1024 * 1024} /dev/urandom > {SSM_PATTERN}
+truncate -s {mib}M {SSM_BACKING}
+LOOP=$(losetup --find --show {SSM_BACKING})
+echo "loop=$LOOP"
+dmsetup create {SSM_MAP} --table "0 {mib * 2048} crypt aes-xts-plain64 {key_hex} 0 $LOOP 0"
+"""
+
+
+def _ssm_writers_script(writers: int, mib: int) -> str:
+    per = mib * 256 // writers  # 4 KiB blocks per writer
+    return f"""set -e
+for i in $(seq 0 {writers - 1}); do
+  dd if={SSM_PATTERN} of=/dev/mapper/{SSM_MAP} bs=4k seek=$((i*{per})) skip=$((i*{per})) \\
+     count={per} oflag=direct conv=notrunc status=none &
+done
+wait
+dd if=/dev/mapper/{SSM_MAP} bs=4k count=$(({per}*{writers})) iflag=direct status=none \\
+  | cmp -n $(({per}*{writers}*4096)) - {SSM_PATTERN} && echo CMP_OK
+"""
+
+
+def _ssm_teardown_script() -> str:
+    return (
+        f"dmsetup remove {SSM_MAP} 2>&1; "
+        f"for l in $(losetup -j {SSM_BACKING} -O NAME -n); do losetup -d $l; done; "
+        f"rm -f {SSM_BACKING} {SSM_PATTERN}"
+    )
+
+
+def bench_ssm(
+    host: str,
+    password: str,
+    report: Report,
+    writers: int = 4,
+    mib: int = 64,
+    unbind: bool = False,
+) -> None:
+    def remote(script: str) -> tuple[int, str]:
+        return run_remote(host, password, script, timeout=SSM_SSH_TIMEOUT_S)
+
+    rc, out = remote("devlink health show")
+    bdf = find_ssm_bdf(out)
+    if rc != 0 or not bdf:
+        report.add(
+            "ssm",
+            True,
+            f"SKIPPED: no ssm devlink reporter (al_ssm loaded?): {out[-200:]}",
+        )
+        return
+
+    def diag() -> dict[str, str]:
+        rc, out = remote(f"devlink health diagnose pci/{bdf} reporter ssm")
+        return parse_ssm_diag(out) if rc == 0 else {}
+
+    key = secrets.token_hex(64)  # aes-xts 512-bit key; fresh per run
+    before = diag()
+    try:
+        rc, out = remote(_ssm_setup_script(mib, key))
+        if rc != 0:
+            report.add("ssm setup", False, f"rc={rc}: {out.strip()[-200:]}")
+            return
+        if unbind:
+            remote(
+                f"({_ssm_writers_script(writers, mib)}) & "
+                f"echo {bdf} > /sys/bus/pci/drivers/al_ssm/unbind; wait"
+            )
+            report.add(
+                "ssm unbind under load",
+                True,
+                "survived; check dmesg for KASAN/DMA-API (#301)",
+            )
+            return
+        rc, out = remote(_ssm_writers_script(writers, mib))
+        after = diag()
+        for _ in range(SSM_QUIESCE_POLLS):
+            if after.get("in_flight") == "0" and after.get("backlog") == "0":
+                break
+            after = diag()
+        fails = judge_ssm(before, after, "CMP_OK" in out)
+        detail = ", ".join(
+            f"{k} {after.get(k, '?')}" for k in ("submitted", "completed", "errors")
+        )
+        report.add(
+            f"ssm dm-crypt {writers}x{mib // writers} MiB",
+            not fails,
+            "; ".join(fails) if fails else detail,
+        )
+    finally:
+        rc, out = remote(_ssm_teardown_script())
+        if rc != 0:
+            report.add("ssm teardown", False, f"rc={rc}: {out.strip()[-200:]}")
+
+
+# ======== Memory + CPU stress (opt-in: --stress) ========
+# memtester is memtest86-style over an mmap'd region; stress-ng loads CPU, VM
+# and cache. Stability / thermal check, not a throughput number. Needs both on
+# the box; bench-all does not install packages.
+
+STRESS_MEMTESTER_MB = (
+    256  # big enough to exercise the controller, small enough not to OOM
+)
+
+
+def bench_stress(host: str, password: str, report: Report, secs: int = 60) -> None:
+    quick = DMA_SSH_CONNECT_S + DMA_SLACK_S
+    rc, out = run_remote(
+        host,
+        password,
+        "command -v memtester >/dev/null && command -v stress-ng >/dev/null && echo HAVE",
+        timeout=quick,
+    )
+    if "HAVE" not in out:
+        report.add(
+            "stress",
+            True,
+            "SKIPPED: memtester/stress-ng missing on the box (dnf install memtester stress-ng)",
+        )
+        return
+    # Waits for: one memtester pass, a few s/MB worst case -> 2 s/MB, min 120 s.
+    limit = max(120, STRESS_MEMTESTER_MB * 2)
+    rc, out = run_remote(
+        host,
+        password,
+        f"memtester {STRESS_MEMTESTER_MB}M 1 2>&1 | tail -40",
+        timeout=limit,
+    )
+    report.add(
+        f"stress memtester {STRESS_MEMTESTER_MB}M",
+        rc == 0 and "FAILURE" not in out,
+        out.strip().splitlines()[-1] if out.strip() else f"rc={rc}",
+    )
+    # --cpu 0 = one CPU stressor per online core. Waits for: --timeout secs.
+    rc, out = run_remote(
+        host,
+        password,
+        f"stress-ng --cpu 0 --vm 2 --vm-bytes 256M --cache 2 --timeout {secs}s "
+        "--metrics-brief 2>&1 | tail -30",
+        timeout=secs + 120,
+    )
+    report.add(
+        f"stress stress-ng {secs}s",
+        rc == 0 and "successful run completed" in out.lower(),
+        out.strip().splitlines()[-1] if out.strip() else f"rc={rc}",
+    )
+
+
 # ======== Orchestration ========
 
 
@@ -964,6 +1171,17 @@ def run_suite(args) -> dict:
             reload=args.dma_reload,
             pq=args.dma_pq,
         )
+    if args.ssm:
+        bench_ssm(
+            host,
+            args.password,
+            report,
+            writers=args.ssm_writers,
+            mib=args.ssm_mib,
+            unbind=args.ssm_unbind_under_load,
+        )
+    if args.stress:
+        bench_stress(host, args.password, report, secs=args.stress_secs)
 
     stamp = datetime.datetime.now().astimezone().isoformat(timespec="seconds")
     commit = subprocess.run(
@@ -1046,6 +1264,25 @@ def main() -> int:
     )
     ap.add_argument("--i-accept-a-reboot", action="store_true")
     ap.add_argument(
+        "--ssm",
+        action="store_true",
+        help="also drive al_ssm through dm-crypt: integrity + quiesce (#267, #300)",
+    )
+    ap.add_argument("--ssm-writers", type=int, default=4)
+    ap.add_argument("--ssm-mib", type=int, default=64)
+    ap.add_argument(
+        "--ssm-unbind-under-load",
+        action="store_true",
+        help="with --ssm: PCI-unbind al_ssm while writers run (#301); needs --i-accept-a-crash",
+    )
+    ap.add_argument("--i-accept-a-crash", action="store_true")
+    ap.add_argument(
+        "--stress",
+        action="store_true",
+        help="also run memtester + stress-ng on the box (heavy; not for --idle)",
+    )
+    ap.add_argument("--stress-secs", type=int, default=60)
+    ap.add_argument(
         "--eth-duration", type=int, default=8, help="seconds per direction per port"
     )
     ap.add_argument(
@@ -1068,6 +1305,12 @@ def main() -> int:
         sys.exit(
             "--dma-reload/--dma-pq can wedge the engine (#23): add --i-accept-a-reboot"
         )
+    if args.ssm_unbind_under_load and not (args.ssm and args.i_accept_a_crash):
+        sys.exit(
+            "--ssm-unbind-under-load can crash the box: needs --ssm --i-accept-a-crash"
+        )
+    if args.ssm and (args.ssm_mib * 256) % args.ssm_writers:
+        sys.exit("--ssm-mib must split into whole 4 KiB blocks per --ssm-writers")
     if args.dma_pq and not args.dma_reload:
         sys.exit("--dma-pq needs --dma-reload (enable_pq is a module parameter)")
 

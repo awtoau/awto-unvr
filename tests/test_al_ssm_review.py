@@ -8,7 +8,7 @@
   and that the fix direction does not.
 - #301: ordering of al_ssm_pci_remove(), read from the source. xfail(strict)
   until fixed; the strict flag makes the fix flip the test.
-- scripts/al-ssm-stress.py parsers on real devlink output.
+- scripts/bench-all.py bench_ssm parsers and verdicts on real devlink output.
 """
 
 from __future__ import annotations
@@ -133,12 +133,12 @@ def test_remove_walks_pending_under_lock():
     assert "spin_lock" in body[:walk]
 
 
-# ---- stress script parsers --------------------------------------------------
+# ---- bench-all --ssm parsers and verdicts -----------------------------------
 
 
 def _stress():
     spec = importlib.util.spec_from_file_location(
-        "al_ssm_stress", REPO / "scripts" / "al-ssm-stress.py"
+        "bench_all", REPO / "scripts" / "bench-all.py"
     )
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
@@ -159,8 +159,30 @@ SHOW = (
 
 def test_stress_parsers():
     mod = _stress()
-    d = mod.parse_diag(DIAG)
+    d = mod.parse_ssm_diag(DIAG)
     assert d["submitted"] == "180" and d["in_flight"] == "0" and d["backlog"] == "0"
     assert int(d["max_in_flight"]) == MAX_IN_FLIGHT
-    assert mod.find_bdf(SHOW) == "0000:00:04.0"
-    assert mod.find_bdf("pci/0000:00:05.0: reporter dma") is None
+    assert mod.find_ssm_bdf(SHOW) == "0000:00:04.0"
+    assert mod.find_ssm_bdf("pci/0000:00:05.0: reporter dma") is None
+
+
+def test_ssm_verdicts():
+    mod = _stress()
+    before = mod.parse_ssm_diag(DIAG)
+    after = mod.parse_ssm_diag(
+        DIAG.replace("submitted: 180", "submitted: 244").replace(
+            "completed: 180", "completed: 244"
+        )
+    )
+    assert mod.judge_ssm(before, after, True) == []
+    assert "data mismatch" in mod.judge_ssm(before, after, False)[0]
+    # CE served the writes: the engine saw nothing
+    assert any("no ops" in f for f in mod.judge_ssm(before, before, True))
+    stuck = mod.parse_ssm_diag(
+        DIAG.replace("in_flight: 0", "in_flight: 3").replace(
+            "submitted: 180", "submitted: 244"
+        )
+    )
+    assert any("no quiesce" in f for f in mod.judge_ssm(before, stuck, True))
+    assert any("completed" in f for f in mod.judge_ssm(before, stuck, True))
+    assert mod.judge_ssm(before, {}, True)  # empty diagnose never passes
