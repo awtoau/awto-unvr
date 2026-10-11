@@ -247,8 +247,16 @@ static void al_dma_cleanup_tasklet(struct tasklet_struct *t)
 			spin_unlock_irqrestore(&ch->lock, flags);
 
 			dma_cookie_complete(&desc->txd);
+			/* Unmap before the callback, then clear the fields: a
+			 * recycled ring slot otherwise keeps the previous op's
+			 * callback and unmap data, and async_tx's unmap refcount
+			 * leaks per descriptor (#278). dma_async_tx_descriptor_init()
+			 * only resets ->chan. Pattern from ioat/dma.c:627. */
+			dma_descriptor_unmap(&desc->txd);
 			if (desc->txd.callback)
 				desc->txd.callback(desc->txd.callback_param);
+			desc->txd.callback = NULL;
+			desc->txd.callback_result = NULL;
 			dma_run_dependencies(&desc->txd);
 		}
 	} while (ret > 0);
