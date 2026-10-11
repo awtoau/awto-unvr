@@ -217,83 +217,9 @@ struct al_unit_adapter_rob_cfg {
 
 /* API definitions */
 
-/**
- * Handle initialization
- *
- * @param	unit_adapter
- *		The unit_adapter instance
- * @param	type
- *		The unit adapter type
- * @param	unit_adapter_regs_base
- *		The base address of the unit adapter registers
- * @param	pcie_read_config_u32
- *		pointer to function that reads register from pcie config space
- *		if NULL is passed, al_reg_read32 from unit_adapter_regs_base
- *		is used
- * @param	pcie_write_config_u32
- *		register to pcie config space
- *		if NULL is passed, al_reg_write32 from unit_adapter_regs_base
- *		is used
- * @param	pcie_flr
- *		pointer to function that makes the actual reset.
- *		That function is responsible for performing the post reset
- *		delay.
- *		if NULL is passed, FLR is performed through the device
- *		capability register.
- * @param	handle
- *		pointer passes to the above functions as first parameter
- *
- * @return	0 if finished successfully
- *		<0 if an error occurred
- */
-__must_check int al_unit_adapter_handle_init(
-	struct al_unit_adapter *unit_adapter,
-	enum al_unit_adapter_type type,
-	void __iomem *unit_adapter_regs_base,
-	int (* pcie_read_config_u32)(void *handle, int where, uint32_t *val),
-	int (* pcie_write_config_u32)(void *handle, int where, uint32_t val),
-	int (* pcie_flr)(void *handle),
-	void *handle);
 
-/**
- * Performance parameters printout
- *
- * @param	unit_adapter
- *		Initialized handle
- */
-void al_unit_adapter_perf_params_print(
-	struct al_unit_adapter	*unit_adapter);
 
-/**
- * Check whether BME status is enabled
- *
- * @param	unit_adapter
- *		The unit_adapter instance
- *
- * @return	AL_TRUE if BME status is enabled,
- *		AL_FALSE otherwise
- */
-__must_check al_bool al_unit_adapter_bme_get(
-	struct al_unit_adapter	*unit_adapter);
 
-/**
- * Set AXI master timeout configuration (disabled by default)
- *
- * @param	unit_adapter
- *		The unit_adapter instance
- * @param	wr_timeout
- *		AXI Master write timeout threshold (in I/O fabric clock cycles).
- *		A value of 0 disables the timer.
- *		This value is multiplied by 4.
- * @param	rd_timeout
- *		AXI Master read timeout threshold (in I/O fabric clock cycles).
- *		A value of 0 disables the timer.
- *		This value is multiplied by 4.
- */
-void al_unit_adapter_axi_master_timeout_config(
-	struct al_unit_adapter	*unit_adapter,
-	unsigned int		wr_timeout,
-	unsigned int		rd_timeout);
 
 /**
  * Snooping enable/disable
@@ -325,117 +251,14 @@ void al_unit_adapter_error_track_enable(
 	unsigned int	func_num,
 	al_bool	error_track_en);
 
-/**
- * Check whether adapter errors tracking is enabled
- *
- * @param	unit_adapter
- *		The unit_adapter instance
- *
- * @return	AL_TRUE if errors tracking is enabled,
- *		AL_FALSE otherwise
- */
-__must_check al_bool al_unit_adapter_error_track_is_enabled(
-	struct al_unit_adapter	*unit_adapter);
 
-/**
- * Enable interrupt from adapter
- *
- * @param	unit_adapter
- *		The unit_adapter instance
- * @param	intr_en
- *		Interrupt from adapter enabled
- */
-void al_unit_adapter_int_enable(
-	struct al_unit_adapter	*unit_adapter,
-	al_bool			intr_en);
 
-/**
- * Set interrupt cause mask
- *
- * @param	unit_adapter
- *		The unit_adapter instance
- * @param	wr_err_en
- *		AXI master write error interrupt enabled
- * @param	rd_err_en
- *		AXI master read error interrupt enabled
- */
-void al_unit_adapter_int_cause_mask_set(
-	struct al_unit_adapter	*unit_adapter,
-	al_bool			wr_err_en,
-	al_bool			rd_err_en);
 
-/**
- * Set interrupt cause mask extended
- *
- * @param	unit_adapter
- *		The unit_adapter instance
- * @param	params
- *		unit_adapter Interrupt fields instance
- */
-void al_unit_adapter_int_cause_mask_set_ex(
-	struct al_unit_adapter	*unit_adapter,
-	struct al_unit_adapter_int_fields *params);
 
-/**
- * Get & clear interrupt cause
- *
- * @param	unit_adapter
- *		The unit_adapter instance
- * @param	wr_err
- *		AXI master write error
- * @param	rd_err
- *		AXI master read error
- */
-void al_unit_adapter_int_cause_get_and_clear(
-	struct al_unit_adapter	*unit_adapter,
-	al_bool			*wr_err,
-	al_bool			*rd_err);
 
-/**
- * Get & clear interrupt cause extended
- *
- * @param	unit_adapter
- *		The unit_adapter instance
- * @param	params
- *		unit_adapter Interrupt fields instance
- */
-void al_unit_adapter_int_cause_get_and_clear_ex(
-	struct al_unit_adapter	*unit_adapter,
-	struct al_unit_adapter_int_fields *params);
 
-/**
- * Get & clear last captured AXI master write error attributes
- *
- * @param	unit_adapter
- *		The unit_adapter instance
- * @param	wr_err_attr
- *		AXI master write error attributes
- */
-void al_unit_adapter_axi_master_wr_err_attr_get_and_clear(
-	struct al_unit_adapter		*unit_adapter,
-	struct al_unit_adapter_err_attr	*wr_err_attr);
 
-/**
- * Get & clear last captured AXI master read error attributes
- *
- * @param	unit_adapter
- *		The unit_adapter instance
- * @param	rd_err_attr
- *		AXI master read error attributes
- */
-void al_unit_adapter_axi_master_rd_err_attr_get_and_clear(
-	struct al_unit_adapter		*unit_adapter,
-	struct al_unit_adapter_err_attr	*rd_err_attr);
 
-/**
- * Get & clear last captured Application Parity error status
- *
- * @param	unit_adapter
- *		The unit_adapter instance
- * @return	parity status
- */
-__must_check uint32_t al_unit_adapter_app_parity_status_get_and_clear(
-	struct al_unit_adapter *unit_adapter);
 
 /**
  * Perform function level reset and takes care for all needed PCIe config space
@@ -469,88 +292,12 @@ void al_unit_adapter_rob_cfg(
 	al_bool			wr_rob_en,
 	al_bool			wr_rob_force_in_order);
 
-/**
- * Reorder buffer (ROB) get configuration
- *
- * @param	unit_adapter
- *		The unit_adapter instance
- * @param	rob_cfg
- *		ROB configuration struct
- */
-void al_unit_adapter_rob_cfg_get(
-	struct al_unit_adapter		*unit_adapter,
-	struct al_unit_adapter_rob_cfg	*rob_cfg);
 
-/**
- * Internal memories shutdown control
- *
- * @param	unit_adapter
- *		The unit_adapter instance
- * @param	en
- *		Internal memories shutdown enable/disable
- */
-void al_unit_adapter_mem_shutdown_ctrl(
-	struct al_unit_adapter	*unit_adapter,
-	al_bool			en);
 
-/**
- * Clock gating control
- *
- * @param	unit_adapter
- *		The unit_adapter instance
- * @param	en
- *		Clock gating enable/disable
- */
-void al_unit_adapter_clk_gating_ctrl(
-	struct al_unit_adapter	*unit_adapter,
-	al_bool			en);
 
-/**
- * Powerdown control
- *
- * @param	unit_adapter
- *		The unit_adapter instance
- * @param	en
- *		Powerdown enable/disable (D3)
- */
-void al_unit_adapter_pd_ctrl(
-	struct al_unit_adapter	*unit_adapter,
-	al_bool			en);
 
-/** SATA Target-ID MSI-X control configuration
- *  *
- * @param	unit_adapter
- *		The unit_adapter instance
- * @param	conf
- *		SATA Target-ID MSI-X configuration
- */
-void al_sata_tgtid_msix_conf_set(
-		struct al_unit_adapter	*unit_adapter,
-		struct al_sata_tgtid_msix_conf	*conf);
 
-/**
- * SATA Target-ID control advanced Tx configuration
- *
- * @param	unit_adapter
- *		The unit_adapter instance
- * @param	conf
- *		SATA Target-ID Tx configuration
- */
-void al_unit_sata_adapter_advanced_tgtid_tx_conf(
-		struct al_unit_adapter	*unit_adapter,
-		struct al_sata_tgtid_advanced_conf	*conf);
 
-/**
- * SATA Target-ID control advanced Rx configuration
- *
- * @param	unit_adapter
- *		The unit_adapter instance
- * @param	conf
- *		SATA Target-ID Rx configuration
- */
-void al_unit_sata_adapter_advanced_tgtid_rx_conf(
-		struct al_unit_adapter	*unit_adapter,
-		struct al_sata_tgtid_advanced_conf	*conf);
 
 #define AL_UNIT_ADAPTER_HAS_INIT		1
 
@@ -563,14 +310,6 @@ void al_unit_sata_adapter_advanced_tgtid_rx_conf(
 void al_unit_adapter_init(
 		struct al_unit_adapter	*unit_adapter);
 
-/**
- * Error attributes printout
- *
- * @param	unit_adapter Initialized handle
- * @param	is_read choose read or write error attributes
- *
- */
-void al_unit_adapter_err_attr_print(struct al_unit_adapter *unit_adapter, al_bool is_read);
 
 #endif
 

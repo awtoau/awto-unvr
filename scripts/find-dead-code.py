@@ -93,6 +93,48 @@ def stmt_end(lines: list[str], start: int) -> int:
     return start
 
 
+OUTSIDE = (
+    "tests",
+    "scripts",
+    "tools",
+    "Platform",
+    "uboot-port",
+    "hal",
+    "patches",
+    "dts",
+)
+
+
+def outside_refs(names: set[str], own_file: str) -> dict[str, list[str]]:
+    """Whole-word references to `names` outside modules/ (tests, U-Boot, EDK2,
+    scripts). al_eth's HAL is staged into U-Boot/EDK2 (scripts/stage_hal.py), so
+    a hit there can be a real caller; for other modules it is a separate copy."""
+    pat = r"\b(" + "|".join(sorted(names)) + r")\b"
+    out = subprocess.run(
+        [
+            "grep",
+            "-rnIE",
+            pat,
+            *OUTSIDE,
+            "--include=*.c",
+            "--include=*.h",
+            "--include=*.py",
+            "--include=*.inf",
+            "--include=Makefile",
+            "--include=*.dts*",
+        ],
+        capture_output=True,
+        text=True,
+        cwd=REPO,
+    ).stdout
+    hits: dict[str, list[str]] = defaultdict(list)
+    for line in out.splitlines():
+        m = re.search(pat, line.split(":", 2)[2])
+        if m:
+            hits[m.group(1)].append(line.split(":", 2)[0] + ":" + line.split(":", 2)[1])
+    return hits
+
+
 def makefile_objs(mod: Path) -> set[str]:
     mk = (mod / "Makefile").read_text()
     return set(re.findall(r"([\w]+)\.o\b", mk))
@@ -171,6 +213,9 @@ def analyse(mod: Path):
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("modules", nargs="*")
+    ap.add_argument(
+        "--outside", action="store_true", help="also grep tests/ U-Boot/ EDK2/ scripts/"
+    )
     ap.add_argument("--functions", action="store_true", help="list each dead function")
     args = ap.parse_args()
 
@@ -198,6 +243,10 @@ def main() -> int:
                 f"  {fn}: {len(per_file[fn])}/{total} functions dead, "
                 f"{dl} of {len(lines_of[fn])} lines"
             )
+            if args.outside:
+                hits = outside_refs({n for n, _ in per_file[fn]}, fn)
+                for n in sorted(hits):
+                    log(f"      OUTSIDE REF {n}: {', '.join(hits[n][:3])}")
             if args.functions:
                 for name, i in sorted(per_file[fn], key=lambda x: x[1]["start"]):
                     st = "static " if i["static"] else ""

@@ -930,34 +930,7 @@ void al_crypto_xts_cfg_set(
 	void __iomem			*app_regs,
 	const struct al_crypto_xts_cfg	*cfg);
 
-/**
- * Get SSM crypto error interrupts masks
- *
- * @param rev_id - PCI revision ID
- * @param crypto_a_mask - pointer to iofic group A mask
- * @param crypto_b_mask - pointer to iofic group B mask
- * @param crypto_c_mask - pointer to iofic group C mask
- * @param crypto_d_mask - pointer to iofic group D mask
- */
-void al_crypto_error_ints_mask_get(unsigned int rev_id,
-				   uint32_t *crypto_a_mask,
-				   uint32_t *crypto_b_mask,
-				   uint32_t *crypto_c_mask,
-				   uint32_t *crypto_d_mask);
 
-/**
- * Unmask crypto error interrupts
- *
- * @param	rev_id
- *		PCI adapter revision ID
- * @param	crypto_regs_base
- *		cryoto register base address
- * @param	udma_regs_base
- *		UDMA register base address
- */
-void al_crypto_error_ints_unmask(uint8_t rev_id,
-				 void __iomem *crypto_regs_base,
-				 void __iomem *udma_regs_base);
 /* *INDENT-OFF* */
 #ifdef __cplusplus
 }

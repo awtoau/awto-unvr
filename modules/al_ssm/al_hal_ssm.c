@@ -40,7 +40,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
 #include "al_hal_ssm.h"
-#include "al_hal_ssm_crc_memcpy.h"
 #include "al_hal_ssm_crypto.h"
 #include "al_hal_ssm_raid.h"
 #include "al_hal_udma_iofic.h"
@@ -362,26 +361,4 @@ void al_ssm_unit_regs_info_get(void *bars[6],
 		pr_err("%s: unknown device ID %d\n", __func__, dev_id);
 		al_assert(0);
 	}
-}
-
-/******************************************************************************
- ******************************************************************************/
-void al_ssm_error_ints_unmask(struct al_ssm_unit_regs_info *unit_info, unsigned int rev_id)
-{
-	if (unit_info->crypto_regs_base) {
-		al_crypto_error_ints_unmask(rev_id,
-			unit_info->crypto_regs_base,
-			unit_info->udma_regs_base);
-	}
-
-	if (unit_info->raid_regs_base) {
-		al_raid_error_ints_unmask(rev_id,
-			unit_info->raid_regs_base,
-			unit_info->udma_regs_base);
-	}
-
-	al_crc_memcpy_error_ints_unmask(rev_id,
-			AL_SSM_V1_V2_CRC_NUM,
-			unit_info->crc_regs_base,
-			unit_info->udma_regs_base);
 }

@@ -288,14 +288,6 @@ void al_ssm_unit_regs_info_get(void *bars[6],
 			       unsigned int rev_id,
 			       struct al_ssm_unit_regs_info *unit_info);
 
-/**
- * Unmask SSM unit error interrupts
- *
- * @param unit_info - SSM unit register info context
- * @param rev_id - PCI revision ID
- */
-void al_ssm_error_ints_unmask(struct al_ssm_unit_regs_info *unit_info, unsigned int rev_id);
-
 /* *INDENT-OFF* */
 #ifdef __cplusplus
 }
