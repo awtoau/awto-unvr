@@ -1,0 +1,17 @@
+{
+  "timestamp": "2026-10-11T21:41:39+11:00",
+  "commit": "fc9ba2a-dirty",
+  "host": "192.168.25.42",
+  "checks": [
+    {
+      "name": "dma copy+xor",
+      "ok": false,
+      "detail": "dma0chan0-copy0: 0 failures but {'prep error': 131}; dma0chan0-xor0: 0 failures but {'prep error': 264}; kernel log: ['rejected']"
+    }
+  ],
+  "metrics": {
+    "dma dma0chan0 copy iops": 13538.66,
+    "dma dma0chan0 xor iops": 13761.15
+  },
+  "all_ok": false
+}

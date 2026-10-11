@@ -1,0 +1,101 @@
+{
+  "timestamp": "2026-10-11T22:09:43+11:00",
+  "commit": "2a3c5b2-dirty",
+  "host": "192.168.25.42",
+  "kernel": "7.3.0-rc6-a2e0f98-dirty+",
+  "checks": [
+    {
+      "name": "health al_eth module",
+      "ok": false,
+      "detail": "vermagic=modinfo: running=7.3.0-rc6-a2e0f98-dirty+"
+    },
+    {
+      "name": "health link enp0s1",
+      "ok": true,
+      "detail": "speed=100 carrier=1 oper=up"
+    },
+    {
+      "name": "health link enp0s2",
+      "ok": true,
+      "detail": "speed=10000 carrier=1 oper=up"
+    },
+    {
+      "name": "health adaptive moderation off",
+      "ok": true,
+      "detail": "off on enp0s1, enp0s2"
+    },
+    {
+      "name": "health MAC counters",
+      "ok": true,
+      "detail": "all zero"
+    },
+    {
+      "name": "health rx ring refill",
+      "ok": true,
+      "detail": "no growth"
+    },
+    {
+      "name": "health kernel log",
+      "ok": false,
+      "detail": "3 line(s): [    0.000000] OF: reserved mem: 0x0000000092000000..0x00000000921fffff (2048 KiB) map non-reusable ramoops@92000000"
+    },
+    {
+      "name": "eth 1G host->box",
+      "ok": true,
+      "detail": "93.8 Mbits/sec"
+    },
+    {
+      "name": "eth 1G box->host",
+      "ok": true,
+      "detail": "864 Mbits/sec"
+    },
+    {
+      "name": "eth 10G host->box",
+      "ok": true,
+      "detail": "3.40 Gbits/sec"
+    },
+    {
+      "name": "eth 10G box->host",
+      "ok": true,
+      "detail": "4.83 Gbits/sec"
+    },
+    {
+      "name": "eth USB1",
+      "ok": false,
+      "detail": "iperf3 client hung past 23s - enp6s0f0 likely has no working L2 path to 192.168.25.42 right now (check `ip neigh` / link state)"
+    },
+    {
+      "name": "eth USB2 host->box",
+      "ok": true,
+      "detail": "50.3 Mbits/sec"
+    },
+    {
+      "name": "eth USB2 box->host",
+      "ok": true,
+      "detail": "93.6 Mbits/sec"
+    },
+    {
+      "name": "dma copy+xor",
+      "ok": true,
+      "detail": "copy0 20000 tests 0 fail 13551 iops, xor0 20000 tests 0 fail 13608 iops"
+    },
+    {
+      "name": "dma oversize",
+      "ok": true,
+      "detail": "copy0 300 tests 137 fail 21 iops, xor0 300 tests 258 fail 11 iops"
+    }
+  ],
+  "metrics": {
+    "link enp0s1 speed Mbps": 100.0,
+    "link enp0s2 speed Mbps": 10000.0,
+    "eth 1G host->box": 93.8,
+    "eth 1G box->host": 864.0,
+    "eth 10G host->box": 3400.0,
+    "eth 10G box->host": 4830.0,
+    "eth USB2 host->box": 50.3,
+    "eth USB2 box->host": 93.6,
+    "dma dma0chan0 copy iops": 13550.53,
+    "dma dma0chan0 xor iops": 13607.62
+  },
+  "all_ok": false
+}

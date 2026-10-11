@@ -1,0 +1,22 @@
+{
+  "timestamp": "2026-10-11T21:41:17+11:00",
+  "commit": "c416db4-dirty",
+  "host": "192.168.25.42",
+  "checks": [
+    {
+      "name": "dma copy+xor",
+      "ok": true,
+      "detail": "copy0 20000 tests 0 fail 13382 iops, xor0 20000 tests 0 fail 13575 iops"
+    },
+    {
+      "name": "dma oversize",
+      "ok": true,
+      "detail": "copy0 300 tests 131 fail 22 iops, xor0 300 tests 264 fail 11 iops"
+    }
+  ],
+  "metrics": {
+    "dma dma0chan0 copy iops": 13381.61,
+    "dma dma0chan0 xor iops": 13574.58
+  },
+  "all_ok": true
+}

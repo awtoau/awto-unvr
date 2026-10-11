@@ -1,0 +1,60 @@
+{
+  "timestamp": "2026-10-11T22:34:48+11:00",
+  "commit": "6bb452a-dirty",
+  "host": "192.168.25.42",
+  "kernel": "7.3.0-rc6-c352697+",
+  "checks": [
+    {
+      "name": "health al_eth module",
+      "ok": false,
+      "detail": "vermagic=modinfo: running=7.3.0-rc6-c352697+"
+    },
+    {
+      "name": "health link enp0s1",
+      "ok": true,
+      "detail": "speed=100 carrier=1 oper=up"
+    },
+    {
+      "name": "health link enp0s2",
+      "ok": true,
+      "detail": "speed=10000 carrier=1 oper=up"
+    },
+    {
+      "name": "health adaptive moderation off",
+      "ok": true,
+      "detail": "off on enp0s1, enp0s2"
+    },
+    {
+      "name": "health MAC counters",
+      "ok": true,
+      "detail": "all zero"
+    },
+    {
+      "name": "health queue drop counters",
+      "ok": true,
+      "detail": "no growth"
+    },
+    {
+      "name": "health kernel log",
+      "ok": false,
+      "detail": "3 line(s): [    0.000000] OF: reserved mem: 0x0000000092000000..0x00000000921fffff (2048 KiB) map non-reusable ramoops@92000000"
+    },
+    {
+      "name": "dma copy+xor",
+      "ok": true,
+      "detail": "copy0 20000 tests 0 fail 13450 iops, xor0 20000 tests 0 fail 13490 iops"
+    },
+    {
+      "name": "dma oversize",
+      "ok": true,
+      "detail": "copy0 300 tests 153 fail 19 iops, xor0 300 tests 268 fail 11 iops"
+    }
+  ],
+  "metrics": {
+    "link enp0s1 speed Mbps": 100.0,
+    "link enp0s2 speed Mbps": 10000.0,
+    "dma dma0chan0 copy iops": 13449.96,
+    "dma dma0chan0 xor iops": 13489.99
+  },
+  "all_ok": false
+}

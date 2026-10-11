@@ -13,18 +13,20 @@ Umbrella issue: #284. No driver code changed by this document.
 
 ## Ranking (bugs prevented / effort)
 
-| # | Work item | Bugs prevented | Effort | Risk | Issue |
-|---|---|---|---|---|---|
-| 1 | al_dma: dmaengine descriptor contract | silent leak/corruption on md RAID5 (XOR advertised, `MD_RAID456` built) | S | low | #278 |
-| 2 | al_thermal: report correct millidegrees, fix remove path, drop PBS HAL | critical trip can never fire (confirmed); double free on rmmod | S | low | #279, #280 |
-| 3 | al_ssm: crypto-API contract (flags, GFP, backlog, BH) + test via dm-crypt/EXTRA_TESTS | #267 closed by reading (AF_ALG mask); contract gaps feed #182 | S flags/tests, M engine | med | #282, #267, #182 |
-| 4 | al_nand: `setup_interface()` for ONFI timing, then exec_op | wrong SET FEATURES address/payload | M (+L for exec_op) | med | #281, #268 |
-| 5 | Retire unreferenced vendor state machines to `debris/` | removes ~14k lines nothing executes (8.5k conditional on SerDes group) | S, mechanical | low | umbrella |
-| 6 | al_eth: ethtool completeness, tunables, `dimlib` | missing `ethtool -m`/FEC; sysfs knobs duplicate ethtool | S | low | umbrella |
-| 7 | al_eth 1G: phylib `adjust_link` -> phylink | one link path for both ports | M | med | umbrella |
-| 8 | SerDes as `drivers/phy` provider + DT tuning | #207, `BUG()`s, per-module copies | L | med | #283, #207 |
-| 9 | al_reboot -> `sp805_wdt` restart | one less module; unproven | S (needs reboot) | med | umbrella |
-| 10 | One HAL source tree | 4 diverging UDMA copies | L | med | #256, #264 |
+Status as of 2026-10-11, HEAD `bc79402`, box `7.3.0-rc6-c352697+`. Per-issue disposition: `docs/issue-reconciliation.md`.
+
+| # | Work item | Bugs prevented | Effort | Risk | Issue | Status |
+|---|---|---|---|---|---|---|
+| 1 | al_dma: dmaengine descriptor contract | silent leak/corruption on md RAID5 (XOR advertised, `MD_RAID456` built) | S | low | #278 | done (`1d6b480`, `5455587`, `c2d432c`, `c073b10`); dmatest 20000 ops, 0 failures. IRQ completion open, parked (#241) |
+| 2 | al_thermal: report correct millidegrees, fix remove path, drop PBS HAL | critical trip can never fire (confirmed); double free on rmmod | S | low | #279, #280 | partial: #279, #294 done; #280 fixed (`580b279`), unverified; PBS HAL (~3,500 lines) not removed |
+| 3 | al_ssm: crypto-API contract (flags, GFP, backlog, BH) + test via dm-crypt/EXTRA_TESTS | #267 closed by reading (AF_ALG mask); contract gaps feed #182 | S flags/tests, M engine | med | #282, #267, #182 | not started: #282, #291, #300, #301 open (umbrella #318); #267 residual is a bench-all label |
+| 4 | al_nand: `setup_interface()` for ONFI timing, then exec_op | wrong SET FEATURES address/payload | M (+L for exec_op) | med | #281, #268 | partial: `setup_interface()` done (#281, `6f94327`); exec_op open (#268) |
+| 5 | Retire unreferenced vendor state machines to `debris/` | removes ~14k lines nothing executes (8.5k conditional on SerDes group) | S, mechanical | low | #325 | not started |
+| 6 | al_eth: ethtool completeness, tunables, `dimlib` | missing `ethtool -m`/FEC; sysfs knobs duplicate ethtool | S | low | #326 | not started |
+| 7 | al_eth 1G: phylib `adjust_link` -> phylink | one link path for both ports | M | med | #327 | not started |
+| 8 | SerDes as `drivers/phy` provider + DT tuning | #207, `BUG()`s, per-module copies | L | med | #283, #207 | partial: #283 done (`92077bb`); phy provider and DT taps open (#207) |
+| 9 | al_reboot -> `sp805_wdt` restart | one less module; unproven | S (needs reboot) | med | #328 | not started |
+| 10 | One HAL source tree | 4 diverging UDMA copies | L | med | #256, #264 | partial: U-Boot and EDK2 stage from `modules/al_eth` (#256); Linux still has separate al_eth/al_ssm/al_dma/al_nand copies (#264) |
 
 - 1-4 are the ones that can hide a #274: silent data-path divergence from a generic contract.
 - 5 is first in line for effort/benefit on audit time: nothing in it can be wrong at runtime, but it is ~14k lines every future review has to rule out.
