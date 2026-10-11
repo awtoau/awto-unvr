@@ -42,6 +42,10 @@ CASES = [
     "reread_failure",
     "reread_blank_page",
     "reread_parityless_page",
+    "timing_mode_feature",
+    "setup_interface_check_only",
+    "setup_interface_programs_controller",
+    "write_byte_is_a_data_cycle",
 ]
 
 

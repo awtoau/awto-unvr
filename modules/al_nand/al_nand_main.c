@@ -45,9 +45,6 @@
 /* 4 KiB page / 224 B OOB on the MT29F8G08 fitted here; 1 KiB is slack. */
 #define AL_NAND_MAX_OOB_SIZE SZ_1K
 
-/* ONFI SET FEATURES address for the timing-mode feature. */
-#define NAND_SET_FEATURES_ADDR 0xfa
-
 /*
  * Command-FIFO drain poll - CMD/ADDRESS entries only.
  *   waits for:  the controller's command FIFO to go empty
@@ -913,29 +910,59 @@ static int al_nand_page_size_convert(unsigned int bytes,
 	return 0;
 }
 
-/* Tell the device which SDR timing mode to use, via ONFI SET FEATURES. */
-static int al_nand_set_timing_mode(struct al_nand_data *nand,
-				   enum al_nand_device_timing_mode timing)
+/*
+ * One data-out byte, for the core's SET FEATURES (nand_set_features_op() sends
+ * its four parameter bytes through legacy.write_byte). The controller carries
+ * the byte in the command entry itself (STATUS_WRITE); write_buf() cannot, as
+ * it only moves whole 4-byte words.
+ */
+static void al_nand_write_byte(struct nand_chip *chip, u8 byte)
 {
-	const u32 cmds[] = {
-		AL_NAND_CMD_SEQ_ENTRY(AL_NAND_COMMAND_TYPE_CMD,
-				      NAND_CMD_SET_FEATURES),
-		AL_NAND_CMD_SEQ_ENTRY(AL_NAND_COMMAND_TYPE_ADDRESS,
-				      NAND_SET_FEATURES_ADDR),
-		AL_NAND_CMD_SEQ_ENTRY(AL_NAND_COMMAND_TYPE_STATUS_WRITE,
-				      timing),
-		AL_NAND_CMD_SEQ_ENTRY(AL_NAND_COMMAND_TYPE_STATUS_WRITE, 0x00),
-		AL_NAND_CMD_SEQ_ENTRY(AL_NAND_COMMAND_TYPE_STATUS_WRITE, 0x00),
-		AL_NAND_CMD_SEQ_ENTRY(AL_NAND_COMMAND_TYPE_STATUS_WRITE, 0x00),
-	};
+	struct al_nand_data *nand = to_al_nand(chip);
 
-	al_nand_cmd_seq_execute(&nand->nand_obj, cmds, ARRAY_SIZE(cmds));
-
-	return al_nand_wait_cmd_fifo_empty(nand);
+	al_nand_cmd_single_execute(
+		&nand->nand_obj,
+		AL_NAND_CMD_SEQ_ENTRY(AL_NAND_COMMAND_TYPE_STATUS_WRITE, byte));
+	al_nand_err_set(nand, al_nand_wait_cmd_fifo_empty(nand));
 }
 
-/* Pick the highest SDR mode the device and AL_NAND_MAX_ONFI_TIMING_MODE both
- * allow, and program the controller and the device for it. */
+/*
+ * The core picks the ONFI SDR mode, sends SET FEATURES 0x01 to the device and
+ * verifies it with GET FEATURES (nand_setup_interface()); this hook programs
+ * the CONTROLLER to match. NAND_DATA_IFACE_CHECK_ONLY must not touch hardware.
+ */
+static int al_nand_setup_interface(struct nand_chip *chip, int chipnr,
+				   const struct nand_interface_config *conf)
+{
+	struct al_nand_data *nand = to_al_nand(chip);
+	int ret;
+
+	if (!nand_interface_is_sdr(conf) ||
+	    conf->timings.mode > AL_NAND_MAX_ONFI_TIMING_MODE)
+		return -EOPNOTSUPP;
+
+	if (chipnr == NAND_DATA_IFACE_CHECK_ONLY)
+		return 0;
+
+	/* Addressing RMN: 2903 - manual timing, see al_nand_timing_params_set(). */
+	nand->dev_props.timingMode = AL_NAND_DEVICE_TIMING_MODE_MANUAL;
+	ret = al_nand_timing_params_set(&nand->dev_props.timing,
+					conf->timings.mode);
+	if (ret)
+		return ret;
+
+	ret = al_nand_dev_config(&nand->nand_obj, &nand->dev_props,
+				 &nand->ecc_config);
+	if (ret) {
+		dev_err(nand->dev, "dev_config failed for timing mode %u\n",
+			conf->timings.mode);
+		return -EIO;
+	}
+
+	return 0;
+}
+
+/* Page size and ECC algorithm from the chip; timing comes from setup_interface(). */
 static int al_nand_onfi_config_set(struct nand_chip *chip)
 {
 	struct al_nand_data *nand = to_al_nand(chip);
@@ -943,31 +970,9 @@ static int al_nand_onfi_config_set(struct nand_chip *chip)
 	const struct nand_ecc_props *req;
 	enum al_nand_device_page_size page_size;
 	struct mtd_info *mtd = nand_to_mtd(chip);
-	u16 modes = 0;
-	int i, ret;
+	int ret;
 
-	/* Addressing RMN: 2903 - see al_nand_timing_params_set(). */
 	props->timingMode = AL_NAND_DEVICE_TIMING_MODE_MANUAL;
-
-	if (chip->parameters.onfi)
-		modes = chip->parameters.onfi->sdr_timing_modes;
-
-	/* A non-ONFI chip reports no modes; fall through to the ceiling. */
-	for (i = AL_NAND_MAX_ONFI_TIMING_MODE;
-	     modes && i && !((1 << i) & modes); i--)
-		;
-
-	ret = al_nand_timing_params_set(&props->timing, i);
-	if (ret) {
-		dev_err(nand->dev, "invalid ONFI timing mode %d\n", i);
-		return ret;
-	}
-
-	ret = al_nand_set_timing_mode(nand, props->timingMode);
-	if (ret) {
-		dev_err(nand->dev, "SET FEATURES (timing mode) timed out\n");
-		return ret;
-	}
 
 	props->num_col_cyc = chip->page_shift;
 	props->num_row_cyc = chip->chip_shift;
@@ -1117,6 +1122,7 @@ static int al_nand_attach_chip(struct nand_chip *chip)
 
 static const struct nand_controller_ops al_nand_controller_ops = {
 	.attach_chip = al_nand_attach_chip,
+	.setup_interface = al_nand_setup_interface,
 };
 
 /******************************************************************************/
@@ -1239,6 +1245,7 @@ static int al_nand_probe(struct platform_device *pdev)
 	chip->legacy.cmd_ctrl = al_nand_cmd_ctrl;
 	chip->legacy.read_byte = al_nand_read_byte;
 	chip->legacy.read_buf = al_nand_read_buf;
+	chip->legacy.write_byte = al_nand_write_byte;
 	chip->legacy.write_buf = al_nand_write_buf;
 	chip->legacy.dev_ready = al_nand_dev_ready;
 	chip->legacy.select_chip = al_nand_select_chip;

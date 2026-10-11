@@ -868,6 +868,90 @@ static int t_reread_parityless_page(void)
 	return 0;
 }
 
+/* #281: the device is told the ONFI mode via feature 0x01, by the core. */
+static int t_timing_mode_feature(void)
+{
+	int ret = do_probe();
+
+	CHECK(ret == 0, "probe succeeds with the core's GET FEATURES verification");
+	CHECK(ctl.features[ONFI_FEATURE_ADDR_TIMING_MODE] == 1,
+	      "feature 0x01 (ONFI timing mode) holds SDR mode 1");
+	CHECK(ctl.features[0xfa] == 0, "nothing written to the vendor address 0xfa");
+	return 0;
+}
+
+static int t_setup_interface_check_only(void)
+{
+	struct nand_interface_config c = { .type = NAND_SDR_IFACE };
+	const struct nand_controller_ops *ops;
+	int n;
+
+	if (do_probe())
+		return 1;
+	bind();
+	ops = chip->controller->ops;
+	if (!ops->setup_interface) {
+		CHECK(0, "controller provides setup_interface()");
+		return 1;
+	}
+	n = ctl.ncmd;
+
+	c.timings.mode = 1;
+	CHECK(ops->setup_interface(chip, NAND_DATA_IFACE_CHECK_ONLY, &c) == 0,
+	      "SDR mode 1 accepted");
+	c.timings.mode = 2;
+	CHECK(ops->setup_interface(chip, NAND_DATA_IFACE_CHECK_ONLY, &c) == -EOPNOTSUPP,
+	      "SDR mode 2 refused (above the compiled ceiling)");
+	c.timings.mode = 0;
+	c.type = NAND_NVDDR_IFACE;
+	CHECK(ops->setup_interface(chip, NAND_DATA_IFACE_CHECK_ONLY, &c) == -EOPNOTSUPP,
+	      "NV-DDR refused");
+	CHECK(ctl.ncmd == n, "CHECK_ONLY touched no hardware");
+	return 0;
+}
+
+static int t_setup_interface_programs_controller(void)
+{
+	struct nand_interface_config c = { .type = NAND_SDR_IFACE };
+	const struct nand_controller_ops *ops;
+	unsigned int slow, fast;
+
+	if (do_probe())
+		return 1;
+	bind();
+	ops = chip->controller->ops;
+	if (!ops->setup_interface) {
+		CHECK(0, "controller provides setup_interface()");
+		return 1;
+	}
+
+	c.timings.mode = 0;
+	CHECK(ops->setup_interface(chip, 0, &c) == 0, "mode 0 programmed");
+	slow = nand->dev_props.timing.tWRP;
+	c.timings.mode = 1;
+	CHECK(ops->setup_interface(chip, 0, &c) == 0, "mode 1 programmed");
+	fast = nand->dev_props.timing.tWRP;
+
+	CHECK(slow == NAND_CLK_CYCLES(54) && fast == NAND_CLK_CYCLES(27),
+	      "tWRP follows the mode table at the DT clock (54 ns -> 27 ns)");
+	CHECK(nand->dev_props.timingMode == AL_NAND_DEVICE_TIMING_MODE_MANUAL,
+	      "controller stays in MANUAL timing (RMN 2903)");
+	return 0;
+}
+
+static int t_write_byte_is_a_data_cycle(void)
+{
+	if (do_probe())
+		return 1;
+	bind();
+	chip->legacy.write_byte(chip, 0x5a);
+	CHECK(ctl.cmd_log[ctl.ncmd - 1] ==
+		      AL_NAND_CMD_SEQ_ENTRY(AL_NAND_COMMAND_TYPE_STATUS_WRITE, 0x5a),
+	      "write_byte() emits one STATUS_WRITE entry carrying the byte");
+	CHECK(nand->op_err == 0, "...and drains cleanly");
+	return 0;
+}
+
 static const struct {
 	const char *name;
 	int (*fn)(void);
@@ -881,6 +965,10 @@ static const struct {
 	{ "reread_failure", t_reread_failure },
 	{ "reread_blank_page", t_reread_blank_page },
 	{ "reread_parityless_page", t_reread_parityless_page },
+	{ "timing_mode_feature", t_timing_mode_feature },
+	{ "setup_interface_check_only", t_setup_interface_check_only },
+	{ "setup_interface_programs_controller", t_setup_interface_programs_controller },
+	{ "write_byte_is_a_data_cycle", t_write_byte_is_a_data_cycle },
 };
 
 int main(int argc, char **argv)
