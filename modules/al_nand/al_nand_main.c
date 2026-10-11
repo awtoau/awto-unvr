@@ -595,26 +595,39 @@ static const struct mtd_ooblayout_ops al_nand_ooblayout_ops = {
 /********************************* HW ECC *************************************/
 /******************************************************************************/
 
-/* An erased page is all 0xff. BCH flags it uncorrectable, so distinguish it by
- * counting zero bits in the OOB rather than trusting the ECC verdict. */
-static bool al_nand_oob_is_empty(const u8 *oob, int len)
+/* HW BCH calls every blank page uncorrectable (all-0xff has no valid parity),
+ * so an uncorrectable verdict must be re-tested. Checks data AND parity per
+ * codeword via the core helper - the OOB alone cannot tell a blank page from
+ * one written without parity (#274). Returns max bitflips, or -EBADMSG. */
+static int al_nand_erased_or_bad(struct nand_chip *chip, u8 *buf, int page)
 {
-	int flips = 0;
-	int i, j;
+	struct al_nand_data *nand = to_al_nand(chip);
+	struct mtd_info *mtd = nand_to_mtd(chip);
+	int eccsize = chip->ecc.size;
+	int eccbytes = chip->ecc.bytes;
+	int max_flips = 0;
+	int i, stat, ret;
 
-	for (i = 0; i < len; i++) {
-		if (oob[i] == 0xff)
-			continue;
+	/* Raw re-read: the ECC path already rewrote buf and dropped the parity. */
+	ret = nand_read_page_op(chip, page, 0, buf, mtd->writesize);
+	if (ret)
+		return ret;
+	ret = nand_read_oob_op(chip, page, 0, chip->oob_poi, mtd->oobsize);
+	if (ret)
+		return ret;
 
-		for (j = 0; j < 8; j++) {
-			if (!(oob[i] & BIT(j))) {
-				if (++flips >= AL_NAND_MAX_BIT_FLIPS)
-					return false;
-			}
-		}
+	for (i = 0; i < chip->ecc.steps; i++) {
+		u8 *data = buf + i * eccsize;
+		u8 *ecc = chip->oob_poi + nand->ecc_offset + i * eccbytes;
+
+		stat = nand_check_erased_ecc_chunk(data, eccsize, ecc, eccbytes,
+						   NULL, 0, chip->ecc.strength);
+		if (stat < 0)
+			return -EBADMSG;
+		max_flips = max(max_flips, stat);
 	}
 
-	return true;
+	return max_flips;
 }
 
 static int al_nand_ecc_read_page(struct nand_chip *chip, u8 *buf,
@@ -661,25 +674,18 @@ static int al_nand_ecc_read_page(struct nand_chip *chip, u8 *buf,
 		return ret;
 
 	if (uncorr) {
-		bool real = true;
+		int flips = al_nand_erased_or_bad(chip, buf, page);
 
-		if (nand->ecc_config.algorithm == AL_NAND_ECC_ALGORITHM_BCH) {
-			chip->legacy.read_buf(chip, nand->oob, mtd->oobsize);
-			ret = al_nand_err_report(nand, 0);
-			if (ret)
-				return ret;
-
-			if (al_nand_oob_is_empty(nand->oob, mtd->oobsize)) {
-				real = false;
-				memset(buf, 0xff, mtd->writesize);
-			}
-		}
-
-		if (real) {
+		if (flips < 0) {
 			mtd->ecc_stats.failed++;
 			dev_err(nand->dev,
 				"uncorrectable ECC error in page %d (total %u)\n",
 				page, mtd->ecc_stats.failed);
+		} else if (flips > 0) {
+			/* Blank page with bitflips: report as corrected so the
+			 * core raises -EUCLEAN and UBI scrubs before it decays. */
+			mtd->ecc_stats.corrected += flips;
+			return flips;
 		}
 	}
 
