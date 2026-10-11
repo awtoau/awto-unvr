@@ -292,18 +292,18 @@ int al_udma_q_init(struct al_udma *udma, uint32_t qid,
 	}
 
 	if (q_params->size < AL_UDMA_MIN_Q_SIZE) {
-		pr_err("udma: queue (%d) size too small\n", qid);
+		pr_err("udma: queue (%d) size (%d) too small\n", qid, q_params->size);
 		return -EINVAL;
 	}
 
 	if (q_params->size > AL_UDMA_MAX_Q_SIZE) {
-		pr_err("udma: queue (%d) size too large\n", qid);
+		pr_err("udma: queue (%d) size (%d) too large\n", qid, q_params->size);
 		return -EINVAL;
 	}
 
 	if (q_params->size & (q_params->size - 1)) {
 		pr_err("udma: queue (%d) size (%d) must be power of 2\n",
-			 q_params->size, qid);
+			 qid, q_params->size);
 		return -EINVAL;
 	}
 
