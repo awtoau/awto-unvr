@@ -52,7 +52,6 @@
 #include <linux/unaligned.h>
 
 #include "al_hal_eth.h"
-#include "al_hal_serdes_25g.h"
 #include "al_init_eth_lm.h"
 #include "alpine_serdes.h"
 
@@ -261,8 +260,6 @@ MODULE_DEVICE_TABLE(pci, al_eth_pci_tbl);
 
 #define MAC_ADDR_STR "%02x:%02x:%02x:%02x:%02x:%02x"
 #define MAC_ADDR(addr) addr[0], addr[1], addr[2], addr[3], addr[4], addr[5]
-
-#define AL_ETH_SERDES_25G_OFFSET 0x2000 /** Offset into 25g serdes from serdes base */
 
 #define  AL_ETH_REF_CLK_FREQ_TO_HZ(ref_clk_freq)   \
 	( ((ref_clk_freq) == AL_ETH_REF_FREQ_375_MHZ) ? 375000000 : (   \

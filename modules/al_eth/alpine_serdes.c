@@ -31,7 +31,7 @@
 static void __iomem *serdes_base;
 
 //#define SERDES_GROUP_SIZE	0x400
-static uint32_t serdes_grp_offset[] = {0, 0x400, 0x800, 0xc00, 0x2000};
+static uint32_t serdes_grp_offset[] = {0, 0x400, 0x800, 0xc00};
 
 static struct al_serdes_grp_obj serdes_grp_obj[AL_SRDS_NUM_GROUPS];
 
@@ -111,10 +111,6 @@ static struct alpine_serdes_eth_group_mode {
 	{
 		.lock = __MUTEX_INITIALIZER(alpine_serdes_eth_group_mode[3].lock),
 		.mode_set = false,
-	},
-	{
-		.lock = __MUTEX_INITIALIZER(alpine_serdes_eth_group_mode[4].lock),
-		.mode_set = false,
 	}};
 
 int alpine_serdes_eth_mode_set(
@@ -137,8 +133,6 @@ int alpine_serdes_eth_mode_set(
 
 		if (mode == ALPINE_SERDES_ETH_MODE_SGMII)
 			obj->mode_set_sgmii(obj);
-		else if (mode == ALPINE_SERDES_ETH_MODE_25G)
-			obj->mode_set_25g(obj);
 		else
 			obj->mode_set_kr(obj);
 

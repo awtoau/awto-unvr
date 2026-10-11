@@ -35,16 +35,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "al_serdes.h"
 #include "al_hal_serdes_hssp.h"
-#include "al_hal_serdes_25g.h"
 
 static int(*handle_init[AL_SRDS_NUM_GROUPS])(void __iomem *, struct al_serdes_grp_obj *) = {
 	al_serdes_hssp_handle_init,
 	al_serdes_hssp_handle_init,
 	al_serdes_hssp_handle_init,
 	al_serdes_hssp_handle_init,
-#if CHECK_ALPINE_V2
-	al_serdes_25g_handle_init,
-#endif
 };
 
 int al_serdes_handle_grp_init(

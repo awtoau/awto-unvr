@@ -53,12 +53,7 @@ enum al_serdes_group {
 	AL_SRDS_GRP_C,
 	AL_SRDS_GRP_D,
 	AL_SRDS_NUM_HSSP_GROUPS,
-#if CHECK_ALPINE_V2
-	AL_SRDS_GRP_E = AL_SRDS_NUM_HSSP_GROUPS,
-	AL_SRDS_NUM_GROUPS,
-#else
 	AL_SRDS_NUM_GROUPS = AL_SRDS_NUM_HSSP_GROUPS,
-#endif
 };
 
 int al_serdes_handle_grp_init(

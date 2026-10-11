@@ -29,8 +29,7 @@ void __iomem *alpine_serdes_resource_get(u32 group);
 /* SerDes ETH mode */
 enum alpine_serdes_eth_mode {
 	ALPINE_SERDES_ETH_MODE_SGMII,
-	ALPINE_SERDES_ETH_MODE_KR,
-	ALPINE_SERDES_ETH_MODE_25G
+	ALPINE_SERDES_ETH_MODE_KR
 };
 
 /*

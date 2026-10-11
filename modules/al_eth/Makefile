@@ -43,7 +43,6 @@ $(MODNAME)-y := al_eth_main.o \
             al_eth_sysfs.o \
             al_hal_eth_main.o \
             al_hal_iofic.o \
-            al_hal_serdes_25g.o \
             al_hal_serdes_hssp.o \
             al_hal_udma_config.o \
             al_hal_udma_debug.o \
