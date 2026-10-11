@@ -25,7 +25,6 @@
 #include <asm/io.h>
 #include <vsprintf.h>
 
-#include "al_hal_serdes_25g.h"		/* pulls interface + common + shim */
 #include "al_hal_serdes_hssp.h"		/* HSSP group HAL - the REAL group-D driver */
 #include "al_serdes_10g.h"
 

@@ -18,8 +18,6 @@ Authored (Awto, GPLv2-or-later; on U-Boot primitives):
   `board/annapurna/alpine/al_hal/` or similar).
 
 Vendor HAL, verbatim (Annapurna Labs, GPLv2 OR BSD-3-Clause — headers untouched):
-- `al_hal_serdes_25g.c` — 25G/10G SerDes group config + lane calibration + status.
-- `al_hal_serdes_25g.h`, `al_hal_serdes_25g_regs.h`, `al_hal_serdes_25g_internal_regs.h`
 - `al_hal_serdes_hssp.c` — HSSP group HAL (#111): the REAL driver for group D
   (the UNVR SFP+ 10G lane). Ported byte-identical from `modules/al_eth/` (the
   Linux driver tree) — no adaptation was needed to compile under U-Boot.

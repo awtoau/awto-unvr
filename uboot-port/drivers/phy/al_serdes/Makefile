@@ -1,9 +1,8 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
-# Annapurna Labs 25G SerDes HAL (alpine_v2 subset) + fixed-10G SFP+ bring-up.
+# Annapurna Labs HSSP SerDes HAL + fixed-10G SFP+ bring-up.
 # Copyright (C) 2026 Awto / Daniel Tyrrell <dan@awto.au>
 # Co-authored with Claude (Anthropic).
 
-obj-y += al_hal_serdes_25g.o	# vendor PMA HAL (25G/10G group config)
 obj-y += al_hal_serdes_hssp.o	# vendor PMA HAL (HSSP group, real 10G-optic EQ)
 obj-y += al_serdes_10g.o	# fixed-10G init + PCS + `serdes` command
 

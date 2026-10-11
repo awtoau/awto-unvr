@@ -107,7 +107,7 @@ ALLOWLIST: dict[str, str] = {
     ),
     "uboot-port/drivers/phy/al_serdes": (
         "phase 2 (#256): modules/al_eth/ has al_hal_serdes_* but the copies "
-        "have really diverged (al_hal_serdes_25g.c differs by 176 lines). "
+        "have really diverged (al_hal_serdes_hssp.c differs). "
         "Consolidating needs its own 10G/SerDes bring-up proof, not the 1G "
         "tftpboot gate this phase is measured by."
     ),
