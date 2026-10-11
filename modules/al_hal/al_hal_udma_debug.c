@@ -286,7 +286,7 @@ static void al_udma_regs_s2m_wr_print(struct al_udma *udma)
 {
 	pr_debug("S2M write regs:\n");
 	AL_UDMA_PRINT_REG(udma, " ", "\n", s2m, s2m_wr, data_cfg_1);
-	AL_UDMA_PRINT_REG(udma, " ", "\n", s2m, s2m_wr, data_cfg_1);
+	AL_UDMA_PRINT_REG(udma, " ", "\n", s2m, s2m_wr, data_cfg_2);
 }
 
 static void al_udma_regs_s2m_comp_print(struct al_udma *udma)
@@ -322,7 +322,7 @@ static void al_udma_regs_s2m_feature_print(struct al_udma *udma)
 static void al_udma_regs_s2m_q_print(struct al_udma *udma, uint32_t qid)
 {
 	pr_debug("S2M Q[%d] status regs:\n", qid);
-	al_reg_write32(&udma->udma_regs->m2s.m2s.indirect_ctrl, qid);
+	al_reg_write32(&udma->udma_regs->s2m.s2m.indirect_ctrl, qid);
 	AL_UDMA_PRINT_REG(udma, " ", "\n", s2m, s2m, sel_pref_fifo_status);
 	AL_UDMA_PRINT_REG(udma, " ", "\n", s2m, s2m, sel_comp_fifo_status);
 
