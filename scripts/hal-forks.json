@@ -83,10 +83,9 @@
   }
  },
  "al_hal_ssm_raid_regs.h": {
-  "reason": "being merged into modules/al_hal in this series (#264)",
+  "reason": "U-Boot carrier: uboot-port/drivers/crypto/al_ssm holds a copy identical to the shared file. It cannot link into modules/; it goes with the U-Boot al_ssm driver (plan item 5, #325).",
   "trees": {
-   "al_dma": "ab10235f79dfa144",
-   "al_ssm": "025e17e0ba88b3b9",
+   "al_hal": "025e17e0ba88b3b9",
    "uboot": "025e17e0ba88b3b9"
   }
  },
