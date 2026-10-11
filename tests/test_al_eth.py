@@ -129,3 +129,52 @@ def test_adaptive_moderation_defaults_off(alpine):
         ["-DCONFIG_ARCH_ALPINE=1"] if alpine else [],
     )
     assert run(exe).strip() == "0"
+
+
+# ---- #305: rx_poll completes NAPI whatever the refill did --------------------
+
+
+def _header_defines(*names: str) -> str:
+    hdr = (MAIN_C.parent / "al_eth.h").read_text()
+    out = []
+    for n in names:
+        m = re.search(rf"^#define\s+{n}\b.*$", hdr, re.M)
+        assert m, f"{n} not defined in al_eth.h"
+        out.append(m.group(0))
+    return "\n".join(out) + "\n"
+
+
+RX_CASES = [
+    "short_refill_completes",
+    "zero_refill_completes",
+    "full_refill_completes",
+    "budget_exhausted_stays_scheduled",
+    "moderation_follows_the_flag",
+    "watchdog_kicks_after_threshold",
+    "watchdog_nonempty_resets_count",
+    "watchdog_full_ring_never_kicks",
+    "watchdog_queues_independent",
+    "watchdog_rearms_only_while_up",
+]
+
+
+@pytest.fixture(scope="module")
+def rx_harness() -> Path:
+    src = main_c()
+    funcs = "\n\n".join(
+        extract_function(src, n)
+        for n in (
+            "al_eth_rx_poll_finish",
+            "al_eth_check_for_empty_rx_ring",
+            "al_eth_rx_watchdog",
+        )
+    )
+    consts = _header_defines(
+        "AL_ETH_DEFAULT_RX_DESCS", "AL_ETH_EMPTY_RX_REFILL", "AL_ETH_RX_WATCHDOG_PERIOD"
+    )
+    return build("rx", "al_eth_rx_host.c", {"rx_funcs": funcs, "consts": consts})
+
+
+@pytest.mark.parametrize("case", RX_CASES)
+def test_rx_ring_recovery(rx_harness, case):
+    assert f"PASS {case}" in run(rx_harness, case)

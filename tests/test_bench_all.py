@@ -40,6 +40,9 @@ enp0s2 rx_errors=0 rx_crc_errors=0 tx_errors=0
 @@coalesce
 enp0s1 Adaptive RX: off  TX: n/a
 enp0s2 Adaptive RX: off  TX: n/a
+@@qstats
+enp0s1 queue_0_rx_refill_fail:0 queue_0_rx_empty_ring:0 queue_1_rx_refill_fail:0
+enp0s2 queue_0_rx_refill_fail:0 queue_0_rx_empty_ring:0 queue_1_rx_empty_ring:0
 @@dmesg
 [  10.0] al_eth 0000:00:01.0: of_irq_parse_pci: failed with rc=-22
 [  11.0] EXT4-fs (sda2): mounted
@@ -91,6 +94,33 @@ def test_health_counters_judge_growth_not_history():
     grown = old.replace("rx_errors=7", "rx_errors=9")
     third = {n: ok for n, ok, _ in m.judge_health(m.parse_sections(grown), state)[0]}
     assert third["health MAC counters"] is False
+
+
+def test_health_rx_refill_shortfall_fails_and_sums_queues():
+    bad = HEALTH_OK.replace("queue_1_rx_empty_ring:0", "queue_1_rx_empty_ring:2")
+    ok, detail = _health(bad)[0]["health rx ring refill"]
+    assert ok is False and "enp0s2 rx_empty_ring 0->2" in detail
+    assert _health(HEALTH_OK)[0]["health rx ring refill"][0] is True
+
+
+def test_health_rx_refill_growth_only_after_first_look():
+    m = _mod()
+    state = m.HealthState()
+    old = HEALTH_OK.replace(
+        "queue_0_rx_refill_fail:0 queue_0_rx_empty_ring:0 queue_1_rx",
+        "queue_0_rx_refill_fail:5 queue_0_rx_empty_ring:0 queue_1_rx",
+        1,
+    )
+    assert not _health(old, state)[0]["health rx ring refill"][0]  # one-shot
+    again = _health(old, state)[0]["health rx ring refill"][0]
+    assert again is True  # unchanged: not a new finding
+
+
+def test_health_rx_refill_missing_data_fails():
+    gone = HEALTH_OK.replace(
+        "queue_0_rx_refill_fail:0 queue_0_rx_empty_ring:0 queue_1_rx_empty_ring:0", ""
+    )
+    assert _health(gone)[0]["health rx ring refill"][0] is False
 
 
 def test_health_adaptive_moderation_on_fails():

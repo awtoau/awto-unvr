@@ -6,7 +6,7 @@ another script (see "Not in here", #312). One run writes a comparable JSON snaps
 Subtests (each is a function taking a Report; metrics land in the snapshot and
 --compare / --idle pick them up by name):
 - health: al_eth vermagic vs running kernel, carrier + speed, MAC error
-  counters, adaptive RX moderation off (#304), kernel-log trouble lines. (test-eth.py's non-throughput half.)
+  counters, adaptive RX moderation off (#304), RX refill shortfalls (#305), kernel-log trouble lines. (test-eth.py's non-throughput half.)
 - eth: bidirectional iperf3, 4 streams, per port (1G, 10G, any USB NIC), bound
   with SO_BINDTODEVICE (`-B ip%iface`); a plain -B bind picks the wrong NIC (#121).
 - crypto: AES-256-XTS via AF_ALG. It binds by generic name, so it measures
@@ -588,6 +588,9 @@ DMESG_BAD = re.compile(
 DMESG_BENIGN = ("of_irq_parse_pci: failed with rc=-22",)
 # Error counters: any growth between two looks is a finding.
 HEALTH_ERROR_COUNTERS = ("rx_errors", "rx_crc_errors", "tx_errors")
+# Driver-private per-queue counters from `ethtool -S` (summed over queues):
+# a short RX refill and an empty ring the watchdog had to kick (#305).
+HEALTH_QUEUE_COUNTERS = ("rx_refill_fail", "rx_empty_ring")
 
 
 class HealthState:
@@ -596,6 +599,7 @@ class HealthState:
     def __init__(self) -> None:
         self.mark: str | None = None  # dmesg marker: only look at lines after it
         self.stats: dict[str, dict[str, int]] | None = None
+        self.queue_stats: dict[str, dict[str, int]] | None = None
         # --idle: the first look records the counters instead of judging them,
         # so history from before the run is not a finding.
         self.baseline_first_look = False
@@ -609,6 +613,7 @@ echo '@@vermagic'; modinfo -F vermagic al_eth 2>&1
 echo '@@link'; for i in {ifs}; do echo "$i speed=$(cat /sys/class/net/$i/speed 2>/dev/null) carrier=$(cat /sys/class/net/$i/carrier 2>/dev/null) oper=$(cat /sys/class/net/$i/operstate 2>/dev/null)"; done
 echo '@@stats'; for i in {ifs}; do echo "$i $(for c in {" ".join(HEALTH_ERROR_COUNTERS)}; do echo -n "$c=$(cat /sys/class/net/$i/statistics/$c 2>/dev/null) "; done)"; done
 echo '@@coalesce'; for i in {ifs}; do echo "$i $(ethtool -c $i 2>&1 | grep -i 'Adaptive RX')"; done
+echo '@@qstats'; for i in {ifs}; do echo "$i $(ethtool -S $i 2>&1 | grep -E '_({"|".join(HEALTH_QUEUE_COUNTERS)}):' | tr -d ' ' | tr '\\n' ' ')"; done
 echo '@@dmesg'; dmesg | {scan}
 """
 
@@ -657,14 +662,37 @@ def parse_counters(text: str) -> dict[str, dict[str, int]]:
     return stats
 
 
+def parse_queue_stats(text: str) -> dict[str, dict[str, int]]:
+    """'<iface> queue_0_rx_refill_fail:0 queue_1_rx_refill_fail:0 ...' lines ->
+    {iface: {rx_refill_fail: <sum over queues>, ...}}; an interface with none of
+    the counters is left out."""
+    out: dict[str, dict[str, int]] = {}
+    for line in text.splitlines():
+        parts = line.split()
+        if not parts:
+            continue
+        sums = dict.fromkeys(HEALTH_QUEUE_COUNTERS, 0)
+        seen = False
+        for p in parts[1:]:
+            m = re.fullmatch(r"queue_\d+_(\w+):(\d+)", p)
+            if m and m[1] in sums:
+                sums[m[1]] += int(m[2])
+                seen = True
+        if seen:  # a driver without the counters is "no data", not "zero"
+            out[parts[0]] = sums
+    return out
+
+
 def counter_growth(
-    prev: dict[str, dict[str, int]] | None, cur: dict[str, dict[str, int]]
+    prev: dict[str, dict[str, int]] | None,
+    cur: dict[str, dict[str, int]],
+    names: tuple[str, ...] = HEALTH_ERROR_COUNTERS,
 ) -> list[str]:
     """Error counters that grew since the previous look; with no previous look
     (one-shot run) any nonzero counter counts, as test-eth.py judged it."""
     grown = []
     for iface, ctrs in sorted(cur.items()):
-        for name in HEALTH_ERROR_COUNTERS:
+        for name in names:
             if name not in ctrs:
                 continue
             before = (prev or {}).get(iface, {}).get(name, 0)
@@ -741,6 +769,18 @@ def judge_health(
         )
     )
     state.stats = cur
+    qcur = parse_queue_stats(sections.get("qstats", ""))
+    if state.queue_stats is None and state.baseline_first_look:
+        state.queue_stats = qcur
+    qgrown = counter_growth(state.queue_stats, qcur, HEALTH_QUEUE_COUNTERS)
+    checks.append(
+        (
+            "health rx ring refill",
+            not qgrown and set(qcur) >= set(HEALTH_IFACES),
+            ", ".join(qgrown) or ("no growth" if qcur else "no queue counters"),
+        )
+    )
+    state.queue_stats = qcur
     bad = dmesg_trouble(sections.get("dmesg", ""))
     checks.append(
         (

@@ -11,6 +11,7 @@
 #define AL_ETH_H
 
 #include <linux/interrupt.h>
+#include <linux/timer.h>
 #include <linux/netdevice.h>
 #include <linux/etherdevice.h>
 #include <linux/skbuff.h>
@@ -194,6 +195,8 @@ struct al_eth_stats_rx {
 	u64 skb_alloc_fail;
 	u64 dma_mapping_err;
 	u64 small_copy_len_pkt;
+	u64 refill_fail;	/* rx_poll left the ring short of buffers */
+	u64 empty_ring;		/* watchdog found the ring empty and kicked NAPI */
 };
 
 struct al_eth_ring {
@@ -225,6 +228,7 @@ struct al_eth_ring {
 
 	struct net_device *netdev;
 	struct al_udma_q_params	q_params;
+	u8 empty_rx_queue;	/* RX only: consecutive empty looks by the watchdog */
 
 	struct u64_stats_sync syncp;
 	union {
@@ -237,6 +241,12 @@ struct al_eth_ring {
 #define AL_ETH_TX_RING_IDX_NEXT(tx_ring, idx) (((idx) + 1) & (AL_ETH_DEFAULT_TX_SW_DESCS - 1))
 
 #define AL_ETH_RX_RING_IDX_NEXT(rx_ring, idx) (((idx) + 1) & (AL_ETH_DEFAULT_RX_DESCS - 1))
+/* RX-empty watchdog, same shape as ena_timer_service()/check_for_empty_rx_ring():
+ * look once a second; a ring empty on EMPTY_RX_REFILL looks in a row (3 s) gets
+ * its NAPI scheduled so rx_poll refills it. Expiry action: kick + count. */
+#define AL_ETH_RX_WATCHDOG_PERIOD	HZ
+#define AL_ETH_EMPTY_RX_REFILL		3
+
 #define AL_ETH_RX_RING_IDX_ADD(rx_ring, idx, n) (((idx) + (n)) & (AL_ETH_DEFAULT_RX_DESCS - 1))
 
 /* flow control configuration */
@@ -578,6 +588,9 @@ struct al_eth_adapter {
 	al_bool				kr_fec_enable;
 
 	struct 	work_struct 		reset_task;
+
+	/* Re-kicks an RX ring that ran out of buffers (#305). */
+	struct timer_list		rx_watchdog;
 
 	/* MAC cross-check reporting (#222), out of band - never used by probe. */
 	struct devlink			*devlink;

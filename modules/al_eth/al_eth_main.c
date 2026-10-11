@@ -3304,16 +3304,16 @@ al_eth_refill_rx_bufs(struct al_eth_adapter *adapter, unsigned int qid,
 		struct al_eth_rx_buffer *rx_info = &rx_ring->rx_buffer_info[next_to_use];
 
 		if (unlikely(al_eth_alloc_rx_frag(adapter, rx_ring, rx_info) < 0)) {
-			netdev_warn(adapter->netdev, "failed to alloc buffer for rx queue %d\n",
-				    qid);
+			net_warn_ratelimited("%s: failed to alloc buffer for rx queue %d\n",
+				    adapter->netdev->name, qid);
 			break;
 		}
 		rc = al_eth_rx_buffer_add(rx_ring->dma_q,
 					 &rx_info->al_buf, AL_ETH_RX_FLAGS_INT,
 					 NULL);
 		if (unlikely(rc)) {
-			netdev_warn(adapter->netdev, "failed to add buffer for rx queue %d\n",
-				    qid);
+			net_warn_ratelimited("%s: failed to add buffer for rx queue %d\n",
+				    adapter->netdev->name, qid);
 			break;
 
 		}
@@ -3321,8 +3321,8 @@ al_eth_refill_rx_bufs(struct al_eth_adapter *adapter, unsigned int qid,
 	}
 
 	if (unlikely(i < num)) {
-		netdev_warn(adapter->netdev, "refilled rx queue %d with %d pages only - available %d\n",
-			    qid, i, al_udma_available_get(rx_ring->dma_q));
+		net_warn_ratelimited("%s: refilled rx queue %d with %d pages only - available %d\n",
+			    adapter->netdev->name, qid, i, al_udma_available_get(rx_ring->dma_q));
 	}
 
 	if (likely(i))
@@ -3651,6 +3651,77 @@ static inline void al_eth_rx_checksum(struct al_eth_adapter *adapter,
 }
 
 /**
+ * al_eth_rx_poll_finish - refill the ring, then leave polling mode if under budget
+ *
+ * An under-budget poll MUST napi_complete() whatever the refill did: scheduling
+ * from inside poll is a no-op (SCHED is still set) and left the queue dead with
+ * its IRQ masked (#305). Same as ena_io_poll(): complete when under budget.
+ * A short refill is counted; al_eth_rx_watchdog() recovers an emptied ring.
+ */
+static void
+al_eth_rx_poll_finish(struct al_eth_adapter *adapter, struct al_eth_ring *rx_ring,
+		      struct napi_struct *napi, unsigned int qid, int budget_left)
+{
+	int refill_required = al_udma_available_get(rx_ring->dma_q);
+	int refill_actual = al_eth_refill_rx_bufs(adapter, qid, refill_required);
+
+	if (unlikely(refill_actual < refill_required)) {
+		u64_stats_update_begin(&rx_ring->syncp);
+		rx_ring->rx_stats.refill_fail++;
+		u64_stats_update_end(&rx_ring->syncp);
+	}
+
+	if (budget_left > 0) {
+		napi_complete(napi);
+		if (adapter->adaptive_intr_rate)
+			al_eth_update_intr_moderation(adapter, qid, AL_ETH_RX);
+		al_reg_write32_relaxed(rx_ring->unmask_reg_offset, rx_ring->unmask_val);
+	}
+}
+
+/**
+ * al_eth_check_for_empty_rx_ring - kick NAPI on a ring that has no buffers
+ *
+ * With every RX descriptor consumed and none refilled the MAC has nowhere to
+ * write, no completion arrives, so no IRQ ever runs rx_poll to refill:
+ * ena check_for_empty_rx_ring(). Empty = all descriptors free.
+ */
+static void al_eth_check_for_empty_rx_ring(struct al_eth_adapter *adapter)
+{
+	int i;
+
+	for (i = 0; i < adapter->num_rx_queues; i++) {
+		struct al_eth_ring *rx_ring = &adapter->rx_ring[i];
+
+		if (al_udma_available_get(rx_ring->dma_q) != AL_ETH_DEFAULT_RX_DESCS - 1) {
+			rx_ring->empty_rx_queue = 0;
+			continue;
+		}
+		if (++rx_ring->empty_rx_queue < AL_ETH_EMPTY_RX_REFILL)
+			continue;
+
+		u64_stats_update_begin(&rx_ring->syncp);
+		rx_ring->rx_stats.empty_ring++;
+		u64_stats_update_end(&rx_ring->syncp);
+		netdev_err(adapter->netdev, "rx queue %d empty, rescheduling to refill\n", i);
+		napi_schedule(rx_ring->napi);
+		rx_ring->empty_rx_queue = 0;
+	}
+}
+
+static void al_eth_rx_watchdog(struct timer_list *t)
+{
+	struct al_eth_adapter *adapter = timer_container_of(adapter, t, rx_watchdog);
+
+	if (!adapter->up)
+		return;
+
+	al_eth_check_for_empty_rx_ring(adapter);
+	mod_timer(&adapter->rx_watchdog,
+		  round_jiffies(jiffies + AL_ETH_RX_WATCHDOG_PERIOD));
+}
+
+/**
  * al_eth_rx_poll - NAPI Rx polling callback
  * @napi: structure for representing this polling device
  * @budget: how many packets driver is allowed to clean
@@ -3667,8 +3738,6 @@ al_eth_rx_poll(struct napi_struct *napi, int budget)
 	struct al_eth_pkt *hal_pkt = &rx_ring->hal_pkt;
 	int work_done = 0;
 	u16 next_to_clean = rx_ring->next_to_clean;
-	int refill_required;
-	int refill_actual;
 	unsigned int total_len = 0;
 	unsigned int small_copy_len_pkt = 0;
 
@@ -3751,21 +3820,7 @@ next:
 	rx_ring->rx_stats.small_copy_len_pkt += small_copy_len_pkt;
 	u64_stats_update_end(&rx_ring->syncp);
 
-	refill_required = al_udma_available_get(rx_ring->dma_q);
-	refill_actual = al_eth_refill_rx_bufs(adapter, qid, refill_required);
-
-	if (unlikely(refill_actual < refill_required)) {
-		netdev_warn(adapter->netdev,
-			"%s: rescheduling rx queue %d\n", __func__, qid);
-		napi_schedule(napi);
-	} else if (budget > 0) {
-		dev_dbg(&adapter->pdev->dev, "rx_poll: q %d done next to clean %x\n",
-			qid, next_to_clean);
-		napi_complete(napi);
-		if(adapter->adaptive_intr_rate)
-			al_eth_update_intr_moderation(adapter, qid, AL_ETH_RX);
-		al_reg_write32_relaxed(rx_ring->unmask_reg_offset, rx_ring->unmask_val);
-	}
+	al_eth_rx_poll_finish(adapter, rx_ring, napi, qid, budget);
 
 	return work_done;
 }
@@ -3924,6 +3979,10 @@ static int al_eth_up(struct al_eth_adapter *adapter)
 		goto err_req_irq;
 
 	adapter->up = true;
+
+	timer_setup(&adapter->rx_watchdog, al_eth_rx_watchdog, 0);
+	mod_timer(&adapter->rx_watchdog,
+		  round_jiffies(jiffies + AL_ETH_RX_WATCHDOG_PERIOD));
 
 	return rc;
 
@@ -4112,6 +4171,8 @@ static void al_eth_down(struct al_eth_adapter *adapter)
 	adapter->up = false;
 	adapter->last_link = false;
 
+	/* shutdown, not delete: the callback re-arms itself */
+	timer_shutdown_sync(&adapter->rx_watchdog);
 	netif_carrier_off(adapter->netdev);
 	al_eth_disable_int_sync(adapter);
 	al_eth_napi_disable_all(adapter);
@@ -5001,6 +5062,8 @@ static const struct al_eth_ethtool_stats al_eth_ethtool_stats_rx_strings[] = {
 	AL_ETH_ETHTOOL_STAT_RX_ENTRY(skb_alloc_fail),
 	AL_ETH_ETHTOOL_STAT_RX_ENTRY(dma_mapping_err),
 	AL_ETH_ETHTOOL_STAT_RX_ENTRY(small_copy_len_pkt),
+	AL_ETH_ETHTOOL_STAT_RX_ENTRY(refill_fail),
+	AL_ETH_ETHTOOL_STAT_RX_ENTRY(empty_ring),
 };
 
 #define AL_ETH_ETHTOOL_STATS_ARRAY_GLOBAL	ARRAY_SIZE(al_eth_ethtool_stats_global_strings)
@@ -6000,6 +6063,7 @@ al_eth_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 
 	al_eth_init_rings(adapter);
 	INIT_WORK(&adapter->reset_task, al_eth_reset_task);
+	timer_setup(&adapter->rx_watchdog, al_eth_rx_watchdog, 0);
 
 	netdev->netdev_ops = &al_eth_netdev_ops;
 
