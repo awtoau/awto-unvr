@@ -352,6 +352,71 @@ static void al_dma_cleanup_tasklet(struct tasklet_struct *t)
 	spin_unlock_irqrestore(&ch->lock, flags);
 }
 
+/* ======== Channel lifecycle ======== */
+
+/* Reset the channel's tx and rx HAL queues. Only enabled ones: a queue that
+ * never initialised has no q_regs, and a disabled one is already stopped.
+ * Without this the HAL keeps "queue already enabled" and the next
+ * alloc_chan_resources() fails -EIO (#289). Returns the first error. */
+static int al_dma_hw_queue_stop(struct al_dma_chan *ch)
+{
+	struct al_dma_device *dev = ch->device;
+	struct al_udma_q *q[2] = {
+		al_ssm_dma_tx_queue_handle_get(&dev->hal_dma, ch->idx),
+		al_ssm_dma_rx_queue_handle_get(&dev->hal_dma, ch->idx),
+	};
+	int i, rc = 0;
+
+	for (i = 0; i < 2; i++) {
+		int r;
+
+		if (!q[i] || q[i]->status != AL_QUEUE_ENABLED)
+			continue;
+		r = al_udma_q_reset(q[i]);
+		if (r) {
+			dev_err(&dev->pdev->dev, "chan %d: %s queue reset failed: %d\n",
+				ch->idx, i ? "rx" : "tx", r);
+			rc = rc ? rc : r;
+		}
+	}
+	return rc;
+}
+
+/* Complete every submitted-but-unfinished slot as `res` and empty the ring.
+ * The HW queues must already be stopped and no prep may be running (free
+ * path: no client left). Returns how many slots were completed. */
+static int al_dma_abort_outstanding(struct al_dma_chan *ch,
+				    enum al_dma_result res)
+{
+	int n = 0;
+
+	for (;;) {
+		struct al_dma_sw_desc *desc;
+		dma_cookie_t cookie;
+		unsigned long flags;
+
+		spin_lock_irqsave(&ch->lock, flags);
+		if (ch->completed == ch->head) {
+			ch->tail = ch->head;
+			spin_unlock_irqrestore(&ch->lock, flags);
+			return n;
+		}
+		desc = &ch->sw_ring[ch->completed];
+		cookie = desc->txd.cookie;
+		if (cookie >= DMA_MIN_COOKIE)
+			dma_cookie_complete(&desc->txd);
+		spin_unlock_irqrestore(&ch->lock, flags);
+
+		if (cookie >= DMA_MIN_COOKIE)
+			al_dma_desc_finish(desc, res);
+
+		spin_lock_irqsave(&ch->lock, flags);
+		ch->completed = (ch->completed + 1) % ch->sw_ring_count;
+		spin_unlock_irqrestore(&ch->lock, flags);
+		n++;
+	}
+}
+
 static int al_dma_alloc_chan_resources(struct dma_chan *c)
 {
 	struct al_dma_chan *ch = to_al_dma_chan(c);
@@ -359,6 +424,12 @@ static int al_dma_alloc_chan_resources(struct dma_chan *c)
 	struct al_udma_q_params tx_params, rx_params;
 	int ring_size;
 	int rc = 0;	/* stays 0 on the alloc-failure paths below */
+
+	if (ch->dead) {
+		dev_err(&dev->pdev->dev, "chan %d: HW queue reset failed earlier, reboot to recover\n",
+			ch->idx);
+		return -EIO;
+	}
 
 	ring_size = 1 << ring_alloc_order;
 	ch->sw_ring_count = ring_size;
@@ -414,6 +485,8 @@ static int al_dma_alloc_chan_resources(struct dma_chan *c)
 		dev_err(&dev->pdev->dev,
 			"Failed to init DMA queue %d: %d\n", ch->idx, rc);
 		al_dma_fault(dev, AL_DMA_FAULT_QUEUE_INIT);
+		/* tx may have come up before rx failed */
+		al_dma_hw_queue_stop(ch);
 		goto err_q_init;
 	}
 
@@ -467,7 +540,7 @@ err_tx_ring:
 	ch->sw_ring = NULL;
 	if (rc == 0)
 		al_dma_fault(dev, AL_DMA_FAULT_DMA_ALLOC);
-	return -ENOMEM;
+	return rc ? rc : -ENOMEM;
 }
 
 static void al_dma_free_chan_resources(struct dma_chan *c)
@@ -475,24 +548,42 @@ static void al_dma_free_chan_resources(struct dma_chan *c)
 	struct al_dma_chan *ch = to_al_dma_chan(c);
 	struct al_dma_device *dev = ch->device;
 	int ring_size = ch->sw_ring_count;
+	int rc, n;
 
 	if (!ch->sw_ring)
 		return;
 
 	tasklet_kill(&ch->cleanup_task);
 
-	if (ch->rx_cring)
-		dma_free_coherent(&dev->pdev->dev,
-			ring_size * AL_DMA_RAID_RX_CDESC_SIZE,
-			ch->rx_cring, ch->rx_cring_dma);
-	if (ch->rx_ring)
-		dma_free_coherent(&dev->pdev->dev,
-			ring_size * sizeof(union al_udma_desc),
-			ch->rx_ring, ch->rx_ring_dma);
-	if (ch->tx_ring)
-		dma_free_coherent(&dev->pdev->dev,
-			ring_size * sizeof(union al_udma_desc),
-			ch->tx_ring, ch->tx_ring_dma);
+	/* Stop the engine before anything it could write to goes away, and
+	 * before the callbacks below unmap the clients' buffers. */
+	rc = al_dma_hw_queue_stop(ch);
+	n = al_dma_abort_outstanding(ch, AL_DMA_RES_ABORTED);
+	if (n)
+		dev_warn(&dev->pdev->dev, "chan %d: aborted %d in-use descriptors on free\n",
+			 ch->idx, n);
+
+	if (rc) {
+		/* The engine may still DMA into the rings: leak them. */
+		ch->dead = true;
+		dev_err(&dev->pdev->dev, "chan %d: leaking rings, queue not stopped\n", ch->idx);
+	} else {
+		if (ch->rx_cring)
+			dma_free_coherent(&dev->pdev->dev,
+				ring_size * AL_DMA_RAID_RX_CDESC_SIZE,
+				ch->rx_cring, ch->rx_cring_dma);
+		if (ch->rx_ring)
+			dma_free_coherent(&dev->pdev->dev,
+				ring_size * sizeof(union al_udma_desc),
+				ch->rx_ring, ch->rx_ring_dma);
+		if (ch->tx_ring)
+			dma_free_coherent(&dev->pdev->dev,
+				ring_size * sizeof(union al_udma_desc),
+				ch->tx_ring, ch->tx_ring_dma);
+	}
+	ch->rx_cring = NULL;
+	ch->rx_ring = NULL;
+	ch->tx_ring = NULL;
 
 	kfree(ch->sw_ring);
 	ch->sw_ring = NULL;
@@ -973,8 +1064,16 @@ static void al_dma_pci_remove(struct pci_dev *pdev)
 
 	dma_async_device_unregister(&aldev->dma_dev);
 
-	for (i = 0; i < aldev->num_channels; i++)
-		tasklet_kill(&aldev->channels[i].cleanup_task);
+	/* A client that never released its channel: free it (stops its HW
+	 * queues). Anything else still enabled is stopped too, so a module
+	 * reload never meets a running queue (#289, as al_ssm #167). */
+	for (i = 0; i < aldev->num_channels; i++) {
+		struct al_dma_chan *ch = &aldev->channels[i];
+
+		tasklet_kill(&ch->cleanup_task);
+		al_dma_free_chan_resources(&ch->chan);
+		al_dma_hw_queue_stop(ch);
+	}
 
 	/* After this no fault can still be in flight to a live reporter. */
 	al_dma_devlink_fini(aldev);

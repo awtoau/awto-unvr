@@ -48,6 +48,10 @@ CASES = [
     "pq_cap_gate",
     "slot_held_through_callback",
     "error_status",
+    "realloc",
+    "free_aborts_inflight",
+    "alloc_failure",
+    "remove_resets",
 ]
 
 
@@ -83,6 +87,7 @@ def harness() -> Path:
             f"-I{BUILD / 'kshim'}",
             str(BUILD / "harness.c"),
             *[str(BUILD / c) for c in HAL_C],
+            "-Wl,--wrap=al_udma_q_init",
             "-lpthread",
             "-o",
             str(exe),

@@ -112,6 +112,19 @@ void al_dma_devlink_fini(struct al_dma_device *dev) { (void)dev; }
 int al_dma_sysfs_init(struct al_dma_device *dev) { (void)dev; return 0; }
 void al_dma_sysfs_remove(struct al_dma_device *dev) { (void)dev; }
 
+/* Fail the Nth al_udma_q_init() call (1-based; 0 = never) with -EINVAL. The
+ * driver inits tx then rx, so 2 fails the rx half of the first alloc. */
+static int g_qinit_calls, g_qinit_fail_at;
+int __real_al_udma_q_init(struct al_udma *udma, uint32_t qid,
+			  struct al_udma_q_params *q_params);
+int __wrap_al_udma_q_init(struct al_udma *udma, uint32_t qid,
+			  struct al_udma_q_params *q_params)
+{
+	if (++g_qinit_calls == g_qinit_fail_at)
+		return -EINVAL;
+	return __real_al_udma_q_init(udma, qid, q_params);
+}
+
 /* ----------------------------------------------------- fake UDMA engine */
 #define NQ DMA_MAX_Q
 #define MAXPEND 2048
@@ -743,6 +756,104 @@ static int t_error_status(void)
 	return fails;
 }
 
+/* #289: a channel can be freed and allocated again, and free stops the HW. */
+static int t_realloc(void)
+{
+	struct client c1 = { 0 }, c2 = { 0 };
+	int rc1, rc2;
+
+	env_init();
+	rc1 = alloc_chan(0);
+	CHECK(rc1 > 0, "first alloc");
+	submit_copy(0, &c1, 4096, false);
+	D->dma_dev.device_issue_pending(&chan(0)->chan);
+	run_tasklet(0, 4);
+	CHECK(c1.cb == 1, "op completes before free");
+	free_chan(0);
+	CHECK(emu[0].rst_tx == 1 && emu[0].rst_rx == 1, "free reset both HW queues");
+	rc2 = alloc_chan(0);
+	CHECK(rc2 > 0, "second alloc succeeds (was -EIO: queue already enabled)");
+	if (rc2 > 0) {
+		submit_copy(0, &c2, 4096, false);
+		D->dma_dev.device_issue_pending(&chan(0)->chan);
+		run_tasklet(0, 4);
+		CHECK(c2.cb == 1, "op completes after re-alloc");
+	}
+	free_chan(0);
+	CHECK(emu[0].rst_tx == 2 && emu[0].rst_rx == 2, "second free reset again");
+	return fails;
+}
+
+static int g_rst_at_cb = -1;
+static void note_reset_state(struct client *c)
+{
+	(void)c;
+	if (g_rst_at_cb < 0)
+		g_rst_at_cb = emu[0].rst_tx + emu[0].rst_rx;
+}
+
+/* #289: free with ops in flight stops the HW first, then completes them as
+ * ABORTED (callbacks run, buffers unmapped) instead of dropping them. */
+static int t_free_aborts_inflight(void)
+{
+	static struct client c[3];
+	dma_cookie_t ck[3];
+	int i, bad = 0;
+
+	quiet = 1;
+	env_init();
+	alloc_chan(0);
+	emu[0].hold = 1;
+	for (i = 0; i < 3; i++)
+		ck[i] = submit_copy(0, &c[i], 4096, true);
+	c[0].in_cb = note_reset_state;
+	D->dma_dev.device_issue_pending(&chan(0)->chan);
+	free_chan(0);
+	quiet = 0;
+	for (i = 0; i < 3; i++)
+		bad += !(c[i].cb_result == 1 && c[i].last_result == DMA_TRANS_ABORTED);
+	CHECK(bad == 0, "all 3 in-flight ops got callback_result ABORTED");
+	CHECK(k_unmap_calls == 3, "all 3 unmapped");
+	CHECK(status_of(0, ck[2]) == DMA_COMPLETE, "cookies complete");
+	CHECK(g_rst_at_cb == 2, "HW queues were reset before the first callback ran");
+	CHECK(chan(0)->sw_ring == NULL, "ring freed");
+	return fails;
+}
+
+/* #289: the real errno comes back, and a half-initialised channel (tx queue
+ * up, rx init failed) is stopped so the next alloc can succeed. */
+static int t_alloc_failure(void)
+{
+	int rc;
+
+	quiet = 1;
+	env_init();
+	g_qinit_fail_at = 2;
+	rc = alloc_chan(0);
+	CHECK(rc == -EINVAL, "alloc returns the HAL errno, not -ENOMEM");
+	CHECK(emu[0].rst_tx == 1, "tx queue that did init was reset");
+	CHECK(chan(0)->sw_ring == NULL, "nothing left allocated");
+	g_qinit_fail_at = 0;
+	quiet = 0;
+	CHECK(alloc_chan(0) > 0, "retry succeeds (was -EIO: tx queue left enabled)");
+	return fails;
+}
+
+/* #289: removal stops every initialised queue, including a channel a client
+ * never released, and leaves never-initialised ones alone. */
+static int t_remove_resets(void)
+{
+	quiet = 1;
+	env_init();
+	alloc_chan(1);
+	al_dma_pci_remove(&g_pdev);
+	quiet = 0;
+	CHECK(emu[1].rst_tx == 1 && emu[1].rst_rx == 1, "initialised channel was reset");
+	CHECK(emu[0].rst_tx == 0 && emu[2].rst_tx == 0, "idle channels untouched");
+	CHECK(g_unregister_calls == 1, "unregistered from dmaengine");
+	return fails;
+}
+
 struct test { const char *name; int (*fn)(void); };
 static const struct test tests[] = {
 	{ "smoke", t_smoke },
@@ -752,6 +863,10 @@ static const struct test tests[] = {
 	{ "pq_cap_gate", t_pq_cap_gate },
 	{ "slot_held_through_callback", t_slot_held_through_callback },
 	{ "error_status", t_error_status },
+	{ "realloc", t_realloc },
+	{ "free_aborts_inflight", t_free_aborts_inflight },
+	{ "alloc_failure", t_alloc_failure },
+	{ "remove_resets", t_remove_resets },
 };
 
 int main(int argc, char **argv)

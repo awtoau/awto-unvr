@@ -65,6 +65,10 @@ struct al_dma_chan {
 	 * plx_dma.c's ring_lock (__acquires in prep, __releases in submit)
 	 * and the vendor's al_dma_tx_submit_sw_cond_unlock(). */
 	unsigned long			prep_flags;
+	/* A HW queue reset failed: the rings may still be written by the
+	 * engine, so they are leaked and the channel refuses new work until
+	 * reboot (#289). */
+	bool				dead;
 	struct tasklet_struct		cleanup_task;
 	/* #23: bounds the tasklet's self-reschedule loop below - a
 	 * descriptor that never completes (real hardware bug, confirmed
