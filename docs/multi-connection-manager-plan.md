@@ -150,7 +150,7 @@ model: "ONE tio owns the serial port and exposes a unix socket + a plain log."
   - `scripts/ssh-woomera.py` (`ssh-woomera.py:1-126`): MAC-OUI LAN discovery +
     `tmp/woomera-addr` cache (single address, no per-NIC distinction), then a
     fresh `os.execvp("ssh", …)` per invocation — no connection reuse.
-  - `scripts/test-eth.py` (`test-eth.py:55-90, 253-300`): `sshpass` + plain
+  - `debris/scripts/test-eth.py` (`debris/scripts/test-eth.py:55-90, 253-300`): `sshpass` + plain
     `ssh` per remote command, no ControlMaster, no persistent session.
   - `scripts/eth-watch.py` (`eth-watch.py:1-40`): the closest thing to a
     *persistent* SSH session in this repo — one long-lived `ssh` process
@@ -164,7 +164,7 @@ model: "ONE tio owns the serial port and exposes a unix socket + a plain log."
   first — not necessarily the one you meant to test — and even once you have
   the *right* box IP, Linux route selection on the dev host is
   destination-driven, so the wrong local NIC can still carry the traffic
-  silently. `test-eth.py:253-300` already codes around this for one-shot
+  silently. `debris/scripts/test-eth.py:253-300` already codes around this for one-shot
   iperf3 runs (`enp0s2_ip()` queries the live IP over SSH, `check_local_route()`
   reports which local NIC `ip route get` would actually use). **This
   correctness problem has no formal state today** — it is re-solved ad hoc,
@@ -229,12 +229,12 @@ No awto-l8 analogue — its boards each have one physical link. `conn/health.py`
 for `1g`/`10g` should actively check, not just remember, which NIC an address
 resolves through:
 1. Read the link's own cached IP (`tmp/conn-addr.<1g|10g>`, populated the same
-   way `test-eth.py:253-261` `enp0s2_ip()` does — query
+   way `debris/scripts/test-eth.py:253-261` `enp0s2_ip()` does — query
    `ip -4 -o addr show enp0sN` over whichever connection is currently up,
    bootstrapping from `ssh-woomera.py`'s MAC-OUI discovery on first contact).
 2. Before trusting `running`, run `ip route get <cached-IP>` **on the dev
    host** and confirm the selected local device matches the NIC this target
-   is supposed to test through (mirrors `test-eth.py:262-295`
+   is supposed to test through (mirrors `debris/scripts/test-eth.py:262-295`
    `check_local_route()`, but as a first-class recurring health check instead
    of a one-shot script gate).
 3. Mismatch → `wrong-nic`, with the remedy already documented in
@@ -258,7 +258,7 @@ ssh -M -N -f -S tmp/ssh.<1g|10g>.sock \
 ```
 
 - `-M -N -f`: establish a backgrounded ControlMaster, no remote command.
-  Password auth (`sshpass`, per `test-eth.py:65-90` — no SSH key is set up for
+  Password auth (`sshpass`, per `debris/scripts/test-eth.py:65-90` — no SSH key is set up for
   this box today) happens **once**, at master creation; every subsequent
   `ssh -S tmp/ssh.<key>.sock root@<ip> <cmd>` reuses the multiplexed
   connection with no further auth cost. This is the direct SSH analogue of

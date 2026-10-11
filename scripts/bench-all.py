@@ -129,7 +129,8 @@ def run_remote(
 
 
 class Report:
-    def __init__(self) -> None:
+    def __init__(self, echo: bool = True) -> None:
+        self.echo = echo  # False in --idle: the terminal gets findings only
         self.checks: list[tuple[str, bool, str]] = []
         self.metrics: dict[str, float] = {}
 
@@ -137,8 +138,8 @@ class Report:
         self, name: str, ok: bool, detail: str, metric: float | None = None
     ) -> None:
         self.checks.append((name, ok, detail))
-        mark = "PASS" if ok else "FAIL"
-        print(f"[{mark}] {name}: {detail}")
+        if self.echo:
+            print(f"[{'PASS' if ok else 'FAIL'}] {name}: {detail}")
         if metric is not None:
             self.metrics[name] = metric
 
@@ -492,12 +493,220 @@ def _hdparm_direct(
     return True, f"{mbps:.1f} MB/sec", mbps
 
 
+def _usb_link_mbps(host: str, password: str, dev: str) -> float | None:
+    """Negotiated USB speed (Mb/s) of the device's usb_device node: SuperSpeed
+    is 5000; behind a USB 2.0 hub it caps at 480 whatever the bridge can do."""
+    walk = (
+        f"p=$(readlink -f /sys/block/{dev}); "
+        'while [ "$p" != / ]; do '
+        '[ -f "$p/speed" ] && [ -f "$p/idVendor" ] && { cat "$p/speed"; break; }; '
+        'p=$(dirname "$p"); done'
+    )
+    rc, out = run_remote(host, password, walk, timeout=DMA_SSH_CONNECT_S + DMA_SLACK_S)
+    try:
+        return float(out.strip().splitlines()[-1]) if rc == 0 and out.strip() else None
+    except ValueError:
+        return None
+
+
 def bench_disks(
     host: str, password: str, devices: tuple[str, ...], label: str, report: Report
 ) -> None:
     for dev in devices:
         ok, detail, mbps = _hdparm_direct(host, password, dev)
         report.add(f"{label} {dev}", ok, detail, metric=mbps)
+        if label == "usb":
+            link = _usb_link_mbps(host, password, dev)
+            if link is not None:
+                report.add(
+                    f"{label} {dev} link",
+                    True,
+                    f"{link:.0f} Mb/s negotiated",
+                    metric=link,
+                )
+
+
+# ======== Health (link, MAC counters, kernel log) ========
+
+HEALTH_IFACES = ("enp0s1", "enp0s2")
+# Kernel-log lines that mean a driver or the engine is in trouble. Narrower
+# than soak-test.py's list on purpose: an unattended run must not cry wolf.
+DMESG_BAD = re.compile(
+    r"WARNING:|BUG:|Oops|Call trace|Unable to handle|SError|hung task|soft lockup"
+    r"|hard LOCKUP|rcu_sched|I/O error|ata\d+\.\d+: failed|reset failed|tx timeout"
+    r"|Tx timeout|link is down|uncorrect|never completed|queue reset failed"
+    r"|Failed to init DMA queue|completion error|DMA-API"
+    r"|al_eth.*(error|fail|timeout|hang)",
+    re.IGNORECASE,
+)
+# Known-benign and already tracked: #55 (MSI-X fallback works).
+DMESG_BENIGN = ("of_irq_parse_pci: failed with rc=-22",)
+# Error counters: any growth between two looks is a finding.
+HEALTH_ERROR_COUNTERS = ("rx_errors", "rx_crc_errors", "tx_errors")
+
+
+class HealthState:
+    """What the health subtest carries from one cycle to the next (--idle)."""
+
+    def __init__(self) -> None:
+        self.mark: str | None = None  # dmesg marker: only look at lines after it
+        self.stats: dict[str, dict[str, int]] | None = None
+
+
+def _health_script(mark: str | None) -> str:
+    ifs = " ".join(HEALTH_IFACES)
+    scan = f"sed -n '/{mark}/,$p'" if mark else "cat"
+    return f"""echo '@@kernel'; uname -r
+echo '@@vermagic'; modinfo -F vermagic al_eth 2>&1
+echo '@@link'; for i in {ifs}; do echo "$i speed=$(cat /sys/class/net/$i/speed 2>/dev/null) carrier=$(cat /sys/class/net/$i/carrier 2>/dev/null) oper=$(cat /sys/class/net/$i/operstate 2>/dev/null)"; done
+echo '@@stats'; for i in {ifs}; do echo "$i $(for c in {" ".join(HEALTH_ERROR_COUNTERS)}; do echo -n "$c=$(cat /sys/class/net/$i/statistics/$c 2>/dev/null) "; done)"; done
+echo '@@dmesg'; dmesg | {scan}
+"""
+
+
+def parse_sections(text: str) -> dict[str, str]:
+    """Split output on '@@name' marker lines."""
+    out: dict[str, list[str]] = {}
+    cur = None
+    for line in text.splitlines():
+        if line.startswith("@@"):
+            cur = line[2:].strip()
+            out[cur] = []
+        elif cur is not None:
+            out[cur].append(line)
+    return {k: "\n".join(v).strip() for k, v in out.items()}
+
+
+def parse_link(text: str) -> dict[str, dict[str, str]]:
+    links = {}
+    for m in re.finditer(r"^(\S+) speed=(\S*) carrier=(\S*) oper=(\S*)", text, re.M):
+        links[m[1]] = {"speed": m[2], "carrier": m[3], "oper": m[4]}
+    return links
+
+
+def parse_counters(text: str) -> dict[str, dict[str, int]]:
+    stats: dict[str, dict[str, int]] = {}
+    for line in text.splitlines():
+        parts = line.split()
+        if not parts:
+            continue
+        stats[parts[0]] = {
+            k: int(v)
+            for k, v in (p.split("=", 1) for p in parts[1:] if "=" in p)
+            if v.isdigit()
+        }
+    return stats
+
+
+def counter_growth(
+    prev: dict[str, dict[str, int]] | None, cur: dict[str, dict[str, int]]
+) -> list[str]:
+    """Error counters that grew since the previous look; with no previous look
+    (one-shot run) any nonzero counter counts, as test-eth.py judged it."""
+    grown = []
+    for iface, ctrs in sorted(cur.items()):
+        for name in HEALTH_ERROR_COUNTERS:
+            if name not in ctrs:
+                continue
+            before = (prev or {}).get(iface, {}).get(name, 0)
+            if ctrs[name] > before:
+                grown.append(f"{iface} {name} {before}->{ctrs[name]}")
+    return grown
+
+
+def dmesg_trouble(text: str) -> list[str]:
+    return [
+        line.strip()
+        for line in text.splitlines()
+        if DMESG_BAD.search(line) and not any(b in line for b in DMESG_BENIGN)
+    ]
+
+
+def judge_health(
+    sections: dict[str, str], state: HealthState
+) -> tuple[list[tuple[str, bool, str]], dict[str, float]]:
+    """(checks, metrics) from one health look. Pure: no I/O."""
+    checks: list[tuple[str, bool, str]] = []
+    metrics: dict[str, float] = {}
+    kernel = sections.get("kernel", "")
+    vermagic = (sections.get("vermagic", "").split() or [""])[0]
+    checks.append(
+        (
+            "health al_eth module",
+            bool(kernel) and vermagic == kernel,
+            f"vermagic={vermagic or '?'} running={kernel or '?'}",
+        )
+    )
+    links = parse_link(sections.get("link", ""))
+    for iface in HEALTH_IFACES:
+        link = links.get(iface)
+        if not link:
+            checks.append((f"health link {iface}", False, "no data"))
+            continue
+        up = link["carrier"] == "1" and link["oper"] == "up"
+        checks.append(
+            (
+                f"health link {iface}",
+                up,
+                f"speed={link['speed']} carrier={link['carrier']} oper={link['oper']}",
+            )
+        )
+        if link["speed"].isdigit():
+            metrics[f"link {iface} speed Mbps"] = float(link["speed"])
+    cur = parse_counters(sections.get("stats", ""))
+    grown = counter_growth(state.stats, cur)
+    checks.append(
+        (
+            "health MAC counters",
+            not grown and bool(cur),
+            ", ".join(grown) or ("no growth" if state.stats else "all zero")
+            if cur
+            else "no counters",
+        )
+    )
+    state.stats = cur
+    bad = dmesg_trouble(sections.get("dmesg", ""))
+    checks.append(
+        (
+            "health kernel log",
+            not bad,
+            f"{len(bad)} line(s): {bad[0]}" if bad else "no trouble lines",
+        )
+    )
+    return checks, metrics
+
+
+def bench_health(
+    host: str, password: str, report: Report, state: HealthState | None = None
+) -> None:
+    state = state or HealthState()
+    # Waits for: one ssh round trip plus dmesg. Limit = connect + slack.
+    rc, out = run_remote(
+        host,
+        password,
+        _health_script(state.mark),
+        timeout=DMA_SSH_CONNECT_S + DMA_SLACK_S,
+    )
+    if rc != 0:
+        report.add("health", False, f"rc={rc}: {out.strip()[-200:]}")
+        return
+    checks, metrics = judge_health(parse_sections(out), state)
+    for name, ok, detail in checks:
+        report.add(name, ok, detail)
+    report.metrics.update(metrics)
+
+
+def mark_dmesg(host: str, password: str, state: HealthState, stamp: str) -> None:
+    """Put a marker in the kernel log; the next health look reads from it."""
+    mark = f"bench-all mark {stamp}"
+    rc, _ = run_remote(
+        host,
+        password,
+        f"echo '{mark}' > /dev/kmsg",
+        timeout=DMA_SSH_CONNECT_S + DMA_SLACK_S,
+    )
+    if rc == 0:
+        state.mark = mark
 
 
 # ======== DMA engine (al_dma, via dmatest) ========
@@ -736,6 +945,8 @@ def run_suite(args) -> dict:
     print(f"# woomera at {host}", file=sys.stderr)
     report = Report()
 
+    if not args.skip_health:
+        bench_health(host, args.password, report)
     if not args.skip_eth:
         bench_ethernet(host, args.password, args.eth_duration, report)
     if not args.skip_crypto:
@@ -811,6 +1022,7 @@ def main() -> int:
         "--host", help="woomera's address (default: auto-locate by MAC OUI)"
     )
     ap.add_argument("--password", default=DEFAULT_ROOT_PASSWORD)
+    ap.add_argument("--skip-health", action="store_true")
     ap.add_argument("--skip-eth", action="store_true")
     ap.add_argument("--skip-crypto", action="store_true")
     ap.add_argument("--skip-disk", action="store_true")

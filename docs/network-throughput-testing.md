@@ -25,25 +25,24 @@ still be entirely a 1G-class measurement, on the *second* attempt at fixing
 it - the first fix (binding source address) didn't actually address the
 route-selection problem at all.
 
-## Use `scripts/test-eth.py`, don't hand-roll `iperf3` commands
+## Use `scripts/bench-all.py`, don't hand-roll `iperf3` commands
 
-`scripts/test-eth.py` implements this correctly: it queries `enp0s2`'s own
-live IP over SSH (not host-discovery's address) and reports which local
-interface+speed `ip route get` will actually use for the test, so a
-wrong-NIC result is flagged instead of silently mislabeled. Its own
-docstring is the maintained, authoritative explanation of this - this doc
-summarizes it, refer to the script for detail as it evolves.
+- `scripts/bench-all.py` replaced `test-eth.py` (retired to `debris/scripts/`).
+- Ethernet: bidirectional iperf3, 4 streams, per port (1G, 10G, any USB NIC).
+  - Client binds with `-B <ip>%<iface>` (SO_BINDTODEVICE), not a plain source bind (#121).
+  - Pairing is fixed (`ETH_PAIRS`), so a wrong-NIC result cannot be mislabelled.
+- Health subtest keeps test-eth's non-throughput checks: module vermagic vs
+  running kernel, carrier/speed, MAC error counters, kernel-log errors.
+  - SFP DDM (i2c) is not in it: `scripts/sfp-ddm.py`.
 
 ```
-./scripts/test-eth.py                    # full run, ~30s iperf3 each way
-./scripts/test-eth.py --skip-iperf        # quick check, no throughput test
-./scripts/test-eth.py --iperf-duration 60 # longer throughput test
+./scripts/bench-all.py --skip-crypto --skip-disk --skip-usb --skip-dma   # eth + health
+./scripts/bench-all.py --skip-eth                                        # everything else
 ```
 
-It still cannot force your *own* machine's egress interface for you (that
-needs the temporary host route above) - it only reports what route
-selection will actually do, so you can catch a wrong-NIC run before trusting
-the number.
+- It cannot force the dev host's own egress interface; the fixed pairing plus
+  the neighbour flush covers it. If a result still looks wrong, add the host
+  route above.
 
 ## A third trap: the box itself can pick the wrong egress NIC (#170)
 
