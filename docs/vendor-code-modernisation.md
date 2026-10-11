@@ -21,7 +21,7 @@ Status as of 2026-10-11, HEAD `bc79402`, box `7.3.0-rc6-c352697+`. Per-issue dis
 | 2 | al_thermal: report correct millidegrees, fix remove path, drop PBS HAL | critical trip can never fire (confirmed); double free on rmmod | S | low | #279, #280 | partial: #279, #294 done; #280 fixed (`580b279`), unverified; PBS HAL (~3,500 lines) not removed |
 | 3 | al_ssm: crypto-API contract (flags, GFP, backlog, BH) + test via dm-crypt/EXTRA_TESTS | #267 closed by reading (AF_ALG mask); contract gaps feed #182 | S flags/tests, M engine | med | #282, #267, #182 | not started: #282, #291, #300, #301 open (umbrella #318); #267 residual is a bench-all label |
 | 4 | al_nand: `setup_interface()` for ONFI timing, then exec_op | wrong SET FEATURES address/payload | M (+L for exec_op) | med | #281, #268 | partial: `setup_interface()` done (#281, `6f94327`); exec_op open (#268) |
-| 5 | Retire unreferenced vendor state machines to `debris/` | removes ~14k lines nothing executes (8.5k conditional on SerDes group) | S, mechanical | low | #325 | not started |
+| 5 | Retire unreferenced vendor state machines to `debris/` | removes ~14k lines nothing executes (8.5k conditional on SerDes group) | S, mechanical | low | #325 | done: 31.5k lines to `debris/code/` (23.0k Linux modules, 8.5k U-Boot); evidence table under "Item 5 evidence"; `git log --grep '#325'`. Function-level leftovers listed there, not retired |
 | 6 | al_eth: ethtool completeness, tunables, `dimlib` | missing `ethtool -m`/FEC; sysfs knobs duplicate ethtool | S | low | #326 | not started |
 | 7 | al_eth 1G: phylib `adjust_link` -> phylink | one link path for both ports | M | med | #327 | not started |
 | 8 | SerDes as `drivers/phy` provider + DT tuning | #207, `BUG()`s, per-module copies | L | med | #283, #207 | partial: #283 done (`92077bb`); phy provider and DT taps open (#207) |
@@ -31,12 +31,48 @@ Status as of 2026-10-11, HEAD `bc79402`, box `7.3.0-rc6-c352697+`. Per-issue dis
 - 1-4 are the ones that can hide a #274: silent data-path divergence from a generic contract.
 - 5 is first in line for effort/benefit on audit time: nothing in it can be wrong at runtime, but it is ~14k lines every future review has to rule out.
 
+## Item 5 evidence (#325)
+
+- Method: `scripts/find-dead-code.py` (ctags spans + name reachability; roots = `.c` file-scope initialisers and `#define` bodies) over `modules/*`; `outside_refs` greps tests/, scripts/, U-Boot, EDK2; every move built (9 `.ko`, 0 warnings, `CONFIG_WERROR=y`).
+- 10G port SerDes group: **3 = HSSP group D**, lane 0. DT `serdes-grp = <3>`; woomera debugfs `board_params` for `0000:00:02.0`: `serdes grp 3 lane 0`. 1G port: no SerDes. Group E (25G, offset 0x2000) unused; U-Boot (`al_serdes_10g.c`): board-cfg SKIP, external-aborts on first access.
+- Retired code is in `debris/code/<dir>/` with a README per directory.
+
+| file | lines | why dead | disposition |
+|---|---|---|---|
+| `al_eth/al_init_eth_lm.c` | 2,564 -> 262 | detect/establish step machines, SFP/QSFP detect, Auto-FEC, retimer drivers: no caller outside themselves; phylink + sfp.c own the port; `retimer_exist = false` | cut to `al_eth-vendor-lm/`; kept `al_eth_lm_init`, static SerDes tables + `_params_set`, `static_parameters_{override,get}`, `debug_mode_set` |
+| `al_eth/al_init_eth_lm.h` | 546 -> 210 | context/params fields only the cut code read | trimmed |
+| `al_eth/al_init_eth_kr.[ch]` | 830 + 78 | sole caller `al_eth_an_lt_execute()` in the cut establish step | moved, `al_eth-kr-an-lt/` |
+| `al_eth/al_hal_eth_kr.[ch]` | 1,029 + 372 | sole caller is `al_init_eth_kr.c` | moved |
+| `al_eth/al_hal_an_lt_wrapper_regs.h` | 263 | included only by `al_hal_eth_kr.c` | moved |
+| `al_eth/al_hal_serdes_25g.{c,h}`, `_regs.h`, `_internal_regs.h` | 3,395 + 79 + 434 + 4,616 | only reference: `al_serdes.c` group-init table (fills pointers, no register access) for group 4; board has no group 4 | moved, `al_eth-serdes-25g/`; `AL_SRDS_NUM_GROUPS` 5 -> 4 |
+| `uboot-port/.../al_hal_serdes_25g.{c,h}`, `_regs.h`, `_internal_regs.h` | 3,393 + 79 + 434 + 4,616 | linked `u-boot` ELF has no `al_serdes_25g*` symbol; `al_serdes_10g.c` only included the header | moved, `uboot-serdes-25g/`; syntax-checked, full U-Boot build not run (it resets the shared tree) |
+| `al_ssm/al_hal_ssm_crypto_cfg.c` | 2,382 | 7 exported symbols, callers = header declarations; GMAC/inline-CRC/compression config | moved, `al_ssm-unbuilt-hal/`; 7 prototypes cut from `al_hal_ssm_crypto.h` |
+| `al_ssm/al_err_events*.{c,h}`, `al_err_events_internal.h` | 166 + 383 + 239 + 1,403 + 223 | never in the Makefile, included by nothing | moved |
+| `al_ssm/al_hal_ssm_crc_regs.h`, `al_hal_unit_adapter_gen_regs.h` | 409 + 1,460 | included by nothing built | moved |
+| `al_dma/al_hal_unit_adapter_regs.h` | 433 | included by no al_dma source | moved, `al_dma-unbuilt-hal/` |
+| `al_ssm/al_hal_ssm_crc_memcpy.[ch]` | 789 + 344 | only caller `al_ssm_error_ints_unmask()`, itself uncalled; `al_ssm_main.c` is crypto-only | moved, `al_ssm-crc-memcpy/` |
+| `al_ssm/al_hal_ssm.c`, `al_hal_ssm_crypto.c` (+ `.h`) | 23 + 125 (+ 35) | `al_ssm_error_ints_unmask`, `al_crypto_error_ints_{mask_get,unmask}` | cut |
+| `al_ssm/al_hal_unit_adapter.c`, `.h` | 443 + 261 | 25 of 30 functions uncalled | cut, `al_ssm-unit-adapter/`; kept `_init`, `_snoop_enable`, `_error_track_enable`, `al_pcie_perform_flr`, `_rob_cfg` |
+
+- Module sizes (unstripped `.ko`, bytes): `al_eth_1g` 8,575,008 -> 7,655,152; `al_eth_10g` 8,575,064 -> 7,655,200; `al_ssm` 3,165,488 -> 2,816,128; others unchanged.
+- `hal-drift` baseline: 39 -> 35 tracked files (25G x4 no longer shared with U-Boot; `al_hal_unit_adapter_regs.h` loses al_dma; `al_hal_ssm.h`, `al_hal_unit_adapter.h`, `al_hal_ssm.c` re-hashed).
+
+Kept (dead by the scan, not retired):
+
+| file | lines | reason kept |
+|---|---|---|
+| `al_eth/al_hal_eth_main.c` | 2,051 of 7,919 (59 functions) | staged into U-Boot and EDK2 (#256); U-Boot calls `al_eth_flr_rmn_restore_params`; the RX/TX parser tables are annotated by `scripts/designate-al-eth-tables.py` |
+| `al_nand/al_hal_nand.c` | 909 of 2,131 (13 functions) | `al_nand_properties_encode` is used by `tests/c/al_nand_host.c`; page read/write command generators belong to item 3/4 (exec_op) |
+| `al_thermal/al_hal_pbs_utils.c`, `al_hal_thermal_sensor.c` | 77 + 103 | item 2 (PBS HAL removal) |
+| `al_*/al_hal_udma_*`, `al_hal_iofic*`, `al_hal_ssm_raid*`, `al_hal_m2m_udma*` | ~5,800 dead across copies | item 10 (one HAL tree) is merging these |
+| `al_eth/alpine_serdes.c` lock/trylock/unlock | 21 | uncalled; tied to #310 |
+
 ## Alpine-specific code that stays (all modules)
 
 - UDMA M2S/S2M queue, descriptor, completion-ring and IOFIC register programming (`al_hal_udma_*`, `al_hal_iofic*`).
 - al_eth MAC/EC programming: `al_hal_eth_main.c` (MAC modes, RFW/RSS tables, checksum/TSO descriptor metadata, flow-control regs, clear-on-read stats, Alpine MDIO controller).
 - SerDes HSSP register programming: PLL, CDR, TX/RX equalisation, eye measurement (`al_hal_serdes_hssp.c`).
-- 10GBASE-R PCS status read; SerDes static TX/RX parameter tables (`al_init_eth_lm.c:739-833`).
+- 10GBASE-R PCS status read; SerDes static TX/RX parameter tables (`al_init_eth_lm.c`, now the whole file).
 - al_nand: command FIFO, code-word buffers, BCH engine programming, boot-time config decode from PBS (ECC layout must match the bootloader), IRQ wait.
 - al_ssm/al_dma: SSM crypto SA format (`al_hal_ssm_crypto*.c`), RAID/XOR/PQ transaction build and GF tables (`al_hal_ssm_raid.c`).
 - al_thermal: sensor enable/power-down, T_VALID/T_INIT_DONE polling, readout conversion (V2 offset 1090, multiplier 3520).
@@ -108,10 +144,8 @@ Status as of 2026-10-11, HEAD `bc79402`, box `7.3.0-rc6-c352697+`. Per-issue dis
   - 10G port: phylink + `drivers/net/phy/sfp.c` (`al_eth_phylink.c`, only the PCS and three MAC ops are ours); `page_pool` RX; `pci_enable_msix_exact` only because IOFIC needs a sparse entry set (#177).
   - 1G port: phylib + mii_bus.
 - Duplicates a generic subsystem:
-  - `al_init_eth_lm.c:400-720`: SFF-8472/SFF-8436 byte-offset parser (`SFP_I2C_HEADER_*`, `QSFP_*`) = `sfp-bus.c:sfp_parse_support()`. Reachable only from the unreferenced establish path. Keeping it does not solve #237/#128 (sfp.c reports 10GBASE-R for optic and DAC alike): the discriminator is `struct sfp_eeprom_id` (`base.sfp_ct_passive/active`) inside sfp.c, which phylink does not hand to the MAC driver.
-  - `al_init_eth_lm.c:1849-2410` link detection/establish state machine, retimer lock checks (`:1424-1600`), `al_eth_lm_link_check`: phylink's job. No caller outside the state machine itself (`al_eth_lm_link_establish`, `al_eth_lm_link_detection`, `al_eth_lm_link_check`, `al_eth_lm_pause_check` have none).
-  - KR AN/LT: `al_init_eth_kr.c` (830) + `al_hal_eth_kr.c` (1,029) + `al_hal_eth_kr.h` (372); only caller is `al_eth_an_lt_execute()` from the dead establish path. Mainline has no clause 72 framework; keep as register-level HAL only if 10GBASE-KR backplane is ever needed.
-  - 25G SerDes (`al_hal_serdes_25g.c` 3,395 + internal regs 4,616 + regs 434 + `.h` 79 = 8,524 lines): selected only for SerDes group 4 (`al_serdes.c`); the 1G port has no SerDes (dmesg: "no serdes on this port"). Confirm the 10G port's group from board params before retiring.
+  - Retired in item 5 (`debris/code/al_eth-vendor-lm/`, `al_eth-kr-an-lt/`, `al_eth-serdes-25g/`): SFF-8472/8436 parser, link detection/establish state machines, retimer drivers, KR AN/LT, 25G SerDes HAL. Duplicate generic: `sfp-bus.c:sfp_parse_support()`, phylink.
+  - Open (#237/#128): sfp.c reports 10GBASE-R for optic and DAC alike; the discriminator is `struct sfp_eeprom_id` (`base.sfp_ct_passive/active`) inside sfp.c, which phylink does not hand to the MAC driver.
   - 1G `al_eth_adjust_link` (`al_eth_main.c:2537-2620`): hard-codes `PHY_INTERFACE_MODE_RGMII_ID` (`:2652-2653`), PHY address from board params instead of DT `phy-handle`/`phy-mode`, `al_eth_down()/al_eth_up()` from phylib's state-machine callback, hand-masked `supported` (`:2660-2672`). Generic: `phylink_create()` + `phylink_of_phy_connect()` with `mac_capabilities`, `phy_support_asym_pause()`.
   - Adaptive interrupt moderation (`al_eth_main.c:275-340,1560-1600`, sysfs tables in `al_eth_sysfs.c`): `lib/dim` (`include/linux/dim.h`, 2018-11) + `ethtool -C`.
   - sysfs knobs (`al_eth_sysfs.c`, 790 lines): `small_copy_len` = ethtool tunable `ETHTOOL_RX_COPYBREAK` (2014-09); `udma_dump` -> devlink region/`get_regs`; `intr_moderation` -> `ethtool -C`; `serdes_*` -> DT/phy (below); `link_poll_interval`, `link_training_enable`, `force_1000_base_x` -> phylink.
@@ -141,7 +175,6 @@ Status as of 2026-10-11, HEAD `bc79402`, box `7.3.0-rc6-c352697+`. Per-issue dis
 - Whether mainline `sp805_wdt` restart resets AL-324 (needs a reboot).
 - Hardware effect of the SET FEATURES defect (#281): no GET FEATURES read-back run.
 - Whether `dmaengine-unmap-*` leaks in practice (#278): `dmatest` not run, box in use.
-- Which SerDes group the 10G port uses (25G HAL retirement depends on it).
 - Whether the PBS coded-properties handoff in al_nand can be replaced by DT under awto-uboot.
 
 ## Reference drivers
