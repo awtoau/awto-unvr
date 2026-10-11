@@ -139,10 +139,6 @@ static enum dma_status al_dma_tx_status(struct dma_chan *c,
 					dma_cookie_t cookie,
 					struct dma_tx_state *txstate)
 {
-	/* Pairs with the smp_wmb() in the cleanup tasklet: completed_cookie is
-	 * published outside the channel lock, so acquire it before reading
-	 * (#285). */
-	smp_rmb();
 	return dma_cookie_status(c, cookie, txstate);
 }
 
@@ -248,16 +244,14 @@ static void al_dma_cleanup_tasklet(struct tasklet_struct *t)
 			ch->stall_start = 0;
 			ch->stall_reported = false;
 			ch->last_completion = jiffies;
+			/* Under the lock, as fsl_raid.c:185 and ioat/dma.c:625
+			 * do: completed_cookie is a plain store, and a client
+			 * woken by the callback that calls tx_status must not
+			 * read it stale - dmatest's "completion busy status"
+			 * (#285). */
+			dma_cookie_complete(&desc->txd);
 			spin_unlock_irqrestore(&ch->lock, flags);
 
-			dma_cookie_complete(&desc->txd);
-			/* completed_cookie is a plain store and the lock is
-			 * already dropped, so publish it before the callback:
-			 * a client waking on the callback and then calling
-			 * tx_status could otherwise read a stale cookie and see
-			 * DMA_IN_PROGRESS - dmatest's "completion busy status"
-			 * (#285). ioat holds its lock across this instead. */
-			smp_wmb();
 			/* Unmap before the callback, then clear the fields: a
 			 * recycled ring slot otherwise keeps the previous op's
 			 * callback and unmap data, and async_tx's unmap refcount
