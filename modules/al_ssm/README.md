@@ -69,9 +69,23 @@ cat /proc/crypto | grep -A5 "xts-aes-al-ssm"
 #   priority     : 400
 #   type         : skcipher
 
-# The priority (400) is higher than ARM64 NEON (200),
-# so dm-crypt will automatically use hardware crypto.
 ```
+
+## Who can reach it
+
+- Priority 400 beats ARM64 CE (300): a lookup by the generic name picks al_ssm first.
+- AF_ALG cannot reach it on kernels >= 7.2: it allocates with
+  `AF_ALG_CRYPTOAPI_MASK` (`include/crypto/if_alg.h`), which excludes
+  `ASYNC | KERN_DRIVER_ONLY | ALLOCATES_MEMORY` (#267). fscrypt masks `ASYNC` out too.
+- dm-crypt reaches it (`drivers/md/dm-crypt.c:2307`, mask `ALLOCATES_MEMORY` only).
+  Hence the driver allocates nothing per request and does not declare that flag:
+  declaring it would hide the engine from dm-crypt.
+- Needs `CONFIG_DM_CRYPT`; `scripts/build-linux-fedora.py` forces it to `=m`.
+- Software fallback (same-name synchronous tfm, `CRYPTO_ALG_NEED_FALLBACK`) takes:
+  XTS with a partial last block, requests over `AL_SSM_MAX_DATA_SIZE`, requests that
+  need more than `AL_SSM_MAX_DATA_BUFS` descriptors, failed DMA mappings.
+  `devlink health diagnose ... reporter ssm` counts them as `fallback`.
+- Rejected with `-EINVAL`: CBC length not a multiple of 16, XTS length under 16.
 
 ## Diagnostics (devlink)
 
@@ -115,8 +129,8 @@ cryptsetup luksOpen /dev/sda1 secure_data
   is present but disabled in stock firmware. This driver enables it.
 - The SSM and DMA/RAID engines share PCI device ID 0x0022 but have different
   class codes: 0x100000 (crypto) vs 0x010400 (RAID).
-- The ARM64 NEON AES (`aes-arm64`) is the software fallback. The hardware
-  engine should be faster for large block operations (dm-crypt 4KB+ sectors).
+- Whether the engine beats ARM64 CE is unmeasured: every `bench-all` crypto
+  figure before #267 was a CE number. Use `bench-all.py --ssm`.
 
 ## Source
 

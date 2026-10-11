@@ -518,8 +518,8 @@ _CRYPTO_REMOTE_SCRIPT = """
 import socket, os, time, json, sys, re, signal
 
 def active_driver(alg_name):
-    # Highest-priority registered driver for `alg_name`, per /proc/crypto -
-    # what AF_ALG's generic-name bind will actually resolve to.
+    # Highest-priority NON-ASYNC registered driver for `alg_name`, per
+    # /proc/crypto - what AF_ALG's generic-name bind resolves to on >= 7.2.
     best_driver, best_prio = None, None
     with open("/proc/crypto") as f:
         blocks = f.read().split("\\n\\n")
@@ -527,7 +527,11 @@ def active_driver(alg_name):
         m_name = re.search(r"^name\\s*:\\s*(\\S+)", block, re.M)
         m_driver = re.search(r"^driver\\s*:\\s*(\\S+)", block, re.M)
         m_prio = re.search(r"^priority\\s*:\\s*(-?\\d+)", block, re.M)
+        m_async = re.search(r"^async\\s*:\\s*(\\S+)", block, re.M)
         if not (m_name and m_driver and m_prio):
+            continue
+        # AF_ALG masks ASYNC drivers out (#267): al_ssm can never be the answer.
+        if m_async and m_async.group(1) == "yes":
             continue
         if m_name.group(1) != alg_name:
             continue

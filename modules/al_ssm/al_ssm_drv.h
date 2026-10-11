@@ -30,9 +30,14 @@
 #define AL_SSM_MAX_BACKLOG	4096
 #define AL_SSM_POLL_INTERVAL_US	100
 #define AL_SSM_MAX_DATA_SIZE	(256 * 1024)
-/* One UDMA descriptor length is 16 bits; see al_ssm_split_buf() (#332). */
+/* One UDMA descriptor length is 16 bits; see al_ssm_add_range() (#332). */
 #define AL_SSM_MAX_DESC_LEN	(32 * 1024)
-#define AL_SSM_MAX_DESC_BUFS	(AL_SSM_MAX_DATA_SIZE / AL_SSM_MAX_DESC_LEN)
+/*
+ * Data buffers per direction in one transaction. HW takes 31 descriptors:
+ * tx = 31 - metadata - SA - IV - sign, rx = 31 - sa/iv/next-iv/sign outputs
+ * (vendor al_crypto.h:59-66). We use SA + IV only; 27 is the vendor's bound.
+ */
+#define AL_SSM_MAX_DATA_BUFS	27
 #define RING_BYTES		(AL_SSM_RING_SIZE * sizeof(union al_udma_desc))
 
 /*
@@ -61,8 +66,14 @@ enum al_ssm_fault {
 	AL_SSM_FAULT_SUBMIT,		/* hardware refused a prepared transaction */
 	AL_SSM_FAULT_COMPLETION,	/* completion descriptor carried an error */
 	AL_SSM_FAULT_STALL,		/* in-flight work never completed (#182) */
-	AL_SSM_FAULT_DMA_ALLOC,		/* coherent DMA buffer allocation failed */
+	AL_SSM_FAULT_DMA_ALLOC,		/* request could not be DMA-mapped; served in software */
 	AL_SSM_FAULT_COUNT
+};
+
+/* Read by the engine (DMA_TO_DEVICE); one mapping per request. */
+struct al_ssm_hwbuf {
+	struct al_crypto_hw_sa sa;
+	u8 iv[AES_BLOCK_SIZE];
 };
 
 struct al_ssm_reqctx {
@@ -75,15 +86,20 @@ struct al_ssm_reqctx {
 	struct al_ssm_dev *dev;
 	enum al_crypto_dir dir;
 	enum al_crypto_sa_enc_type enc_type;
-	void *src_virt;
-	void *dst_virt;
-	u8 *iv_buf;
-	struct al_crypto_hw_sa *hw_sa;
-	dma_addr_t src_dma;
-	dma_addr_t dst_dma;
-	dma_addr_t sa_dma;
-	dma_addr_t iv_dma;
 	unsigned int nbytes;
+
+	/* req->src / req->dst mapped in place; no bounce, no allocation */
+	int src_nents, dst_nents;	/* as passed to dma_map_sg(), for the unmap */
+	bool in_place, src_mapped, dst_mapped, hw_mapped;
+	struct al_buf src_bufs[AL_SSM_MAX_DATA_BUFS];
+	struct al_buf dst_bufs[AL_SSM_MAX_DATA_BUFS];
+	unsigned int src_num, dst_num;
+	u8 next_iv[AES_BLOCK_SIZE];	/* CBC decrypt: output IV saved from the input */
+
+	dma_addr_t hw_dma;
+	struct al_ssm_hwbuf hw __aligned(CRYPTO_DMA_ALIGN);
+
+	struct skcipher_request fallback_req;	/* must be last */
 };
 
 struct al_ssm_chan {
@@ -104,6 +120,7 @@ struct al_ssm_chan {
 
 struct al_ssm_ctx {
 	struct al_ssm_dev *dev;
+	struct crypto_skcipher *fallback;	/* sync software cipher, same name */
 	enum al_crypto_sa_enc_type enc_type;
 	enum al_crypto_sa_aes_ksize aes_ksize;
 	u8 key[AES_MAX_KEY_SIZE];
@@ -137,6 +154,7 @@ struct al_ssm_dev {
 	atomic64_t stat_completed;
 	atomic64_t stat_errors;
 	atomic64_t stat_poll_cycles;
+	atomic64_t stat_fallback;	/* requests served by software */
 	unsigned long last_completion;	/* jiffies, 0 = none since probe */
 	unsigned long stall_clock;	/* jiffies: last completion, or work became outstanding */
 	bool stall_reported;

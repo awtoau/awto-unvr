@@ -24,7 +24,7 @@ static const char * const al_ssm_fault_msg[AL_SSM_FAULT_COUNT] = {
 	[AL_SSM_FAULT_SUBMIT]		= "submit failed: hardware refused a prepared transaction",
 	[AL_SSM_FAULT_COMPLETION]	= "completion error: descriptor returned a non-zero status",
 	[AL_SSM_FAULT_STALL]		= "engine stall: work in flight never completed",
-	[AL_SSM_FAULT_DMA_ALLOC]	= "dma allocation failed: coherent buffer unavailable",
+	[AL_SSM_FAULT_DMA_ALLOC]	= "dma mapping failed: request served in software",
 };
 
 static const char *al_ssm_udma_state_str(enum al_udma_state state)
@@ -120,6 +120,7 @@ static void al_ssm_fmsg_state(struct al_ssm_dev *dev, struct devlink_fmsg *fmsg)
 	devlink_fmsg_u64_pair_put(fmsg, "completed", atomic64_read(&dev->stat_completed));
 	devlink_fmsg_u64_pair_put(fmsg, "errors", atomic64_read(&dev->stat_errors));
 	devlink_fmsg_u64_pair_put(fmsg, "poll_cycles", atomic64_read(&dev->stat_poll_cycles));
+	devlink_fmsg_u64_pair_put(fmsg, "fallback", atomic64_read(&dev->stat_fallback));
 	devlink_fmsg_u64_pair_put(fmsg, "since_last_completion_ms", idle_ms);
 
 	devlink_fmsg_u32_pair_put(fmsg, "hw_pending", hw_pending);

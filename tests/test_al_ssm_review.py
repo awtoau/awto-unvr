@@ -132,18 +132,145 @@ def test_descriptor_chunk_fits_the_16_bit_length_field():
     chunk = _drv_const("AL_SSM_MAX_DESC_LEN")
     assert 0 < chunk < 0x10000
     # data descriptors left after SA + IV (tx) and none extra (rx)
-    assert _drv_const("AL_SSM_MAX_DESC_BUFS") + 2 <= 31
-    assert _drv_const("AL_SSM_MAX_DESC_BUFS") * chunk >= _drv_const(
-        "AL_SSM_MAX_DATA_SIZE"
-    )
+    bufs = _drv_const("AL_SSM_MAX_DATA_BUFS")
+    assert bufs + 2 <= 31  # + SA + IV, HAL limit per transaction
+    assert bufs * chunk >= _drv_const("AL_SSM_MAX_DATA_SIZE")
 
 
 def test_a_request_is_never_one_buffer():
-    body = _code(_func_body("al_ssm_hw_submit_locked"))
-    assert "al_ssm_split_buf(src_bufs" in body and "al_ssm_split_buf(dst_bufs" in body
-    assert not re.search(r"\.len\s*=\s*rctx->nbytes", body)
-    split = _code(_func_body("al_ssm_split_buf"))
-    assert "AL_SSM_MAX_DESC_LEN" in split
+    add = _code(_func_body("al_ssm_add_range"))
+    assert "AL_SSM_MAX_DESC_LEN" in add and "-E2BIG" in add
+    # every buffer the engine sees comes from the splitter
+    assert "al_ssm_add_range" in _func_body("al_ssm_sg_to_bufs")
+    sub = _code(_func_body("al_ssm_hw_submit_locked"))
+    assert "rctx->src_bufs" in sub and "rctx->dst_bufs" in sub
+    assert not re.search(r"\.len\s*=\s*rctx->nbytes", sub)
+
+
+# ---- #282 crypto-API contract / #291 lengths ------------------------------------
+
+REQUEST_PATH = (
+    "al_ssm_enqueue",
+    "al_ssm_prepare",
+    "al_ssm_unmap",
+    "al_ssm_submit_and_poll",
+    "al_ssm_hw_submit_locked",
+    "al_ssm_reap_locked",
+    "al_ssm_fill_locked",
+    "al_ssm_service_locked",
+    "al_ssm_service",
+    "al_ssm_complete_one",
+    "al_ssm_run_done",
+    "al_ssm_poll_completions",
+    "al_ssm_do_fallback",
+)
+
+
+def _algs() -> str:
+    m = re.search(r"static struct skcipher_alg al_ssm_algs\[\] = \{.*?\n\};", SRC, re.S)
+    return _code(m.group(0))
+
+
+def test_request_path_allocates_nothing():
+    # dm-crypt asks for algorithms WITHOUT CRYPTO_ALG_ALLOCATES_MEMORY
+    # (drivers/md/dm-crypt.c:2307); the flag below stays unset because of this.
+    for fn in REQUEST_PATH:
+        body = _code(_func_body(fn))
+        assert not re.search(r"dma_alloc_coherent|k[mz]alloc|GFP_|vmalloc", body), fn
+
+
+def test_algs_declare_what_they_do():
+    algs = _algs()
+    flags = re.findall(r"cra_flags\s*=([^,]+),", algs)
+    assert len(flags) == 2
+    for f in flags:
+        assert "CRYPTO_ALG_ASYNC" in f and "CRYPTO_ALG_NEED_FALLBACK" in f
+        # not allocating, so not claiming to: the flag would hide the driver
+        # from dm-crypt, its only in-kernel consumer
+        assert "ALLOCATES_MEMORY" not in f
+
+
+def test_requests_are_mapped_in_place_not_bounced():
+    prep = _code(_func_body("al_ssm_prepare"))
+    assert "dma_map_sg(dev->dev, req->src" in prep
+    assert "dma_map_sg(dev->dev, req->dst" in prep
+    assert "dma_map_single" in prep  # SA + IV, in the request context
+    for dead in ("src_virt", "dst_virt", "iv_buf", "hw_sa"):
+        assert not re.search(rf"\b{dead}\b", _code(SRC)), dead
+    unmap = _code(_func_body("al_ssm_unmap"))
+    assert unmap.count("dma_unmap") == 3
+
+
+def test_request_context_is_dma_aligned():
+    assert "skcipher_request_ctx(" not in _code(SRC)
+    assert "crypto_skcipher_set_reqsize_dma" in _func_body("al_ssm_init_tfm")
+    hdr = (REPO / "modules" / "al_ssm" / "al_ssm_drv.h").read_text()
+    assert re.search(r"hw __aligned\(CRYPTO_DMA_ALIGN\)", hdr)
+    # the fallback request carries a trailing context: it must stay last
+    body = hdr[hdr.index("struct al_ssm_reqctx {") :]
+    body = body[: body.index("\n};")]
+    assert body.rstrip().endswith(
+        "struct skcipher_request fallback_req;\t/* must be last */"
+    )
+
+
+def test_software_fallback_is_wired():
+    init = _code(_func_body("al_ssm_init_tfm"))
+    assert "crypto_alloc_skcipher(name, 0" in init
+    assert "CRYPTO_ALG_NEED_FALLBACK" in init and "CRYPTO_ALG_ASYNC" in init
+    # reqsize carries the fallback's request
+    assert "crypto_skcipher_reqsize(ctx->fallback)" in init
+    assert "crypto_free_skcipher(ctx->fallback)" in _func_body("al_ssm_exit_tfm")
+    # one key, both implementations
+    for fn in ("al_ssm_xts_setkey", "al_ssm_cbc_setkey"):
+        assert "al_ssm_setkey_fallback" in _func_body(fn), fn
+    fb = _code(_func_body("al_ssm_do_fallback"))
+    assert "req->base.flags" in fb  # MAY_SLEEP/MAY_BACKLOG survive
+    assert "crypto_skcipher_encrypt(subreq)" in fb
+
+
+def test_length_rules_per_mode():
+    chk = _code(_func_body("al_ssm_check_len"))
+    cbc = chk[chk.index("AL_CRYPT_AES_CBC") : chk.index("AL_CRYPT_AES_XTS")]
+    assert "!IS_ALIGNED(len, AES_BLOCK_SIZE)" in cbc and "-EINVAL" in cbc
+    xts = chk[chk.index("AL_CRYPT_AES_XTS") :]
+    assert re.search(r"len < AES_BLOCK_SIZE\)\s*return -EINVAL", xts)
+    assert re.search(
+        r"!IS_ALIGNED\(len, AES_BLOCK_SIZE\)\)\s*return 1", xts
+    )  # CTS: software
+    assert "len > AL_SSM_MAX_DATA_SIZE" in xts  # oversize: software, not -EINVAL
+    # lengths are decided before anything is mapped, and zero length is success
+    enq = _code(_func_body("al_ssm_enqueue"))
+    assert _pos(enq, "if (!req->cryptlen)") < _pos(enq, "al_ssm_check_len")
+    assert re.search(r"if \(!req->cryptlen\)[^;]*\n\s*return 0;", enq)
+    assert _pos(enq, "al_ssm_check_len") < _pos(enq, "al_ssm_prepare")
+    # the old blanket -EINVAL for "too big" is gone
+    assert "nbytes > AL_SSM_MAX_DATA_SIZE" not in _code(SRC)
+
+
+def test_a_mapping_failure_falls_back_instead_of_failing():
+    enq = _code(_func_body("al_ssm_enqueue"))
+    prep = enq[enq.index("al_ssm_prepare(") :]
+    assert "al_ssm_do_fallback" in prep[: prep.index("al_ssm_submit_and_poll")]
+
+
+def test_completion_callbacks_are_bh_protected():
+    done = _code(_func_body("al_ssm_run_done"))
+    assert _pos(done, "local_bh_disable") < _pos(done, "al_ssm_complete_one")
+    assert _pos(done, "al_ssm_complete_one") < _pos(done, "local_bh_enable")
+    # the only callbacks in the driver are inside complete_one
+    code = _code(SRC)
+    assert code.count("skcipher_request_complete(") == 1
+    assert code.count("al_ssm_complete_one(") == 2  # definition + run_done
+    assert "skcipher_request_complete(" in _func_body("al_ssm_complete_one")
+
+
+def test_output_iv_is_published_after_the_unmap():
+    fin = _code(_func_body("al_ssm_finish_request"))
+    assert _pos(fin, "al_ssm_unmap") < _pos(fin, "al_ssm_update_iv")
+    prep = _code(_func_body("al_ssm_prepare"))
+    # a decrypt saves its last input block before the engine can overwrite it
+    assert _pos(prep, "rctx->next_iv") < _pos(prep, "dma_map_sg")
 
 
 # ---- #301 remove ordering ---------------------------------------------------
@@ -227,7 +354,10 @@ def test_tfm_holds_a_device_reference():
     assert "g_ssm_dev" not in _func_body("al_ssm_init_tfm")
     assert "kref_get" in _func_body("al_ssm_dev_get")
     assert "kfree" in _func_body("al_ssm_dev_release")
-    # probe keeps its own reference; remove drops it last
+    # probe keeps its own reference (and the pci_dev, which requests unmap
+    # through); remove drops it last
+    assert "pci_dev_get(pdev)" in _func_body("al_ssm_pci_probe")
+    assert "pci_dev_put(dev->pdev)" in _func_body("al_ssm_dev_release")
     assert "kref_init(&dev->ref)" in _func_body("al_ssm_pci_probe")
     remove = _func_body("al_ssm_pci_remove")
     assert remove.rindex("al_ssm_dev_put(dev)") > remove.rindex("pci_disable_device")
@@ -260,6 +390,38 @@ SHOW = (
     "pci/0000:00:04.0: reporter ssm   state healthy error 0 recover 0\n"
     "pci/0000:00:05.0: reporter dma   state healthy error 0 recover 0\n"
 )
+
+
+CRYPTO_PROC = """name         : xts(aes)
+driver       : xts-aes-al-ssm
+priority     : 400
+type         : skcipher
+async        : yes
+
+name         : xts(aes)
+driver       : xts-aes-ce
+priority     : 300
+type         : skcipher
+async        : no
+
+name         : xts(aes)
+driver       : xts-aes-neon
+priority     : 200
+type         : skcipher
+async        : no
+"""
+
+
+def test_crypto_bench_names_the_driver_af_alg_can_reach():
+    # #267: AF_ALG masks ASYNC out, so the highest priority is not the answer
+    from unittest import mock
+
+    src = _stress()._CRYPTO_REMOTE_SCRIPT
+    fn = src[src.index("def active_driver") : src.index("class _BenchTimeout")]
+    ns = {"re": re}
+    exec(fn, ns)  # noqa: S102 - repo-owned snippet
+    with mock.patch("builtins.open", mock.mock_open(read_data=CRYPTO_PROC)):
+        assert ns["active_driver"]("xts(aes)") == "xts-aes-ce"
 
 
 def test_stress_parsers():

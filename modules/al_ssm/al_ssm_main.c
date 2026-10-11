@@ -12,9 +12,11 @@
  *
  * Architecture:
  *   dm-crypt  ->  Linux crypto API (async skcipher)
- *             ->  this driver: enqueue, submit to HW, return -EINPROGRESS
+ *             ->  this driver: map req->src/dst, submit to HW, spin briefly
+ *                 for the result, else return -EINPROGRESS
  *             ->  completion workqueue polls UDMA, calls skcipher_request_complete()
  *             ->  AL HAL SSM crypto  ->  UDMA DMA  ->  HW crypto engine
+ *   Lengths or shapes the engine cannot do go to a software fallback tfm.
  *
  * IMPORTANT: The UDMA requires SEPARATE DMA buffers for submission
  * descriptor rings and completion descriptor rings. Sharing the same
@@ -72,7 +74,10 @@ static struct al_ssm_dev *al_ssm_dev_get(void)
 
 static void al_ssm_dev_release(struct kref *ref)
 {
-	kfree(container_of(ref, struct al_ssm_dev, ref));
+	struct al_ssm_dev *dev = container_of(ref, struct al_ssm_dev, ref);
+
+	pci_dev_put(dev->pdev);	/* dev->dev: requests unmap through it until the last put */
+	kfree(dev);
 }
 
 static void al_ssm_dev_put(struct al_ssm_dev *dev)
@@ -81,45 +86,136 @@ static void al_ssm_dev_put(struct al_ssm_dev *dev)
 }
 
 static void al_ssm_poll_completions(struct work_struct *work);
-static void al_ssm_complete_one(struct al_ssm_reqctx *rctx, int err);
 static void al_ssm_schedule_poll(struct al_ssm_dev *dev, unsigned long delay);
 
-/* ── DMA resource management ──────────────────────────────────────────── */
+/* ── DMA mapping (no allocation in the request path) ──────────────────── */
 
-static int al_ssm_alloc_resources(struct al_ssm_reqctx *rctx,
-				  struct al_ssm_ctx *ctx,
-				  struct scatterlist *src,
-				  unsigned int nbytes, u8 *iv,
-				  enum al_crypto_dir dir)
+/*
+ * Append [addr, addr+len) to @bufs as descriptor-sized buffers (#332): the HAL
+ * writes every descriptor length as `len & 0xffff` and checks nothing, so no
+ * buffer may reach 64 KiB. Physically adjacent ranges are merged. Returns
+ * -E2BIG when the request needs more descriptors than one transaction holds.
+ */
+static int al_ssm_add_range(struct al_buf *bufs, unsigned int *n,
+			    dma_addr_t addr, unsigned int len)
+{
+	while (len) {
+		struct al_buf *last = *n ? &bufs[*n - 1] : NULL;
+		unsigned int chunk;
+
+		if (last && last->addr + last->len == addr &&
+		    last->len < AL_SSM_MAX_DESC_LEN) {
+			chunk = min_t(unsigned int, len, AL_SSM_MAX_DESC_LEN - last->len);
+			last->len += chunk;
+		} else {
+			if (*n == AL_SSM_MAX_DATA_BUFS)
+				return -E2BIG;
+			chunk = min_t(unsigned int, len, AL_SSM_MAX_DESC_LEN);
+			bufs[*n].addr = addr;
+			bufs[*n].len = chunk;
+			(*n)++;
+		}
+		addr += chunk;
+		len -= chunk;
+	}
+	return 0;
+}
+
+/* The first @nbytes of a mapped scatterlist as descriptor buffers. */
+static int al_ssm_sg_to_bufs(struct al_buf *bufs, unsigned int *n,
+			     struct scatterlist *sgl, int mapped,
+			     unsigned int nbytes)
+{
+	struct scatterlist *sg;
+	int i, rc;
+
+	*n = 0;
+	for_each_sg(sgl, sg, mapped, i) {
+		unsigned int len = min_t(unsigned int, sg_dma_len(sg), nbytes);
+
+		rc = al_ssm_add_range(bufs, n, sg_dma_address(sg), len);
+		if (rc)
+			return rc;
+		nbytes -= len;
+		if (!nbytes)
+			break;
+	}
+	return nbytes ? -EINVAL : 0;
+}
+
+static void al_ssm_unmap(struct al_ssm_reqctx *rctx)
+{
+	struct device *d = rctx->dev->dev;
+	struct skcipher_request *req = rctx->req;
+
+	if (rctx->hw_mapped)
+		dma_unmap_single(d, rctx->hw_dma, sizeof(rctx->hw), DMA_TO_DEVICE);
+	if (rctx->dst_mapped)
+		dma_unmap_sg(d, req->dst, rctx->dst_nents, DMA_FROM_DEVICE);
+	if (rctx->src_mapped)
+		dma_unmap_sg(d, req->src, rctx->src_nents,
+			     rctx->in_place ? DMA_BIDIRECTIONAL : DMA_TO_DEVICE);
+	rctx->hw_mapped = rctx->dst_mapped = rctx->src_mapped = false;
+}
+
+/*
+ * Map the request's own scatterlists and build the per-request SA + IV.
+ * No allocation: everything lives in the request context. Any failure leaves
+ * nothing mapped, and the caller serves the request from the fallback.
+ */
+static int al_ssm_prepare(struct al_ssm_reqctx *rctx, struct al_ssm_ctx *ctx,
+			  struct skcipher_request *req, enum al_crypto_dir dir)
 {
 	struct al_ssm_dev *dev = ctx->dev;
 	struct al_crypto_sa sa;
+	unsigned int nbytes = req->cryptlen;
+	int rc, mapped;
 
 	rctx->dev = dev;
+	rctx->req = req;
 	rctx->dir = dir;
 	rctx->enc_type = ctx->enc_type;
 	rctx->nbytes = nbytes;
+	rctx->in_place = req->src == req->dst;
+	rctx->src_mapped = rctx->dst_mapped = rctx->hw_mapped = false;
 
-	if (nbytes == 0 || nbytes > AL_SSM_MAX_DATA_SIZE)
+	/* CBC output IV: the last ciphertext block. A decrypt must take it from
+	 * the input before the engine runs - in place it is overwritten. */
+	if (rctx->enc_type == AL_CRYPT_AES_CBC && dir == AL_CRYPT_DECRYPT)
+		scatterwalk_map_and_copy(rctx->next_iv, req->src,
+					 nbytes - AES_BLOCK_SIZE, AES_BLOCK_SIZE, 0);
+
+	rctx->src_nents = sg_nents_for_len(req->src, nbytes);
+	rctx->dst_nents = rctx->in_place ? rctx->src_nents :
+			  sg_nents_for_len(req->dst, nbytes);
+	if (rctx->src_nents < 0 || rctx->dst_nents < 0)
 		return -EINVAL;
 
-	rctx->src_virt = dma_alloc_coherent(dev->dev, nbytes, &rctx->src_dma, GFP_KERNEL);
-	if (!rctx->src_virt) {
-		al_ssm_fault(dev, AL_SSM_FAULT_DMA_ALLOC);
-		return -ENOMEM;
+	mapped = dma_map_sg(dev->dev, req->src, rctx->src_nents,
+			    rctx->in_place ? DMA_BIDIRECTIONAL : DMA_TO_DEVICE);
+	if (!mapped) {
+		rc = -ENOMEM;
+		goto err;
 	}
-	rctx->dst_virt = dma_alloc_coherent(dev->dev, nbytes, &rctx->dst_dma, GFP_KERNEL);
-	if (!rctx->dst_virt)
-		goto err_free_src;
-	rctx->iv_buf = dma_alloc_coherent(dev->dev, AES_BLOCK_SIZE, &rctx->iv_dma, GFP_KERNEL);
-	if (!rctx->iv_buf)
-		goto err_free_dst;
-	rctx->hw_sa = dma_alloc_coherent(dev->dev, sizeof(*rctx->hw_sa), &rctx->sa_dma, GFP_KERNEL);
-	if (!rctx->hw_sa)
-		goto err_free_iv;
+	rctx->src_mapped = true;
+	rc = al_ssm_sg_to_bufs(rctx->src_bufs, &rctx->src_num, req->src, mapped, nbytes);
+	if (rc)
+		goto err;
 
-	scatterwalk_map_and_copy(rctx->src_virt, src, 0, nbytes, 0);
-	memcpy(rctx->iv_buf, iv, AES_BLOCK_SIZE);
+	if (rctx->in_place) {
+		memcpy(rctx->dst_bufs, rctx->src_bufs, sizeof(rctx->dst_bufs));
+		rctx->dst_num = rctx->src_num;
+	} else {
+		mapped = dma_map_sg(dev->dev, req->dst, rctx->dst_nents, DMA_FROM_DEVICE);
+		if (!mapped) {
+			rc = -ENOMEM;
+			goto err;
+		}
+		rctx->dst_mapped = true;
+		rc = al_ssm_sg_to_bufs(rctx->dst_bufs, &rctx->dst_num, req->dst, mapped, nbytes);
+		if (rc)
+			goto err;
+	}
 
 	memset(&sa, 0, sizeof(sa));
 	sa.sa_op = AL_CRYPT_ENC;
@@ -131,34 +227,24 @@ static int al_ssm_alloc_resources(struct al_ssm_reqctx *rctx,
 	if (ctx->enc_type == AL_CRYPT_AES_XTS)
 		memcpy(sa.enc_xts_tweak_key, ctx->xts_key,
 		       min_t(unsigned int, ctx->keylen, sizeof(sa.enc_xts_tweak_key)));
-	memcpy(sa.enc_iv, rctx->iv_buf, AES_BLOCK_SIZE);
+	memcpy(sa.enc_iv, req->iv, AES_BLOCK_SIZE);
 
-	memset(rctx->hw_sa, 0, sizeof(*rctx->hw_sa));
-	al_crypto_hw_sa_init(&sa, rctx->hw_sa);
+	memset(&rctx->hw, 0, sizeof(rctx->hw));
+	al_crypto_hw_sa_init(&sa, &rctx->hw.sa);
+	memcpy(rctx->hw.iv, req->iv, AES_BLOCK_SIZE);
+
+	rctx->hw_dma = dma_map_single(dev->dev, &rctx->hw, sizeof(rctx->hw),
+				      DMA_TO_DEVICE);
+	if (dma_mapping_error(dev->dev, rctx->hw_dma)) {
+		rc = -ENOMEM;
+		goto err;
+	}
+	rctx->hw_mapped = true;
 	return 0;
 
-err_free_iv:
-	dma_free_coherent(dev->dev, AES_BLOCK_SIZE, rctx->iv_buf, rctx->iv_dma);
-err_free_dst:
-	dma_free_coherent(dev->dev, nbytes, rctx->dst_virt, rctx->dst_dma);
-err_free_src:
-	dma_free_coherent(dev->dev, nbytes, rctx->src_virt, rctx->src_dma);
-	al_ssm_fault(dev, AL_SSM_FAULT_DMA_ALLOC);
-	return -ENOMEM;
-}
-
-static void al_ssm_free_resources(struct al_ssm_reqctx *rctx)
-{
-	struct al_ssm_dev *dev = rctx->dev;
-
-	if (rctx->hw_sa)
-		dma_free_coherent(dev->dev, sizeof(*rctx->hw_sa), rctx->hw_sa, rctx->sa_dma);
-	if (rctx->iv_buf)
-		dma_free_coherent(dev->dev, AES_BLOCK_SIZE, rctx->iv_buf, rctx->iv_dma);
-	if (rctx->dst_virt)
-		dma_free_coherent(dev->dev, rctx->nbytes, rctx->dst_virt, rctx->dst_dma);
-	if (rctx->src_virt)
-		dma_free_coherent(dev->dev, rctx->nbytes, rctx->src_virt, rctx->src_dma);
+err:
+	al_ssm_unmap(rctx);
+	return rc;
 }
 
 /* ── Submit, completion, backlog ───────────────────────────────────────
@@ -182,7 +268,6 @@ static void al_ssm_account_completion(struct al_ssm_dev *dev, uint32_t comp_stat
 	atomic64_inc(&dev->stat_completed);
 	dev->last_completion = jiffies;
 	dev->stall_clock = jiffies;
-	dev->stall_clock = jiffies;
 	dev->stall_reported = false;
 	if (comp_status) {
 		atomic64_inc(&dev->stat_errors);
@@ -203,29 +288,6 @@ static void al_ssm_finish_locked(struct al_ssm_reqctx *rctx, int status,
 		list_add_tail(&rctx->list, done);
 }
 
-/*
- * Split one DMA range into descriptor-sized buffers (#332). The HAL writes
- * every descriptor length as `len & 0xffff` and never checks it, so a larger
- * buffer is silently truncated. AL_SSM_MAX_DESC_LEN stays below 64 KiB whatever
- * the 64K-as-zero encoding does.
- */
-static unsigned int al_ssm_split_buf(struct al_buf *bufs, dma_addr_t addr,
-				     unsigned int len)
-{
-	unsigned int n = 0;
-
-	while (len) {
-		unsigned int chunk = min_t(unsigned int, len, AL_SSM_MAX_DESC_LEN);
-
-		bufs[n].addr = addr;
-		bufs[n].len = chunk;
-		addr += chunk;
-		len -= chunk;
-		n++;
-	}
-	return n;
-}
-
 /**
  * al_ssm_hw_submit_locked - put one prepared request on the hardware ring
  *
@@ -237,7 +299,6 @@ static int al_ssm_hw_submit_locked(struct al_ssm_dev *dev,
 {
 	struct al_ssm_chan *chan = &dev->channel;
 	struct al_crypto_transaction xaction;
-	struct al_buf src_bufs[AL_SSM_MAX_DESC_BUFS], dst_bufs[AL_SSM_MAX_DESC_BUFS];
 	int rc;
 
 	if (chan->pending_count >= AL_SSM_MAX_IN_FLIGHT)
@@ -246,15 +307,15 @@ static int al_ssm_hw_submit_locked(struct al_ssm_dev *dev,
 	memset(&xaction, 0, sizeof(xaction));
 	xaction.dir = rctx->dir;
 	xaction.flags = AL_SSM_INTERRUPT;
-	xaction.src.bufs = src_bufs;
-	xaction.src.num = al_ssm_split_buf(src_bufs, rctx->src_dma, rctx->nbytes);
+	xaction.src.bufs = rctx->src_bufs;
+	xaction.src.num = rctx->src_num;
 	xaction.src_size = rctx->nbytes;
-	xaction.dst.bufs = dst_bufs;
-	xaction.dst.num = al_ssm_split_buf(dst_bufs, rctx->dst_dma, rctx->nbytes);
+	xaction.dst.bufs = rctx->dst_bufs;
+	xaction.dst.num = rctx->dst_num;
 	xaction.sa_indx = 0;
-	xaction.sa_in.addr = rctx->sa_dma;
-	xaction.sa_in.len = sizeof(*rctx->hw_sa);
-	xaction.enc_iv_in.addr = rctx->iv_dma;
+	xaction.sa_in.addr = rctx->hw_dma + offsetof(struct al_ssm_hwbuf, sa);
+	xaction.sa_in.len = sizeof(rctx->hw.sa);
+	xaction.enc_iv_in.addr = rctx->hw_dma + offsetof(struct al_ssm_hwbuf, iv);
 	xaction.enc_iv_in.len = AES_BLOCK_SIZE;
 
 	rc = al_crypto_dma_prepare(&dev->ssm_dma, 0, &xaction);
@@ -303,7 +364,7 @@ static int al_ssm_reap_locked(struct al_ssm_dev *dev, struct list_head *done)
 
 static struct al_ssm_reqctx *al_ssm_areq_ctx(struct crypto_async_request *areq)
 {
-	return skcipher_request_ctx(skcipher_request_cast(areq));
+	return skcipher_request_ctx_dma(skcipher_request_cast(areq));
 }
 
 /*
@@ -357,48 +418,59 @@ static int al_ssm_service_locked(struct al_ssm_dev *dev, struct list_head *done)
 }
 
 /*
- * Copy engine output back to req->dst and, for CBC, update req->iv to the last
- * ciphertext block (7.1 skcipher IV-chaining contract). XTS/others: no update.
- * Reads the IV from the private bounce buffers (src_virt/dst_virt), so in-place
- * (req->src == req->dst) is correct even though req->src is overwritten here.
+ * CBC output IV (7.1 skcipher IV-chaining contract): the last ciphertext
+ * block - read from req->dst after an encrypt, saved from the input before a
+ * decrypt (al_ssm_prepare). XTS and the rest: no update. Called after the
+ * unmap, once the CPU may read the output.
  */
-static void al_ssm_copy_result(struct al_ssm_reqctx *rctx)
+static void al_ssm_update_iv(struct al_ssm_reqctx *rctx)
 {
 	struct skcipher_request *req = rctx->req;
 
-	scatterwalk_map_and_copy(rctx->dst_virt, req->dst, 0, rctx->nbytes, 1);
+	if (rctx->enc_type != AL_CRYPT_AES_CBC)
+		return;
+	if (rctx->dir == AL_CRYPT_ENCRYPT)
+		scatterwalk_map_and_copy(req->iv, req->dst,
+					 rctx->nbytes - AES_BLOCK_SIZE, AES_BLOCK_SIZE, 0);
+	else
+		memcpy(req->iv, rctx->next_iv, AES_BLOCK_SIZE);
+}
 
-	if (rctx->enc_type == AL_CRYPT_AES_CBC && rctx->nbytes >= AES_BLOCK_SIZE) {
-		/* enc: last block of ciphertext (dst); dec: last block of input (src) */
-		const u8 *last = (rctx->dir == AL_CRYPT_ENCRYPT ?
-				  (const u8 *)rctx->dst_virt :
-				  (const u8 *)rctx->src_virt) +
-				 rctx->nbytes - AES_BLOCK_SIZE;
-		memcpy(req->iv, last, AES_BLOCK_SIZE);
-	}
+/* The engine is done with the request: unmap, then publish the IV. */
+static void al_ssm_finish_request(struct al_ssm_reqctx *rctx, int err)
+{
+	al_ssm_unmap(rctx);
+	if (!err)
+		al_ssm_update_iv(rctx);
 }
 
 static void al_ssm_complete_one(struct al_ssm_reqctx *rctx, int err)
 {
 	struct skcipher_request *req = rctx->req;
 
-	if (!err)
-		al_ssm_copy_result(rctx);
-	al_ssm_free_resources(rctx);
+	al_ssm_finish_request(rctx, err);
 	if (rctx->notify_owed)	/* promoted out of the backlog: say so first */
 		crypto_request_complete(&req->base, -EINPROGRESS);
 	skcipher_request_complete(req, err);
 }
 
-/* Callbacks for what a service pass collected. No lock held. */
+/*
+ * Callbacks for what a service pass collected. No lock held. Completion
+ * callbacks assume softirq context (crypto_engine asserts it), but this runs
+ * from the poll worker and from submitters: disable BH around them.
+ */
 static void al_ssm_run_done(struct list_head *done)
 {
 	struct al_ssm_reqctx *rctx, *tmp;
 
+	if (list_empty(done))
+		return;
+	local_bh_disable();
 	list_for_each_entry_safe(rctx, tmp, done, list) {
 		list_del(&rctx->list);
 		al_ssm_complete_one(rctx, rctx->status);
 	}
+	local_bh_enable();
 }
 
 /* Reap + refill + complete. Returns the number of completions reaped. */
@@ -421,7 +493,7 @@ static int al_ssm_service(struct al_ssm_dev *dev)
  * al_ssm_submit_and_poll - submit one request, try to finish it inline
  *
  * Returns:
- *   0            - completed synchronously, result already in dst_virt
+ *   0            - completed synchronously, output already in req->dst
  *  -EIO          - hardware completion error (synchronous)
  *  -EINPROGRESS  - accepted; the worker completes it through the callback
  *  -EBUSY        - queued behind a full ring, MAY_BACKLOG request
@@ -550,42 +622,89 @@ static void al_ssm_schedule_poll(struct al_ssm_dev *dev, unsigned long delay)
 
 /* ── Async crypto entry ───────────────────────────────────────────────── */
 
+static struct al_ssm_reqctx *al_ssm_req_rctx(struct skcipher_request *req)
+{
+	return skcipher_request_ctx_dma(req);
+}
+
+/* Serve the request from the software cipher (sync; completes inline). */
+static int al_ssm_do_fallback(struct al_ssm_ctx *ctx, struct skcipher_request *req,
+			      enum al_crypto_dir dir)
+{
+	struct skcipher_request *subreq = &al_ssm_req_rctx(req)->fallback_req;
+
+	atomic64_inc(&ctx->dev->stat_fallback);
+	skcipher_request_set_tfm(subreq, ctx->fallback);
+	skcipher_request_set_callback(subreq, req->base.flags,
+				      req->base.complete, req->base.data);
+	skcipher_request_set_crypt(subreq, req->src, req->dst, req->cryptlen, req->iv);
+	return dir == AL_CRYPT_ENCRYPT ? crypto_skcipher_encrypt(subreq) :
+					 crypto_skcipher_decrypt(subreq);
+}
+
+/*
+ * Length rules per mode (#291). Returns 0 to use the engine, a negative errno
+ * to fail the request, or 1 to use the software fallback.
+ *  - CBC needs whole blocks: -EINVAL like qce (skcipher.c:232-234).
+ *  - XTS needs one block at least: -EINVAL like crypto/xts.c:248.
+ *  - XTS with a partial last block is ciphertext stealing; the engine's CTS
+ *    is not proven, so software does it.
+ *  - Above what the engine was sized for: software.
+ */
+static int al_ssm_check_len(struct al_ssm_ctx *ctx, unsigned int len)
+{
+	if (ctx->enc_type == AL_CRYPT_AES_CBC && !IS_ALIGNED(len, AES_BLOCK_SIZE))
+		return -EINVAL;
+	if (ctx->enc_type == AL_CRYPT_AES_XTS) {
+		if (len < AES_BLOCK_SIZE)
+			return -EINVAL;
+		if (!IS_ALIGNED(len, AES_BLOCK_SIZE))
+			return 1;
+	}
+	return len > AL_SSM_MAX_DATA_SIZE;
+}
+
 static int al_ssm_enqueue(struct al_ssm_ctx *ctx, struct skcipher_request *req,
 			   enum al_crypto_dir dir)
 {
-	struct al_ssm_dev *dev = ctx->dev;
-	struct al_ssm_reqctx *rctx = skcipher_request_ctx(req);
-	u8 iv[AES_BLOCK_SIZE];
+	struct al_ssm_reqctx *rctx = al_ssm_req_rctx(req);
 	int rc;
 
-	if (!dev)
-		return -ENODEV;
+	if (!req->cryptlen)	/* nothing to do; a valid request */
+		return 0;
 
-	memcpy(iv, req->iv, AES_BLOCK_SIZE);
+	rc = al_ssm_check_len(ctx, req->cryptlen);
+	if (rc < 0)
+		return rc;
+	if (rc)
+		return al_ssm_do_fallback(ctx, req, dir);
+
 	INIT_LIST_HEAD(&rctx->list);
-	rctx->req = req;
 	rctx->inline_wait = false;
 	rctx->finished = false;
 	rctx->notify_owed = false;
 
-	rc = al_ssm_alloc_resources(rctx, ctx, req->src, req->cryptlen, iv, dir);
-	if (rc)
-		return rc;
+	/* Too many segments, or the mapping failed: software, not an error. */
+	rc = al_ssm_prepare(rctx, ctx, req, dir);
+	if (rc) {
+		if (rc == -ENOMEM)
+			al_ssm_fault(ctx->dev, AL_SSM_FAULT_DMA_ALLOC);
+		return al_ssm_do_fallback(ctx, req, dir);
+	}
 
 	rc = al_ssm_submit_and_poll(rctx);
 
 	if (rc == 0) {
-		/* Completed synchronously — copy result + output IV, return success */
-		al_ssm_copy_result(rctx);
-		al_ssm_free_resources(rctx);
+		/* Completed synchronously — output IV published, return success */
+		al_ssm_finish_request(rctx, 0);
 		return 0;
 	}
 
 	if (rc == -EINPROGRESS || rc == -EBUSY)
-		return rc;	/* the callback frees rctx */
+		return rc;	/* the callback unmaps rctx */
 
 	/* Not accepted, or failed synchronously; removed dev is -ENODEV */
-	al_ssm_free_resources(rctx);
+	al_ssm_finish_request(rctx, rc);
 	return rc == -ESHUTDOWN ? -ENODEV : rc;
 }
 
@@ -594,22 +713,49 @@ static int al_ssm_enqueue(struct al_ssm_ctx *ctx, struct skcipher_request *req,
 static int al_ssm_init_tfm(struct crypto_skcipher *tfm)
 {
 	struct al_ssm_ctx *ctx = crypto_skcipher_ctx(tfm);
+	const char *name = crypto_tfm_alg_name(crypto_skcipher_tfm(tfm));
 
 	ctx->dev = al_ssm_dev_get();
 	if (!ctx->dev)
 		return -ENODEV;
+
+	/* A synchronous, non-fallback implementation of the same name. */
+	ctx->fallback = crypto_alloc_skcipher(name, 0,
+					      CRYPTO_ALG_NEED_FALLBACK | CRYPTO_ALG_ASYNC);
+	if (IS_ERR(ctx->fallback)) {
+		int rc = PTR_ERR(ctx->fallback);
+
+		dev_err(ctx->dev->dev, "no software fallback for %s: %d\n", name, rc);
+		al_ssm_dev_put(ctx->dev);
+		return rc;
+	}
+
 	atomic_inc(&g_ssm_tfms);
-	crypto_skcipher_set_reqsize(tfm, sizeof(struct al_ssm_reqctx));
+	crypto_skcipher_set_reqsize_dma(tfm, sizeof(struct al_ssm_reqctx) +
+					crypto_skcipher_reqsize(ctx->fallback));
 	return 0;
 }
 
 static void al_ssm_exit_tfm(struct crypto_skcipher *tfm)
 {
 	struct al_ssm_ctx *ctx = crypto_skcipher_ctx(tfm);
+
 	memzero_explicit(ctx->key, sizeof(ctx->key));
 	memzero_explicit(ctx->xts_key, sizeof(ctx->xts_key));
+	crypto_free_skcipher(ctx->fallback);
 	al_ssm_dev_put(ctx->dev);
 	atomic_dec(&g_ssm_tfms);
+}
+
+static int al_ssm_setkey_fallback(struct crypto_skcipher *tfm, const u8 *key,
+				  unsigned int keylen)
+{
+	struct al_ssm_ctx *ctx = crypto_skcipher_ctx(tfm);
+
+	crypto_skcipher_clear_flags(ctx->fallback, CRYPTO_TFM_REQ_MASK);
+	crypto_skcipher_set_flags(ctx->fallback,
+				  crypto_skcipher_get_flags(tfm) & CRYPTO_TFM_REQ_MASK);
+	return crypto_skcipher_setkey(ctx->fallback, key, keylen);
 }
 
 static int al_ssm_xts_setkey(struct crypto_skcipher *tfm, const u8 *key, unsigned int keylen)
@@ -625,6 +771,9 @@ static int al_ssm_xts_setkey(struct crypto_skcipher *tfm, const u8 *key, unsigne
 	case AES_KEYSIZE_256: ctx->aes_ksize = AL_CRYPT_AES_256; break;
 	default: return -EINVAL;
 	}
+	ret = al_ssm_setkey_fallback(tfm, key, keylen);
+	if (ret)
+		return ret;
 	ctx->keylen = half;
 	memcpy(ctx->key, key, half);
 	memcpy(ctx->xts_key, key + half, half);
@@ -644,6 +793,8 @@ static int al_ssm_xts_decrypt(struct skcipher_request *req)
 static int al_ssm_cbc_setkey(struct crypto_skcipher *tfm, const u8 *key, unsigned int keylen)
 {
 	struct al_ssm_ctx *ctx = crypto_skcipher_ctx(tfm);
+	int ret;
+
 	ctx->enc_type = AL_CRYPT_AES_CBC;
 	switch (keylen) {
 	case AES_KEYSIZE_128: ctx->aes_ksize = AL_CRYPT_AES_128; break;
@@ -651,6 +802,9 @@ static int al_ssm_cbc_setkey(struct crypto_skcipher *tfm, const u8 *key, unsigne
 	case AES_KEYSIZE_256: ctx->aes_ksize = AL_CRYPT_AES_256; break;
 	default: return -EINVAL;
 	}
+	ret = al_ssm_setkey_fallback(tfm, key, keylen);
+	if (ret)
+		return ret;
 	ctx->keylen = keylen;
 	memcpy(ctx->key, key, keylen);
 	return 0;
@@ -673,7 +827,8 @@ static struct skcipher_alg al_ssm_algs[] = {
 		.base.cra_name		= "xts(aes)",
 		.base.cra_driver_name	= "xts-aes-al-ssm",
 		.base.cra_priority	= 400,
-		.base.cra_flags		= CRYPTO_ALG_ASYNC | CRYPTO_ALG_KERN_DRIVER_ONLY,
+		.base.cra_flags		= CRYPTO_ALG_ASYNC | CRYPTO_ALG_KERN_DRIVER_ONLY |
+					  CRYPTO_ALG_NEED_FALLBACK,
 		.base.cra_blocksize	= AES_BLOCK_SIZE,
 		.base.cra_ctxsize	= sizeof(struct al_ssm_ctx),
 		.base.cra_module	= THIS_MODULE,
@@ -690,7 +845,8 @@ static struct skcipher_alg al_ssm_algs[] = {
 		.base.cra_name		= "cbc(aes)",
 		.base.cra_driver_name	= "cbc-aes-al-ssm",
 		.base.cra_priority	= 400,
-		.base.cra_flags		= CRYPTO_ALG_ASYNC | CRYPTO_ALG_KERN_DRIVER_ONLY,
+		.base.cra_flags		= CRYPTO_ALG_ASYNC | CRYPTO_ALG_KERN_DRIVER_ONLY |
+					  CRYPTO_ALG_NEED_FALLBACK,
 		.base.cra_blocksize	= AES_BLOCK_SIZE,
 		.base.cra_ctxsize	= sizeof(struct al_ssm_ctx),
 		.base.cra_module	= THIS_MODULE,
@@ -810,10 +966,11 @@ static int al_ssm_pci_probe(struct pci_dev *pdev, const struct pci_device_id *en
 		return -ENOMEM;
 
 	kref_init(&dev->ref);
-	dev->pdev = pdev;
+	dev->pdev = pci_dev_get(pdev);
 	dev->dev = &pdev->dev;
 	atomic_set(&dev->total_pending, 0);
 	dev->last_completion = jiffies;
+	dev->stall_clock = jiffies;
 
 	rc = pci_enable_device(pdev);
 	if (rc)
@@ -920,6 +1077,7 @@ err_regions:
 err_disable:
 	pci_disable_device(pdev);
 err_free:
+	pci_dev_put(pdev);
 	kfree(dev);
 	return rc;
 }

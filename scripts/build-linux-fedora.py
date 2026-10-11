@@ -473,6 +473,23 @@ def configure():
     # RAID6_PQ_BENCHMARK from the same block does, so it is --module in a mixed
     # chain that gets lost. Re-assert it on its own; olddefconfig preserves it.
     run([cfg, "--file", os.path.join(KOUT, ".config"), "--module", "MD_RAID456"])
+    # al_ssm's only in-kernel consumer (#267: AF_ALG and fscrypt mask ASYNC
+    # drivers out; dm-crypt does not). localmodconfig drops DM_CRYPT (the build
+    # host has no dm-crypt volume loaded); `bench-all --ssm` needs it.
+    # CRYPTO_TEST (tcrypt) re-runs testmgr on demand:
+    # `modprobe tcrypt alg=xts-aes-al-ssm`.
+    run(
+        [cfg, "--file", os.path.join(KOUT, ".config")]
+        + ["--module", "DM_CRYPT", "--module", "CRYPTO_TEST"]
+        # Fuzzes every algorithm against the generic one at registration (zero
+        # length, partial blocks, MAY_BACKLOG, in-place, misaligned sg): the
+        # check #282/#291 call for. Slows boot, so opt-in.
+        + (
+            ["--enable", "CRYPTO_MANAGER_EXTRA_TESTS"]
+            if os.environ.get("AWTO_CRYPTO_EXTRA_TESTS")
+            else []
+        )
+    )
     run(["make", "-C", SRC, f"O={KOUT}", "olddefconfig"])
     dotcfg = pathlib.Path(os.path.join(KOUT, ".config")).read_text()
     for sym in (
@@ -493,6 +510,8 @@ def configure():
         # DMA_XOR/DMA_PQ. localmodconfig drops it (nothing was using it),
         # so verify the force-enable survived.
         "CONFIG_MD_RAID456=m",
+        # al_ssm's only in-kernel consumer (see the force-enable above).
+        "CONFIG_DM_CRYPT=m",
         # #258: the build's own identity. olddefconfig has been seen to drop
         # a --set-str, and a silently-empty LOCALVERSION puts us straight
         # back to "every build looks identical".
