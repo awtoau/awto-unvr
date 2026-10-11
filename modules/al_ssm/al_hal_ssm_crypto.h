@@ -802,21 +802,6 @@ struct al_crypto_gmac_cfg {
 	const struct al_crypto_gmac_data_mask		*data_mask_cfg;
 };
 
-/**
- * Crypto GMAC init
- *
- * @param	dma
- *		Crypto DMA handle
- * @param	app_regs
- *		Crypto application registers
- * @param	cfg
- *		The required configuration, or NULL if defaults are required
- */
-void al_crypto_gmac_init(
-	struct al_ssm_dma		*dma,
-	void __iomem			*app_regs,
-	const struct al_crypto_gmac_cfg	*cfg);
-
 /** Inline CRC start mask */
 struct al_crypto_icrc_cfg_start_mask {
 	uint32_t c_mask[4];
@@ -828,93 +813,6 @@ struct al_crypto_icrc_cfg {
 	enum al_crypto_icrc_prof_id		prof_id;
 	struct al_crypto_icrc_cfg_start_mask	start_masks[4];
 };
-
-/**
- * Crypto Inline CRC init
- *
- * @param	dma
- *		Crypto DMA handle
- * @param	app_regs
- *		Crypto application registers
- * @param	cfg
- *		The required configuration, or NULL if defaults are required
- */
-void al_crypto_icrc_init(
-	struct al_ssm_dma		*dma,
-	void __iomem			*app_regs,
-	const struct al_crypto_icrc_cfg	*cfg);
-
-/**
- * Crypto compression LZ init
- *
- * @param	dma
- *		Crypto DMA handle
- * @param	app_regs
- *		Crypto application registers
- */
-void al_crypto_cmprs_lz_init(
-	struct al_ssm_dma	*dma,
-	void __iomem		*app_regs);
-
-/**
- * Crypto compression Huffman init
- *
- * @param	dma
- *		Crypto DMA handle
- * @param	app_regs
- *		Crypto application registers
- */
-void al_crypto_cmprs_huffman_init(
-	struct al_ssm_dma	*dma,
-	void __iomem		*app_regs);
-
-/**
- * Crypto compression Huffman static table entry setting
- *
- * @param	dma
- *		Crypto DMA handle
- * @param	app_regs
- *		Crypto application registers
- * @param	entry_index
- *		Entry index
- * @param	entry
- *		Entry contents
- */
-void al_crypto_cmprs_huffman_static_tbl_entry_set(
-	struct al_ssm_dma				*dma,
-	void __iomem					*app_regs,
-	unsigned int					entry_index,
-	struct al_crypto_cmprs_huffman_static_tbl_entry	*entry);
-
-/**
- * Crypto compression Huffman dynamic table default setting
- *
- * @param	buff
- *		Huffman dynamic table buffer
- * @param	buff_size
- *		Huffman dynamic table buffer size - should be 1294 bytes
- */
-void al_crypto_cmprs_huffman_static_tbl_default_set(
-	void						*buff,
-	unsigned int					buff_size);
-
-/**
- * Crypto compression Huffman dynamic table entry setting
- *
- * @param	buff
- *		Huffman dynamic table buffer
- * @param	buff_size
- *		Huffman dynamic table buffer size - should be 1294 bytes
- * @param	entry_index
- *		Entry index
- * @param	entry
- *		Entry contents
- */
-void al_crypto_cmprs_huffman_dynamic_tbl_entry_set(
-	void						*buff,
-	unsigned int					buff_size,
-	unsigned int					entry_index,
-	struct al_crypto_cmprs_huffman_static_tbl_entry	*entry);
 
 /**
  * Initialize hw_sa (n entries, according to sa length)

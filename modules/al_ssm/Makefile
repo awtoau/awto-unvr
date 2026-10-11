@@ -22,7 +22,6 @@ al_ssm-y += al_ssm_devlink.o
 # -- HAL: SSM (Security Services Module) --
 al_ssm-y += al_hal_ssm.o
 al_ssm-y += al_hal_ssm_crypto.o
-al_ssm-y += al_hal_ssm_crypto_cfg.o
 al_ssm-y += al_hal_ssm_crc_memcpy.o
 al_ssm-y += al_hal_ssm_raid.o
 
