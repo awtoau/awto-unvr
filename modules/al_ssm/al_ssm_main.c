@@ -203,6 +203,29 @@ static void al_ssm_finish_locked(struct al_ssm_reqctx *rctx, int status,
 		list_add_tail(&rctx->list, done);
 }
 
+/*
+ * Split one DMA range into descriptor-sized buffers (#332). The HAL writes
+ * every descriptor length as `len & 0xffff` and never checks it, so a larger
+ * buffer is silently truncated. AL_SSM_MAX_DESC_LEN stays below 64 KiB whatever
+ * the 64K-as-zero encoding does.
+ */
+static unsigned int al_ssm_split_buf(struct al_buf *bufs, dma_addr_t addr,
+				     unsigned int len)
+{
+	unsigned int n = 0;
+
+	while (len) {
+		unsigned int chunk = min_t(unsigned int, len, AL_SSM_MAX_DESC_LEN);
+
+		bufs[n].addr = addr;
+		bufs[n].len = chunk;
+		addr += chunk;
+		len -= chunk;
+		n++;
+	}
+	return n;
+}
+
 /**
  * al_ssm_hw_submit_locked - put one prepared request on the hardware ring
  *
@@ -214,25 +237,20 @@ static int al_ssm_hw_submit_locked(struct al_ssm_dev *dev,
 {
 	struct al_ssm_chan *chan = &dev->channel;
 	struct al_crypto_transaction xaction;
-	struct al_buf src_buf, dst_buf;
+	struct al_buf src_bufs[AL_SSM_MAX_DESC_BUFS], dst_bufs[AL_SSM_MAX_DESC_BUFS];
 	int rc;
 
 	if (chan->pending_count >= AL_SSM_MAX_IN_FLIGHT)
 		return -ENOSPC;
 
-	src_buf.addr = rctx->src_dma;
-	src_buf.len = rctx->nbytes;
-	dst_buf.addr = rctx->dst_dma;
-	dst_buf.len = rctx->nbytes;
-
 	memset(&xaction, 0, sizeof(xaction));
 	xaction.dir = rctx->dir;
 	xaction.flags = AL_SSM_INTERRUPT;
-	xaction.src.bufs = &src_buf;
-	xaction.src.num = 1;
+	xaction.src.bufs = src_bufs;
+	xaction.src.num = al_ssm_split_buf(src_bufs, rctx->src_dma, rctx->nbytes);
 	xaction.src_size = rctx->nbytes;
-	xaction.dst.bufs = &dst_buf;
-	xaction.dst.num = 1;
+	xaction.dst.bufs = dst_bufs;
+	xaction.dst.num = al_ssm_split_buf(dst_bufs, rctx->dst_dma, rctx->nbytes);
 	xaction.sa_indx = 0;
 	xaction.sa_in.addr = rctx->sa_dma;
 	xaction.sa_in.len = sizeof(*rctx->hw_sa);

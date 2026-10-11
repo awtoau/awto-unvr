@@ -30,6 +30,9 @@
 #define AL_SSM_MAX_BACKLOG	4096
 #define AL_SSM_POLL_INTERVAL_US	100
 #define AL_SSM_MAX_DATA_SIZE	(256 * 1024)
+/* One UDMA descriptor length is 16 bits; see al_ssm_split_buf() (#332). */
+#define AL_SSM_MAX_DESC_LEN	(32 * 1024)
+#define AL_SSM_MAX_DESC_BUFS	(AL_SSM_MAX_DATA_SIZE / AL_SSM_MAX_DESC_LEN)
 #define RING_BYTES		(AL_SSM_RING_SIZE * sizeof(union al_udma_desc))
 
 /*

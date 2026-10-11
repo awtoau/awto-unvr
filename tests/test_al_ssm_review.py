@@ -117,6 +117,35 @@ def test_promoted_backlog_waiter_gets_its_in_progress_notification():
     assert "-EINPROGRESS" in done
 
 
+# ---- #332 descriptor length --------------------------------------------------
+
+
+def _drv_const(name: str) -> int:
+    hdr = (REPO / "modules" / "al_ssm" / "al_ssm_drv.h").read_text()
+    expr = re.search(rf"#define {name}\s+(.+)", hdr).group(1)
+    expr = re.sub(r"/\*.*?\*/", "", expr).strip().replace("(", "").replace(")", "")
+    return eval(expr, {}, {n: _drv_const(n) for n in re.findall(r"AL_SSM_\w+", expr)})  # noqa: S307
+
+
+def test_descriptor_chunk_fits_the_16_bit_length_field():
+    # HAL: `len & 0xffff` (al_hal_ssm_crypto_desc.h), no check
+    chunk = _drv_const("AL_SSM_MAX_DESC_LEN")
+    assert 0 < chunk < 0x10000
+    # data descriptors left after SA + IV (tx) and none extra (rx)
+    assert _drv_const("AL_SSM_MAX_DESC_BUFS") + 2 <= 31
+    assert _drv_const("AL_SSM_MAX_DESC_BUFS") * chunk >= _drv_const(
+        "AL_SSM_MAX_DATA_SIZE"
+    )
+
+
+def test_a_request_is_never_one_buffer():
+    body = _code(_func_body("al_ssm_hw_submit_locked"))
+    assert "al_ssm_split_buf(src_bufs" in body and "al_ssm_split_buf(dst_bufs" in body
+    assert not re.search(r"\.len\s*=\s*rctx->nbytes", body)
+    split = _code(_func_body("al_ssm_split_buf"))
+    assert "AL_SSM_MAX_DESC_LEN" in split
+
+
 # ---- #301 remove ordering ---------------------------------------------------
 
 
