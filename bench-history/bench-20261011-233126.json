@@ -1,0 +1,118 @@
+{
+  "timestamp": "2026-10-11T23:31:26+11:00",
+  "commit": "26ca5ac-dirty",
+  "host": "192.168.25.42",
+  "kernel": "7.3.0-rc6-b5f1aef-dirty+",
+  "checks": [
+    {
+      "name": "health al_eth module",
+      "ok": false,
+      "detail": "vermagic=modinfo: running=7.3.0-rc6-b5f1aef-dirty+"
+    },
+    {
+      "name": "health link enp0s1",
+      "ok": true,
+      "detail": "speed=100 carrier=1 oper=up"
+    },
+    {
+      "name": "health link enp0s2",
+      "ok": true,
+      "detail": "speed=10000 carrier=1 oper=up"
+    },
+    {
+      "name": "health adaptive moderation off",
+      "ok": true,
+      "detail": "off on enp0s1, enp0s2"
+    },
+    {
+      "name": "health MAC counters",
+      "ok": true,
+      "detail": "all zero"
+    },
+    {
+      "name": "health queue drop counters",
+      "ok": true,
+      "detail": "no growth"
+    },
+    {
+      "name": "health kernel log",
+      "ok": false,
+      "detail": "3 line(s): [    0.000000] OF: reserved mem: 0x0000000092000000..0x00000000921fffff (2048 KiB) map non-reusable ramoops@92000000"
+    },
+    {
+      "name": "eth 1G host->box",
+      "ok": true,
+      "detail": "5.50 Mbits/sec"
+    },
+    {
+      "name": "eth 1G box->host",
+      "ok": true,
+      "detail": "95.9 Mbits/sec"
+    },
+    {
+      "name": "eth 10G host->box",
+      "ok": true,
+      "detail": "3.17 Gbits/sec"
+    },
+    {
+      "name": "eth 10G box->host",
+      "ok": true,
+      "detail": "4.16 Gbits/sec"
+    },
+    {
+      "name": "eth 10G v6 control udp",
+      "ok": true,
+      "detail": "100/100 arrived"
+    },
+    {
+      "name": "eth 10G v6 hop-by-hop udp csum",
+      "ok": true,
+      "detail": "100/100 arrived (lost ones failed the checksum)"
+    },
+    {
+      "name": "eth USB1 host->box",
+      "ok": true,
+      "detail": "96.8 Mbits/sec"
+    },
+    {
+      "name": "eth USB1 box->host",
+      "ok": true,
+      "detail": "95.9 Mbits/sec"
+    },
+    {
+      "name": "eth USB2 host->box",
+      "ok": true,
+      "detail": "97.2 Mbits/sec"
+    },
+    {
+      "name": "eth USB2 box->host",
+      "ok": true,
+      "detail": "84.5 Mbits/sec"
+    },
+    {
+      "name": "dma copy+xor",
+      "ok": true,
+      "detail": "copy0 20000 tests 0 fail 13476 iops, xor0 20000 tests 0 fail 13485 iops"
+    },
+    {
+      "name": "dma oversize",
+      "ok": true,
+      "detail": "copy0 300 tests 168 fail 17 iops, xor0 300 tests 272 fail 11 iops"
+    }
+  ],
+  "metrics": {
+    "link enp0s1 speed Mbps": 100.0,
+    "link enp0s2 speed Mbps": 10000.0,
+    "eth 1G host->box": 5.5,
+    "eth 1G box->host": 95.9,
+    "eth 10G host->box": 3170.0,
+    "eth 10G box->host": 4160.0,
+    "eth USB1 host->box": 96.8,
+    "eth USB1 box->host": 95.9,
+    "eth USB2 host->box": 97.2,
+    "eth USB2 box->host": 84.5,
+    "dma dma0chan0 copy iops": 13476.39,
+    "dma dma0chan0 xor iops": 13484.99
+  },
+  "all_ok": false
+}
