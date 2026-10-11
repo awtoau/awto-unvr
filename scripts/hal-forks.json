@@ -175,10 +175,9 @@
   }
  },
  "al_hal_udma_iofic.c": {
-  "reason": "being merged into modules/al_hal in this series (#264)",
+  "reason": "al_ssm keeps the gen B UDMA (AL SDK 4.19, API v5: V3/V4 register structs, handle_init, q_pause, state_set_wait(flush), AXI timeout 5M). modules/al_hal holds gen A (4.1.37) for al_dma + al_eth. Type- and API-incompatible; see docs/vendor-code-modernisation.md item 10.",
   "trees": {
-   "al_dma": "ef9ff62d47aa0209",
-   "al_eth": "09cb3016f1e70bda",
+   "al_hal": "ef9ff62d47aa0209",
    "al_ssm": "7ca5d36e875f6aed"
   }
  },
