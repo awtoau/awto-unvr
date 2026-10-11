@@ -298,8 +298,10 @@ MODULE_DEVICE_TABLE(pci, al_eth_pci_tbl);
 #define AL_ETH_INTR_HIGHEST_VALUE(sb_clk_freq)		((uint)(1000 * AL_ETH_INTR_HIGHEST_USECS / \
 	AL_ETH_INTR_MODERATION_RESOLUTION_NSECS(sb_clk_freq)))
 
-/** Enable (AL_TRUE) / disable (AL_FALSE) interrupt moderation */
-#define AL_ETH_DEFAULT_ADAPTIVE_INT_MODERATION	AL_TRUE
+/* Adaptive moderation default: OFF on Alpine (vendor al_eth.c:274-278, the
+ * CONFIG_ARCH_ALPINE arm). Unconditional: this module only drives Alpine, and
+ * a bare #ifdef falls back to AL_TRUE if the symbol is ever absent. #304 */
+#define AL_ETH_DEFAULT_ADAPTIVE_INT_MODERATION	AL_FALSE
 
 static int adaptive_int_moderation = AL_ETH_DEFAULT_ADAPTIVE_INT_MODERATION;
 module_param(adaptive_int_moderation, int, 0);

@@ -6,7 +6,7 @@ another script (see "Not in here", #312). One run writes a comparable JSON snaps
 Subtests (each is a function taking a Report; metrics land in the snapshot and
 --compare / --idle pick them up by name):
 - health: al_eth vermagic vs running kernel, carrier + speed, MAC error
-  counters, kernel-log trouble lines. (test-eth.py's non-throughput half.)
+  counters, adaptive RX moderation off (#304), kernel-log trouble lines. (test-eth.py's non-throughput half.)
 - eth: bidirectional iperf3, 4 streams, per port (1G, 10G, any USB NIC), bound
   with SO_BINDTODEVICE (`-B ip%iface`); a plain -B bind picks the wrong NIC (#121).
 - crypto: AES-256-XTS via AF_ALG. It binds by generic name, so it measures
@@ -608,6 +608,7 @@ def _health_script(mark: str | None) -> str:
 echo '@@vermagic'; modinfo -F vermagic al_eth 2>&1
 echo '@@link'; for i in {ifs}; do echo "$i speed=$(cat /sys/class/net/$i/speed 2>/dev/null) carrier=$(cat /sys/class/net/$i/carrier 2>/dev/null) oper=$(cat /sys/class/net/$i/operstate 2>/dev/null)"; done
 echo '@@stats'; for i in {ifs}; do echo "$i $(for c in {" ".join(HEALTH_ERROR_COUNTERS)}; do echo -n "$c=$(cat /sys/class/net/$i/statistics/$c 2>/dev/null) "; done)"; done
+echo '@@coalesce'; for i in {ifs}; do echo "$i $(ethtool -c $i 2>&1 | grep -i 'Adaptive RX')"; done
 echo '@@dmesg'; dmesg | {scan}
 """
 
@@ -630,6 +631,16 @@ def parse_link(text: str) -> dict[str, dict[str, str]]:
     for m in re.finditer(r"^(\S+) speed=(\S*) carrier=(\S*) oper=(\S*)", text, re.M):
         links[m[1]] = {"speed": m[2], "carrier": m[3], "oper": m[4]}
     return links
+
+
+def parse_adaptive_rx(text: str) -> dict[str, str]:
+    """'<iface> Adaptive RX: off  TX: n/a' lines -> {iface: 'on'|'off'|...}.
+    Off is the vendor default on Alpine (#304); on reprograms the IOFIC
+    interval from rx_poll on every completion."""
+    out = {}
+    for m in re.finditer(r"^(\S+) Adaptive RX:\s*(\S+)", text, re.M):
+        out[m[1]] = m[2]
+    return out
 
 
 def parse_counters(text: str) -> dict[str, dict[str, int]]:
@@ -701,6 +712,21 @@ def judge_health(
         )
         if link["speed"].isdigit():
             metrics[f"link {iface} speed Mbps"] = float(link["speed"])
+    adaptive = parse_adaptive_rx(sections.get("coalesce", ""))
+    on = sorted(i for i, v in adaptive.items() if v != "off")
+    checks.append(
+        (
+            "health adaptive moderation off",
+            not on and set(adaptive) >= set(HEALTH_IFACES),
+            f"on/unknown: {', '.join(on)}"
+            if on
+            else (
+                "off on " + ", ".join(sorted(adaptive))
+                if adaptive
+                else "no coalesce data"
+            ),
+        )
+    )
     cur = parse_counters(sections.get("stats", ""))
     if state.stats is None and state.baseline_first_look:
         state.stats = cur

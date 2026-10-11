@@ -37,6 +37,9 @@ enp0s2 speed=10000 carrier=1 oper=up
 @@stats
 enp0s1 rx_errors=0 rx_crc_errors=0 tx_errors=0
 enp0s2 rx_errors=0 rx_crc_errors=0 tx_errors=0
+@@coalesce
+enp0s1 Adaptive RX: off  TX: n/a
+enp0s2 Adaptive RX: off  TX: n/a
 @@dmesg
 [  10.0] al_eth 0000:00:01.0: of_irq_parse_pci: failed with rc=-22
 [  11.0] EXT4-fs (sda2): mounted
@@ -88,6 +91,19 @@ def test_health_counters_judge_growth_not_history():
     grown = old.replace("rx_errors=7", "rx_errors=9")
     third = {n: ok for n, ok, _ in m.judge_health(m.parse_sections(grown), state)[0]}
     assert third["health MAC counters"] is False
+
+
+def test_health_adaptive_moderation_on_fails():
+    # #304: the port shipped with adaptive moderation ON; vendor default is OFF
+    on = HEALTH_OK.replace("enp0s2 Adaptive RX: off", "enp0s2 Adaptive RX: on ")
+    ok, detail = _health(on)[0]["health adaptive moderation off"]
+    assert ok is False and "enp0s2" in detail
+    assert _health(HEALTH_OK)[0]["health adaptive moderation off"][0] is True
+
+
+def test_health_adaptive_moderation_missing_data_fails():
+    gone = HEALTH_OK.replace("enp0s1 Adaptive RX: off  TX: n/a\n", "")
+    assert _health(gone)[0]["health adaptive moderation off"][0] is False
 
 
 def test_health_kernel_log_trouble_fails_but_benign_does_not():
