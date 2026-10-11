@@ -69,6 +69,7 @@ SUMMARY = re.compile(
 RESULT = re.compile(r"dmatest: (?P<thr>\S+): result #\d+: '(?P<what>[^']+)'")
 BAD_KERNEL = re.compile(
     r"Failed to init DMA queue|BUG:|Oops|WARNING:|never completed|queue reset failed"
+    r"|completion error|rejected"
 )
 
 
@@ -124,8 +125,15 @@ def judge(parsed: dict, iterations: int, allow_kinds: set[str] = frozenset()):
             fails.append(f"{thr}: {s['failures']} failures but {kinds}")
         if s["tests"] != iterations:
             fails.append(f"{thr}: ran {s['tests']} of {iterations} tests")
-    if parsed["kernel_trouble"]:
-        fails.append(f"kernel log: {sorted(set(parsed['kernel_trouble']))}")
+    # 'rejected' is the driver's warning for a refused length: expected when
+    # the run allows prep errors, a bug otherwise.
+    trouble = [
+        t
+        for t in parsed["kernel_trouble"]
+        if not (t == "rejected" and "prep error" in allow_kinds)
+    ]
+    if trouble:
+        fails.append(f"kernel log: {sorted(set(trouble))}")
     return fails
 
 

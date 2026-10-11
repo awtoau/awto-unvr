@@ -68,6 +68,20 @@ def test_queue_init_failure_in_kernel_log_fails_a_clean_summary():
     )
 
 
+def test_completion_error_in_kernel_log_fails_a_clean_summary():
+    m = _mod()
+    text = CLEAN + "[ 100.3] al_dma 0000:00:04.0: DMA chan 0 completion error: 0x10\n"
+    assert any("completion error" in f for f in m.judge(m.parse_dmesg(text), 20000))
+
+
+def test_refusal_warning_is_expected_only_when_prep_errors_are():
+    m = _mod()
+    text = PQ_PREP + "[ 100.0] al_dma 0000:00:04.0: pq len 12032 rejected\n"
+    p = m.parse_dmesg(text)
+    assert m.judge(p, 20000, {"prep error"}) == []
+    assert any("rejected" in f for f in m.judge(p, 20000))
+
+
 def test_no_summary_fails():
     m = _mod()
     assert m.judge(m.parse_dmesg("nothing\n"), 20000)
