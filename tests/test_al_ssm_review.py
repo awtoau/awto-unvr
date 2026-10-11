@@ -19,8 +19,6 @@ import re
 import sys
 from pathlib import Path
 
-import pytest
-
 REPO = Path(__file__).resolve().parent.parent
 SRC = (REPO / "modules" / "al_ssm" / "al_ssm_main.c").read_text()
 sys.path.insert(0, str(REPO / "scripts"))
@@ -51,73 +49,72 @@ def _code(text: str) -> str:
     return re.sub(r"/\*.*?\*/|//[^\n]*", "", text, flags=re.S)
 
 
-# ---- #300 model -------------------------------------------------------------
+# ---- #300 backlog invariant -------------------------------------------------
 
 
-class Model:
-    """enqueue: decide (chan lock) ... insert (backlog lock); worker cycle."""
-
-    def __init__(self, drain_policy: str) -> None:
-        self.policy = drain_policy  # "completed_only" (driver) | "if_backlog"
-        self.pending = 0
-        self.backlog = 0
-        self.submitted_from_backlog = 0
-        self.worker_scheduled = False
-
-    def decide_full(self) -> bool:
-        return self.pending >= MAX_IN_FLIGHT
-
-    def insert_backlog(self) -> None:
-        self.backlog += 1
-        self.worker_scheduled = True  # al_ssm_schedule_poll()
-
-    def worker_cycle(self, hw_done: int) -> bool:
-        """Returns True if it reschedules itself."""
-        completed = min(hw_done, self.pending)
-        self.pending -= completed
-        gate = completed > 0 if self.policy == "completed_only" else self.backlog > 0
-        if gate:
-            while self.backlog and self.pending < MAX_IN_FLIGHT:
-                self.backlog -= 1
-                self.pending += 1
-                self.submitted_from_backlog += 1
-        return self.pending + self.backlog > 0
+def test_ring_full_decision_and_backlog_insert_are_one_critical_section():
+    body = _code(_func_body("al_ssm_submit_and_poll"))
+    decide = _pos(body, "crypto_queue_len(&chan->backlog) ?")
+    insert = _pos(body, "crypto_enqueue_request(&chan->backlog")
+    between = body[decide:insert]
+    assert "spin_unlock" not in between and "spin_lock" not in between
+    assert _pos(body, "spin_lock_irqsave(&chan->lock, flags);") < decide
+    # the only insert in the driver; there is no second lock to split it from
+    assert _code(SRC).count("crypto_enqueue_request(") == 1
+    assert "backlog_lock" not in SRC
 
 
-def _lose_scenario(policy: str) -> Model:
-    m = Model(policy)
-    m.pending = MAX_IN_FLIGHT
-    assert m.decide_full()  # enqueuer E decides ENOSPC, drops chan->lock
-    # E is delayed; HW completes everything, worker cycle X runs on an empty backlog
-    m.worker_cycle(hw_done=MAX_IN_FLIGHT)
-    m.insert_backlog()  # E finally inserts and schedules the worker
-    # worker cycles Y...: HW has nothing left to complete (hw_done = 0)
-    for _ in range(100):
-        if not m.worker_cycle(hw_done=0):
-            break
-    return m
+def test_one_function_consumes_completions_and_every_pass_refills():
+    code = _code(SRC)
+    assert code.count("al_crypto_dma_completion(") == 1
+    assert "al_crypto_dma_completion(" in _func_body("al_ssm_reap_locked")
+    # the two completion consumers and the refill all go through service_locked
+    svc = _code(_func_body("al_ssm_service_locked"))
+    assert _pos(svc, "al_ssm_reap_locked") < _pos(svc, "al_ssm_fill_locked")
+    assert "al_ssm_service_locked(" in _func_body("al_ssm_submit_and_poll")
+    assert "al_ssm_service_locked(" in _func_body("al_ssm_service")
+    assert "al_ssm_service(dev)" in _func_body("al_ssm_poll_completions")
 
 
-def test_model_matches_driver_gate():
-    body = _func_body("al_ssm_poll_completions")
-    assert re.search(r"if \(completed > 0\)\s*al_ssm_drain_backlog", body), (
-        "drain gate changed: update the #300 model and drop the xfail if fixed"
-    )
+def test_refill_is_not_gated_on_the_caller_having_completed_something():
+    fill = _code(_func_body("al_ssm_fill_locked"))
+    loop = fill[fill.index("while") : fill.index("{")]
+    assert "crypto_queue_len(&chan->backlog)" in loop
+    assert "completed" not in loop and "reaped" not in loop
+    assert not re.search(r"if \(completed > 0\)", _code(SRC))
 
 
-@pytest.mark.parametrize(
-    "policy",
-    [
-        pytest.param(
-            "completed_only",
-            marks=pytest.mark.xfail(strict=True, reason="#300 backlog request lost"),
-        ),
-        "if_backlog",
-    ],
-)
-def test_backlogged_request_is_submitted(policy):
-    m = _lose_scenario(policy)
-    assert m.submitted_from_backlog == 1 and m.backlog == 0
+def test_enqueue_refills_in_the_same_critical_section():
+    # older requests may be waiting while the ring has room again
+    body = _code(_func_body("al_ssm_submit_and_poll"))
+    ins = _pos(body, "crypto_enqueue_request(&chan->backlog")
+    fill = _pos(body[ins:], "al_ssm_fill_locked") + ins
+    assert "spin_unlock" not in body[ins:fill]
+
+
+def test_stall_detector_sees_a_backlog_only_hang():
+    body = _code(_func_body("al_ssm_poll_completions"))
+    cond = body[body.index("if (pending + backlog > 0 &&") :]
+    assert "dev->stall_clock" in cond[: cond.index("{")]
+    # the clock starts when the ring goes idle -> busy, not at the last completion
+    assert "dev->stall_clock = jiffies" in _func_body("al_ssm_hw_submit_locked")
+
+
+def test_inline_waiter_owns_its_result():
+    # a reaper in another thread must not complete a request its submitter
+    # still dereferences
+    fin = _func_body("al_ssm_finish_locked")
+    assert "if (rctx->inline_wait)" in fin and "list_add_tail" in fin
+    body = _code(_func_body("al_ssm_submit_and_poll"))
+    assert _pos(body, "rctx->inline_wait = true") < _pos(body, "for (;;)")
+    assert "rctx->inline_wait = false" in body
+
+
+def test_promoted_backlog_waiter_gets_its_in_progress_notification():
+    assert "notify_owed = true" in _func_body("al_ssm_backlog_pop_locked")
+    done = _code(_func_body("al_ssm_complete_one"))
+    assert _pos(done, "rctx->notify_owed") < _pos(done, "skcipher_request_complete")
+    assert "-EINPROGRESS" in done
 
 
 # ---- #301 remove ordering ---------------------------------------------------
@@ -164,27 +161,28 @@ def test_quiesce_pauses_the_queues_then_stops_bus_mastering():
     assert max(pause) < _pos(body, "pci_clear_master")
 
 
-def test_fail_outstanding_reaps_then_fails_the_rest_under_locks():
-    body = _func_body("al_ssm_fail_outstanding")
-    # what the engine finished is completed normally first
-    assert _pos(body, "al_ssm_poll_channel(dev)") < _pos(body, "list_splice")
-    # both lists are detached under their own lock, callbacks run after
-    assert body.count("list_splice") == 2
-    assert "dev->backlog_closed = true" in body
-    first_cb = _pos(body, "al_ssm_complete_one")
-    assert first_cb > body.rindex("spin_unlock_irqrestore")
-    assert "-ESHUTDOWN" in body
+def test_fail_outstanding_reaps_then_fails_the_rest_under_the_lock():
+    body = _code(_func_body("al_ssm_fail_outstanding"))
+    lock = _pos(body, "spin_lock_irqsave(&chan->lock")
+    reap = _pos(body, "al_ssm_reap_locked(dev, &done)")
+    pending = _pos(body, "&chan->pending")
+    backlog = _pos(body, "al_ssm_backlog_pop_locked")
+    unlock = _pos(body, "spin_unlock_irqrestore(&chan->lock")
+    # what the engine finished is completed normally first; both lists are
+    # drained under the lock, and no callback runs before it is dropped
+    assert lock < reap < pending < backlog < unlock < _pos(body, "al_ssm_run_done")
+    assert body.count("-ESHUTDOWN") == 2
 
 
 def test_submit_refuses_once_stopping_under_the_channel_lock():
     body = _func_body("al_ssm_submit_and_poll")
     lock = _pos(body, "spin_lock_irqsave(&chan->lock, flags);")
     assert (
-        lock < _pos(body, "if (chan->stopping)") < _pos(body, "al_crypto_dma_prepare")
+        lock < _pos(body, "if (chan->stopping)") < _pos(body, "al_ssm_hw_submit_locked")
     )
-    # the lock is dropped around a completion: re-check inside the poll loop
-    loop = _pos(body, "while (ktime_before")
-    assert loop < body.index("chan->stopping", loop)
+    # the lock is dropped between polls: the loop exits once remove started
+    loop = _pos(body, "for (;;)")
+    assert "chan->stopping" in body[loop:]
 
 
 def test_poll_is_armed_only_under_the_lock_remove_sets_stopping_under():

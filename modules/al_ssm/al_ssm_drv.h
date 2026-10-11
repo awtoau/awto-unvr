@@ -16,6 +16,7 @@
 #include <linux/workqueue.h>
 
 #include <crypto/aes.h>
+#include <crypto/algapi.h>
 #include <crypto/skcipher.h>
 
 #include "al_hal_ssm.h"
@@ -62,7 +63,11 @@ enum al_ssm_fault {
 };
 
 struct al_ssm_reqctx {
-	struct list_head list;
+	struct list_head list;		/* chan->pending, then a service pass's done list */
+	bool notify_owed;		/* chan->lock: MAY_BACKLOG promotion, owes -EINPROGRESS */
+	int status;			/* result, valid once reaped */
+	bool inline_wait;		/* chan->lock: submitter is spinning on this request */
+	bool finished;			/* chan->lock: reaped while inline_wait; submitter completes it */
 	struct skcipher_request *req;
 	struct al_ssm_dev *dev;
 	enum al_crypto_dir dir;
@@ -88,8 +93,9 @@ struct al_ssm_chan {
 	dma_addr_t rx_ring_dma;
 	void *rx_cdesc;
 	dma_addr_t rx_cdesc_dma;
-	struct list_head pending;
+	struct list_head pending;	/* on the ring, FIFO == completion order */
 	int pending_count;
+	struct crypto_queue backlog;	/* waiting for ring space; MAY_BACKLOG contract */
 	bool stopping;		/* chan->lock: remove started, refuse new work (#301) */
 };
 
@@ -114,10 +120,6 @@ struct al_ssm_dev {
 	struct al_ssm_unit_regs_info unit_info;
 	struct al_ssm_chan channel;
 	bool crypto_registered;
-	spinlock_t backlog_lock;
-	bool backlog_closed;	/* backlog_lock: remove started (#301) */
-	struct list_head backlog;
-	atomic_t backlog_count;
 	struct workqueue_struct *wq;
 	struct delayed_work poll_work;
 	atomic_t total_pending;
@@ -133,6 +135,7 @@ struct al_ssm_dev {
 	atomic64_t stat_errors;
 	atomic64_t stat_poll_cycles;
 	unsigned long last_completion;	/* jiffies, 0 = none since probe */
+	unsigned long stall_clock;	/* jiffies: last completion, or work became outstanding */
 	bool stall_reported;
 };
 

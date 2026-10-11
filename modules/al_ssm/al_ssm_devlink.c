@@ -99,11 +99,12 @@ static void al_ssm_fmsg_state(struct al_ssm_dev *dev, struct devlink_fmsg *fmsg)
 {
 	struct al_udma_q *tx_q, *rx_q;
 	unsigned long flags, last;
-	int hw_pending;
+	int hw_pending, backlog;
 	u64 idle_ms;
 
 	spin_lock_irqsave(&dev->channel.lock, flags);
 	hw_pending = dev->channel.pending_count;
+	backlog = crypto_queue_len(&dev->channel.backlog);
 	last = dev->last_completion;
 	spin_unlock_irqrestore(&dev->channel.lock, flags);
 
@@ -122,7 +123,7 @@ static void al_ssm_fmsg_state(struct al_ssm_dev *dev, struct devlink_fmsg *fmsg)
 	devlink_fmsg_u64_pair_put(fmsg, "since_last_completion_ms", idle_ms);
 
 	devlink_fmsg_u32_pair_put(fmsg, "hw_pending", hw_pending);
-	devlink_fmsg_u32_pair_put(fmsg, "backlog", atomic_read(&dev->backlog_count));
+	devlink_fmsg_u32_pair_put(fmsg, "backlog", backlog);
 	devlink_fmsg_u32_pair_put(fmsg, "max_in_flight", AL_SSM_MAX_IN_FLIGHT);
 	devlink_fmsg_u32_pair_put(fmsg, "ring_size", AL_SSM_RING_SIZE);
 	devlink_fmsg_u32_pair_put(fmsg, "stall_threshold_ms", AL_SSM_STALL_MS);
