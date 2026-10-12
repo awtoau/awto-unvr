@@ -49,9 +49,14 @@ stock U-Boot -> NAND 0x1300000 (awto-uboot, raw, `go`) -> awto-uefi -> Linux
 - **Refetch before use.** Our snapshot is 6.18.46 from 2026-08-25; upstream is
   at **6.18.55**, **4824 commits ahead**. `master-nightly` moves, so pin a
   commit when phase 4 starts.
-- Delta to resolve: TrueNAS is on 6.18.x; we run 7.3-rc. Either carry our
-  `al_*` drivers back to 6.18, or carry TrueNAS's deltas forward to 7.3.
-  **Not yet decided** — this is the first phase-4 question.
+- **Direction DECIDED (Dan, 2026-10-13): carry our drivers BACK to 6.18.**
+  Not TrueNAS's deltas forward. Development stays on bleeding-edge 7.3+; 6.18
+  is a build target, not where we work.
+- **It must be a generated patch series, not a hand-maintained branch.** The
+  7.3 tree keeps moving, so every change has to backport mechanically, with
+  hand-coding the exception. Precedent: `patches/*.patch` with
+  `check_kernel_patches()` in `scripts/_repo.py` already does this for
+  mainline. Tracked as #338.
 - No near-miss mainline tree is kept as a diff baseline: the exact source is a
   clone away, so `linux-v6.18.44` was retired with the rest.
 - Needs ZFS on arm64 with our drivers, and the storage stack #32 is baselining.
