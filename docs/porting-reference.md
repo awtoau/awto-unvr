@@ -62,7 +62,7 @@ still than the mdraid figure above.
 
 ## QEMU: what it can and cannot do
 
-Checked `hw/arm/` in `/mnt/2tb/git_mirror/qemu` — there is **no Alpine/Annapurna
+Checked `hw/arm/` in a mainline QEMU tree (no local copy kept) — there is **no Alpine/Annapurna
 machine model**, only generic `virt.c` and `sbsa-ref.c`. Therefore:
 
 - Stock u-boot is Alpine-V2 register-level code. On `-M virt` it faults immediately.
@@ -318,8 +318,8 @@ Buildroot-based, own kernel, installs over SSH:
 | Recovery Mode procedure | <https://help.ui.com/hc/en-us/articles/360043360253-UniFi-Recovery-Mode> |
 | Failed-USB replacement procedure | <https://www.incredigeek.com/home/unifi-unvr-recover-from-failed-usb-drive/> |
 | Community thread, 368 replies — USB failure is a known defect | <https://community.ui.com/questions/UNVR-stopped-responding-just-white-flashing-light/a051f869-8349-4a2a-a72a-ce3a8aa8c759> |
-| Mainline Alpine support (DTs, irqchip, PCIe) | `/mnt/2tb/git_mirror/linux` |
-| QEMU ARM machine models (no Alpine) | `/mnt/2tb/git_mirror/qemu` `hw/arm/` |
+| Mainline Alpine support (DTs, irqchip, PCIe) | `/mnt/2tb/unvr-port-refs/linux-v7.3-fresh` |
+| QEMU ARM machine models (no Alpine) | upstream `hw/arm/`; no local tree |
 
 Credits chain: Bootlin did the original Alpine V2 upstreaming (2017); delroth
 extracted the HAL and the standalone `al_eth`; riptidewave93 documented the boot

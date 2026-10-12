@@ -7,8 +7,8 @@ aarch64, sysid **0xea16**.
 Marks: ✅ confirmed this session · ⚠ needs on-device test · 📄 from source/docs.
 
 Sources cited by absolute path:
-- Mainline: `/mnt/2tb/unvr-port-refs/u-boot-v2026.07` (full mirror at
-  `/mnt/2tb/git_mirror/u-boot/u-boot` when cloned).
+- Mainline: `/mnt/2tb/unvr-port-refs/u-boot-v2026.07`.
+- Our fork: `/mnt/2tb/git/github.com/awto-au/awto-uboot`.
 - Ubiquiti GPL U-Boot: `/mnt/2tb/unvr-port-refs/UBNT-source-code/UNVR-1.3.35-GPL/u-boot`.
 - RE'd Annapurna HAL: `/mnt/2tb/unvr-port-refs/delroth-alpine_hal`.
 - Board DTS: `/mnt/2tb/unvr-port-refs/linux-alpine-v2/dts/alpine-v2-ubnt-unvr-ea16.dts`;
