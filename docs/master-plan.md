@@ -77,3 +77,26 @@ legacy; GB-scale so wastebasket, not `rm`): 35.0 GB of stale `build-out-*`
 from Aug-Sep, and 8.2 GB of superseded mainline trees (6.12, v6.18,
 v6.18.44, v7.1.8). Refs 62 GB -> 20 GB. `scripts/reclaim-stale-buildouts.py`,
 dry-run by default.
+
+## Upstream trees: one mirror, many branches
+
+**Never clone a second copy of a repo we already mirror.** Use
+`/mnt/2tb/git_mirror/<owner>/<repo>`, maintained by
+`awto-dan/scripts/get_to_mirror.py`. Every branch is `origin/<branch>`, all
+tags fetched, one branch checked out; another version is a `git checkout` or
+`git worktree add` away.
+
+| mirror | size | covers |
+|---|---|---|
+| `torvalds/linux` | 8.4 GB | **951 tags** - v6.12, v6.18, v7.3-rc6 all present |
+| `truenas/linux` | 5.0 GB | **203 branches**, incl. `truenas/linux-6.18` (phase 4) |
+| `u-boot/u-boot` | - | mainline U-Boot |
+
+Why: five single-version clones of linux cost **15.4 GB** and gave one
+version each. The two mirrors above cost 13.4 GB and give every version.
+
+Stable point releases (e.g. `v7.1.8`) are **not** in `torvalds/linux` - mirror
+`gregkh/linux-stable` if one is needed.
+
+`unvr-port-refs/` keeps only trees that are NOT plain upstream clones:
+extracted vendor drops, the UBNT GPL source, and the live `build-out-fedora`.
