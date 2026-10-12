@@ -47,6 +47,21 @@ WASTEBASKET = Path("/mnt/2tb/wastebasket")
 # build-out-fedora is the live deploy source. Everything else is Aug-Sep.
 KEEP = {"build-out-fedora"}
 
+# Superseded mainline trees. No live build reads them: the only references are
+# a comment in build-on-box.py saying v7.1.8 was already deleted, an example
+# KDIR= in mmio-dump/Makefile, and refs-check.py's drift list (which reports
+# them absent rather than failing). `git clone --depth` refetches any of them.
+#
+# v6.18.44 goes too: TrueNAS 27 ships 6.18 and truenas/linux-6.18 is at .55,
+# so the exact source is a clone away. Keeping a near-miss mainline tree as a
+# diff baseline is worse than fetching the real thing (#phase-4).
+STALE_KERNELS = {
+    "linux-6.12",
+    "linux-v6.18",
+    "linux-v6.18.44",
+    "linux-v7.1.8",
+}
+
 
 def size_gb(p: Path) -> float:
     out = subprocess.run(
@@ -57,7 +72,11 @@ def size_gb(p: Path) -> float:
 
 def stale() -> list[Path]:
     return sorted(
-        d for d in REFS.glob("build-out*") if d.is_dir() and d.name not in KEEP
+        d
+        for d in REFS.iterdir()
+        if d.is_dir()
+        and d.name not in KEEP
+        and (d.name.startswith("build-out") or d.name in STALE_KERNELS)
     )
 
 

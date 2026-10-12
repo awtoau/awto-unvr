@@ -42,11 +42,18 @@ stock U-Boot -> NAND 0x1300000 (awto-uboot, raw, `go`) -> awto-uefi -> Linux
 
 ## Phase 4 — TrueNAS SCALE port (the goal)
 
-- Target tree: `/mnt/2tb/unvr-port-refs/truenas-linux` — the TrueNAS SCALE
-  kernel fork, **6.18.46**, full arm64 support present.
+- Target: **TrueNAS 27** (released; 27.0.0-RC.1 preceded it). Ships **kernel
+  6.18** and **OpenZFS 2.4**, with frequent updates through 27.x.
+- Target tree: `/mnt/2tb/unvr-port-refs/truenas-linux`, branch
+  `truenas/linux-6.18`, full arm64 support present.
+- **Refetch before use.** Our snapshot is 6.18.46 from 2026-08-25; upstream is
+  at **6.18.55**, **4824 commits ahead**. `master-nightly` moves, so pin a
+  commit when phase 4 starts.
 - Delta to resolve: TrueNAS is on 6.18.x; we run 7.3-rc. Either carry our
-  `al_*` drivers back to 6.18.46, or carry TrueNAS's deltas forward to 7.3.
+  `al_*` drivers back to 6.18, or carry TrueNAS's deltas forward to 7.3.
   **Not yet decided** — this is the first phase-4 question.
+- No near-miss mainline tree is kept as a diff baseline: the exact source is a
+  clone away, so `linux-v6.18.44` was retired with the rest.
 - Needs ZFS on arm64 with our drivers, and the storage stack #32 is baselining.
 - Hardware prerequisites met: 20.1 TB of disk freed, al_dma XOR/PQ verified
   at 0 failures in 40k ops (#286), so RAID parity offload is available.
@@ -65,6 +72,8 @@ stock U-Boot -> NAND 0x1300000 (awto-uboot, raw, `go`) -> awto-uefi -> Linux
 | `edk2` 1.1G, `u-boot-v2026.07` 738M | phase 3 references |
 | `build-out-fedora` 5.4G | the live build output |
 
-Regenerable, no legacy (project rule): ~33 GB of stale `build-out-*` from
-Aug-Sep, and ~8.8 GB of superseded mainline trees (6.12, v6.18, v6.18.44,
-v7.1.8) that a clone refetches.
+Retired 2026-10-13 to `/mnt/2tb/wastebasket/` (derived artifacts have no
+legacy; GB-scale so wastebasket, not `rm`): 35.0 GB of stale `build-out-*`
+from Aug-Sep, and 8.2 GB of superseded mainline trees (6.12, v6.18,
+v6.18.44, v7.1.8). Refs 62 GB -> 20 GB. `scripts/reclaim-stale-buildouts.py`,
+dry-run by default.
