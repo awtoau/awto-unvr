@@ -78,6 +78,14 @@ void alu_eth_dump_tx(struct alu_eth_priv *priv, const char *tag)
 	printf("alu_eth[%s]: m2s.state=%08x tx0 drhp=%08x drtp=%08x dcp=%08x crhp=%08x qpkt=%08x\n",
 	       tag, readl(u + 0x200), readl(u + 0x1034), readl(u + 0x103c),
 	       readl(u + 0x1040), readl(u + 0x104c), readl(u + 0x10c0));
+	/* The Linux-diff set (#253): a WORKING Linux 10G TX q0 reads
+	 * status=30000000 tcrbp=0 comp_cfg=00000002, with tcrhp tracking tdcp.
+	 * Offsets from struct udma_m2s_q (queue base 0x1000, block at +0x20):
+	 * status 0x1024, tcrbp_low/high 0x1044/0x1048, comp_cfg 0x10a0.
+	 * cfg (0x1020) is NOT readable on this rev - see the warning above. */
+	printf("alu_eth[%s]: tx0 status=%08x tcrbp=%08x%08x comp_cfg=%08x\n",
+	       tag, readl(u + 0x1024), readl(u + 0x1048), readl(u + 0x1044),
+	       readl(u + 0x10a0));
 }
 
 /* Unit-adapter AXI-master READ error attributes. addr_to = never routed to a
@@ -224,11 +232,24 @@ static int alu_eth_flr(struct udevice *dev, struct alu_eth_priv *priv)
 
 /* ---- bring-up ----------------------------------------------------------- */
 
+/* `cdesc_slot` < 0 means no completion ring, which is what TX wants.
+ *
+ * Linux, whose 10G TX runs at line rate, passes cdesc_base = NULL for TX -
+ * "completion queue not used for tx" (modules/al_eth/al_eth_main.c:3073); only
+ * RX gets a ring (:3195). A NULL base makes the HAL set
+ * AL_UDMA_Q_FLAGS_NO_COMP_UPDATE, which CLEARS EN_COMP_RING_UPDATE in comp_cfg,
+ * telling the hardware not to write completion descriptors to memory at all.
+ * Measured on a working Linux 10G: comp_cfg=00000002, tcrbp=0, tcrhp tracking
+ * tdcp. Ours read comp_cfg=00000003, tcrbp=02002800, tcrhp stuck (#253).
+ *
+ * `crhp` still advances without the ring: al_udma_cdesc_get_all() reads it as a
+ * REGISTER (al_hal_udma.h:628) and, unlike al_udma_cdesc_packet_get(), does not
+ * assert against NO_COMP_UPDATE. The ring only held descriptor content, which
+ * the TX path never reads. */
 static void alu_eth_q_params(struct al_udma_q_params *p, uintptr_t base,
-			     unsigned int sdesc_slot, unsigned int cdesc_slot)
+			     unsigned int sdesc_slot, int cdesc_slot)
 {
 	uintptr_t sdesc = base + sdesc_slot * ALU_ETH_Q_DESCS_SIZE;
-	uintptr_t cdesc = base + cdesc_slot * ALU_ETH_Q_DESCS_SIZE;
 
 	memset(p, 0, sizeof(*p));
 	p->size = ALU_ETH_DESCS_PER_Q;
@@ -236,8 +257,12 @@ static void alu_eth_q_params(struct al_udma_q_params *p, uintptr_t base,
 	p->adapter_rev_id = AL_ETH_REV_ID_2;
 	p->desc_base = (union al_udma_desc *)sdesc;
 	p->desc_phy_base = sdesc;
-	p->cdesc_base = (uint8_t *)cdesc;
-	p->cdesc_phy_base = cdesc;
+
+	if (cdesc_slot < 0)
+		return;
+
+	p->cdesc_base = (uint8_t *)(base + cdesc_slot * ALU_ETH_Q_DESCS_SIZE);
+	p->cdesc_phy_base = base + cdesc_slot * ALU_ETH_Q_DESCS_SIZE;
 	memset(p->cdesc_base, 0, ALU_ETH_Q_DESCS_SIZE);
 }
 
@@ -313,7 +338,7 @@ int alu_eth_core_init(struct udevice *dev, struct alu_eth_priv *priv)
 	 * tracking stays on: it is the only latch for a failed M2S read. */
 	alu_eth_unit_adapter_setup(dev, true);
 
-	alu_eth_q_params(&txp, base, 0, 1);
+	alu_eth_q_params(&txp, base, 0, -1);	/* TX: no completion ring, as Linux */
 	alu_eth_q_params(&rxp, base, 2, 3);
 
 	/* al_eth_queue_enable() is a HAL stub that always returns -EPERM; the
