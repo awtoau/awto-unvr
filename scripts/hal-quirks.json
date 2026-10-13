@@ -61,6 +61,10 @@
       "modules/al_ssm/al_ssm_main.c": {
         "marker": "al_udma_q_reset\\(tx_q\\)",
         "note": "Where the fix was first made (#167); al_dma's comment cites it."
+      },
+      "uboot-port/drivers/net/al_eth/alu_eth_core.c": {
+        "marker": "al_udma_q_reset\\(priv->tx_q\\)",
+        "note": "alu_eth_core_stop(). Missing until 2026-10-14: a second start() in one session counted the previous run's completions ('-20 descs left')."
       }
     },
     "exempt": {

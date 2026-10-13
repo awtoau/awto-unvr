@@ -584,6 +584,15 @@ void alu_eth_core_stop(struct udevice *dev)
 	if (rc)
 		dev_err(dev, "al_eth_adapter_stop failed: %d\n", rc);
 
+	/* Reset both queues so the next start() sees crhp/dcp at 0, matching
+	 * the software indices queue_config() resets. Without it a second start
+	 * in one session counted the previous run's completions (-20 descs).
+	 * Linux does the same on teardown (al_eth_udma_queues_reset_all). */
+	if (priv->tx_q && al_udma_q_reset(priv->tx_q))
+		dev_err(dev, "tx queue reset failed\n");
+	if (priv->rx_q && al_udma_q_reset(priv->rx_q))
+		dev_err(dev, "rx queue reset failed\n");
+
 	priv->started = false;
 }
 
