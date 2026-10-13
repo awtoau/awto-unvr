@@ -1302,6 +1302,18 @@ def _probe_awto_nas(timeout_s: float = 4.0) -> bool:
 
 
 @command(
+    "chainload the FRESH U-Boot build from the SSD - no network, so it works "
+    "while both ports fail in U-Boot (#341 1G autoneg, #253 10G TX). scp to "
+    "/boot over SSH, then ext4load -> cp.b -> go. Never touches flash; a "
+    "power-cycle falls back to NAND. --test-343 activates both ports in one "
+    "session (scripts/uboot-chainload-from-ssd.py)",
+    kind="action",
+)
+def cmd_uboot_chainload_ssd(_extra: list[str]) -> int:
+    return _run_script("scripts/uboot-chainload-from-ssd.py", _extra)
+
+
+@command(
     "put the FRESH build on the box + stop at awto-nas# for hands-on testing, "
     "from ANY starting box state: SP805-reset -> catch stock -> tftp -> go "
     "(scripts/uboot-test.tcl). Auto-detects warm (already at awto-nas#) vs "
