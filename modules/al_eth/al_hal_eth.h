@@ -2754,5 +2754,11 @@ void al_eth_mac_error_ints_masks_get(unsigned int eth_rev_id,
 }
 #endif
 /* *INDENT-ON* */
+/* Named-register dump at a bring-up stage, one line per register:
+ *   regdump <adapter> <stage> <block>.<reg>=<hex>
+ * Same code on Linux and U-Boot, so the two logs diff register-for-register
+ * (scripts/regdump-diff.py). Named members only - no reserved slots (#253). */
+void al_eth_regdump(struct al_hal_eth_adapter *adapter, const char *stage);
+
 #endif		/* __AL_HAL_ETH_H__ */
 /** @} end of Ethernet group */

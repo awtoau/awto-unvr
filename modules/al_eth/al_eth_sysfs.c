@@ -449,7 +449,8 @@ enum udma_dump_type {
 	UDMA_DUMP_M2S_Q_POINTERS,
 	UDMA_DUMP_S2M_REGS,
 	UDMA_DUMP_S2M_Q_STRUCT,
-	UDMA_DUMP_S2M_Q_POINTERS
+	UDMA_DUMP_S2M_Q_POINTERS,
+	UDMA_DUMP_REGDUMP
 };
 
 static ssize_t rd_udma_dump(
@@ -471,7 +472,8 @@ static struct dev_ext_attribute dev_attr_udma_debug[] = {
 	UDMA_DUMP_PREP_ATTR(m2s_q_pointers, UDMA_DUMP_M2S_Q_POINTERS),
 	UDMA_DUMP_PREP_ATTR(s2m_regs, UDMA_DUMP_S2M_REGS),
 	UDMA_DUMP_PREP_ATTR(s2m_q_struct, UDMA_DUMP_S2M_Q_STRUCT),
-	UDMA_DUMP_PREP_ATTR(s2m_q_pointers, UDMA_DUMP_S2M_Q_POINTERS)
+	UDMA_DUMP_PREP_ATTR(s2m_q_pointers, UDMA_DUMP_S2M_Q_POINTERS),
+	UDMA_DUMP_PREP_ATTR(regdump, UDMA_DUMP_REGDUMP)
 };
 
 /* intr moderation */
@@ -704,6 +706,9 @@ static ssize_t wr_udma_dump(
 		return err;
 
 	switch (dump_type) {
+	case UDMA_DUMP_REGDUMP:
+		al_eth_regdump(&adapter->hal_adapter, "ondemand");
+		break;
 	case UDMA_DUMP_M2S_REGS:
 		al_udma_regs_print(al_eth_udma_get(adapter, 1), val);
 		break;

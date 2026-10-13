@@ -1314,6 +1314,7 @@ static int al_eth_hw_init(struct al_eth_adapter *adapter)
 		}
 	}
 
+
 	netdev_dbg(adapter->netdev, "mdio config\n");
 	if (adapter->phy_if == AL_ETH_BOARD_PHY_IF_XMDIO) {
 		mdio_type = AL_ETH_MDIO_TYPE_CLAUSE_45;

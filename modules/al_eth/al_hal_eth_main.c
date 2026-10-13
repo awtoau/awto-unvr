@@ -8010,3 +8010,119 @@ void al_eth_mac_error_ints_masks_get(unsigned int eth_rev_id,
 
 /** @} end of Ethernet group */
 
+/* ---- regdump (#253) --------------------------------------------------- */
+#define RD(blk, ptr, f) \
+	pr_info("regdump %s %s %s.%s=%08x\n", name, stage, blk, #f, \
+		al_reg_read32(&(ptr)->f))
+
+void al_eth_regdump(struct al_hal_eth_adapter *adapter, const char *stage)
+{
+	struct al_eth_mac_regs __iomem *m = adapter->mac_regs_base;
+	struct al_ec_regs __iomem *e = adapter->ec_regs_base;
+	union udma_regs __iomem *u = adapter->tx_udma.udma_regs;
+	struct al_udma_q *tq = &adapter->tx_udma.udma_q[0];
+	struct al_udma_q *rq = &adapter->rx_udma.udma_q[0];
+	const char *name = adapter->name ? adapter->name : "?";
+
+	pr_info("regdump %s %s begin mac_mode=%d rev=%d\n", name, stage,
+		adapter->mac_mode, adapter->rev_id);
+	RD("gen", &m->gen, version); RD("gen", &m->gen, cfg);
+	RD("gen", &m->gen, mac_1g_cfg); RD("gen", &m->gen, mac_1g_stat);
+	RD("gen", &m->gen, rgmii_cfg); RD("gen", &m->gen, rgmii_stat);
+	RD("gen", &m->gen, mac_10g_cfg); RD("gen", &m->gen, mac_10g_stat);
+	RD("gen", &m->gen, xaui_cfg); RD("gen", &m->gen, xaui_stat);
+	RD("gen", &m->gen, rxaui_cfg); RD("gen", &m->gen, rxaui_stat);
+	RD("gen", &m->gen, sd_cfg);
+	RD("gen", &m->gen, xgmii_dfifo_32_64); RD("gen", &m->gen, mac_res_1_out);
+	RD("gen", &m->gen, xgmii_dfifo_64_32); RD("gen", &m->gen, mac_res_1_in);
+	RD("gen", &m->gen, sd_fifo_ctrl); RD("gen", &m->gen, sd_fifo_stat);
+	RD("gen", &m->gen, mux_sel); RD("gen", &m->gen, clk_cfg);
+	RD("gen", &m->gen, los_sel); RD("gen", &m->gen, rgmii_sel);
+	RD("gen", &m->gen, led_cfg); 
+	RD("mac10g", &m->mac_10g, rev); RD("mac10g", &m->mac_10g, cmd_cfg);
+	RD("mac10g", &m->mac_10g, mac_0); RD("mac10g", &m->mac_10g, mac_1);
+	RD("mac10g", &m->mac_10g, frm_len);
+	RD("mac10g", &m->mac_10g, rx_fifo_sections);
+	RD("mac10g", &m->mac_10g, tx_fifo_sections);
+	RD("mac10g", &m->mac_10g, rx_fifo_almost_f_e);
+	RD("mac10g", &m->mac_10g, tx_fifo_almost_f_e);
+	RD("mac10g", &m->mac_10g, hashtable_load);
+	RD("mac10g", &m->mac_10g, mdio_cfg_status);
+	RD("mac10g", &m->mac_10g, status); RD("mac10g", &m->mac_10g, tx_ipg_len);
+	RD("mac10g", &m->mac_10g, cl01_pause_quanta);
+	RD("mac10g", &m->mac_10g, cl01_quanta_thresh);
+	RD("mac10g", &m->mac_10g, rx_pause_status);
+	RD("mac1g", &m->mac_1g, cmd_cfg); RD("mac1g", &m->mac_1g, frm_len);
+	RD("ec.gen", &e->gen, version); RD("ec.gen", &e->gen, en);
+	RD("ec.gen", &e->gen, fifo_en); RD("ec.gen", &e->gen, l2);
+	RD("ec.gen", &e->gen, cfg_i); RD("ec.gen", &e->gen, cfg_i_ext);
+	RD("ec.gen", &e->gen, en_ext);
+	RD("ec.mac", &e->mac, gen); RD("ec.mac", &e->mac, min_pkt);
+	RD("ec.mac", &e->mac, max_pkt); 
+	 
+	RD("ec.tfw", &e->tfw, tx_wr_fifo); RD("ec.tfw", &e->tfw, tx_rd_fifo);
+	RD("ec.tfw", &e->tfw, tx_checksum); RD("ec.tfw", &e->tfw, tx_gen);
+	RD("ec.tfw", &e->tfw, tx_spf); RD("ec.tfw", &e->tfw, data_fifo);
+	RD("ec.tfw", &e->tfw, ctrl_fifo); RD("ec.tfw", &e->tfw, hdr_fifo);
+	RD("ec.tfw_udma0", &e->tfw_udma[0], uc_udma);
+	RD("ec.tfw_udma0", &e->tfw_udma[0], mc_udma);
+	RD("ec.tfw_udma0", &e->tfw_udma[0], bc_udma);
+	RD("ec.tfw_udma0", &e->tfw_udma[0], spf_cmd);
+	RD("ec.tfw_udma0", &e->tfw_udma[0], fwd_dec);
+	RD("ec.tmi", &e->tmi, tx_cfg); 
+	 
+	 
+	 
+	 
+
+	if (u) {
+		RD("m2s", &u->m2s.m2s, state); RD("m2s", &u->m2s.m2s, cfg_len);
+		RD("m2s", &u->m2s.m2s, stream_cfg); RD("m2s", &u->m2s.m2s, fifo_en);
+		RD("m2s", &u->m2s.m2s_rd, desc_pref_cfg_1);
+		RD("m2s", &u->m2s.m2s_rd, desc_pref_cfg_2);
+		RD("m2s", &u->m2s.m2s_rd, desc_pref_cfg_3);
+		RD("m2s", &u->m2s.m2s_rd, data_cfg);
+		RD("m2s", &u->m2s.m2s_comp, cfg_1c);
+		RD("m2s", &u->m2s.m2s_comp, cfg_coal);
+		RD("m2s", &u->m2s.m2s_comp, cfg_application_ack);
+		RD("m2s.axi", &u->m2s.axi_m2s, desc_rd_cfg_1);
+		RD("m2s.axi", &u->m2s.axi_m2s, desc_rd_cfg_2);
+		RD("m2s.axi", &u->m2s.axi_m2s, desc_rd_cfg_3);
+		RD("m2s.axi", &u->m2s.axi_m2s, data_rd_cfg_1);
+		RD("m2s.axi", &u->m2s.axi_m2s, data_rd_cfg_2);
+		RD("m2s.axi", &u->m2s.axi_m2s, comp_wr_cfg_1);
+		RD("m2s.axi", &u->m2s.axi_m2s, comp_wr_cfg_2);
+		RD("m2s.axi", &u->m2s.axi_m2s, ostand_cfg);
+		RD("s2m", &u->s2m.s2m, state); RD("s2m", &u->s2m.s2m, fifo_en);
+		RD("s2m", &u->s2m.s2m, stream_cfg);
+		RD("s2m", &u->s2m.s2m_comp, cfg_1c);
+		RD("s2m.axi", &u->s2m.axi_s2m, data_wr_cfg_1);
+		RD("s2m.axi", &u->s2m.axi_s2m, data_wr_cfg_2);
+		RD("s2m.axi", &u->s2m.axi_s2m, desc_wr_cfg_1);
+		RD("s2m.axi", &u->s2m.axi_s2m, ostand_cfg_rd);
+		RD("s2m.axi", &u->s2m.axi_s2m, ostand_cfg_wr);
+	}
+	/* Left out - SError 0xbf000002 on read (write-only on this silicon):
+	 * rings.cfg (q +0x20), s2m_comp.cfg_2c, s2m_comp.cfg_application_ack. Each
+	 * panicked Linux at readl. Validate new entries under U-Boot first (#253). */
+	if (tq->q_regs) {
+		RD("txq0", &tq->q_regs->rings, status);
+		RD("txq0", &tq->q_regs->rings, drbp_low); RD("txq0", &tq->q_regs->rings, drbp_high);
+		RD("txq0", &tq->q_regs->rings, drl); RD("txq0", &tq->q_regs->rings, drhp);
+		RD("txq0", &tq->q_regs->rings, drtp); RD("txq0", &tq->q_regs->rings, dcp);
+		RD("txq0", &tq->q_regs->rings, crbp_low); RD("txq0", &tq->q_regs->rings, crbp_high);
+		RD("txq0", &tq->q_regs->rings, crhp);
+		RD("txq0", &tq->q_regs->m2s_q, comp_cfg); RD("txq0", &tq->q_regs->m2s_q, q_tx_pkt);
+	}
+	if (rq->q_regs) {
+		RD("rxq0", &rq->q_regs->rings, status);
+		RD("rxq0", &rq->q_regs->rings, drbp_low); RD("rxq0", &rq->q_regs->rings, drl);
+		RD("rxq0", &rq->q_regs->rings, drhp); RD("rxq0", &rq->q_regs->rings, drtp);
+		RD("rxq0", &rq->q_regs->rings, dcp); RD("rxq0", &rq->q_regs->rings, crbp_low);
+		RD("rxq0", &rq->q_regs->rings, crhp);
+		RD("rxq0", &rq->q_regs->s2m_q, comp_cfg); RD("rxq0", &rq->q_regs->s2m_q, comp_cfg_2);
+		RD("rxq0", &rq->q_regs->s2m_q, pkt_cfg); RD("rxq0", &rq->q_regs->s2m_q, qos_cfg);
+	}
+	pr_info("regdump %s %s end\n", name, stage);
+}
+#undef RD

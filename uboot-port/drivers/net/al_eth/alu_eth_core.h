@@ -49,6 +49,7 @@ struct alu_eth_priv {
 	 * 1G path passes traffic today without one, and adding it there would
 	 * change the only path currently proven on hardware. */
 	bool				want_flr;
+	bool				regdumped;	/* one regdump per start (#253) */
 	bool				started;
 	char				name[16];
 };

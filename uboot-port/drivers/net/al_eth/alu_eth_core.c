@@ -323,6 +323,7 @@ int alu_eth_core_init(struct udevice *dev, struct alu_eth_priv *priv)
 	struct al_udma_q_params txp, rxp;
 	int rc;
 
+	priv->regdumped = false;
 	rc = alu_eth_flr(dev, priv);
 	if (rc) {
 		dev_err(dev, "FLR failed: %d\n", rc);
@@ -348,6 +349,7 @@ int alu_eth_core_init(struct udevice *dev, struct alu_eth_priv *priv)
 		return rc;
 	}
 
+	al_eth_regdump(&priv->adapter, "after_adapter_init");
 	/* adapter_init resets SMCC to 0, so snoop/ROB come after it. Error
 	 * tracking stays on: it is the only latch for a failed M2S read. */
 	alu_eth_unit_adapter_setup(dev, true);
@@ -391,6 +393,7 @@ int alu_eth_core_init(struct udevice *dev, struct alu_eth_priv *priv)
 		return rc;
 	}
 
+	al_eth_regdump(&priv->adapter, "after_mac_config");
 	rc = al_eth_rx_pkt_limit_config(&priv->adapter, ALU_ETH_RX_MIN_LEN,
 					ALU_ETH_RX_MAX_LEN);
 	if (rc) {
@@ -411,6 +414,7 @@ int alu_eth_core_init(struct udevice *dev, struct alu_eth_priv *priv)
 		return rc;
 	}
 
+	al_eth_regdump(&priv->adapter, "after_mac_start");
 	return 0;
 }
 
@@ -501,6 +505,10 @@ int alu_eth_core_send(struct udevice *dev, void *packet, int length)
 				ndesc, elapsed_us, limit_us, length, mbps);
 			alu_eth_dump_tx(priv, "timeout");
 			alu_eth_dump_axi_err(dev);
+			if (!priv->regdumped) {
+				priv->regdumped = true;
+				al_eth_regdump(&priv->adapter, "tx_timeout");
+			}
 			return -ETIMEDOUT;
 		}
 		udelay(1);
