@@ -1,0 +1,71 @@
+{
+  "_README": [
+    "Cross-tree quirk registry. hal-forks.json records WHERE trees diverge and why;",
+    "this records WHICH FIX must be present in WHICH tree, so a fix found in one",
+    "generation is not silently missing from another.",
+    "",
+    "Checked by scripts/hal-quirk-check.py (./dev.py hal-quirks, part of ./dev.py gate).",
+    "",
+    "Each entry:",
+    "  issue      the issue that found it",
+    "  symptom    what it looks like when absent - the log line or the failure",
+    "  applies_to trees/files that MUST carry it, each with a marker that proves it",
+    "  exempt     trees that must NOT carry it, with the reason",
+    "  marker     a regex that must appear in the file (the fix's fingerprint)",
+    "",
+    "Adding a quirk is part of fixing a bug, not an afterthought: if a quirk could",
+    "plausibly affect another tree, it gets an entry even when that tree is exempt."
+  ],
+  "udma-rx-stream-flush-before-state-change": {
+    "issue": "#342",
+    "also": [
+      "#254",
+      "#253",
+      "#340"
+    ],
+    "symptom": "[eth rx] warn: dma state didn't change to Normal / error -110; a failed adapter_stop on one port then poisons adapter_init on the next in the same U-Boot session",
+    "root_cause": "An RX UDMA that can still receive never reaches quiescence: it keeps processing new arrivals while state_set_wait() waits for IDLE, so the wait expires. The stream must be stopped and the FIFOs flushed FIRST.",
+    "applies_to": {
+      "modules/al_eth/al_hal_eth_main.c": {
+        "marker": "al_udma_s2m_stream_configure\\(dma, AL_FALSE\\)",
+        "note": "gen A (4.1.37). Staged into the U-Boot build by scripts/stage_hal.py (#256), so this one edit covers Linux AND U-Boot."
+      },
+      "modules/al_ssm/al_hal_udma_main.c": {
+        "marker": "al_udma_s2m_fifos_flush\\(dma\\)",
+        "note": "gen B (AL SDK 4.19) - vendor already ships it, behind the flush_stream argument."
+      }
+    },
+    "exempt": {
+      "modules/al_hal/al_hal_udma_main.c": "Holds al_udma_state_set() only - no wait loop, so no predicate to fix. al_dma calls the bare setter and never waits, so it cannot hit this timeout. If al_dma ever gains a wait, it inherits this quirk - see #343.",
+      "tx/m2s side": "M2S has no FLUSH/STOP_PREFETCH bits and no inbound traffic to drop. A TX engine that will not quiesce has a descriptor stuck in flight, which is #253, not a missing flush."
+    },
+    "verified_on_hardware": false
+  },
+  "udma-queue-reset-before-reuse": {
+    "issue": "#289",
+    "also": [
+      "#23",
+      "#167"
+    ],
+    "symptom": "A module reload meets queues the hardware still thinks are running: alloc_chan_resources fails -EIO, or the engine silently does nothing. rmmod/modprobe does NOT reset UDMA hardware state - only a reboot does, which is why this was believed to be a hardware quirk.",
+    "root_cause": "UDMA queue state lives in hardware and survives the driver. Every module that owns UDMA queues must reset them on bring-up rather than assume a clean engine.",
+    "applies_to": {
+      "modules/al_eth/al_eth_main.c": {
+        "marker": "al_udma_q_reset\\(adapter->tx_ring\\[i\\]\\.dma_q\\)",
+        "note": "al_eth_udma_queues_reset_all(), both directions."
+      },
+      "modules/al_dma/al_dma_drv.c": {
+        "marker": "al_udma_q_reset\\(q\\[i\\]\\)",
+        "note": "Per channel, tx+rx, skipping queues not AL_QUEUE_ENABLED."
+      },
+      "modules/al_ssm/al_ssm_main.c": {
+        "marker": "al_udma_q_reset\\(tx_q\\)",
+        "note": "Where the fix was first made (#167); al_dma's comment cites it."
+      }
+    },
+    "exempt": {
+      "modules/al_nand, al_thermal, al_sgpo, al_reboot, ubnt_hdd_pwrctl": "Own no UDMA queues - no engine state to carry across a reload."
+    },
+    "verified_on_hardware": true
+  }
+}
