@@ -115,9 +115,9 @@ STEPS: dict[str, tuple[str, list[str], bool]] = {
     # hal-drift proves the shared files are shared; it cannot prove a FIX is
     # present everywhere it belongs - a quirk nobody ported leaves every hash
     # matching. scripts/hal-quirks.json records which fix must live in which
-    # tree, with a marker regex, and which trees are exempt and why (#342).
+    # tree, with a marker regex, and which trees are exempt and why (#343).
     "hal-quirks": (
-        "cross-tree quirk registry: each fix present in every tree that needs it (#342)",
+        "cross-tree quirk registry: each fix present in every tree that needs it (#343)",
         [sys.executable, "scripts/hal-quirk-check.py"],
         True,
     ),

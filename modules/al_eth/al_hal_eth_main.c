@@ -520,7 +520,7 @@ static const char *al_eth_mac_mode_str(enum al_eth_mac_mode mode)
 
 /* RX FIFO reset: toggle fifo_en and restart the control state machines, to
  * drop packets already in the FIFO. Gen B (al_ssm) equivalent; the registers
- * and bits are identical in gen A. #342 */
+ * and bits are identical in gen A. #343 */
 static void al_udma_s2m_fifos_flush(struct al_udma *udma)
 {
 	al_assert(udma->type == UDMA_RX);
@@ -593,7 +593,7 @@ static int al_udma_state_set_wait(struct al_udma *dma, enum al_udma_state new_st
 	 * processing new arrivals, so the wait below times out and the caller
 	 * reports -110. Stop the stream and flush the FIFOs first, exactly as
 	 * the gen B HAL does. Without this, a failed 10G adapter_stop poisons
-	 * the next port's adapter_init in the same U-Boot session. #342, #254 */
+	 * the next port's adapter_init in the same U-Boot session. #343, #254 */
 	if (dma->type == UDMA_RX &&
 	    (new_state == UDMA_DISABLE || new_state == UDMA_NORMAL)) {
 		al_udma_s2m_stream_configure(dma, AL_FALSE);

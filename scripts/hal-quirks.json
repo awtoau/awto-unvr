@@ -17,7 +17,7 @@
     "plausibly affect another tree, it gets an entry even when that tree is exempt."
   ],
   "udma-rx-stream-flush-before-state-change": {
-    "issue": "#342",
+    "issue": "#343",
     "also": [
       "#254",
       "#253",
@@ -36,7 +36,7 @@
       }
     },
     "exempt": {
-      "modules/al_hal/al_hal_udma_main.c": "Holds al_udma_state_set() only - no wait loop, so no predicate to fix. al_dma calls the bare setter and never waits, so it cannot hit this timeout. If al_dma ever gains a wait, it inherits this quirk - see #343.",
+      "modules/al_hal/al_hal_udma_main.c": "Holds al_udma_state_set() only - no wait loop, so no predicate to fix. al_dma calls the bare setter and never waits, so it cannot hit this timeout. If al_dma ever gains a wait, it inherits this quirk - see #342.",
       "tx/m2s side": "M2S has no FLUSH/STOP_PREFETCH bits and no inbound traffic to drop. A TX engine that will not quiesce has a descriptor stuck in flight, which is #253, not a missing flush."
     },
     "verified_on_hardware": false

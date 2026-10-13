@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-2.0-or-later
 # Copyright (C) 2026 Awto / Daniel Tyrrell
-"""Enforce the cross-tree quirk registry (#342).
+"""Enforce the cross-tree quirk registry (#343).
 
 hal-drift-check.py answers "are the shared files actually shared?". It cannot
 answer "is this fix present everywhere it belongs?", because a quirk that was
