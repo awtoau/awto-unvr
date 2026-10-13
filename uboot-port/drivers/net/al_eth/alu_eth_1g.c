@@ -99,6 +99,18 @@ static int alu_eth_1g_do_start(struct udevice *dev)
 			      SUPPORTED_1000baseT_Full);
 	p->phy->advertising = p->phy->supported;
 
+	/* Linux suspends the AR8031 on shutdown (BMCR_PDOWN) and genphy never
+	 * clears it, so autoneg can't complete after a warm reboot from Linux
+	 * (BMCR read 0x3900). A cold power-cycle hides it by resetting the PHY. #341 */
+	{
+		int bmcr = phy_read(p->phy, MDIO_DEVAD_NONE, MII_BMCR);
+
+		if (bmcr >= 0 && (bmcr & BMCR_PDOWN)) {
+			dev_info(dev, "PHY was powered down (BMCR %04x), waking it\n", bmcr);
+			phy_write(p->phy, MDIO_DEVAD_NONE, MII_BMCR, bmcr & ~BMCR_PDOWN);
+		}
+	}
+
 	rc = phy_config(p->phy);
 	if (rc) {
 		dev_err(dev, "phy_config failed: %d\n", rc);
