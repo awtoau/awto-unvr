@@ -21,8 +21,14 @@ alu_eth_10g: al_eth_adapter_stop failed: -110
 ```
 
 `drhp == drtp == dcp` all advance, `crhp` never does. **The engine consumes the
-descriptor and the completion never arrives.** Every AXI error register is zero,
-so the read is not erroring — it is not being answered.
+descriptor and never retires it.** Every AXI error register is zero.
+
+The one discriminator against a working Linux: `tcrhp` tracks `tdcp` there
+(`0x40000022` -> `0x40000025` with traffic) and never leaves `0x40000000` here.
+`q_tx_pkt=1` is NOT a symptom — Linux reads 1 on a port doing 10 Gbit/s.
+
+**The 10G's BAR is `0xfe040000`; `0xfe000000` is the 1G.** Two "all zeros"
+readings on 2026-10-13 were the 1G's idle ring, read by mistake.
 
 ## Ruled out — do not re-test
 
@@ -43,6 +49,13 @@ so the read is not erroring — it is not being answered.
 | **Kernel PCIe host-bridge doing something extra** | All 298 lines of `pcie-al-internal.c` read: exactly 3 register writes (SMCC SM0, SM1-3, APP_CONTROL). No ATU, no stream-ID table, no IOMMU. `board_late_init()` already replicates it. | `eth-tx-abort.md` |
 | **eth-specific** | No. `iodma` on al_ssm (a different al_udma) reproduced the identical signature. | `eth-tx-abort.md`, `156c8d6` |
 | **Hardware / Linux affected** | No. Linux: 10G at 9.38 Gbit/s, `tx_errors 0`, `tx_dropped 0`. | #234, `issue-reconciliation.md:150` |
+| **TX completion ring present** | Was a real delta — Linux passes `cdesc_base = NULL` for TX (`al_eth_main.c:3073`). Fixed (6a384f8): `tcrbp=0`, `comp_cfg=00000002` now match. **Did not fix TX.** | #253 2026-10-13 |
+| **Descriptor `INT_EN` / `NO_SNOOP_H`** | No. A/B'd separately and together; word 0 top byte now `0x9d` = Linux's. Identical failure. Also settles the NO_SNOOP contradiction: makes no difference on this path. | #253 2026-10-13 |
+| **Descriptor ring base vs write address** | No mismatch. All four addresses agree on both ports (`desc_block`, `desc_base`, `desc_phy_base`, `tdrbp`). The claimed mismatch was a cross-port read. | #253 2026-10-13 |
+| **SFP media (DT says DAC, module is optical `FS SFP-10GSR-85`)** | Real DT defect (#237), inert here: `dac`/`dac_len` only reach the board-params scratchpad, never SerDes EQ. U-Boot applies optic EQ unconditionally. | #253 2026-10-13 |
+| **`al_eth_mac_start()` return** | Returns 0 — `alu_eth_core.c:394` already logs a failure and none appears. | #253 2026-10-13 |
+| **Flow control absent** | Cannot block TX. `q_pause_0` is a mask that *enables* pause-on; reset default 0 = never paused. | #253 2026-10-13 |
+| **Scheduler / DWRR / rate limiter** | Neither driver configures it; both at reset defaults, and Linux's dump matches ours. `EN_PREF\|EN_SCHEDULING` set by the shared `al_udma_q_enable()`. | #253 2026-10-13 |
 
 ### The one argument that survives re-reading
 
@@ -125,28 +138,20 @@ find it.
 
 ## Not yet tested — where to go next
 
-Ranked.
+Everything UDMA-side now matches a working Linux: descriptor, ring, queue
+config, scheduler state. The remaining difference has to be downstream.
 
-1. **Where `crhp` is written vs where the completion ring was allocated.** The
-   explicit ask from the one good dump (#253, 2026-09-07), never acted on, now
-   36+ days old. `alu_eth_q_params()` sets `cdesc_phy_base = cdesc`; nothing has
-   verified the engine agrees. This is the highest-value lead and it matches the
-   signature exactly (descriptor consumed, completion never written).
-2. **`al_eth_mac_start()`'s return value on the 10G.** Flagged 2026-09-06 as
-   "the change I would watch" — a MAC that silently failed to enable transmit
-   gives descriptors-consumed-no-completion, and would also explain 0 frames on
-   the wire. Never confirmed on hardware.
-3. **Re-run the wire test** on current code, capture interface verified. See above.
-4. **Decode `m2s.state=00000001`** per `al_hal_udma_regs_m2s.h`. Never done for
-   the current value. `30e7c65` showed a bad decode of this register caused a
-   three-session misdiagnosis (`0x1000` was read as a hang; it is `desc_pref=1`,
-   Normal).
-5. **Re-test NO_SNOOP** now the ABORT model is dead, and reconcile with al_dma's
-   opposite conclusion (#23).
-6. **Cold boot vs chainload.** Every #253 measurement has been chainloaded.
-   `docs/agent-memory/our-uboot-assume-nothing.md`: "chainload pre-state is a
-   crutch."
-7. **`eth diag 2`** post-start on the current `alu_*` code — never read.
+1. **EC TX-side registers.** We replicate only the EC's RX forwarding
+   (`alu_eth_rxfwd_config()`, #234). `tcrhp` not advancing means the EC/MAC
+   never signals the UDMA that a packet left. Diff `ec_regs_base` TX blocks
+   between Linux and U-Boot — the last unexamined block in the datapath.
+2. **TPE/TFW counters.** `ec_tpe_in_tx_pkt` / `ec_tfw_in_tx_pkt` etc.
+   (`al_eth_main.c:5124-5128`) say whether a packet ever *entered* the EC.
+   Zero on a transmit attempt localises the fault precisely. U-Boot has no
+   dump of these; add one.
+3. **Re-run the wire test** on current code with the capture interface verified
+   to be on the 10G segment (see above).
+4. **Cold boot vs chainload.** Every measurement has been chainloaded.
 
 ## The TX bound is too tight (diagnostic quality, not the cause)
 
