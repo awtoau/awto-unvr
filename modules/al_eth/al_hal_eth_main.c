@@ -518,6 +518,62 @@ static const char *al_eth_mac_mode_str(enum al_eth_mac_mode mode)
 	}
 }
 
+/* RX FIFO reset: toggle fifo_en and restart the control state machines, to
+ * drop packets already in the FIFO. Gen B (al_ssm) equivalent; the registers
+ * and bits are identical in gen A. #342 */
+static void al_udma_s2m_fifos_flush(struct al_udma *udma)
+{
+	al_assert(udma->type == UDMA_RX);
+
+	al_reg_write32(&udma->udma_regs->s2m.s2m.fifo_en, 0);
+	al_reg_write32(&udma->udma_regs->s2m.s2m.clear_ctrl, 0xffffffff);
+	al_udelay(1);
+
+	al_reg_write32(&udma->udma_regs->s2m.s2m.fifo_en, 0xffffffff);
+	al_reg_write32(&udma->udma_regs->s2m.s2m.clear_ctrl, 0xffffffff);
+	al_udelay(1);
+}
+
+#define AL_UDMA_S2M_STREAM_FLUSH (UDMA_S2M_STREAM_CFG_DISABLE | \
+				  UDMA_S2M_STREAM_CFG_FLUSH | \
+				  UDMA_S2M_STREAM_CFG_STOP_PREFETCH)
+
+/* Enable/disable the RX stream, controller-wide and per queue. Disabling
+ * drops inbound packets so the engine can reach quiescence. Order matters:
+ * enable queues before the controller, disable the controller first. */
+static int al_udma_s2m_stream_configure(struct al_udma *udma, al_bool enable)
+{
+	unsigned int i;
+
+	al_assert(udma->type == UDMA_RX);
+
+	if (!enable)
+		al_reg_write32_masked(&udma->udma_regs->s2m.s2m.stream_cfg,
+				      AL_UDMA_S2M_STREAM_FLUSH,
+				      AL_UDMA_S2M_STREAM_FLUSH);
+
+	for (i = 0; i < udma->num_of_queues; i++) {
+		struct al_udma_q *dma_q = NULL;
+		int rc = al_udma_q_handle_get(udma, i, &dma_q);
+
+		/* A queue that was never set up has no regs to poke; the
+		 * stream bit is per queue, so skip it rather than fail the
+		 * whole flush. */
+		if (rc || !dma_q || !dma_q->q_regs)
+			continue;
+
+		al_reg_write32_masked(&dma_q->q_regs->s2m_q.cfg,
+				      UDMA_S2M_Q_CFG_EN_STREAM,
+				      enable ? UDMA_S2M_Q_CFG_EN_STREAM : 0);
+	}
+
+	if (enable)
+		al_reg_write32_masked(&udma->udma_regs->s2m.s2m.stream_cfg,
+				      AL_UDMA_S2M_STREAM_FLUSH, 0);
+
+	return 0;
+}
+
 /**
  * change and wait udma state
  *
@@ -532,6 +588,18 @@ static int al_udma_state_set_wait(struct al_udma *dma, enum al_udma_state new_st
 	enum al_udma_state expected_state = new_state;
 	int count = 1000;
 	int rc;
+
+	/* An RX engine that can still receive never goes quiescent: it keeps
+	 * processing new arrivals, so the wait below times out and the caller
+	 * reports -110. Stop the stream and flush the FIFOs first, exactly as
+	 * the gen B HAL does. Without this, a failed 10G adapter_stop poisons
+	 * the next port's adapter_init in the same U-Boot session. #342, #254 */
+	if (dma->type == UDMA_RX &&
+	    (new_state == UDMA_DISABLE || new_state == UDMA_NORMAL)) {
+		al_udma_s2m_stream_configure(dma, AL_FALSE);
+		al_udelay(1);
+		al_udma_s2m_fifos_flush(dma);
+	}
 
 	rc = al_udma_state_set(dma, new_state);
 	if (rc != 0) {
@@ -556,6 +624,12 @@ static int al_udma_state_set_wait(struct al_udma *dma, enum al_udma_state new_st
 			return -ETIMEDOUT;
 		}
 	} while (1);
+
+	/* Quiescent now, so let traffic back in. Only for NORMAL: a DISABLE
+	 * wants the stream to stay shut. */
+	if (dma->type == UDMA_RX && new_state == UDMA_NORMAL)
+		al_udma_s2m_stream_configure(dma, AL_TRUE);
+
 	return 0;
 }
 
