@@ -28,6 +28,10 @@ weak-host/ARP-flux notes: `docs/agent-memory/four-nics-one-subnet-weak-host.md`.
   2026-10-08: `device_tree` was erased and written to test #208's write path without
   asking. No harm (it was erased, and the write failed) — but that was luck, not
   process.
+- **NEVER `ext4write` (or any U-Boot filesystem write) to the Fedora root partition.**
+  U-Boot reads it fine but cannot write Fedora's ext4 (`metadata_csum`): a *failed* write
+  on 2026-10-14 still corrupted the superblock and the box would not mount root (#347).
+  No network? Boot Linux with the bad module blacklisted and use `scripts/console-put.py`.
 - **Never kill or restart a `tio` you did not start** — it is the user's console.
 - **Never `pkill` Chrome** (shared, and it loses the cleared Turnstile session).
 - **NEVER re-test snoop/SMCC/axcache/ROB/cache-maintenance/FLR for the U-Boot eth TX
