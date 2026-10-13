@@ -51,6 +51,18 @@ proc step {cmd needle secs what} {
     return 1
 }
 if {![step "setenv bootdelay -1" "awto-nas#" 6 "stop autoboot"]} { return }
+# AR8031 gigabit autoneg through sw1's copper SFP does not reliably finish
+# inside upstream's 4000 ms PHY_ANEG_TIMEOUT: it timed out at 9 dots (4.08 s)
+# and U-Boot then rotated ethact to the 10G port, whose datapath hits #253 -
+# so the dhcp below failed on a link that works. Set it in the RAM env so the
+# running NAND build (which compiles in the old 4000) gets the raised bound
+# too; the compiled-in CONFIG_PHY_ANEG_TIMEOUT=9000 covers fresh builds.
+# 12000 = ~2.7x the ~4.5 s Linux takes to link on this exact port. On expiry:
+# phy_startup returns -ETIMEDOUT and the dhcp step names itself. #341
+if {![step "setenv phy_aneg_timeout 12000" "awto-nas#" 6 "raise the autoneg bound"]} { return }
+# Only the 1G has a working U-Boot datapath; the 10G is #253. Pin it rather
+# than let a failed start rotate ethact silently (#270).
+if {![step "setenv ethact alu_eth_1g" "awto-nas#" 6 "pin ethact to the 1G"]} { return }
 # DHCP, not the $IPADDR static: that address is inside the lease pool and the
 # box has held it as a lease before, so ARP for it never resolved and every
 # transfer died at "ARP Retry count exceeded" (#252). A lease needs no
