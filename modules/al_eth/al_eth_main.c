@@ -807,9 +807,42 @@ int al_eth_mac_verify(struct al_eth_adapter *adapter,
 	return 0;
 }
 
+/* DT mac-address/local-mac-address, if present. No MTD dependency, so unlike
+ * the nvmem cell this is readable at probe (#340). */
+static int al_eth_mac_addr_dt(struct al_eth_adapter *adapter, u8 *addr)
+{
+	static const char * const props[] = {
+		"mac-address", "local-mac-address",
+	};
+	struct device_node *np;
+	int i, rc = -ENOENT;
+
+	np = al_eth_mac_of_node(adapter->pdev);
+	if (!np)
+		return -ENODEV;
+
+	for (i = 0; i < ARRAY_SIZE(props); i++) {
+		if (of_property_read_u8_array(np, props[i], addr, ETH_ALEN))
+			continue;
+		if (!is_valid_ether_addr(addr))
+			continue;
+		rc = 0;
+		break;
+	}
+
+	of_node_put(np);
+	return rc;
+}
+
 /*
- * Trust the EC registers. The bootloader already read NOR and programmed them;
- * that IS the handoff. Verification is out of band - al_eth_mac_verify().
+ * DT first, then the EC registers the bootloader programmed from NOR.
+ *
+ * The EC alone is not a dependable handoff: U-Boot's FLR path zeroes the
+ * forwarding table when a stop/init fails, and probe is too early to read the
+ * NOR nvmem cell (al_eth binds ~2 s before spi-nor, and a PCI probe is not
+ * retried on -EPROBE_DEFER). DT has neither problem. #340.
+ *
+ * Verification against NOR is out of band - al_eth_mac_verify().
  */
 static int al_eth_mac_addr_resolve(struct al_eth_adapter *adapter)
 {
@@ -817,9 +850,15 @@ static int al_eth_mac_addr_resolve(struct al_eth_adapter *adapter)
 	u8 ec_addr[ETH_ALEN];
 	int rc;
 
+	rc = al_eth_mac_addr_dt(adapter, adapter->mac_addr);
+	if (!rc) {
+		dev_info(dev, "MAC from DT: %pM\n", adapter->mac_addr);
+		return 0;
+	}
+
 	rc = al_eth_mac_addr_read(adapter->ec_base, 0, ec_addr);
 	if (rc) {
-		dev_err(dev, "bootloader programmed no MAC into the EC forwarding table (rc %d)\n",
+		dev_err(dev, "no MAC in DT, and bootloader programmed none into the EC forwarding table (rc %d)\n",
 			rc);
 		eth_zero_addr(adapter->mac_addr);
 		return 0;

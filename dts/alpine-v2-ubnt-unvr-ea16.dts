@@ -521,6 +521,12 @@
 			 * bootloader-programmed EC value against. */
 			nvmem-cells = <&mac_base>;
 			nvmem-cell-names = "mac-address";
+			/* Same value as the nvmem cell above, but readable AT PROBE:
+			 * al_eth binds ~2 s before spi-nor, so the cell does not exist
+			 * yet, and a PCI probe is not retried on -EPROBE_DEFER. Without
+			 * this the driver invents a random MAC every boot (#340).
+			 * al_eth_mac_verify() still cross-checks against NOR. */
+			local-mac-address = [74 ac b9 41 a8 11];
 		};
 
 		eth2: ethernet@fc200000 {
@@ -542,8 +548,11 @@
 			 * (al_eth_phylink.c), not by compatible/reg. */
 			managed = "in-band-status";
 			sfp = <&sfp0>;
-			/* No MAC cell: the 10G MAC is derived as base+2 in
-			 * al_eth, matching stock U-Boot (#89). */
+			/* base+1 (AL_ETH_10G_MAC_OFFSET), matching stock U-Boot's
+			 * "mac: [base] + [2]" - a COUNT of two allocated addresses,
+			 * not an offset (#222, #223). Spelled out rather than derived
+			 * so probe needs neither NOR nor the EC filter (#340). */
+			local-mac-address = [74 ac b9 41 a8 12];
 		};
 
 		eth3: ethernet@fc300000 {
