@@ -79,6 +79,18 @@ static void alu_eth_10g_sfp_check(struct udevice *dev)
 	}
 	dev_info(dev, "SFP module: %s %s -> %s\n", sfp.vendor, sfp.part,
 		 alu_eth_sfp_media_name(sfp.media));
+	{
+		struct alu_eth_sfp_tx tx;
+
+		if (!alu_eth_sfp_tx_enable(&tx))
+			dev_info(dev, "SFP A2 status %02x -> %02x%s, TX power %u.%u uW%s (#345)\n",
+				 tx.status_before, tx.status_after,
+				 tx.cleared ? " (soft TX_DISABLE cleared)" : "",
+				 tx.tx_power_before / 10, tx.tx_power_before % 10,
+				 (tx.status_before & 0x80) ? ", TX_DISABLE PIN asserted" : "");
+		else
+			dev_warn(dev, "SFP A2 page unreadable - cannot check TX_DISABLE\n");
+	}
 	if (sfp.media == ALU_SFP_1000BASE_X)
 		dev_warn(dev, "1G-only module cannot link at 10G\n");
 	else if (sfp.media == ALU_SFP_UNKNOWN)

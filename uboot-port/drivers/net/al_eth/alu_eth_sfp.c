@@ -30,7 +30,7 @@
  * = 2 ms, 4.7x), so no extra timer here; SFP_ATTEMPTS caps the total.
  * On expiry: driver returns an error, retry once, then media = NONE and the
  * caller keeps the fixed 10GBASE-R path. */
-static int sfp_read_id(u8 *buf, int len, int off)
+static int sfp_xfer(u8 addr, int off, u8 *buf, int len, bool write)
 {
 	struct udevice *bus, *chip;
 	ofnode port, bus_node;
@@ -48,13 +48,54 @@ static int sfp_read_id(u8 *buf, int len, int off)
 		return rc;
 
 	for (i = 0; i < SFP_ATTEMPTS; i++) {
-		rc = i2c_get_chip(bus, SFP_EEPROM_ADDR, 1, &chip);
+		rc = i2c_get_chip(bus, addr, 1, &chip);
 		if (!rc)
-			rc = dm_i2c_read(chip, off, buf, len);
+			rc = write ? dm_i2c_write(chip, off, buf, len)
+				   : dm_i2c_read(chip, off, buf, len);
 		if (!rc)
 			return 0;
 	}
 	return rc;
+}
+
+static int sfp_read_id(u8 *buf, int len, int off)
+{
+	return sfp_xfer(SFP_EEPROM_ADDR, off, buf, len, false);
+}
+
+/* SFF-8472 A2h (0x51): byte 110 status/control, 102-103 measured TX power. */
+#define SFP_DDM_ADDR		0x51
+#define SFP_A2_STATUS		110
+#define SFP_A2_TX_POWER		102
+#define SFP_A2_SOFT_TX_DISABLE	BIT(6)
+
+int alu_eth_sfp_tx_enable(struct alu_eth_sfp_tx *st)
+{
+	u8 v, pw[2];
+	int rc;
+
+	memset(st, 0, sizeof(*st));
+	rc = sfp_xfer(SFP_DDM_ADDR, SFP_A2_STATUS, &v, 1, false);
+	if (rc)
+		return rc;
+	st->status_before = v;
+	if (!sfp_xfer(SFP_DDM_ADDR, SFP_A2_TX_POWER, pw, 2, false))
+		st->tx_power_before = (pw[0] << 8) | pw[1];
+
+	/* Linux's sfp.c sets soft TX_DISABLE on driver remove (every shutdown)
+	 * and the module keeps it across a warm reboot: laser off, partner sees
+	 * no light, our RX-side indicators all stay green. Clear it here, every
+	 * start, so no previous stage can leave the transmitter dark. #345 */
+	if (v & SFP_A2_SOFT_TX_DISABLE) {
+		v &= ~SFP_A2_SOFT_TX_DISABLE;
+		rc = sfp_xfer(SFP_DDM_ADDR, SFP_A2_STATUS, &v, 1, true);
+		if (rc)
+			return rc;
+		st->cleared = true;
+	}
+	if (!sfp_xfer(SFP_DDM_ADDR, SFP_A2_STATUS, &v, 1, false))
+		st->status_after = v;
+	return 0;
 }
 
 enum alu_eth_sfp_media alu_eth_sfp_decode(const u8 *id)

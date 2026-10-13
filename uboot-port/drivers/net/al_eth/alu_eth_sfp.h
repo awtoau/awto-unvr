@@ -37,4 +37,14 @@ bool alu_eth_sfp_is_dac(enum alu_eth_sfp_media m);
  * returns the error. */
 int alu_eth_sfp_probe(struct alu_eth_sfp_info *info);
 
+/* A2h byte 110 before/after, soft TX_DISABLE cleared if set (#345).
+ * tx_power_before: A2h 102-103, 0.1 uW units (0 = laser dark). */
+struct alu_eth_sfp_tx {
+	u8	status_before;
+	u8	status_after;
+	u16	tx_power_before;
+	bool	cleared;
+};
+int alu_eth_sfp_tx_enable(struct alu_eth_sfp_tx *st);
+
 #endif
