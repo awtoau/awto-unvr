@@ -1558,6 +1558,10 @@ def cmd_ssh(extra: list[str]) -> int:
     kind="action",
 )
 def cmd_flash_uboot(extra: list[str]) -> int:
+    # Serve the root the script stages into. Without this it trusted whatever
+    # tftpd was running: publish-fedora had left one on images/tftp, which
+    # served a Sept 4 u-boot-awto.bin into NAND (caught by the CRC check).
+    _ensure_tftpd(root="tmp/tftp")
     return _run_script("scripts/flash-awto-uboot.py", extra)
 
 

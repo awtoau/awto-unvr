@@ -25,6 +25,7 @@ genuine stock firmware and does not boot (#166). Needs working 1G.
 from __future__ import annotations
 
 import os
+import re
 import sys
 import time
 import zlib
@@ -115,9 +116,18 @@ def main():
     log("=== flashing awto-uboot to NAND (stock kernel @0x300000 preserved) ===")
     step(s, f"setenv ipaddr {IPADDR}", STOCK_PROMPT, 5, "set ipaddr")
     step(s, f"setenv serverip {server_ip}", STOCK_PROMPT, 5, "set serverip")
-    step(
-        s, f"tftpboot {STAGE} {TFTP_NAME}", "Bytes transferred", 60, f"tftp {TFTP_NAME}"
-    )
+    # Needle is the line's end ("... = N (hex hex)") so the count is complete.
+    out = step(s, f"tftpboot {STAGE} {TFTP_NAME}", "hex)", 60, f"tftp {TFTP_NAME}")
+    # Size check BEFORE erasing NAND: a stale file of the same name from
+    # another tftpd root once got flashed and was only caught by the CRC.
+    size_want = UBOOT_BIN.stat().st_size
+    m = re.search(r"Bytes transferred = (\d+)", (out or b"").decode(errors="replace"))
+    if not m or int(m.group(1)) != size_want:
+        sys.exit(
+            f"ABORT before erase: tftp delivered {m.group(1) if m else '?'} bytes, "
+            f"built {size_want} - wrong file served (check the tftpd root)"
+        )
+    log(f"  OK: tftp size {size_want} matches the build")
     step(s, f"nand erase {U_NAND} {U_SPAN}", "OK", 30, "erase awto-uboot region")
     step(s, f"nand write {STAGE} {U_NAND} {U_SPAN}", "OK", 60, "write awto-uboot")
 
