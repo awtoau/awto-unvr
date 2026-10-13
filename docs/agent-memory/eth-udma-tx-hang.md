@@ -1,3 +1,8 @@
+> **SUPERSEDED 2026-10-13 by [../eth-uboot-tx-ruled-out.md](../eth-uboot-tx-ruled-out.md).** This file's 10G lead ("FLR wipes
+> board params") was killed by measurement: `want_flr = false` gives a
+> byte-for-byte identical failure. Its "do not re-test" list is still
+> right, and is carried into the new file with evidence links.
+
 ---
 name: eth-udma-tx-hang
 description: "awto-uboot al_eth — 1G FIXED (was RX, RGMII_ID, not TX at all); 10G TX still fails (#253, FLR wipes board params). #90 closed. Eliminated-hypotheses list, do not re-test."

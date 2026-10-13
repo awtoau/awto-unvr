@@ -30,6 +30,13 @@ weak-host/ARP-flux notes: `docs/agent-memory/four-nics-one-subnet-weak-host.md`.
   process.
 - **Never kill or restart a `tio` you did not start** — it is the user's console.
 - **Never `pkill` Chrome** (shared, and it loses the cleared Turnstile session).
+- **NEVER re-test snoop/SMCC/axcache/ROB/cache-maintenance/FLR for the U-Boot eth TX
+  failure (#253).** Read `docs/eth-uboot-tx-ruled-out.md` first. Snoop alone has been
+  tested **5 times** across 3 sessions; three commits each claimed to be "THE
+  TX-completion fix" (`92f5706` cache, `092fcde` FLR, `d69b711` snoop) and all failed.
+  The 1G and 10G program byte-identical values in that whole register group and one
+  works, so it cannot be the discriminator. Untested leads are listed in that file —
+  start with where `crhp` is written vs where the completion ring was allocated.
 
 ## Boot chain (since #216)
 

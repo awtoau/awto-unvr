@@ -53,9 +53,14 @@ struct alu_eth_priv {
 	char				name[16];
 };
 
-/* al_udma master DRAM reach: it decodes only the LOW window, and U-Boot's heap
- * relocates to the top of the 3GB bank, so memalign() hands the engine
- * addresses it hangs on. Every al_udma-visible buffer comes from here. #90. */
+/* Every al_udma-visible buffer comes from here, matching stock and iodma.
+ *
+ * The old comment claimed "the master decodes only the LOW window" as fact.
+ * That is backwards from its own evidence: pinning low was measured and did
+ * NOT fix the hang (d41ed23 called it "necessary-not-sufficient at best"), and
+ * the 1G now tftpboots at 4.2 MiB/s through that same master. Kept for
+ * stock-parity, not because the restriction is established.
+ * docs/eth-uboot-tx-ruled-out.md */
 void *alu_eth_dma_low_alloc(size_t size);
 
 /* Allocate this port's descriptor block, RX buffers and TX bounce buffer out of

@@ -1,4 +1,26 @@
-# al_eth 1G TX: M2S engine ABORTs on the descriptor-read from DRAM (UNRESOLVED)
+# ARCHIVE: the Aug 2026 1G TX investigation (#90, closed)
+
+> **SUPERSEDED. For the live U-Boot TX failure (#253, the 10G port) read
+> [eth-uboot-tx-ruled-out.md](eth-uboot-tx-ruled-out.md).**
+>
+> Keep this file for its evidence base - the vendor Ghidra decompile, the
+> per-line HAL diffs, the al_ssm cross-check and the SMCC sweep are all still
+> valid measurements and are not recorded anywhere else. Do NOT read it as the
+> current diagnosis:
+>
+> - It is about the **1G**, which is **fixed** (`30e7c65`): the 1G never had a
+>   TX bug at all, it was RX, missing `RGMII_ID` internal delay. Every
+>   conclusion below that reasons from "1G TX aborts" is reasoning from a
+>   wrong premise.
+> - **#90 is closed.**
+> - The `m2s.state=0x00002222` ABORT model below **no longer occurs**. Today's
+>   10G reads `m2s.state=00000001`, and `30e7c65` showed `0x1000` was misread
+>   as a hang for three sessions when it means `desc_pref=1` (Normal).
+> - "`dcp` never leaves 0, the engine NEVER fetches the descriptor" is
+>   superseded: `drhp`, `drtp` and `dcp` all advance together now and `crhp`
+>   is the one that never moves. The failure moved from *fetch* to *completion*.
+> - The AHCI comparison used below as evidence is **retracted** later in this
+>   same file: generic U-Boot AHCI, no al_udma, never good evidence either way.
 
 Port: our U-Boot v2026.07, chainloaded from stock, Alpine V2 / AL-324, eth1 (1G RGMII,
 PCI 1c36:0001, rev_id 2). `ping`/`tftp` TX never completes. Tracked as #90.

@@ -160,8 +160,13 @@ void alu_eth_unit_adapter_setup(struct udevice *dev, bool err_track)
 	u32 v;
 	int i;
 
-	/* Coherent AXI master on all four sub-masters, plus axcache - the same
-	 * settings the working AHCI uses on this fabric. */
+	/* Coherent AXI master on all four sub-masters, plus axcache.
+	 *
+	 * DO NOT re-test this group against a reference to chase #253. Snoop has
+	 * been tested 5x (added, removed, swept 0/1/3, setpci-diffed against a
+	 * working Linux, bundles 1-3 unwritten) and never changed the failure.
+	 * The 1G and 10G program BYTE-IDENTICAL values here and one works, so
+	 * this cannot be the discriminator. docs/eth-uboot-tx-ruled-out.md */
 	dm_pci_read_config32(dev, ALU_ETH_SMCC, &v);
 	v |= ALU_ETH_SMCC_COHERENT;
 	dm_pci_write_config32(dev, ALU_ETH_SMCC, v);
@@ -412,9 +417,14 @@ int alu_eth_core_send(struct udevice *dev, void *packet, int length)
 
 	memset(&pkt, 0, sizeof(pkt));
 	pkt.num_of_bufs = 1;
-	/* NO_SNOOP: the M2S engine reads descriptor + buffer as plain DRAM reads
-	 * (serviced by the flush below) instead of snoop reads, which stall
-	 * forever here - the fabric never answers the snoop. */
+	/* NO_SNOOP: descriptor + buffer read as plain DRAM reads rather than
+	 * snoop reads.
+	 *
+	 * CONTRADICTS alu_eth_unit_adapter_setup() above, which enables snoop on
+	 * all four sub-masters, and al_dma dropped NO_SNOOP as a hardware fact
+	 * (#23, 3b2b44a). Likely cargo from the d69b711 -> d4f176a thrash, never
+	 * re-tested since the 0x2222-ABORT model collapsed.
+	 * docs/eth-uboot-tx-ruled-out.md */
 	pkt.flags = AL_ETH_TX_FLAGS_NO_SNOOP;
 
 	/* The caller's packet is in U-Boot's high heap, which the al_udma master
