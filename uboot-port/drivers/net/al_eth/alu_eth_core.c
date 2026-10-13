@@ -86,6 +86,20 @@ void alu_eth_dump_tx(struct alu_eth_priv *priv, const char *tag)
 	printf("alu_eth[%s]: tx0 status=%08x tcrbp=%08x%08x comp_cfg=%08x\n",
 	       tag, readl(u + 0x1024), readl(u + 0x1048), readl(u + 0x1044),
 	       readl(u + 0x10a0));
+	/* Mid-send MAC + TFW state (#253). Read HERE, not at the prompt: by then
+	 * eth_halt -> al_eth_mac_stop has cleared TX_ENA|RX_ENA (HAL :2106), so a
+	 * post-halt cmd_cfg says nothing about the state during the send.
+	 * mac_10g.cmd_cfg +0x408 (want ..13 = TX_ENA|RX_ENA), mac_10g.status +0x440,
+	 * gen.mac_10g_stat +0x924; EC tfw data/ctrl FIFO status +0xc1c/+0xc20
+	 * (non-zero = packets stuck in the forwarder). One word each - a 2-word
+	 * read into tfw_udma's reserved slot SError'd and reset the box. */
+	{
+		u8 __iomem *m = priv->mac_regs, *e = priv->ec_regs;
+
+		printf("alu_eth[%s]: mac10g cmd_cfg=%08x status=%08x gen.10g_stat=%08x tfw fifo data=%08x ctrl=%08x\n",
+		       tag, readl(m + 0x408), readl(m + 0x440), readl(m + 0x924),
+		       readl(e + 0xc1c), readl(e + 0xc20));
+	}
 }
 
 /* Unit-adapter AXI-master READ error attributes. addr_to = never routed to a
