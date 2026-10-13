@@ -2861,11 +2861,25 @@ al_eth_function_reset(struct al_eth_adapter *adapter)
 			netdev_err(adapter->netdev,
 				   "%s: failed to save board params before FLR (rc %d) - will skip restore\n",
 				   __func__, save_rc);
-		sub_rc = al_eth_mac_addr_read(adapter->ec_base, 0, adapter->mac_addr);
-		if (sub_rc)
-			netdev_err(adapter->netdev,
-				   "%s: failed to save mac address before FLR (rc %d)\n",
-				   __func__, sub_rc);
+		/* Read into a scratch buffer, never over adapter->mac_addr: on
+		 * failure the read leaves it zeroed, which discards the address
+		 * already resolved from DT and then stores zeros back into the EC
+		 * below. Same shape as the board-params guard above. #340 */
+		{
+			u8 ec_addr[ETH_ALEN];
+
+			sub_rc = al_eth_mac_addr_read(adapter->ec_base, 0, ec_addr);
+			if (sub_rc)
+				netdev_err(adapter->netdev,
+					   "%s: no mac address in the EC to save before FLR (rc %d) - keeping %pM\n",
+					   __func__, sub_rc, adapter->mac_addr);
+			else if (!is_valid_ether_addr(ec_addr))
+				netdev_err(adapter->netdev,
+					   "%s: EC holds an invalid mac %pM - keeping %pM\n",
+					   __func__, ec_addr, adapter->mac_addr);
+			else
+				ether_addr_copy(adapter->mac_addr, ec_addr);
+		}
 
 		rc = al_eth_flr_rmn(&al_eth_read_pci_config,
 			&al_eth_write_pci_config,
@@ -2879,11 +2893,16 @@ al_eth_function_reset(struct al_eth_adapter *adapter)
 					   "%s: failed to restore board params after FLR (rc %d)\n",
 					   __func__, sub_rc);
 		}
-		sub_rc = al_eth_mac_addr_store(adapter->ec_base, 0, adapter->mac_addr);
-		if (sub_rc)
-			netdev_err(adapter->netdev,
-				   "%s: failed to restore mac address after FLR (rc %d)\n",
-				   __func__, sub_rc);
+		/* Only ever write a real address back. Storing a zeroed buffer is
+		 * what left the EC empty for the next reader. #340 */
+		if (is_valid_ether_addr(adapter->mac_addr)) {
+			sub_rc = al_eth_mac_addr_store(adapter->ec_base, 0,
+						       adapter->mac_addr);
+			if (sub_rc)
+				netdev_err(adapter->netdev,
+					   "%s: failed to restore mac address after FLR (rc %d)\n",
+					   __func__, sub_rc);
+		}
 	}
 	return rc;
 }

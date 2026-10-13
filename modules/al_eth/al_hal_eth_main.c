@@ -5018,6 +5018,7 @@ int al_eth_flr_rmn_restore_params(int (* pci_read_config_u32)(void *handle, int 
 {
 	struct al_eth_board_params params = { .media_type = 0 };
 	uint8_t mac_addr[6];
+	int mac_rc;
 	int rc;
 	int save_rc;
 
@@ -5032,13 +5033,18 @@ int al_eth_flr_rmn_restore_params(int (* pci_read_config_u32)(void *handle, int 
 	if (save_rc)
 		pr_err("%s: failed to save board params before FLR (rc %d) - will skip restore\n",
 		       __func__, save_rc);
-	if (al_eth_mac_addr_read(ec_base, 0, mac_addr))
-		pr_err("%s: failed to save mac address before FLR\n", __func__);
+	/* `mac_addr` is an uninitialized stack local: on a failed read, storing
+	 * it back would write stack garbage into the EC filter. Skip the
+	 * restore instead, same as board params above. #340 */
+	mac_rc = al_eth_mac_addr_read(ec_base, 0, mac_addr);
+	if (mac_rc)
+		pr_err("%s: no mac address in the EC to save before FLR (rc %d) - will skip restore\n",
+		       __func__, mac_rc);
 
 	rc = al_eth_flr_rmn(pci_read_config_u32, pci_write_config_u32, handle, mac_base);
 	if (!save_rc && al_eth_board_params_set(mac_base, &params))
 		pr_err("%s: failed to restore board params after FLR\n", __func__);
-	if (al_eth_mac_addr_store(ec_base, 0, mac_addr))
+	if (!mac_rc && al_eth_mac_addr_store(ec_base, 0, mac_addr))
 		pr_err("%s: failed to restore mac address after FLR\n", __func__);
 
 	return rc;
