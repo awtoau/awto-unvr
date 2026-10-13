@@ -25,6 +25,8 @@ from __future__ import annotations
 
 import argparse
 import os
+import re
+import shutil
 import subprocess
 import sys
 import time
@@ -39,6 +41,11 @@ from _repo import make_log
 
 log = make_log("uboot-chainload-from-ssd", stamped=False)
 
+# The BUILD output, not tmp/tftp/ - that staging copy is written only by
+# ./dev.py uboot-test, so reading it silently chainloads a stale binary. That
+# happened: three "identical failure" results were measured against a 90-minute-
+# old build before the size mismatch gave it away.
+SRC = REPO / "tmp/uboot-build/u-boot.bin"
 BIN = REPO / "tmp/tftp/u-boot-chainload.bin"
 ON_BOX = "/boot/u-boot-chainload.bin"
 # /boot is a DIRECTORY on the rootfs, not its own partition - bootcmd loads
@@ -93,10 +100,14 @@ def step(s, cmd: str, wait: float, until: str, what: str) -> str | None:
 
 
 def stage() -> bool:
-    """scp the binary onto the box's /boot over SSH (needs Linux up)."""
-    if not BIN.is_file():
-        log(f"FATAL: no binary at {BIN} - run ./dev.py build-uboot")
+    """Refresh the staging copy from the build output, then scp it onto the
+    box's /boot over SSH (needs Linux up)."""
+    if not SRC.is_file():
+        log(f"FATAL: no binary at {SRC} - run ./dev.py build-uboot")
         return False
+    BIN.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(SRC, BIN)
+    log(f"staged from {SRC.relative_to(REPO)} ({SRC.stat().st_size} bytes)")
     host = _box.locate()
     if not host:
         log("FATAL: woomera not reachable - boot Linux first, or use --no-stage")
@@ -257,9 +268,22 @@ def main() -> int:
                 f"ext4load from scsi {dev}:2",
             )
             if out and "bytes read" in out:
+                want = SRC.stat().st_size
+                got = None
                 for ln in out.splitlines():
                     if "bytes read" in ln:
                         log(f"scsi {dev}:2: {ln.strip()[:90]}")
+                        m = re.search(r"(\d+) bytes read", ln)
+                        if m:
+                            got = int(m.group(1))
+                # A stale /boot copy loads cleanly and tests the WRONG binary.
+                # Three results were measured that way before a size mismatch
+                # gave it away, so this is now fatal rather than cosmetic.
+                if got != want:
+                    log(
+                        f"FATAL: loaded {got} bytes, built {want} - stale binary on /boot"
+                    )
+                    return 1
                 loaded = True
                 break
         if not loaded:
