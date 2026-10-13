@@ -68,6 +68,13 @@ CONFIG_LOG_MAX_LEVEL=6
 CONFIG_LOG_DEFAULT_LEVEL=6
 CONFIG_PHYLIB=y
 CONFIG_PHY_ATHEROS=y
+# AR8031 gigabit autoneg, through the copper SFP at sw1. Upstream's 4000 ms
+# default expired mid-negotiation and U-Boot rotated to the 10G port, whose
+# datapath is broken (#253); Linux negotiates the same link in ~4.5 s. 9000 =
+# 1.25x the worst observed case. On expiry: phy_startup() returns -ETIMEDOUT
+# and the port is unusable for tftp. Overridable live via `phy_aneg_timeout`
+# (ms). #341
+CONFIG_PHY_ANEG_TIMEOUT=9000
 CONFIG_CMD_NET=y
 CONFIG_CMD_PING=y
 CONFIG_CMD_DHCP=y
