@@ -63,6 +63,10 @@ if {![step "setenv phy_aneg_timeout 12000" "awto-nas#" 6 "raise the autoneg boun
 # Only the 1G has a working U-Boot datapath; the 10G is #253. Pin it rather
 # than let a failed start rotate ethact silently (#270).
 if {![step "setenv ethact alu_eth_1g" "awto-nas#" 6 "pin ethact to the 1G"]} { return }
+# U-Boot's dhcp autoloads the DHCP-offered bootfile straight after binding,
+# which held the console through the next step the first time the 1G actually
+# negotiated (2026-10-13). We tftp our own file below; a lease is all we want.
+if {![step "setenv autoload no" "awto-nas#" 6 "disable dhcp autoload"]} { return }
 # DHCP, not the $IPADDR static: that address is inside the lease pool and the
 # box has held it as a lease before, so ARP for it never resolved and every
 # transfer died at "ARP Retry count exceeded" (#252). A lease needs no
