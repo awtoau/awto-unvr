@@ -31,6 +31,7 @@
 [LibraryClasses]
   ArmLib
   DebugLib
+  HobLib
   IoLib
   MemoryAllocationLib
   SerialPortLib

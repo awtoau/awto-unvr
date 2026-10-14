@@ -32,6 +32,7 @@
 #include <Library/ArmLib.h>
 #include <Library/ArmPlatformLib.h>
 #include <Library/DebugLib.h>
+#include <Library/HobLib.h>
 #include <Library/MemoryAllocationLib.h>
 
 #define UNVR_DRAM0_BASE   0x0000000000ULL
@@ -77,7 +78,19 @@ ArmPlatformGetVirtualMemoryMap (
   VirtualMemoryTable[Index].Attributes   = ARM_MEMORY_REGION_ATTRIBUTE_WRITE_BACK;
   Index++;
 
-  // DRAM1 (1 GiB, non-contiguous with DRAM0)
+  // DRAM1 (1 GiB, non-contiguous with DRAM0). PcdSystemMemory* only covers
+  // DRAM0, so DRAM1 needs its own resource HOB or the OS never sees it (#263).
+  BuildResourceDescriptorHob (
+    EFI_RESOURCE_SYSTEM_MEMORY,
+    EFI_RESOURCE_ATTRIBUTE_PRESENT |
+    EFI_RESOURCE_ATTRIBUTE_INITIALIZED |
+    EFI_RESOURCE_ATTRIBUTE_WRITE_COMBINEABLE |
+    EFI_RESOURCE_ATTRIBUTE_WRITE_THROUGH_CACHEABLE |
+    EFI_RESOURCE_ATTRIBUTE_WRITE_BACK_CACHEABLE |
+    EFI_RESOURCE_ATTRIBUTE_TESTED,
+    UNVR_DRAM1_BASE,
+    UNVR_DRAM1_SIZE
+    );
   VirtualMemoryTable[Index].PhysicalBase = UNVR_DRAM1_BASE;
   VirtualMemoryTable[Index].VirtualBase  = UNVR_DRAM1_BASE;
   VirtualMemoryTable[Index].Length       = UNVR_DRAM1_SIZE;
