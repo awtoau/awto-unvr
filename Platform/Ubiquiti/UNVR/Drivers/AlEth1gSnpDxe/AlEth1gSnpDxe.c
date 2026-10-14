@@ -235,12 +235,14 @@ AlEth1gQuiesceStaleState (
 
   MicroSecondDelay (10);
 
-  if (al_udma_q_handle_get (&TmpAdapter.tx_udma, 0, &TmpQ) == 0) {
-    al_udma_q_reset (TmpQ);
+  if ((al_udma_q_handle_get (&TmpAdapter.tx_udma, 0, &TmpQ) == 0) &&
+      (al_udma_q_reset (TmpQ) != 0)) {
+    DEBUG ((DEBUG_WARN, "AlEth1g: quiesce tx queue reset failed\n"));
   }
 
-  if (al_udma_q_handle_get (&TmpAdapter.rx_udma, 0, &TmpQ) == 0) {
-    al_udma_q_reset (TmpQ);
+  if ((al_udma_q_handle_get (&TmpAdapter.rx_udma, 0, &TmpQ) == 0) &&
+      (al_udma_q_reset (TmpQ) != 0)) {
+    DEBUG ((DEBUG_WARN, "AlEth1g: quiesce rx queue reset failed\n"));
   }
 
   Err = al_eth_adapter_stop (&TmpAdapter);
@@ -335,8 +337,11 @@ AlEth1gHwInitialize (
 
   /* No al_eth_queue_enable(): the HAL function is a stub that always returns
    * -EPERM. The queue is live after queue_config() (77da515, #256). */
-  al_udma_q_handle_get (&Ctx->HalAdapter.tx_udma, 0, &Ctx->TxDmaQ);
-  al_udma_q_handle_get (&Ctx->HalAdapter.rx_udma, 0, &Ctx->RxDmaQ);
+  if ((al_udma_q_handle_get (&Ctx->HalAdapter.tx_udma, 0, &Ctx->TxDmaQ) != 0) ||
+      (al_udma_q_handle_get (&Ctx->HalAdapter.rx_udma, 0, &Ctx->RxDmaQ) != 0)) {
+    DEBUG ((DEBUG_ERROR, "AlEth1g: udma queue handle_get failed\n"));
+    return EFI_DEVICE_ERROR;
+  }
 
   /* RGMII. No al_eth_mac_link_config() - see file header. */
   Err = al_eth_mac_config (&Ctx->HalAdapter, AL_ETH_MAC_MODE_RGMII);
@@ -431,11 +436,11 @@ AlEth1gHwShutdown (
 
   MicroSecondDelay (10);
 
-  if (Ctx->TxDmaQ != NULL) {
-    al_udma_q_reset (Ctx->TxDmaQ);
+  if ((Ctx->TxDmaQ != NULL) && (al_udma_q_reset (Ctx->TxDmaQ) != 0)) {
+    DEBUG ((DEBUG_WARN, "AlEth1g: tx queue reset failed\n"));
   }
-  if (Ctx->RxDmaQ != NULL) {
-    al_udma_q_reset (Ctx->RxDmaQ);
+  if ((Ctx->RxDmaQ != NULL) && (al_udma_q_reset (Ctx->RxDmaQ) != 0)) {
+    DEBUG ((DEBUG_WARN, "AlEth1g: rx queue reset failed\n"));
   }
 
   Err = al_eth_adapter_stop (&Ctx->HalAdapter);
