@@ -71,6 +71,23 @@ PROBE_TIMEOUT_S = 180
 # failure case and a false abort costs a whole cold-boot cycle.
 # On expiry: report the command never announced itself and stop.
 JUMP_BANNER_S = 1.5
+# Waits for: the prompt crc32 prints after its value. Expected: one prompt
+# line, ~1ms at 115200; 0.5s bounds it. Typing before it lands while U-Boot
+# still polls ctrlc(), which reads and discards input (`bootedk2` arrived as
+# `bo`). On expiry: send anyway and let the jump check report it.
+PROMPT_AFTER_S = 0.5
+
+
+def wait_for(s, want: str, limit_s: float) -> str:
+    """Read (no send) until `want` arrives or limit_s elapses; return what came."""
+    buf = b""
+    end = time.monotonic() + limit_s
+    while time.monotonic() < end and want not in buf.decode(errors="replace"):
+        try:
+            buf += s.recv(4096)
+        except TimeoutError:
+            continue
+    return buf.decode(errors="replace")
 
 
 def send_expect(
@@ -181,6 +198,8 @@ def main() -> int:
         print(f"FATAL: on-device crc32 mismatch (want 0x{want_crc})\n{out}")
         return 1
     print(f"crc32 verified: 0x{local_crc:08x}\n")
+    if PROMPT not in out.lower().split(want_crc, 1)[1]:
+        wait_for(s, PROMPT, PROMPT_AFTER_S)
 
     # bootedk2, not `go` + manual `dcache off; icache off`. awto-uboot runs
     # with MMU + caches ON and do_go skips cleanup_before_linux(), so the FD
