@@ -1554,10 +1554,15 @@ def cmd_ssh(extra: list[str]) -> int:
 @command(
     "flash awto-uboot into NAND and point stock's bootcmd at it, so awto-uboot "
     "owns the boot and loads the kernel from SSD (~6x faster than NAND, and our "
-    "bootargs win). Run at the stock U-Boot prompt (scripts/flash-awto-uboot.py)",
+    "bootargs win). Power-cycles to stock's prompt itself (scripts/flash-awto-uboot.py)",
     kind="action",
 )
 def cmd_flash_uboot(extra: list[str]) -> int:
+    # Stock's prompt specifically: the watchdog reset lands in awto-nas#.
+    rc = _power_cycle_to_stock()
+    if rc != 0:
+        log("flash-uboot: never reached stock's prompt - NOT flashing", "ERROR")
+        return rc
     # Serve the root the script stages into. Without this it trusted whatever
     # tftpd was running: publish-fedora had left one on images/tftp, which
     # served a Sept 4 u-boot-awto.bin into NAND (caught by the CRC check).
@@ -1653,6 +1658,11 @@ def _reset_to_uboot() -> int:
             "using power-cycle + catch-stock"
         )
 
+    return _power_cycle_to_stock()
+
+
+def _power_cycle_to_stock() -> int:
+    """Power-cycle and catch STOCK's prompt (ESC stream started first)."""
     # Same catch-before-reset ordering as uboot-test --cold / the EDK2 probe:
     # the ESC stream must already be running when power comes back.
     catch = subprocess.Popen(
