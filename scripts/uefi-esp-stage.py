@@ -108,8 +108,11 @@ def main() -> int:
     try:
         log(sh(host, f"df -h {MNT}; ls -l {MNT}"))
         avail = int(sh(host, f"df -B1 --output=avail {MNT} | tail -1").strip())
-        if avail < need:
-            sys.exit(f"ESP has {avail} B free, need {need} B")
+        # Image.efi / unvr.dtb are overwritten in place: their space comes back.
+        old = sh(host, f"stat -c %s {MNT}/Image.efi {MNT}/unvr.dtb 2>/dev/null; true")
+        reclaim = sum(int(x) for x in old.split())
+        if avail + reclaim < need:
+            sys.exit(f"ESP has {avail} B free + {reclaim} B replaced, need {need} B")
 
         if not a.yes:
             log("DRY RUN - pass --yes to copy. Nothing written.")
