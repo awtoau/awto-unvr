@@ -1,6 +1,6 @@
 # `./dev.py uboot-test` drives this: put the FRESH build on the box and stop for
 # hands-on testing. From our awto-nas#: arm SP805 watchdog (SoC reset) -> catch
-# the NAND awto-uboot -> tftp 0x02000000 -> cp.b to 0x1100000 -> go -> STOP. No
+# the NAND awto-uboot -> tftp 0x03000000 -> cp.b to 0x1100000 -> go -> STOP. No
 # auto-tests — the live prompt is the user's to drive (i2c scan / ping / serdes /
 # ddr bist). SP805 @0xfd88c000: Lock@0xC00, Load@0x000, Control@0x008 (INTEN|RESEN).
 # $SERVERIP is injected by cmd_uboot_test (scripts/_net.py detect_server_ip(),
@@ -81,8 +81,8 @@ if {![step "setenv serverip $SERVERIP" "awto-nas#" 6 "set serverip"]} { return }
 # Stage elsewhere, copy, jump: same shape as flash-awto-uboot.py.
 # tftp bound: 820KB over a 100Mb link is <1s; 30s is ~30x, and covers the
 # ARP retries that precede a transfer on a cold neighbour table.
-if {![step "tftpboot 0x02000000 u-boot-chainload.bin" "Bytes transferred" 30 "tftp the image"]} { return }
-if {![step "cp.b 0x02000000 0x1100000 \$filesize" "awto-nas#" 10 "copy to TEXT_BASE"]} { return }
+if {![step "tftpboot 0x03000000 u-boot-chainload.bin" "Bytes transferred" 30 "tftp the image"]} { return }
+if {![step "cp.b 0x03000000 0x1100000 \$filesize" "awto-nas#" 10 "copy to TEXT_BASE"]} { return }
 send "go 0x1100000"
 # Our own U-Boot also autoboots (CONFIG_BOOTDELAY=2) - nothing sets the
 # CANARY that would make it stay at the prompt on its own, so a passive

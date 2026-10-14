@@ -15,7 +15,7 @@
  *
  * Ring + buffers MUST be low DRAM: the al_udma master can't reach U-Boot's ~3GB
  * relocated heap (mirror of alu_eth_core.c alu_eth_dma_low_alloc - see that
- * file). Separate window from alu_eth's 0x02000000 so the two never clash.
+ * file). Separate window from alu_eth's 0x01000000 so the two never clash.
  */
 
 #include <command.h>
@@ -63,10 +63,10 @@ void al_unit_adapter_init(struct al_unit_adapter *unit_adapter)
 #define AL_SSM_DEFAULT_LEN	256
 
 /*
- * Low-DRAM bump allocator (see file-head note). Distinct window from al_eth's
- * (0x02000000..0x02100000): use 0x02200000. 1:1 mapped, so virt == phys.
+ * Low-DRAM bump allocator (see file-head note). Below al_eth's window
+ * (0x01000000..0x01100000) and clear of loadaddr 0x02000000. 1:1 mapped.
  */
-#define AL_SSM_DMA_LOW_BASE	0x02200000UL
+#define AL_SSM_DMA_LOW_BASE	0x00f00000UL
 #define AL_SSM_DMA_LOW_SIZE	0x00040000UL	/* 256KB: 3 rings (~12KB) + buffers */
 static uintptr_t al_ssm_dma_low_next;
 

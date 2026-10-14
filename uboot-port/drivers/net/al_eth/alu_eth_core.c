@@ -15,6 +15,7 @@
 
 #include <dm.h>
 #include <errno.h>
+#include <lmb.h>
 #include <memalign.h>
 #include <net.h>
 #include <pci.h>
@@ -47,9 +48,10 @@
 #define ALU_ETH_RX_MIN_LEN	30
 #define ALU_ETH_RX_MAX_LEN	1518
 
-/* Low DRAM the al_udma master can reach: 1MB at 32MB, below relocated U-Boot,
- * shared by both ports. gd->ram_size stays 3GB. #90. */
-#define ALU_ETH_DMA_LOW_BASE	0x02000000UL
+/* Low DRAM for rings + buffers, shared by both ports (#90). 1MB directly below
+ * TEXT_BASE: clear of loadaddr 0x02000000, where tftp/ext4load used to trample
+ * the RX ring. LMB-reserved so an overlapping load is refused, not silent. */
+#define ALU_ETH_DMA_LOW_BASE	0x01000000UL
 #define ALU_ETH_DMA_LOW_SIZE	0x00100000UL
 static uintptr_t alu_eth_dma_low_next = ALU_ETH_DMA_LOW_BASE;
 
@@ -131,6 +133,17 @@ void *alu_eth_dma_low_alloc(size_t size)
 {
 	uintptr_t p = ALIGN(alu_eth_dma_low_next, ARCH_DMA_MINALIGN);
 	uintptr_t end = p + ALIGN(size, ARCH_DMA_MINALIGN);
+	static bool reserved;
+
+	if (!reserved) {
+		phys_addr_t base = ALU_ETH_DMA_LOW_BASE;
+
+		if (lmb_alloc_mem(LMB_MEM_ALLOC_ADDR, 0, &base,
+				  ALU_ETH_DMA_LOW_SIZE, LMB_NOOVERWRITE))
+			printf("alu_eth: LMB reserve of DMA window 0x%lx+0x%lx failed\n",
+			       ALU_ETH_DMA_LOW_BASE, ALU_ETH_DMA_LOW_SIZE);
+		reserved = true;
+	}
 
 	if (end > ALU_ETH_DMA_LOW_BASE + ALU_ETH_DMA_LOW_SIZE)
 		return NULL;
