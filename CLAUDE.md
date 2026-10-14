@@ -21,13 +21,12 @@ weak-host/ARP-flux notes: `docs/agent-memory/four-nics-one-subnet-weak-host.md`.
     driver-shaped test is `i2ctransfer -y <bus> r1@0x30`.
 - **NEVER run `./dev.py flash` casually.** NAND `0x1300000` holds awto-uboot since #216;
   flashing a kernel there destroys the bootloader. It refuses without an explicit flag.
-- **ASK before any flash WRITE — NAND or NOR, any partition, however dead it looks.**
-  Reads and surveys need no permission; `flash_erase`, `nandwrite`, `nand write`,
-  `sf write` do. "I verified it was erased" is not the same as being told to write to
-  flash, and a wrong partition has no recovery path (#166). This was violated
-  2026-10-08: `device_tree` was erased and written to test #208's write path without
-  asking. No harm (it was erased, and the write failed) — but that was luck, not
-  process.
+- **Flash writes need NO permission — the box is ours to flash (Dan, 2026-10-14).**
+  Don't ask; do it. The care is in the target, not the asking:
+  - Address partitions by label, re-read `/proc/mtd` / the offset first — mtd numbers moved when
+    the NAND driver landed.
+  - Size + CRC-check the image before erasing (`flash-uboot` does). A wrong partition has no
+    recovery path (#166).
 - **NEVER `ext4write` (or any U-Boot filesystem write) to the Fedora root partition.**
   U-Boot reads it fine but cannot write Fedora's ext4 (`metadata_csum`): a *failed* write
   on 2026-10-14 still corrupted the superblock and the box would not mount root (#347).
