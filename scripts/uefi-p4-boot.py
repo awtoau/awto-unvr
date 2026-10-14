@@ -22,13 +22,14 @@ RAM payload only, never touches flash - a power-cycle always returns the
 box to its normal stock boot.
 
 Usage:
-    ./dev.py uefi-p4-boot [--fs fs0] [--no-boot]
+    ./dev.py uefi-p4-boot [--fs fsN] [--no-boot]
 """
 
 from __future__ import annotations
 
 import argparse
 import os
+import re
 import sys
 import time
 import zlib
@@ -181,7 +182,12 @@ def main() -> int:
     ap = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
     )
-    ap.add_argument("--fs", default="fs0", help="Shell mapping holding the ESP")
+    ap.add_argument(
+        "--fs",
+        default=None,
+        help="Shell mapping holding the ESP (default: first FSn with the image; "
+        "FS0/FS1 are usually EDK2's own memory-mapped FVs)",
+    )
     ap.add_argument("--image", default="Image.efi")
     ap.add_argument("--dtb", default=r"\unvr.dtb", help="dtb= path, image-relative")
     ap.add_argument("--root", default=DEFAULT_ROOT)
@@ -295,21 +301,34 @@ def main() -> int:
     log("\n--- connect -r")
     log(quiet(s, "connect -r", CONNECT_LIMIT_S)[-3000:])
     log("\n--- map -r")
-    log(quiet(s, "map -r", CMD_LIMIT_S)[-3000:])
-
-    log(f"\n--- {a.fs}:")
-    out = quiet(s, f"{a.fs}:", CMD_LIMIT_S)
-    log(out[-2000:])
-    if "is not a valid mapping" in out:
-        log(f"FATAL: no {a.fs}: mapping - check `map -r` above for the right fsN")
-        return 1
-
-    log("\n--- ls")
-    out = quiet(s, "ls", CMD_LIMIT_S)
+    out = quiet(s, "map -r", CMD_LIMIT_S)
     log(out[-3000:])
-    if a.image not in out:
-        log(f"FATAL: {a.image} not on {a.fs}: - run ./dev.py uefi-esp-stage --yes")
+    candidates = (
+        [a.fs]
+        if a.fs
+        else sorted(
+            {f"fs{n}" for n in re.findall(r"\bFS(\d+):", out)}, key=lambda f: int(f[2:])
+        )
+    )
+    found = None
+    for fs in candidates:
+        log(f"\n--- {fs}: / ls")
+        out = quiet(s, f"{fs}:", CMD_LIMIT_S)
+        if "is not a valid mapping" in out:
+            log(f"  no {fs}: mapping")
+            continue
+        out = quiet(s, "ls", CMD_LIMIT_S)
+        log(out[-1500:])
+        if a.image in out:
+            found = fs
+            break
+    if not found:
+        log(
+            f"FATAL: {a.image} on none of {candidates} - run ./dev.py uefi-esp-stage --yes"
+        )
         return 1
+    a.fs = found
+    log(f"ESP: {a.fs}:")
 
     if a.no_boot:
         log("--no-boot: stopping at the Shell prompt.")
