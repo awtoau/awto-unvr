@@ -78,18 +78,6 @@ JUMP_BANNER_S = 1.5
 PROMPT_AFTER_S = 0.5
 
 
-def wait_for(s, want: str, limit_s: float) -> str:
-    """Read (no send) until `want` arrives or limit_s elapses; return what came."""
-    buf = b""
-    end = time.monotonic() + limit_s
-    while time.monotonic() < end and want not in buf.decode(errors="replace"):
-        try:
-            buf += s.recv(4096)
-        except TimeoutError:
-            continue
-    return buf.decode(errors="replace")
-
-
 def send_expect(
     s, cmd: str, want: str, limit_s: float, *, or_prompt: bool = False
 ) -> str:
@@ -199,7 +187,7 @@ def main() -> int:
         return 1
     print(f"crc32 verified: 0x{local_crc:08x}\n")
     if PROMPT not in out.lower().split(want_crc, 1)[1]:
-        wait_for(s, PROMPT, PROMPT_AFTER_S)
+        _console._ru(s, PROMPT, PROMPT_AFTER_S)
 
     # bootedk2, not `go` + manual `dcache off; icache off`. awto-uboot runs
     # with MMU + caches ON and do_go skips cleanup_before_linux(), so the FD
