@@ -5,7 +5,8 @@ index; each linked doc covers the version-specific deltas in depth.
 
 ## Inventory
 
-Kernel target is `/mnt/2tb/unvr-port-refs/linux-v7.3-fresh`, tracking
+Kernel target is `tmp/refs/linux-v7.3-fresh` (a Linux-store worktree,
+[kernel-rebase.md](kernel-rebase.md#linux-store-350)), tracking
 `torvalds/linux` mainline directly (this repo's own methodology: pull
 forward, port whatever breaks). Board support (DTS, `pcie-al-internal.c`,
 the `pcie-al.c` DBI fix, `unvr_defconfig`) lives as real commits in that
@@ -13,7 +14,7 @@ tree's own git history - not as patches applied by any script here.
 `patches/*.patch` are staging artifacts for that: `git apply` + commit them
 in the kernel tree, they are not applied by a build.
 
-### `patches/` - kernel tree (`/mnt/2tb/unvr-port-refs/linux-v7.3-fresh`)
+### `patches/` - kernel tree (`tmp/refs/linux-v7.3-fresh`)
 
 | Patch | Covers | Enforced by |
 |---|---|---|

@@ -7,7 +7,7 @@ Tracking: #208 (driver), #268 (exec_op / references), #166 (recovery), #30 (layo
 - Box: kernel `7.3.0-rc6-36cb313+`, up 2 d, a 245 GB rsync running on the SSD (load ~3.5).
 - Measured 2026-10-10 11:00-13:45 +11:00 unless stated. Zero flash writes, zero erases.
 - Tools added: `scripts/nand-survey.py` (bbm / ecc / eccflags), `scripts/nand_bch.py` (independent ECC model), `tests/test_nand_bch.py`.
-- References: `sources/MT29F8G08ABBCAH4-micron-m71m-datasheet.pdf` (Rev L, 122 p), `/mnt/2tb/unvr-port-refs/urnvr-kernel-4.19.152/drivers/mtd/nand/raw/al_nand.c`, `/mnt/2tb/unvr-port-refs/UBNT-source-code/UNVR-1.3.35-GPL/{u-boot/board/annapurna-labs/common/al_nand.c,linux-arm64-unvr-4.1.37-ubnt/drivers/mtd/nand/al/al_nand.c}`, `/mnt/2tb/unvr-port-refs/linux-v7.3-fresh/drivers/mtd/nand/raw/`.
+- References: `sources/MT29F8G08ABBCAH4-micron-m71m-datasheet.pdf` (Rev L, 122 p), `tmp/refs/urnvr-kernel-4.19.152/drivers/mtd/nand/raw/al_nand.c`, `tmp/refs/UBNT-source-code/UNVR-1.3.35-GPL/{u-boot/board/annapurna-labs/common/al_nand.c,linux-arm64-unvr-4.1.37-ubnt/drivers/mtd/nand/al/al_nand.c}`, `tmp/refs/linux-v7.3-fresh/drivers/mtd/nand/raw/`.
 
 ## 1. Status
 

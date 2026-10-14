@@ -8,9 +8,9 @@ metadata:
   modified: 2026-08-31T04:02:43.926Z
 ---
 
-`/mnt/2tb/unvr-port-refs/linux-v7.3-fresh` has `origin` = `torvalds/linux.git`
-directly (not a distro/stable fork) and a local branch `latest` that tracks
-`origin/master`. This is deliberate: the project's methodology is "take
+`tmp/refs/linux-v7.3-fresh` (a worktree of the machine Linux store, #350) has
+`origin`/`torvalds` = `torvalds/linux.git` directly (not a distro/stable fork)
+and a local branch `latest` that tracks `origin/master`. This is deliberate: the project's methodology is "take
 mainline HEAD, make it work" — done before starting from 7.1, done again
 2026-08-31 pulling 473 commits forward to Linux 7.3-rc1, no issues.
 
@@ -34,8 +34,8 @@ special justification.
   (or just a clean history if committed before the pull) instead of hoping
   nothing conflicts.
 - `awto-au/linux` (public fork, remote name `awto`) is where these board
-  patches get pushed, as small topic branches (e.g.
-  `unvr/board-support-7.3`), matching the existing branch-per-topic
+  patches get pushed, as small topic branches named
+  `awto/unvr/<topic>-<base>` (e.g. `awto/unvr/board-support-v7.3`), matching the existing branch-per-topic
   convention (`r8169/pcie-max-speed-param`) — never push to `origin`
   (Linus's tree).
 - After any pull: full rebuild via `./dev.py build-fedora` (kernel + all 5

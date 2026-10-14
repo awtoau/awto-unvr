@@ -1,7 +1,7 @@
 # Vendor code modernisation plan
 
 Audit of the out-of-tree `al_*` modules against the generic kernel facilities they duplicate.
-Measured 2026-10-11 against `/mnt/2tb/unvr-port-refs/linux-v7.3-fresh` (7.3.0-rc6) and woomera (`7.3.0-rc6-bac8230+`).
+Measured 2026-10-11 against `tmp/refs/linux-v7.3-fresh` (7.3.0-rc6) and woomera (`7.3.0-rc6-bac8230+`).
 Umbrella issue: #284. No driver code changed by this document.
 
 ## Principle
@@ -229,7 +229,7 @@ Carried between copies (each in its own commit):
 ## Reference drivers
 
 Method: pick the mainline reference first, diff the contract second (lesson of #285; `724094f` reverted by `22ae409`).
-Measured 2026-10-11 against `/mnt/2tb/unvr-port-refs/linux-v7.3-fresh` (v7.3-rc6), repo at `22ae409`. Static analysis only: no box access, no flash, dmatest was running.
+Measured 2026-10-11 against `tmp/refs/linux-v7.3-fresh` (v7.3-rc6), repo at `22ae409`. Static analysis only: no box access, no flash, dmatest was running.
 
 ### Reference table
 

@@ -35,9 +35,9 @@ bisect. The Fedora-rootfs path costs a real disk boot per candidate but
 has the only actual reproduction record (6/6).
 
 Usage (run once to set up, then let git bisect drive this script):
-    cd /mnt/2tb/unvr-port-refs/linux-v7.3-fresh
+    cd tmp/refs/linux-v7.3-fresh
     git bisect start cee9395acd80 dbff1ec23f68
-    git bisect run python3 /mnt/2tb/git/awto-unvr/scripts/bisect-r8152-workqueue.py
+    git bisect run python3 <repo>/scripts/bisect-r8152-workqueue.py
 
 Or run a single step directly (for testing this script itself, against
 whatever commit SRC is currently checked out to):
@@ -65,11 +65,9 @@ os.environ.setdefault("AWTO_ALLOW_DIRECT_SCRIPT", "1")
 from _console import connect as console_connect  # noqa: E402
 from _console import login as console_login  # noqa: E402
 from _console import sh as console_sh  # noqa: E402
-from _repo import kernel_build_out, kernel_build_ver  # noqa: E402
+from _repo import kernel_build_out, kernel_build_ver, kernel_src  # noqa: E402
 
-SRC = Path(
-    os.environ.get("AWTO_KERNEL_SRC", "/mnt/2tb/unvr-port-refs/linux-v7.3-fresh")
-)
+SRC = kernel_src()
 # MUST be the KASAN variant: all 6 original crash reproductions tonight were
 # on AWTO_KASAN_BUILD=1 kernels. The bug is a torn/racy pointer read - without
 # KASAN's shadow-memory instrumentation to catch it, a garbage-but-plausible

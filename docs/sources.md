@@ -454,7 +454,7 @@ reference set:
 |---|---|
 | [openwrt/openwrt PR #24057](https://github.com/openwrt/openwrt/pull/24057) | **newest public Annapurna HAL port** — forward-ported to 6.18, 100 files, incl. `al_hal_udma_*.c`, `al_hal_ssm.c`, `drivers/crypto/al/`. Alpine **V1**, so no DTS/bring-up transfer, but HAL-level code is relevant to #90/#182 |
 | [KalGuinn/buffalo-terastation](https://github.com/KalGuinn/buffalo-terastation) | Alpine **V2 arm64** (TeraStation TS51220) — 2427-line hand-annotated DTS decompiled from vendor DTBs, with the internal-PCIe map and `unit-adapter-eth-port3` reg-names |
-| `linux-qnap-tsx32x/drivers/ata/ahci_alpine.c` | 212-line standalone `pci_driver`, per-port MSI-X. **The file to port for #92.** Locally mirrored at `/mnt/2tb/unvr-port-refs/linux-qnap-tsx32x/` |
+| `linux-qnap-tsx32x/drivers/ata/ahci_alpine.c` | 212-line standalone `pci_driver`, per-port MSI-X. **The file to port for #92.** Locally mirrored at `tmp/refs/linux-qnap-tsx32x/` |
 | FreeBSD `sys/arm/annapurna/alpine/alpine_pci.c` | independent driver for `annapurna-labs,alpine-internal-pcie` |
 | UNVR 1.3.35 GPL `linux-arm64-unvr-4.1.37-ubnt/drivers/crypto/al/` | **8 files absent from the 4.19 drop** — the interrupt-driven al_ssm (MSI-X + tasklet). Root-cause material for #182 |
 

@@ -1089,6 +1089,16 @@ def cmd_refs_check(extra: list[str]) -> int:
 
 
 @command(
+    "kernel trees as worktrees of the machine Linux store: show / checkout / "
+    "setup the tmp/linux-store + tmp/refs symlinks (#350, scripts/kernel-store.py)",
+    args="[show | checkout [TREE ...] | setup --store PATH --refs DIR]",
+    kind="action",
+)
+def cmd_kernel_store(extra: list[str]) -> int:
+    return _run_script("scripts/kernel-store.py", extra)
+
+
+@command(
     "docs/uefi.md §5's dry chainload probe: tftp+crc32-verify+`go` the P0 "
     "UNVR.fd, watch for the UEFI Shell prompt (scripts/uefi-chainload-probe.py)",
     kind="action",

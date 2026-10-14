@@ -44,8 +44,8 @@ stock U-Boot -> NAND 0x1300000 (awto-uboot, raw, `go`) -> awto-uefi -> Linux
 
 - Target: **TrueNAS 27** (released; 27.0.0-RC.1 preceded it). Ships **kernel
   6.18** and **OpenZFS 2.4**, with frequent updates through 27.x.
-- Target tree: `/mnt/2tb/unvr-port-refs/truenas-linux`, branch
-  `truenas/linux-6.18`, full arm64 support present.
+- Target tree: `tmp/refs/truenas-linux` (Linux-store worktree, remote
+  `truenas`), branch `truenas/linux-6.18`, full arm64 support present.
 - **Refetch before use.** Our snapshot is 6.18.46 from 2026-08-25; upstream is
   at **6.18.55**, **4824 commits ahead**. `master-nightly` moves, so pin a
   commit when phase 4 starts.
@@ -58,7 +58,7 @@ stock U-Boot -> NAND 0x1300000 (awto-uboot, raw, `go`) -> awto-uefi -> Linux
   `check_kernel_patches()` in `scripts/_repo.py` already does this for
   mainline. Tracked as #338.
 - No near-miss mainline tree is kept as a diff baseline: the exact source is a
-  clone away, so `linux-v6.18.44` was retired with the rest.
+  store worktree away, so `linux-v6.18.44` was retired with the rest.
 - Needs ZFS on arm64 with our drivers, and the storage stack #32 is baselining.
 - Hardware prerequisites met: 20.1 TB of disk freed, al_dma XOR/PQ verified
   at 0 failures in 40k ops (#286), so RAID parity offload is available.
@@ -69,11 +69,13 @@ stock U-Boot -> NAND 0x1300000 (awto-uboot, raw, `go`) -> awto-uefi -> Linux
 
 | keep | why |
 |---|---|
-| `truenas-linux` 5.4G | **phase 4 target.** Not stray material |
+| `truenas-linux` (store worktree) | **phase 4 target.** Not stray material |
 | `UBNT-source-code` 2.6G | GPL drop + working 4.1.37 kernel. Irreplaceable |
-| `linux-v7.3-fresh` 1.8G | the mainline reference every audit diffs against |
-| `urnvr-kernel-4.19.152` 1.2G | vendor's later NAND driver (#268 model) |
-| `linux-qnap-tsx32x` 1.9G | Alpine V1 reference |
+| `linux-v7.3-fresh` (store worktree) | the mainline reference every audit diffs against |
+| `urnvr-kernel-4.19.152` (store worktree) | vendor's later NAND driver (#268 model) |
+| `linux-qnap-tsx32x` (store worktree) | Alpine V1 reference |
+
+Store worktrees cost a checkout only; objects are shared (#350).
 | `edk2` 1.1G, `u-boot-v2026.07` 738M | phase 3 references |
 | `build-out-fedora` 5.4G | the live build output |
 
@@ -85,23 +87,16 @@ dry-run by default.
 
 ## Upstream trees: one mirror, many branches
 
-**Never clone a second copy of a repo we already mirror.** Use
-`/mnt/2tb/git_mirror/<owner>/<repo>`, maintained by
-`awto-dan/scripts/get_to_mirror.py`. Every branch is `origin/<branch>`, all
-tags fetched, one branch checked out; another version is a `git checkout` or
-`git worktree add` away.
+**Never clone a kernel.** All Linux trees are worktrees of the one machine
+Linux store (#350, [kernel-rebase.md](kernel-rebase.md#linux-store-350)):
 
-| mirror | size | covers |
-|---|---|---|
-| `torvalds/linux` | 8.4 GB | **951 tags** - v6.12, v6.18, v7.3-rc6 all present |
-| `truenas/linux` | 5.0 GB | **203 branches**, incl. `truenas/linux-6.18` (phase 4) |
-| `u-boot/u-boot` | - | mainline U-Boot |
+- Remotes: `torvalds`, `next`, `stable` (point releases such as `v7.1.8`),
+  `truenas`, `qnap`, `urnvr`, `awto` (our fork). Another version is a
+  `git worktree add` away; `./dev.py kernel-store checkout`.
+- Why: single-version clones cost a full object store each; the store holds
+  every version once.
+- U-Boot has its own machine store; this repo still uses the
+  `u-boot-v2026.07` ref tree.
 
-Why: five single-version clones of linux cost **15.4 GB** and gave one
-version each. The two mirrors above cost 13.4 GB and give every version.
-
-Stable point releases (e.g. `v7.1.8`) are **not** in `torvalds/linux` - mirror
-`gregkh/linux-stable` if one is needed.
-
-`unvr-port-refs/` keeps only trees that are NOT plain upstream clones:
+`tmp/refs/` otherwise keeps trees that are NOT plain upstream clones:
 extracted vendor drops, the UBNT GPL source, and the live `build-out-fedora`.

@@ -6,7 +6,7 @@
  * or macros - shared verbatim, not just cross-checked, by this SoC's
  * three independent bootloader/firmware/OS ports:
  *   - Linux (canonical origin): drivers/pci/controller/pcie-al-internal.c
- *     in our fork (/mnt/2tb/unvr-port-refs/linux-v7.3-fresh,
+ *     in our fork (tmp/refs/linux-v7.3-fresh,
  *     github.com/awto-au/linux), commit f755b2f5dc75.
  *   - U-Boot: uboot-port/board/annapurna/alpine/alpine.c (this repo) -
  *     scripts/uboot-build.py stages this exact file alongside it.

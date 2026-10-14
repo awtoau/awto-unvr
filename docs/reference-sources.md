@@ -1,8 +1,12 @@
 # Reference sources (offline)
 
-Full catalog: **`/mnt/2tb/unvr-port-refs/MANIFEST.md`** (20 sources, cloned 2026-08-16, ~9.9 GB).
+Full catalog: **`tmp/refs/MANIFEST.md`** (20 sources, gathered 2026-08-16).
 This is the in-repo index of the ones that matter per task — read it before hunting for HAL/driver
 source, so nothing gets "lost" again.
+
+- Paths below are relative to `tmp/refs/` (gitignored symlink to the reference-tree dir).
+- Kernel trees there are worktrees of the machine Linux store, not clones (#350,
+  [kernel-rebase.md](kernel-rebase.md#linux-store-350)). `./dev.py kernel-store` lists them.
 
 **Research writeup:** [hal-provenance-and-cross-system.md](hal-provenance-and-cross-system.md) — HAL
 provenance (delroth = UDM GPL extraction, verified by hash), the i2c/RTC ch0-wedge cross-system
@@ -69,8 +73,9 @@ Not applying this patch is the right call, not a gap. Re-check only if a future 
 version starts touching PCIe/AHCI/xHCI code outside the RHEL-gated sections.
 
 ## TrueNAS SCALE kernel — checked for hardware-relevant fixes (#163)
-`truenas-linux/` — github.com/truenas/linux, branch `truenas/linux-6.18` (tracks their 26.x
-release line). Cloned dev host + on-box (`/root/src/truenas-linux`), 2026-08-28.
+`truenas-linux/` — github.com/truenas/linux (store remote `truenas`), branch `truenas/linux-6.18`
+(tracks their 26.x release line) at `580caa3a792d`, the commit checked 2026-08-28. Also on-box
+(`/root/src/truenas-linux`).
 - **x86_64-only in practice.** `arch/arm64/` present only as generic inherited mainline code —
   no TrueNAS-specific ARM enablement commits in the history. Not useful as an ARM64/Annapurna
   reference tree.

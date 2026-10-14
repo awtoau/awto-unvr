@@ -3,7 +3,7 @@
 # Copyright (C) 2026 Awto / Daniel Tyrrell
 """Move stale kernel build outputs to the machine-wide wastebasket.
 
-`/mnt/2tb/unvr-port-refs/` is 62 GB, of which ~38 GB is `build-out-*` -
+The refs dir (`tmp/refs/`) was 62 GB, of which ~38 GB is `build-out-*` -
 derived artifacts, not reference material. Only `build-out-fedora` is live.
 
 Derived artifacts have no legacy (CLAUDE.md): regenerable from current source,
@@ -37,11 +37,10 @@ REPO = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO / "scripts"))
 os.environ.setdefault("AWTO_ALLOW_DIRECT_SCRIPT", "1")
 
-from _repo import make_log  # noqa: E402
+from _repo import REFS, make_log  # noqa: E402
 
 log = make_log("reclaim-stale-buildouts")
 
-REFS = Path("/mnt/2tb/unvr-port-refs")
 WASTEBASKET = Path("/mnt/2tb/wastebasket")
 
 # build-out-fedora is the live deploy source. Everything else is Aug-Sep.
@@ -50,10 +49,11 @@ KEEP = {"build-out-fedora"}
 # Superseded mainline trees. No live build reads them: the only references are
 # a comment in build-on-box.py saying v7.1.8 was already deleted, an example
 # KDIR= in mmio-dump/Makefile, and refs-check.py's drift list (which reports
-# them absent rather than failing). `git clone --depth` refetches any of them.
+# them absent rather than failing). A Linux-store worktree restores any of them
+# (#350); store worktrees themselves are never moved here (`git worktree remove`).
 #
 # v6.18.44 goes too: TrueNAS 27 ships 6.18 and truenas/linux-6.18 is at .55,
-# so the exact source is a clone away. Keeping a near-miss mainline tree as a
+# so the exact source is a worktree away. Keeping a near-miss mainline tree as a
 # diff baseline is worse than fetching the real thing (#phase-4).
 STALE_KERNELS = {
     "linux-6.12",
@@ -75,6 +75,7 @@ def stale() -> list[Path]:
         d
         for d in REFS.iterdir()
         if d.is_dir()
+        and not (d / ".git").is_file()
         and d.name not in KEEP
         and (d.name.startswith("build-out") or d.name in STALE_KERNELS)
     )

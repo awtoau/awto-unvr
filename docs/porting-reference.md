@@ -318,7 +318,7 @@ Buildroot-based, own kernel, installs over SSH:
 | Recovery Mode procedure | <https://help.ui.com/hc/en-us/articles/360043360253-UniFi-Recovery-Mode> |
 | Failed-USB replacement procedure | <https://www.incredigeek.com/home/unifi-unvr-recover-from-failed-usb-drive/> |
 | Community thread, 368 replies — USB failure is a known defect | <https://community.ui.com/questions/UNVR-stopped-responding-just-white-flashing-light/a051f869-8349-4a2a-a72a-ce3a8aa8c759> |
-| Mainline Alpine support (DTs, irqchip, PCIe) | `/mnt/2tb/unvr-port-refs/linux-v7.3-fresh` |
+| Mainline Alpine support (DTs, irqchip, PCIe) | `tmp/refs/linux-v7.3-fresh` |
 | QEMU ARM machine models (no Alpine) | upstream `hw/arm/`; no local tree |
 
 Credits chain: Bootlin did the original Alpine V2 upstreaming (2017); delroth

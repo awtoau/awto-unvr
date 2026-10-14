@@ -1,6 +1,6 @@
 Subject: arm64: Kconfig.platforms: ARCH_ALPINE selects NET_DEVLINK
 
-Tree: /mnt/2tb/unvr-port-refs/linux-v7.3-fresh (torvalds/linux mainline)
+Tree: tmp/refs/linux-v7.3-fresh (torvalds/linux mainline)
 
 NET_DEVLINK has no prompt - it is select-only. The Alpine SoC drivers that
 register devlink instances (al_ssm, al_dma, al_eth) are out-of-tree in

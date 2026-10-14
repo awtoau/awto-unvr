@@ -79,6 +79,10 @@ DOCS = REPO / "docs"
 # tmp/tftp used to be two independently-hardcoded paths; a tftpd left
 # running against the stale one silently served a 4-day-old U-Boot build).
 TFTP_ROOT = TMP / "tftp"
+# Machine Linux store + reference-tree dir, via gitignored symlinks: no host path in the repo (#350).
+# `./dev.py kernel-store setup --store PATH --refs DIR` makes them.
+LINUX_STORE = Path(os.environ.get("UNVR_LINUX_STORE") or TMP / "linux-store")
+REFS = Path(os.environ.get("UNVR_REFS") or TMP / "refs")
 
 
 def log_path(name: str) -> Path:
@@ -214,10 +218,11 @@ def kernel_src() -> Path:
     """AWTO_KERNEL_SRC as build-linux-fedora.py resolves it - the kernel
     tree this project tracks forward against torvalds/linux mainline
     (docs/build.md). Single source of truth so kernel_build_ver() below
-    reads the same tree the actual build ran against."""
+    reads the same tree the actual build ran against. Resolved, so kbuild
+    sees the real path, not the tmp/refs symlink."""
     return Path(
-        os.environ.get("AWTO_KERNEL_SRC", "/mnt/2tb/unvr-port-refs/linux-v7.3-fresh")
-    )
+        os.environ.get("AWTO_KERNEL_SRC") or REFS / "linux-v7.3-fresh"
+    ).resolve()
 
 
 # Source-level patch markers: file -> (string that must be present, patch,

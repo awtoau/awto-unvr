@@ -1,6 +1,6 @@
 Subject: i2c: designware: add snps,no-enable-abort / snps,no-sda-rx-hold opt-outs
 
-Tree: /mnt/2tb/unvr-port-refs/linux-v7.3-fresh (torvalds/linux mainline)
+Tree: tmp/refs/linux-v7.3-fresh (torvalds/linux mainline)
 Issue: #86, docs/rtc-s35390a-fault.md
 
 Two per-controller DT opt-outs for mainline DesignWare i2c behaviour that

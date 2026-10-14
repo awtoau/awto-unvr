@@ -31,9 +31,10 @@ from _repo import (
     check_kernel_patches,
     kernel_build_out,
     kernel_build_ver,
+    kernel_src,
 )  # -j28 host build parallelism (#146); self-locating repo root
 
-SRC = os.environ.get("AWTO_KERNEL_SRC", "/mnt/2tb/unvr-port-refs/linux-v7.3-fresh")
+SRC = str(kernel_src())  # store worktree via tmp/refs (#350)
 PORT = os.environ.get("AWTO_KERNEL_PORT", "/mnt/2tb/unvr-port-refs/linux-alpine-v2")
 # _repo.py's REPO self-locates via git rev-parse, correct wherever this
 # script runs from (dev host or natively on woomera).

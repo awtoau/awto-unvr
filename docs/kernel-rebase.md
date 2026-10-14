@@ -10,9 +10,23 @@ network check). It reports `ours` / `theirs` per tree and names what is behind.
 
 | tree | role |
 |---|---|
-| `/mnt/2tb/unvr-port-refs/linux-v7.3-fresh` | what we build (`AWTO_KERNEL_SRC`). A git **worktree**, so `.git` is a file. |
+| `tmp/refs/linux-v7.3-fresh` | what we build (`AWTO_KERNEL_SRC`). Store worktree on branch `latest` (our port series), so `.git` is a file. |
+| `tmp/refs/truenas-linux`, `linux-qnap-tsx32x`, `urnvr-kernel-4.19.152` | comparison kernels, store worktrees detached at a pinned commit (`scripts/kernel-store.py` `TREES`). |
 | `linux-6.12`, `linux-v6.18*`, `linux-v7.1.8` | old bases kept for bisect. Pinned - being behind is their job. |
 | `modules/al_*` in this repo | the OOT drivers. Not in the kernel tree. |
+
+## Linux store (#350)
+
+- Every kernel tree is a `git worktree` of the machine-wide Linux store: one object store, every upstream a remote (`torvalds`, `next`, `stable`, `truenas`, `qnap`, `urnvr`, `awto`).
+- Never `git clone` a kernel here, never `--depth`. Need another base: add it to `TREES`, `./dev.py kernel-store checkout <tree>`.
+- Never `git gc` / `git repack` in the store or its worktrees: shared, maintained by a machine timer.
+- Reached through gitignored symlinks, so no host path is tracked:
+  - `tmp/linux-store` -> the store (env `UNVR_LINUX_STORE` overrides)
+  - `tmp/refs` -> the reference-tree dir (env `UNVR_REFS` overrides)
+  - Set up once per checkout: `./dev.py kernel-store setup --store PATH --refs DIR`. `./dev.py clean` removes them; re-run setup.
+- `./dev.py kernel-store` shows each tree's HEAD against its pin.
+- Remotes other than `torvalds` are `--no-tags`: fetch a tag explicitly (`git -C tmp/linux-store fetch --no-tags <remote> tag <tag>`).
+- Our series branches: `awto/unvr/<topic>-<base>`; push to the `awto` remote only with the owner's OK.
 
 ## Our carried commits
 
@@ -62,4 +76,4 @@ network check). It reports `ours` / `theirs` per tree and names what is behind.
 Separate forks, not rebased with the kernel:
 `/mnt/2tb/git/github.com/awto-au/awto-uboot` (v2026.10-rc3) and `awto-uefi`
 (edk2-stable202608), both with `upstream` remotes kept. `refs-check.py`
-reports newer tags for the reference trees under `unvr-port-refs/`.
+reports newer tags for the reference trees under `tmp/refs/`.

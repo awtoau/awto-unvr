@@ -13,15 +13,16 @@ Read-only: never touches the box.
 from __future__ import annotations
 
 import logging
+import os
 import subprocess
 import sys
 from pathlib import Path
 
-REFS = Path("/mnt/2tb/unvr-port-refs")
+REPO = Path(__file__).resolve().parent.parent
+REFS = Path(os.environ.get("UNVR_REFS") or REPO / "tmp/refs")  # = _repo.REFS (#350)
 UBNT = REFS / "UBNT-source-code/UNVR-1.3.35-GPL/linux-arm64-unvr-4.1.37-ubnt"
 MAINLINE = REFS / "linux-v7.3-fresh"
 
-REPO = Path(__file__).resolve().parent.parent
 LOG_DIR = REPO / "tmp" / "logs"
 
 # (label, path under UBNT, path under mainline). The DW driver was split into

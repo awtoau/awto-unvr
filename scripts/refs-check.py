@@ -3,7 +3,7 @@
 # Copyright (C) 2026 Awto / Daniel Tyrrell
 """Report how far each external reference tree is behind its upstream.
 
-20 git trees under /mnt/2tb/unvr-port-refs/ supply our kernel base, U-Boot,
+The git trees in the refs dir (tmp/refs, #350) supply our kernel base, U-Boot,
 EDK2, vendor HALs and comparison sources (docs/reference-sources.md). Nothing
 tracked whether any of them had moved, so "are we on the latest kernel" was
 answered by hand each time.
@@ -32,11 +32,9 @@ REPO = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO / "scripts"))
 os.environ.setdefault("AWTO_ALLOW_DIRECT_SCRIPT", "1")
 
-from _repo import make_log  # noqa: E402
+from _repo import REFS, make_log  # noqa: E402
 
 log = make_log("refs-check")
-
-REFS = Path("/mnt/2tb/unvr-port-refs")
 
 # tree -> upstream ref to compare against. None = vendor snapshot, nothing to
 # be behind. A "tag:<glob>" value means the tree was cloned at a tag and fetches
@@ -48,7 +46,7 @@ UPSTREAM = {
     "u-boot-v2026.07": "tag:v20*",
     "linux-alpine-v2": "origin/main",
     "imbushuo-ccr2004-uefi": "origin/master",
-    "truenas-linux": "origin/master",
+    "truenas-linux": "truenas/truenas/linux-6.18",
     # Old kernel bases kept for bisect/comparison. Pinned on purpose - being
     # "behind" is their job, so no upstream.
     "linux-6.12": None,
@@ -102,6 +100,9 @@ def main() -> int:
 
     # .git is a FILE in a worktree, a dir in a normal clone. Testing is_dir()
     # silently skipped linux-v7.3-fresh - the tree we actually build from.
+    if not REFS.is_dir():
+        log(f"{REFS}: no refs dir; ./dev.py kernel-store setup --store PATH --refs DIR")
+        return 2
     trees = sorted(p for p in REFS.iterdir() if (p / ".git").exists())
     if a.only:
         trees = [p for p in trees if p.name == a.only]
@@ -125,7 +126,9 @@ def main() -> int:
         if a.fetch:
             remote = "origin" if up.startswith("tag:") else up.split("/")[0]
             log(f"  fetching {t.name} {remote} ...")
-            git(t, "fetch", "--tags", remote, timeout=FETCH_TIMEOUT_S)
+            # .git file = Linux store worktree: its remotes' tagopt decides (#350)
+            tags = [] if (t / ".git").is_file() else ["--tags"]
+            git(t, "fetch", *tags, remote, timeout=FETCH_TIMEOUT_S)
 
         desc = git(t, "describe", "--tags", "HEAD") or git(
             t, "log", "-1", "--format=%h"

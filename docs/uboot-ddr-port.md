@@ -9,7 +9,7 @@ Marks: ✅ confirmed this session · ⚠ needs on-device test · 📄 from sourc
 Key insight (CONFIRMED ✅): the DDR init is **open, not to be reversed**. Two byte-identical
 GPLv2 copies of the Annapurna DDR HAL exist:
 - `/mnt/2tb/unvr-port-refs/delroth-alpine_hal/ddr/` (the RE drop).
-- `/mnt/2tb/unvr-port-refs/urnvr-kernel-4.19.152/drivers/soc/alpine/HAL/ddr/` (ships in the
+- `tmp/refs/urnvr-kernel-4.19.152/drivers/soc/alpine/HAL/ddr/` (ships in the
   **Ubiquiti GPL kernel**).
 - `diff -q` on `al_hal_ddr_init_alpine_v2.c` (5608 lines each) → **IDENTICAL**. The delroth
   copy is the same source Ubiquiti already publishes under GPLv2. Use the **kernel-tree

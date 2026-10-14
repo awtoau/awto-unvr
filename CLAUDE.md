@@ -139,9 +139,11 @@ On a box WITHOUT that fix applied, all of the following still holds:
   file in another module is a fork and needs a reason in `scripts/hal-forks.json`
   (`./dev.py hal-drift`).
 - `dts/reference/`, `docs/hw-reference/*/live.dts` — vendor hardware-of-record, never built.
-- Reference trees (20 sources, ~9.9 GB) under `/mnt/2tb/unvr-port-refs/` — QNAP, MikroTik
-  CCR2004 UEFI, the UBNT GPL drop with the **working 4.1.37 kernel**, delroth's HAL.
-  See `docs/reference-sources.md`. Search these before reverse-engineering anything.
+- Reference trees in `tmp/refs/` (gitignored symlink) — QNAP, MikroTik CCR2004 UEFI, the
+  UBNT GPL drop with the **working 4.1.37 kernel**, delroth's HAL. See
+  `docs/reference-sources.md`. Search these before reverse-engineering anything.
+- **Never `git clone` a kernel.** Kernel trees are worktrees of the machine Linux store
+  (`./dev.py kernel-store`, `docs/kernel-rebase.md`, #350). Never `git gc` in the store.
 
 ## Filing
 
