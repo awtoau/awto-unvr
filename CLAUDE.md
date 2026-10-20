@@ -2,7 +2,7 @@
 
 Ubiquiti UNVR (Annapurna Labs Alpine V2, AL-324, sysid `ea16`), hostname **woomera**. Mainline Linux + our U-Boot + out-of-tree `al_*` drivers. Public, awtoau-owned → scrub private paths, confirm before posting.
 
-IP registry block (`awto-dan/docs/network/ip-registry.toml`): woomera `.40-.47`. Static: `/24`, gw/DNS `.254`, domain `dnt.com.au`. Multi-NIC-on-one-subnet weak-host/ARP-flux: `docs/agent-memory/four-nics-one-subnet-weak-host.md`.
+IPs, subnet, gateway/DNS, domain → `awto-dan/docs/network/ip-registry.toml` (woomera block). Multi-NIC-on-one-subnet weak-host/ARP-flux: `docs/agent-memory/four-nics-one-subnet-weak-host.md`.
 
 ## Hard "do not" — each has cost hours
 - **i2c scan now safe** (fixed 2026-09-04 #86) on a kernel whose DTB carries `snps,no-enable-abort`; bus also runs 400 kHz now. On any *older* build: a ch0 scan wedges the controller, recoverable only by a **cold power cycle**, and drops the 10G link (`docs/rtc-s35390a-fault.md`).
