@@ -139,6 +139,9 @@ def build() -> None:
             src,
             f"O={KOUT}",
             *CC_ARG,
+            # TrueNAS builds with Debian's GCC 14; 6.18 in-tree code is not GCC 16 warning-clean.
+            # Warnings stay in the log; OOT modules (no KCFLAGS) keep CONFIG_WERROR's -Werror.
+            "KCFLAGS=-Wno-error",
             f"-j{NPROC}",
             "Image",
             dtb_rel,
