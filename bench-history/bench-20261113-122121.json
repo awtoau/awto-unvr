@@ -1,0 +1,112 @@
+{
+  "timestamp": "2026-11-13T12:21:21+11:00",
+  "commit": "bc1fd32-dirty",
+  "host": "192.168.25.127",
+  "kernel": "7.4.0-rc2-bc1fd32+",
+  "checks": [
+    {
+      "name": "health al_eth module",
+      "ok": false,
+      "detail": "vermagic=modinfo: running=7.4.0-rc2-bc1fd32+"
+    },
+    {
+      "name": "health link enp0s1",
+      "ok": true,
+      "detail": "speed=1000 carrier=1 oper=up"
+    },
+    {
+      "name": "health link enp0s2",
+      "ok": true,
+      "detail": "speed=10000 carrier=1 oper=up"
+    },
+    {
+      "name": "health adaptive moderation off",
+      "ok": true,
+      "detail": "off on enp0s1, enp0s2"
+    },
+    {
+      "name": "health MAC counters",
+      "ok": true,
+      "detail": "all zero"
+    },
+    {
+      "name": "health queue drop counters",
+      "ok": true,
+      "detail": "no growth"
+    },
+    {
+      "name": "health kernel log",
+      "ok": false,
+      "detail": "3 line(s): [    0.000000] OF: reserved mem: 0x0000000092000000..0x00000000921fffff (2048 KiB) map non-reusable ramoops@92000000"
+    },
+    {
+      "name": "eth 1G host->box",
+      "ok": true,
+      "detail": "13.8 Mbits/sec"
+    },
+    {
+      "name": "eth 1G box->host",
+      "ok": true,
+      "detail": "98.8 Mbits/sec"
+    },
+    {
+      "name": "eth 10G",
+      "ok": false,
+      "detail": "couldn't get local IP for enp7s0"
+    },
+    {
+      "name": "crypto xts(aes) [xts-aes-ce]",
+      "ok": true,
+      "detail": "224.8 MB/s (32.0MB in 0.14s)"
+    },
+    {
+      "name": "sata sdb",
+      "ok": true,
+      "detail": "339.7 MB/sec"
+    },
+    {
+      "name": "sata sdc",
+      "ok": true,
+      "detail": "57.4 MB/sec"
+    },
+    {
+      "name": "sata sdd",
+      "ok": true,
+      "detail": "268.1 MB/sec"
+    },
+    {
+      "name": "sata sde",
+      "ok": false,
+      "detail": "/dev/sde: No such file or directory"
+    },
+    {
+      "name": "usb sda",
+      "ok": true,
+      "detail": "191.6 MB/sec"
+    },
+    {
+      "name": "dma copy+xor",
+      "ok": true,
+      "detail": "copy0 20000 tests 0 fail 13980 iops, xor0 20000 tests 0 fail 14033 iops"
+    },
+    {
+      "name": "dma oversize",
+      "ok": true,
+      "detail": "copy0 300 tests 140 fail 21 iops, xor0 300 tests 256 fail 11 iops"
+    }
+  ],
+  "metrics": {
+    "link enp0s1 speed Mbps": 1000.0,
+    "link enp0s2 speed Mbps": 10000.0,
+    "eth 1G host->box": 13.8,
+    "eth 1G box->host": 98.8,
+    "crypto xts(aes) [xts-aes-ce]": 224.82848712946964,
+    "sata sdb": 339.72,
+    "sata sdc": 57.43,
+    "sata sdd": 268.1,
+    "usb sda": 191.58,
+    "dma dma0chan0 copy iops": 13980.0,
+    "dma dma0chan0 xor iops": 14033.19
+  },
+  "all_ok": false
+}

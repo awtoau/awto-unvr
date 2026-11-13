@@ -1,0 +1,124 @@
+{
+  "timestamp": "2026-11-13T12:24:28+11:00",
+  "commit": "bc1fd32-dirty",
+  "host": "192.168.25.127",
+  "kernel": "7.4.0-rc2-bc1fd32+",
+  "checks": [
+    {
+      "name": "health al_eth module",
+      "ok": true,
+      "detail": "vermagic=7.4.0-rc2-bc1fd32+ running=7.4.0-rc2-bc1fd32+"
+    },
+    {
+      "name": "health link enp0s1",
+      "ok": true,
+      "detail": "speed=1000 carrier=1 oper=up"
+    },
+    {
+      "name": "health link enp0s2",
+      "ok": true,
+      "detail": "speed=10000 carrier=1 oper=up"
+    },
+    {
+      "name": "health adaptive moderation off",
+      "ok": true,
+      "detail": "off on enp0s1, enp0s2"
+    },
+    {
+      "name": "health MAC counters",
+      "ok": true,
+      "detail": "all zero"
+    },
+    {
+      "name": "health queue drop counters",
+      "ok": true,
+      "detail": "no growth"
+    },
+    {
+      "name": "health kernel log",
+      "ok": true,
+      "detail": "no trouble lines"
+    },
+    {
+      "name": "eth 1G host->box",
+      "ok": true,
+      "detail": "5.50 Mbits/sec"
+    },
+    {
+      "name": "eth 1G box->host",
+      "ok": true,
+      "detail": "98.6 Mbits/sec"
+    },
+    {
+      "name": "eth 10G host->box",
+      "ok": true,
+      "detail": "3.86 Gbits/sec"
+    },
+    {
+      "name": "eth 10G box->host",
+      "ok": true,
+      "detail": "5.48 Gbits/sec"
+    },
+    {
+      "name": "eth 10G v6 control udp",
+      "ok": true,
+      "detail": "100/100 arrived"
+    },
+    {
+      "name": "eth 10G v6 hop-by-hop udp csum",
+      "ok": true,
+      "detail": "100/100 arrived (lost ones failed the checksum)"
+    },
+    {
+      "name": "crypto xts(aes) [xts-aes-ce]",
+      "ok": true,
+      "detail": "223.6 MB/s (32.0MB in 0.14s)"
+    },
+    {
+      "name": "sata sda",
+      "ok": true,
+      "detail": "181.1 MB/sec"
+    },
+    {
+      "name": "sata sdb",
+      "ok": true,
+      "detail": "422.2 MB/sec"
+    },
+    {
+      "name": "sata sdc",
+      "ok": true,
+      "detail": "237.9 MB/sec"
+    },
+    {
+      "name": "sata sdd",
+      "ok": true,
+      "detail": "206.5 MB/sec"
+    },
+    {
+      "name": "dma copy+xor",
+      "ok": true,
+      "detail": "copy0 20000 tests 0 fail 13886 iops, xor0 20000 tests 0 fail 13955 iops"
+    },
+    {
+      "name": "dma oversize",
+      "ok": true,
+      "detail": "copy0 300 tests 162 fail 18 iops, xor0 300 tests 258 fail 11 iops"
+    }
+  ],
+  "metrics": {
+    "link enp0s1 speed Mbps": 1000.0,
+    "link enp0s2 speed Mbps": 10000.0,
+    "eth 1G host->box": 5.5,
+    "eth 1G box->host": 98.6,
+    "eth 10G host->box": 3860.0,
+    "eth 10G box->host": 5480.0,
+    "crypto xts(aes) [xts-aes-ce]": 223.6226450605626,
+    "sata sda": 181.11,
+    "sata sdb": 422.21,
+    "sata sdc": 237.94,
+    "sata sdd": 206.51,
+    "dma dma0chan0 copy iops": 13885.57,
+    "dma dma0chan0 xor iops": 13954.6
+  },
+  "all_ok": true
+}

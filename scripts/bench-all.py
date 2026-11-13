@@ -116,13 +116,23 @@ DEFAULT_ROOT_PASSWORD = "unvr"  # documented default, see docs/fedora-on-ssd.md
 LOG = Path("tmp/logs/bench-all.log")
 LOCK = Path("tmp/bench-all-idle.lock")  # one --idle run at a time
 
-# Fixed NIC pairing - both box and dev host have exactly one 1G and one 10G
-# port; auto-detecting "the fastest local NIC" only
-# works when testing a single target, not when we need both directions
-# tested independently.
+# Box port -> dev-host NIC. dev_iface is preferred; if absent (host NICs get
+# renamed/reshuffled), the first host NIC at dev_speed with an IPv4 is used.
 ETH_PAIRS = (
-    {"box_iface": "enp0s1", "dev_iface": "enp5s0", "label": "1G", "port": 5602},
-    {"box_iface": "enp0s2", "dev_iface": "enp7s0", "label": "10G", "port": 5603},
+    {
+        "box_iface": "enp0s1",
+        "dev_iface": "enp5s0",
+        "dev_speed": 1000,
+        "label": "1G",
+        "port": 5602,
+    },
+    {
+        "box_iface": "enp0s2",
+        "dev_iface": "enp8s0",
+        "dev_speed": 10000,
+        "label": "10G",
+        "port": 5603,
+    },
 )
 
 # Dev-host NICs available to pair against USB-attached box interfaces, which
@@ -134,8 +144,6 @@ USB_ETH_BASE_PORT = 5604
 
 CRYPTO_ALG = "xts(aes)"
 
-SATA_DEVICES = ("sdb", "sdc", "sdd", "sde")
-USB_DEVICES = ("sda",)
 
 REGRESSION_THRESHOLD = 0.10  # 10% drop flagged in --compare
 
@@ -210,6 +218,20 @@ def _local_ip(iface: str) -> str | None:
     )
     m = re.search(r"inet (\d+\.\d+\.\d+\.\d+)/", result.stdout)
     return m.group(1) if m else None
+
+
+def _dev_iface(pair: dict) -> str:
+    """Preferred dev-host NIC if it has an IPv4, else one at the pair's speed."""
+    if _local_ip(pair["dev_iface"]):
+        return pair["dev_iface"]
+    for net in sorted(Path("/sys/class/net").iterdir()):
+        try:
+            speed = int((net / "speed").read_text())
+        except (OSError, ValueError):
+            continue
+        if speed == pair.get("dev_speed") and _local_ip(net.name):
+            return net.name
+    return pair["dev_iface"]
 
 
 def bench_eth_pair(
@@ -506,6 +528,7 @@ def bench_v6_exthdr(host: str, password: str, pair: dict, report: Report) -> Non
 
 def bench_ethernet(host: str, password: str, duration: int, report: Report) -> None:
     for pair in ETH_PAIRS:
+        pair = {**pair, "dev_iface": _dev_iface(pair)}
         bench_eth_pair(host, password, pair, duration, report)
         bench_v6_exthdr(host, password, pair, report)
     for pair in discover_usb_eth_pairs(host, password, report):
@@ -686,9 +709,19 @@ def _usb_link_mbps(host: str, password: str, dev: str) -> float | None:
         return None
 
 
+def _box_disks(host: str, password: str, tran: str) -> tuple[str, ...]:
+    """Box disks on transport `tran` (sata/usb), by lsblk - sdX letters move."""
+    rc, out = run_remote(host, password, "lsblk -dno NAME,TRAN", timeout=20)
+    return tuple(
+        f[0] for f in (ln.split() for ln in out.splitlines()) if f[1:] == [tran]
+    )
+
+
 def bench_disks(
     host: str, password: str, devices: tuple[str, ...], label: str, report: Report
 ) -> None:
+    if not devices and label == "sata":  # USB disks are optional
+        report.add(f"{label} disks", False, "none found by lsblk")
     for dev in devices:
         ok, detail, mbps = _hdparm_direct(host, password, dev)
         report.add(f"{label} {dev}", ok, detail, metric=mbps)
@@ -709,7 +742,7 @@ HEALTH_IFACES = ("enp0s1", "enp0s2")
 # Kernel-log lines that mean a driver or the engine is in trouble. Narrower
 # than soak-test.py's list on purpose: an unattended run must not cry wolf.
 DMESG_BAD = re.compile(
-    r"WARNING:|BUG:|Oops|Call trace|Unable to handle|SError|hung task|soft lockup"
+    r"WARNING:|BUG:|\bOops\b|Call trace|Unable to handle|SError|hung task|soft lockup"
     r"|hard LOCKUP|rcu_sched|I/O error|ata\d+\.\d+: failed|reset failed|tx timeout"
     r"|Tx timeout|link is down|uncorrect|never completed|queue reset failed"
     r"|Failed to init DMA queue|completion error|DMA-API"
@@ -751,7 +784,7 @@ def _health_script(mark: str | None) -> str:
     ifs = " ".join(HEALTH_IFACES)
     scan = f"sed -n '/{mark}/,$p'" if mark else "cat"
     return f"""echo '@@kernel'; uname -r
-echo '@@vermagic'; modinfo -F vermagic al_eth 2>&1
+echo '@@vermagic'; modinfo -F vermagic al_eth_1g 2>&1
 echo '@@link'; for i in {ifs}; do echo "$i speed=$(cat /sys/class/net/$i/speed 2>/dev/null) carrier=$(cat /sys/class/net/$i/carrier 2>/dev/null) oper=$(cat /sys/class/net/$i/operstate 2>/dev/null)"; done
 echo '@@stats'; for i in {ifs}; do echo "$i $(for c in {" ".join(HEALTH_ERROR_COUNTERS)}; do echo -n "$c=$(cat /sys/class/net/$i/statistics/$c 2>/dev/null) "; done)"; done
 echo '@@coalesce'; for i in {ifs}; do echo "$i $(ethtool -c $i 2>&1 | grep -i 'Adaptive RX')"; done
@@ -1823,10 +1856,10 @@ def run_subtests(
         bench_crypto(host, pw, args.crypto_mb, report)
     if not args.skip_disk:
         check()
-        bench_disks(host, pw, SATA_DEVICES, "sata", report)
+        bench_disks(host, pw, _box_disks(host, pw, "sata"), "sata", report)
     if not args.skip_usb:
         check()
-        bench_disks(host, pw, USB_DEVICES, "usb", report)
+        bench_disks(host, pw, _box_disks(host, pw, "usb"), "usb", report)
     if not args.skip_dma:
         check()
         bench_dma(
