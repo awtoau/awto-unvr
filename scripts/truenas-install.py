@@ -18,6 +18,7 @@
 from __future__ import annotations
 
 import argparse
+import contextlib
 import gzip
 import json
 import os
@@ -612,10 +613,45 @@ def cmd_verify(_a) -> int:
     return 1 if bad else 0
 
 
-def cmd_verify_api(_a) -> int:
-    """Same checks over the middleware JSON-RPC websocket (26.04 has no REST) - works before sshd."""
+@contextlib.contextmanager
+def api_session():
+    """Logged-in JSON-RPC caller on ws://<box>/api/current (26.04 has no REST), or None."""
     from websockets.sync.client import connect
 
+    # LAN round trip + one middleware call: well under 1 s; 20 s per call = a hung middleware.
+    with connect(f"ws://{BOX_1G_IP}/api/current", open_timeout=20) as ws:
+        n = 0
+
+        def call(method: str, params: list):
+            nonlocal n
+            n += 1
+            ws.send(json.dumps({"jsonrpc": "2.0", "id": n, "method": method, "params": params}))
+            r = json.loads(ws.recv(timeout=20))
+            if "error" in r:
+                raise RuntimeError(f"{method}: {r['error']}")
+            return r["result"]
+
+        r = call("auth.login_ex", [{"mechanism": "PASSWORD_PLAIN", "username": "truenas_admin",
+                                    "password": admin_password()}])  # fmt: skip
+        if r.get("response_type") != "SUCCESS":
+            log(f"FATAL: auth.login_ex: {r.get('response_type')}")
+            yield None
+            return
+        yield call
+
+
+def cmd_reboot_api(_a) -> int:
+    """TrueNAS -> reboot over the API (bootonce already cleared -> Fedora). For when sshd is down."""
+    with api_session() as call:
+        if call is None:
+            return 1
+        call("system.reboot", ["awto-unvr: back to Fedora"])
+    log("system.reboot sent")
+    return 0
+
+
+def cmd_verify_api(_a) -> int:
+    """Same checks over the middleware JSON-RPC websocket (26.04 has no REST) - works before sshd."""
     calls = {
         "system": ("system.info", []),
         "boot": ("boot.get_state", []),
@@ -624,23 +660,12 @@ def cmd_verify_api(_a) -> int:
         "disks": ("disk.query", []),
     }
     bad = 0
-    # LAN round trip + one middleware call: well under 1 s; 20 s per call = a hung middleware.
-    with connect(f"ws://{BOX_1G_IP}/api/current", open_timeout=20) as ws:
-        def call(n: int, method: str, params: list):
-            ws.send(json.dumps({"jsonrpc": "2.0", "id": n, "method": method, "params": params}))
-            r = json.loads(ws.recv(timeout=20))
-            if "error" in r:
-                raise RuntimeError(f"{method}: {r['error']}")
-            return r["result"]
-
-        r = call(0, "auth.login_ex", [{"mechanism": "PASSWORD_PLAIN", "username": "truenas_admin",
-                                      "password": admin_password()}])  # fmt: skip
-        if r.get("response_type") != "SUCCESS":
-            log(f"FATAL: auth.login_ex: {r.get('response_type')}")
+    with api_session() as call:
+        if call is None:
             return 1
-        for n, (k, (method, params)) in enumerate(calls.items(), 1):
+        for k, (method, params) in calls.items():
             try:
-                data = call(n, method, params)
+                data = call(method, params)
             except (RuntimeError, TimeoutError) as e:
                 bad += 1
                 log(f"== {k}: FAILED {e}")
@@ -676,12 +701,13 @@ def main() -> int:
             "stage-boot",
             "verify",
             "verify-api",
+            "reboot-api",
         ),
     )
     ap.add_argument("--go", action="store_true")
     a = ap.parse_args()
     fn = {"build": cmd_build, "rehearse": cmd_rehearse, "stage": cmd_stage, "run": cmd_run, "fetch": cmd_fetch,
-          "commit-p3": cmd_commit_p3, "stage-boot": cmd_stage_boot, "verify": cmd_verify, "verify-api": cmd_verify_api}[a.step]  # fmt: skip
+          "commit-p3": cmd_commit_p3, "stage-boot": cmd_stage_boot, "verify": cmd_verify, "verify-api": cmd_verify_api, "reboot-api": cmd_reboot_api}[a.step]  # fmt: skip
     try:
         return fn(a)
     except (RuntimeError, ValueError, subprocess.SubprocessError, OSError) as e:
