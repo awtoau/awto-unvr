@@ -1200,7 +1200,7 @@ def cmd_boot_next(extra: list[str]) -> int:
 
 
 @command(
-    "install TrueNAS 26.04 on the SSD's p3 via one maint boot, then boot it with our "
+    "install our self-built TrueNAS 27 (.update image) on the SSD's p3 via one maint boot, then boot it with our "
     "kernel (scripts/truenas-install.py, docs/truenas.md)",
     args="build|rehearse|stage|run --go|fetch|commit-p3 --go|stage-boot|verify",
     kind="action",
