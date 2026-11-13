@@ -32,9 +32,9 @@ TREES = {
         "build tree (AWTO_KERNEL_SRC); branch = our port series",
     ),
     "truenas-linux": (
-        "580caa3a792d20aa5ce7b94b4742d0e30fe13940",
+        "b97fad085a83735f9c644aa6bc1e89c970d5114b",
         "truenas",
-        "TrueNAS truenas/linux-6.18 (#163)",
+        "TrueNAS truenas/linux-6.18 @ 6.18.60, pristine; build tree is truenas-unvr (#338)",
     ),
     "linux-qnap-tsx32x": (
         "6864002c76982f3af47757db564a09f99f91425a",
@@ -98,7 +98,7 @@ def checkout(name: str) -> bool:
                 f"{name}: {rel(wt)} exists but is not a store worktree - retire it first (#350)"
             )
             return False
-        return True
+        return len(rev) != 40 or move_pin(name, wt, rev, remote)
     if len(rev) == 40 and not git(
         "rev-parse", "--verify", "--quiet", f"{rev}^{{commit}}", check=False
     ):
@@ -108,6 +108,23 @@ def checkout(name: str) -> bool:
     detach = ["--detach"] if len(rev) == 40 else []
     log(f"{name}: worktree add {rel(wt)} @ {rev}")
     git("worktree", "add", *detach, str(wt), rev, timeout=CHECKOUT_TIMEOUT_S)
+    return True
+
+
+def move_pin(name: str, wt: Path, rev: str, remote: str) -> bool:
+    """Re-pin an existing detached tree; refuses if dirty or on a branch."""
+    if git("rev-parse", "HEAD", cwd=wt) == rev:
+        return True
+    if git("status", "--porcelain", "-uno", cwd=wt) or git(
+        "symbolic-ref", "-q", "HEAD", cwd=wt, check=False
+    ):
+        log(f"{name}: {rel(wt)} is dirty or on a branch - not moving it to {rev[:12]}")
+        return False
+    if not git("rev-parse", "--verify", "--quiet", f"{rev}^{{commit}}", check=False):
+        log(f"{name}: fetch {remote} for {rev}")
+        git("fetch", remote, timeout=FETCH_TIMEOUT_S)
+    log(f"{name}: re-pin {rel(wt)} -> {rev[:12]}")
+    git("checkout", "--detach", rev, cwd=wt, timeout=CHECKOUT_TIMEOUT_S)
     return True
 
 
