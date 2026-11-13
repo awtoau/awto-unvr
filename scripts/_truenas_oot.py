@@ -100,11 +100,12 @@ def build_zfs(run, log, ksrc: str, kout: str, oot: str) -> str:
     src = ensure_src("truenas-zfs", _truenas.ZFS_REPO, _truenas.ZFS_PIN, log)
     work = stage(run, log, src, os.path.join(oot, "zfs"), "truenas-zfs")
     run(["sh", "autogen.sh"], cwd=work)
-    # No --host: the Fedora cross GCC has no libc to link configure's userspace probes;
-    # kernel probes and the module build go through KERNEL_* (arm64 kbuild).
+    # --host=aarch64 so host_cpu gates out x86 SIMD defines (else zfs.ko wants fletcher_4_sse2);
+    # CC=host gcc: the Fedora cross GCC has no libc for configure's link probes. Kernel probes
+    # and the module build go through KERNEL_* (arm64 kbuild).
     run(
         [
-            "./configure", "--with-config=kernel",
+            "./configure", "--with-config=kernel", "--host=aarch64-linux-gnu", "CC=gcc",
             f"--with-linux={ksrc}", f"--with-linux-obj={kout}",
             # no KERNEL_CC: configure word-splits it; kbuild uses $(CROSS_COMPILE)gcc
             "KERNEL_ARCH=arm64", f"KERNEL_CROSS_COMPILE={CROSS}",
