@@ -1,0 +1,13 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "truenas-truesearch"
+version = "27.0.0"
+description = "Clean-room stand-in for TrueNAS truesearch_client: the TrueSearch service is unavailable (awto-unvr #356)"
+requires-python = ">=3.11"
+license = {text = "GPL-2.0-or-later"}
+
+[tool.setuptools]
+packages = ["truesearch_client"]

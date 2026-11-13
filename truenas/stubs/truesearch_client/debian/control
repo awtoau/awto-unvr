@@ -1,0 +1,19 @@
+Source: truenas-truesearch
+Section: contrib/python
+Priority: optional
+Maintainer: Awto <noreply@awto.au>
+Build-Depends: debhelper-compat (= 13),
+               dh-python,
+               pybuild-plugin-pyproject,
+               python3-all,
+               python3-setuptools
+Standards-Version: 4.7.0
+Homepage: https://github.com/awtoau/awto-unvr
+
+Package: truenas-truesearch
+Architecture: all
+Depends: ${misc:Depends}, ${python3:Depends}
+Description: clean-room stand-in for TrueNAS truesearch_client
+ Reports that the TrueSearch service is unavailable, so TrueNAS middleware runs without the closed
+ component. Written from public middleware usage only; contains no TrueNAS
+ closed code.

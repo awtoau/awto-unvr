@@ -1,0 +1,8 @@
+#!/usr/bin/make -f
+
+export PYBUILD_NAME=truenas-truesearch
+export PYBUILD_SYSTEM=pyproject
+export PYBUILD_DISABLE=test
+
+%:
+	dh $@ --with python3 --buildsystem=pybuild

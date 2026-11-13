@@ -77,7 +77,16 @@ THIRD_PARTY = {
     "pytz", "pyudev", "remote_pdb", "requests", "rich", "sphinxbootstrap4theme", "sqlalchemy",
     "typing_extensions", "urllib3", "websocket", "yaml",
 }  # fmt: skip
-LOCAL = {"middlewared", "auto_config", "bases", "changelog", "config", "functions", "protocols", "third_party"}
+LOCAL = {
+    "middlewared",
+    "auto_config",
+    "bases",
+    "changelog",
+    "config",
+    "functions",
+    "protocols",
+    "third_party",
+}
 
 # Host-process guard (awto-dan#53): git prints progress continuously, 60 s silent = hung.
 STALL_S = 60
@@ -377,8 +386,12 @@ def collect(root: Path) -> Uses:
     status_funcs = _status_returning_funcs(trees)
 
     for rel, tree in trees.items():
-        local: dict[str, str] = {}  # truenas_pylicensed local name -> stub name (value flow)
-        bound: dict[str, tuple[str, str | None]] = {}  # local -> (module, name|None for a module)
+        local: dict[
+            str, str
+        ] = {}  # truenas_pylicensed local name -> stub name (value flow)
+        bound: dict[
+            str, tuple[str, str | None]
+        ] = {}  # local -> (module, name|None for a module)
         for n in ast.walk(tree):
             if isinstance(n, ast.ImportFrom) and not n.level and _closed(n.module):
                 uses.files.add(rel)
@@ -392,12 +405,19 @@ def collect(root: Path) -> Uses:
                     if _closed(a.name):
                         uses.files.add(rel)
                         uses.names[(a.name, None)].add(f"{rel}:{n.lineno}")
-                        bound[a.asname or a.name.split(".")[0]] = (a.asname and a.name or a.name.split(".")[0], None)
+                        bound[a.asname or a.name.split(".")[0]] = (
+                            a.asname and a.name or a.name.split(".")[0],
+                            None,
+                        )
         if not bound:
             continue
         for n in ast.walk(tree):
             site = f"{rel}:{getattr(n, 'lineno', 0)}"
-            if isinstance(n, ast.Attribute) and isinstance(n.value, ast.Name) and n.value.id in bound:
+            if (
+                isinstance(n, ast.Attribute)
+                and isinstance(n.value, ast.Name)
+                and n.value.id in bound
+            ):
                 uses.attrs[(bound[n.value.id], n.attr)].add(site)
             elif isinstance(n, ast.Call):
                 ref = None
@@ -410,15 +430,32 @@ def collect(root: Path) -> Uses:
                     and bound[n.func.value.id][1] is None
                 ):
                     ref = (bound[n.func.value.id], n.func.attr)
-                if ref and not any(isinstance(x, ast.Starred) for x in n.args) and all(k.arg for k in n.keywords):
-                    uses.calls[(ref, len(n.args), tuple(sorted(k.arg for k in n.keywords)))].add(site)
-                    if ref[1] is None and ref[0][1] in ("LicenseStatus", "FeatureEntry"):
+                if (
+                    ref
+                    and not any(isinstance(x, ast.Starred) for x in n.args)
+                    and all(k.arg for k in n.keywords)
+                ):
+                    uses.calls[
+                        (ref, len(n.args), tuple(sorted(k.arg for k in n.keywords)))
+                    ].add(site)
+                    if ref[1] is None and ref[0][1] in (
+                        "LicenseStatus",
+                        "FeatureEntry",
+                    ):
                         for kw in n.keywords:
                             uses.kwargs[(ref[0][1], kw.arg)].add(site)
-            elif isinstance(n, ast.MatchClass) and isinstance(n.cls, ast.Name) and n.cls.id in bound:
+            elif (
+                isinstance(n, ast.MatchClass)
+                and isinstance(n.cls, ast.Name)
+                and n.cls.id in bound
+            ):
                 for kw in n.kwd_attrs:
                     uses.inst_attrs[(bound[n.cls.id], kw)].add(site)
-        scopes = [tree] + [n for n in ast.walk(tree) if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))]
+        scopes = [tree] + [
+            n
+            for n in ast.walk(tree)
+            if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))
+        ]
         for sc in scopes:
             if local:
                 _scan_scope(sc, rel, local, status_funcs, uses)
@@ -428,13 +465,19 @@ def collect(root: Path) -> Uses:
 
 def _scan_annotated(scope, rel, bound, uses: Uses) -> None:
     """Attributes read off names annotated with a from-imported stub class (info: InfoResult)."""
-    classes = {k: v for k, v in bound.items() if v[1] is not None and v[1][:1].isupper()}
+    classes = {
+        k: v for k, v in bound.items() if v[1] is not None and v[1][:1].isupper()
+    }
     typed: dict[str, list] = {}
 
     def note(name, ann):
         if ann is None:
             return
-        refs = [classes[x.id] for x in ast.walk(ann) if isinstance(x, ast.Name) and x.id in classes]
+        refs = [
+            classes[x.id]
+            for x in ast.walk(ann)
+            if isinstance(x, ast.Name) and x.id in classes
+        ]
         # Containers (list[X]) say nothing about the name's own attributes.
         if refs and not isinstance(ann, ast.Subscript):
             typed[name] = refs
@@ -447,8 +490,26 @@ def _scan_annotated(scope, rel, bound, uses: Uses) -> None:
     for n in nodes:
         if isinstance(n, ast.AnnAssign) and isinstance(n.target, ast.Name):
             note(n.target.id, n.annotation)
+        # x = y if isinstance(y, Cls) else None
+        elif (
+            isinstance(n, ast.Assign)
+            and len(n.targets) == 1
+            and isinstance(n.targets[0], ast.Name)
+            and isinstance(n.value, ast.IfExp)
+            and isinstance(t := n.value.test, ast.Call)
+            and isinstance(t.func, ast.Name)
+            and t.func.id == "isinstance"
+            and len(t.args) == 2
+            and isinstance(t.args[1], ast.Name)
+            and t.args[1].id in classes
+        ):
+            typed[n.targets[0].id] = [classes[t.args[1].id]]
     for n in nodes:
-        if isinstance(n, ast.Attribute) and isinstance(n.value, ast.Name) and n.value.id in typed:
+        if (
+            isinstance(n, ast.Attribute)
+            and isinstance(n.value, ast.Name)
+            and n.value.id in typed
+        ):
             for ref in typed[n.value.id]:
                 uses.inst_attrs[(ref, n.attr)].add(f"{rel}:{n.lineno}")
 
@@ -488,9 +549,18 @@ def classify_imports() -> list[str]:
                 mods = [n.module]
             for m in mods:
                 names.setdefault(m.split(".")[0], f"{p.relative_to(CLONE)}:{n.lineno}")
-    known = set(sys.stdlib_module_names) | LOCAL | PUBLIC_TRUENAS | THIRD_PARTY | set(CLOSED)
+    known = (
+        set(sys.stdlib_module_names)
+        | LOCAL
+        | PUBLIC_TRUENAS
+        | THIRD_PARTY
+        | set(CLOSED)
+    )
     unknown = {k: v for k, v in names.items() if k not in known}
-    return [f"unclassified import {k!r} ({v}): public source, third-party, or a new closed lib?" for k, v in sorted(unknown.items())]
+    return [
+        f"unclassified import {k!r} ({v}): public source, third-party, or a new closed lib?"
+        for k, v in sorted(unknown.items())
+    ]
 
 
 def check_static(uses: Uses) -> list[str]:
@@ -515,7 +585,9 @@ def check_static(uses: Uses) -> list[str]:
     for (ref, attr), sites in sorted(uses.inst_attrs.items(), key=str):
         try:
             if not _has_inst_attr(_resolve(ref), attr):
-                errs.append(f"{ref[0]}.{ref[1]} instances lack .{attr} ({_first(sites)})")
+                errs.append(
+                    f"{ref[0]}.{ref[1]} instances lack .{attr} ({_first(sites)})"
+                )
         except (ImportError, AttributeError):
             pass
     for ((ref, sub), nargs, kws), sites in sorted(uses.calls.items(), key=str):
@@ -529,7 +601,9 @@ def check_static(uses: Uses) -> list[str]:
             sig.bind(*range(nargs), **dict.fromkeys(kws))
         except TypeError as e:
             label = f"{ref[0]}.{ref[1] or ''}{'.' + sub if sub else ''}"
-            errs.append(f"call {label}({nargs} pos, kw {list(kws)}): {e} ({_first(sites)})")
+            errs.append(
+                f"call {label}({nargs} pos, kw {list(kws)}): {e} ({_first(sites)})"
+            )
     for (cls, kw), sites in sorted(uses.kwargs.items()):
         if kw not in {f.name for f in dataclasses.fields(getattr(stub, cls))}:
             errs.append(f"{cls}() has no field {kw!r} ({_first(sites)})")
@@ -544,10 +618,14 @@ def check_static(uses: Uses) -> list[str]:
     fp = stub.get_fingerprint()
     for key, sites in sorted(uses.fp_keys.items()):
         if key not in fp:
-            errs.append(f"get_fingerprint() lacks required key {key!r} ({_first(sites)})")
+            errs.append(
+                f"get_fingerprint() lacks required key {key!r} ({_first(sites)})"
+            )
     # Semantics: no licence, the code middleware falls back to legacy on.
     if st.valid or st.code is not stub.LicenseError.NO_LICENSE:
-        errs.append(f"verify() must be valid=False code=NO_LICENSE, got {st.valid} {st.code}")
+        errs.append(
+            f"verify() must be valid=False code=NO_LICENSE, got {st.valid} {st.code}"
+        )
     for enum_cls in (stub.LicenseFeature, stub.SupportTier, stub.LicenseType):
         if bad := [m.name for m in enum_cls if m.value != m.name]:
             errs.append(f"{enum_cls.__name__} value != name: {bad}")
@@ -557,10 +635,16 @@ def check_static(uses: Uses) -> list[str]:
 def check_doc(uses: Uses) -> list[str]:
     text = DOC.read_text()
     try:
-        block = text.split("<!-- derived-from:begin -->")[1].split("<!-- derived-from:end -->")[0]
+        block = text.split("<!-- derived-from:begin -->")[1].split(
+            "<!-- derived-from:end -->"
+        )[0]
     except IndexError:
         return [f"{DOC.name}: no derived-from markers"]
-    listed = {ln.strip().strip("-").strip().split("`")[1] for ln in block.splitlines() if ln.strip().startswith("- `")}
+    listed = {
+        ln.strip().strip("-").strip().split("`")[1]
+        for ln in block.splitlines()
+        if ln.strip().startswith("- `")
+    }
     errs = []
     if missing := sorted(uses.files - listed):
         errs.append(f"{DOC.name} does not list: {missing}")
@@ -615,7 +699,9 @@ def _env() -> dict:
     shutil.copy2(REPO / "scripts" / "_truenas_stubs_harness.py", HARNESS_DIR)
     env = dict(os.environ)
     env["TRUENAS_STUBS_FAKE"] = ",".join(sorted(_mw_import_names()))
-    env["PYTHONPATH"] = os.pathsep.join([*map(str, STUB_DIRS), str(MW_SRC), str(HARNESS_DIR)])
+    env["PYTHONPATH"] = os.pathsep.join(
+        [*map(str, STUB_DIRS), str(MW_SRC), str(HARNESS_DIR)]
+    )
     env["PYTHONDONTWRITEBYTECODE"] = "1"
     return env
 
@@ -631,8 +717,12 @@ def check_imports(uses: Uses) -> list[str]:
     # Measured ~3 s for all ~42 modules; the backstop is generous because it is one process.
     out = subprocess.run(
         [
-            sys.executable, "-c", _IMPORT_PROBE,
-            json.dumps([str(d) for d in STUB_DIRS]), json.dumps(sorted(CLOSED)), *mods,
+            sys.executable,
+            "-c",
+            _IMPORT_PROBE,
+            json.dumps([str(d) for d in STUB_DIRS]),
+            json.dumps(sorted(CLOSED)),
+            *mods,
         ],  # fmt: skip
         capture_output=True,
         text=True,
@@ -702,10 +792,14 @@ def check_ce_column() -> list[str]:
         if got:
             entitled.add(key)
         if got != ce:
-            errs.append(f"ce column: {key} entitled={got} but Vector.ce={int(ce)} ({column}, {reason})")
+            errs.append(
+                f"ce column: {key} entitled={got} but Vector.ce={int(ce)} ({column}, {reason})"
+            )
     log(f"ce: entitled {sorted(entitled)} of {len(res['rows'])} policy keys")
     if entitled != CE_ENTITLED:
-        errs.append(f"ce: entitled {sorted(entitled)} != expected {sorted(CE_ENTITLED)}")
+        errs.append(
+            f"ce: entitled {sorted(entitled)} != expected {sorted(CE_ENTITLED)}"
+        )
     return errs
 
 

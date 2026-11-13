@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 # Copyright (C) 2026 Awto / Daniel Tyrrell
-"""truenas_pylicensed stub semantics (#356), no middleware clone needed.
+"""truenas/stubs/ closed-lib stand-in semantics (#356), no middleware clone needed.
 
 Coverage against middleware itself: scripts/check-truenas-stubs.py.
 """
@@ -14,10 +14,26 @@ from pathlib import Path
 import pytest
 
 REPO = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(REPO / "truenas" / "stubs" / "truenas_pylicensed"))
+for _d in (
+    "truenas_pylicensed",
+    "truenas_pylibsed",
+    "truenas_zfstierd",
+    "truesearch_client",
+    "licenselib",
+):
+    sys.path.insert(0, str(REPO / "truenas" / "stubs" / _d))
 
+import truenas_pylibsed as sed  # noqa: E402
 import truenas_pylicensed as t  # noqa: E402
+import truenas_zfstierd_client as tc  # noqa: E402
+import truesearch_client as ts  # noqa: E402
+from licenselib import license as ll  # noqa: E402
+from licenselib.utils import proactive_support_allowed  # noqa: E402
 from truenas_pylicensed import features as tf  # noqa: E402
+from truenas_zfstierd_common import JSONRPCErrorCode, RewriteJobStatus  # noqa: E402
+from truenas_zfstierd_common.configfile import ZFSTierdGlobalConfig, generate_config  # noqa: E402
+from truesearch_client import config as tsc  # noqa: E402
+from truesearch_client import control as tsctl  # noqa: E402
 
 
 def test_verify_is_no_license():
@@ -70,3 +86,69 @@ def test_fingerprint_shape():
     fp = t.get_fingerprint()
     assert {"macs", "cpu_id", "machine_id", "smbios"} <= set(fp)
     assert isinstance(fp["smbios"], dict)
+
+
+def test_sed_not_capable():
+    info = sed.get_device_info(0)
+    assert info["locking"] == {"supported": False, "enabled": False, "locked": False}
+    for op, args in [
+        (sed.unlock, (0, b"pw")),
+        (sed.initial_setup, (0, b"pw")),
+        (sed.get_locking_info, (0, b"pw")),
+        (sed.factory_reset, (0, b"psid")),
+        (sed.change_password, (0, b"a", b"b")),
+        (sed.is_uninitialized, (0,)),
+    ]:
+        with pytest.raises(OSError):
+            op(*args, device_info=info)
+
+
+def test_zfstier_no_jobs():
+    import asyncio
+
+    assert list(tc.enum_jobs()) == []
+    with pytest.raises(KeyError):
+        tc.get_last_job("tank/a")
+    with pytest.raises(ValueError):
+        tc.get_info("tank/a", "u")
+
+    async def create():
+        async with tc.RewriteClient() as c:
+            await c.create_job("tank/a")
+
+    with pytest.raises(tc.RewriteClientException) as e:
+        asyncio.run(create())
+    assert e.value.code is JSONRPCErrorCode.DISABLED
+    assert all(m.value == m.name for m in RewriteJobStatus)
+    assert "enabled = false" in generate_config(ZFSTierdGlobalConfig())
+
+
+def test_truesearch_unavailable():
+    with pytest.raises(OSError):
+        with ts.Client():
+            pass
+    assert tsc.read_config() is None
+    with pytest.raises(OSError):
+        tsctl.indexer_status(1)
+    assert tsctl.wait_released(set()) is True
+    assert issubclass(ts.Busy, ts.TruesearchError) and issubclass(
+        ts.CallError, ts.TruesearchError
+    )
+
+
+def test_licenselib_decodes_nothing():
+    from datetime import date
+
+    with pytest.raises(ValueError):
+        ll.License.load("AUgxMAAA")
+    lic = ll.License(
+        1, "M50", "S1", "", ll.ContractType.legacy, ll.ContractHardware.parts,
+        ll.ContractSoftware.none, date(2026, 1, 1), 10, "", "KEY", [], [],
+    )  # fmt: skip
+    assert lic.contract_end == date(2026, 1, 11)
+    assert "KEY" not in repr(lic)
+    with pytest.raises(NotImplementedError):
+        lic.dump()
+    assert proactive_support_allowed("gold") and not proactive_support_allowed(
+        "STANDARD"
+    )
