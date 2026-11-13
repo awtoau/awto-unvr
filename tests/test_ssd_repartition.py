@@ -145,3 +145,33 @@ def test_uimage_check():
 
 def test_init_syntax():
     subprocess.run(["bash", "-n", str(sr.INIT_SRC)], check=True)
+
+
+def _fake_ssh(monkeypatch, sums: dict[str, str], calls: list[str]):
+    def ssh(_ip, cmd, **_kw):
+        calls.append(cmd)
+        if cmd.startswith("sha256sum"):
+            return "".join(f"{h}  {p}\n" for p, h in sums.items())
+        if cmd.startswith("cp -p /boot/uImage.normal /boot/uImage"):
+            sums["/boot/uImage"] = sums["/boot/uImage.normal"]
+        return ""
+
+    monkeypatch.setattr(sr, "ssh", ssh)
+
+
+@pytest.mark.parametrize(
+    ("uimage", "normal", "copies"),
+    [
+        ("a" * 64, None, False),  # install failed early: untouched
+        ("b" * 64, "a" * 64, True),  # maint installed, verified copy exists
+        ("b" * 64, "c" * 64, False),  # copy is not the original: never use it
+    ],
+)
+def test_rollback_only_from_verified_copy(monkeypatch, uimage, normal, copies):
+    sums = {"/boot/uImage": uimage}
+    if normal:
+        sums["/boot/uImage.normal"] = normal
+    calls: list[str] = []
+    _fake_ssh(monkeypatch, sums, calls)
+    sr.rollback("192.0.2.1", "a" * 64)
+    assert any(c.startswith("cp -p") for c in calls) == copies

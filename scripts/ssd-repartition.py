@@ -515,6 +515,7 @@ class Scenario:
     expect_ok: bool
     expect_log: tuple[str, ...] = ()
     expect_fed: bool = True
+    resized: bool | None = None  # fs at target afterwards; default = expect_ok
 
 
 SCENARIOS = {
@@ -545,6 +546,16 @@ SCENARIOS = {
         True,
         ("no progress for -1s in '",),
         expect_fed=False,
+    ),
+    # p3 append fails after the fs shrank and p2 was cut: repair e2fsck must run,
+    # p2/fs stay at target, data intact, normal uImage restored.
+    "late-fail": Scenario(
+        "late-fail",
+        300 << 20,
+        {"P3_TYPE": "not-a-guid"},
+        False,
+        ("RESULT: FAIL sfdisk --append", "== step repair", "restored=1"),
+        resized=True,
     ),
 }
 
@@ -680,8 +691,12 @@ def rehearse_one(sc: Scenario, cpio: bytes) -> dict:
 
         post = parse_dump(sudo("sfdisk", "-d", loop).stdout)
         errs = []
+        resized = sc.expect_ok if sc.resized is None else sc.resized
         if sc.expect_ok:
             errs += check_table(post, g, after=True)
+        elif resized:
+            if 3 in post["parts"] or post["parts"][2]["size"] != g.p2_new_sectors:
+                errs.append("late failure: want p2 at new size and no p3")
         elif post != pre:
             errs.append("table changed on an aborted run")
         if post["parts"][1] != pre["parts"][1] or post.get("label_id") != pre.get(
@@ -692,7 +707,7 @@ def rehearse_one(sc: Scenario, cpio: bytes) -> dict:
         res["p3"] = post["parts"].get(3)
         fsb = fs_bytes(sudo("dumpe2fs", "-h", p2).stdout)
         res["fs_bytes_after"] = fsb
-        want_fs = g.fs_target_bytes if sc.expect_ok else res["fs_bytes_before"]
+        want_fs = g.fs_target_bytes if resized else res["fs_bytes_before"]
         if fsb != want_fs:
             errs.append(f"fs {fsb} B != {want_fs} B")
         if fsb > post["parts"][2]["size"] * SECTOR:
@@ -984,17 +999,21 @@ def verify_after(ip: str, run_id: str) -> int:
     ).splitlines():
         if line.split(" ", 1)[1].startswith(REAL.model):
             dn = line.split()[0]
+    if not dn:
+        errs.append(f"no {REAL.model} disk")
+        for x in errs:
+            log(f"verify FAIL: {x}")
+        return 1
     d = parse_dump(ssh(ip, f"sfdisk -d /dev/{dn}"))
     errs += check_table(d, REAL, after=True)
     fsb = fs_bytes(ssh(ip, f"dumpe2fs -h /dev/{dn}2 2>/dev/null"))
     if fsb != REAL.fs_target_bytes:
         errs.append(f"fs is {fsb} B, want {REAL.fs_target_bytes}")
     log("df: " + ssh(ip, "df -h /").strip().replace("\n", " | "))
-    sums = ssh(ip, "sha256sum /boot/uImage /boot/uImage.normal", check=False)
-    hs = re.findall(r"^([0-9a-f]{64}) ", sums, re.M)
-    restored = len(hs) == 2 and hs[0] == hs[1]
+    sums = boot_sums(ip)
+    restored = len(sums) == 2 and len(set(sums.values())) == 1
     if not restored:
-        errs.append(f"/boot/uImage != /boot/uImage.normal: {sums.strip()}")
+        errs.append(f"/boot/uImage != /boot/uImage.normal: {sums}")
     else:
         ssh(ip, "rm -f /boot/uImage.normal /boot/ssd-repartition.id && sync")
         log(
@@ -1039,16 +1058,26 @@ def install(ip: str, run_id: str) -> str:
     return normal
 
 
-def rollback(ip: str) -> None:
-    out = ssh(
-        ip,
-        "cp -p /boot/uImage.normal /boot/uImage && sync && sha256sum /boot/uImage /boot/uImage.normal",
-        check=False,
-    )
-    log(f"rollback: {out.strip()}")
+def boot_sums(ip: str) -> dict[str, str]:
+    out = ssh(ip, "sha256sum /boot/uImage /boot/uImage.normal 2>/dev/null; true")
+    return {p: h for h, p in re.findall(r"^([0-9a-f]{64})  (\S+)$", out, re.M)}
 
 
-def wait_back(old_boot_id: str, kver: str, t0: float) -> str | None:
+def rollback(ip: str, orig: str) -> None:
+    """Put the pre-run uImage back, only from a copy proven to be it."""
+    s = boot_sums(ip)
+    if s.get("/boot/uImage") == orig:
+        log("rollback: /boot/uImage is still the original")
+        return
+    if s.get("/boot/uImage.normal") != orig:
+        log(f"ROLLBACK IMPOSSIBLE: no verified copy of the original uImage: {s}")
+        return
+    ssh(ip, "cp -p /boot/uImage.normal /boot/uImage && sync")
+    ok = boot_sums(ip).get("/boot/uImage") == orig
+    log(f"rollback: {'OK' if ok else 'FAILED - /boot/uImage is not the original'}")
+
+
+def wait_back(old_boot_id: str, kver: str, t0: float, expected_s: int) -> str | None:
     last_err = ""
     while (el := time.monotonic() - t0) < RUN_LIMIT_S:
         ip = _box.locate()
@@ -1062,19 +1091,10 @@ def wait_back(old_boot_id: str, kver: str, t0: float) -> str | None:
                     return ip
             except RuntimeError as e:
                 last_err = str(e)
-        log(
-            f"waiting: {el:.0f}/{RUN_LIMIT_S}s (expected ~{_expected_total_s()}s) {last_err}"
-        )
+        log(f"waiting: {el:.0f}/{RUN_LIMIT_S}s (expected ~{expected_s}s) {last_err}")
         time.sleep(POLL_S)
     log(f"TIMEOUT: no new boot after {RUN_LIMIT_S}s; last ssh error: {last_err}")
     return None
-
-
-_EXPECTED = {"s": 0}
-
-
-def _expected_total_s() -> int:
-    return _EXPECTED["s"]
 
 
 GUIDANCE = """\
@@ -1104,24 +1124,33 @@ def cmd_run(a) -> int:
         for x in errs:
             log(f"preflight FAIL: {x}")
         return 1
-    _EXPECTED["s"] = 60 + 30 + 120 + f["resize_estimate_s"] + 120 + 30 + 17 + 80
+    # Same terms as RUN_LIMIT_S, with this box's measured resize estimate.
+    expected = 60 + 30 + 120 + f["resize_estimate_s"] + 120 + 30 + 17 + 80
     log(
         f"preflight OK: {f['tail']}, resize estimate {f['resize_estimate_s']}s, limit {RUN_LIMIT_S}s"
     )
     run_id = time.strftime("%Y%m%d-%H%M%S")
     kver, old_bid = _box.boot_state(ip)
+    orig = boot_sums(ip)["/boot/uImage"]
     try:
         install(ip, run_id)
     except (RuntimeError, subprocess.SubprocessError) as e:
         log(f"FATAL: install: {e}")
-        rollback(ip)
+        rollback(ip, orig)
         return 1
     log(f"run id {run_id}: rebooting into the maint kernel")
-    subprocess.run(
-        _box.ssh_argv(ip, cmd=["systemctl reboot"], batch=True), check=False, timeout=30
-    )
+    try:
+        # The box drops the session as it goes down; rc is meaningless. 30 s backstop.
+        subprocess.run(
+            _box.ssh_argv(ip, cmd=["systemctl reboot"], batch=True),
+            check=False,
+            timeout=30,
+            capture_output=True,
+        )
+    except subprocess.TimeoutExpired:
+        log("systemctl reboot: ssh did not return in 30 s (box going down?) - polling")
     t0 = time.monotonic()
-    ip = wait_back(old_bid, kver, t0)
+    ip = wait_back(old_bid, kver, t0, expected)
     if not ip:
         print(
             GUIDANCE.format(

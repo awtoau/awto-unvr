@@ -21,7 +21,7 @@ RUN_ID=""
 DISK="" DN="" P2="" P2N=""
 
 now() { local up; read -r up _ </proc/uptime; echo "${up%.*}"; }
-T0=$(now)
+T0=0
 el() { echo $(($(now) - T0)); }
 
 log() {
@@ -35,7 +35,11 @@ log() {
     fi
 }
 
-fail() { [ -n "$FAIL" ] || FAIL="$*"; log "FAIL: $*"; }
+fail() {
+    [ -n "$FAIL" ] || { FAIL="$*"; FAIL_STEP=$(cat /run/wdt.step 2>/dev/null); }
+    log "FAIL: $*"
+}
+FAIL_STEP=""
 
 # --- watchdog -----------------------------------------------------------
 # Feeder feeds only while the current step is inside its deadline AND showing
@@ -334,6 +338,13 @@ save_log() {
 }
 
 finish() {
+    # Failed at/after resize2fs: repair now rather than let Fedora mount it rw unchecked.
+    case $FAIL_STEP in
+    resize | sfdisk | verify)
+        step repair "$T_FSCK"
+        run_cmd e2fsck -f -y "$P2"
+        ;;
+    esac
     step save "$T_SAVE"
     if [ -z "$FAIL" ]; then log "RESULT: OK"; else log "RESULT: FAIL $FAIL (restored=$RESTORED)"; fi
     save_log
@@ -359,6 +370,7 @@ if [ "$MODE" = real ]; then
     mount -t sysfs sysfs /sys
     mount -t devtmpfs devtmpfs /dev
     ln -sf /proc/self/fd /dev/fd
+    echo on >/proc/sys/kernel/printk_devkmsg # no ratelimit: the log tail lands in pstore
 elif [ "$MODE" != rehearse ]; then
     echo "MODE must be real or rehearse" >&2
     exit 95
