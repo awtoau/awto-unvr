@@ -361,7 +361,8 @@ echo "KERNELRELEASE=$KR"
 # mkdebian copies scripts/package/truenas/* relative to the objtree
 mkdir -p scripts/package && ln -sfn $KSRC/scripts/package/truenas scripts/package/truenas
 $M archprepare  # writes include/config/kernel.release, which mkdebian reads
-KDEB_CHANGELOG_DIST=trixie $M run-command KBUILD_RUN_COMMAND='$(srctree)/scripts/package/mkdebian'
+# KDEB_PKGVERSION: mkdebian's fallback runs ./scripts/* from the srctree, not the objtree
+KDEB_PKGVERSION=$KR-1 KDEB_CHANGELOG_DIST=trixie $M run-command KBUILD_RUN_COMMAND='$(srctree)/scripts/package/mkdebian'
 # no perf package: cross-building tools/perf needs the arm64 userland dev libs
 sed -i '/^Package: linux-perf-truenas$/,/^$/d' debian/control
 export DEB_BUILD_PROFILES="pkg.linux-$KR.nokerneldbg" DEB_BUILD_OPTIONS="parallel=$NPROC"
