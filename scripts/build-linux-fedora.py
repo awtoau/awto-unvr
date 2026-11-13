@@ -211,8 +211,7 @@ def configure():
             #   FAIL_MAKE_REQUEST          - block-layer error paths
             #   DEBUG_FS + FAULT_INJECTION_DEBUG_FS - the /sys/kernel/debug knobs
             # NETCONSOLE gives netpoll, which is the only caller that hands
-            # rx_poll a zero budget (#314). NET_PKTGEN: NIC-only throughput
-            # under al_eth MAC loopback, no TCP or userspace copy (#353).
+            # rx_poll a zero budget (#314).
             "--enable",
             "FAULT_INJECTION",
             "--enable",
@@ -225,8 +224,6 @@ def configure():
             "FAIL_MAKE_REQUEST",
             "--module",
             "NETCONSOLE",
-            "--module",
-            "NET_PKTGEN",
             "--disable",
             "MODULE_SIG",
             "--disable",
@@ -316,6 +313,9 @@ def configure():
             # completion handling (#23) without needing a real RAID array.
             "--module",
             "DMATEST",
+            # NIC-only throughput under al_eth MAC loopback, no TCP/copy (#353).
+            "--module",
+            "NET_PKTGEN",
             "--enable",
             "MDIO_I2C",
             "--enable",
