@@ -1,0 +1,31 @@
+From e464eefdd068d8f4f5e84d2b208fa89ce04691f8 Mon Sep 17 00:00:00 2001
+From: Joel May <git@jmay.us>
+Date: Thu, 24 Apr 2025 22:28:32 -0700
+Subject: [PATCH] Add support for aarch64
+
+---
+ debian/fetch_node.sh | 10 ++++++++--
+ 1 file changed, 8 insertions(+), 2 deletions(-)
+
+diff --git a/debian/fetch_node.sh b/debian/fetch_node.sh
+index b9eb2aa3298..fbdd7dbbb87 100644
+--- a/debian/fetch_node.sh
++++ b/debian/fetch_node.sh
+@@ -9,9 +9,15 @@ VERSION=v24.13.1
+ 
+ # shasums can be downloaded from https://nodejs.org/dist/${VERSION}/SHASUMS256.txt
+ # checksum changes without version change should be investigated.
+-SHA256SUM="30215f90ea3cd04dfbc06e762c021393fa173a1d392974298bbc871a8e461089"
+ 
+-PLATFORM=linux-x64
++if [ "$(uname -m)" = "aarch64" ];
++then
++    PLATFORM=linux-arm64
++    SHA256SUM="c827d3d301e2eed1a51f36d0116b71b9e3d9e3b728f081615270ea40faac34c1"
++else
++    PLATFORM=linux-x64
++    SHA256SUM="30215f90ea3cd04dfbc06e762c021393fa173a1d392974298bbc871a8e461089"
++fi
+ 
+ wget https://nodejs.org/dist/${VERSION}/node-${VERSION}-${PLATFORM}.tar.xz
+ 

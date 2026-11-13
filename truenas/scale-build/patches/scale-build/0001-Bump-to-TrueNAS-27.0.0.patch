@@ -1,0 +1,401 @@
+From fb46f1f64235d3dcfa9144eec82e58db519635eb Mon Sep 17 00:00:00 2001
+From: awto <noreply@awto.au>
+Date: Sat, 14 Nov 2026 01:26:59 +1100
+Subject: [PATCH 1/3] Bump to TrueNAS 27.0.0
+
+- apt repos: 27/27.0.0 snapshot (arm64 present)
+- sources: release/27.0.0; joel0 jmay.us forks -> upstream github + awto-unvr per-source patches
+- binaries, sedutil: joel0-truenas aarch64 forks (upstream 27 tree == 26.0.0-BETA.1)
+- avahi stays release/26.0.0-BETA.1 (no 27 branch)
+- add truenas_pysnmp, truenas_pydiscovery (middlewared 27 deps)
+- _VERS 27.0.0-MASTER
+---
+ conf/build.manifest   | 139 +++++++++++++++++++++++-------------------
+ scale_build/config.py |   2 +-
+ 2 files changed, 77 insertions(+), 64 deletions(-)
+
+diff --git a/conf/build.manifest b/conf/build.manifest
+index 6f7e6e7..84d2878 100644
+--- a/conf/build.manifest
++++ b/conf/build.manifest
+@@ -10,26 +10,26 @@ identity_file_path_default: "~/.ssh/id_rsa"
+ apt-repos:
+   base-url: https://apt.sys.truenas.net/
+   base-url-internal: http://apt-mirror.tn.ixsystems.net/
+-  url: halfmoon/nightlies/debian/
++  url: 27/27.0.0/debian/
+   distribution: trixie
+   components: main
+   additional:
+-  - url: halfmoon/nightlies/debian-security/
++  - url: 27/27.0.0/debian-security/
+     distribution: trixie-security
+     component: main
+-  - url: halfmoon/nightlies/debian-backports/
++  - url: 27/27.0.0/debian-backports/
+     distribution: trixie-backports
+     component: "main contrib non-free non-free-firmware"
+-  - url: halfmoon/nightlies/debian-debug/
++  - url: 27/27.0.0/debian-debug/
+     distribution: trixie-debug
+     component: main
+-  - url: halfmoon/nightlies/yarn/
++  - url: 27/27.0.0/yarn/
+     distribution: stable
+     component: main
+-  - url: halfmoon/nightlies/netdata/
++  - url: 27/27.0.0/netdata/
+     distribution: trixie
+     component: main
+-  - url: halfmoon/nightlies/docker/
++  - url: 27/27.0.0/docker/
+     distribution: trixie
+     component: stable
+     key: keys/docker.gpg
+@@ -121,6 +121,8 @@ base-packages:
+   install_recommends: true
+ - name: python3-truenas-pyos
+   install_recommends: true
++- name: python3-truenas-pysnmp
++  install_recommends: true
+ - name: python3-truenas-pwenc
+   install_recommends: true
+ - name: python3-truenas-pyscstadmin
+@@ -380,12 +382,12 @@ iso-packages:
+ sources:
+ - name: truenas-openssl-provider-fips
+   repo: https://github.com/truenas/openssl-fips
+-  branch: release/26.0.0-BETA.1
++  branch: release/27.0.0
+   predepscmd:
+     - "apt install -y wget xz-utils"
+ - name: kernel
+-  repo: https://git.jmay.us/truenas/linux
+-  branch: release/26.0.0-BETA.1-aarch64
++  repo: https://github.com/truenas/linux
++  branch: release/27.0.0
+   batch_priority: 0
+   supports_ccache: true
+   env:
+@@ -435,11 +437,11 @@ sources:
+         - "make -j$(nproc) bindeb-pkg"
+ # - name: nfs4xdr_acl_tools
+ #   repo: https://github.com/truenas/nfs4xdr-acl-tools
+-#   branch: release/26.0.0-BETA.1
++#   branch: release/27.0.0
+ - name: openzfs
+   repo: https://github.com/truenas/zfs
+   batch_priority: 0
+-  branch: release/26.0.0-BETA.1
++  branch: release/27.0.0
+   env:
+     KVERS: "$(shell apt info linux-headers-truenas-production-{{ ARCH }} | awk '/Source:/ { print $$2}' | sed 's/linux-//')"
+     KSRC: "/usr/src/linux-headers-truenas-production-{{ ARCH }}"
+@@ -490,55 +492,61 @@ sources:
+       generate_version: false
+ - name: truenas_pylibvirt
+   repo: https://github.com/truenas/truenas_pylibvirt
+-  branch: release/26.0.0-BETA.1
++  branch: release/27.0.0
+ - name: truenas_pynetif
+   repo: https://github.com/truenas/truenas_pynetif
+-  branch: release/26.0.0-BETA.1
++  branch: release/27.0.0
+ - name: truenas_pylibzfs
+   repo: https://github.com/truenas/truenas_pylibzfs
+-  branch: release/26.0.0-BETA.1
++  branch: release/27.0.0
+   explicit_deps:
+     - openzfs
+ - name: truenas_pykeyring
+   repo: https://github.com/truenas/truenas_pykeyring
+-  branch: release/26.0.0-BETA.1
++  branch: release/27.0.0
+ - name: truenas_pyos
+   repo: https://github.com/truenas/truenas_pyos
+-  branch: release/26.0.0-BETA.1
++  branch: release/27.0.0
+   predepscmd:
+     - "apt install -y linux-truenas-production-libc-dev"
+   explicit_deps:
+     - kernel
++- name: truenas_pysnmp
++  repo: https://github.com/truenas/truenas_pysnmp
++  branch: release/27.0.0
++- name: truenas_pydiscovery
++  repo: https://github.com/truenas/truenas_pydiscovery
++  branch: release/27.0.0
+ - name: truenas_pwenc
+   repo: https://github.com/truenas/truenas_pwenc
+-  branch: release/26.0.0-BETA.1
++  branch: release/27.0.0
+ - name: truenas_scram
+   repo: https://github.com/truenas/truenas_scram
+-  branch: release/26.0.0-BETA.1
++  branch: release/27.0.0
+ - name: truenas_pypam
+   repo: https://github.com/truenas/truenas_pypam
+-  branch: release/26.0.0-BETA.1
++  branch: release/27.0.0
+ - name: pam_truenas
+   repo: https://github.com/truenas/pam_truenas
+   explicit_deps:
+     - truenas_pwenc
+     - truenas_scram
+-  branch: release/26.0.0-BETA.1
++  branch: release/27.0.0
+ - name: truenas_samba
+   repo: https://github.com/truenas/samba
+-  branch: release/26.0.0-BETA.1
++  branch: release/27.0.0
+   generate_version: false
+   batch_priority: 0
+   explicit_deps:
+     - openzfs
+ - name: truenas_pyscstadmin
+   repo: https://github.com/truenas/truenas_pyscstadmin
+-  branch: release/26.0.0-BETA.1
++  branch: release/27.0.0
+   buildcmd:
+     - "dpkg-buildpackage -us -uc -b"
+ - name: truenas_sssd
+   repo: https://github.com/truenas/sssd
+-  branch: release/26.0.0-BETA.1
++  branch: release/27.0.0
+   generate_version: false
+   predepscmd:
+     - "apt install -y wget xz-utils systemd-dev truenas-samba"
+@@ -547,7 +555,7 @@ sources:
+     - truenas_samba
+ - name: truenas_ipaclient
+   repo: https://github.com/truenas/freeipa
+-  branch: release/26.0.0-BETA.1
++  branch: release/27.0.0
+   generate_version: false
+   predepscmd:
+     - "apt install -y pkg-config truenas-samba truenas-sssd"
+@@ -557,8 +565,8 @@ sources:
+     - truenas_samba
+     - truenas_sssd
+ - name: truenas_spdk
+-  repo: https://git.jmay.us/truenas/truenas_spdk
+-  branch: release/26.0.0-BETA.1-aarch64
++  repo: https://github.com/truenas/truenas_spdk
++  branch: release/27.0.0
+   generate_version: false
+   env:
+     PIP_BREAK_SYSTEM_PACKAGES: "1"
+@@ -572,27 +580,28 @@ sources:
+     - kernel-dbg
+ - name: avahi
+   repo: https://github.com/truenas/avahi
++  # no release/27.0.0 branch; every release/stable branch is the same commit
+   branch: release/26.0.0-BETA.1
+   generate_version: false
+ - name: py_libzfs
+   repo: https://github.com/truenas/py-libzfs
+-  branch: release/26.0.0-BETA.1
++  branch: release/27.0.0
+   explicit_deps:
+     - openzfs
+ - name: zettarepl
+   repo: https://github.com/truenas/zettarepl
+-  branch: release/26.0.0-BETA.1
++  branch: release/27.0.0
+ - name: truenas_crypto_utils
+   repo: https://github.com/truenas/truenas_crypto_utils
+-  branch: release/26.0.0-BETA.1
++  branch: release/27.0.0
+ - name: truenas_connect_utils
+   repo: https://github.com/truenas/truenas_connect_utils
+-  branch: release/26.0.0-BETA.1
++  branch: release/27.0.0
+ - name: truenas_installer
+-  repo: https://git.jmay.us/truenas/truenas-installer
+-  branch: release/26.0.0-BETA.1-aarch64
++  repo: https://github.com/truenas/truenas-installer
++  branch: release/27.0.0
+ - name: scst
+-  repo: https://git.jmay.us/truenas/scst
++  repo: https://github.com/truenas/scst
+   generate_version: false
+   env:
+     KVER: "$(shell apt info linux-headers-truenas-production-{{ ARCH }} | awk '/Source:/ { print $$2}' | sed 's/linux-//')"
+@@ -607,7 +616,7 @@ sources:
+   explicit_deps:
+     - kernel
+     - kernel-dbg
+-  branch: release/26.0.0-BETA.1-aarch64
++  branch: release/27.0.0
+   subpackages:
+     - name: scst-dbg
+       generate_version: false
+@@ -629,10 +638,11 @@ sources:
+         - kernel
+         - kernel-dbg
+ - name: truenas_binaries
+-  repo: https://git.jmay.us/truenas/binaries
++  repo: https://github.com/joel0-truenas/binaries
++  # aarch64 fork; upstream release/27.0.0 tree == release/26.0.0-BETA.1
+   branch: release/26.0.0-BETA.1-aarch64
+ - name: truenas_webui
+-  repo: https://git.jmay.us/truenas/webui
++  repo: https://github.com/truenas/webui
+   env:
+     COREPACK_ENABLE_DOWNLOAD_PROMPT: "0"
+   predepscmd:
+@@ -643,23 +653,24 @@ sources:
+     - "yarn install --immutable --network-timeout 100000"
+     - "tar cvzf node_files.tgz node_modules/"
+     - "rm -rf node_modules"
+-  branch: release/26.0.0-BETA.1-aarch64
++  branch: release/27.0.0
+   secret_env: ["SENTRY_AUTH_TOKEN"]
+ - name: sedutil
+-  repo: https://git.jmay.us/truenas/sedutil
++  repo: https://github.com/joel0-truenas/sedutil
++  # aarch64 fork; upstream release/27.0.0 tree == release/26.0.0-BETA.1
+   branch: release/26.0.0-BETA.1-aarch64
+ - name: python_netsnmpagent
+   repo: https://github.com/truenas/python-netsnmpagent
+-  branch: release/26.0.0-BETA.1
++  branch: release/27.0.0
+ - name: python_truenas_requirements
+-  repo: https://git.jmay.us/truenas/python-truenas-requirements
+-  branch: release/26.0.0-BETA.1-aarch64
++  repo: https://github.com/truenas/python-truenas-requirements
++  branch: release/27.0.0
+ # - name: licenselib
+ #   repo: https://github.com/truenas/licenselib
+-#   branch: release/26.0.0-BETA.1
++#   branch: release/27.0.0
+ - name: zectl
+   repo: https://github.com/truenas/zectl
+-  branch: release/26.0.0-BETA.1
++  branch: release/27.0.0
+   predepscmd:
+     - "cp -a packaging/debian ."
+   deps_path: packaging/debian
+@@ -667,28 +678,28 @@ sources:
+     - openzfs
+ - name: ixdiagnose
+   repo: https://github.com/truenas/ixdiagnose
+-  branch: release/26.0.0-BETA.1
++  branch: release/27.0.0
+ - name: ixhardware
+   repo: https://github.com/truenas/ixhardware
+-  branch: release/26.0.0-BETA.1
++  branch: release/27.0.0
+ - name: apps_validation
+   repo: https://github.com/truenas/apps_validation
+-  branch: release/26.0.0-BETA.1
++  branch: release/27.0.0
+ - name: py_cryptit
+   repo: https://github.com/truenas/py-cryptit
+-  branch: release/26.0.0-BETA.1
++  branch: release/27.0.0
+ - name: py_sgio
+   repo: https://github.com/truenas/py-sgio
+-  branch: release/26.0.0-BETA.1
++  branch: release/27.0.0
+ - name: py_fenced
+   repo: https://github.com/truenas/py-fenced
+-  branch: release/26.0.0-BETA.1
++  branch: release/27.0.0
+ - name: py_nvme
+   repo: https://github.com/truenas/py-nvme
+-  branch: release/26.0.0-BETA.1
++  branch: release/27.0.0
+ - name: truenas
+-  repo: https://git.jmay.us/truenas/middleware
+-  branch: release/26.0.0-BETA.1-aarch64
++  repo: https://github.com/truenas/middleware
++  branch: release/27.0.0
+   subdir: debian
+   subpackages:
+     - name: middlewared
+@@ -698,6 +709,8 @@ sources:
+         - truenas_sssd
+         - truenas_pwenc
+         - truenas_pyos
++        - truenas_pysnmp
++        - truenas_pydiscovery
+         - truenas_pyscstadmin
+       subdir: src/middlewared
+     - name: middlewared-docs
+@@ -706,16 +719,16 @@ sources:
+       subdir: src/freenas
+ - name: truenas_api_client
+   repo: https://github.com/truenas/api_client
+-  branch: release/26.0.0-BETA.1
++  branch: release/27.0.0
+ - name: truenas_verify
+   repo: https://github.com/truenas/truenas_verify
+-  branch: release/26.0.0-BETA.1
++  branch: release/27.0.0
+ - name: midcli
+   repo: https://github.com/truenas/midcli
+-  branch: release/26.0.0-BETA.1
++  branch: release/27.0.0
+ - name: grub2
+   repo: https://github.com/truenas/grub2
+-  branch: release/26.0.0-BETA.1
++  branch: release/27.0.0
+   debian_fork: true
+   predepscmd:
+     - "apt install -y wget xz-utils"
+@@ -726,7 +739,7 @@ sources:
+   batch_priority: 150
+ # - name: parted
+ #   repo: https://github.com/truenas/parted
+-#   branch: release/26.0.0-BETA.1
++#   branch: release/27.0.0
+ #   debian_fork: true
+ #   predepscmd:
+ #     - "apt install -y wget xz-utils"
+@@ -735,15 +748,15 @@ sources:
+ #   generate_version: false
+ - name: rclone
+   repo: https://github.com/truenas/rclone
+-  branch: release/26.0.0-BETA.1
++  branch: release/27.0.0
+   deoptions: nocheck
+   generate_version: false
+ - name: py_sg3
+   repo: https://github.com/truenas/py-sg3
+-  branch: release/26.0.0-BETA.1
++  branch: release/27.0.0
+ - name: smartmontools
+   repo: https://github.com/truenas/smartmontools
+-  branch: release/26.0.0-BETA.1
++  branch: release/27.0.0
+   debian_fork: true
+   predepscmd:
+     - "apt install -y wget xz-utils"
+@@ -752,11 +765,11 @@ sources:
+   generate_version: false
+ - name: truenas_audit_rules
+   repo: https://github.com/truenas/audit_rules.git
+-  branch: release/26.0.0-BETA.1
++  branch: release/27.0.0
+   generate_version: false
+ - name: nfs_utils
+   repo: https://github.com/truenas/nfs-utils.git
+-  branch: release/26.0.0-BETA.1
++  branch: release/27.0.0
+   generate_version: false
+ 
+ # Nvidia extensions versions
+diff --git a/scale_build/config.py b/scale_build/config.py
+index 1b8baf8..cb6d6c5 100644
+--- a/scale_build/config.py
++++ b/scale_build/config.py
+@@ -3,7 +3,7 @@ from time import time
+ from datetime import datetime
+ 
+ IDENTITY_FILE_PATH_OVERRIDE_SUFFIX = '_OVERRIDE_IDENTITY_FILE_PATH'
+-_VERS = '26.0.0-MASTER'
++_VERS = '27.0.0-MASTER'
+ 
+ 
+ def get_env_variable(key, _type, default_value=None):

@@ -1,0 +1,66 @@
+From e428d617ce55095acded22250fb97eef15d8a5f1 Mon Sep 17 00:00:00 2001
+From: Joel May <git@jmay.us>
+Date: Sun, 15 Jun 2025 21:54:23 -0700
+Subject: [PATCH] Add support for aach64
+
+---
+ debian/control       | 8 +++++---
+ debian/not-installed | 2 ++
+ debian/rules         | 4 ++--
+ 3 files changed, 9 insertions(+), 5 deletions(-)
+
+diff --git a/debian/control b/debian/control
+index 4821c5d..78865ed 100644
+--- a/debian/control
++++ b/debian/control
+@@ -6,8 +6,10 @@ Standards-Version: 26.01
+ Homepage: https://spdk.io/
+ Build-Depends:
+  debhelper-compat (= 13),
+- linux-headers-truenas-production-amd64,
+- linux-headers-truenas-debug-amd64,
++ linux-headers-truenas-production-amd64 [amd64],
++ linux-headers-truenas-production-arm64 [arm64],
++ linux-headers-truenas-debug-amd64 [amd64],
++ linux-headers-truenas-debug-arm64 [arm64],
+  dh-python,
+  gcc,
+  g++,
+@@ -38,7 +40,7 @@ Vcs-Browser: https://github.com/truenas/spdk
+ Vcs-Git: https://github.com/truenas/spdk
+ 
+ Package: truenas-spdk
+-Architecture: amd64
++Architecture: amd64 arm64
+ Depends:
+  libarchive13,
+  libnuma1,
+diff --git a/debian/not-installed b/debian/not-installed
+index 6ee1b8e..442da63 100644
+--- a/debian/not-installed
++++ b/debian/not-installed
+@@ -10,6 +10,8 @@ usr/lib/python3/dist-packages/spdk/spdkcli/*
+ usr/lib/python3/dist-packages/spdk/spdkcli/*/*
+ usr/lib/python3/dist-packages/spdk/__pycache__
+ usr/lib/python3/dist-packages/spdk/__pycache__/*
++usr/lib/aarch64-linux-gnu/pkgconfig/*.pc
++usr/lib/aarch64-linux-gnu/libspdk_*
+ usr/lib/x86_64-linux-gnu/pkgconfig/*.pc
+ usr/lib/x86_64-linux-gnu/libspdk_*
+ usr/bin/dpdk-cmdline-gen.py
+diff --git a/debian/rules b/debian/rules
+index dd465dc..c20430d 100755
+--- a/debian/rules
++++ b/debian/rules
+@@ -19,9 +19,9 @@ export PATH := $(PATH):$(HOME)/.local/bin
+ 
+ confflags = \
+ 	--prefix=/usr \
+-	--libdir=/usr/lib/x86_64-linux-gnu \
++	--libdir=/usr/lib/${DEB_TARGET_GNU_CPU}-linux-gnu \
+ 	--with-rdma \
+-	--with-uring=/usr/lib/x86_64-linux-gnu \
++	--with-uring=/usr/lib/${DEB_TARGET_GNU_CPU}-linux-gnu \
+ 	--with-vfio-user \
+ 	--without-rbd \
+ 	--without-ublk \

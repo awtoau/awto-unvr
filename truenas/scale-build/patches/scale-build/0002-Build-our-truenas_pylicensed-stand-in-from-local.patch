@@ -1,0 +1,33 @@
+From b3839bd062da19724fb764ba795b640d86ccb520 Mon Sep 17 00:00:00 2001
+From: awto <noreply@awto.au>
+Date: Sat, 14 Nov 2026 01:45:21 +1100
+Subject: [PATCH 2/3] Build our truenas_pylicensed stand-in from /local
+
+---
+ conf/build.manifest | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/conf/build.manifest b/conf/build.manifest
+index 84d2878..93faf42 100644
+--- a/conf/build.manifest
++++ b/conf/build.manifest
+@@ -511,6 +511,11 @@ sources:
+     - "apt install -y linux-truenas-production-libc-dev"
+   explicit_deps:
+     - kernel
++# awto-unvr truenas/stubs/: clean no-licence stand-in for the closed truenas_pylicensed;
++# truenas-build.py snapshots it into a local git repo mounted at /local.
++- name: truenas_pylicensed
++  repo: file:///local/truenas_pylicensed
++  branch: main
+ - name: truenas_pysnmp
+   repo: https://github.com/truenas/truenas_pysnmp
+   branch: release/27.0.0
+@@ -711,6 +716,7 @@ sources:
+         - truenas_pyos
+         - truenas_pysnmp
+         - truenas_pydiscovery
++        - truenas_pylicensed
+         - truenas_pyscstadmin
+       subdir: src/middlewared
+     - name: middlewared-docs

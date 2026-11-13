@@ -1,0 +1,202 @@
+From c85fab87c73b6e7b535f04a245e1353ca961cbe6 Mon Sep 17 00:00:00 2001
+From: awto <noreply@awto.au>
+Date: Sat, 14 Nov 2026 01:26:51 +1100
+Subject: [PATCH] Build for arm64; drop closed-source deps
+
+Based on joel0-truenas/middleware release/26.0.0-BETA.1-aarch64 (Joel May).
+- truenas: Architecture amd64 arm64; cpuid/qemu-system-x86 amd64-only, qemu-system-arm on arm64
+- drop unpublished deps: truenas-file-manager, truenas-licensed, libtruenas-licensed-dev, truenas-s3,
+  python3-licenselib, python3-truenas-pylibsed, python3-truenas-zfstierd, truenas-truesearch
+- python3-truenas-pylicensed stays: awto-unvr ships a clean no-licence stand-in
+- multiarch lib paths instead of x86_64-linux-gnu
+---
+ debian/debian/control                                 | 11 ++++-------
+ src/freenas/usr/share/initramfs-tools/hooks/truenas   |  4 ++--
+ src/middlewared/debian/control                        |  8 --------
+ src/middlewared/middlewared/scripts/configure_fips.py |  3 ++-
+ src/middlewared/middlewared/utils/nss/nss_common.py   |  3 ++-
+ src/middlewared/middlewared/utils/sensors.py          |  3 ++-
+ 6 files changed, 12 insertions(+), 20 deletions(-)
+
+diff --git a/debian/debian/control b/debian/debian/control
+index 54466b6637..f02cb46555 100644
+--- a/debian/debian/control
++++ b/debian/debian/control
+@@ -7,11 +7,11 @@ Standards-Version: 4.4.0
+ Homepage: http://www.truenas.com
+ 
+ Package: truenas
+-Architecture: all
++Architecture: amd64 arm64
+ Depends: acl,
+          console-setup,
+          containerd.io,
+-         cpuid,
++         cpuid [amd64],
+ # We need to bring in dnsmasq-base explicitly as that is used for internal/automatic bridge network in virt plugin
+          dnsmasq-base,
+          docker-buildx-plugin,
+@@ -45,7 +45,8 @@ Depends: acl,
+          proftpd,
+          proftpd-mod-crypto,
+          python3-midcli,
+-         qemu-system-x86,
++         qemu-system-x86 [amd64],
++         qemu-system-arm [arm64],
+          truenas-samba,
+          truenas-sssd,
+          snmpd,
+@@ -57,10 +58,6 @@ Depends: acl,
+          systemd-coredump,
+          tmux,
+          truenas-binaries,
+-         truenas-file-manager,
+-         truenas-licensed,
+-         libtruenas-licensed-dev,
+-         truenas-s3,
+          truenas-webui,
+          usrmerge,
+          waagent,
+diff --git a/src/freenas/usr/share/initramfs-tools/hooks/truenas b/src/freenas/usr/share/initramfs-tools/hooks/truenas
+index b5981d7c9c..44ffd2d981 100755
+--- a/src/freenas/usr/share/initramfs-tools/hooks/truenas
++++ b/src/freenas/usr/share/initramfs-tools/hooks/truenas
+@@ -17,8 +17,8 @@ esac
+ . /usr/share/initramfs-tools/hook-functions
+ 
+ # CorSSL needs an hmac that doesn't get copied automatically by copy_exec
+-copy_file hmac "/usr/lib/x86_64-linux-gnu/libcrypto.hmac"
+-copy_file hmac "/usr/lib/x86_64-linux-gnu/libssl.hmac"
++copy_file hmac "/usr/lib/$(uname -m)-linux-gnu/libcrypto.hmac"
++copy_file hmac "/usr/lib/$(uname -m)-linux-gnu/libssl.hmac"
+ 
+ # FreeBSD loader imports boot pool with hostid=0
+ # We want to keep this to be able to boot back into FreeBSD in case of an erroneous upgrade
+diff --git a/src/middlewared/debian/control b/src/middlewared/debian/control
+index e497b0b8cd..5a830442cf 100644
+--- a/src/middlewared/debian/control
++++ b/src/middlewared/debian/control
+@@ -35,7 +35,6 @@ Build-Depends: alembic,
+                python3-ldap,
+                python3-libvirt,
+                python3-libzfs,
+-               python3-licenselib,
+                python3-mako,
+                python3-netsnmpagent,
+                python3-packaging,
+@@ -54,7 +53,6 @@ Build-Depends: alembic,
+                python3-truenas-connect-utils,
+                python3-truenas-crypto-utils,
+                python3-truenas-pam-utils,
+-               python3-truenas-pylibsed,
+                python3-truenas-pylibvirt,
+                python3-truenas-pylicensed,
+                python3-truenas-pynetif,
+@@ -65,14 +63,12 @@ Build-Depends: alembic,
+                python3-truenas-scram (>= 0.2.0),
+                python3-truenas-spdk,
+                python3-truenas-verify,
+-               python3-truenas-zfstierd,
+                python3-websocket,
+                python3-zettarepl,
+                rclone,
+                sqlite3,
+                truenas-samba,
+                truenas-sssd,
+-               truenas-truesearch,
+                truenas-files
+ Standards-Version: 4.4.0
+ Homepage: https://github.com/truenas/middleware
+@@ -132,7 +128,6 @@ Depends: alembic,
+          python3-ldap,
+          python3-libvirt,
+          python3-libzfs,
+-         python3-licenselib,
+          python3-mako,
+          python3-netsnmpagent,
+          python3-packaging,
+@@ -151,7 +146,6 @@ Depends: alembic,
+          python3-truenas-crypto-utils,
+          python3-truenas-pam-utils,
+          python3-truenas-pydiscovery,
+-         python3-truenas-pylibsed,
+          python3-truenas-pylibvirt,
+          python3-truenas-pylicensed,
+          python3-truenas-pynetif,
+@@ -162,7 +156,6 @@ Depends: alembic,
+          python3-truenas-scram (>= 0.2.0),
+          python3-truenas-spdk,
+          python3-truenas-verify,
+-         python3-truenas-zfstierd,
+          python3-websocket,
+          python3-zettarepl,
+          qemu-system-modules-spice,
+@@ -172,7 +165,6 @@ Depends: alembic,
+          rsync,
+          truenas-samba,
+          truenas-sssd,
+-         truenas-truesearch,
+          scst,
+          scstadmin,
+          sedutil,
+diff --git a/src/middlewared/middlewared/scripts/configure_fips.py b/src/middlewared/middlewared/scripts/configure_fips.py
+index d68f0837ba..0404ec87a0 100755
+--- a/src/middlewared/middlewared/scripts/configure_fips.py
++++ b/src/middlewared/middlewared/scripts/configure_fips.py
+@@ -1,6 +1,7 @@
+ #!/usr/bin/python3
+ import logging
+ import os
++import platform
+ import shutil
+ import sqlite3
+ import subprocess
+@@ -33,7 +34,7 @@ def configure_fips(enable_fips: bool) -> None:
+     if enable_fips:
+         subprocess.check_call([
+             'openssl', 'fipsinstall', '-out', FIPS_MODULE_FILE,
+-            '-module', '/usr/lib/x86_64-linux-gnu/ossl-modules/fips.so',
++            '-module', f'/usr/lib/{platform.machine()}-linux-gnu/ossl-modules/fips.so',
+         ], timeout=30, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+ 
+     modify_openssl_config(enable_fips)
+diff --git a/src/middlewared/middlewared/utils/nss/nss_common.py b/src/middlewared/middlewared/utils/nss/nss_common.py
+index 5fd0f59a6c..92dd839fda 100644
+--- a/src/middlewared/middlewared/utils/nss/nss_common.py
++++ b/src/middlewared/middlewared/utils/nss/nss_common.py
+@@ -1,12 +1,13 @@
+ import enum
+ import ctypes
+ import os
++import platform
+ from typing import Any
+ 
+ from collections import defaultdict
+ 
+ 
+-NSS_MODULES_DIR = '/usr/lib/x86_64-linux-gnu'
++NSS_MODULES_DIR = f'/usr/lib/{platform.machine()}-linux-gnu'
+ FILES_NSS_PATH = os.path.join(NSS_MODULES_DIR, 'libnss_files.so.2')
+ SSS_NSS_PATH = os.path.join(NSS_MODULES_DIR, 'libnss_sss.so.2')
+ WINBIND_NSS_PATH = os.path.join(NSS_MODULES_DIR, 'libnss_winbind.so.2')
+diff --git a/src/middlewared/middlewared/utils/sensors.py b/src/middlewared/middlewared/utils/sensors.py
+index 1a734c1317..fd44be283c 100644
+--- a/src/middlewared/middlewared/utils/sensors.py
++++ b/src/middlewared/middlewared/utils/sensors.py
+@@ -9,6 +9,7 @@ from __future__ import annotations
+ import ctypes
+ import ctypes.util
+ import enum
++import platform
+ from types import TracebackType
+ 
+ 
+@@ -191,7 +192,7 @@ class SensorsWrapper:
+             # Try common paths
+             for path in [
+                 "/usr/lib/libsensors.so",
+-                "/usr/lib/x86_64-linux-gnu/libsensors.so",
++                f"/usr/lib/{platform.machine()}-linux-gnu/libsensors.so",
+             ]:
+                 try:
+                     self.lib = ctypes.CDLL(path)

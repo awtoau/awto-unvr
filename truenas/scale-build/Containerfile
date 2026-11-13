@@ -1,0 +1,14 @@
+# arm64 Debian host for TrueNAS scale-build (#356); run emulated via qemu-aarch64 binfmt.
+# Debian release = the manifest's debian_release.
+FROM docker.io/library/debian:trixie
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        build-essential debootstrap git python3-pip python3-venv python3-dev squashfs-tools \
+        unzip libjson-perl rsync libarchive-tools gpg dpkg-dev ca-certificates curl wget \
+        xorriso mtools grub-efi-arm64-bin grub2-common make libyaml-dev \
+    && rm -rf /var/lib/apt/lists/*
+# scale-build's checkout runs git against bind-mounted trees owned by the host user.
+# scale-build's Makefile runs `pip install -U virtualenv`; pre-install so it is a no-op
+# (upgrading Debian's python3-packaging has no RECORD file and fails).
+RUN python3 -m pip install --break-system-packages --ignore-installed virtualenv
+RUN git config --system --add safe.directory '*'
+WORKDIR /build
