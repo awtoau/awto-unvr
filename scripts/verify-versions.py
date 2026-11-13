@@ -23,6 +23,10 @@ What each stage emits (all three verified on real console output):
   kernel  Linux version 7.3.0-rc1-<sha>-dirty+ (dan@host) ...
           CONFIG_LOCALVERSION, set for every build.
 
+No live console (tio not running, #352): the kernel row comes from
+`uname -r` over ssh instead; U-Boot/UEFI report NO-CONSOLE (cannot answer,
+never a failure, even under --require). --log forces the log path.
+
 Four outcomes per stage. Only one of them is a defect:
   OK        banner present, revision matches the working tree.
   STALE     banner present, revision DIFFERS. The real signal. Exit 1.
@@ -57,6 +61,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 os.environ.setdefault("AWTO_ALLOW_DIRECT_SCRIPT", "1")
+import _box  # noqa: E402
+import _console  # noqa: E402
 from _repo import LOGS, build_ident, make_log, rel  # noqa: E402
 
 CONSOLE_LOG = LOGS / "unvr-console.log"
@@ -127,6 +133,20 @@ def scan(text: str, stage: str) -> tuple[str | None, str | None]:
     return last.group("rev"), last.group(0).strip()
 
 
+def kernel_over_ssh() -> tuple[str | None, str | None, str | None]:
+    """(revision, "uname -r: <release>", error) for the running kernel."""
+    ip = _box.locate()
+    if ip is None:
+        return None, None, "woomera not found on the LAN"
+    try:
+        release, _ = _box.boot_state(ip)
+    except RuntimeError as e:
+        return None, None, f"ssh {ip}: {e}"
+    # Same regex as the console banner: uname -r IS the banner's release field.
+    rev, _ = scan(f"Linux version {release} ", "kernel")
+    return rev, f"uname -r: {release}", None
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
@@ -134,8 +154,9 @@ def main() -> int:
     ap.add_argument(
         "--log",
         type=Path,
-        default=CONSOLE_LOG,
-        help=f"console log to scan (default {rel(CONSOLE_LOG)})",
+        default=None,
+        help=f"console log to scan (default {rel(CONSOLE_LOG)}; given "
+        "explicitly, used even with no live console)",
     )
     ap.add_argument(
         "--stage",
@@ -164,17 +185,28 @@ def main() -> int:
     if bad:
         sys.exit(f"--require: unknown stage(s) {sorted(bad)}")
 
-    try:
-        with a.log.open("rb") as f:
-            f.seek(0, os.SEEK_END)
-            f.seek(max(0, f.tell() - TAIL_BYTES))
-            text = f.read().decode("utf-8", "replace")
-    except OSError as e:
-        if a.gate:
-            log(f"verify-versions: SKIP (no console log: {e})")
-            return 0
-        log(f"verify-versions: cannot read {rel(a.log)}: {e}")
-        return 1
+    no_console = None if a.log else _console.live_reason()
+    if no_console and a.gate:
+        # Gate stays offline: no ssh scan of the LAN from a shared gate.
+        log(f"verify-versions: SKIP ({no_console})")
+        return 0
+    log_path = a.log or CONSOLE_LOG
+    text = ""
+    ssh_err = None
+    if no_console:
+        log(f"{no_console} - kernel via ssh, U-Boot/UEFI cannot be checked")
+    else:
+        try:
+            with log_path.open("rb") as f:
+                f.seek(0, os.SEEK_END)
+                f.seek(max(0, f.tell() - TAIL_BYTES))
+                text = f.read().decode("utf-8", "replace")
+        except OSError as e:
+            if a.gate:
+                log(f"verify-versions: SKIP (no console log: {e})")
+                return 0
+            log(f"verify-versions: cannot read {rel(log_path)}: {e}")
+            return 1
 
     rows = []
     stale = 0
@@ -182,7 +214,13 @@ def main() -> int:
     unstamped = 0
     for stage in stages:
         expected = build_ident(stage)
-        running, banner = scan(text, stage)
+        if no_console and stage != "kernel":
+            rows.append((stage, expected, "-", "NO-CONSOLE", None))
+            continue
+        if no_console:
+            running, banner, ssh_err = kernel_over_ssh()
+        else:
+            running, banner = scan(text, stage)
         if running is None and banner is None:
             status = "MISSING"
             missing += 1
@@ -206,7 +244,10 @@ def main() -> int:
         rows.append((stage, expected, shown, status, banner))
 
     w = max(len(r[1]) for r in rows) if rows else 8
-    log(f"console log: {rel(a.log)} (last {TAIL_BYTES // 1024} KB)")
+    if no_console:
+        log("source: ssh (kernel only)" + (f" - {ssh_err}" if ssh_err else ""))
+    else:
+        log(f"console log: {rel(log_path)} (last {TAIL_BYTES // 1024} KB)")
     log(f"{'stage':<7} {'expected':<{w}} {'running':<{w}} status")
     for stage, expected, shown, status, _ in rows:
         log(f"{stage:<7} {expected:<{w}} {shown:<{w}} {status}")
@@ -227,7 +268,9 @@ def main() -> int:
             "(#258), so it carries no revision to check. Rebuild and "
             "redeploy it to enable the check. Not a stale deploy."
         )
-    if missing:
+    if missing and no_console:
+        log("\nMISSING (kernel): ssh could not read `uname -r` - see source line.")
+    elif missing:
         names = ", ".join(r[0] for r in rows if r[3] == "MISSING")
         log(
             f"\nMISSING ({names}): not seen in this log. The console log "

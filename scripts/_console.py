@@ -12,6 +12,7 @@ from __future__ import annotations
 import os
 import re
 import socket
+import subprocess
 import time
 from pathlib import Path
 
@@ -27,6 +28,33 @@ STOCK_PROMPT = "ALPINE_UBNT_NAS_ALL>"  # UBNT's 2015.07 stock U-Boot
 UEFI_SHELL_MARK = "UEFI Interactive Shell"
 UEFI_SHELL_PROMPT_SUFFIX = ":\\>"
 UEFI_CRASH_MARKS = ("Synchronous Exception", "Data Abort", "Instruction Abort")
+
+
+def tio_pid() -> int | None:
+    """PID of the tio bound to OUR socket, or None.
+    Matches the socket name in the cmdline: a bare `pgrep -x tio` also hits
+    other projects' tio instances."""
+    p = subprocess.run(
+        ["pgrep", "-x", "tio"], capture_output=True, text=True, check=False
+    )
+    for pid in p.stdout.split():
+        try:
+            cmdline = Path(f"/proc/{pid}/cmdline").read_bytes()
+        except OSError:
+            continue
+        if SOCK.name.encode() in cmdline:
+            return int(pid)
+    return None
+
+
+def live_reason() -> str | None:
+    """None if the console log can grow (tio running + socket present),
+    else a one-line reason it cannot (#352)."""
+    if tio_pid() is None:
+        return "console tio not running"
+    if not SOCK.exists():
+        return f"console socket absent ({SOCK})"
+    return None
 
 
 def connect(timeout: float = 0.2):

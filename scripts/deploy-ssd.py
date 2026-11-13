@@ -76,43 +76,54 @@ def main() -> int:
     if a.reboot:
         # The box drops the connection as it goes down; that is success here,
         # so the reboot's own exit status is not meaningful.
+        # boot_id lets the ssh fallback tell the new boot from the old one.
+        try:
+            _, old_boot_id = _box.boot_state(ip)
+        except RuntimeError as e:
+            sys.exit(f"FAILED: reading boot_id before reboot: {e}")
         log("rebooting...")
         subprocess.run(["ssh", *opts, host, "systemctl reboot"], check=False)
         log("reboot issued.")
         if a.no_verify:
             log("--no-verify: not checking what actually came back up.")
             return 0
-        return wait_and_verify()
+        return wait_and_verify(old_boot_id)
 
     log("not rebooting (pass --reboot). The box is still on the OLD kernel.")
     return 0
 
 
-def wait_and_verify() -> int:
+def wait_and_verify(old_boot_id: str) -> int:
     """#258/#165: after a --reboot, check what actually came back up rather
     than assuming the deploy took.
 
-    Both steps have their own timeouts and progress output, so nothing here
-    blocks blindly: wait-for-boot.py polls the console log every 2 s to a
-    300 s cap (its own docstring derives that from a ~200 s observed worst
-    case), and verify-versions.py only reads a file."""
+    - Both steps own their timeouts and progress output (wait-for-boot.py).
+    - No live console -> both fall back to ssh (#352)."""
     log("waiting for the box to come back (wait-for-boot.py)...")
     boot = subprocess.run(
-        [sys.executable, str(REPO / "scripts/wait-for-boot.py")],
+        [
+            sys.executable,
+            str(REPO / "scripts/wait-for-boot.py"),
+            "--kver",
+            KVER,
+            "--old-boot-id",
+            old_boot_id,
+        ],
         check=False,
         env={**os.environ, "AWTO_ALLOW_DIRECT_SCRIPT": "1"},
     )
     if boot.returncode == 3:
-        log("FAILED: box did not reach a login prompt - versions not checked")
+        log("FAILED: box did not come back up - versions not checked")
+        return 1
+    if boot.returncode == 4:
+        log(f"FAILED: box booted a different kernel than {KVER}")
         return 1
     if boot.returncode == 1:
         log("box booted but logged trouble lines - checking versions anyway")
 
-    # --require kernel: this deploy just wrote /boot/uImage, so the kernel
-    # banner MUST be in the log we were watching. Absent means the box did
-    # not boot the thing we deployed, which is exactly the silent failure
-    # this exists to catch. U-Boot/UEFI are not required - a deploy-ssd does
-    # not touch either.
+    # --require kernel: this deploy just wrote /boot/uImage, so an unknown
+    # kernel revision is the silent failure this exists to catch.
+    # U-Boot/UEFI not required - deploy-ssd touches neither.
     log("verifying the running build against the working tree...")
     return subprocess.run(
         [

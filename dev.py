@@ -251,25 +251,11 @@ def _console_port() -> str | None:
 
 
 def _console_pid() -> int | None:
-    """PID of the live tio owning OUR port, or None. Clears a stale pidfile.
-
-    Match only the tio bound to OUR socket. `pgrep -x tio` alone matches ANY tio
-    on the machine - e.g. an unrelated tio on another project's serial device -
-    and would falsely report our port as owned. Filter by our socket name in the
-    process cmdline."""
-    p = subprocess.run(
-        ["pgrep", "-x", "tio"], capture_output=True, text=True, check=False
-    )
-    if p.returncode == 0 and p.stdout.strip():
-        for pid in p.stdout.split():
-            try:
-                cmdline = Path(f"/proc/{pid}/cmdline").read_bytes()
-            except OSError:
-                continue
-            if CONSOLE_SOCK.name.encode() in cmdline:
-                return int(pid)
-    CONSOLE_PID.unlink(missing_ok=True)
-    return None
+    """PID of the live tio owning OUR port, or None. Clears a stale pidfile."""
+    pid = _console.tio_pid()
+    if pid is None:
+        CONSOLE_PID.unlink(missing_ok=True)
+    return pid
 
 
 def _roll_console_log() -> Path | None:

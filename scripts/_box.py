@@ -173,6 +173,41 @@ def ssh_argv(
     return ["ssh", *opts, f"{user}@{ip}", *cmd]
 
 
+# Post-reboot polling (#352). Connect: LAN TCP handshake is sub-ms, 3 s covers
+# an ARP re-resolve; whole call adds key auth + one exec. On expiry: that try
+# fails with its error and the caller polls again.
+POLL_CONNECT_TIMEOUT_S = 3
+POLL_CALL_TIMEOUT_S = 8
+
+
+def boot_state(ip: str) -> tuple[str, str]:
+    """(`uname -r`, boot_id) of the box over key-auth ssh.
+    Raises RuntimeError with ssh's last stderr line on any failure."""
+    argv = [
+        "ssh",
+        "-o",
+        f"ConnectTimeout={POLL_CONNECT_TIMEOUT_S}",
+        *SSH_OPTS_BATCH,
+        f"root@{ip}",
+        "uname -r; cat /proc/sys/kernel/random/boot_id",
+    ]
+    try:
+        r = subprocess.run(
+            argv,
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=POLL_CALL_TIMEOUT_S,
+        )
+    except subprocess.TimeoutExpired:
+        raise RuntimeError(f"ssh call exceeded {POLL_CALL_TIMEOUT_S}s") from None
+    lines = r.stdout.split()
+    if r.returncode or len(lines) != 2:
+        err = (r.stderr.strip().splitlines() or [f"rc={r.returncode}"])[-1]
+        raise RuntimeError(err)
+    return lines[0], lines[1]
+
+
 def sshpass_argv(
     password: str, *, prog: str = "ssh", connect_timeout: int | None = None
 ) -> list[str]:
