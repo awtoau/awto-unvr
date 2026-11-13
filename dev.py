@@ -1174,6 +1174,16 @@ def cmd_truenas_install(extra: list[str]) -> int:
 
 
 @command(
+    "receive the box's kernel log over netconsole UDP into tmp/logs/netconsole.log - "
+    "the console when no serial is attached (scripts/netconsole-listen.py)",
+    args="[--port 6666]",
+    kind="action",
+)
+def cmd_netconsole_listen(extra: list[str]) -> int:
+    return _run_script("scripts/netconsole-listen.py", extra)
+
+
+@command(
     "run the defconfig CONFIG_BOOTCOMMAND through U-Boot sandbox scenarios before it "
     "goes into the box's env (scripts/bootcmd-sandbox.py)",
     kind="action",

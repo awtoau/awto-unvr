@@ -24,6 +24,7 @@ mount -t proc proc /proc
 mount -t sysfs sysfs /sys
 mount -t devtmpfs devtmpfs /dev
 mount -t tmpfs -o mode=755 tmpfs /run
+ln -s /proc/self/fd /dev/fd
 log "start, kernel $(uname -r)"
 
 # --- watchdog: feed while SSD I/O or the job's CPU time moves; STALL_S of neither = hung -> reset.
@@ -54,8 +55,15 @@ feeder() {
     done
 }
 
+# netconsole drops what is logged before the 1G link is up: replay the record over it.
+replay() {
+    local l
+    { cat "$LOG"; dmesg | tail -n 400; } | while IFS= read -r l; do echo "tnmaint-replay: $l" >/dev/kmsg; done
+}
+
 finish() {
     log "finish: $1"
+    replay
     [ -c /dev/zfs ] && chroot /live zpool export -a >>"$LOG" 2>&1
     sync
     if [ -n "${P2LOG:-}" ]; then cat "$LOG" >"$P2LOG"; sync; fi
@@ -80,8 +88,33 @@ fi
 # --- p2 by PARTUUID (SSD probe measured 4.7-21.6 s on this box: ssd-repartition.py T_DISK)
 P2=""
 lim=$(($(now) + T_DISK))
+pci_list() { local d; for d in /sys/bus/pci/devices/*; do echo -n "${d##*/}=$(cat "$d/vendor"):$(cat "$d/device") "; done; }
+log "pci: $(pci_list)"
+rescanned=0
 while [ -z "$P2" ] && (($(now) < lim)); do
     P2=$(blkid -t "PARTUUID=$P2_PARTUUID" -o device 2>/dev/null | head -n1)
+    if [ -z "$P2" ] && [ "$rescanned" = 0 ] && (($(now) > lim - T_DISK / 2)); then
+        # Diagnostics only: p2 still missing halfway through T_DISK - record why (#338).
+        rescanned=1
+        echo 1 >/sys/bus/pci/rescan
+        log "pci after rescan: $(pci_list); block: $(ls /sys/block | tr '\n' ' ')"
+        log "modules: $(grep -oE '^(ahci[a-z_]*|libahci|libata|sd_mod)' /proc/modules | tr '\n' ' ')"
+        log "pci drivers: $(ls /sys/bus/pci/drivers | tr '\n' ' ')"
+        for s in 0000:00:08.0 0000:00:09.0; do
+            dp=/sys/bus/pci/devices/$s
+            [ -d "$dp" ] || continue
+            log "$s class=$(cat $dp/class) enable=$(cat $dp/enable) driver=$(readlink $dp/driver) override=$(cat $dp/driver_override 2>&1)"
+            echo "$s" >/sys/bus/pci/drivers/ahci-alpine/bind 2>>"$LOG" || log "bind $s to ahci-alpine failed"
+        done
+        log "after bind: driver08=$(readlink /sys/bus/pci/devices/0000:00:08.0/driver) block: $(ls /sys/block | tr '\n' ' ')"
+        mount -t debugfs debugfs /sys/kernel/debug 2>/dev/null
+        log "deferred: $(tr '\n' '|' </sys/kernel/debug/devices_deferred 2>&1)"
+        log "regulators: $(cat /sys/class/regulator/*/name 2>&1 | tr '\n' ' ')"
+        log "reg-fixed bound: $(ls /sys/bus/platform/drivers/reg-fixed-voltage 2>&1 | tr '\n' ' ')"
+        log "08 waiting_for_supplier=$(cat /sys/bus/pci/devices/0000:00:08.0/waiting_for_supplier 2>&1) links: $(ls /sys/bus/pci/devices/0000:00:08.0 | grep -E 'supplier|consumer' | tr '\n' ' ')"
+        for l in /sys/class/devlink/*0000:00:08.0*; do log "devlink ${l##*/} status=$(cat $l/status 2>&1)"; done
+        dmesg | tail -n 40 | while IFS= read -r l; do log "dmesg: $l"; done
+    fi
     [ -n "$P2" ] || sleep 1
 done
 [ -n "$P2" ] || finish "p2 PARTUUID $P2_PARTUUID not found in ${T_DISK}s"
