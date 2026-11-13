@@ -136,6 +136,12 @@ STEPS: dict[str, tuple[str, list[str], bool]] = {
         [sys.executable, "scripts/truenas-series.py", "check"],
         True,
     ),
+    # OOT al_* against the last 6.18 kbuild (-Werror), ~20 s; SKIPs before the first build.
+    "truenas-modules": (
+        "al_* OOT modules still build against TrueNAS 6.18 (#338)",
+        [sys.executable, "scripts/build-linux-truenas.py", "--gate"],
+        True,
+    ),
     # The rootfs builder's guard only sees a FRESH installroot. This catches a
     # marker on a rootfs built before that guard existed and still running -
     # which is what #217 turned out to be. Skips when the box is unreachable.
@@ -163,6 +169,7 @@ GATE = [
     "hal-quirks",
     "dt-drift",
     "truenas-series",
+    "truenas-modules",
     "box-container",
     "versions",
 ]
@@ -1129,6 +1136,7 @@ def cmd_truenas_series(extra: list[str]) -> int:
 @command(
     "build TrueNAS's arm64 6.18 kernel + UNVR DTB + al_* modules: series apply, "
     "TrueNAS production config + UNVR fragment (#338, scripts/build-linux-truenas.py)",
+    args="[--modules-only]",
     kind="action",
 )
 def cmd_build_truenas(extra: list[str]) -> int:

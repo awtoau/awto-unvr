@@ -10,6 +10,9 @@
 - Modules: TrueNAS's MODULE_SIG_ALL signs in-tree ones at install; OOT al_* signed with
   the same build key. WERROR comes from truenas.config.
 - Out: truenas_build_out() (Image, uImage, DTB, config, modroot/).
+- --modules-only: rebuild just the OOT modules against the existing kbuild (into
+  OUT/oot-check/, not modroot) - the fast 6.18 API check after a modules/ edit.
+  --gate: same, but SKIP (rc 0) when no 6.18 kbuild exists yet.
 - Log: tmp/logs/build-linux-truenas.log
 """
 
@@ -177,7 +180,22 @@ def build() -> None:
     log(f"DONE. KVER={kv} modroot: {modroot} ; Image/uImage/dtb in {OUT}")
 
 
+def modules_only(gate: bool) -> None:
+    if not os.path.exists(os.path.join(KOUT, "Module.symvers")):
+        log(
+            f"{'SKIP' if gate else 'FATAL'}: no built kernel in {KOUT} - ./dev.py build-truenas"
+        )
+        sys.exit(0 if gate else 1)
+    scratch = os.path.join(OUT, "oot-check")
+    _kbuild.build_oot_modules(run, log, KOUT, scratch, os.path.join(scratch, "ko"))
+    log(f"OOT modules build against {kver(KOUT)}")
+
+
 if __name__ == "__main__":
     t0 = time.time()
-    build()
+    args = sys.argv[1:]
+    if "--modules-only" in args or "--gate" in args:
+        modules_only("--gate" in args)
+    else:
+        build()
     log(f"TOTAL {int(time.time() - t0)}s")

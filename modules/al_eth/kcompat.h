@@ -1,11 +1,8 @@
 /*
  * kcompat.h - compatibility header for al_eth driver
  *
- * Minimal kcompat header - this project tracks mainline HEAD directly
- * (see scripts/build-linux-fedora.py), with 6.12 as the floor this shim
- * assumes. No version branching below: every symbol here has been stable
- * since long before 6.12, so there's nothing to gate on LINUX_VERSION_CODE. All
- * backwards compatibility code for pre-6.12 kernels has been removed.
+ * One source for mainline (7.x) and TrueNAS 6.18 (#338): API differences
+ * are LINUX_VERSION_CODE-gated below, never forked.
  *
  * Copyright (c) 2016 Amazon.com, Inc.
  * Copyright (c) 2024 - Ported to kernel 6.12+
@@ -73,5 +70,10 @@ static inline int al_eth_vlan_hwaccel_check_and_put(netdev_features_t *features,
 	}
 	return -EOPNOTSUPP;
 }
+
+/* dev->dma_coherent became an accessor in 7.2 (3e2c1e213ac2). */
+#if LINUX_VERSION_CODE < KERNEL_VERSION(7, 2, 0)
+#define dev_dma_coherent(dev) ((dev)->dma_coherent)
+#endif
 
 #endif /* _KCOMPAT_H_ */
