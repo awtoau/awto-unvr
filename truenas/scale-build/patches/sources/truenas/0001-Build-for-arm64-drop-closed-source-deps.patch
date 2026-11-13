@@ -1,22 +1,22 @@
-From c85fab87c73b6e7b535f04a245e1353ca961cbe6 Mon Sep 17 00:00:00 2001
+From 2e67f2917f3152f02559c19d37d643223e9ad55f Mon Sep 17 00:00:00 2001
 From: awto <noreply@awto.au>
 Date: Sat, 14 Nov 2026 01:26:51 +1100
-Subject: [PATCH] Build for arm64; drop closed-source deps
+Subject: [PATCH 1/3] Build for arm64; drop closed-source deps
 
 Based on joel0-truenas/middleware release/26.0.0-BETA.1-aarch64 (Joel May).
 - truenas: Architecture amd64 arm64; cpuid/qemu-system-x86 amd64-only, qemu-system-arm on arm64
-- drop unpublished deps: truenas-file-manager, truenas-licensed, libtruenas-licensed-dev, truenas-s3,
-  python3-licenselib, python3-truenas-pylibsed, python3-truenas-zfstierd, truenas-truesearch
-- python3-truenas-pylicensed stays: awto-unvr ships a clean no-licence stand-in
+- drop closed deps with no stand-in: truenas-file-manager, truenas-licensed,
+  libtruenas-licensed-dev, truenas-s3
+- middlewared's licenselib/pylibsed/pylicensed/zfstierd/truesearch deps stay: awto-unvr
+  truenas/stubs/ ships clean stand-ins under those package names
 - multiarch lib paths instead of x86_64-linux-gnu
 ---
  debian/debian/control                                 | 11 ++++-------
  src/freenas/usr/share/initramfs-tools/hooks/truenas   |  4 ++--
- src/middlewared/debian/control                        |  8 --------
  src/middlewared/middlewared/scripts/configure_fips.py |  3 ++-
  src/middlewared/middlewared/utils/nss/nss_common.py   |  3 ++-
  src/middlewared/middlewared/utils/sensors.py          |  3 ++-
- 6 files changed, 12 insertions(+), 20 deletions(-)
+ 5 files changed, 12 insertions(+), 12 deletions(-)
 
 diff --git a/debian/debian/control b/debian/debian/control
 index 54466b6637..f02cb46555 100644
@@ -72,73 +72,6 @@ index b5981d7c9c..44ffd2d981 100755
  
  # FreeBSD loader imports boot pool with hostid=0
  # We want to keep this to be able to boot back into FreeBSD in case of an erroneous upgrade
-diff --git a/src/middlewared/debian/control b/src/middlewared/debian/control
-index e497b0b8cd..5a830442cf 100644
---- a/src/middlewared/debian/control
-+++ b/src/middlewared/debian/control
-@@ -35,7 +35,6 @@ Build-Depends: alembic,
-                python3-ldap,
-                python3-libvirt,
-                python3-libzfs,
--               python3-licenselib,
-                python3-mako,
-                python3-netsnmpagent,
-                python3-packaging,
-@@ -54,7 +53,6 @@ Build-Depends: alembic,
-                python3-truenas-connect-utils,
-                python3-truenas-crypto-utils,
-                python3-truenas-pam-utils,
--               python3-truenas-pylibsed,
-                python3-truenas-pylibvirt,
-                python3-truenas-pylicensed,
-                python3-truenas-pynetif,
-@@ -65,14 +63,12 @@ Build-Depends: alembic,
-                python3-truenas-scram (>= 0.2.0),
-                python3-truenas-spdk,
-                python3-truenas-verify,
--               python3-truenas-zfstierd,
-                python3-websocket,
-                python3-zettarepl,
-                rclone,
-                sqlite3,
-                truenas-samba,
-                truenas-sssd,
--               truenas-truesearch,
-                truenas-files
- Standards-Version: 4.4.0
- Homepage: https://github.com/truenas/middleware
-@@ -132,7 +128,6 @@ Depends: alembic,
-          python3-ldap,
-          python3-libvirt,
-          python3-libzfs,
--         python3-licenselib,
-          python3-mako,
-          python3-netsnmpagent,
-          python3-packaging,
-@@ -151,7 +146,6 @@ Depends: alembic,
-          python3-truenas-crypto-utils,
-          python3-truenas-pam-utils,
-          python3-truenas-pydiscovery,
--         python3-truenas-pylibsed,
-          python3-truenas-pylibvirt,
-          python3-truenas-pylicensed,
-          python3-truenas-pynetif,
-@@ -162,7 +156,6 @@ Depends: alembic,
-          python3-truenas-scram (>= 0.2.0),
-          python3-truenas-spdk,
-          python3-truenas-verify,
--         python3-truenas-zfstierd,
-          python3-websocket,
-          python3-zettarepl,
-          qemu-system-modules-spice,
-@@ -172,7 +165,6 @@ Depends: alembic,
-          rsync,
-          truenas-samba,
-          truenas-sssd,
--         truenas-truesearch,
-          scst,
-          scstadmin,
-          sedutil,
 diff --git a/src/middlewared/middlewared/scripts/configure_fips.py b/src/middlewared/middlewared/scripts/configure_fips.py
 index d68f0837ba..0404ec87a0 100755
 --- a/src/middlewared/middlewared/scripts/configure_fips.py

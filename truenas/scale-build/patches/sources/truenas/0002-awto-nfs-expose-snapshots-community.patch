@@ -1,4 +1,4 @@
-From 8c903644c51e0c6bfe95bca7f3cd5a8ac8658b59 Mon Sep 17 00:00:00 2001
+From 517cd24d1c56c5bce765fb64f06c6b3d4c97608a Mon Sep 17 00:00:00 2001
 From: awto <noreply@awto.au>
 Date: Sat, 14 Nov 2026 02:08:13 +1100
 Subject: [PATCH 2/3] nfs: expose_snapshots without the NFS_SNAPSHOT
