@@ -79,6 +79,8 @@ def build(tree: str) -> Path:
             inc,
             "-undef",
             "-D__DTS__",
+            # 6.18 pwrctrl strands *-supply PCI children (#338); 7.x Fedora keeps them (#104).
+            *(["-DAWTO_NO_PCI_SUPPLY"] if tree == "truenas" else []),
             "-x",
             "assembler-with-cpp",
             "-o",

@@ -139,16 +139,22 @@
 			 * ahci probe until the bay rails are up (#104).
 			 * docs/sata-bay-power-ordering.md
 			 */
+			/* 6.18 pwrctrl turns a *-supply child into a platform dev
+			 * nothing binds -> slot never scanned (#338): TrueNAS tree drops them. */
 			sata@8,0 {
 				reg = <0x4000 0 0 0 0>;
+#ifndef AWTO_NO_PCI_SUPPLY
 				port0-target-supply = <&reg_hdd_bay3>;
 				port2-target-supply = <&reg_hdd_bay4>;
+#endif
 			};
 
 			sata@9,0 {
 				reg = <0x4800 0 0 0 0>;
+#ifndef AWTO_NO_PCI_SUPPLY
 				port0-target-supply = <&reg_hdd_bay2>;
 				port2-target-supply = <&reg_hdd_bay1>;
+#endif
 			};
 		};
 
