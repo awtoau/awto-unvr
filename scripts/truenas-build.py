@@ -360,7 +360,8 @@ KR=$($M -s kernelrelease)
 echo "KERNELRELEASE=$KR"
 # mkdebian copies scripts/package/truenas/* relative to the objtree
 mkdir -p scripts/package && ln -sfn $KSRC/scripts/package/truenas scripts/package/truenas
-$M KDEB_CHANGELOG_DIST=trixie debian
+$M archprepare  # writes include/config/kernel.release, which mkdebian reads
+KDEB_CHANGELOG_DIST=trixie $M run-command KBUILD_RUN_COMMAND='$(srctree)/scripts/package/mkdebian'
 # no perf package: cross-building tools/perf needs the arm64 userland dev libs
 sed -i '/^Package: linux-perf-truenas$/,/^$/d' debian/control
 export DEB_BUILD_PROFILES="pkg.linux-$KR.nokerneldbg" DEB_BUILD_OPTIONS="parallel=$NPROC"
@@ -391,11 +392,11 @@ def step_kernel(a) -> int:
         flags=re.M,
     )
     (obj / ".config").write_text(text)
-    certs = obj / "debian" / "certs"
-    certs.mkdir(parents=True, exist_ok=True)
-    shutil.copy(ksrc / "scripts/package/truenas/truenas-uefi-certs.pem", certs)
+    # `make debian` is a directory target: a stale debian/ makes it a no-op
+    shutil.rmtree(obj / "debian", ignore_errors=True)
     cmd = [
         "sudo", "podman", "run", "--rm", "--name", f"{CTR_NAME}-kbuild", "--network", "host",
+        "--user", f"{os.getuid()}:{os.getgid()}", "-e", "HOME=/tmp",
         "-v", f"{ksrc}:{ksrc}:ro", "-v", f"{store}:{store}:ro", "-v", f"{obj}:/kobj",
         "-v", f"{KWORK}:/kout", "-e", f"KSRC={ksrc}", "-e", f"NPROC={NPROC}",
         KIMAGE, "sh", "-c", KBUILD_SH,

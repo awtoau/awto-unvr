@@ -1,4 +1,4 @@
-From 2308539ab749b657f0f9d7a0cb422c144fb0ef11 Mon Sep 17 00:00:00 2001
+From d7e98fb828249eb2055c9af15d8494b228050447 Mon Sep 17 00:00:00 2001
 From: awto <noreply@awto.au>
 Date: Sat, 14 Nov 2026 01:48:42 +1100
 Subject: [PATCH 3/3] Kernel comes from awto-unvr, not truenas/linux
@@ -7,11 +7,11 @@ Subject: [PATCH 3/3] Kernel comes from awto-unvr, not truenas/linux
   (linux-image/headers-truenas-production-arm64, linux-truenas-production-libc-dev) into tmp/pkgdir
 - drop the debug kernel and its openzfs-dbg/scst-dbg builds, and linux-perf-truenas
 ---
- conf/build.manifest | 113 --------------------------------------------
- 1 file changed, 113 deletions(-)
+ conf/build.manifest | 117 --------------------------------------------
+ 1 file changed, 117 deletions(-)
 
 diff --git a/conf/build.manifest b/conf/build.manifest
-index 93faf42..7685f49 100644
+index 93faf42..7d1dd18 100644
 --- a/conf/build.manifest
 +++ b/conf/build.manifest
 @@ -49,14 +49,8 @@ base-packages:
@@ -104,10 +104,11 @@ index 93faf42..7685f49 100644
  # - name: nfs4xdr_acl_tools
  #   repo: https://github.com/truenas/nfs4xdr-acl-tools
  #   branch: release/27.0.0
-@@ -461,35 +401,7 @@ sources:
+@@ -460,36 +400,7 @@ sources:
+     - "dpkg-buildpackage -us -uc -b"
      - "rm ../openzfs-zfs-dkms*.deb ../openzfs-zfs-dracut*.deb"
      - "debian/rules override_dh_binary-modules"
-   explicit_deps:
+-  explicit_deps:
 -    - kernel
 -    - kernel-dbg
    generate_version: false
@@ -140,27 +141,30 @@ index 93faf42..7685f49 100644
  - name: truenas_pylibvirt
    repo: https://github.com/truenas/truenas_pylibvirt
    branch: release/27.0.0
-@@ -510,7 +422,6 @@ sources:
+@@ -509,8 +420,6 @@ sources:
+   branch: release/27.0.0
    predepscmd:
      - "apt install -y linux-truenas-production-libc-dev"
-   explicit_deps:
+-  explicit_deps:
 -    - kernel
  # awto-unvr truenas/stubs/: clean no-licence stand-in for the closed truenas_pylicensed;
  # truenas-build.py snapshots it into a local git repo mounted at /local.
  - name: truenas_pylicensed
-@@ -581,8 +492,6 @@ sources:
+@@ -580,9 +489,6 @@ sources:
+     - "sh -x fetch.sh"
      - "scripts/pkgdep.sh  --rdma"
    deps_path: debian
-   explicit_deps:
+-  explicit_deps:
 -    - kernel
 -    - kernel-dbg
  - name: avahi
    repo: https://github.com/truenas/avahi
    # no release/27.0.0 branch; every release/stable branch is the same commit
-@@ -619,29 +528,7 @@ sources:
+@@ -618,30 +524,7 @@ sources:
+     - "make 2perf"
      - "make scst-dist-gzip"
      - "make dpkg DEBEMAIL=no-reply@ixsystems.com DEBFULLNAME=TrueNAS"
-   explicit_deps:
+-  explicit_deps:
 -    - kernel
 -    - kernel-dbg
    branch: release/27.0.0
