@@ -20,6 +20,7 @@ IPs, subnet, gateway/DNS, domain → `awto-dan/docs/network/ip-registry.toml` (w
 stock U-Boot → NAND 0x1300000 (awto-uboot, raw, `go`) → ext4load /boot/uImage from SSD → Linux
 ```
 - Deploy = `./dev.py publish-fedora` then `./dev.py deploy-ssd [--reboot]` — an scp, not a flash. `./dev.py flash` (NAND) is recovery-only.
+- Kernel variant: `--kernel debug|perf` on build-fedora / publish-fedora / deploy-ssd. **debug is slow** (10G CPU-bound); perf = line rate. `docs/build.md`, #353.
 - `./dev.py uboot-test --cold` reliably lands at `awto-nas#`. `catch-uboot.py` stops at **stock's** prompt, not ours.
 - `awto-nas#` prompt is **not sticky**: its autoboot countdown continues, so a slow follow-up command lands in Linux.
 - Stock console is 115200, can't change (closed binary). Ours can, but a stale saved env in mtd3 overrides compiled `CONFIG_*` — `env default -a; saveenv` (#229).

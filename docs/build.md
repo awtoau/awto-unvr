@@ -68,13 +68,28 @@ The
 | # | What | dev.py | Script | Output |
 |---|------|--------|--------|--------|
 | 1 | Netboot installer (bare-disk bootstrap for `deploy-fedora-rootfs`) | `build-ea16` | `build-linux-ea16.py` | `build-out-ea16/` (`AWTO_KERNEL_OUT`) |
-| 2 | Fedora rootfs (**daily driver**) | `build-fedora` | `build-linux-fedora.py` | `build-out-fedora/` |
+| 2 | Fedora kernel, **debug** (default): lockdep, debug-objects, fault injection, SW PAN. **Slow** | `build-fedora [--kernel debug]` | `build-linux-fedora.py` | `build-out-fedora/` |
 | 2a | ↳ same script, full-debug variant (KASAN, UBSAN, DMA_API_DEBUG, lockdep, panic-on-lockup) | `AWTO_KASAN_BUILD=1 build-fedora` | (same) | `build-out-fedora-kasan/` |
-| 2b | ↳ same script, non-debug perf variant (no lockdep/debug-objects/fault-injection/SW PAN; #353). Same env on `publish-fedora`/`deploy-ssd` | `AWTO_PERF_BUILD=1 build-fedora` | (same) | `build-out-fedora-perf/` |
+| 2b | ↳ **perf**: none of row 2's debug, no SW PAN, no `init_on_alloc` (#353) | `build-fedora --kernel perf` | (same) | `build-out-fedora-perf/` |
 | 3 | On-box native (no cross-compile) | *(none)* | `build-on-box.py` | `/lib/modules/<kver>/updates/` on the box |
 | 4 | Fedora rootfs tarball | `build-fedora-rootfs` | `build-fedora-rootfs.py` | `tmp/fedora-rootfs.tar.gz` |
 | 5 | awto-uboot (our U-Boot) | `build-uboot` | `uboot-build.py` | staged into `/mnt/2tb/unvr-port-refs/u-boot-v2026.07`, chainload-able |
 | 6 | EDK2/UEFI (our platform port, docs/uefi.md) | `build-uefi-p0` | `build-uefi-p0.py` | builds against `/mnt/2tb/unvr-port-refs/edk2` (pristine `edk2-stable202608` clone), `UNVR.fd` chainload-able |
+
+### debug vs perf kernel
+
+- Pick with `--kernel debug|perf` on all three steps: `build-fedora`, `publish-fedora`, `deploy-ssd`. They must match; the flag just sets `AWTO_PERF_BUILD`.
+- **debug is slow by design.** Lockdep and SW PAN took over half the CPU on 10G receive. Measured 2026-11-13, 7.4.0-rc2, iperf3 -P4 to the dev host's ConnectX-3 (#353):
+
+  | 10G | debug | perf |
+  |---|---|---|
+  | into box | 7.00 Gbit/s | 9.26-9.40 |
+  | out of box | 6.82 | 9.41 |
+  | bidir in+out | 3.16+4.51 | 7.7+8.1 |
+  | RX FIFO overruns | 42772 | 0 |
+
+- Use **debug** to hunt locking, use-after-free and fault-path bugs (#214). Use **perf** for throughput numbers and for normal use.
+- perf drops security hardening: `ARM64_SW_TTBR0_PAN` (the A57 has no hardware PAN) and zero-on-alloc (`init_on_alloc=1` at boot restores it).
 
 Rows 5 and 6 both keep the actual source of truth (`uboot-port/`,
 `Platform/Ubiquiti/UNVR/`) tracked in this repo, with the upstream tree

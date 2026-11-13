@@ -930,13 +930,47 @@ def cmd_build_uboot(extra: list[str]) -> int:
     return _run_script("scripts/uboot-build.py", extra)
 
 
+KERNEL_VARIANTS = ("debug", "perf")
+KERNEL_ARGS = "[--kernel debug|perf]"
+
+
+def _kernel_variant(extra: list[str]) -> list[str]:
+    """Strip `--kernel debug|perf` and set AWTO_PERF_BUILD to match.
+
+    debug (default): lockdep/debug-objects/fault injection - slow, 10G is
+    CPU-bound. perf: those off, reaches 10G line rate. docs/build.md, #353."""
+    out, variant = [], None
+    it = iter(extra)
+    for a in it:
+        if a == "--kernel":
+            variant = next(it, None)
+        elif a.startswith("--kernel="):
+            variant = a.split("=", 1)[1]
+        else:
+            out.append(a)
+    if variant is None:
+        return out
+    if variant not in KERNEL_VARIANTS:
+        sys.exit(
+            f"--kernel must be one of {'|'.join(KERNEL_VARIANTS)}, got {variant!r}"
+        )
+    if variant == "perf":
+        os.environ["AWTO_PERF_BUILD"] = "1"
+    else:
+        os.environ.pop("AWTO_PERF_BUILD", None)
+    log(f"kernel variant: {variant}")
+    return out
+
+
 @command(
-    "build the Fedora kernel + DTB + al_* modules, version set by "
-    "AWTO_KERNEL_SRC/AWTO_KERNEL_VER env vars (scripts/build-linux-fedora.py)",
+    "build the Fedora kernel + DTB + al_* modules. --kernel debug (default: "
+    "lockdep etc., SLOW - 10G CPU-bound) or perf (line rate) - docs/build.md "
+    "(scripts/build-linux-fedora.py)",
+    args=KERNEL_ARGS,
     kind="action",
 )
 def cmd_build_fedora(extra: list[str]) -> int:
-    return _run_script("scripts/build-linux-fedora.py", extra)
+    return _run_script("scripts/build-linux-fedora.py", _kernel_variant(extra))
 
 
 @command(
@@ -1514,10 +1548,13 @@ def cmd_wait_for_boot(extra: list[str]) -> int:
 
 @command(
     "phase 1/2 of a Fedora deploy: regenerate tftp uImage+DTB from build-out "
-    "+ sync module tree onto woomera. Run while Fedora is up (scripts/publish-fedora.py)",
+    "+ sync module tree onto woomera. Run while Fedora is up. Same --kernel as "
+    "the build (scripts/publish-fedora.py)",
+    args=KERNEL_ARGS,
     kind="action",
 )
 def cmd_publish_fedora(extra: list[str]) -> int:
+    extra = _kernel_variant(extra)
     # Ensure a fresh, correctly-rooted server BEFORE staging (#119): flash
     # may happen much later in a separate invocation, so this can't be a
     # start/stop-around-the-call pattern - it must be left running for
@@ -1530,11 +1567,13 @@ def cmd_publish_fedora(extra: list[str]) -> int:
     "deploy the published kernel+DTB onto the SSD over 1G - the deploy path for "
     "the current boot chain (awto-uboot boots /boot/uImage from SSD). Run "
     "./dev.py publish-fedora first. `--reboot` boots into it and verifies the "
-    "kernel that came back is this tree's build (#258) (scripts/deploy-ssd.py)",
+    "kernel that came back is this tree's build (#258). Same --kernel as the "
+    "build (scripts/deploy-ssd.py)",
+    args=f"{KERNEL_ARGS} [--reboot]",
     kind="action",
 )
 def cmd_deploy_ssd(extra: list[str]) -> int:
-    return _run_script("scripts/deploy-ssd.py", extra)
+    return _run_script("scripts/deploy-ssd.py", _kernel_variant(extra))
 
 
 @command(
