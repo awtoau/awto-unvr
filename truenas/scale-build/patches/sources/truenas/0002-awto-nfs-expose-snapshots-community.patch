@@ -1,0 +1,66 @@
+From 8c903644c51e0c6bfe95bca7f3cd5a8ac8658b59 Mon Sep 17 00:00:00 2001
+From: awto <noreply@awto.au>
+Date: Sat, 14 Nov 2026 02:08:13 +1100
+Subject: [PATCH 2/3] nfs: expose_snapshots without the NFS_SNAPSHOT
+ entitlement (awto-unvr)
+
+- sharing.nfs validation skips truenas.entitlements.check(NFS_SNAPSHOT); dataset-root check kept
+- kernel NFSEXP_SNAPDIR (fs/nfsd) and truenas/nfs-utils zfs_snapdir are open source
+- entitlement matrix/engine untouched; entitlement_usage may still report the feature in use
+---
+ src/middlewared/middlewared/plugins/nfs.py | 35 ++++++++++------------
+ 1 file changed, 16 insertions(+), 19 deletions(-)
+
+diff --git a/src/middlewared/middlewared/plugins/nfs.py b/src/middlewared/middlewared/plugins/nfs.py
+index ac25028a29..5d4a29f447 100644
+--- a/src/middlewared/middlewared/plugins/nfs.py
++++ b/src/middlewared/middlewared/plugins/nfs.py
+@@ -5,7 +5,6 @@ import itertools
+ import os
+ import shutil
+ 
+-from truenas_pylicensed.features import LicenseFeature
+ 
+ from middlewared.api import api_method
+ from middlewared.api.current import (
+@@ -636,24 +635,22 @@ class SharingNFSService(SharingService):
+                 )
+ 
+         if data["expose_snapshots"]:
+-            entitlement = await self.call2(self.s.truenas.entitlements.check, LicenseFeature.NFS_SNAPSHOT)
+-            if entitlement.entitled:
+-                # check if mountpoint and whether snapdir is enabled
+-                try:
+-                    # We're using statfs output because in future it should expose
+-                    # whether snapdir is enabled
+-                    sfs = await self.middleware.call("filesystem.statfs", data["path"])
+-                    if sfs["dest"] != data["path"]:
+-                        verrors.add(
+-                            f"{schema_name}.expose_snapshots",
+-                            f"{data['path']}: export path is not the root directory of a dataset."
+-                        )
+-                except Exception:
+-                    # we can't get info on unmounted / locked datasets but this
+-                    # doesn't have to be perfect.
+-                    pass
+-            else:
+-                verrors.add(f"{schema_name}.expose_snapshots", entitlement.message)
++            # awto-unvr: no NFS_SNAPSHOT entitlement check - kernel NFSEXP_SNAPDIR and
++            # nfs-utils zfs_snapdir are open source; only the dataset-root rule stays.
++            # check if mountpoint and whether snapdir is enabled
++            try:
++                # We're using statfs output because in future it should expose
++                # whether snapdir is enabled
++                sfs = await self.middleware.call("filesystem.statfs", data["path"])
++                if sfs["dest"] != data["path"]:
++                    verrors.add(
++                        f"{schema_name}.expose_snapshots",
++                        f"{data['path']}: export path is not the root directory of a dataset."
++                    )
++            except Exception:
++                # we can't get info on unmounted / locked datasets but this
++                # doesn't have to be perfect.
++                pass
+ 
+     @private
+     async def sanitize_share_networks_and_hosts(self, data, schema_name, verrors):
