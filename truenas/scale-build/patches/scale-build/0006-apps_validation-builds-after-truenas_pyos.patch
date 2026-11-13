@@ -1,0 +1,23 @@
+From f82a345dbe8201107d997f4a0a95714983971f42 Mon Sep 17 00:00:00 2001
+From: awto <noreply@awto.au>
+Date: Sat, 14 Nov 2026 03:57:47 +1100
+Subject: [PATCH] apps_validation builds after truenas_pyos
+
+From joel0-truenas/scale-build 6965d73 (Joel May); not on the BETA branch.
+---
+ conf/build.manifest | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/conf/build.manifest b/conf/build.manifest
+index f293ce6..702fbfc 100644
+--- a/conf/build.manifest
++++ b/conf/build.manifest
+@@ -568,6 +568,8 @@ sources:
+ - name: apps_validation
+   repo: https://github.com/truenas/apps_validation
+   branch: release/27.0.0
++  explicit_deps:
++    - truenas_pyos
+ - name: py_cryptit
+   repo: https://github.com/truenas/py-cryptit
+   branch: release/27.0.0
