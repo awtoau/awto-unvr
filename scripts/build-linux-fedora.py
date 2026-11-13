@@ -169,6 +169,8 @@ PERF_DISABLE = (
     "KASAN",
     # Security hardening traded for uaccess cost, perf variant only (#353).
     "ARM64_SW_TTBR0_PAN",
+    # Zeroes every TCP send page; boot `init_on_alloc=1` restores it (#353).
+    "INIT_ON_ALLOC_DEFAULT_ON",
 )
 # Must be absent from a perf .config after olddefconfig.
 PERF_MUST_BE_OFF = (
