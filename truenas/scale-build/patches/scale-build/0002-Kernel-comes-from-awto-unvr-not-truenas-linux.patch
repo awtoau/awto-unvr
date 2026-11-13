@@ -1,7 +1,7 @@
-From d7e98fb828249eb2055c9af15d8494b228050447 Mon Sep 17 00:00:00 2001
+From f0aa683a42d36e2ca0ffef8b9d3444e01ffa0959 Mon Sep 17 00:00:00 2001
 From: awto <noreply@awto.au>
-Date: Sat, 14 Nov 2026 01:48:42 +1100
-Subject: [PATCH 3/3] Kernel comes from awto-unvr, not truenas/linux
+Date: Sat, 14 Nov 2026 02:02:45 +1100
+Subject: [PATCH 2/2] Kernel comes from awto-unvr, not truenas/linux
 
 - drop the kernel/kernel-dbg sources: truenas-build.py injects our 6.18 kernel .debs
   (linux-image/headers-truenas-production-arm64, linux-truenas-production-libc-dev) into tmp/pkgdir
@@ -11,7 +11,7 @@ Subject: [PATCH 3/3] Kernel comes from awto-unvr, not truenas/linux
  1 file changed, 117 deletions(-)
 
 diff --git a/conf/build.manifest b/conf/build.manifest
-index 93faf42..7d1dd18 100644
+index 84d2878..39c2a76 100644
 --- a/conf/build.manifest
 +++ b/conf/build.manifest
 @@ -49,14 +49,8 @@ base-packages:
@@ -147,10 +147,10 @@ index 93faf42..7d1dd18 100644
      - "apt install -y linux-truenas-production-libc-dev"
 -  explicit_deps:
 -    - kernel
- # awto-unvr truenas/stubs/: clean no-licence stand-in for the closed truenas_pylicensed;
- # truenas-build.py snapshots it into a local git repo mounted at /local.
- - name: truenas_pylicensed
-@@ -580,9 +489,6 @@ sources:
+ - name: truenas_pysnmp
+   repo: https://github.com/truenas/truenas_pysnmp
+   branch: release/27.0.0
+@@ -575,9 +484,6 @@ sources:
      - "sh -x fetch.sh"
      - "scripts/pkgdep.sh  --rdma"
    deps_path: debian
@@ -160,7 +160,7 @@ index 93faf42..7d1dd18 100644
  - name: avahi
    repo: https://github.com/truenas/avahi
    # no release/27.0.0 branch; every release/stable branch is the same commit
-@@ -618,30 +524,7 @@ sources:
+@@ -613,30 +519,7 @@ sources:
      - "make 2perf"
      - "make scst-dist-gzip"
      - "make dpkg DEBEMAIL=no-reply@ixsystems.com DEBFULLNAME=TrueNAS"

@@ -150,6 +150,12 @@ STEPS: dict[str, tuple[str, list[str], bool]] = {
         [sys.executable, "scripts/check-box-container-markers.py"],
         True,
     ),
+    # truenas_pylicensed stub vs public middleware 27 (#356); SKIPs without tmp/truenas-middleware-27.
+    "pylicensed-stub": (
+        "truenas_pylicensed stub covers middleware 27's usage (#356)",
+        [sys.executable, "scripts/check-pylicensed-stub.py", "--gate"],
+        True,
+    ),
     # #258. Report-only, like box-container above: --gate prints the table
     # and always exits 0. The box's state is never a reason to block a
     # commit of unrelated code, and the gate is shared. The failing exit
@@ -170,6 +176,7 @@ GATE = [
     "dt-drift",
     "truenas-series",
     "truenas-modules",
+    "pylicensed-stub",
     "box-container",
     "versions",
 ]
@@ -1151,6 +1158,16 @@ def cmd_build_truenas(extra: list[str]) -> int:
 )
 def cmd_truenas_build(extra: list[str]) -> int:
     return _run_script("scripts/truenas-build.py", extra)
+
+
+@command(
+    "check our truenas_pylicensed stub against public middleware 27: static usage, imports, "
+    "middleware's licence unit tests (#356, scripts/check-pylicensed-stub.py)",
+    args="[--refresh] [--static-only]",
+    kind="action",
+)
+def cmd_check_pylicensed_stub(extra: list[str]) -> int:
+    return _run_script("scripts/check-pylicensed-stub.py", extra)
 
 
 @command(

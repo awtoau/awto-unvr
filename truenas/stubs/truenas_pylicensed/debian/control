@@ -1,0 +1,18 @@
+Source: truenas-pylicensed
+Section: contrib/python
+Priority: optional
+Maintainer: Awto <noreply@awto.au>
+Build-Depends: debhelper-compat (= 13),
+               dh-python,
+               pybuild-plugin-pyproject,
+               python3-all,
+               python3-setuptools
+Standards-Version: 4.7.0
+Homepage: https://github.com/awtoau/awto-unvr
+
+Package: python3-truenas-pylicensed
+Architecture: all
+Depends: ${misc:Depends}, ${python3:Depends}
+Description: clean-room no-licence stand-in for truenas_pylicensed
+ Always reports no licence, so TrueNAS middleware runs as Community Edition.
+ Written from public middleware usage only; contains no TrueNAS closed code.

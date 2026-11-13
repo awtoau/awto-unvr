@@ -1,0 +1,5 @@
+truenas-pylicensed (27.0.0) unstable; urgency=medium
+
+  * Clean-room no-licence stand-in for middleware 27.0 (awto-unvr #356).
+
+ -- Awto <noreply@awto.au>  Sat, 14 Nov 2026 12:00:00 +1000

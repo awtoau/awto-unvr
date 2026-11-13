@@ -46,10 +46,8 @@ FORK = "https://github.com/joel0-truenas/scale-build"
 FORK_BRANCH = "release/26.0.0-BETA.1-aarch64"
 PIN_SHA = "cd53605006f4bffb5a0e8e4f44368e904e5fa39c"
 LOCAL = WORK / "local"
-# manifest name -> repo dir snapshotted into LOCAL (stand-ins for closed TrueNAS packages)
-LOCAL_SOURCES = {
-    "truenas_pylicensed": REPO / "truenas" / "stubs" / "truenas_pylicensed"
-}
+# stand-ins for TrueNAS's closed packages, one Debian source package per dir
+STUBS = REPO / "truenas" / "stubs"
 KWORK = WORK / "kernel"
 KIMAGE = "localhost/awto-truenas-kbuild:trixie"
 KERNEL_DEBS = (
@@ -285,42 +283,55 @@ def invalidate_on_patch_change() -> None:
         rec.write_text(digest.hexdigest())
 
 
+def stub_dirs() -> list[Path]:
+    """Every truenas/stubs/<name>/ with a debian/control: one scale-build source each."""
+    if not STUBS.is_dir():
+        log(
+            f"WARNING: {rel(STUBS)} absent - no stand-ins for TrueNAS's closed packages"
+        )
+        return []
+    dirs = sorted(d for d in STUBS.iterdir() if (d / "debian" / "control").is_file())
+    for d in sorted(set(STUBS.iterdir()) - set(dirs)):
+        log(f"WARNING: {rel(d)} has no debian/control - skipped")
+    return dirs
+
+
 def snapshot_local_sources() -> None:
-    """Repo dirs scale-build checks out as file:///local/<name> (branch main), rebuilt each run."""
-    for name, src in LOCAL_SOURCES.items():
-        dst = LOCAL / name
-        if dst.exists():
-            shutil.rmtree(dst)
-        if not src.is_dir():
-            log(f"WARNING: {rel(src)} absent - dropping manifest source {name!r}")
-            drop_manifest_source(name)
-            continue
-        shutil.copytree(src, dst, ignore=shutil.ignore_patterns("__pycache__"))
+    """Each stub dir -> git repo LOCAL/<name> (branch main) + manifest source, middlewared
+    explicit dep and base-packages entries for its binary packages. Rebuilt every run."""
+    if LOCAL.exists():
+        shutil.rmtree(LOCAL)
+    LOCAL.mkdir(parents=True)
+    sources, deps, base = [], [], []
+    for src in stub_dirs():
+        name, dst = src.name, LOCAL / src.name
+        shutil.copytree(src, dst, ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
         for argv in (["init", "-q", "-b", "main"], ["add", "-A"],
                      ["-c", "user.name=awto", "-c", "user.email=noreply@awto.au", "commit", "-q",
                       "-m", f"snapshot of awto-unvr {rel(src)}"]):  # fmt: skip
             git(*argv, cwd=dst)
-        log(
-            f"local source {name}: {rel(src)} @ {git('rev-parse', '--short', 'HEAD', cwd=dst).stdout.strip()}"
+        pkgs = re.findall(
+            r"^Package:\s*(\S+)", (src / "debian" / "control").read_text(), re.M
         )
-
-
-def drop_manifest_source(name: str) -> None:
-    """Remove a '- name: <name>' sources block and any explicit_deps line naming it."""
-    lines = (SB / "conf" / "build.manifest").read_text().splitlines(keepends=True)
-    out, skip = [], False
-    for line in lines:
-        if line.startswith(f"- name: {name}\n"):
-            skip = True
-            continue
-        if skip and (
-            line.startswith("- ") or line.startswith("#") or not line.startswith(" ")
-        ):
-            skip = False
-        if skip or line.strip() == f"- {name}":
-            continue
-        out.append(line)
-    (SB / "conf" / "build.manifest").write_text("".join(out))
+        sha = git("rev-parse", "--short", "HEAD", cwd=dst).stdout.strip()
+        log(f"local source {name}: {rel(src)} @ {sha} -> {', '.join(pkgs)}")
+        sources.append(
+            f"- name: {name}\n  repo: file:///local/{name}\n  branch: main\n"
+        )
+        deps.append(f"        - {name}\n")
+        base += [f"- name: {p}\n  install_recommends: true\n" for p in pkgs]
+    mf = SB / "conf" / "build.manifest"
+    text = mf.read_text()
+    anchor_dep = (
+        "        - truenas_pydiscovery\n"  # in middlewared's explicit_deps (patch 0001)
+    )
+    for anchor in ("\nsources:\n", "\nbase-packages:\n", anchor_dep):
+        if text.count(anchor) != 1:
+            fatal(f"manifest anchor {anchor!r} not found exactly once")
+    text = text.replace("\nsources:\n", "\nsources:\n" + "".join(sources))
+    text = text.replace("\nbase-packages:\n", "\nbase-packages:\n" + "".join(base))
+    text = text.replace(anchor_dep, anchor_dep + "".join(deps))
+    mf.write_text(text)
 
 
 def step_checkout(a) -> int:
