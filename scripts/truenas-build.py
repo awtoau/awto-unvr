@@ -194,6 +194,7 @@ def run_guarded(
     return rc
 
 
+# SKIP_SOURCE_REPO_VALIDATION: sources include /local stubs and joel0-truenas forks.
 # --network host: rootful podman's bridge has no working DNS on this host.
 def in_container(argv: list[str], step: str, stall_s: int) -> int:
     """argv runs as root in the arm64 container: /build = SB, /awto = CONF (ro), /local = LOCAL."""
@@ -201,7 +202,7 @@ def in_container(argv: list[str], step: str, stall_s: int) -> int:
     cmd = [
         "sudo", "podman", "run", "--rm", "--name", CTR_NAME, "--platform", "linux/arm64",
         "--privileged", "--network", "host", "-v", f"{SB}:/build", "-v", f"{CONF}:/awto:ro",
-        "-v", f"{LOCAL}:/local:ro", "-w", "/build", "-e", f"TRUENAS_TRAIN={TRAIN}", IMAGE, *argv,
+        "-v", f"{LOCAL}:/local:ro", "-w", "/build", "-e", f"TRUENAS_TRAIN={TRAIN}", "-e", "SKIP_SOURCE_REPO_VALIDATION=1", IMAGE, *argv,
     ]  # fmt: skip
     return run_guarded(cmd, step, stall_s)
 
