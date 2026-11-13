@@ -1,0 +1,10 @@
+{
+  "replace": {
+    "i2c: designware: allow opting out of IC_ENABLE.ABORT and the forced SDA RX hold": {
+      "file": "i2c-designware-no-enable-abort.patch",
+      "from_patch_id": "348f32eabc4ae1bb85bec8da5853abafcfd3847b",
+      "reason": "6.18 __i2c_dw_disable() has no target-mode abort block (added in 7.x) for the hunk's context; same change"
+    }
+  },
+  "after": []
+}

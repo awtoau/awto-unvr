@@ -1,0 +1,69 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Dan on Selwyn <dan@awto.au>
+Date: Fri, 4 Sep 2026 15:51:41 +1000
+Subject: [PATCH] i2c: designware: allow opting out of IC_ENABLE.ABORT and the
+ forced SDA RX hold
+
+Two DT opt-outs for controllers whose targets cannot tolerate mainline's
+defaults.
+
+snps,no-enable-abort: __i2c_dw_disable() writes IC_ENABLE.ABORT when the master
+is holding the bus, which terminates the transfer MID-BYTE. A Seiko S-35390A
+RTC answers that (datasheet Fig 46) by holding SDA low until clocked through -
+an unrecoverable bus wedge needing a power cycle, since the DW v1.20 core has
+no SDA-stuck recovery and this board's SCL/SDA have no GPIO alternate for a
+bit-bang deblock.
+
+Introduced by 2409205acd3c (2023). The vendor 4.19 kernel this board shipped
+with has no abort at all and never wedged; nor does its U-Boot, whose RTC
+access works on identical hardware. Reachable on every transfer, not just error
+paths: i2c_dw_xfer_init() calls __i2c_dw_disable(), and emptyfifo_hold_master
+is true here.
+
+snps,no-sda-rx-hold: 171e23e150ac (2016) force-sets a non-zero SDA RX hold as
+an admittedly empirical fix ("Reason for this is unknown but after trial and
+error") for one Intel platform, applied unconditionally to every DesignWare
+controller since. Provided for controllers that need the register to match a
+known-good vendor configuration exactly.
+
+Both default to current behaviour; only a DT opting in changes anything.
+
+Tested on a Ubiquiti UNVR (Annapurna Labs Alpine V2): a full i2cdetect scan of
+the RTC's mux channel completes with zero timeouts where it previously wedged
+the bus for every subsequent transfer.
+---
+ drivers/i2c/busses/i2c-designware-common.c | 14 +++++++++++++-
+ 1 file changed, 13 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/i2c/busses/i2c-designware-common.c b/drivers/i2c/busses/i2c-designware-common.c
+index 5cefbc66b9e7..84309bd5fd93 100644
+--- a/drivers/i2c/busses/i2c-designware-common.c
++++ b/drivers/i2c/busses/i2c-designware-common.c
+@@ -489,7 +489,8 @@ int i2c_dw_set_sda_hold(struct dw_i2c_dev *dev)
+ 		 * extends incoming SDA low to high transition while SCL is
+ 		 * high but it appears to help also above issue.
+ 		 */
+-		if (!(dev->sda_hold_time & DW_IC_SDA_HOLD_RX_MASK))
++		if (!(dev->sda_hold_time & DW_IC_SDA_HOLD_RX_MASK) &&
++		    !device_property_read_bool(dev->dev, "snps,no-sda-rx-hold"))
+ 			dev->sda_hold_time |= 1 << DW_IC_SDA_HOLD_RX_SHIFT;
+ 
+ 		dev_dbg(dev->dev, "SDA Hold Time TX:RX = %d:%d\n",
+@@ -525,6 +526,17 @@ void __i2c_dw_disable(struct dw_i2c_dev *dev)
+ 
+ 	abort_needed = (raw_intr_stats & DW_IC_INTR_MST_ON_HOLD) ||
+ 			(ic_stats & DW_IC_STATUS_MASTER_HOLD_TX_FIFO_EMPTY);
++
++	/*
++	 * IC_ENABLE.ABORT terminates the transfer mid-byte, which some targets
++	 * (S-35390A, Fig 46) answer by holding SDA low until clocked through -
++	 * an unrecoverable bus wedge. Introduced in 2023 (2409205acd3c); the
++	 * vendor 4.19 kernel that drives this board has no abort and does not
++	 * wedge. Opt out per-controller.
++	 */
++	if (device_property_read_bool(dev->dev, "snps,no-enable-abort"))
++		abort_needed = false;
++
+ 	if (abort_needed) {
+ 		if (!(enable & DW_IC_ENABLE_ENABLE)) {
+ 			regmap_write(dev->map, DW_IC_ENABLE, DW_IC_ENABLE_ENABLE);

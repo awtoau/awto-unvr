@@ -129,6 +129,13 @@ STEPS: dict[str, tuple[str, list[str], bool]] = {
         [sys.executable, "scripts/dt-drift-check.py"],
         True,
     ),
+    # Board-support series from our 7.x tree must still apply to TrueNAS's 6.18 pin;
+    # index-only, no checkout. A full 6.18 build is `build-truenas` (#338).
+    "truenas-series": (
+        "generated board-support series applies to the TrueNAS 6.18 pin (#338)",
+        [sys.executable, "scripts/truenas-series.py", "check"],
+        True,
+    ),
     # The rootfs builder's guard only sees a FRESH installroot. This catches a
     # marker on a rootfs built before that guard existed and still running -
     # which is what #217 turned out to be. Skips when the box is unreachable.
@@ -155,6 +162,7 @@ GATE = [
     "hal-drift",
     "hal-quirks",
     "dt-drift",
+    "truenas-series",
     "box-container",
     "versions",
 ]
@@ -215,7 +223,7 @@ def run_step(name: str, extra: list[str] | None = None) -> int:
         return SKIPPED
     cmd = argv + (list(extra) if (extra and takes_extra) else [])
     log("run: " + " ".join(cmd))
-    rc = subprocess.call(cmd, cwd=REPO)
+    rc = subprocess.call(cmd, cwd=REPO, env={**os.environ, "AWTO_VIA_DEVPY": "1"})
     log(f"rc={rc}: " + " ".join(cmd), "INFO" if rc == 0 else "ERROR")
     return rc
 
@@ -1106,6 +1114,25 @@ def cmd_verify_versions(extra: list[str]) -> int:
 )
 def cmd_refs_check(extra: list[str]) -> int:
     return _run_script("scripts/refs-check.py", extra)
+
+
+@command(
+    "regenerate our board-support series from the 7.x tree and check/apply it onto "
+    "TrueNAS's pinned 6.18 (#338, scripts/truenas-series.py)",
+    args="[check | apply]",
+    kind="action",
+)
+def cmd_truenas_series(extra: list[str]) -> int:
+    return _run_script("scripts/truenas-series.py", extra)
+
+
+@command(
+    "build TrueNAS's arm64 6.18 kernel + UNVR DTB + al_* modules: series apply, "
+    "TrueNAS production config + UNVR fragment (#338, scripts/build-linux-truenas.py)",
+    kind="action",
+)
+def cmd_build_truenas(extra: list[str]) -> int:
+    return _run_script("scripts/build-linux-truenas.py", extra)
 
 
 @command(

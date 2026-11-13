@@ -19,6 +19,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+from _truenas import TRUENAS_PIN
+
 from _repo import LINUX_STORE, REFS, TMP, make_log, rel
 
 log = make_log("kernel-store")
@@ -32,7 +34,7 @@ TREES = {
         "build tree (AWTO_KERNEL_SRC); branch = our port series",
     ),
     "truenas-linux": (
-        "b97fad085a83735f9c644aa6bc1e89c970d5114b",
+        TRUENAS_PIN,  # one pin for this tree and the series build (#338)
         "truenas",
         "TrueNAS truenas/linux-6.18 @ 6.18.60, pristine; build tree is truenas-unvr (#338)",
     ),
