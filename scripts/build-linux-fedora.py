@@ -12,6 +12,12 @@ Prereq: have tmp/fedora-kernel/fedora-aarch64.config extracted.
 
 Out: build-out-fedora/ (uImage-unvr-ea16-<VER>-fedora, dtb, config, modroot/).
 Deploy modroot/lib/modules/<kv> -> the Fedora rootfs /lib/modules; boot the uImage.
+
+Variants (env; same env on publish-fedora/deploy-ssd picks the matching out dir):
+- default: debug kernel (#214), build-out-fedora/
+- AWTO_KASAN_BUILD=1: + KASAN/UBSAN/DMA_API_DEBUG, build-out-fedora-kasan/, -kasan
+- AWTO_PERF_BUILD=1: #214 debug set off, for throughput (#353),
+  build-out-fedora-perf/, -perf
 """
 
 import os
@@ -32,6 +38,7 @@ from _repo import (
     kernel_build_out,
     kernel_build_ver,
     kernel_src,
+    kernel_variant,
 )  # -j28 host build parallelism (#146); self-locating repo root
 
 SRC = str(kernel_src())  # store worktree via tmp/refs (#350)
@@ -41,7 +48,8 @@ PORT = os.environ.get("AWTO_KERNEL_PORT", "/mnt/2tb/unvr-port-refs/linux-alpine-
 # kernel_build_out() is the single source of truth shared with
 # _fedora_deploy.py (the consumer) - see its own docstring for why this
 # used to be two independently-hardcoded copies.
-OUT = str(kernel_build_out())
+VARIANT = kernel_variant()  # "", "kasan" or "perf"; both envs set = fatal
+OUT = str(kernel_build_out(VARIANT))
 # kbuild's own O= output dir (Documentation/kbuild/kbuild.rst) - separate from
 # OUT itself (which holds the COLLECTED final artifacts: uImage, dtb, config
 # copy, modroot/). Before this, every build ran `make -C SRC` with no O=, so
@@ -130,15 +138,57 @@ def trim_to_woomera_modules():
     log(f"trimmed to {LSMOD_KNOWN_GOOD} ({n} modules)")
 
 
-def localversion() -> str:
-    """CONFIG_LOCALVERSION for this build: "[-kasan]-<git describe>" (#258).
+# #214 debug set: on in the default/kasan builds, --disabled in perf (#353).
+DEBUG_SYMS = (
+    "PROVE_LOCKING",
+    "WQ_WATCHDOG",
+    "DEBUG_ATOMIC_SLEEP",
+    "DEBUG_OBJECTS",
+    "DEBUG_OBJECTS_WORK",
+    "DEBUG_OBJECTS_TIMERS",
+    "FAULT_INJECTION",
+    "FAULT_INJECTION_DEBUG_FS",
+    "FAILSLAB",
+    "FAIL_PAGE_ALLOC",
+    "FAIL_MAKE_REQUEST",
+)
+# Perf-only extra --disables: lock debugging PROVE_LOCKING selected (prompted
+# symbols survive olddefconfig on their own), and SW PAN (#353).
+PERF_DISABLE = (
+    "PROVE_RAW_LOCK_NESTING",
+    "PROVE_RCU",
+    "DEBUG_LOCK_ALLOC",
+    "DEBUG_RT_MUTEXES",
+    "DEBUG_SPINLOCK",
+    "DEBUG_MUTEXES",
+    "DEBUG_WW_MUTEX_SLOWPATH",
+    "DEBUG_RWSEMS",
+    "DEBUG_LOCKDEP",
+    "LOCK_STAT",
+    "DEBUG_KMEMLEAK",
+    "KASAN",
+    # Security hardening traded for uaccess cost, perf variant only (#353).
+    "ARM64_SW_TTBR0_PAN",
+)
+# Must be absent from a perf .config after olddefconfig.
+PERF_MUST_BE_OFF = (
+    *DEBUG_SYMS,
+    *PERF_DISABLE,
+    "LOCKDEP",
+    "DEBUG_OBJECTS_FREE",
+    "DEBUG_OBJECTS_RCU_HEAD",
+)
 
-    Order matters. -kasan must stay a *prefix* of the suffix so the two
+
+def localversion() -> str:
+    """CONFIG_LOCALVERSION for this build: "[-kasan|-perf]-<git describe>" (#258).
+
+    Order matters. The variant must stay a *prefix* of the suffix so the
     builds keep landing in different /lib/modules/ dirs even when they share
     a SHA - swapping the order would make a plain and a KASAN build of the
     same commit collide again (the #131 incident)."""
-    kasan = "-kasan" if os.environ.get("AWTO_KASAN_BUILD") else ""
-    return f"{kasan}-{build_ident('kernel')}"
+    prefix = f"-{VARIANT}" if VARIANT else ""
+    return f"{prefix}-{build_ident('kernel')}"
 
 
 def configure():
@@ -192,36 +242,20 @@ def configure():
             #   DEBUG_ATOMIC_SLEEP       - sleeping in atomic context
             #   DEBUG_OBJECTS_*          - work/timer use-after-free (#186)
             # These cost runtime, which is the trade this kernel exists to make.
-            "--enable",
-            "PROVE_LOCKING",
-            "--enable",
-            "WQ_WATCHDOG",
-            "--enable",
-            "DEBUG_ATOMIC_SLEEP",
-            "--enable",
-            "DEBUG_OBJECTS",
-            "--enable",
-            "DEBUG_OBJECTS_WORK",
-            "--enable",
-            "DEBUG_OBJECTS_TIMERS",
             # Fault injection, so a driver's error path can be PROVEN rather
             # than closed on code review. Each targets paths that cannot be
             # reached by normal load:
             #   FAILSLAB + FAIL_PAGE_ALLOC - #305 rx refill shortfall
             #   FAIL_MAKE_REQUEST          - block-layer error paths
             #   DEBUG_FS + FAULT_INJECTION_DEBUG_FS - the /sys/kernel/debug knobs
+            # The perf variant --disables this whole set instead (#353).
+            *(
+                a
+                for sym in DEBUG_SYMS
+                for a in ("--disable" if VARIANT == "perf" else "--enable", sym)
+            ),
             # NETCONSOLE gives netpoll, which is the only caller that hands
             # rx_poll a zero budget (#314).
-            "--enable",
-            "FAULT_INJECTION",
-            "--enable",
-            "FAULT_INJECTION_DEBUG_FS",
-            "--enable",
-            "FAILSLAB",
-            "--enable",
-            "FAIL_PAGE_ALLOC",
-            "--enable",
-            "FAIL_MAKE_REQUEST",
             "--module",
             "NETCONSOLE",
             "--disable",
@@ -472,8 +506,14 @@ def configure():
                     # Kconfig symbol - set `sysctl kernel.panic_on_warn=1`
                     # after boot instead of trying to bake it in here.
                 ]
-                if os.environ.get("AWTO_KASAN_BUILD")
+                if VARIANT == "kasan"
                 else []
+            ),
+            *(
+                a
+                for sym in PERF_DISABLE
+                for a in ("--disable", sym)
+                if VARIANT == "perf"
             ),
         ]
     )
@@ -544,7 +584,12 @@ def configure():
         if sym not in dotcfg:
             log(f"FATAL: {sym} not set after olddefconfig")
             sys.exit(1)
-    if os.environ.get("AWTO_KASAN_BUILD"):
+    if VARIANT == "perf":
+        for sym in PERF_MUST_BE_OFF:
+            if f"CONFIG_{sym}=" in dotcfg:
+                log(f"FATAL: CONFIG_{sym} still set in the perf build (#353)")
+                sys.exit(1)
+    if VARIANT == "kasan":
         # scripts/config --enable silently no-ops on an unknown symbol name
         # instead of erroring - verify every debug flag actually landed
         # rather than assuming the invocation above worked.

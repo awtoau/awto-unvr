@@ -70,6 +70,7 @@ The
 | 1 | Netboot installer (bare-disk bootstrap for `deploy-fedora-rootfs`) | `build-ea16` | `build-linux-ea16.py` | `build-out-ea16/` (`AWTO_KERNEL_OUT`) |
 | 2 | Fedora rootfs (**daily driver**) | `build-fedora` | `build-linux-fedora.py` | `build-out-fedora/` |
 | 2a | ↳ same script, full-debug variant (KASAN, UBSAN, DMA_API_DEBUG, lockdep, panic-on-lockup) | `AWTO_KASAN_BUILD=1 build-fedora` | (same) | `build-out-fedora-kasan/` |
+| 2b | ↳ same script, non-debug perf variant (no lockdep/debug-objects/fault-injection/SW PAN; #353). Same env on `publish-fedora`/`deploy-ssd` | `AWTO_PERF_BUILD=1 build-fedora` | (same) | `build-out-fedora-perf/` |
 | 3 | On-box native (no cross-compile) | *(none)* | `build-on-box.py` | `/lib/modules/<kver>/updates/` on the box |
 | 4 | Fedora rootfs tarball | `build-fedora-rootfs` | `build-fedora-rootfs.py` | `tmp/fedora-rootfs.tar.gz` |
 | 5 | awto-uboot (our U-Boot) | `build-uboot` | `uboot-build.py` | staged into `/mnt/2tb/unvr-port-refs/u-boot-v2026.07`, chainload-able |
@@ -90,7 +91,7 @@ in #140 (a removed file staying resident in the build tree because
 nothing reverted it).
 
 `AWTO_KERNEL_SRC`/`AWTO_KERNEL_OUT`/`AWTO_KERNEL_VER` override the kernel
-tree/output dir/version string for any of rows 1-2a - both the producer
+tree/output dir/version string for any of rows 1-2b - both the producer
 scripts and their deploy-side consumers (`_fedora_deploy.py`,
 `deploy-modules-woomera.py`, `deploy-fedora-boot.py`, `dev.py`'s
 `deploy-fedora-rootfs`) resolve these through the shared

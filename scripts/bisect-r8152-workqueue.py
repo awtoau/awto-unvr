@@ -74,7 +74,7 @@ SRC = kernel_src()
 # pointer read can silently "succeed" instead of oopsing. Confirmed live:
 # the plain (non-KASAN) build ran clean (0/3) on the exact commit that
 # crashed 6/6 on KASAN builds.
-FEDORA_OUT = kernel_build_out(kasan=True)
+FEDORA_OUT = kernel_build_out("kasan")
 FEDORA_KOUT = FEDORA_OUT / "kbuild"
 VER = kernel_build_ver()
 LOG = REPO / "tmp/logs/bisect-r8152-workqueue.log"

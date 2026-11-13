@@ -186,7 +186,21 @@ def build_ident(stage: str) -> str:
 NPROC = max(1, min(os.cpu_count() or 4, int(os.environ.get("AWTO_NPROC") or 28)))
 
 
-def kernel_build_out(kasan: bool | None = None) -> Path:
+KERNEL_VARIANTS = ("", "kasan", "perf")
+
+
+def kernel_variant() -> str:
+    """Fedora kernel variant from env: "" (debug default), "kasan"
+    (AWTO_KASAN_BUILD) or "perf" (AWTO_PERF_BUILD, non-debug, #353).
+    Both set = fatal: the configs contradict."""
+    kasan = bool(os.environ.get("AWTO_KASAN_BUILD"))
+    perf = bool(os.environ.get("AWTO_PERF_BUILD"))
+    if kasan and perf:
+        sys.exit("FATAL: AWTO_KASAN_BUILD and AWTO_PERF_BUILD are mutually exclusive")
+    return "kasan" if kasan else "perf" if perf else ""
+
+
+def kernel_build_out(variant: str | None = None) -> Path:
     """The single source of truth for where a Fedora kernel build's output
     lives - build-linux-fedora.py (the producer) and _fedora_deploy.py (the
     consumer) used to each hardcode their own copy of this default, and one
@@ -194,15 +208,14 @@ def kernel_build_out(kasan: bool | None = None) -> Path:
     3-day-stale build. Both now call this instead of hardcoding it again.
 
     AWTO_KERNEL_OUT always wins if set (matches build-linux-fedora.py's own
-    override precedent). `kasan=None` reads AWTO_KASAN_BUILD from the
-    environment; pass True/False to force a choice regardless of env."""
-    if kasan is None:
-        kasan = bool(os.environ.get("AWTO_KASAN_BUILD"))
-    default = (
-        "/mnt/2tb/unvr-port-refs/build-out-fedora-kasan"
-        if kasan
-        else "/mnt/2tb/unvr-port-refs/build-out-fedora"
-    )
+    override precedent). `variant=None` reads kernel_variant() from the
+    environment; pass one of KERNEL_VARIANTS to force a choice."""
+    if variant is None:
+        variant = kernel_variant()
+    if variant not in KERNEL_VARIANTS:
+        raise ValueError(f"unknown kernel variant {variant!r}")
+    suffix = f"-{variant}" if variant else ""
+    default = f"/mnt/2tb/unvr-port-refs/build-out-fedora{suffix}"
     return Path(os.environ.get("AWTO_KERNEL_OUT", default))
 
 

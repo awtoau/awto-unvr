@@ -100,7 +100,7 @@ STAGES = {
     ),
     "kernel": (
         # LOCALVERSION lands between the upstream version and kbuild's
-        # trailing "+", e.g. 7.3.0-rc1-5f56952-dirty+. The optional -kasan
+        # trailing "+", e.g. 7.3.0-rc1-5f56952-dirty+. The optional -kasan|-perf
         # sits BEFORE the sha (build-linux-fedora.py:localversion()).
         # -rcN is matched explicitly and NOT as part of `rev`: left to the
         # optional-group fallback it is itself a valid _REV, so an
@@ -108,7 +108,7 @@ STAGES = {
         # compared unequal - a STALE that hid the real answer (UNSTAMPED).
         re.compile(
             r"Linux version \d+\.\d+\.\d+(?:-rc\d+)?"
-            r"(?:(?:-kasan)?-(?P<rev>" + _REV + r"))?\+?\s"
+            r"(?:(?:-kasan|-perf)?-(?P<rev>" + _REV + r"))?\+?\s"
         ),
         "CONFIG_LOCALVERSION",
     ),
