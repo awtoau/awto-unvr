@@ -4161,6 +4161,12 @@ al_eth_flow_steer(struct net_device *netdev, const struct sk_buff *skb,
 
 static int al_set_features(struct net_device *dev,
 		    netdev_features_t features) {
+	struct al_eth_adapter *adapter = netdev_priv(dev);
+
+	/* MAC/PCS loopback, for NIC-only throughput tests with no link partner. */
+	if ((dev->features ^ features) & NETIF_F_LOOPBACK)
+		return al_eth_mac_loopback_config(&adapter->hal_adapter,
+						  !!(features & NETIF_F_LOOPBACK));
 	return 0;
 }
 
@@ -6283,7 +6289,7 @@ al_eth_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 				NETIF_F_RXHASH |
 				NETIF_F_HIGHDMA;
 
-	netdev->hw_features |= netdev->features;
+	netdev->hw_features |= netdev->features | NETIF_F_LOOPBACK;
 
 	netdev->vlan_features |= netdev->features;
 
