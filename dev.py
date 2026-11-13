@@ -1164,6 +1164,16 @@ def cmd_boot_next(extra: list[str]) -> int:
 
 
 @command(
+    "install TrueNAS 26.04 on the SSD's p3 via one maint boot, then boot it with our "
+    "kernel (scripts/truenas-install.py, docs/truenas.md)",
+    args="build|rehearse|stage|run --go|fetch|commit-p3 --go|stage-boot|verify",
+    kind="action",
+)
+def cmd_truenas_install(extra: list[str]) -> int:
+    return _run_script("scripts/truenas-install.py", extra)
+
+
+@command(
     "run the defconfig CONFIG_BOOTCOMMAND through U-Boot sandbox scenarios before it "
     "goes into the box's env (scripts/bootcmd-sandbox.py)",
     kind="action",
