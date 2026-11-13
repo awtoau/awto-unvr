@@ -1,4 +1,4 @@
-awto-unvr #338: backport of openzfs/zfs 3800525cd2cc (PR 18532, in 2.2/2.4 branches later).
+awto-unvr #338: backport of openzfs/zfs 3800525cd2cc (PR 18532; 2.2 backport PR 18671).
 Why: host GCC 16 rejects '+&w' on hard-register NEON operands (hard error, not -Werror);
 TrueNAS builds 2.4.0 with Debian GCC 14, which accepts it. Same constraint fix as upstream.
 
