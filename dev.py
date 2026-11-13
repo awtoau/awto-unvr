@@ -1161,6 +1161,15 @@ def cmd_truenas_build(extra: list[str]) -> int:
 
 
 @command(
+    "build the al_* OOT modules for the self-built TrueNAS 27 kernel as one .deb, against its "
+    "headers deb (#356, scripts/truenas-oot-deb.py)",
+    kind="action",
+)
+def cmd_truenas_oot_deb(extra: list[str]) -> int:
+    return _run_script("scripts/truenas-oot-deb.py", extra)
+
+
+@command(
     "check our truenas/stubs/ closed-lib stand-ins against public middleware 27: static usage, "
     "imports, CE entitlement column, middleware's licence unit tests (#356, scripts/check-truenas-stubs.py)",
     args="[--refresh] [--static-only]",
