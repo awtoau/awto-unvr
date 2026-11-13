@@ -1,0 +1,19 @@
+From 723601ad99b74382e1a491e2f6cb7c7c4bee821f Mon Sep 17 00:00:00 2001
+From: awto <noreply@awto.au>
+Date: Sat, 14 Nov 2026 09:28:58 +1100
+Subject: [PATCH] Reference passwd: truenas-discovery (truenas_pydiscovery, new
+ in 27)
+
+---
+ conf/reference-files/etc/passwd | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/conf/reference-files/etc/passwd b/conf/reference-files/etc/passwd
+index cfe1690..ed2c57b 100644
+--- a/conf/reference-files/etc/passwd
++++ b/conf/reference-files/etc/passwd
+@@ -55,3 +55,4 @@ netdata:x:999:997::/var/lib/netdata:/bin/sh
+ sssd:x:117:122:SSSD system user:/var/lib/sss:/usr/sbin/nologin
+ caddy:x:997:994:Caddy web server:/var/lib/caddy:/usr/sbin/nologin
+ dhcpcd:x:119:65534:DHCP Client Daemon:/usr/lib/dhcpcd:/bin/false
++truenas-discovery:x:132:1:TrueNAS Discovery Daemon:/var/empty:/usr/sbin/nologin
