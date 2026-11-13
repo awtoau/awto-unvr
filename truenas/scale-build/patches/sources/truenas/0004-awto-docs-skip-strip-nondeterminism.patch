@@ -1,0 +1,22 @@
+From 087e7700734bf5849c4fd5c5972d8e1e944debcf Mon Sep 17 00:00:00 2001
+From: awto <noreply@awto.au>
+Date: Sat, 14 Nov 2026 07:26:11 +1100
+Subject: [PATCH] middlewared-docs: skip dh_strip_nondeterminism (awto-unvr)
+
+Under qemu-user it ran >15 min with no output on the generated docs tree and tripped
+the build's stall guard; the HTML/JS output has no archive timestamps to normalise.
+---
+ src/middlewared_docs/debian/rules | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/src/middlewared_docs/debian/rules b/src/middlewared_docs/debian/rules
+index abaac0c4d2..1f99560171 100755
+--- a/src/middlewared_docs/debian/rules
++++ b/src/middlewared_docs/debian/rules
+@@ -14,3 +14,6 @@ override_dh_auto_build:
+ override_dh_auto_install:
+ 	mkdir -p debian/middlewared-docs/usr/share/middlewared
+ 	mv dist debian/middlewared-docs//usr/share/middlewared/docs
++
++# awto-unvr: trips the build stall guard under qemu-user (awto-unvr #356); HTML has nothing to strip
++override_dh_strip_nondeterminism:
