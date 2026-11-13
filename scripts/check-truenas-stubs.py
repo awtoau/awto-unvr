@@ -746,7 +746,7 @@ def main() -> int:
     )
     log(f"middleware {BRANCH} @ {head.stdout.strip()}")
 
-    uses = collect(MW_SRC)
+    uses = collect(CLONE / "src")
     log(
         f"static: {len(uses.files)} files, {len(uses.names)} imports, {len(uses.attrs)} attrs, "
         f"{len(uses.calls)} call shapes, {len(uses.inst_attrs)} instance attrs, status attrs {sorted(uses.status_attrs)}, "

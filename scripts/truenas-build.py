@@ -89,9 +89,10 @@ def check_free(tag: str) -> None:
 
 def git(*args, cwd: Path = SB, check: bool = True) -> subprocess.CompletedProcess:
     log("+ git " + " ".join(args))
-    return subprocess.run(
-        ["git", *args], cwd=cwd, check=check, text=True, capture_output=True
-    )
+    r = subprocess.run(["git", *args], cwd=cwd, text=True, capture_output=True)
+    if check and r.returncode:
+        fatal(f"git {' '.join(args)} rc={r.returncode}: {r.stderr.strip()}")
+    return r
 
 
 def tree_bytes(path: Path) -> int:
@@ -227,7 +228,9 @@ def prepare_scale_build() -> None:
         git("clone", "--branch", FORK_BRANCH, FORK, str(SB), cwd=WORK)
     if git("cat-file", "-e", f"{PIN_SHA}^{{commit}}", check=False).returncode:
         git("fetch", "origin", FORK_BRANCH)
-    git("checkout", "-q", "-B", "awto-27", PIN_SHA)
+    git(
+        "checkout", "-q", "-f", "-B", "awto-27", PIN_SHA
+    )  # -f: last run edited the manifest
     patches = sorted((CONF / "patches" / "scale-build").glob("*.patch"))
     if patches:
         r = git("-c", "user.name=awto", "-c", "user.email=noreply@awto.au", "am", "-q",
