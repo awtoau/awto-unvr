@@ -60,6 +60,15 @@ def sha256(path: str) -> str:
     return h.hexdigest()
 
 
+def set_clock(job_json: str) -> None:
+    """No RTC driver in the maint boot -> 1970; the installer stamps password change dates with it
+    (-> EXPIRED login, #338). job.json was written by stage under Fedora's synced clock."""
+    t = os.stat(job_json).st_mtime
+    if time.time() < t:
+        time.clock_settime(time.CLOCK_REALTIME, t)
+        log(f"clock set to job.json mtime {time.strftime('%Y-%m-%dT%H:%M:%S%z')}")
+
+
 def inject_kernel(cfg: dict, root: str, chroot=("chroot",)) -> None:
     """Our kernel into the new root, the way a TrueNAS kernel package lays it out."""
     kver, job = cfg["kver"], cfg["job_dir"]
@@ -293,6 +302,7 @@ def main() -> int:
             return rehearse(json.load(f), sys.argv[2])
     with open(sys.argv[1]) as f:
         cfg = json.load(f)
+    set_clock(sys.argv[1])
     res: dict = {"ok": False, "started": time.strftime("%Y-%m-%dT%H:%M:%S%z")}
     try:
         install(cfg, res)

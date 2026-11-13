@@ -612,6 +612,54 @@ def cmd_verify(_a) -> int:
     return 1 if bad else 0
 
 
+def cmd_verify_api(_a) -> int:
+    """Same checks over the middleware JSON-RPC websocket (26.04 has no REST) - works before sshd."""
+    from websockets.sync.client import connect
+
+    calls = {
+        "system": ("system.info", []),
+        "boot": ("boot.get_state", []),
+        "services": ("service.query", []),
+        "interfaces": ("interface.query", []),
+        "disks": ("disk.query", []),
+    }
+    bad = 0
+    # LAN round trip + one middleware call: well under 1 s; 20 s per call = a hung middleware.
+    with connect(f"ws://{BOX_1G_IP}/api/current", open_timeout=20) as ws:
+        def call(n: int, method: str, params: list):
+            ws.send(json.dumps({"jsonrpc": "2.0", "id": n, "method": method, "params": params}))
+            r = json.loads(ws.recv(timeout=20))
+            if "error" in r:
+                raise RuntimeError(f"{method}: {r['error']}")
+            return r["result"]
+
+        r = call(0, "auth.login_ex", [{"mechanism": "PASSWORD_PLAIN", "username": "truenas_admin",
+                                      "password": admin_password()}])  # fmt: skip
+        if r.get("response_type") != "SUCCESS":
+            log(f"FATAL: auth.login_ex: {r.get('response_type')}")
+            return 1
+        for n, (k, (method, params)) in enumerate(calls.items(), 1):
+            try:
+                data = call(n, method, params)
+            except (RuntimeError, TimeoutError) as e:
+                bad += 1
+                log(f"== {k}: FAILED {e}")
+                continue
+            if k == "system":
+                data = {x: data.get(x) for x in ("version", "hostname", "uptime_seconds", "physmem", "cores", "model")}
+            elif k == "services":
+                data = {s["service"]: s["state"] for s in data}
+            elif k == "interfaces":
+                data = {i["name"]: [a["address"] for a in i.get("state", {}).get("aliases", [])
+                                    if a.get("type") == "INET"] for i in data}  # fmt: skip
+            elif k == "disks":
+                data = [(d["name"], d.get("model"), d.get("serial"), d.get("size")) for d in data]
+            elif k == "boot":
+                data = {"name": data.get("name"), "status": data.get("status"), "healthy": data.get("healthy")}
+            log(f"== {k}\n{json.dumps(data, indent=1)[:3000]}")
+    return 1 if bad else 0
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
@@ -627,12 +675,13 @@ def main() -> int:
             "commit-p3",
             "stage-boot",
             "verify",
+            "verify-api",
         ),
     )
     ap.add_argument("--go", action="store_true")
     a = ap.parse_args()
     fn = {"build": cmd_build, "rehearse": cmd_rehearse, "stage": cmd_stage, "run": cmd_run, "fetch": cmd_fetch,
-          "commit-p3": cmd_commit_p3, "stage-boot": cmd_stage_boot, "verify": cmd_verify}[a.step]  # fmt: skip
+          "commit-p3": cmd_commit_p3, "stage-boot": cmd_stage_boot, "verify": cmd_verify, "verify-api": cmd_verify_api}[a.step]  # fmt: skip
     try:
         return fn(a)
     except (RuntimeError, ValueError, subprocess.SubprocessError, OSError) as e:
