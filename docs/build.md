@@ -71,6 +71,7 @@ The
 | 2 | Fedora kernel, **debug** (default): lockdep, debug-objects, fault injection, SW PAN. **Slow** | `build-fedora [--kernel debug]` | `build-linux-fedora.py` | `build-out-fedora/` |
 | 2a | ↳ same script, full-debug variant (KASAN, UBSAN, DMA_API_DEBUG, lockdep, panic-on-lockup) | `AWTO_KASAN_BUILD=1 build-fedora` | (same) | `build-out-fedora-kasan/` |
 | 2b | ↳ **perf**: none of row 2's debug, no SW PAN, no `init_on_alloc` (#353) | `build-fedora --kernel perf` | (same) | `build-out-fedora-perf/` |
+| 2b' | ↳ **maint**: perf + SP805/ramoops `=y` + an embedded one-shot initramfs, Image only. Never a daily driver | `ssd-repartition build` (sets `AWTO_MAINT_BUILD` + `AWTO_INITRAMFS_SOURCE`) | (same) | `build-out-fedora-maint/`, `-maint-<describe>` |
 | 2c | TrueNAS arm64 6.18 kernel + UNVR DTB + al_*, OpenZFS, SCST modules (#338, build only) | `build-truenas [--modules-only \| --zfs-scst]` | `build-linux-truenas.py` | `build-out-truenas/` (`truenas_build_out()`) |
 | 3 | On-box native (no cross-compile) | *(none)* | `build-on-box.py` | `/lib/modules/<kver>/updates/` on the box |
 | 4 | Fedora rootfs tarball | `build-fedora-rootfs` | `build-fedora-rootfs.py` | `tmp/fedora-rootfs.tar.gz` |

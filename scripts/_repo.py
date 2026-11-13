@@ -186,18 +186,25 @@ def build_ident(stage: str) -> str:
 NPROC = max(1, min(os.cpu_count() or 4, int(os.environ.get("AWTO_NPROC") or 28)))
 
 
-KERNEL_VARIANTS = ("", "kasan", "perf")
+KERNEL_VARIANTS = ("", "kasan", "perf", "maint")
+# env var -> variant; more than one set = fatal, the configs contradict.
+_VARIANT_ENV = {
+    "AWTO_KASAN_BUILD": "kasan",
+    "AWTO_PERF_BUILD": "perf",
+    "AWTO_MAINT_BUILD": "maint",
+}
 
 
 def kernel_variant() -> str:
     """Fedora kernel variant from env: "" (debug default), "kasan"
-    (AWTO_KASAN_BUILD) or "perf" (AWTO_PERF_BUILD, non-debug, #353).
-    Both set = fatal: the configs contradict."""
-    kasan = bool(os.environ.get("AWTO_KASAN_BUILD"))
-    perf = bool(os.environ.get("AWTO_PERF_BUILD"))
-    if kasan and perf:
-        sys.exit("FATAL: AWTO_KASAN_BUILD and AWTO_PERF_BUILD are mutually exclusive")
-    return "kasan" if kasan else "perf" if perf else ""
+    (AWTO_KASAN_BUILD), "perf" (AWTO_PERF_BUILD, non-debug, #353) or "maint"
+    (AWTO_MAINT_BUILD: perf + embedded one-shot initramfs, ssd-repartition.py)."""
+    hits = [v for k, v in _VARIANT_ENV.items() if os.environ.get(k)]
+    if len(hits) > 1:
+        sys.exit(
+            f"FATAL: {' and '.join(k for k in _VARIANT_ENV if os.environ.get(k))} are mutually exclusive"
+        )
+    return hits[0] if hits else ""
 
 
 def kernel_build_out(variant: str | None = None) -> Path:

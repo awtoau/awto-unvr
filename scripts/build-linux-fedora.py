@@ -18,6 +18,8 @@ Variants (env; same env on publish-fedora/deploy-ssd picks the matching out dir)
 - AWTO_KASAN_BUILD=1: + KASAN/UBSAN/DMA_API_DEBUG, build-out-fedora-kasan/, -kasan
 - AWTO_PERF_BUILD=1: #214 debug set off, for throughput (#353),
   build-out-fedora-perf/, -perf
+- AWTO_MAINT_BUILD=1 + AWTO_INITRAMFS_SOURCE=<cpio>: perf + SP805/ramoops built in +
+  that cpio embedded, Image only, build-out-fedora-maint/, -maint (ssd-repartition.py)
 """
 
 import os
@@ -49,7 +51,20 @@ PORT = os.environ.get("AWTO_KERNEL_PORT", "/mnt/2tb/unvr-port-refs/linux-alpine-
 # kernel_build_out() is the single source of truth shared with
 # _fedora_deploy.py (the consumer) - see its own docstring for why this
 # used to be two independently-hardcoded copies.
-VARIANT = kernel_variant()  # "", "kasan" or "perf"; both envs set = fatal
+VARIANT = kernel_variant()  # "", "kasan", "perf" or "maint"; >1 env set = fatal
+PERF_LIKE = VARIANT in ("perf", "maint")  # maint = perf config + MAINT_SET
+# One-shot maintenance initramfs (maint only); nothing else may embed one.
+INITRAMFS = os.environ.get("AWTO_INITRAMFS_SOURCE", "")
+if (VARIANT == "maint") != bool(INITRAMFS):
+    sys.exit(
+        "FATAL: AWTO_INITRAMFS_SOURCE is required by, and only valid for, AWTO_MAINT_BUILD"
+    )
+if INITRAMFS and not os.path.isfile(INITRAMFS):
+    sys.exit(f"FATAL: AWTO_INITRAMFS_SOURCE {INITRAMFS} not found")
+# U-Boot gunzips the uImage into CONFIG_SYS_BOOTM_LEN (uboot-port defconfig);
+# a bigger Image fails bootm and strands the box at U-Boot. 1 MiB headroom.
+BOOTM_LEN = 0x4000000
+IMAGE_MAX = BOOTM_LEN - 0x100000
 OUT = str(kernel_build_out(VARIANT))
 # kbuild's own O= output dir (Documentation/kbuild/kbuild.rst) - separate from
 # OUT itself (which holds the COLLECTED final artifacts: uImage, dtb, config
@@ -229,7 +244,7 @@ def configure():
             *(
                 a
                 for sym in DEBUG_SYMS
-                for a in ("--disable" if VARIANT == "perf" else "--enable", sym)
+                for a in ("--disable" if PERF_LIKE else "--enable", sym)
             ),
             # NETCONSOLE gives netpoll, which is the only caller that hands
             # rx_poll a zero budget (#314).
@@ -486,14 +501,19 @@ def configure():
                 if VARIANT == "kasan"
                 else []
             ),
-            *(
-                a
-                for sym in PERF_DISABLE
-                for a in ("--disable", sym)
-                if VARIANT == "perf"
-            ),
+            *(a for sym in PERF_DISABLE for a in ("--disable", sym) if PERF_LIKE),
         ]
     )
+    if VARIANT == "maint":
+        # No modules in the initramfs: watchdog + ramoops must be =y. XZ keeps
+        # the Image under IMAGE_MAX.
+        run(
+            [cfg, "--file", os.path.join(KOUT, ".config")]
+            + ["--enable", "ARM_SP805_WATCHDOG"]
+            + ["--enable", "PSTORE_RAM", "--enable", "PSTORE_CONSOLE"]
+            + ["--set-str", "INITRAMFS_SOURCE", os.path.abspath(INITRAMFS)]
+            + ["--enable", "INITRAMFS_COMPRESSION_XZ"]
+        )
     # #258: stamp the build's revision into `uname -r`, EVERY build. Without
     # it every build ever made reported the same bare version, so a stale
     # deploy was invisible (#105, #131, #161).
@@ -561,10 +581,25 @@ def configure():
         if sym not in dotcfg:
             log(f"FATAL: {sym} not set after olddefconfig")
             sys.exit(1)
-    if VARIANT == "perf":
+    if PERF_LIKE:
         for sym in PERF_MUST_BE_OFF:
             if f"CONFIG_{sym}=" in dotcfg:
-                log(f"FATAL: CONFIG_{sym} still set in the perf build (#353)")
+                log(f"FATAL: CONFIG_{sym} still set in the {VARIANT} build (#353)")
+                sys.exit(1)
+    if VARIANT == "maint":
+        for sym in (
+            "CONFIG_ARM_SP805_WATCHDOG=y",
+            "CONFIG_PSTORE_RAM=y",
+            "CONFIG_PSTORE_CONSOLE=y",
+            "CONFIG_INITRAMFS_COMPRESSION_XZ=y",
+            f'CONFIG_INITRAMFS_SOURCE="{os.path.abspath(INITRAMFS)}"',
+            "CONFIG_EXT4_FS=y",
+            "CONFIG_BLK_DEV_SD=y",
+            "CONFIG_DEVTMPFS=y",
+            "CONFIG_MAGIC_SYSRQ=y",
+        ):
+            if sym not in dotcfg:
+                log(f"FATAL: {sym} not set after olddefconfig (maint)")
                 sys.exit(1)
     if VARIANT == "kasan":
         # scripts/config --enable silently no-ops on an unknown symbol name
@@ -647,11 +682,33 @@ def stage_dts():
     _kbuild.stage_dts(SRC, log, PORT)
 
 
+def build_maint():
+    """Image only: the maint kernel never mounts a rootfs, so no modules."""
+    run(["make", "-C", SRC, f"O={KOUT}", *CC_ARG, f"-j{NPROC}", "Image"])
+    image = os.path.join(KOUT, "arch/arm64/boot/Image")
+    size = os.path.getsize(image)
+    if size > IMAGE_MAX:
+        log(
+            f"FATAL: Image {size} B > {IMAGE_MAX} B (BOOTM_LEN - 1 MiB): bootm would fail"
+        )
+        sys.exit(1)
+    shutil.copy(image, os.path.join(OUT, "Image"))
+    shutil.copy(
+        os.path.join(KOUT, ".config"),
+        os.path.join(OUT, f"unvr-ea16-{VER}-maint.config"),
+    )
+    log(f"KVER={kver(KOUT)}")
+    log(f"DONE. Image: {OUT}/Image ({size} B, limit {IMAGE_MAX})")
+
+
 def build():
     os.makedirs(OUT, exist_ok=True)
     check_dts_shared(log)
     configure()
     stage_dts()
+    if VARIANT == "maint":
+        build_maint()
+        return
     run(
         [
             "make",

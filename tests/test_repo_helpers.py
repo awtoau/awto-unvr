@@ -67,3 +67,29 @@ def test_run_passes_kwargs_through():
         text=True,
     )
     assert r.stdout.strip() == "ok"
+
+
+@pytest.mark.parametrize(
+    ("env", "want"),
+    [
+        ({}, ""),
+        ({"AWTO_PERF_BUILD": "1"}, "perf"),
+        ({"AWTO_MAINT_BUILD": "1"}, "maint"),
+        ({"AWTO_KASAN_BUILD": "1"}, "kasan"),
+    ],
+)
+def test_kernel_variant(monkeypatch, env, want):
+    for k in ("AWTO_PERF_BUILD", "AWTO_MAINT_BUILD", "AWTO_KASAN_BUILD"):
+        monkeypatch.delenv(k, raising=False)
+    for k, v in env.items():
+        monkeypatch.setenv(k, v)
+    assert _repo.kernel_variant() == want
+    monkeypatch.delenv("AWTO_KERNEL_OUT", raising=False)
+    assert _repo.kernel_build_out().name.endswith(f"-{want}" if want else "fedora")
+
+
+def test_kernel_variant_exclusive(monkeypatch):
+    monkeypatch.setenv("AWTO_PERF_BUILD", "1")
+    monkeypatch.setenv("AWTO_MAINT_BUILD", "1")
+    with pytest.raises(SystemExit):
+        _repo.kernel_variant()
