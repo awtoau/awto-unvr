@@ -46,6 +46,8 @@ FORK = "https://github.com/joel0-truenas/scale-build"
 FORK_BRANCH = "release/26.0.0-BETA.1-aarch64"
 PIN_SHA = "cd53605006f4bffb5a0e8e4f44368e904e5fa39c"
 LOCAL = WORK / "local"
+# Dan: no TrueNAS closed code. caddy = Apache-2.0 upstream GitHub release.
+EXTERNAL_ALLOW = {"caddy"}
 # stand-ins for TrueNAS's closed packages, one Debian source package per dir
 STUBS = REPO / "truenas" / "stubs"
 KWORK = WORK / "kernel"
@@ -353,11 +355,28 @@ def step_packages(a) -> int:
     return in_container(["make", *args], "packages", a.stall)
 
 
+def check_external_packages() -> None:
+    """FATAL unless manifest external-packages (fetched by `update`) are all allowlisted."""
+    text = (SB / "conf" / "build.manifest").read_text()
+    m = re.search(r"^external-packages:\n((?:[ #].*\n|\n)*)", text, re.M)
+    names = re.findall(r"^  ([\w.-]+):\s*$", m[1], re.M) if m else []
+    bad = sorted(set(names) - EXTERNAL_ALLOW)
+    if bad:
+        fatal(
+            f"manifest external-packages not allowlisted (closed code is never fetched): {bad}"
+        )
+    if "assets.sys.truenas.net" in (m[1] if m else ""):
+        fatal("manifest external-packages fetch from assets.sys.truenas.net")
+    log(f"external-packages ok: {names}")
+
+
 def step_update(a) -> int:
+    check_external_packages()
     return in_container(["make", "update"], "update", a.stall)
 
 
 def step_iso(a) -> int:
+    check_external_packages()
     return in_container(["make", "iso"], "iso", a.stall)
 
 
