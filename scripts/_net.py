@@ -15,6 +15,9 @@ LAN_SUBNET = "192.168.25.0/24"
 # The static address every U-Boot flow gives the box (`setenv ipaddr`). Not a
 # lease: Linux-side addresses come from _box.locate(), never a literal.
 UNVR_IPADDR = "192.168.25.140"
+# Static 1G (enp0s1) address the TrueNAS maint initramfs gives itself for netconsole: no
+# DHCP there. Same as woomera-enp0s1's reservation (awto-dan docs/network/ip-registry.toml).
+MAINT_1G_IPADDR = "192.168.25.40"
 
 
 def detect_server_ip(peer: str = UNVR_IPADDR, port: int = 69) -> str:

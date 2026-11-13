@@ -87,7 +87,9 @@ def inject_kernel(cfg: dict, root: str, chroot=("chroot",)) -> None:
     run([*chroot, root, "depmod", "-a", kver])
     # SATA probe waits on the bay rails (i2c pca9575 -> regulator-fixed, #104): =m in TrueNAS's config.
     with open(os.path.join(root, "etc/initramfs-tools/modules"), "a") as f:
-        f.write("\n# UNVR (awto-unvr #338)\ni2c_designware_platform\nfixed\nahci_alpine\nsd_mod\n")
+        f.write(
+            "\n# UNVR (awto-unvr #338)\ni2c_designware_platform\nfixed\nahci_alpine\nsd_mod\n"
+        )
     ssh = os.path.join(root, "root/.ssh")
     os.makedirs(ssh, mode=0o700, exist_ok=True)
     shutil.copyfile(

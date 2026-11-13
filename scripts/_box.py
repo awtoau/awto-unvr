@@ -98,12 +98,14 @@ SSH_PASSWORD_E = " ".join(["ssh", *SSH_OPTS_PASSWORD])
 def macs_of(ip: str) -> list[str]:
     """Every neighbour-table MAC for `ip`, lowercase, after one ping to
     populate it. All rows, not the first: a stale row can name a different
-    port of the same box and must not hide a good one."""
-    subprocess.run(
+    port of the same box and must not hide a good one. No reply -> []: a STALE
+    row outlives the address (TrueNAS took .41 while .127 still mapped to the 10G MAC)."""
+    if subprocess.run(
         ["ping", "-c", "1", "-W", str(PING_TIMEOUT_S), ip],
         capture_output=True,
         check=False,
-    )
+    ).returncode:
+        return []
     out = subprocess.run(
         ["ip", "neigh", "show", ip], capture_output=True, text=True, check=False
     ).stdout

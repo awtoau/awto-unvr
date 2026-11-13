@@ -21,13 +21,16 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from _firewall import ensure_tftp_open  # noqa: E402
+
 from _repo import LOGS, make_log  # noqa: E402
 
 log = make_log("netconsole-listen")
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     ap.add_argument("--port", type=int, default=6666)
     a = ap.parse_args()
     os.environ.setdefault("AWTO_FIREWALL_APPLY", "1")
