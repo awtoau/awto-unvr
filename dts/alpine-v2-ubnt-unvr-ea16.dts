@@ -730,13 +730,13 @@
 					/*
 					 * Stock: blank 0xFF, unused. REPURPOSED: our U-Boot stores its
 					 * OWN env here (CONFIG_ENV_OFFSET=0x1e0000) - #81, docs/mtd.md.
-					 * read-only in Linux so Fedora never clobbers our U-Boot env.
+					 * Writable: Linux sets the one-shot boot selector (bootonce),
+					 * only via scripts/uboot_env.py (CRC + read-back) - #338.
 					 * (Label kept "Factory" for stock traceability; content is ours.)
 					 */
 					partition@1e0000 {
 						reg = <0x1e0000 0x10000>;
 						label = "Factory";
-						read-only;
 					};
 
 					/*

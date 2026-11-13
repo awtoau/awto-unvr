@@ -1144,6 +1144,35 @@ def cmd_build_truenas(extra: list[str]) -> int:
 
 
 @command(
+    "compile repo dts/ against an existing kernel build (no kernel rebuild), "
+    "diffed against that build's DTB (scripts/build-dtb.py)",
+    args="--tree fedora|truenas",
+    kind="action",
+)
+def cmd_build_dtb(extra: list[str]) -> int:
+    return _run_script("scripts/build-dtb.py", extra)
+
+
+@command(
+    "what awto-uboot boots next: one-shot or default boot profile (/boot/awto/<name>) "
+    "set from Linux over ssh, no console needed (scripts/boot-next.py)",
+    args="status | fedora | <profile> [--default] [--reboot] | sync-bootcmd | deploy-dtb F | stage NAME ...",
+    kind="action",
+)
+def cmd_boot_next(extra: list[str]) -> int:
+    return _run_script("scripts/boot-next.py", extra)
+
+
+@command(
+    "run the defconfig CONFIG_BOOTCOMMAND through U-Boot sandbox scenarios before it "
+    "goes into the box's env (scripts/bootcmd-sandbox.py)",
+    kind="action",
+)
+def cmd_uboot_sandbox(extra: list[str]) -> int:
+    return _run_script("scripts/bootcmd-sandbox.py", extra)
+
+
+@command(
     "kernel trees as worktrees of the machine Linux store: show / checkout / "
     "setup the tmp/linux-store + tmp/refs symlinks (#350, scripts/kernel-store.py)",
     args="[show | checkout [TREE ...] | setup --store PATH --refs DIR]",
