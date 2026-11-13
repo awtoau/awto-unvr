@@ -1,0 +1,39 @@
+From 0ce45e2e05bf17c5b3d066826ff3291d5dfa940e Mon Sep 17 00:00:00 2001
+From: awto <noreply@awto.au>
+Date: Sat, 14 Nov 2026 08:33:01 +1100
+Subject: [PATCH] Generate the *.truenas branding files middleware's postinst
+ expects
+
+Middleware NAS-140007 (26.0.0-BETA.1+) copies usr/ and mv's issue/issue.net/os-release
+.truenas files that only the internal builder creates; public scale-build predates it.
+Content is our own (TrueNAS + version, ID=truenas, ID_LIKE=debian).
+---
+ scale_build/packages/build.py | 15 +++++++++++++++
+ 1 file changed, 15 insertions(+)
+
+diff --git a/scale_build/packages/build.py b/scale_build/packages/build.py
+index 6e6bbe6..8834e52 100644
+--- a/scale_build/packages/build.py
++++ b/scale_build/packages/build.py
+@@ -96,6 +96,21 @@ class BuildPackageMixin:
+             os.makedirs(os.path.join(self.package_source_with_chroot, 'etc'), exist_ok=True)
+             with open(os.path.join(self.package_source_with_chroot, 'etc/version'), 'w') as f:
+                 f.write(VERSION)
++            # awto-unvr: middleware's postinst (NAS-140007) expects these from the builder.
++            # Our own content; upstream's internal builder is not public.
++            for rel, text in (
++                ('etc/issue.truenas', f'TrueNAS {VERSION} \\n \\l\n\n'),
++                ('etc/issue.net.truenas', f'TrueNAS {VERSION}\n'),
++                ('usr/lib/os-release.truenas', (
++                    f'PRETTY_NAME="TrueNAS {VERSION}"\nNAME="TrueNAS"\nVERSION_ID="{VERSION}"\n'
++                    f'VERSION="{VERSION}"\nID=truenas\nID_LIKE=debian\n'
++                    'HOME_URL="https://www.truenas.com/"\n'
++                )),
++            ):
++                path = os.path.join(self.package_source_with_chroot, rel)
++                os.makedirs(os.path.dirname(path), exist_ok=True)
++                with open(path, 'w') as f:
++                    f.write(text)
+ 
+         for prebuild_command in self.prebuildcmd:
+             self.logger.debug('Running prebuildcmd: %r', prebuild_command)
