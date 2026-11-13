@@ -42,11 +42,11 @@ sys.path.insert(0, str(REPO / "scripts"))
 os.environ.setdefault("AWTO_ALLOW_DIRECT_SCRIPT", "1")
 
 import _box  # noqa: E402
-from _repo import make_log  # noqa: E402
+from _repo import kernel_build_out, kernel_build_ver, make_log  # noqa: E402
 
-BUILD_OUT = Path("/mnt/2tb/unvr-port-refs/build-out-fedora")
+BUILD_OUT = kernel_build_out()
 KERNEL = BUILD_OUT / "Image"
-DTB = BUILD_OUT / "alpine-v2-ubnt-unvr-ea16-7.3.dtb"
+DTB = BUILD_OUT / f"alpine-v2-ubnt-unvr-ea16-{kernel_build_ver()}.dtb"
 
 MNT = "/mnt/awto-esp"
 SSH_OPTS = _box.SSH_OPTS_BATCH
