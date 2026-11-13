@@ -5,7 +5,7 @@
 # /init of the TrueNAS maint initramfs (scripts/truenas-install.py, #338). Booted ONCE via
 # bootonce=truenas-maint (U-Boot already cleared it): any failure or reset -> Fedora.
 # - Loads the SATA/ext4/squashfs/zfs modules, mounts p2 (by PARTUUID) rw.
-# - Runs $JOB_DIR/job.py inside the TrueNAS live env (ISO filesystem.squashfs + tmpfs overlay).
+# - Runs $JOB_DIR/job.py inside the TrueNAS live env (update's rootfs.squashfs + tmpfs overlay).
 # - Log: p2 $JOB_DIR/logs/<boot>.log. Then reboot (sysrq), SP805 reset as the fallback.
 # - p2 writes stay under $JOB_DIR (/srv/truenas-install).
 
@@ -68,6 +68,7 @@ finish() {
     sync
     if [ -n "${P2LOG:-}" ]; then cat "$LOG" >"$P2LOG"; sync; fi
     umount -R /live 2>/dev/null
+    umount /live-ro /upd-ro 2>/dev/null
     umount /mnt/p2 2>/dev/null
     touch /run/wdt.stop
     echo b >/proc/sysrq-trigger
@@ -128,9 +129,11 @@ P2LOG="$J/logs/maint-$(cat /proc/sys/kernel/random/boot_id).log"
 log "p2 $P2 mounted; log -> $P2LOG"
 cat "$LOG" >"$P2LOG"
 
-# --- TrueNAS live env: ISO squashfs + tmpfs overlay; p2 bind-mounted at the same path
+# --- TrueNAS live env: update rootfs squashfs + tmpfs overlay; p2 bind-mounted at the same path
 mkdir -p /live-ro /live-rw /live
-mount -t squashfs -o ro,loop "$J/filesystem.squashfs" /live-ro || finish "live squashfs mount failed"
+mkdir -p /upd-ro
+mount -t squashfs -o ro,loop "$J/TrueNAS-SCALE.update" /upd-ro || finish "update squashfs mount failed"
+mount -t squashfs -o ro,loop /upd-ro/rootfs.squashfs /live-ro || finish "rootfs squashfs mount failed"
 mount -t tmpfs -o size=1g tmpfs /live-rw
 mkdir -p /live-rw/u /live-rw/w
 mount -t overlay overlay -o lowerdir=/live-ro,upperdir=/live-rw/u,workdir=/live-rw/w /live ||

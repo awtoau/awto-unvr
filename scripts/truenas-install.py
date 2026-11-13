@@ -1,17 +1,20 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-2.0-or-later
 # Copyright (C) 2026 Awto / Daniel Tyrrell
-"""Install TrueNAS 26.04 arm64 onto woomera's p3 and boot it with OUR kernel (#338, docs/truenas.md).
+"""Install our self-built TrueNAS 27 arm64 image onto woomera's p3 (#356, #338, docs/truenas.md).
 
   ./dev.py truenas-install build        # maint initramfs: live-env userland + our modules + /init
   ./dev.py truenas-install rehearse     # host: userland smoke + installer chroot steps (qemu-user)
   ./dev.py truenas-install stage        # job files -> p2 /srv/truenas-install, profile truenas-maint
+                                        #   [--extra-modules TAR]: al_* modules tar for the image kernel
   ./dev.py truenas-install run --go     # one maint boot: pool + install into a p3-sized image on p2
   ./dev.py truenas-install commit-p3 --go   # Fedora: image partition -> p3 (extents, read-back)
   ./dev.py truenas-install stage-boot   # profile truenas: uImage + DTB + the installed initrd
   ./dev.py truenas-install verify       # on TrueNAS: kernel, pool, middleware, web UI, links
 
-- Vendor material stays under /vendors/truenas (sources/ ISO, analysis/26.04 extracted).
+- Image = scale-build's `.update` (tmp/release/*.update, or $TRUENAS_UPDATE); no ISO: the maint
+  live env is the update's own rootfs.squashfs (nested loop mount in /init).
+- Installed kernel = the image's own deb; the maint boot kernel is the build-linux-truenas output.
 - p2 writes only under /srv/truenas-install and /boot/awto. p3 written only by commit-p3.
 """
 
@@ -27,12 +30,12 @@ import shlex
 import shutil
 import subprocess
 import sys
-import tarfile
 import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import _bootsel as bs  # noqa: E402
+from _kbuild import mkuimage  # noqa: E402
 
 import _box  # noqa: E402
 from _net import MAINT_1G_IPADDR  # noqa: E402
@@ -40,23 +43,33 @@ from _repo import REPO, TMP, make_log, truenas_build_out  # noqa: E402
 
 log = make_log("truenas-install")
 
-VENDOR = Path("/vendors/truenas")
-ISO = (
-    VENDOR
-    / "sources/joel0-arm64-26.04.0-20251221/TrueNAS-SCALE-26.04.0-MASTER-20251221-124319-aarch64.iso"
-)
-ANALYSIS = VENDOR / "analysis/26.04"
-LIVE_ROOT = ANALYSIS / "iso/live-root"  # ISO live/filesystem.squashfs, unsquashed
-LIVE_SQUASHFS = ANALYSIS / "iso/live/filesystem.squashfs"
-UPDATE = ANALYSIS / "TrueNAS-SCALE.update"
-ROOTFS_SQUASHFS = ANALYSIS / "upd/rootfs.squashfs"
-REHEARSE_ROOT = ANALYSIS / "rehearse-root"  # sudo unsquashfs: real ownership for chroot
+SCALE_BUILD = Path("/mnt/2tb/truenas-build/scale-build")
 
+
+def update_image() -> Path:
+    """$TRUENAS_UPDATE, else the newest scale-build tmp/release/*.update."""
+    if os.environ.get("TRUENAS_UPDATE"):
+        return Path(os.environ["TRUENAS_UPDATE"])
+    ups = sorted(
+        (SCALE_BUILD / "tmp/release").glob("*.update"), key=lambda p: p.stat().st_mtime
+    )
+    if not ups:
+        raise RuntimeError(
+            f"no .update in {SCALE_BUILD}/tmp/release: ./dev.py truenas-build update first"
+        )
+    return ups[-1]
+
+
+EXTRA_TAR = "modules-extra.tar"
 STAGE = TMP / "truenas-install"
 TREE = STAGE / "initramfs"
 CPIO = STAGE / "initramfs.cpio.gz"
 INIT_SRC = REPO / "scripts/initramfs/truenas-maint-init"
 JOB_SRC = REPO / "scripts/truenas-install-job.py"
+ROOT_DIR = (
+    TMP / "truenas-install/rootfs"
+)  # sudo unsquashfs of the update rootfs: real ownership
+ROOT_STAMP = ROOT_DIR.parent / "rootfs.stamp"
 COPY_SRC = REPO / "scripts/truenas_p3_copy.py"
 OUT = truenas_build_out()
 
@@ -144,7 +157,7 @@ def _interp(elf: Path) -> str | None:
 
 
 def collect_userland() -> dict[str, Path]:
-    """rel path in initramfs -> source file in LIVE_ROOT, NEEDED-closure included."""
+    """rel path in initramfs -> source file in ROOT_DIR, NEEDED-closure included."""
     libdirs = (
         "/usr/lib/aarch64-linux-gnu",
         "/lib/aarch64-linux-gnu",
@@ -155,13 +168,13 @@ def collect_userland() -> dict[str, Path]:
     todo = []
     for b in BINS:
         for d in ("/usr/bin", "/usr/sbin"):
-            src = _real(LIVE_ROOT, f"{d}/{b}")
+            src = _real(ROOT_DIR, f"{d}/{b}")
             if src.is_file():
                 files[f"usr/bin/{b}"] = src
                 todo.append(src)
                 break
         else:
-            raise RuntimeError(f"{b} not in {LIVE_ROOT}")
+            raise RuntimeError(f"{b} not in {ROOT_DIR}")
     seen = set()
     while todo:
         elf = todo.pop()
@@ -169,14 +182,14 @@ def collect_userland() -> dict[str, Path]:
         deps = _needed(elf)
         if interp and interp not in seen:
             seen.add(interp)
-            src = _real(LIVE_ROOT, interp)
+            src = _real(ROOT_DIR, interp)
             files[interp.lstrip("/")] = src
         for lib in deps:
             if lib in seen:
                 continue
             seen.add(lib)
             for d in libdirs:
-                src = _real(LIVE_ROOT, f"{d}/{lib}")
+                src = _real(ROOT_DIR, f"{d}/{lib}")
                 if src.is_file():
                     files[f"usr/lib/aarch64-linux-gnu/{lib}"] = src
                     todo.append(src)
@@ -217,10 +230,7 @@ def netconsole_arg() -> str:
 
 def cmd_build(_a) -> int:
     kv = kver()
-    if not LIVE_ROOT.is_dir():
-        raise RuntimeError(
-            f"{LIVE_ROOT} missing: unsquashfs {LIVE_SQUASHFS} there first"
-        )
+    ensure_root()
     if TREE.exists():
         shutil.rmtree(TREE)
     for d in (
@@ -284,15 +294,49 @@ def cmd_build(_a) -> int:
     return 0
 
 
+def ensure_root() -> None:
+    """ROOT_DIR = the current update's rootfs (live-env userland + chroot rehearsal)."""
+    upd = update_image()
+    want = f"{upd}:{upd.stat().st_mtime_ns}:{upd.stat().st_size}"
+    if ROOT_DIR.is_dir() and ROOT_STAMP.exists() and ROOT_STAMP.read_text() == want:
+        return
+    mnt = ROOT_DIR.parent / "upd-mnt"
+    mnt.mkdir(parents=True, exist_ok=True)
+    sudo("rm", "-rf", ROOT_DIR, check=False)
+    log(f"unsquashfs {upd} rootfs.squashfs -> {ROOT_DIR} (sudo, ~8 GB, xz)")
+    sudo("mount", "-t", "squashfs", "-o", "ro,loop", upd, mnt)
+    try:
+        # ~15 min for 7.6 GB xz on the box's 4x A57; a host is faster. 1800 s backstop.
+        sudo(
+            "unsquashfs",
+            "-n",
+            "-d",
+            ROOT_DIR,
+            mnt / "rootfs.squashfs",
+            timeout=1800,
+            capture_output=True,
+        )
+    finally:
+        sudo("umount", mnt, check=False)
+    ROOT_STAMP.write_text(want)
+
+
 # --- rehearse -------------------------------------------------------------
 def sudo(*cmd, timeout=600, **kw) -> subprocess.CompletedProcess:
     """Privileged host step; 600 s = update-initramfs under qemu-user (slowest step) backstop."""
     return sh(["sudo", "-n", *cmd], timeout=timeout, **kw)
 
 
-def job_cfg(kv: str, job_dir: str, password: str) -> dict:
+def image_kver(root: Path) -> str:
+    """Kernel the image ships: the one /boot/vmlinuz-<kver> in its rootfs."""
+    vm = sorted((root / "boot").glob("vmlinuz-*"))
+    if len(vm) != 1:
+        raise RuntimeError(f"want one /boot/vmlinuz-* in {root}, found {vm}")
+    return vm[0].name.removeprefix("vmlinuz-")
+
+
+def job_cfg(job_dir: str, password: str) -> dict:
     return {
-        "kver": kv,
         "job_dir": job_dir,
         "target": "image",
         "p3_bytes": P3_BYTES,
@@ -310,16 +354,18 @@ def admin_password() -> str:
     ]["password"]
 
 
-def stage_job_files(kv: str, dst: Path) -> None:
-    """The kernel-side job inputs (same set the box gets), locally."""
+def stage_job_files(dst: Path, extra_modules: Path | None) -> None:
+    """Job inputs beyond job.py/job.json (same set the box gets), locally."""
     dst.mkdir(parents=True, exist_ok=True)
-    tar = dst / f"modules-{kv}.tar"
-    if not tar.exists():
-        with tarfile.open(tar, "w") as t:
-            t.add(OUT / "modroot/lib/modules" / kv, arcname=kv,
-                  filter=lambda ti: None if ti.name in (f"{kv}/build", f"{kv}/source") else ti)  # fmt: skip
-    shutil.copy2(OUT / "Image", dst / "Image")
-    shutil.copy2(next(OUT.glob("unvr-ea16-*-truenas.config")), dst / "kernel.config")
+    if extra_modules:  # hook: al_* modules for the image kernel, tar of <kver>/... under usr/lib/modules
+        shutil.copy2(extra_modules, dst / EXTRA_TAR)
+
+
+EXTRA_RH = (
+    Path(os.environ["TRUENAS_EXTRA_MODULES"])
+    if os.environ.get("TRUENAS_EXTRA_MODULES")
+    else None
+)
 
 
 def cmd_rehearse(_a) -> int:
@@ -341,33 +387,23 @@ def cmd_rehearse(_a) -> int:
     log(f"userland smoke rc={r.returncode}\n{r.stdout}{r.stderr}")
     if r.returncode:
         return 1
-    # 2. installer chroot steps + our kernel + initrd on a real-ownership rootfs.
-    if not REHEARSE_ROOT.exists():
-        log(f"unsquashfs {ROOTFS_SQUASHFS} -> {REHEARSE_ROOT} (sudo, ~7.6 GB)")
-        sudo(
-            "unsquashfs",
-            "-n",
-            "-d",
-            REHEARSE_ROOT,
-            ROOTFS_SQUASHFS,
-            timeout=1800,
-            capture_output=True,
-        )
+    # 2. installer chroot steps + the image's kernel + initrd on a real-ownership rootfs.
+    ensure_root()
     jd = STAGE / "rehearse-job"
-    stage_job_files(kv, jd)
+    stage_job_files(jd, EXTRA_RH)
     shutil.copy2(Path.home() / ".ssh/authorized_keys" if (Path.home() / ".ssh/authorized_keys").exists()
                  else next((Path.home() / ".ssh").glob("id_*.pub")), jd / "authorized_keys")  # fmt: skip
     cfgf = jd / "job.json"
-    cfgf.write_text(json.dumps(job_cfg(kv, str(jd), admin_password())))
+    cfgf.write_text(json.dumps(job_cfg(str(jd), admin_password())))
     cfgf.chmod(0o600)
-    # Fresh overlay per run: REHEARSE_ROOT stays pristine (the installer steps are not idempotent).
+    # Fresh overlay per run: ROOT_DIR stays pristine (the installer steps are not idempotent).
     ovl = STAGE / "rehearse-ovl"
     sudo("rm", "-rf", ovl, check=False)
     for d in ("upper", "work", "root"):
         (ovl / d).mkdir(parents=True)
     root = ovl / "root"
     sudo("mount", "-t", "overlay", "overlay", "-o",
-         f"lowerdir={REHEARSE_ROOT},upperdir={ovl / 'upper'},workdir={ovl / 'work'}", root)  # fmt: skip
+         f"lowerdir={ROOT_DIR},upperdir={ovl / 'upper'},workdir={ovl / 'work'}", root)  # fmt: skip
     try:
         for d in ("dev", "proc", "sys"):
             sudo("mount", "--bind", f"/{d}", root / d)
@@ -382,7 +418,8 @@ def cmd_rehearse(_a) -> int:
     if r.returncode:
         log((r.stdout + r.stderr)[-3000:])
         return 1
-    initrd = root / f"boot/initrd.img-{kv}"
+    ikv = image_kver(ROOT_DIR)
+    initrd = root / f"boot/initrd.img-{ikv}"
     try:
         size = int(
             sudo("stat", "-c", "%s", initrd, capture_output=True, text=True).stdout
@@ -432,18 +469,20 @@ def p3_identity(ip: str) -> str:
     return dev
 
 
-def cmd_stage(_a) -> int:
-    kv = kver()
+def cmd_stage(a) -> int:
     ip = _box.require()
     if not CPIO.exists():
         raise RuntimeError("run `./dev.py truenas-install build` first")
     p3_identity(ip)
     jd = STAGE / "box-job"
-    stage_job_files(kv, jd)
-    ssh(ip, f"mkdir -p {JOB_DIR}/logs && rm -f {JOB_DIR}/result.json")
-    want = {"filesystem.squashfs": LIVE_SQUASHFS, "TrueNAS-SCALE.update": UPDATE,
-            f"modules-{kv}.tar": jd / f"modules-{kv}.tar", "Image": jd / "Image",
-            "kernel.config": jd / "kernel.config", "job.py": JOB_SRC}  # fmt: skip
+    stage_job_files(jd, a.extra_modules)
+    ssh(
+        ip,
+        f"mkdir -p {JOB_DIR}/logs && rm -f {JOB_DIR}/result.json {JOB_DIR}/{EXTRA_TAR}",
+    )
+    want = {"TrueNAS-SCALE.update": update_image(), "job.py": JOB_SRC}
+    if a.extra_modules:
+        want[EXTRA_TAR] = jd / EXTRA_TAR
     # Named files only: a * would also hash the job's ~131 GB p3.img.
     have = ssh(
         ip, f"cd {JOB_DIR} && sha256sum {' '.join(want)} 2>/dev/null; true", timeout=120
@@ -461,7 +500,7 @@ def cmd_stage(_a) -> int:
             raise RuntimeError(f"{name}: sha256 mismatch after copy")
     ssh(ip, f"cp /root/.ssh/authorized_keys {JOB_DIR}/authorized_keys")
     cfg = jd / "job.json"
-    cfg.write_text(json.dumps(job_cfg(kv, f"/mnt/p2{JOB_DIR}", admin_password())))
+    cfg.write_text(json.dumps(job_cfg(f"/mnt/p2{JOB_DIR}", admin_password())))
     try:
         scp(ip, cfg, f"{JOB_DIR}/job.json")
     finally:
@@ -568,30 +607,34 @@ def cmd_commit_p3(a) -> int:
 def cmd_stage_boot(_a) -> int:
     ip = _box.require()
     info = json.loads(ssh(ip, f"cat {JOB_DIR}/out/info.json"))
-    kv = kver()
-    if info["kver"] != kv:
-        raise RuntimeError(f"installed initrd is for {info['kver']}, build is {kv}")
+    kv = info["kver"]
     local = STAGE / f"initrd.img-{kv}"
-    sh(
-        [
-            "scp",
-            "-q",
-            *_box.SSH_OPTS_BATCH,
-            f"root@{ip}:{JOB_DIR}/out/{info['initrd']}",
-            local,
-        ],
-        timeout=60,
-    )
-    if (
-        sh(["sha256sum", local], capture_output=True, text=True).stdout.split()[0]
-        != info["initrd_sha256"]
-    ):
-        raise RuntimeError("initrd sha256 != info.json")
+    vmz = STAGE / f"vmlinuz-{kv}"
+    for name, dst in ((info["initrd"], local), (info["vmlinuz"], vmz)):
+        sh(
+            ["scp", "-q", *_box.SSH_OPTS_BATCH, f"root@{ip}:{JOB_DIR}/out/{name}", dst],
+            timeout=60,
+        )
+    for f, key in ((local, "initrd_sha256"), (vmz, "vmlinuz_sha256")):
+        if (
+            sh(["sha256sum", f], capture_output=True, text=True).stdout.split()[0]
+            != info[key]
+        ):
+            raise RuntimeError(f"{f.name} sha256 != info.json")
+    raw = vmz.read_bytes()
+    if raw[:2] == b"\x1f\x8b":  # Image.gz: mkuimage wants the raw Image
+        raw = gzip.decompress(raw)
+    if raw[56:60] != b"ARM\x64":
+        raise RuntimeError("vmlinuz is not an arm64 Image")
+    img = STAGE / f"Image-{kv}"
+    img.write_bytes(raw)
+    uimg = STAGE / f"uImage-{kv}"
+    mkuimage(str(img), str(uimg), f"truenas-{kv}"[:31], log)
     args = (
         f"console=ttyS0,115200 root=ZFS={info['bootfs']} ro zfsforce=1 libata.allow_tpm=1 "
         "nvme_core.multipath=N panic=15 reboot=cold ahci.mask_port_map=0x5 ahci_alpine.mask_port_map=0x5"
     )
-    bs.stage_profile(ip, "truenas", uimage=next(OUT.glob("uImage-*-truenas")), dtb=TMP / "dtb/unvr-truenas.dtb",
+    bs.stage_profile(ip, "truenas", uimage=uimg, dtb=TMP / "dtb/unvr-truenas.dtb",
                      initrd=local, bootargs=args, log=log)  # fmt: skip
     return 0
 
@@ -751,6 +794,11 @@ def main() -> int:
         ),
     )
     ap.add_argument("--go", action="store_true")
+    ap.add_argument(
+        "--extra-modules",
+        type=Path,
+        help="stage: tar of <kver>/... al_* modules for the image kernel",
+    )
     a = ap.parse_args()
     fn = {"build": cmd_build, "rehearse": cmd_rehearse, "stage": cmd_stage, "run": cmd_run, "fetch": cmd_fetch,
           "commit-p3": cmd_commit_p3, "stage-boot": cmd_stage_boot, "verify": cmd_verify, "verify-api": cmd_verify_api, "reboot-api": cmd_reboot_api, "ssh-api": cmd_ssh_api}[a.step]  # fmt: skip

@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-2.0-or-later
 # Copyright (C) 2026 Awto / Daniel Tyrrell
-"""TrueNAS 26.04 install onto woomera, run INSIDE the TrueNAS live env (#338).
+"""TrueNAS 27 (self-built image) install onto woomera, run INSIDE the TrueNAS live env (#338).
 
 - Started by scripts/initramfs/truenas-maint-init; staged by ./dev.py truenas-install stage.
-- Pool: the ISO installer's exact `zpool create` (truenas_installer/install.py) on
+- Pool: the ISO installer's `zpool create` (truenas_installer/install.py, 26.04 copy) on
   target "image" (GPT image file on p2, partition 1 = p3's size, via loop -P) or "p3".
 - Install: the update image's own truenas_install.main(), in-process, with run_command wrapped:
   - skip update-grub / grub-install (U-Boot boots us; no GRUB, no ESP),
-  - before truenas-initrd.py: add OUR kernel (modules, /boot/vmlinuz-<kver>, config), depmod,
-    root's authorized_keys - so the installer builds our initrd like any of its kernels.
-- Out: <job>/out/{initrd.img-<kver>,info.json}, <job>/result.json. Pool exported at the end.
+  - before truenas-initrd.py: optional <job>/modules-extra.tar (al_* for the image kernel), depmod,
+    initramfs module list, root's authorized_keys. The kernel itself is the image's own deb.
+- Out: <job>/out/{initrd.img-<kver>,vmlinuz-<kver>,info.json}, <job>/result.json. Pool exported at the end.
 - Host rehearsal (no zfs): --rehearse-root DIR runs the chroot steps on an extracted rootfs.
 """
 
@@ -69,21 +69,20 @@ def set_clock(job_json: str) -> None:
         log(f"clock set to job.json mtime {time.strftime('%Y-%m-%dT%H:%M:%S%z')}")
 
 
-def inject_kernel(cfg: dict, root: str, chroot=("chroot",)) -> None:
-    """Our kernel into the new root, the way a TrueNAS kernel package lays it out."""
-    kver, job = cfg["kver"], cfg["job_dir"]
-    mods = os.path.join(root, "usr/lib/modules")
-    run(["tar", "-xf", os.path.join(job, f"modules-{kver}.tar"), "-C", mods])
-    for link in ("build", "source"):
-        p = os.path.join(mods, kver, link)
-        if os.path.islink(p):
-            os.unlink(p)
-    shutil.copyfile(
-        os.path.join(job, "Image"), os.path.join(root, f"boot/vmlinuz-{kver}")
-    )
-    shutil.copyfile(
-        os.path.join(job, "kernel.config"), os.path.join(root, f"boot/config-{kver}")
-    )
+def image_kver(root: str) -> str:
+    """The one kernel the image ships (/boot/vmlinuz-<kver>)."""
+    vm = [f for f in os.listdir(os.path.join(root, "boot")) if f.startswith("vmlinuz-")]
+    if len(vm) != 1:
+        raise RuntimeError(f"want one /boot/vmlinuz-* in {root}, found {vm}")
+    return vm[0].removeprefix("vmlinuz-")
+
+
+def inject_kernel(cfg: dict, root: str, chroot=("chroot",)) -> str:
+    """Install-time additions to the image's own kernel; returns its kver."""
+    kver, job = image_kver(root), cfg["job_dir"]
+    extra = os.path.join(job, "modules-extra.tar")
+    if os.path.exists(extra):
+        run(["tar", "-xf", extra, "-C", os.path.join(root, "usr/lib/modules")])
     run([*chroot, root, "depmod", "-a", kver])
     # SATA probe waits on the bay rails (i2c pca9575 -> regulator-fixed, #104): =m in TrueNAS's config.
     with open(os.path.join(root, "etc/initramfs-tools/modules"), "a") as f:
@@ -96,7 +95,8 @@ def inject_kernel(cfg: dict, root: str, chroot=("chroot",)) -> None:
         os.path.join(job, "authorized_keys"), os.path.join(ssh, "authorized_keys")
     )
     os.chmod(os.path.join(ssh, "authorized_keys"), 0o600)
-    log(f"kernel {kver} + root authorized_keys injected into {root}")
+    log(f"kernel {kver} (image) + root authorized_keys prepared in {root}")
+    return kver
 
 
 def make_target(cfg: dict) -> tuple[str, str | None]:
@@ -204,13 +204,13 @@ def run_truenas_install(cfg: dict, upd: str, res: dict) -> None:
             # As called it runs on the LIVE env's python, which lacks libzfs/pyudev: ImportError,
             # rc 1, which the installer accepts - no initrd rebuilt. Run it in the new root instead.
             root = cmd[-1]
-            inject_kernel(cfg, root)
+            kver = res["kver"] = inject_kernel(cfg, root)
             r = run(
                 ["chroot", root, "/usr/local/bin/truenas-initrd.py", "-f", "/"],
                 check=False,
             )
-            if not os.path.exists(os.path.join(root, f"boot/initrd.img-{cfg['kver']}")):
-                run(["chroot", root, "update-initramfs", "-c", "-k", cfg["kver"]])
+            if not os.path.exists(os.path.join(root, f"boot/initrd.img-{kver}")):
+                run(["chroot", root, "update-initramfs", "-c", "-k", kver])
             res["truenas_initrd_rc"] = r.returncode
             return subprocess.CompletedProcess(
                 cmd, min(r.returncode, 1), r.stdout, r.stderr
@@ -245,7 +245,7 @@ def run_truenas_install(cfg: dict, upd: str, res: dict) -> None:
 
 
 def collect(cfg: dict, res: dict) -> None:
-    kver, out = cfg["kver"], os.path.join(cfg["job_dir"], "out")
+    kver, out = res["kver"], os.path.join(cfg["job_dir"], "out")
     bootfs = run(["zpool", "get", "-H", "-o", "value", "bootfs", POOL]).stdout.strip()
     r = "/tmp/newroot"
     os.makedirs(r, exist_ok=True)
@@ -254,6 +254,10 @@ def collect(cfg: dict, res: dict) -> None:
         os.makedirs(out, exist_ok=True)
         src = os.path.join(r, f"boot/initrd.img-{kver}")
         shutil.copyfile(src, os.path.join(out, f"initrd.img-{kver}"))
+        shutil.copyfile(
+            os.path.join(r, f"boot/vmlinuz-{kver}"),
+            os.path.join(out, f"vmlinuz-{kver}"),
+        )
         boots = sorted(os.listdir(os.path.join(r, "boot")))
     finally:
         run(["umount", r], check=False)
@@ -262,6 +266,8 @@ def collect(cfg: dict, res: dict) -> None:
         "kver": kver,
         "initrd": f"initrd.img-{kver}",
         "initrd_sha256": sha256(os.path.join(out, f"initrd.img-{kver}")),
+        "vmlinuz": f"vmlinuz-{kver}",
+        "vmlinuz_sha256": sha256(os.path.join(out, f"vmlinuz-{kver}")),
         "root_boot": boots,
         "datasets": run(
             ["zfs", "list", "-H", "-o", "name,mountpoint,readonly", "-r", POOL]
@@ -291,8 +297,8 @@ def rehearse(cfg: dict, root: str) -> int:
     )
     run([*ch, root, "/usr/local/bin/truenas-nvdimm.py"])
     run([*ch, root, "/usr/local/bin/truenas-grub.py"])
-    inject_kernel(cfg, root, ch)
-    run([*ch, root, "update-initramfs", "-c", "-k", cfg["kver"]])
+    kver = inject_kernel(cfg, root, ch)
+    run([*ch, root, "update-initramfs", "-c", "-k", kver])
     run([*ch, root, "/usr/bin/configure_fips"])
     log("rehearsal OK")
     return 0
