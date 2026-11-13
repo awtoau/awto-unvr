@@ -1,0 +1,29 @@
+awto-unvr #356: truenas_rust builds on aarch64 (rustup-init for the host arch).
+
+---
+--- a/truenas_rust/build.sh
++++ b/truenas_rust/build.sh
+@@ -35,7 +35,7 @@
+ set -eu
+ 
+ RUST_VERSION="1.98.1"
+-RUSTUP_URL="https://static.rust-lang.org/rustup/dist/x86_64-unknown-linux-gnu/rustup-init"
++RUSTUP_URL="https://static.rust-lang.org/rustup/dist/$(uname -m)-unknown-linux-gnu/rustup-init"
+ RETRIES=3
+ 
+ HERE="$(cd "$(dirname "$0")" && pwd)"
+@@ -69,10 +69,10 @@
+     done
+ }
+ 
+-if [ "$(uname -m)" != x86_64 ]; then
+-    echo "FATAL: only x86_64 is supported" >&2
+-    exit 1
+-fi
++case "$(uname -m)" in
++    x86_64|aarch64) ;;
++    *) echo "FATAL: only x86_64 and aarch64 are supported" >&2; exit 1 ;;
++esac
+ 
+ CARGO=""
+ if command -v cargo >/dev/null 2>&1 && version_ok "$(command -v cargo)"; then
