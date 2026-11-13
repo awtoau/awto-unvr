@@ -2,7 +2,7 @@
 # Copyright (C) 2026 Awto / Daniel Tyrrell
 """Clean-room stand-in for TrueNAS's closed truenas_pylicensed (#356): always "no licence".
 
-- Written only from how public truenas/middleware release/27.0.0 uses it: docs/truenas-pylicensed-stub.md.
+- Written only from how public truenas/middleware release/27.0.0 uses it: docs/truenas-stubs.md.
 - verify() -> NO_LICENSE: middleware falls back to the legacy blob, finds none -> Community.
 - Licence upload/remove fails in middleware (reload_seq never moves) - intended.
 """

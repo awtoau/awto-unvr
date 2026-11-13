@@ -2,7 +2,7 @@
 # Copyright (C) 2026 Awto / Daniel Tyrrell
 """truenas_pylicensed stub semantics (#356), no middleware clone needed.
 
-Coverage against middleware itself: scripts/check-pylicensed-stub.py.
+Coverage against middleware itself: scripts/check-truenas-stubs.py.
 """
 
 from __future__ import annotations

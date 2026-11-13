@@ -4,7 +4,7 @@ Clean-room stand-in for TrueNAS's closed `truenas_pylicensed`, so middleware 27 
 
 - Source: `truenas/stubs/truenas_pylicensed/` → Debian binary `python3-truenas-pylicensed` (arch all, pybuild/pyproject, source `truenas-pylicensed`, 3.0 native).
 - Derived **only** from public `truenas/middleware` `release/27.0.0`: imports, attribute reads, constructor kwargs, call sites and that repo's unit tests. No closed package, binary or ISO content read (Dan, 2026-11-14).
-- Check: `./dev.py check-pylicensed-stub` (`scripts/check-pylicensed-stub.py`); gate step `pylicensed-stub` (skips without the clone).
+- Check: `./dev.py check-truenas-stubs` (`scripts/check-truenas-stubs.py`); gate step `pylicensed-stub` (skips without the clone).
 
 ## API surface
 
@@ -40,10 +40,10 @@ Clean-room stand-in for TrueNAS's closed `truenas_pylicensed`, so middleware 27 
 - `utils/license/legacy.py` (imported by `utils/license/__init__.py`, so by middlewared at start) and `plugins/truenas/license.py` import `licenselib` at module level. Not this package; tracked in #356.
 - Full plugin imports need the TrueNAS runtime (service framework deps). The check fakes missing host deps and imports every using module; ones that fail on faked deps are logged, not failed. Stub-caused errors fail.
 
-## Check (`scripts/check-pylicensed-stub.py`)
+## Check (`scripts/check-truenas-stubs.py`)
 
 - Static: AST over the 27.0.0 tree — imports, `Name.attr` on imported names, `LicenseStatus(...)`/`FeatureEntry(...)` kwargs, attributes read off `verify()` / `LicenseStatus`-annotated values / `.features` entries, subscripted `get_fingerprint()` keys.
-- Import: every non-test using module, stub real, missing deps faked (`scripts/_pylicensed_harness.py`). `middlewared.utils.license` and `middlewared.utils.entitlements` must import.
+- Import: every non-test using module, stub real, missing deps faked (`scripts/_truenas_stubs_harness.py`). `middlewared.utils.license` and `middlewared.utils.entitlements` must import.
 - Tests: middleware's own unit tests for license/entitlements run against the stub; exclusions + reasons in the script.
 - Doc list below must equal the files that import the package; the check fails otherwise.
 

@@ -1,16 +1,18 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-2.0-or-later
 # Copyright (C) 2026 Awto / Daniel Tyrrell
-"""check-pylicensed-stub - our truenas_pylicensed stub covers what public middleware 27 uses (#356).
+"""check-truenas-stubs - our truenas/stubs/ stand-ins cover what public middleware 27 uses (#356).
 
 - Sparse-clones truenas/middleware release/27.0.0 (*.py only) to tmp/truenas-middleware-27.
-- static: AST-collect every truenas_pylicensed import, attribute and constructor kwarg, plus
-  attributes read off verify()/LicenseStatus/FeatureEntry/get_fingerprint() values; assert the
-  stub has each. Also asserts docs/truenas-pylicensed-stub.md lists exactly the using files.
-- import: import every non-test using module with the stub real and missing host deps faked
-  (scripts/_pylicensed_harness.py). Fails only on a stub-caused error; core modules must import.
-- tests: run middleware's own license/entitlement unit tests against the stub.
-- --gate: SKIP (rc 0) when the clone is absent; never clones. Log: tmp/logs/check-pylicensed-stub.log
+- classify: every top-level import in src/ must be stdlib, local, public, or a stub here (CLOSED).
+- static: AST-collect every closed-lib import, attribute, call signature, match pattern and
+  stub-class-annotated attribute; plus truenas_pylicensed value flow (verify()/features/fingerprint).
+  Asserts docs/truenas-stubs.md lists exactly the using files.
+- import: every non-test using module, stubs real, missing host deps faked
+  (scripts/_truenas_stubs_harness.py). Fails only on a stub-caused error; CORE_MODULES must import.
+- ce: public entitlement engine + stubs on GENERIC hardware: entitled exactly where Vector.ce == 1.
+- tests: middleware's own license/entitlement unit tests against the stubs.
+- --gate: SKIP (rc 0) when the clone is absent; never clones. Log: tmp/logs/check-truenas-stubs.log
 """
 
 from __future__ import annotations
@@ -19,6 +21,7 @@ import argparse
 import ast
 import dataclasses
 import importlib
+import inspect
 import json
 import os
 import re
@@ -32,27 +35,67 @@ from pathlib import Path
 
 from _repo import DOCS, REPO, TMP, make_log
 
-log = make_log("check-pylicensed-stub")
+log = make_log("check-truenas-stubs")
 
 URL = "https://github.com/truenas/middleware"
 BRANCH = "release/27.0.0"
 CLONE = TMP / "truenas-middleware-27"
 MW_SRC = CLONE / "src" / "middlewared"
-STUB_ROOT = REPO / "truenas" / "stubs" / "truenas_pylicensed"
-DOC = DOCS / "truenas-pylicensed-stub.md"
+STUBS = REPO / "truenas" / "stubs"
+DOC = DOCS / "truenas-stubs.md"
 PKG = "truenas_pylicensed"
+# Closed top-level module -> our stub dir (truenas/stubs/<dir>).
+CLOSED = {
+    "truenas_pylicensed": "truenas_pylicensed",
+    "truenas_pylibsed": "truenas_pylibsed",
+    "truenas_zfstierd_client": "truenas_zfstierd",
+    "truenas_zfstierd_common": "truenas_zfstierd",
+    "truesearch_client": "truesearch_client",
+    "licenselib": "licenselib",
+}
+STUB_DIRS = sorted({STUBS / d for d in CLOSED.values()})
+# Public TrueNAS sources in the scale-build manifest that provide these (checked 2026-11-14, #356).
+PUBLIC_TRUENAS = {
+    "apps_ci", "apps_schema", "apps_validation", "catalog_reader",  # apps_validation
+    "cryptit", "fenced", "ixdiagnose", "ixhardware", "libsg3", "libsgio", "libzfs",
+    "scstadmin", "spdk", "zettarepl", "pysss_murmur", "pysss_nss_idmap", "samba", "tdb",
+    "wbclient", "truenas_acme_utils", "truenas_api_client", "truenas_api_key",
+    "truenas_authenticator", "truenas_connect_utils", "truenas_crypto_utils", "truenas_keyring",
+    "truenas_os", "truenas_os_pyutils", "truenas_pam_faillog", "truenas_pam_session",
+    "truenas_pylibvirt", "truenas_pylibzfs", "truenas_pymdns", "truenas_pynetif", "truenas_pypam",
+    "truenas_pypwenc", "truenas_pyscram", "truenas_pysnmp", "truenas_verify",
+}  # fmt: skip
+# Debian/PyPI third-party, and middleware-local script/doc siblings imported by bare name.
+THIRD_PARTY = {
+    "OpenSSL", "acme", "aiohttp", "alembic", "annotated_types", "asyncssh", "aws_requests_auth",
+    "boto3", "botocore", "bs4", "certbot_dns_cloudflare", "certbot_dns_digitalocean", "croniter",
+    "cryptography", "dateutil", "dns", "docker", "google", "google_auth_httplib2",
+    "googleapiclient", "gssapi", "html2text", "httplib2", "importlinter", "influxdb", "ipaclient",
+    "ipalib", "ipaplatform", "ipapython", "isodate", "jeepney", "josepy", "json_schema_for_humans",
+    "jsonschema", "jwt", "kmip", "ldap", "lexicon", "mako", "netsnmpagent", "packaging",
+    "paramiko", "pyVim", "pyVmomi", "pydantic", "pydantic_core", "pyinotify", "pyotp", "pytest",
+    "pytz", "pyudev", "remote_pdb", "requests", "rich", "sphinxbootstrap4theme", "sqlalchemy",
+    "typing_extensions", "urllib3", "websocket", "yaml",
+}  # fmt: skip
+LOCAL = {"middlewared", "auto_config", "bases", "changelog", "config", "functions", "protocols", "third_party"}
 
 # Host-process guard (awto-dan#53): git prints progress continuously, 60 s silent = hung.
 STALL_S = 60
 # Backstop: 3x the measured cold clone (#356).
 CLONE_LIMIT_S = 20
 
-# Must import under the harness: they hold every enum member at module level (matrix/policy/engine).
-CORE_MODULES = ("middlewared.utils.license", "middlewared.utils.entitlements")
+# Must import under the harness: entitlement vocabulary at module level, legacy licence, disks.
+CORE_MODULES = (
+    "middlewared.utils.license",
+    "middlewared.utils.entitlements",
+    "middlewared.utils.disks_.disk_class",
+    "middlewared.alert.source.zfs_tier",
+    "middlewared.etc_files.truenas_zfstierd",
+)
 
 # Middleware unit tests run against the stub, relative to middlewared/pytest/unit.
-# Excluded, all for faked deps not the stub: test_license_legacy_utils (licenselib),
-# test_validate_topology/test_iscsi_target/test_failover (service framework),
+# Excluded: test_license_legacy_utils (decodes real legacy blobs; our licenselib decodes none),
+# test_validate_topology/test_iscsi_target/test_failover (faked service framework deps),
 # test_truenas_connect (truenas_connect_utils).
 UNIT_TESTS = (
     "utils/test_entitlements.py",
@@ -68,7 +111,7 @@ UNIT_TESTS = (
     "plugins/update/test_profile.py",
 )
 DESELECT = (
-    # legacy blob decode needs real licenselib; ejson comes from truenas_api_client.
+    # legacy blob decode (stub decodes none, by design); ejson comes from faked truenas_api_client.
     "utils/test_license_info_wire.py::test_projection_matches_the_recorded_wire[legacy-<lambda>-expected1]",
     "utils/test_license_info_wire.py::test_dates_reach_the_client_as_ejson_dates",
 )
@@ -159,7 +202,7 @@ class Uses:
     files: set[str] = dataclasses.field(default_factory=set)
     # (module, name) -> sites
     names: dict = dataclasses.field(default_factory=lambda: defaultdict(set))
-    # (stub name, attr) -> sites, e.g. ("LicenseFeature", "HA")
+    # ((module, name|None), attr) -> sites, e.g. (("truenas_pylicensed", "LicenseFeature"), "HA")
     attrs: dict = dataclasses.field(default_factory=lambda: defaultdict(set))
     # (class, kwarg) -> sites, for LicenseStatus(...)/FeatureEntry(...)
     kwargs: dict = dataclasses.field(default_factory=lambda: defaultdict(set))
@@ -169,7 +212,10 @@ class Uses:
     # key -> sites: fp["k"] (required) / fp.get("k") (optional)
     fp_keys: dict = dataclasses.field(default_factory=lambda: defaultdict(set))
     fp_opt_keys: dict = dataclasses.field(default_factory=lambda: defaultdict(set))
-    bare_imports: set[str] = dataclasses.field(default_factory=set)
+    # ((module, name), sub-attr|None, n positional, kw names) -> sites
+    calls: dict = dataclasses.field(default_factory=lambda: defaultdict(set))
+    # ((module, class), attr) -> sites: annotated names and match-class patterns
+    inst_attrs: dict = dataclasses.field(default_factory=lambda: defaultdict(set))
 
 
 def _ann_has(node: ast.AST | None, word: str) -> bool:
@@ -315,63 +361,96 @@ def _scan_scope(scope, rel, local, status_funcs, uses: Uses) -> None:
             uses.fp_opt_keys[n.args[0].value].add(site)
 
 
+def _closed(mod: str | None) -> bool:
+    return bool(mod) and mod.split(".")[0] in CLOSED
+
+
 def collect(root: Path) -> Uses:
     uses = Uses()
     trees: dict[str, ast.Module] = {}
     for path in sorted(root.rglob("*.py")):
         text = path.read_text(errors="replace")
-        if PKG not in text:
+        if not any(m in text for m in CLOSED):
             continue
         rel = str(path.relative_to(CLONE))
         trees[rel] = ast.parse(text, filename=rel)
     status_funcs = _status_returning_funcs(trees)
 
     for rel, tree in trees.items():
-        local: dict[str, str] = {}  # local name -> stub name
+        local: dict[str, str] = {}  # truenas_pylicensed local name -> stub name (value flow)
+        bound: dict[str, tuple[str, str | None]] = {}  # local -> (module, name|None for a module)
         for n in ast.walk(tree):
-            if (
-                isinstance(n, ast.ImportFrom)
-                and n.module
-                and n.module.split(".")[0] == PKG
-            ):
+            if isinstance(n, ast.ImportFrom) and not n.level and _closed(n.module):
                 uses.files.add(rel)
                 for a in n.names:
                     uses.names[(n.module, a.name)].add(f"{rel}:{n.lineno}")
-                    local[a.asname or a.name] = a.name
+                    bound[a.asname or a.name] = (n.module, a.name)
+                    if n.module.split(".")[0] == PKG:
+                        local[a.asname or a.name] = a.name
             elif isinstance(n, ast.Import):
                 for a in n.names:
-                    if a.name.split(".")[0] == PKG:
+                    if _closed(a.name):
                         uses.files.add(rel)
-                        uses.bare_imports.add(f"{rel}:{n.lineno}")
-        if not local:
+                        uses.names[(a.name, None)].add(f"{rel}:{n.lineno}")
+                        bound[a.asname or a.name.split(".")[0]] = (a.asname and a.name or a.name.split(".")[0], None)
+        if not bound:
             continue
         for n in ast.walk(tree):
-            if (
-                isinstance(n, ast.Attribute)
-                and isinstance(n.value, ast.Name)
-                and n.value.id in local
-            ):
-                uses.attrs[(local[n.value.id], n.attr)].add(f"{rel}:{n.lineno}")
-            elif (
-                isinstance(n, ast.Call)
-                and isinstance(n.func, ast.Name)
-                and local.get(n.func.id)
-                in (
-                    "LicenseStatus",
-                    "FeatureEntry",
-                )
-            ):
-                for kw in n.keywords:
-                    if kw.arg:
-                        uses.kwargs[(local[n.func.id], kw.arg)].add(f"{rel}:{n.lineno}")
-        scopes = [tree] + [
-            n
-            for n in ast.walk(tree)
-            if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))
-        ]
-        for s in scopes:
-            _scan_scope(s, rel, local, status_funcs, uses)
+            site = f"{rel}:{getattr(n, 'lineno', 0)}"
+            if isinstance(n, ast.Attribute) and isinstance(n.value, ast.Name) and n.value.id in bound:
+                uses.attrs[(bound[n.value.id], n.attr)].add(site)
+            elif isinstance(n, ast.Call):
+                ref = None
+                if isinstance(n.func, ast.Name) and n.func.id in bound:
+                    ref = (bound[n.func.id], None)
+                elif (
+                    isinstance(n.func, ast.Attribute)
+                    and isinstance(n.func.value, ast.Name)
+                    and n.func.value.id in bound
+                    and bound[n.func.value.id][1] is None
+                ):
+                    ref = (bound[n.func.value.id], n.func.attr)
+                if ref and not any(isinstance(x, ast.Starred) for x in n.args) and all(k.arg for k in n.keywords):
+                    uses.calls[(ref, len(n.args), tuple(sorted(k.arg for k in n.keywords)))].add(site)
+                    if ref[1] is None and ref[0][1] in ("LicenseStatus", "FeatureEntry"):
+                        for kw in n.keywords:
+                            uses.kwargs[(ref[0][1], kw.arg)].add(site)
+            elif isinstance(n, ast.MatchClass) and isinstance(n.cls, ast.Name) and n.cls.id in bound:
+                for kw in n.kwd_attrs:
+                    uses.inst_attrs[(bound[n.cls.id], kw)].add(site)
+        scopes = [tree] + [n for n in ast.walk(tree) if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))]
+        for sc in scopes:
+            if local:
+                _scan_scope(sc, rel, local, status_funcs, uses)
+            _scan_annotated(sc, rel, bound, uses)
     return uses
+
+
+def _scan_annotated(scope, rel, bound, uses: Uses) -> None:
+    """Attributes read off names annotated with a from-imported stub class (info: InfoResult)."""
+    classes = {k: v for k, v in bound.items() if v[1] is not None and v[1][:1].isupper()}
+    typed: dict[str, list] = {}
+
+    def note(name, ann):
+        if ann is None:
+            return
+        refs = [classes[x.id] for x in ast.walk(ann) if isinstance(x, ast.Name) and x.id in classes]
+        # Containers (list[X]) say nothing about the name's own attributes.
+        if refs and not isinstance(ann, ast.Subscript):
+            typed[name] = refs
+
+    if isinstance(scope, (ast.FunctionDef, ast.AsyncFunctionDef)):
+        a = scope.args
+        for arg in a.posonlyargs + a.args + a.kwonlyargs:
+            note(arg.arg, arg.annotation)
+    nodes = list(_walk_scope(scope))
+    for n in nodes:
+        if isinstance(n, ast.AnnAssign) and isinstance(n.target, ast.Name):
+            note(n.target.id, n.annotation)
+    for n in nodes:
+        if isinstance(n, ast.Attribute) and isinstance(n.value, ast.Name) and n.value.id in typed:
+            for ref in typed[n.value.id]:
+                uses.inst_attrs[(ref, n.attr)].add(f"{rel}:{n.lineno}")
 
 
 def _first(sites: set[str]) -> str:
@@ -379,26 +458,80 @@ def _first(sites: set[str]) -> str:
     return s[0] + (f" (+{len(s) - 1})" if len(s) > 1 else "")
 
 
+def _resolve(ref: tuple[str, str | None]):
+    mod, name = ref
+    m = importlib.import_module(mod)
+    return m if name is None else getattr(m, name)
+
+
+def _has_inst_attr(cls, attr: str) -> bool:
+    if hasattr(cls, attr):
+        return True
+    if dataclasses.is_dataclass(cls):
+        return attr in {f.name for f in dataclasses.fields(cls)}
+    return attr in getattr(cls, "__annotations__", {})
+
+
+def classify_imports() -> list[str]:
+    """Every top-level import under src/ must have a known provider; a new closed lib fails here."""
+    names: dict[str, str] = {}
+    for p in (CLONE / "src").rglob("*.py"):
+        try:
+            tree = ast.parse(p.read_text(errors="replace"))
+        except SyntaxError:
+            continue
+        for n in ast.walk(tree):
+            mods = []
+            if isinstance(n, ast.Import):
+                mods = [a.name for a in n.names]
+            elif isinstance(n, ast.ImportFrom) and n.module and not n.level:
+                mods = [n.module]
+            for m in mods:
+                names.setdefault(m.split(".")[0], f"{p.relative_to(CLONE)}:{n.lineno}")
+    known = set(sys.stdlib_module_names) | LOCAL | PUBLIC_TRUENAS | THIRD_PARTY | set(CLOSED)
+    unknown = {k: v for k, v in names.items() if k not in known}
+    return [f"unclassified import {k!r} ({v}): public source, third-party, or a new closed lib?" for k, v in sorted(unknown.items())]
+
+
 def check_static(uses: Uses) -> list[str]:
-    sys.path.insert(0, str(STUB_ROOT))
+    for d in STUB_DIRS:
+        sys.path.insert(0, str(d))
     stub = importlib.import_module(PKG)
     errs = []
-    if uses.bare_imports:
-        errs.append(f"`import {PKG}` form not modelled: {sorted(uses.bare_imports)}")
-    for (mod, name), sites in sorted(uses.names.items()):
+    for (mod, name), sites in sorted(uses.names.items(), key=str):
         try:
             m = importlib.import_module(mod)
         except ImportError:
             errs.append(f"missing module {mod} ({_first(sites)})")
             continue
-        if not hasattr(m, name):
+        if name is not None and not hasattr(m, name):
             errs.append(f"missing {mod}.{name} ({_first(sites)})")
-    for (name, attr), sites in sorted(uses.attrs.items()):
-        if not hasattr(getattr(stub, name, None), attr):
-            errs.append(f"missing {name}.{attr} ({_first(sites)})")
+    for (ref, attr), sites in sorted(uses.attrs.items(), key=str):
+        try:
+            if not hasattr(_resolve(ref), attr):
+                errs.append(f"missing {ref[0]}.{ref[1] or ''}.{attr} ({_first(sites)})")
+        except (ImportError, AttributeError):
+            pass  # reported above
+    for (ref, attr), sites in sorted(uses.inst_attrs.items(), key=str):
+        try:
+            if not _has_inst_attr(_resolve(ref), attr):
+                errs.append(f"{ref[0]}.{ref[1]} instances lack .{attr} ({_first(sites)})")
+        except (ImportError, AttributeError):
+            pass
+    for ((ref, sub), nargs, kws), sites in sorted(uses.calls.items(), key=str):
+        try:
+            fn = _resolve(ref)
+            fn = getattr(fn, sub) if sub else fn
+            sig = inspect.signature(fn)
+        except (ImportError, AttributeError, TypeError, ValueError):
+            continue
+        try:
+            sig.bind(*range(nargs), **dict.fromkeys(kws))
+        except TypeError as e:
+            label = f"{ref[0]}.{ref[1] or ''}{'.' + sub if sub else ''}"
+            errs.append(f"call {label}({nargs} pos, kw {list(kws)}): {e} ({_first(sites)})")
     for (cls, kw), sites in sorted(uses.kwargs.items()):
-        fields = {f.name for f in dataclasses.fields(getattr(stub, cls))}
-        if kw not in fields:
+        if kw not in {f.name for f in dataclasses.fields(getattr(stub, cls))}:
             errs.append(f"{cls}() has no field {kw!r} ({_first(sites)})")
     st = stub.verify()
     for attr, sites in sorted(uses.status_attrs.items()):
@@ -411,17 +544,12 @@ def check_static(uses: Uses) -> list[str]:
     fp = stub.get_fingerprint()
     for key, sites in sorted(uses.fp_keys.items()):
         if key not in fp:
-            errs.append(
-                f"get_fingerprint() lacks required key {key!r} ({_first(sites)})"
-            )
+            errs.append(f"get_fingerprint() lacks required key {key!r} ({_first(sites)})")
     # Semantics: no licence, the code middleware falls back to legacy on.
     if st.valid or st.code is not stub.LicenseError.NO_LICENSE:
-        errs.append(
-            f"verify() must be valid=False code=NO_LICENSE, got {st.valid} {st.code}"
-        )
+        errs.append(f"verify() must be valid=False code=NO_LICENSE, got {st.valid} {st.code}")
     for enum_cls in (stub.LicenseFeature, stub.SupportTier, stub.LicenseType):
-        bad = [m.name for m in enum_cls if m.value != m.name]
-        if bad:
+        if bad := [m.name for m in enum_cls if m.value != m.name]:
             errs.append(f"{enum_cls.__name__} value != name: {bad}")
     return errs
 
@@ -429,21 +557,15 @@ def check_static(uses: Uses) -> list[str]:
 def check_doc(uses: Uses) -> list[str]:
     text = DOC.read_text()
     try:
-        block = text.split("<!-- derived-from:begin -->")[1].split(
-            "<!-- derived-from:end -->"
-        )[0]
+        block = text.split("<!-- derived-from:begin -->")[1].split("<!-- derived-from:end -->")[0]
     except IndexError:
         return [f"{DOC.name}: no derived-from markers"]
-    listed = {
-        ln.strip().strip("-").strip().strip("`")
-        for ln in block.splitlines()
-        if ln.strip().startswith("-")
-    }
+    listed = {ln.strip().strip("-").strip().split("`")[1] for ln in block.splitlines() if ln.strip().startswith("- `")}
     errs = []
     if missing := sorted(uses.files - listed):
         errs.append(f"{DOC.name} does not list: {missing}")
     if extra := sorted(listed - uses.files):
-        errs.append(f"{DOC.name} lists files that no longer use {PKG}: {extra}")
+        errs.append(f"{DOC.name} lists files that no longer use a closed lib: {extra}")
     return errs
 
 
@@ -452,10 +574,11 @@ def check_doc(uses: Uses) -> list[str]:
 _IMPORT_PROBE = r"""
 import faulthandler, importlib, json, sys, traceback
 faulthandler.dump_traceback_later(50, exit=True)
-import _pylicensed_harness as h
-stub_dir = sys.argv[1]
+import _truenas_stubs_harness as h
+stub_dirs = json.loads(sys.argv[1])
+closed = tuple(json.loads(sys.argv[2]))
 res = {}
-for mod in sys.argv[2:]:
+for mod in sys.argv[3:]:
     try:
         importlib.import_module(mod)
         res[mod] = ["ok", ""]
@@ -464,9 +587,9 @@ for mod in sys.argv[2:]:
         obj = getattr(e, "obj", None)
         objmod = str(getattr(obj, "__module__", None) or getattr(obj, "__name__", None) or "")
         stub = (
-            any(f.filename.startswith(stub_dir) for f in tb)
-            or (isinstance(e, ImportError) and "truenas_pylicensed" in str(e))
-            or (isinstance(e, AttributeError) and objmod.startswith("truenas_pylicensed"))
+            any(f.filename.startswith(tuple(stub_dirs)) for f in tb)
+            or (isinstance(e, ImportError) and any(c in str(e) for c in closed))
+            or (isinstance(e, AttributeError) and objmod.startswith(closed))
         )
         res[mod] = ["stub" if stub else "runtime", f"{type(e).__name__}: {e}"[:300]]
 res["__faked__"] = sorted(h.FINDER.faked)
@@ -474,7 +597,7 @@ print("JSON" + json.dumps(res))
 """
 
 
-HARNESS_DIR = TMP / "pylicensed-harness"
+HARNESS_DIR = TMP / "truenas-stubs-harness"
 _IMPORT_RE = re.compile(r"^\s*(?:from|import)\s+([A-Za-z_]\w*)", re.M)
 
 
@@ -483,16 +606,16 @@ def _mw_import_names() -> set[str]:
     names = set()
     for p in (MW_SRC / "middlewared").rglob("*.py"):
         names.update(_IMPORT_RE.findall(p.read_text(errors="replace")))
-    return names - {"middlewared", PKG}
+    return names - {"middlewared"} - set(CLOSED)
 
 
 def _env() -> dict:
     """Harness copied to its own dir: scripts/ on the path would shadow names it should fake."""
     HARNESS_DIR.mkdir(parents=True, exist_ok=True)
-    shutil.copy2(REPO / "scripts" / "_pylicensed_harness.py", HARNESS_DIR)
+    shutil.copy2(REPO / "scripts" / "_truenas_stubs_harness.py", HARNESS_DIR)
     env = dict(os.environ)
-    env["PYLICENSED_FAKE"] = ",".join(sorted(_mw_import_names()))
-    env["PYTHONPATH"] = os.pathsep.join([str(STUB_ROOT), str(MW_SRC), str(HARNESS_DIR)])
+    env["TRUENAS_STUBS_FAKE"] = ",".join(sorted(_mw_import_names()))
+    env["PYTHONPATH"] = os.pathsep.join([*map(str, STUB_DIRS), str(MW_SRC), str(HARNESS_DIR)])
     env["PYTHONDONTWRITEBYTECODE"] = "1"
     return env
 
@@ -507,7 +630,10 @@ def check_imports(uses: Uses) -> list[str]:
         mods.append(dotted.removesuffix(".__init__"))
     # Measured ~3 s for all ~42 modules; the backstop is generous because it is one process.
     out = subprocess.run(
-        [sys.executable, "-c", _IMPORT_PROBE, str(STUB_ROOT), *mods],
+        [
+            sys.executable, "-c", _IMPORT_PROBE,
+            json.dumps([str(d) for d in STUB_DIRS]), json.dumps(sorted(CLOSED)), *mods,
+        ],  # fmt: skip
         capture_output=True,
         text=True,
         env=_env(),
@@ -534,10 +660,59 @@ def check_imports(uses: Uses) -> list[str]:
     return errs
 
 
+_CE_PROBE = r"""
+import json
+import _truenas_stubs_harness
+from middlewared.utils.license import get_license
+from middlewared.utils.entitlements import (
+    DERIVED_VECTORS, POLICY, TARGET_VECTORS, EntitlementFacts, HardwareClass, check_entitlement,
+)
+lic = get_license()
+facts = EntitlementFacts(hardware_class=HardwareClass.GENERIC, license=lic)
+out = {"license": repr(lic), "rows": {}}
+for key in POLICY:
+    vec = TARGET_VECTORS.get(key) or DERIVED_VECTORS[key]
+    e = check_entitlement(key, facts)
+    out["rows"][str(key)] = [bool(vec.ce), e.entitled, e.column, str(e.reason)]
+print("JSON" + json.dumps(out))
+"""
+# The ce column of utils/entitlements/matrix.py as of 27.0.0; the probe also derives it.
+CE_ENTITLED = {"APPS", "CONTAINERS", "DEDUP", "VMS"}
+
+
+def check_ce_column() -> list[str]:
+    """No licence on generic hardware must land every feature in the ce column (Dan, #356)."""
+    out = subprocess.run(
+        [sys.executable, "-c", _CE_PROBE],
+        capture_output=True,
+        text=True,
+        env=_env(),
+        cwd=MW_SRC,
+        timeout=TESTS_LIMIT_S,
+    )
+    line = next((ln for ln in out.stdout.splitlines() if ln.startswith("JSON")), None)
+    if line is None:
+        return [f"ce probe crashed rc={out.returncode}: {out.stderr[-800:]}"]
+    res = json.loads(line[4:])
+    errs = []
+    if res["license"] != "None":
+        errs.append(f"get_license() with stubs must be None, got {res['license']}")
+    entitled = set()
+    for key, (ce, got, column, reason) in sorted(res["rows"].items()):
+        if got:
+            entitled.add(key)
+        if got != ce:
+            errs.append(f"ce column: {key} entitled={got} but Vector.ce={int(ce)} ({column}, {reason})")
+    log(f"ce: entitled {sorted(entitled)} of {len(res['rows'])} policy keys")
+    if entitled != CE_ENTITLED:
+        errs.append(f"ce: entitled {sorted(entitled)} != expected {sorted(CE_ENTITLED)}")
+    return errs
+
+
 def run_unit_tests() -> list[str]:
     unit = MW_SRC / "middlewared" / "pytest" / "unit"
     cmd = [
-        sys.executable, "-m", "pytest", "-q", "-p", "no:cacheprovider", "-p", "_pylicensed_harness",
+        sys.executable, "-m", "pytest", "-q", "-p", "no:cacheprovider", "-p", "_truenas_stubs_harness",
         "-W", "ignore", "--tb=short", "--rootdir", str(unit), "-c", os.devnull, *UNIT_TESTS,
     ]  # fmt: skip
     for d in DESELECT:
@@ -559,7 +734,7 @@ def main() -> int:
 
     if a.gate and not (MW_SRC / "middlewared").is_dir():
         log(
-            f"SKIP: no middleware clone at {CLONE.relative_to(REPO)} (run ./dev.py check-pylicensed-stub)"
+            f"SKIP: no middleware clone at {CLONE.relative_to(REPO)} (run ./dev.py check-truenas-stubs)"
         )
         return 0
     if not a.gate and not ensure_clone(a.refresh):
@@ -574,13 +749,14 @@ def main() -> int:
     uses = collect(MW_SRC)
     log(
         f"static: {len(uses.files)} files, {len(uses.names)} imports, {len(uses.attrs)} attrs, "
-        f"{len(uses.kwargs)} kwargs, status attrs {sorted(uses.status_attrs)}, "
+        f"{len(uses.calls)} call shapes, {len(uses.inst_attrs)} instance attrs, status attrs {sorted(uses.status_attrs)}, "
         f"entry attrs {sorted(uses.entry_attrs)}, fingerprint keys {sorted(uses.fp_keys)} "
         f"optional {sorted(uses.fp_opt_keys)}"
     )
-    errs = check_static(uses) + check_doc(uses)
+    errs = classify_imports() + check_static(uses) + check_doc(uses)
     if not a.static_only:
         errs += check_imports(uses)
+        errs += check_ce_column()
         errs += run_unit_tests()
     for e in errs:
         log(f"FAIL: {e}")

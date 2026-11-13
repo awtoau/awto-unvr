@@ -1,13 +1,13 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 # Copyright (C) 2026 Awto / Daniel Tyrrell
-"""Host harness for import-testing TrueNAS middleware against our truenas_pylicensed stub (#356).
+"""Host harness for import-testing TrueNAS middleware against our truenas/stubs/ stand-ins (#356).
 
 - Importing this installs a last-resort finder: a module the host lacks becomes a permissive
-  placeholder, if its top-level name is in $PYLICENSED_FAKE (comma list: what middleware imports).
-- Never faked: truenas_pylicensed, middlewared, stdlib (a fake winreg hangs mimetypes).
+  placeholder, if its top-level name is in $TRUENAS_STUBS_FAKE (comma list: what middleware imports).
+- Never faked: our stubs (not in the list), middlewared, stdlib (a fake winreg hangs mimetypes).
 - Same idea as middleware's own middlewared/fake_env.py, widened to every missing dep.
-- Also a pytest plugin (`-p _pylicensed_harness`): runs `async def` tests under asyncio.run.
-- Used by scripts/check-pylicensed-stub.py; not imported by anything else.
+- Also a pytest plugin (`-p _truenas_stubs_harness`): runs `async def` tests under asyncio.run.
+- Used by scripts/check-truenas-stubs.py; not imported by anything else.
 """
 
 from __future__ import annotations
@@ -21,8 +21,8 @@ import os
 import sys
 import types
 
-NEVER_FAKE = {"truenas_pylicensed", "middlewared"} | set(sys.stdlib_module_names)
-FAKE_ONLY = {n for n in os.environ.get("PYLICENSED_FAKE", "").split(",") if n}
+NEVER_FAKE = {"middlewared"} | set(sys.stdlib_module_names)
+FAKE_ONLY = {n for n in os.environ.get("TRUENAS_STUBS_FAKE", "").split(",") if n}
 _ids = itertools.count(1 << 20)
 
 
@@ -154,7 +154,7 @@ if not any(isinstance(f, _Finder) for f in sys.meta_path):
 
 def pytest_configure(config):
     config.addinivalue_line(
-        "markers", "asyncio: run under asyncio.run by _pylicensed_harness"
+        "markers", "asyncio: run under asyncio.run by _truenas_stubs_harness"
     )
 
 

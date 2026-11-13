@@ -150,10 +150,10 @@ STEPS: dict[str, tuple[str, list[str], bool]] = {
         [sys.executable, "scripts/check-box-container-markers.py"],
         True,
     ),
-    # truenas_pylicensed stub vs public middleware 27 (#356); SKIPs without tmp/truenas-middleware-27.
-    "pylicensed-stub": (
-        "truenas_pylicensed stub covers middleware 27's usage (#356)",
-        [sys.executable, "scripts/check-pylicensed-stub.py", "--gate"],
+    # Closed-lib stand-ins (truenas/stubs/) vs public middleware 27 (#356); SKIPs without the clone.
+    "truenas-stubs": (
+        "truenas/stubs/ stand-ins cover middleware 27's usage of the closed libs (#356)",
+        [sys.executable, "scripts/check-truenas-stubs.py", "--gate"],
         True,
     ),
     # #258. Report-only, like box-container above: --gate prints the table
@@ -176,7 +176,7 @@ GATE = [
     "dt-drift",
     "truenas-series",
     "truenas-modules",
-    "pylicensed-stub",
+    "truenas-stubs",
     "box-container",
     "versions",
 ]
@@ -1161,13 +1161,13 @@ def cmd_truenas_build(extra: list[str]) -> int:
 
 
 @command(
-    "check our truenas_pylicensed stub against public middleware 27: static usage, imports, "
-    "middleware's licence unit tests (#356, scripts/check-pylicensed-stub.py)",
+    "check our truenas/stubs/ closed-lib stand-ins against public middleware 27: static usage, "
+    "imports, CE entitlement column, middleware's licence unit tests (#356, scripts/check-truenas-stubs.py)",
     args="[--refresh] [--static-only]",
     kind="action",
 )
-def cmd_check_pylicensed_stub(extra: list[str]) -> int:
-    return _run_script("scripts/check-pylicensed-stub.py", extra)
+def cmd_check_truenas_stubs(extra: list[str]) -> int:
+    return _run_script("scripts/check-truenas-stubs.py", extra)
 
 
 @command(
