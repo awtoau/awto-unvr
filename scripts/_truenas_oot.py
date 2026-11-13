@@ -107,6 +107,7 @@ def build_zfs(run, log, ksrc: str, kout: str, oot: str) -> str:
         ],
         cwd=work,
     )  # fmt: skip
+    run(["make", "gitrev"], cwd=work)  # include/zfs_gitrev.h; top-level `all` makes it
     run(["make", "-C", "module", f"-j{NPROC}", "modules"], cwd=work)
     return work
 
