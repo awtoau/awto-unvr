@@ -356,11 +356,11 @@ KBUILD_SH = r"""set -e
 cd /kobj
 M="make -C $KSRC O=/kobj ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu-"
 $M olddefconfig
+$M archprepare  # writes include/config/kernel.release (mkdebian + kernelrelease read it)
 KR=$($M -s kernelrelease)
 echo "KERNELRELEASE=$KR"
-# mkdebian copies scripts/package/truenas/* relative to the objtree
-mkdir -p scripts/package && ln -sfn $KSRC/scripts/package/truenas scripts/package/truenas
-$M archprepare  # writes include/config/kernel.release, which mkdebian reads
+# mkdebian dch's then copies scripts/package/truenas/* relative to the objtree: writable copy
+rm -rf scripts/package/truenas && mkdir -p scripts/package && cp -r $KSRC/scripts/package/truenas scripts/package/
 # KDEB_PKGVERSION: mkdebian's fallback runs ./scripts/* from the srctree, not the objtree
 KDEB_PKGVERSION=$KR-1 KDEB_CHANGELOG_DIST=trixie $M run-command KBUILD_RUN_COMMAND='$(srctree)/scripts/package/mkdebian'
 # no perf package: cross-building tools/perf needs the arm64 userland dev libs
