@@ -31,7 +31,6 @@ from _repo import (
     LINUX_STORE,
     NPROC,
     REPO,
-    build_ident,
     make_log,
     rel,
     truenas_build_out,
@@ -380,14 +379,16 @@ def step_iso(a) -> int:
     return in_container(["make", "iso"], "iso", a.stall)
 
 
-def kernel_release_suffix() -> str:
-    return f"-truenas-{build_ident('kernel')}"
+def kernel_release_suffix(ksrc: Path) -> str:
+    """Kernel tree HEAD, not this repo's: a script commit must not force a full rebuild."""
+    sha = git("rev-parse", "--short=7", "HEAD", cwd=ksrc).stdout.strip()
+    return f"-truenas-{sha}"
 
 
 # Cross build on the host arch (no emulation): ~ build-truenas's own kernel time, not hours.
 KBUILD_SH = r"""set -e
-cd /kobj
-M="make -C $KSRC O=/kobj ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu-"
+cd /kout/obj  # dpkg-buildpackage writes the debs to ..
+M="make -C $KSRC O=/kout/obj ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu-"
 $M olddefconfig
 $M archprepare  # writes include/config/kernel.release (mkdebian + kernelrelease read it)
 KR=$($M -s kernelrelease)
@@ -421,7 +422,7 @@ def step_kernel(a) -> int:
     text = cfg.read_text()
     text = re.sub(
         r'^CONFIG_LOCALVERSION=".*"$',
-        f'CONFIG_LOCALVERSION="{kernel_release_suffix()}"',
+        f'CONFIG_LOCALVERSION="{kernel_release_suffix(ksrc)}"',
         text,
         flags=re.M,
     )
@@ -431,8 +432,7 @@ def step_kernel(a) -> int:
     cmd = [
         "sudo", "podman", "run", "--rm", "--name", f"{CTR_NAME}-kbuild", "--network", "host",
         "--user", f"{os.getuid()}:{os.getgid()}", "-e", "HOME=/tmp",
-        "-v", f"{ksrc}:{ksrc}:ro", "-v", f"{store}:{store}:ro", "-v", f"{obj}:/kobj",
-        "-v", f"{KWORK}:/kout", "-e", f"KSRC={ksrc}", "-e", f"NPROC={NPROC}",
+        "-v", f"{ksrc}:{ksrc}:ro", "-v", f"{store}:{store}:ro",         "-v", f"{KWORK}:/kout", "-e", f"KSRC={ksrc}", "-e", f"NPROC={NPROC}",
         KIMAGE, "sh", "-c", KBUILD_SH,
     ]  # fmt: skip
     rc = run_guarded(cmd, "kernel", a.stall, kill_name=f"{CTR_NAME}-kbuild")

@@ -4,7 +4,8 @@ FROM docker.io/library/debian:trixie
 RUN dpkg --add-architecture arm64 && apt-get update \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
         build-essential gcc-aarch64-linux-gnu bc bison flex kmod cpio rsync zstd xz-utils git \
-        libelf-dev libssl-dev libssl-dev:arm64 dwarves python3 debhelper dpkg-dev devscripts \
+        libelf-dev libssl-dev libssl-dev:arm64 libc6-dev:arm64 dwarves python3 debhelper dpkg-dev devscripts \
         ca-certificates \
     && rm -rf /var/lib/apt/lists/*
+# libc6-dev:arm64: the headers package rebuilds scripts/ (fixdep, modpost...) for arm64
 RUN git config --system --add safe.directory '*'
