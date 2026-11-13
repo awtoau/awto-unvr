@@ -1,0 +1,383 @@
+#!/usr/bin/bash
+# SPDX-License-Identifier: GPL-2.0-or-later
+# Copyright (C) 2026 Awto / Daniel Tyrrell
+#
+# /init of the one-shot maintenance initramfs (scripts/ssd-repartition.py).
+# - Restores /boot/uImage from uImage.normal FIRST: any later failure or reset boots normal Fedora.
+# - Then: e2fsck -> resize2fs p2 -> sfdisk p2 size + append p3 -> e2fsck -n -> log to /root -> reset.
+# - Values come from /etc/ssdrep.conf (generated); MODE=rehearse runs in a chroot on a loop device.
+
+set -u
+export PATH=/usr/sbin:/usr/bin LC_ALL=C TMPDIR=/tmp
+CONF=${SSDREP_CONF:-/etc/ssdrep.conf}
+# shellcheck source=/dev/null
+. "$CONF"
+
+LOG=/run/ssdrep.log
+MNT=/mnt/p2
+FAIL=""
+RESTORED=0
+RUN_ID=""
+DISK="" DN="" P2="" P2N=""
+
+now() { local up; read -r up _ </proc/uptime; echo "${up%.*}"; }
+T0=$(now)
+el() { echo $(($(now) - T0)); }
+
+log() {
+    local l
+    l="T+$(el)s $*"
+    echo "$l" >>"$LOG"
+    if [ -c /dev/kmsg ] && [ "$MODE" = real ]; then
+        echo "ssdrep: $l" >/dev/kmsg
+    else
+        echo "ssdrep: $l" >&2
+    fi
+}
+
+fail() { [ -n "$FAIL" ] || FAIL="$*"; log "FAIL: $*"; }
+
+# --- watchdog -----------------------------------------------------------
+# Feeder feeds only while the current step is inside its deadline AND showing
+# progress (disk I/O counters or the step process's CPU time moved within
+# STALL_S). Otherwise it stops; SP805 resets the SoC (17 s hw timeout).
+step() { # <name> <deadline seconds from now>
+    echo "$1" >/run/wdt.step
+    echo $(($(now) + $2)) >/run/wdt.deadline
+    log "== step $1 (deadline ${2}s)"
+}
+
+progress_sig() {
+    local s pid f
+    s="$(cat /run/wdt.step 2>/dev/null)"
+    [ -r /run/wdt.disk ] && s="$s $(cat "/sys/block/$(cat /run/wdt.disk)/stat" 2>/dev/null)"
+    pid=$(cat /run/wdt.pid 2>/dev/null)
+    if [ -n "$pid" ] && read -r -a f 2>/dev/null <"/proc/$pid/stat"; then
+        s="$s cpu=${f[13]}+${f[14]}"
+    fi
+    echo "$s"
+}
+
+feeder() {
+    local sig last="" changed n dl
+    changed=$(now)
+    while :; do
+        [ -e /run/wdt.stop ] && exit 0
+        n=$(now)
+        dl=$(cat /run/wdt.deadline 2>/dev/null || echo 0)
+        sig=$(progress_sig)
+        if [ "$sig" != "$last" ]; then last=$sig; changed=$n; fi
+        if ((n > dl)); then
+            log "watchdog: step '$(cat /run/wdt.step)' passed its deadline - stop feeding"
+            exit 0
+        fi
+        if ((n - changed > STALL_S)); then
+            log "watchdog: no progress for ${STALL_S}s in '$(cat /run/wdt.step)' - stop feeding"
+            exit 0
+        fi
+        printf 1 >&3
+        sleep "$FEED_EVERY_S"
+    done
+}
+
+wdt_start() {
+    if [ "$MODE" = real ]; then
+        # exec with a failing redirection can exit bash; PID 1 exiting = panic loop
+        [ -c "$WDT_DEV" ] && [ -w "$WDT_DEV" ] || { log "no watchdog at $WDT_DEV"; return 1; }
+    elif [ -e "$WDT_DEV" ] && [ ! -f "$WDT_DEV" ]; then
+        log "rehearse: WDT_DEV $WDT_DEV must be a plain file"
+        exit 98
+    fi
+    exec 3>"$WDT_DEV" || return 1
+    feeder &
+    log "watchdog $WDT_DEV armed, feeder pid $!"
+}
+
+# Run a step's command as a child so the feeder can watch its CPU time.
+run_cmd() {
+    log "+ $*"
+    "$@" </dev/null >>"$LOG" 2>&1 &
+    local pid=$! rc
+    echo "$pid" >/run/wdt.pid
+    wait "$pid"
+    rc=$?
+    rm -f /run/wdt.pid
+    log "rc=$rc: $1"
+    return "$rc"
+}
+
+# --- disk ---------------------------------------------------------------
+ensure_node() { # make /dev/<name> from sysfs when devtmpfs is absent (rehearse)
+    local mm
+    [ -b "/dev/$1" ] && return 0
+    read -r mm <"/sys/class/block/$1/dev" || return 1
+    mknod "/dev/$1" b "${mm%%:*}" "${mm##*:}"
+}
+
+part_name() { # <disk name> <partno>
+    local p
+    for p in "/sys/block/$1/$1"*; do
+        [ -r "$p/partition" ] || continue
+        [ "$(<"$p/partition")" = "$2" ] && { echo "${p##*/}"; return 0; }
+    done
+    return 1
+}
+
+find_disk() {
+    local b model hits=() lim
+    if [ "$MODE" = rehearse ]; then
+        [[ $DISK_OVERRIDE == /dev/loop* ]] || { log "rehearse: DISK_OVERRIDE must be /dev/loopN"; exit 97; }
+        DN=${DISK_OVERRIDE#/dev/}
+    else
+        lim=$(($(now) + T_DISK))
+        while :; do
+            hits=()
+            for b in /sys/block/sd*; do
+                [ -r "$b/device/model" ] || continue
+                read -r model <"$b/device/model"
+                [[ $model == "$SSD_MODEL"* ]] && hits+=("${b##*/}")
+            done
+            [ "${#hits[@]}" -ge 1 ] && break
+            (($(now) > lim)) && break
+            sleep 1
+        done
+        if [ "${#hits[@]}" -ne 1 ]; then
+            log "want exactly one '$SSD_MODEL' disk, found ${#hits[@]}: ${hits[*]:-}"
+            return 1
+        fi
+        DN=${hits[0]}
+    fi
+    DISK=/dev/$DN
+    ensure_node "$DN" || return 1
+    echo "$DN" >/run/wdt.disk
+    log "disk $DISK ($(<"/sys/block/$DN/size") sectors)"
+}
+
+# sfdisk -d field of partition <n>: start|size|type|uuid|name
+DUMP=""
+read_dump() { DUMP=$(sfdisk -d "$DISK" 2>>"$LOG"); }
+pf() {
+    local l
+    while IFS= read -r l; do
+        [[ $l =~ ^/dev/[^\ ]*[^0-9]$1\ : ]] || continue
+        case $2 in
+        start | size) [[ $l =~ $2=\ *([0-9]+) ]] ;;
+        type | uuid) [[ $l =~ $2=([0-9A-Fa-f-]+) ]] ;;
+        name) [[ $l =~ name=\"([^\"]*)\" ]] ;;
+        esac && { echo "${BASH_REMATCH[1]}"; return 0; }
+        return 1
+    done <<<"$DUMP"
+    return 1
+}
+has_part() { pf "$1" start >/dev/null; }
+label_id() { local l; while IFS= read -r l; do [[ $l == label-id:* ]] && echo "${l#label-id: }"; done <<<"$DUMP"; }
+lc() { echo "${1,,}"; }
+
+identity_ok() {
+    local sz uuid
+    sz=$(<"/sys/block/$DN/size")
+    [ "$sz" = "$DISK_SECTORS" ] || { log "disk is $sz sectors, want $DISK_SECTORS"; return 1; }
+    read_dump || { log "sfdisk -d failed"; return 1; }
+    uuid=$(pf 2 uuid) || { log "no p2"; return 1; }
+    [ "$(lc "$uuid")" = "$(lc "$P2_PARTUUID")" ] || { log "p2 PARTUUID $uuid != $P2_PARTUUID"; return 1; }
+    P2N=$(part_name "$DN" 2) || { log "kernel has no p2 of $DN"; return 1; }
+    ensure_node "$P2N" || return 1
+    P2=/dev/$P2N
+    log "identity ok: $P2 PARTUUID $uuid"
+}
+
+# By major:minor: a kernel-mounted root shows as /dev/root in /proc/mounts.
+not_mounted() {
+    local mm f
+    read -r mm <"/sys/class/block/$P2N/dev" || return 1
+    while read -r -a f; do [ "${f[2]}" = "$mm" ] && return 1; done </proc/self/mountinfo
+    return 0
+}
+
+# --- steps --------------------------------------------------------------
+restore_uimage() {
+    local k v
+    mkdir -p "$MNT"
+    run_cmd mount -t ext4 -o rw "$P2" "$MNT" || return 1
+    if [ -r "$MNT/boot/ssd-repartition.id" ]; then
+        while IFS='=' read -r k v; do
+            case $k in
+            ID) [[ $v =~ ^[0-9]{8}-[0-9]{6}$ ]] && RUN_ID=$v ;;
+            EPOCH) [[ $v =~ ^[0-9]+$ ]] && [ "$MODE" = real ] && date -s "@$v" >>"$LOG" 2>&1 ;;
+            esac
+        done <"$MNT/boot/ssd-repartition.id"
+    fi
+    log "run id: ${RUN_ID:-none}"
+    if [ ! -s "$MNT/boot/uImage.normal" ]; then
+        log "no $MNT/boot/uImage.normal"
+        umount "$MNT"
+        return 1
+    fi
+    cp "$MNT/boot/uImage.normal" "$MNT/boot/uImage.restore" &&
+        sync &&
+        cmp "$MNT/boot/uImage.normal" "$MNT/boot/uImage.restore" &&
+        mv -f "$MNT/boot/uImage.restore" "$MNT/boot/uImage" &&
+        sync &&
+        echo 3 >/proc/sys/vm/drop_caches &&
+        cmp "$MNT/boot/uImage.normal" "$MNT/boot/uImage"
+    local rc=$?
+    run_cmd umount "$MNT" || rc=1
+    [ "$rc" = 0 ] && RESTORED=1 && log "restored /boot/uImage from uImage.normal (cmp ok)"
+    return "$rc"
+}
+
+fs_bytes() { # block count * block size from the superblock
+    local l bc="" bs="" out
+    out=$(dumpe2fs -h "$P2" 2>/dev/null)
+    while IFS= read -r l; do
+        [[ $l =~ ^Block\ count:\ +([0-9]+) ]] && bc=${BASH_REMATCH[1]}
+        [[ $l =~ ^Block\ size:\ +([0-9]+) ]] && bs=${BASH_REMATCH[1]}
+    done <<<"$out"
+    [ -n "$bc" ] && [ -n "$bs" ] && echo $((bc * bs))
+}
+
+geometry_ok() { # before any write: the layout this run was built for
+    local s t
+    read_dump || return 1
+    LABEL0=$(label_id)
+    P1_0=$(pf 1 start),$(pf 1 size),$(pf 1 type),$(pf 1 uuid)
+    s=$(pf 2 start)
+    [ "$s" = "$P2_START" ] || { log "p2 start $s != $P2_START"; return 1; }
+    t=$(pf 2 type)
+    [ "$(lc "$t")" = "$(lc "$P2_TYPE")" ] || { log "p2 type $t != $P2_TYPE"; return 1; }
+    s=$(pf 2 size)
+    if has_part 3; then
+        log "p3 already exists"
+        return 1
+    fi
+    [ "$s" = "$P2_SECTORS_ORIG" ] || [ "$s" = "$P2_NEW_SECTORS" ] ||
+        { log "p2 size $s is neither $P2_SECTORS_ORIG nor $P2_NEW_SECTORS"; return 1; }
+    not_mounted || { log "$P2 is mounted"; return 1; }
+    log "geometry ok: p2 start $P2_START size $s, no p3"
+}
+
+fsck_pre() {
+    run_cmd e2fsck -f -y "$P2"
+    local rc=$?
+    if ((rc >= 4)); then fail "e2fsck -f -y rc=$rc"; return 1; fi
+    ((rc >= 2)) && log "e2fsck rc=$rc (corrected, continuing)"
+    return 0
+}
+
+resize_fs() {
+    local cur want=$((FS_TARGET_KIB * 1024))
+    cur=$(fs_bytes) || { fail "cannot read fs size"; return 1; }
+    log "fs is $cur B, target $want B"
+    if ((cur < want)); then fail "fs already smaller than target"; return 1; fi
+    if ((cur > want)); then
+        run_cmd resize2fs "$P2" "${FS_TARGET_KIB}K" || { fail "resize2fs"; return 1; }
+    fi
+    cur=$(fs_bytes)
+    [ "$cur" = "$want" ] || { fail "fs is $cur B after resize, want $want"; return 1; }
+    log "fs resized to $cur B"
+}
+
+repartition() {
+    local s fsb
+    read_dump || { fail "sfdisk -d"; return 1; }
+    if [ "$(pf 2 size)" != "$P2_NEW_SECTORS" ]; then
+        log "+ sfdisk -N 2: size=$P2_NEW_SECTORS"
+        echo "size=$P2_NEW_SECTORS" | sfdisk --wipe never --wipe-partitions never -N 2 "$DISK" >>"$LOG" 2>&1 ||
+            { fail "sfdisk -N 2"; return 1; }
+    fi
+    verify_p2 || return 1
+    log "+ sfdisk --append: type=$P3_TYPE name=$P3_NAME"
+    echo "type=$P3_TYPE, name=\"$P3_NAME\"" |
+        sfdisk --wipe never --wipe-partitions never --append "$DISK" >>"$LOG" 2>&1 ||
+        { fail "sfdisk --append"; return 1; }
+    verify_p2 || return 1
+    has_part 3 || { fail "p3 missing after append"; return 1; }
+    [ "$(lc "$(pf 3 type)")" = "$(lc "$P3_TYPE")" ] || { fail "p3 type $(pf 3 type)"; return 1; }
+    [ "$(pf 3 name)" = "$P3_NAME" ] || { fail "p3 name '$(pf 3 name)'"; return 1; }
+    s=$(pf 3 start)
+    ((s >= P2_START + P2_NEW_SECTORS && s % P3_ALIGN == 0)) || { fail "p3 start $s"; return 1; }
+    log "p3 start $s size $(pf 3 size)"
+    fsb=$(fs_bytes)
+    ((fsb <= P2_NEW_SECTORS * 512)) || { fail "fs $fsb B > p2 $((P2_NEW_SECTORS * 512)) B"; return 1; }
+    s=$(<"/sys/class/block/$P2N/size")
+    [ "$s" = "$P2_NEW_SECTORS" ] || { fail "kernel sees p2 as $s sectors"; return 1; }
+    log "table verified; fs $fsb B <= p2 $((P2_NEW_SECTORS * 512)) B"
+}
+
+verify_p2() { # start, PARTUUID, type unchanged; size = new; p1 + label-id untouched
+    read_dump || { fail "sfdisk -d"; return 1; }
+    [ "$(pf 2 start)" = "$P2_START" ] || { fail "p2 start moved: $(pf 2 start)"; return 1; }
+    [ "$(lc "$(pf 2 uuid)")" = "$(lc "$P2_PARTUUID")" ] || { fail "p2 PARTUUID changed: $(pf 2 uuid)"; return 1; }
+    [ "$(lc "$(pf 2 type)")" = "$(lc "$P2_TYPE")" ] || { fail "p2 type changed: $(pf 2 type)"; return 1; }
+    [ "$(pf 2 size)" = "$P2_NEW_SECTORS" ] || { fail "p2 size $(pf 2 size) != $P2_NEW_SECTORS"; return 1; }
+    [ "$(pf 1 start),$(pf 1 size),$(pf 1 type),$(pf 1 uuid)" = "$P1_0" ] || { fail "p1 changed"; return 1; }
+    [ "$(label_id)" = "$LABEL0" ] || { fail "label-id changed"; return 1; }
+}
+
+fsck_post() {
+    run_cmd e2fsck -f -n "$P2" || { fail "e2fsck -f -n not clean"; return 1; }
+}
+
+save_log() {
+    local name=ssd-repartition-${RUN_ID:-noid-$(now)}.log
+    [ -n "$P2" ] || { log "no verified p2: log stays in RAM/pstore only"; return 1; }
+    not_mounted || umount "$MNT"
+    if [ "$MODE" = real ]; then
+        { echo "--- dmesg ---"; dmesg; } >>"$LOG" 2>&1
+    fi
+    mount -t ext4 -o rw "$P2" "$MNT" >>"$LOG" 2>&1 || { log "mount for log save failed"; return 1; }
+    cp "$LOG" "$MNT/root/$name" && sync
+    local rc=$?
+    umount "$MNT" && sync
+    echo "log saved: /root/$name rc=$rc" >&2
+    return "$rc"
+}
+
+finish() {
+    step save "$T_SAVE"
+    if [ -z "$FAIL" ]; then log "RESULT: OK"; else log "RESULT: FAIL $FAIL (restored=$RESTORED)"; fi
+    save_log
+    touch /run/wdt.stop
+    if [ "$MODE" = real ] && [ $$ = 1 ]; then
+        sync
+        log "reset via sysrq b; SP805 expiry is the fallback"
+        echo b >/proc/sysrq-trigger
+        while :; do sleep 60; done
+    fi
+    [ -z "$FAIL" ]
+    exit $?
+}
+
+# Library mode: preflight sources this read-only on the live box (private mount ns).
+# shellcheck disable=SC2317
+if [ -n "${SSDREP_LIB:-}" ] && [ $$ != 1 ]; then return 0 2>/dev/null || exit 0; fi
+
+# --- main ---------------------------------------------------------------
+if [ "$MODE" = real ]; then
+    [ $$ = 1 ] || { echo "real mode must run as PID 1" >&2; exit 96; }
+    mount -t proc proc /proc
+    mount -t sysfs sysfs /sys
+    mount -t devtmpfs devtmpfs /dev
+    ln -sf /proc/self/fd /dev/fd
+elif [ "$MODE" != rehearse ]; then
+    echo "MODE must be real or rehearse" >&2
+    exit 95
+fi
+mount -t tmpfs -o mode=0755 tmpfs /run
+T0=$(now)
+log "ssd-repartition init, MODE=$MODE, $(e2fsck -V 2>&1 | head -n1), $(sfdisk --version)"
+
+step disk "$T_DISK"
+wdt_start || fail "watchdog"
+find_disk || { fail "disk"; finish; }
+identity_ok || { fail "identity"; P2=""; finish; }
+
+step restore "$T_RESTORE"
+restore_uimage || fail "restore"
+[ -z "$FAIL" ] && { geometry_ok || fail "geometry"; }
+
+[ -z "$FAIL" ] && { step fsck "$T_FSCK" && fsck_pre; }
+[ -z "$FAIL" ] && { step resize "$T_RESIZE" && resize_fs; }
+[ -z "$FAIL" ] && { step sfdisk "$T_SFDISK" && repartition; }
+[ -z "$FAIL" ] && { step verify "$T_VERIFY" && fsck_post; }
+finish

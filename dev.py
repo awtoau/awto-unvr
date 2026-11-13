@@ -1612,6 +1612,16 @@ def cmd_deploy_ssd(extra: list[str]) -> int:
 
 
 @command(
+    "shrink the SSD root to 800 GiB + add the TrueNAS boot partition via a one-shot "
+    "maint-kernel boot, no console needed (scripts/ssd-repartition.py)",
+    args="collect|build [--cpio-only]|rehearse|preflight|run --go|verify --id ID",
+    kind="action",
+)
+def cmd_ssd_repartition(extra: list[str]) -> int:
+    return _run_script("scripts/ssd-repartition.py", extra)
+
+
+@command(
     "shell on woomera over the 1G port - a second terminal beside the serial "
     "console. Finds the box by its stable 1G MAC every time (DHCP moves the "
     "lease); pass `-- <cmd>` to run one command (scripts/ssh-woomera.py)",
