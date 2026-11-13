@@ -71,7 +71,7 @@ The
 | 2 | Fedora kernel, **debug** (default): lockdep, debug-objects, fault injection, SW PAN. **Slow** | `build-fedora [--kernel debug]` | `build-linux-fedora.py` | `build-out-fedora/` |
 | 2a | ↳ same script, full-debug variant (KASAN, UBSAN, DMA_API_DEBUG, lockdep, panic-on-lockup) | `AWTO_KASAN_BUILD=1 build-fedora` | (same) | `build-out-fedora-kasan/` |
 | 2b | ↳ **perf**: none of row 2's debug, no SW PAN, no `init_on_alloc` (#353) | `build-fedora --kernel perf` | (same) | `build-out-fedora-perf/` |
-| 2c | TrueNAS arm64 6.18 kernel + UNVR DTB + al_* modules (#338, build only) | `build-truenas [--modules-only]` | `build-linux-truenas.py` | `build-out-truenas/` (`truenas_build_out()`) |
+| 2c | TrueNAS arm64 6.18 kernel + UNVR DTB + al_*, OpenZFS, SCST modules (#338, build only) | `build-truenas [--modules-only \| --zfs-scst]` | `build-linux-truenas.py` | `build-out-truenas/` (`truenas_build_out()`) |
 | 3 | On-box native (no cross-compile) | *(none)* | `build-on-box.py` | `/lib/modules/<kver>/updates/` on the box |
 | 4 | Fedora rootfs tarball | `build-fedora-rootfs` | `build-fedora-rootfs.py` | `tmp/fedora-rootfs.tar.gz` |
 | 5 | awto-uboot (our U-Boot) | `build-uboot` | `uboot-build.py` | staged into `/mnt/2tb/unvr-port-refs/u-boot-v2026.07`, chainload-able |
@@ -90,6 +90,14 @@ The
 - OOT modules: one source for 7.x and 6.18; API differences `LINUX_VERSION_CODE`-gated in the module's `kcompat.h`.
 - Gate: `truenas-series` (series applies to the pin, index-only) + `truenas-modules` (OOT against the last 6.18 kbuild, SKIPs before the first build).
 - KVER: `6.18.60-production-truenas-<describe>+` (`-production` is TrueNAS's Makefile EXTRAVERSION).
+- OpenZFS + SCST (`scripts/_truenas_oot.py`), built after al_*; `--zfs-scst` rebuilds just these into the existing modroot.
+  - Pins in `_truenas.py`, matched to the 26.04.0-MASTER-20251221 arm64 image: `ZFS_PIN` = `truenas/zfs-2.4-release` head at image build (tag 2.4.0 merged; pkg 2.4.0-2, modinfo `2.4.0-1`); `SCST_PIN` = the hash in pkg version `3.10.0.1.ae15cad9cfef` (`joel0-truenas/scst`, = `truenas-3.10.0-pre` + arm64 `debian/control`).
+  - Checkouts `tmp/refs/truenas-{zfs,scst}` stay pristine; build runs in a copy under `oot-src/`, with `patches/truenas-{zfs,scst}/*.patch` applied.
+  - Recipes as scale-build: ZFS `configure --with-config=kernel` + `make -C module`; SCST `make 2perf`, then debian/rules SUBDIRS (no scstadmin; iscsi-scst `mods` only).
+  - ZFS configure: `--host=aarch64-linux-gnu CC=gcc` (x86 host_cpu enables SSE/AVX fletcher refs; cross GCC has no libc to link probes), `KERNEL_ARCH`/`KERNEL_CROSS_COMPILE` for the kernel side.
+  - No `CC=ccache ...` to ZFS/SCST: both word-split it.
+  - Installed at the image's dpkg paths: `extra/zcommon/{spl,zfs}.ko`, `extra/*.ko`, `extra/dev_handlers/scst_*.ko` (19). Stripped, signed with the build key, vermagic FATAL-checked, `depmod -e` against `System.map` FATAL on unknown symbols.
+  - Userspace (zfsutils, iscsi-scstd, scstadmin) comes from the image unchanged.
 
 ### debug vs perf kernel
 
