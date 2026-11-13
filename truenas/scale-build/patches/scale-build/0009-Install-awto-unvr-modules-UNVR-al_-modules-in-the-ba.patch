@@ -1,0 +1,25 @@
+From de9888b1e2c699f585c063a026f4df47555a5a73 Mon Sep 17 00:00:00 2001
+From: awto <noreply@awto.au>
+Date: Sat, 14 Nov 2026 09:31:09 +1100
+Subject: [PATCH] Install awto-unvr-modules (UNVR al_* modules) in the base
+ system
+
+---
+ conf/build.manifest | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/conf/build.manifest b/conf/build.manifest
+index 702fbfc..0742d58 100644
+--- a/conf/build.manifest
++++ b/conf/build.manifest
+@@ -51,6 +51,10 @@ base-packages:
+   install_recommends: true
+ - name: linux-image-truenas-production-{{ ARCH }}
+   install_recommends: true
++# awto-unvr: UNVR board modules (al_*), built against the kernel above (./dev.py truenas-oot-deb)
++- name: awto-unvr-modules
++  arch: arm64
++  install_recommends: true
+ - name: avahi-daemon
+   install_recommends: true
+ - name: avahi-utils
