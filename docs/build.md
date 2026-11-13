@@ -71,10 +71,25 @@ The
 | 2 | Fedora kernel, **debug** (default): lockdep, debug-objects, fault injection, SW PAN. **Slow** | `build-fedora [--kernel debug]` | `build-linux-fedora.py` | `build-out-fedora/` |
 | 2a | ↳ same script, full-debug variant (KASAN, UBSAN, DMA_API_DEBUG, lockdep, panic-on-lockup) | `AWTO_KASAN_BUILD=1 build-fedora` | (same) | `build-out-fedora-kasan/` |
 | 2b | ↳ **perf**: none of row 2's debug, no SW PAN, no `init_on_alloc` (#353) | `build-fedora --kernel perf` | (same) | `build-out-fedora-perf/` |
+| 2c | TrueNAS arm64 6.18 kernel + UNVR DTB + al_* modules (#338, build only) | `build-truenas [--modules-only]` | `build-linux-truenas.py` | `build-out-truenas/` (`truenas_build_out()`) |
 | 3 | On-box native (no cross-compile) | *(none)* | `build-on-box.py` | `/lib/modules/<kver>/updates/` on the box |
 | 4 | Fedora rootfs tarball | `build-fedora-rootfs` | `build-fedora-rootfs.py` | `tmp/fedora-rootfs.tar.gz` |
 | 5 | awto-uboot (our U-Boot) | `build-uboot` | `uboot-build.py` | staged into `/mnt/2tb/unvr-port-refs/u-boot-v2026.07`, chainload-able |
 | 6 | EDK2/UEFI (our platform port, docs/uefi.md) | `build-uefi-p0` | `build-uefi-p0.py` | builds against `/mnt/2tb/unvr-port-refs/edk2` (pristine `edk2-stable202608` clone), `UNVR.fd` chainload-able |
+
+### TrueNAS 6.18 (#338)
+
+- Source: `tmp/refs/truenas-unvr`, branch `awto/unvr/truenas-6.18` = TrueNAS pin (`_truenas.TRUENAS_PIN`, also `kernel-store` `truenas-linux`) + our series. Rebuilt every run; never edit it.
+- Series is **generated**: `git format-patch torvalds/master..latest` from the 7.x tree, `git am -3` onto the pin. `./dev.py truenas-series [check|apply]`.
+- 6.18-only deltas: `patches/truenas-6.18/series.json`
+  - `replace`: 6.18 version of one generated patch, keyed to its 7.x patch-id. 7.x patch changes -> FATAL until redone.
+  - `after`: fixups after the series, genuine API breaks only.
+- Config = TrueNAS scale-build's kernel step for arm64: `defconfig` -> merge `debian_arm64.config` -> `truenas.config` -> `tn-production.config` (`scripts/package/truenas/`), then `patches/truenas-6.18/unvr.config`. Each `unvr.config` line FATAL-checked after `olddefconfig`.
+- Board drivers are `=m` where TrueNAS's are: needs TrueNAS's initramfs, unlike row 2.
+- In-tree code built with `KCFLAGS=-Wno-error` (host GCC 16 vs TrueNAS's GCC 14); OOT `al_*` keep `-Werror`.
+- OOT modules: one source for 7.x and 6.18; API differences `LINUX_VERSION_CODE`-gated in the module's `kcompat.h`.
+- Gate: `truenas-series` (series applies to the pin, index-only) + `truenas-modules` (OOT against the last 6.18 kbuild, SKIPs before the first build).
+- KVER: `6.18.60-production-truenas-<describe>+` (`-production` is TrueNAS's Makefile EXTRAVERSION).
 
 ### debug vs perf kernel
 

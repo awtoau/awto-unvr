@@ -74,7 +74,8 @@ version starts touching PCIe/AHCI/xHCI code outside the RHEL-gated sections.
 
 ## TrueNAS SCALE kernel — checked for hardware-relevant fixes (#163)
 `truenas-linux/` — github.com/truenas/linux (store remote `truenas`), branch `truenas/linux-6.18`
-(tracks their 26.x release line) at `580caa3a792d`, the commit checked 2026-08-28. Also on-box
+(tracks their 26.x release line); the check below was made at `580caa3a792d` (2026-08-28). Pin now in
+`scripts/_truenas.py` `TRUENAS_PIN`. Also on-box
 (`/root/src/truenas-linux`).
 - **x86_64-only in practice.** `arch/arm64/` present only as generic inherited mainline code —
   no TrueNAS-specific ARM enablement commits in the history. Not useful as an ARM64/Annapurna

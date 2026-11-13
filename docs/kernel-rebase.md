@@ -11,6 +11,7 @@ network check). It reports `ours` / `theirs` per tree and names what is behind.
 | tree | role |
 |---|---|
 | `tmp/refs/linux-v7.3-fresh` | what we build (`AWTO_KERNEL_SRC`). Store worktree on branch `latest` (our port series), so `.git` is a file. |
+| `tmp/refs/truenas-unvr` | TrueNAS 6.18 build tree, regenerated from `latest` by `./dev.py truenas-series apply` ([build.md](build.md#truenas-618-338)). |
 | `tmp/refs/truenas-linux`, `linux-qnap-tsx32x`, `urnvr-kernel-4.19.152` | comparison kernels, store worktrees detached at a pinned commit (`scripts/kernel-store.py` `TREES`). |
 | `linux-6.12`, `linux-v6.18*`, `linux-v7.1.8` | old bases kept for bisect. Pinned - being behind is their job. |
 | `modules/al_*` in this repo | the OOT drivers. Not in the kernel tree. |
@@ -49,7 +50,7 @@ network check). It reports `ours` / `theirs` per tree and names what is behind.
 3. `./dev.py build-fedora` - the OOT drivers are built against the new headers
    here, and this is where a kernel API change surfaces. `CONFIG_WERROR=y`, so
    a new warning in `modules/al_*` fails the build.
-4. `./dev.py gate` - `hal-drift` confirms every shared HAL file is the one in
+4. `./dev.py gate` - `truenas-series` confirms the series still applies to TrueNAS 6.18; a conflict means a new `replace` entry in `patches/truenas-6.18/series.json`. `hal-drift` confirms every shared HAL file is the one in
    `modules/al_hal/` and every remaining fork is registered (#264), `dt-drift`
    the Linux/U-Boot board facts (#221).
 5. `./dev.py publish-fedora` then `./dev.py deploy-ssd --reboot` - **two

@@ -46,9 +46,8 @@ stock U-Boot -> NAND 0x1300000 (awto-uboot, raw, `go`) -> awto-uefi -> Linux
   6.18** and **OpenZFS 2.4**, with frequent updates through 27.x.
 - Target tree: `tmp/refs/truenas-linux` (Linux-store worktree, remote
   `truenas`), branch `truenas/linux-6.18`, full arm64 support present.
-- **Refetch before use.** Our snapshot is 6.18.46 from 2026-08-25; upstream is
-  at **6.18.55**, **4824 commits ahead**. `master-nightly` moves, so pin a
-  commit when phase 4 starts.
+- Pinned (`_truenas.TRUENAS_PIN`). Phase 1 (kernel + DTB + al_* build) done:
+  `./dev.py build-truenas`, [build.md](build.md#truenas-618-338), #338.
 - **Direction DECIDED (Dan, 2026-10-13): carry our drivers BACK to 6.18.**
   Not TrueNAS's deltas forward. Development stays on bleeding-edge 7.3+; 6.18
   is a build target, not where we work.
