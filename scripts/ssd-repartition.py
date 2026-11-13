@@ -801,9 +801,9 @@ def _run_init(root: Path, freeze: str | None, res: dict) -> subprocess.Completed
 # STALL_S=3 + FEED_EVERY_S=1 -> feeder reports within ~5 s; 15 s = 3x.
 FREEZE_MAX_S = 15
 
-# chroot /init on the 4 GiB image: ok scenario ~16 s (rehearsal.json init_s); ~3.8x.
+# chroot /init on the 4 GiB image: ok scenario 16-31 s (rehearsal.json init_s, host load); ~3x.
 # Expiry: TimeoutExpired propagates, cleanup unmounts + detaches the loop.
-REHEARSE_TIMEOUT_S = 60
+REHEARSE_TIMEOUT_S = 100
 
 
 def cmd_rehearse(a) -> int:
