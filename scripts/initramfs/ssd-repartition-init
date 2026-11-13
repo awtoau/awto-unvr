@@ -111,12 +111,16 @@ run_cmd() {
 }
 
 # --- disk ---------------------------------------------------------------
-ensure_node() { # make /dev/<name> from sysfs when devtmpfs is absent (rehearse)
+# Rehearse has no devtmpfs: a partition re-read can renumber loop partitions,
+# so remake the node every time. Real mode: devtmpfs keeps it current.
+ensure_node() {
     local mm
-    [ -b "/dev/$1" ] && return 0
-    read -r mm <"/sys/class/block/$1/dev" || return 1
+    [ "$MODE" = real ] && [ -b "/dev/$1" ] && return 0
+    read -r mm <"/sys/class/block/$1/dev" || { log "no /sys/class/block/$1"; return 1; }
+    rm -f "/dev/$1"
     mknod "/dev/$1" b "${mm%%:*}" "${mm##*:}"
 }
+p2_node() { ensure_node "$P2N"; }
 
 part_name() { # <disk name> <partno>
     local p
@@ -301,6 +305,7 @@ repartition() {
     s=$(pf 3 start)
     ((s >= P2_START + P2_NEW_SECTORS && s % P3_ALIGN == 0)) || { fail "p3 start $s"; return 1; }
     log "p3 start $s size $(pf 3 size)"
+    p2_node
     fsb=$(fs_bytes)
     ((fsb <= P2_NEW_SECTORS * 512)) || { fail "fs $fsb B > p2 $((P2_NEW_SECTORS * 512)) B"; return 1; }
     s=$(<"/sys/class/block/$P2N/size")
@@ -319,6 +324,7 @@ verify_p2() { # start, PARTUUID, type unchanged; size = new; p1 + label-id untou
 }
 
 fsck_post() {
+    p2_node || return 1
     run_cmd e2fsck -f -n "$P2" || { fail "e2fsck -f -n not clean"; return 1; }
 }
 
@@ -329,6 +335,7 @@ save_log() {
     if [ "$MODE" = real ]; then
         { echo "--- dmesg ---"; dmesg; } >>"$LOG" 2>&1
     fi
+    p2_node
     mount -t ext4 -o rw "$P2" "$MNT" >>"$LOG" 2>&1 || { log "mount for log save failed"; return 1; }
     cp "$LOG" "$MNT/root/$name" && sync
     local rc=$?
@@ -342,6 +349,7 @@ finish() {
     case $FAIL_STEP in
     resize | sfdisk | verify)
         step repair "$T_FSCK"
+        p2_node
         run_cmd e2fsck -f -y "$P2"
         ;;
     esac

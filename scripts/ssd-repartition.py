@@ -462,6 +462,13 @@ def cmd_build(a) -> int:
     except ValueError as e:
         log(f"FATAL: {e}")
         return 1
+    # The kernel's own copy of the initramfs must be byte-identical to the rehearsed cpio.
+    import lzma
+
+    inc = lzma.decompress((out / "kbuild/usr/initramfs_inc_data").read_bytes())
+    if sha256(inc) != sha256(blob):
+        log("FATAL: embedded initramfs != the cpio just built")
+        return 1
     kver = (out / "kbuild/include/config/kernel.release").read_text().strip()
     info = {
         "kver": kver,
