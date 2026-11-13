@@ -361,10 +361,15 @@ def snapshot_local_sources() -> None:
     for src in stub_dirs():
         name, dst = src.name, LOCAL / src.name
         shutil.copytree(src, dst, ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
+        # fixed dates: same content -> same sha, so scale-build doesn't rebuild the stub
+        stamp = "2000-01-01T00:00:00+0000"
+        os.environ["GIT_AUTHOR_DATE"] = os.environ["GIT_COMMITTER_DATE"] = stamp
         for argv in (["init", "-q", "-b", "main"], ["add", "-A"],
                      ["-c", "user.name=awto", "-c", "user.email=noreply@awto.au", "commit", "-q",
                       "-m", f"snapshot of awto-unvr {rel(src)}"]):  # fmt: skip
             git(*argv, cwd=dst)
+        for k in ("GIT_AUTHOR_DATE", "GIT_COMMITTER_DATE"):
+            os.environ.pop(k)
         pkgs = re.findall(
             r"^Package:\s*(\S+)", (src / "debian" / "control").read_text(), re.M
         )
