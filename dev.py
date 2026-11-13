@@ -1144,6 +1144,16 @@ def cmd_build_truenas(extra: list[str]) -> int:
 
 
 @command(
+    "self-build arm64 TrueNAS 27.0 userland: joel0 scale-build + our patches in an emulated "
+    "arm64 container, build state outside the repo (#356, scripts/truenas-build.py)",
+    args="container | checkout | packages [--only a,b] | update | iso | status",
+    kind="action",
+)
+def cmd_truenas_build(extra: list[str]) -> int:
+    return _run_script("scripts/truenas-build.py", extra)
+
+
+@command(
     "compile repo dts/ against an existing kernel build (no kernel rebuild), "
     "diffed against that build's DTB (scripts/build-dtb.py)",
     args="--tree fedora|truenas",
