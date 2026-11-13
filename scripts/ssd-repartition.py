@@ -142,7 +142,6 @@ TIMEOUTS = {
     "T_RESTORE": 60,  # mount + 19 MB cp + cmp: ~2 s
     # e2fsck -fn on the live fs: 13 s (2026-11-13, warm); cold + repairs ~120 s
     "T_FSCK": 180,
-    "T_RESIZE": 1800,  # 1.5x the 20 min estimate in RESIZE_ESTIMATE below
     "T_SFDISK": 60,
     "T_VERIFY": 180,
     "T_SAVE": 60,
@@ -523,11 +522,12 @@ class Scenario:
     expect_log: tuple[str, ...] = ()
     expect_fed: bool = True
     resized: bool | None = None  # fs at target afterwards; default = expect_ok
+    freeze: str | None = None  # SIGSTOP this /init child when its log line appears
 
 
 SCENARIOS = {
     # 2.2 GiB in 3.8 GiB, target 3 GiB: forces block + inode moves out of the cut groups.
-    "ok": Scenario("ok", 2200 << 20, {}, True),
+    "ok": Scenario("ok", 2200 << 20, {}, True, ("== step resize (no deadline)",)),
     # Wrong original size in the conf: restore must still happen, nothing else may change.
     "abort": Scenario(
         "abort",
@@ -546,13 +546,18 @@ SCENARIOS = {
         ("passed its deadline - stop feeding",),
         expect_fed=False,
     ),
+    # resize2fs SIGSTOPped (no I/O, no CPU): the stall check alone must stop feeding
+    # (resize has no hard deadline). SIGCONT afterwards; the run must still complete.
     "wdt-stall": Scenario(
         "wdt-stall",
-        300 << 20,
-        {"STALL_S": -1},
+        2200 << 20,
+        {"STALL_S": 3, "FEED_EVERY_S": 1},
         True,
-        ("no progress for -1s in '",),
-        expect_fed=False,
+        (
+            "== step resize (no deadline)",
+            "no progress for 3s in 'resize' - stop feeding",
+        ),
+        freeze="resize2fs",
     ),
     # p3 append fails after the fs shrank and p2 was cut: repair e2fsck must run,
     # p2/fs stay at target, data intact, normal uImage restored.
@@ -673,15 +678,7 @@ def rehearse_one(sc: Scenario, cpio: bytes) -> dict:
         sudo("mknod", root / "dev" / Path(loop).name, "b", *mm)
         sudo("mknod", root / "dev/null", "c", "1", "3")
         t = time.monotonic()
-        run = sudo(
-            "env",
-            "-i",
-            shutil.which("chroot"),
-            root,
-            "/init",
-            check=False,
-            timeout=REHEARSE_TIMEOUT_S,
-        )
+        run = _run_init(root, sc.freeze, res)
         res["init_s"] = round(time.monotonic() - t, 1)
         res["init_rc"] = run.returncode
         boxlog = (
@@ -750,6 +747,8 @@ def rehearse_one(sc: Scenario, cpio: bytes) -> dict:
             errs.append(
                 f"watchdog fed {res['wdt_feeds']} times, expected fed={sc.expect_fed}"
             )
+        if sc.freeze and ("frozen_for_s" not in res or res.get("freeze_missed")):
+            errs.append(f"never froze {sc.freeze}")
         if (run.returncode == 0) != sc.expect_ok:
             errs.append(f"init rc={run.returncode}")
         res["errors"] = errs
@@ -760,6 +759,47 @@ def rehearse_one(sc: Scenario, cpio: bytes) -> dict:
             sudo("umount", mp, check=False)
         sudo("losetup", "-d", loop, check=False)
 
+
+def _run_init(root: Path, freeze: str | None, res: dict) -> subprocess.CompletedProcess:
+    """chroot /init; with `freeze`, SIGSTOP that child once /init logs it, SIGCONT
+    after the feeder reports the stall (or FREEZE_MAX_S)."""
+    argv = ["sudo", "-n", "env", "-i", shutil.which("chroot"), str(root), "/init"]
+    if not freeze:
+        return subprocess.run(
+            argv,
+            capture_output=True,
+            text=True,
+            timeout=REHEARSE_TIMEOUT_S,
+            check=False,
+        )
+    proc = subprocess.Popen(
+        argv, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+    )
+    logf, t0, pid = root / "run/ssdrep.log", time.monotonic(), None
+    while proc.poll() is None and time.monotonic() - t0 < REHEARSE_TIMEOUT_S:
+        txt = logf.read_text() if logf.exists() else ""
+        if pid is None and f"+ {freeze} " in txt:
+            r = subprocess.run(["pgrep", "-x", freeze], capture_output=True, text=True)
+            if r.stdout.split():
+                pid = r.stdout.split()[0]
+                sudo("kill", "-STOP", pid)
+                ts = time.monotonic()
+                res["frozen_at_s"] = round(ts - t0, 1)
+        if pid and ("stop feeding" in txt or time.monotonic() - ts > FREEZE_MAX_S):
+            res["frozen_for_s"] = round(time.monotonic() - ts, 1)
+            sudo("kill", "-CONT", pid)
+            pid = ""
+        time.sleep(0.02)  # 20 ms log poll: resize2fs runs ~1-2 s here
+    if pid:
+        sudo("kill", "-CONT", pid, check=False)
+    out, err = proc.communicate(timeout=REHEARSE_TIMEOUT_S)
+    if pid is None:
+        res["freeze_missed"] = True
+    return subprocess.CompletedProcess(argv, proc.returncode, out, err)
+
+
+# STALL_S=3 + FEED_EVERY_S=1 -> feeder reports within ~5 s; 15 s = 3x.
+FREEZE_MAX_S = 15
 
 # chroot /init on the 4 GiB image: ok scenario ~16 s (rehearsal.json init_s); ~3.8x.
 # Expiry: TimeoutExpired propagates, cleanup unmounts + detaches the loop.
@@ -825,11 +865,11 @@ def resize_estimate_s(tail_used_bytes: int) -> int:
     return int(tail_used_bytes * (1 / READ_BPS + 1 / WRITE_BPS)) + RESIZE_FIXED_S
 
 
-# Runner limit: reboot -> maint /init ~60 s, disk 30, fsck 120, resize 1200,
-# fsck -n 120, misc 30, reset 17, normal boot -> sshd 80 (#352) = 1657 s;
-# x1.5 = 2486 s. The /init ceilings sum to 2460 s + 157 s of boots, so 2700 s
-# covers both: past it, init can no longer be running under its own watchdog.
-RUN_LIMIT_S = 2700
+RESIZE_EXPECTED_S = 1200  # expected worst; /init has NO hard cap on resize (stall only)
+# When to stop polling and print guidance - NOT proof /init is dead. Reboot -> /init
+# ~60 s, disk 30, fsck 120, resize 1200, fsck -n 120, misc 30, reset 17, boot -> sshd 80
+# (#352) = 1657 s; x1.5 -> 2500 s.
+RUN_LIMIT_S = 2500
 POLL_S = 20
 
 
@@ -917,9 +957,9 @@ def preflight(ip: str) -> dict:
     n, ub, ui = map(int, ssh(ip, tail_usage_cmd(p2, cut)).split())
     f["tail"] = {"groups": n, "used_bytes": ub * 4096, "used_inodes": ui}
     f["resize_estimate_s"] = resize_estimate_s(ub * 4096)
-    if f["resize_estimate_s"] > TIMEOUTS["T_RESIZE"] / 1.5:
+    if f["resize_estimate_s"] > RESIZE_EXPECTED_S:
         e.append(
-            f"resize estimate {f['resize_estimate_s']} s exceeds the T_RESIZE budget"
+            f"resize estimate {f['resize_estimate_s']} s exceeds the {RESIZE_EXPECTED_S} s RUN_LIMIT_S assumes"
         )
     boot = ssh(
         ip,
@@ -1105,17 +1145,16 @@ def wait_back(old_boot_id: str, kver: str, t0: float, expected_s: int) -> str | 
 
 
 GUIDANCE = """\
-NOT power-cycling automatically. What is known:
-- /init restores /boot/uImage BEFORE touching the filesystem, but there is no
-  network in the initramfs: whether it got that far is unknown until the box returns.
-- /init's own step ceilings (incl. T_RESIZE {t_resize}s) have all expired by now, and an
-  armed SP805 would have reset the box. A box still silent is hung outside that
-  (kernel never reached /init, or U-Boot did not boot the maint uImage).
-- Power-cycle (./dev.py power-cycle) is safe for the disk only if resize2fs is not running;
-  past {limit}s it cannot be. If the maint uImage was never restored, a power-cycle
-  re-runs /init from the top (restore first), which is the intended retry.
-- Then: ./dev.py ssd-repartition verify --id {run_id}
-- No progress at all after a power-cycle -> serial console needed.
+Not back after {limit}s - NOT power-cycling. The box may still be resizing:
+- resize2fs has no time cap in /init; the SP805 resets the box only after
+  {stall}s with no disk I/O and no resize2fs CPU. Slow-but-progressing = still running.
+- No network in the initramfs, so silence cannot tell "resizing" from "hung".
+- Do NOT power-cycle yet. Keep checking reachability: ./dev.py ssh -- uname -r
+- Power-cycle is safe only once SSH answers (run finished), or after a stall reset
+  already happened (box rebooted on its own). A power-cycle mid-resize can corrupt p2.
+- Never returns after hours: kernel or U-Boot likely failed before /init (a stalled
+  /init resets itself within ~{stall}s + 17 s); power-cycle, then serial console.
+- When SSH answers: ./dev.py ssd-repartition verify --id {run_id}
 """
 
 
@@ -1160,9 +1199,7 @@ def cmd_run(a) -> int:
     ip = wait_back(old_bid, kver, t0, expected)
     if not ip:
         print(
-            GUIDANCE.format(
-                t_resize=TIMEOUTS["T_RESIZE"], limit=RUN_LIMIT_S, run_id=run_id
-            )
+            GUIDANCE.format(stall=TIMEOUTS["STALL_S"], limit=RUN_LIMIT_S, run_id=run_id)
         )
         return 3
     return verify_after(ip, run_id)

@@ -45,10 +45,10 @@ FAIL_STEP=""
 # Feeder feeds only while the current step is inside its deadline AND showing
 # progress (disk I/O counters or the step process's CPU time moved within
 # STALL_S). Otherwise it stops; SP805 resets the SoC (17 s hw timeout).
-step() { # <name> <deadline seconds from now>
+step() { # <name> <deadline seconds from now | none>
     echo "$1" >/run/wdt.step
-    echo $(($(now) + $2)) >/run/wdt.deadline
-    log "== step $1 (deadline ${2}s)"
+    if [ "$2" = none ]; then echo none; else echo $(($(now) + $2)); fi >/run/wdt.deadline
+    if [ "$2" = none ]; then log "== step $1 (no deadline)"; else log "== step $1 (deadline ${2}s)"; fi
 }
 
 progress_sig() {
@@ -71,7 +71,7 @@ feeder() {
         dl=$(cat /run/wdt.deadline 2>/dev/null || echo 0)
         sig=$(progress_sig)
         if [ "$sig" != "$last" ]; then last=$sig; changed=$n; fi
-        if ((n > dl)); then
+        if [ "$dl" != none ] && ((n > dl)); then
             log "watchdog: step '$(cat /run/wdt.step)' passed its deadline - stop feeding"
             exit 0
         fi
@@ -397,7 +397,8 @@ restore_uimage || fail "restore"
 [ -z "$FAIL" ] && { geometry_ok || fail "geometry"; }
 
 [ -z "$FAIL" ] && { step fsck "$T_FSCK" && fsck_pre; }
-[ -z "$FAIL" ] && { step resize "$T_RESIZE" && resize_fs; }
+# No hard cap: a reset mid-resize can corrupt p2 (no undo); only STALL_S stops feeding.
+[ -z "$FAIL" ] && { step resize none && resize_fs; }
 [ -z "$FAIL" ] && { step sfdisk "$T_SFDISK" && repartition; }
 [ -z "$FAIL" ] && { step verify "$T_VERIFY" && fsck_post; }
 finish
