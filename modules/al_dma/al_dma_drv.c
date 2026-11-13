@@ -30,6 +30,11 @@
 #include <linux/dmaengine.h>
 #include <linux/dma-mapping.h>
 
+/* Still exported, but declared only in the private drivers/dma/dmaengine.h
+ * since 7.4 (511afae96d89). A matching redeclaration is fine on older kernels. */
+int dma_async_device_register(struct dma_device *device);
+void dma_async_device_unregister(struct dma_device *device);
+
 /*
  * Cookie helper functions — moved from include/linux/dmaengine.h to
  * drivers/dma/dmaengine.h (private) in kernel 6.x. Inlined here for
