@@ -21,7 +21,7 @@ import sys
 import _truenas
 from _kbuild import CC_ARG, CROSS
 
-from _repo import NPROC, REFS
+from _repo import NPROC, REFS, REPO
 
 # relpath under lib/modules/<kver>/extra/, from the image's openzfs-zfs-modules-* and scst .list
 ZFS_KOS = ("zcommon/spl.ko", "zcommon/zfs.ko")
@@ -84,17 +84,21 @@ def _git(args, cwd, log) -> str:
     return r.stdout
 
 
-def stage(src: pathlib.Path, work: str) -> str:
-    """Fresh copy of `src` (no .git) at `work`: builds write into the tree."""
+def stage(run, log, src: pathlib.Path, work: str, name: str) -> str:
+    """Fresh copy of `src` (no .git) at `work`, then patches/<name>/*.patch (reasons in
+    each patch's header). Builds write into the tree, so never into the checkout."""
     if os.path.exists(work):
         shutil.rmtree(work)
     shutil.copytree(src, work, ignore=shutil.ignore_patterns(".git"), symlinks=True)
+    for p in sorted((REPO / "patches" / name).glob("*.patch")):
+        run(["git", "apply", "-p1", str(p)], cwd=work)
+        log(f"patched {name}: {p.name}")
     return work
 
 
 def build_zfs(run, log, ksrc: str, kout: str, oot: str) -> str:
     src = ensure_src("truenas-zfs", _truenas.ZFS_REPO, _truenas.ZFS_PIN, log)
-    work = stage(src, os.path.join(oot, "zfs"))
+    work = stage(run, log, src, os.path.join(oot, "zfs"), "truenas-zfs")
     run(["sh", "autogen.sh"], cwd=work)
     # No --host: the Fedora cross GCC has no libc to link configure's userspace probes;
     # kernel probes and the module build go through KERNEL_* (arm64 kbuild).
@@ -114,7 +118,7 @@ def build_zfs(run, log, ksrc: str, kout: str, oot: str) -> str:
 
 def build_scst(run, log, kout: str, kv: str, oot: str) -> str:
     src = ensure_src("truenas-scst", _truenas.SCST_REPO, _truenas.SCST_PIN, log)
-    work = stage(src, os.path.join(oot, "scst"))
+    work = stage(run, log, src, os.path.join(oot, "scst"), "truenas-scst")
     mk = [
         f"KDIR={kout}", f"KVER={kv}",
         # modinfo stamps; the Makefile would take uname -m (host) and git (absent in the copy)
