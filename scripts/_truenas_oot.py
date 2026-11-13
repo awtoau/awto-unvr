@@ -148,7 +148,8 @@ def find_ko(tree: str, name: str, log) -> str:
 
 
 def install(run, log, kos, tree: str, extra: str, sign) -> list[str]:
-    """Strip debug info (as dh_strip), sign, copy to extra/<relpath>."""
+    """Strip debug info (as INSTALL_MOD_STRIP for in-tree; TrueNAS ships it unstripped),
+    sign, copy to extra/<relpath>."""
     out = []
     for rel in kos:
         ko = find_ko(tree, os.path.basename(rel), log)
