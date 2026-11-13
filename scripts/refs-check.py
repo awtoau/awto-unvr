@@ -47,6 +47,9 @@ UPSTREAM = {
     "linux-alpine-v2": "origin/main",
     "imbushuo-ccr2004-uefi": "origin/master",
     "truenas-linux": "truenas/truenas/linux-6.18",
+    # #338 phase 2 OOT module sources; pinned in _truenas.py.
+    "truenas-zfs": "origin/truenas/zfs-2.4-release",
+    "truenas-scst": "origin/truenas-3.10.0-pre",
     # Old kernel bases kept for bisect/comparison. Pinned on purpose - being
     # "behind" is their job, so no upstream.
     "linux-6.12": None,

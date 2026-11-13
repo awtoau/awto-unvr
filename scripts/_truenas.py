@@ -23,6 +23,13 @@ from pathlib import Path
 from _repo import LINUX_STORE, REFS, REPO, TMP, kernel_src
 
 TRUENAS_PIN = "b97fad085a83735f9c644aa6bc1e89c970d5114b"  # truenas/linux-6.18, 6.18.60
+# OOT module sources (#338 phase 2), matched to the 26.04.0-MASTER-20251221 arm64 image:
+# ZFS = truenas/zfs-2.4-release head at image build (merge of tag zfs-2.4.0, pkg 2.4.0-2).
+# SCST = pkg version 3.10.0.1.ae15cad9cfef: truenas-3.10.0-pre + Joel May's arm64 debian/control.
+ZFS_REPO = "https://github.com/truenas/zfs"
+ZFS_PIN = "c5ee957a6e813053455cff0fd8001ff08d2882a9"
+SCST_REPO = "https://github.com/joel0-truenas/scst"
+SCST_PIN = "ae15cad9cfef801c22832e5c20124513eb45af7a"
 SERIES_BASE, SERIES_TIP = "torvalds/master", "latest"
 BUILD_TREE = "truenas-unvr"
 BUILD_BRANCH = "awto/unvr/truenas-6.18"

@@ -1134,9 +1134,9 @@ def cmd_truenas_series(extra: list[str]) -> int:
 
 
 @command(
-    "build TrueNAS's arm64 6.18 kernel + UNVR DTB + al_* modules: series apply, "
-    "TrueNAS production config + UNVR fragment (#338, scripts/build-linux-truenas.py)",
-    args="[--modules-only]",
+    "build TrueNAS's arm64 6.18 kernel + UNVR DTB + al_*, OpenZFS, SCST modules: series "
+    "apply, TrueNAS production config + UNVR fragment (#338, scripts/build-linux-truenas.py)",
+    args="[--modules-only | --zfs-scst]",
     kind="action",
 )
 def cmd_build_truenas(extra: list[str]) -> int:

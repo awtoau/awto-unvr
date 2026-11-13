@@ -10,6 +10,8 @@
 - Modules: TrueNAS's MODULE_SIG_ALL signs in-tree ones at install; OOT al_* signed with
   the same build key. WERROR comes from truenas.config.
 - Out: truenas_build_out() (Image, uImage, DTB, config, modroot/).
+- OpenZFS + SCST modules (_truenas_oot.py) into modroot/.../extra at TrueNAS's paths.
+  --zfs-scst: just those, into the existing modroot (no kernel rebuild).
 - --modules-only: rebuild just the OOT modules against the existing kbuild (into
   OUT/oot-check/, not modroot) - the fast 6.18 API check after a modules/ edit.
   --gate: same, but SKIP (rc 0) when no 6.18 kbuild exists yet.
@@ -28,6 +30,7 @@ import time
 
 import _kbuild
 import _truenas
+import _truenas_oot
 from _kbuild import CC_ARG, DTS_NAME, ENV, check_dts_shared, kver, mkuimage
 
 import _repo
@@ -166,7 +169,8 @@ def build() -> None:
     )  # fmt: skip
     extra = os.path.join(modroot, f"lib/modules/{kv}/extra")
     _kbuild.build_oot_modules(run, log, KOUT, OUT, extra, sign=sign_with_build_key)
-    run(["depmod", "-b", modroot, kv], check=False)
+    _truenas_oot.build_all(run, log, src, KOUT, OUT, modroot, kv, sign_with_build_key)
+    depmod(modroot, kv)
 
     name = f"unvr-ea16-{ver}-truenas"
     image = os.path.join(KOUT, "arch/arm64/boot/Image")
@@ -178,6 +182,31 @@ def build() -> None:
     shutil.copy(os.path.join(KOUT, ".config"), os.path.join(OUT, f"{name}.config"))
     mkuimage(image, os.path.join(OUT, f"uImage-{name}"), name, log)
     log(f"DONE. KVER={kv} modroot: {modroot} ; Image/uImage/dtb in {OUT}")
+
+
+def depmod(modroot: str, kv: str) -> None:
+    """depmod, FATAL on an unresolved symbol (-e against this kernel's System.map)."""
+    r = subprocess.run(
+        ["depmod", "-b", modroot, "-e", "-F", os.path.join(KOUT, "System.map"), kv],
+        capture_output=True,
+        text=True,
+    )
+    for line in (r.stdout + r.stderr).splitlines():
+        log(f"depmod: {line}")
+    if r.returncode or "unknown symbol" in r.stderr:
+        log(f"FATAL: depmod rc={r.returncode} for {kv}")
+        sys.exit(1)
+
+
+def zfs_scst_only() -> None:
+    kv = kver(KOUT)
+    modroot = os.path.join(OUT, "modroot")
+    if not os.path.isdir(os.path.join(modroot, f"lib/modules/{kv}")):
+        log(f"FATAL: no modroot for {kv} in {OUT} - ./dev.py build-truenas")
+        sys.exit(1)
+    src = str(_truenas.build_tree().resolve())
+    _truenas_oot.build_all(run, log, src, KOUT, OUT, modroot, kv, sign_with_build_key)
+    depmod(modroot, kv)
 
 
 def modules_only(gate: bool) -> None:
@@ -196,6 +225,8 @@ if __name__ == "__main__":
     args = sys.argv[1:]
     if "--modules-only" in args or "--gate" in args:
         modules_only("--gate" in args)
+    elif "--zfs-scst" in args:
+        zfs_scst_only()
     else:
         build()
     log(f"TOTAL {int(time.time() - t0)}s")
