@@ -443,6 +443,12 @@ def step_kernel(a) -> int:
         if not any(d.startswith(want + "_") for d in debs):
             fatal(f"kernel build made no {want} .deb (have {debs})")
     log(f"kernel debs: {debs}")
+    if not a.keep_obj:
+        # ~21 GB with DEBUG_INFO on a nearly full /mnt/2tb; headers deb can build OOT modules
+        log(
+            f"removing objtree {obj} ({tree_bytes(obj) / 2**30:.1f} GB); --keep-obj keeps it"
+        )
+        shutil.rmtree(obj)
     return inject_kernel_debs(a.stall)
 
 
@@ -492,6 +498,7 @@ def main() -> int:
         ],
     )
     ap.add_argument("--only", help="packages: comma list of manifest source names")
+    ap.add_argument("--keep-obj", action="store_true", help="kernel: keep the objtree")
     ap.add_argument("--stall", type=int, default=DEFAULT_STALL_S, help="stall limit, s")
     a = ap.parse_args()
     fn = {
