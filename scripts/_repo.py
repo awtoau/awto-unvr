@@ -219,6 +219,13 @@ def kernel_build_out(variant: str | None = None) -> Path:
     return Path(os.environ.get("AWTO_KERNEL_OUT", default))
 
 
+def truenas_build_out() -> Path:
+    """build-linux-truenas.py output (#338); AWTO_KERNEL_OUT wins, as for the others."""
+    return Path(
+        os.environ.get("AWTO_KERNEL_OUT", "/mnt/2tb/unvr-port-refs/build-out-truenas")
+    )
+
+
 def ea16_build_out() -> Path:
     """Same single-source-of-truth reasoning as kernel_build_out(), for
     build-linux-ea16.py's own output dir instead of the fedora one."""
@@ -251,11 +258,12 @@ KERNEL_PATCH_MARKERS = {
 }
 
 
-def check_kernel_patches(log_fn=None) -> None:
-    """FATAL if the kernel tree about to be built is missing a source-level
-    patch from patches/. Mirrors the CONFIG_AHCI_ALPINE=y check (#92) for
-    the changes that have no config symbol to check."""
-    src = kernel_src()
+def check_kernel_patches(log_fn=None, src: Path | None = None) -> None:
+    """FATAL if the kernel tree about to be built (default kernel_src()) is
+    missing a source-level patch from patches/. Mirrors the
+    CONFIG_AHCI_ALPINE=y check (#92) for the changes that have no config
+    symbol to check."""
+    src = src or kernel_src()
     for relpath, (marker, patch, issue) in KERNEL_PATCH_MARKERS.items():
         path = src / relpath
         if not path.exists() or marker not in path.read_text():
@@ -270,7 +278,7 @@ def check_kernel_patches(log_fn=None) -> None:
             sys.exit(1)
 
 
-def kernel_build_ver() -> str:
+def kernel_build_ver(src: Path | None = None) -> str:
     """Short 'VERSION.PATCHLEVEL' label (e.g. "7.3") baked into every
     output filename (uImage/dtb/tftp names) and the uImage's own Image
     Name field - the deploy step must read the exact same value or look
@@ -285,7 +293,7 @@ def kernel_build_ver() -> str:
     build's own filenames/Image Name lied about actually being 7.3."""
     if "AWTO_KERNEL_VER" in os.environ:
         return os.environ["AWTO_KERNEL_VER"]
-    makefile = kernel_src() / "Makefile"
+    makefile = (src or kernel_src()) / "Makefile"
     version = patchlevel = None
     for line in makefile.read_text().splitlines()[:10]:
         if line.startswith("VERSION ="):

@@ -23,11 +23,12 @@ Variants (env; same env on publish-fedora/deploy-ssd picks the matching out dir)
 import os
 import pathlib
 import shutil
-import struct
 import subprocess
 import sys
 import time
-import zlib
+
+import _kbuild
+from _kbuild import CC_ARG, DTS_NAME, ENV, check_dts_shared, kver, mkuimage
 
 import _repo
 from _repo import (
@@ -62,36 +63,10 @@ OUT = str(kernel_build_out(VARIANT))
 # becomes structurally impossible instead of a discipline problem.
 KOUT = os.path.join(OUT, "kbuild")
 FEDORA_CONFIG = os.path.join(REPO, "tmp", "fedora-kernel", "fedora-aarch64.config")
-DTS_NAME = "alpine-v2-ubnt-unvr-ea16"
 # Baked into every output filename AND the uImage's own internal Image Name
 # field (U-Boot displays this on boot) - must match AWTO_KERNEL_SRC's real
 # version or the artifacts (and what U-Boot reports booting) lie about it.
 VER = kernel_build_ver()
-# Empty string for a NATIVE build (e.g. running this script ON woomera itself,
-# an aarch64 box - CROSS_COMPILE="" makes kbuild call plain `gcc`, which IS
-# the right compiler there). Cross-compiling on the x86 dev host (the
-# default, and what every existing row-4/4a/4b build has used) needs the
-# real prefix.
-CROSS = os.environ.get("AWTO_CROSS_COMPILE", "aarch64-linux-gnu-")
-# ccache: ~free incremental-rebuild speed across variants sharing mostly-
-# identical source (KASAN vs plain differ in a handful of CONFIG_* symbols;
-# most .o files compile identically either way, and ccache is keyed on
-# preprocessed source+flags, not the O= path, so KASAN and fedora builds
-# share cache hits for anything neither actually changes). Documented
-# invocation per Documentation/kbuild/llvm.rst's ccache example
-# (`CC="ccache clang"` there; `CC="ccache <CROSS_COMPILE>gcc"` here).
-_CCACHE = shutil.which("ccache")
-CC_ARG = [f"CC=ccache {CROSS}gcc"] if _CCACHE else []
-
-IH_MAGIC, IH_OS_LINUX, IH_ARCH_ARM64, IH_TYPE_KERNEL, IH_COMP_NONE = (
-    0x27051956,
-    5,
-    22,
-    2,
-    0,
-)
-LOAD_ADDR = ENTRY_ADDR = 0x08000000
-ENV = dict(os.environ, ARCH="arm64", CROSS_COMPILE=CROSS)
 
 
 def log(m):
@@ -668,57 +643,13 @@ def configure():
     )
 
 
-def kver():
-    """`make kernelrelease` as a standalone invocation is not reliable here -
-    caught it live: right after an AWTO_KASAN_BUILD=1 run followed by a plain
-    run (LOCALVERSION reset only happens inside that conditional, so nothing
-    explicitly clears a stale value), `make kernelrelease` still printed the
-    PREVIOUS run's "-kasan" release even though the real build that followed
-    correctly produced a plain (non-kasan) include/config/kernel.release on
-    disk - the OOT modules got built and copied under the wrong kernel
-    version's extra/ entirely. Read the file kbuild itself writes as part of
-    the real build instead of trusting a separate, apparently-stale-prone
-    target."""
-    path = os.path.join(KOUT, "include/config/kernel.release")
-    if not os.path.exists(path):
-        sys.exit(f"FATAL: {path} missing - build the kernel before calling kver()")
-    return pathlib.Path(path).read_text().strip()
-
-
 def stage_dts():
-    """Copy the repo-tracked DTS + DTSI into the kernel tree so the build ALWAYS
-    compiles the tracked source. Previously only build-linux-ea16.py staged the
-    board DTS; running this script alone compiled whatever stale copy was last left
-    in the kernel tree -> edits to dts/ silently didn't take ("bugs keep coming
-    back"). Repo dts/ is now the single source of truth (dts + the alpine-v2.dtsi
-    include). Reference boards still come from PORT."""
-    amazon = os.path.join(SRC, "arch/arm64/boot/dts/amazon")
-    staged = []
-    for f in sorted(os.listdir(os.path.join(REPO, "dts"))):
-        if f.endswith((".dts", ".dtsi")):
-            shutil.copy(os.path.join(REPO, "dts", f), amazon)
-            staged.append(f)
-    for f in ("dts/alpine-v2-ubnt-unvr.dts", "dts/alpine-v2-ubnt-udmpro.dts"):
-        s = os.path.join(PORT, f)
-        if os.path.exists(s):
-            shutil.copy(s, amazon)
-    log(f"staged DTS/DTSI from repo dts/: {', '.join(staged)}")
-
-
-def check_dts_shared():
-    """Fail the build if the shared i2c timing facts drift between the two DTS
-    trees (docs/rtc-s35390a-fault.md). Guard until they are unified (#75)."""
-    chk = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)), "check-dts-shared.py"
-    )
-    if subprocess.run([sys.executable, chk], check=False).returncode:
-        log("ABORT: DTS shared-fact check failed")
-        sys.exit(1)
+    _kbuild.stage_dts(SRC, log, PORT)
 
 
 def build():
     os.makedirs(OUT, exist_ok=True)
-    check_dts_shared()
+    check_dts_shared(log)
     configure()
     stage_dts()
     run(
@@ -736,7 +667,7 @@ def build():
     )
     # kver() reads include/config/kernel.release off disk - only trustworthy
     # AFTER this real build has actually run and written it fresh.
-    kv = kver()
+    kv = kver(KOUT)
     log(f"KVER={kv}")
 
     # module tree for the Fedora rootfs
@@ -756,86 +687,10 @@ def build():
         ]
     )
 
-    # out-of-tree al_* modules into the same tree. -C KOUT (not SRC): with an
-    # O= kernel build, KOUT *is* "$KDIR" for external-module purposes
-    # (Documentation/kbuild/modules.rst - "$KDIR refers to ... the kernel
-    # output directory if the kernel was built in a separate build
-    # directory"). mpath is already OUT-scoped (a fresh per-build copy), so
-    # its own .o/.ko outputs never cross variants either.
-    extra = os.path.join(modroot, f"lib/modules/{kv}/extra")
-    os.makedirs(extra, exist_ok=True)
-
-    def build_oot(m, mpath, ko_name, make_vars=()):
-        # imported source-of-truth: repo modules/ (carries iofic + crypto fixes).
-        shutil.copytree(os.path.join(REPO, "modules", m), mpath)
-        run(
-            [
-                "make",
-                "-C",
-                KOUT,
-                f"M={mpath}",
-                *CC_ARG,
-                *make_vars,
-                f"-j{NPROC}",
-                "modules",
-            ]
-        )
-        shutil.copy(os.path.join(mpath, f"{ko_name}.ko"), extra)
-        log(f"OOT {ko_name}: ok")
-        # A prior run here silently produced a modroot with `kernel/` fully
-        # populated but `extra/` empty - "OOT al_eth: ok" printed (this log
-        # line ran) yet the .ko wasn't in the final tree. Root cause not
-        # pinned down; this check turns a repeat into a loud failure instead
-        # of a working-but-broken build discovered only after flashing.
-        copied = os.path.join(extra, f"{ko_name}.ko")
-        if not os.path.exists(copied):
-            log(f"FATAL: {copied} missing right after copying it", "ERROR")
-            sys.exit(1)
-
-    # al_reboot is what makes `reboot` work at all on this SoC (#51): PSCI 0.2
-    # claims SYSTEM_RESET at notifier priority 129 but AL-324's firmware does
-    # not implement it, so without our SP805 handler loaded the box just hangs
-    # at "Restarting system". It was written but never added here.
-    # ubnt_hdd_pwrctl binds the ui,hdd-pwrctl DT node (#208) - bay presence and
-    # the amber fault LEDs, which had no driver at all.
-    # al_nand binds annapurna-labs,al-nand (#208): without it /proc/mtd stops
-    # at the NOR partitions and every NAND access has to go through U-Boot.
-    for m in (
-        "al_eth",
-        "al_dma",
-        "al_ssm",
-        "al_sgpo",
-        "al_thermal",
-        "al_reboot",
-        "ubnt_hdd_pwrctl",
-        "al_nand",
-    ):
-        mpath = os.path.join(OUT, m)
-        if os.path.exists(mpath):
-            shutil.rmtree(mpath)
-        if m == "al_eth":
-            # #131: split into 2 .ko's (Makefile MODULE_VARIANT), each bound
-            # to one PCI ID, so udev's 2 independent per-device modprobes
-            # can never race on the same module. Separate source copies per
-            # variant since MODULE_VARIANT changes ccflags.
-            for suffix in ("_1g", "_10g"):
-                if os.path.exists(mpath + suffix):
-                    shutil.rmtree(mpath + suffix)
-            build_oot(
-                "al_eth",
-                mpath + "_1g",
-                "al_eth_1g",
-                make_vars=["MODULE_VARIANT=1g"],
-            )
-            build_oot(
-                "al_eth",
-                mpath + "_10g",
-                "al_eth_10g",
-                make_vars=["MODULE_VARIANT=10g"],
-            )
-            continue
-        build_oot(m, mpath, m)
-    subprocess.run(["depmod", "-b", modroot, kv], check=False)
+    _kbuild.build_oot_modules(
+        run, log, KOUT, OUT, os.path.join(modroot, f"lib/modules/{kv}/extra")
+    )
+    _repo.run(["depmod", "-b", modroot, kv], log=log, check=False)
 
     # collect boot artifacts
     image = os.path.join(KOUT, "arch/arm64/boot/Image")
@@ -846,37 +701,13 @@ def build():
         os.path.join(KOUT, ".config"),
         os.path.join(OUT, f"unvr-ea16-{VER}-fedora.config"),
     )
-    mkuimage(image, os.path.join(OUT, f"uImage-unvr-ea16-{VER}-fedora"), kv)
-    log(f"DONE. modroot: {modroot} ; uImage: {OUT}/uImage-unvr-ea16-{VER}-fedora")
-
-
-def mkuimage(image_path, out_path, kv):
-    data = pathlib.Path(image_path).read_bytes()
-    dcrc = zlib.crc32(data) & 0xFFFFFFFF
-    nm = f"unvr-ea16-{VER}-fedora".encode()[:31].ljust(32, b"\0")
-
-    def hdr(hc):
-        return struct.pack(
-            ">IIIIIIIBBBB32s",
-            IH_MAGIC,
-            hc,
-            int(time.time()),
-            len(data),
-            LOAD_ADDR,
-            ENTRY_ADDR,
-            dcrc,
-            IH_OS_LINUX,
-            IH_ARCH_ARM64,
-            IH_TYPE_KERNEL,
-            IH_COMP_NONE,
-            nm,
-        )
-
-    h = hdr(zlib.crc32(hdr(0)) & 0xFFFFFFFF)
-    pathlib.Path(out_path).write_bytes(h + data)
-    log(
-        f"uImage: {out_path} ({len(h) + len(data)} bytes, load/entry=0x{LOAD_ADDR:08x})"
+    mkuimage(
+        image,
+        os.path.join(OUT, f"uImage-unvr-ea16-{VER}-fedora"),
+        f"unvr-ea16-{VER}-fedora",
+        log,
     )
+    log(f"DONE. modroot: {modroot} ; uImage: {OUT}/uImage-unvr-ea16-{VER}-fedora")
 
 
 if __name__ == "__main__":
