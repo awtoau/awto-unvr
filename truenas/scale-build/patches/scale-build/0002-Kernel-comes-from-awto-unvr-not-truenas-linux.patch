@@ -1,7 +1,7 @@
 From f0aa683a42d36e2ca0ffef8b9d3444e01ffa0959 Mon Sep 17 00:00:00 2001
 From: awto <noreply@awto.au>
 Date: Sat, 14 Nov 2026 02:02:45 +1100
-Subject: [PATCH 2/2] Kernel comes from awto-unvr, not truenas/linux
+Subject: [PATCH 2/4] Kernel comes from awto-unvr, not truenas/linux
 
 - drop the kernel/kernel-dbg sources: truenas-build.py injects our 6.18 kernel .debs
   (linux-image/headers-truenas-production-arm64, linux-truenas-production-libc-dev) into tmp/pkgdir

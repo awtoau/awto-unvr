@@ -1,0 +1,25 @@
+From 7478eec7db52d9b829bd0ccefab2684f862b2e49 Mon Sep 17 00:00:00 2001
+From: awto <noreply@awto.au>
+Date: Sat, 14 Nov 2026 02:18:01 +1100
+Subject: [PATCH 4/4] Skip the NVIDIA sysext
+
+It downloads NVIDIA's proprietary driver and builds it against the kernel; the UNVR
+has no GPU. dev-tools sysext still built.
+---
+ scale_build/extensions.py | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/scale_build/extensions.py b/scale_build/extensions.py
+index bcac54c..c3fa65a 100644
+--- a/scale_build/extensions.py
++++ b/scale_build/extensions.py
+@@ -24,7 +24,8 @@ def build_extensions(rootfs_image, dst_dir):
+     os.makedirs(chroot_base)
+     run(["unsquashfs", "-dest", chroot_base, rootfs_image])
+ 
+-    for klass, name in [(DevToolsExtension, "dev-tools"), (NvidiaExtension, "nvidia")]:
++    # awto-unvr: no NVIDIA sysext (proprietary driver download; no GPU on the UNVR)
++    for klass, name in [(DevToolsExtension, "dev-tools")]:
+         klass(rootfs_image, chroot_base, chroot).build(name, f"{dst_dir}/{name}.raw")
+ 
+ 

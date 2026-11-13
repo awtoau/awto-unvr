@@ -1,7 +1,7 @@
 From a7e888660d091dc6b9e3d27f85377b7678d2797e Mon Sep 17 00:00:00 2001
 From: awto <noreply@awto.au>
 Date: Sat, 14 Nov 2026 01:26:59 +1100
-Subject: [PATCH 1/2] Bump to TrueNAS 27.0.0
+Subject: [PATCH 1/4] Bump to TrueNAS 27.0.0
 
 - apt repos: 27/27.0.0 snapshot (arm64 present)
 - sources: release/27.0.0; joel0 jmay.us forks -> upstream github + awto-unvr per-source patches

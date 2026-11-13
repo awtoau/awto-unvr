@@ -1,0 +1,37 @@
+From 0e3b90b65f78ba600428ea89b60429fdfa6cbe90 Mon Sep 17 00:00:00 2001
+From: awto <noreply@awto.au>
+Date: Sat, 14 Nov 2026 02:18:01 +1100
+Subject: [PATCH 3/4] Drop closed external packages
+
+truenas-file-manager, truesearch, rwd come from assets.sys.truenas.net as closed
+binaries; never fetched or installed. caddy (Apache-2.0, upstream release) stays.
+---
+ conf/build.manifest | 12 +-----------
+ 1 file changed, 1 insertion(+), 11 deletions(-)
+
+diff --git a/conf/build.manifest b/conf/build.manifest
+index 39c2a76..f293ce6 100644
+--- a/conf/build.manifest
++++ b/conf/build.manifest
+@@ -663,20 +663,10 @@ extensions:
+ 
+ # External packages from various sources (GitHub releases, assets.sys.truenas.net)
+ ############################################################################
++# closed TrueNAS packages (truenas-file-manager, truesearch, rwd) removed: never fetched
+ external-packages:
+-  truenas-file-manager:
+-    deb_version: "0.3.5"
+-    url_template: "https://assets.sys.truenas.net/debian-packages/{package}_{version}_{arch}.deb"
+-  truesearch:
+-    deb_version: "0.0.8"
+-    url_template: "https://assets.sys.truenas.net/debian-packages/{package}_{version}_{arch}.deb"
+   caddy:
+     deb_version: "2.10.0"
+     url_template: "https://github.com/caddyserver/caddy/releases/download/v{version}/caddy_{version}_linux_{arch}.deb"
+     post_install_commands:
+       - ["systemctl", "disable", "caddy"]
+-  rwd:
+-    deb_version: "0.0.1"
+-    url_template: "https://assets.sys.truenas.net/debian-packages/{package}_{version}_{arch}.deb"
+-    post_install_commands:
+-      - ["systemctl", "disable", "rwd"]
