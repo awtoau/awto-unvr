@@ -8,7 +8,7 @@
 - Per-source patches: truenas/scale-build/patches/sources/<manifest name>/*.patch, applied after
   `make checkout` (which resets each tree to its branch head).
 - Build state: $AWTO_TRUENAS_BUILD (default /mnt/2tb/truenas-build), outside any repo.
-- Steps: container | checkout | packages [--only a,b] | update | iso | status.
+- Steps: container | kernel | inject | checkout | packages [--only a,b] | update | iso | status.
 - Guards: free space on the build fs < MIN_FREE_GB -> kill; no growth in stdout or
   scale-build's logs/ for --stall s -> kill. Max silence seen is logged (tune --stall).
 - Log: tmp/logs/truenas-build.log
@@ -199,10 +199,11 @@ def run_guarded(
 def in_container(argv: list[str], step: str, stall_s: int) -> int:
     """argv runs as root in the arm64 container: /build = SB, /awto = CONF (ro), /local = LOCAL."""
     LOCAL.mkdir(parents=True, exist_ok=True)
+    KWORK.mkdir(parents=True, exist_ok=True)
     cmd = [
         "sudo", "podman", "run", "--rm", "--name", CTR_NAME, "--platform", "linux/arm64",
         "--privileged", "--network", "host", "-v", f"{SB}:/build", "-v", f"{CONF}:/awto:ro",
-        "-v", f"{LOCAL}:/local:ro", "-w", "/build", "-e", f"TRUENAS_TRAIN={TRAIN}", "-e", "SKIP_SOURCE_REPO_VALIDATION=1", IMAGE, *argv,
+        "-v", f"{LOCAL}:/local:ro", "-w", "/build", "-e", f"TRUENAS_TRAIN={TRAIN}", "-e", "SKIP_SOURCE_REPO_VALIDATION=1", "-v", f"{KWORK}:/kout:ro", "-e", "AWTO_PREBUILT_DEBS=/kout", IMAGE, *argv,
     ]  # fmt: skip
     return run_guarded(cmd, step, stall_s)
 
@@ -491,6 +492,7 @@ def main() -> int:
         choices=[
             "container",
             "kernel",
+            "inject",
             "checkout",
             "packages",
             "update",
@@ -503,7 +505,8 @@ def main() -> int:
     ap.add_argument("--stall", type=int, default=DEFAULT_STALL_S, help="stall limit, s")
     a = ap.parse_args()
     fn = {
-        "container": step_container, "kernel": step_kernel, "checkout": step_checkout, "packages": step_packages,
+        "container": step_container, "kernel": step_kernel,
+        "inject": lambda a: inject_kernel_debs(a.stall), "checkout": step_checkout, "packages": step_packages,
         "update": step_update, "iso": step_iso, "status": step_status,
     }[a.step]  # fmt: skip
     return fn(a)

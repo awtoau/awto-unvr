@@ -1,0 +1,45 @@
+From 1287ec28818e4db267f856b5ca28ebd74d4b2b39 Mon Sep 17 00:00:00 2001
+From: awto <noreply@awto.au>
+Date: Sat, 14 Nov 2026 03:02:09 +1100
+Subject: [PATCH] Re-inject prebuilt debs after a package clean
+
+A changed base chroot wipes tmp/pkgdir; $AWTO_PREBUILT_DEBS (our kernel .debs) are copied
+back and the local repo re-indexed, so openzfs/scst/spdk find linux-headers-truenas-*.
+---
+ scale_build/clean.py | 16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
+
+diff --git a/scale_build/clean.py b/scale_build/clean.py
+index 60c191e..7a1bba6 100644
+--- a/scale_build/clean.py
++++ b/scale_build/clean.py
+@@ -1,6 +1,7 @@
+ import logging
+ import os
+ import shutil
++import subprocess
+ 
+ from .utils.paths import HASH_DIR, LOG_DIR, PKG_DIR, SOURCES_DIR, TMP_DIR
+ 
+@@ -23,6 +24,21 @@ def clean_packages():
+             continue
+         else:
+             os.makedirs(path)
++    inject_prebuilt_packages()
++
++
++def inject_prebuilt_packages():
++    """awto-unvr: debs built outside scale-build (our kernel) survive a package clean."""
++    src = os.environ.get('AWTO_PREBUILT_DEBS')
++    if not src:
++        return
++    for name in sorted(os.listdir(src)):
++        if name.endswith('.deb'):
++            shutil.copy(os.path.join(src, name), PKG_DIR)
++    subprocess.run(
++        f'cd {PKG_DIR} && dpkg-scanpackages --multiversion . /dev/null | gzip -9c > Packages.gz',
++        shell=True, check=True,
++    )
+ 
+ 
+ def complete_cleanup():
