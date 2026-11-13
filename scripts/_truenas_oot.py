@@ -19,7 +19,7 @@ import subprocess
 import sys
 
 import _truenas
-from _kbuild import CC_ARG, CROSS
+from _kbuild import CROSS
 
 from _repo import NPROC, REFS, REPO
 
@@ -125,7 +125,7 @@ def build_scst(run, log, kout: str, kv: str, oot: str) -> str:
         # modinfo stamps; the Makefile would take uname -m (host) and git (absent in the copy)
         "ARCH_TYPE=aarch64", f"GIT_COMMIT={_truenas.SCST_PIN[:12]}", "BUILD_NUMBER=1",
         "BUILD_2X_MODULE=y", "CONFIG_SCSI_QLA_FC=y", "CONFIG_SCSI_QLA2XXX_TARGET=y",
-        *(["PASS_CC_TO_MAKE=1", CC_ARG[0]] if CC_ARG else []),
+        # no CC=: SCST's Makefiles word-split it; kbuild uses $(CROSS_COMPILE)gcc
     ]  # fmt: skip
     run(["make", *mk, "2perf"], cwd=work)
     for d in SCST_SUBDIRS:
