@@ -107,6 +107,54 @@ def tree_bytes(path: Path) -> int:
     return total
 
 
+# qemu-user fork() from threaded scale_build can deadlock the child before exec (futex
+# on a lock another thread held). Seen 2026-11-14: one child stuck 26 min, every build
+# thread blocked behind it. A child still running the parent's argv this long never execs.
+STUCK_FORK_S = 60
+
+
+def _cmdline(pid: int) -> bytes:
+    try:
+        return Path(f"/proc/{pid}/cmdline").read_bytes()
+    except OSError:
+        return b""
+
+
+def reap_stuck_forks() -> None:
+    """SIGKILL children of the in-container scale_build that are still its own pre-exec copy."""
+    hz = os.sysconf("SC_CLK_TCK")
+    uptime = float(Path("/proc/uptime").read_text().split()[0])
+    for d in Path("/proc").iterdir():
+        if not d.name.isdigit():
+            continue
+        cmd = _cmdline(int(d.name))
+        if b"bin/scale_build" not in cmd:
+            continue
+        try:
+            stat = (d / "stat").read_text().rsplit(")", 1)[1].split()
+        except OSError:
+            continue
+        ppid, start = int(stat[1]), int(stat[19]) / hz
+        if _cmdline(ppid) == cmd and uptime - start > STUCK_FORK_S:
+            log(
+                f"KILL stuck pre-exec fork pid {d.name} (parent {ppid}, {uptime - start:.0f} s old)"
+            )
+            subprocess.run(["sudo", "kill", "-9", d.name], check=False)
+
+
+def step_reap(_a) -> int:
+    """Stand-alone stuck-fork reaper for a build started elsewhere; exits with it."""
+    while any(
+        b"bin/scale_build" in _cmdline(int(d.name))
+        for d in Path("/proc").iterdir()
+        if d.name.isdigit()
+    ):
+        reap_stuck_forks()
+        time.sleep(30)  # same poll period as run_guarded's watchdog
+    log("reap: no scale_build running")
+    return 0
+
+
 def run_guarded(
     cmd: list[str], step: str, stall_s: int, kill_name: str = CTR_NAME
 ) -> int:
@@ -156,6 +204,7 @@ def run_guarded(
             if size != state["logs"]:
                 state["max_quiet"] = max(state["max_quiet"], now - state["last"])
                 state["logs"], state["last"] = size, now
+            reap_stuck_forks()
             gb = free_gb(WORK)
             peak_used[0] = max(peak_used[0], free0 - gb)
             why = None
@@ -493,6 +542,7 @@ def main() -> int:
             "container",
             "kernel",
             "inject",
+            "reap",
             "checkout",
             "packages",
             "update",
@@ -506,7 +556,7 @@ def main() -> int:
     a = ap.parse_args()
     fn = {
         "container": step_container, "kernel": step_kernel,
-        "inject": lambda a: inject_kernel_debs(a.stall), "checkout": step_checkout, "packages": step_packages,
+        "inject": lambda a: inject_kernel_debs(a.stall), "reap": step_reap, "checkout": step_checkout, "packages": step_packages,
         "update": step_update, "iso": step_iso, "status": step_status,
     }[a.step]  # fmt: skip
     return fn(a)
