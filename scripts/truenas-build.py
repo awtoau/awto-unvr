@@ -365,7 +365,7 @@ rm -rf scripts/package/truenas && mkdir -p scripts/package && cp -r $KSRC/script
 KDEB_PKGVERSION=$KR-1 KDEB_CHANGELOG_DIST=trixie $M run-command KBUILD_RUN_COMMAND='$(srctree)/scripts/package/mkdebian'
 # no perf package: cross-building tools/perf needs the arm64 userland dev libs
 sed -i '/^Package: linux-perf-truenas$/,/^$/d' debian/control
-export DEB_BUILD_PROFILES="pkg.linux-$KR.nokerneldbg" DEB_BUILD_OPTIONS="parallel=$NPROC"
+export DEB_BUILD_PROFILES="pkg.linux-$KR.nokerneldbg" DEB_BUILD_OPTIONS="parallel=$NPROC terse"
 export ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu-
 dpkg-buildpackage --build=binary --no-pre-clean --unsigned-changes -R'make -f debian/rules'     -j1 -a$(cat debian/arch) --no-check-builddeps
 ls -la /kout/*.deb
