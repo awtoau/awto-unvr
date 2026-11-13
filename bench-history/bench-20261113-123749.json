@@ -1,0 +1,82 @@
+{
+  "timestamp": "2026-11-13T12:37:49+11:00",
+  "commit": "38845fd-dirty",
+  "host": "192.168.25.127",
+  "kernel": "7.4.0-rc2-bc1fd32+",
+  "checks": [
+    {
+      "name": "health al_eth module",
+      "ok": true,
+      "detail": "vermagic=7.4.0-rc2-bc1fd32+ running=7.4.0-rc2-bc1fd32+"
+    },
+    {
+      "name": "health link enp0s1",
+      "ok": true,
+      "detail": "speed=1000 carrier=1 oper=up"
+    },
+    {
+      "name": "health link enp0s2",
+      "ok": true,
+      "detail": "speed=10000 carrier=1 oper=up"
+    },
+    {
+      "name": "health adaptive moderation off",
+      "ok": true,
+      "detail": "off on enp0s1, enp0s2"
+    },
+    {
+      "name": "health MAC counters",
+      "ok": false,
+      "detail": "enp0s2 rx_errors 0->1"
+    },
+    {
+      "name": "health queue drop counters",
+      "ok": false,
+      "detail": "enp0s2 rx_dropped 0->1"
+    },
+    {
+      "name": "health kernel log",
+      "ok": true,
+      "detail": "no trouble lines"
+    },
+    {
+      "name": "eth 1G host->box",
+      "ok": true,
+      "detail": "6.29 Mbits/sec"
+    },
+    {
+      "name": "eth 1G box->host",
+      "ok": true,
+      "detail": "97.9 Mbits/sec"
+    },
+    {
+      "name": "eth 10G host->box",
+      "ok": true,
+      "detail": "2.73 Gbits/sec"
+    },
+    {
+      "name": "eth 10G box->host",
+      "ok": true,
+      "detail": "4.67 Gbits/sec"
+    },
+    {
+      "name": "eth 10G v6 control udp",
+      "ok": true,
+      "detail": "100/100 arrived"
+    },
+    {
+      "name": "eth 10G v6 hop-by-hop udp csum",
+      "ok": true,
+      "detail": "100/100 arrived (lost ones failed the checksum)"
+    }
+  ],
+  "metrics": {
+    "link enp0s1 speed Mbps": 1000.0,
+    "link enp0s2 speed Mbps": 10000.0,
+    "eth 1G host->box": 6.29,
+    "eth 1G box->host": 97.9,
+    "eth 10G host->box": 2730.0,
+    "eth 10G box->host": 4670.0
+  },
+  "all_ok": false
+}

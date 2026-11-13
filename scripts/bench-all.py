@@ -118,11 +118,12 @@ LOCK = Path("tmp/bench-all-idle.lock")  # one --idle run at a time
 
 # Box port -> dev-host NIC. dev_iface is preferred; if absent (host NICs get
 # renamed/reshuffled), the first host NIC at dev_speed with an IPv4 is used.
+# 1G also runs from the host's 10G NIC: enp5s0 reaches sw1 via a 100M uplink (#351).
 ETH_PAIRS = (
     {
         "box_iface": "enp0s1",
-        "dev_iface": "enp5s0",
-        "dev_speed": 1000,
+        "dev_iface": "enp8s0",
+        "dev_speed": 10000,
         "label": "1G",
         "port": 5602,
     },
