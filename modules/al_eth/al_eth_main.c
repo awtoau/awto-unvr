@@ -2577,6 +2577,11 @@ static int al_eth_mdiobus_setup(struct al_eth_adapter *adapter)
 		return 0;
 	}
 
+	/* Applied directly: since 7.4 phy_register_fixup_for_uid() is __init and
+	 * not exported, so a module cannot register a fixup (f619d5003ff4). */
+	if (adapter->phy_fixup_needed && phydev->phy_id == AQUANTIA_AQR105_ID)
+		al_eth_aq_phy_fixup(phydev);
+
 	if (!phydev->drv) {
 		netdev_warn(adapter->netdev,
 			    "PHY at addr %d (id 0x%08x) has no driver\n",
@@ -4353,14 +4358,6 @@ static int al_eth_open(struct net_device *netdev)
 		rc = al_eth_up(adapter);
 		if (rc)
 			return rc;
-
-		if (adapter->phy_fixup_needed) {
-			rc = phy_register_fixup_for_uid(AQUANTIA_AQR105_ID, 0xffffffff,
-							al_eth_aq_phy_fixup);
-			if (rc)
-				netdev_warn(adapter->netdev, "failed to register PHY fixup (rc %d)\n",
-					    rc);
-		}
 
 		rc = al_eth_mdiobus_setup(adapter);
 		if (rc) {
