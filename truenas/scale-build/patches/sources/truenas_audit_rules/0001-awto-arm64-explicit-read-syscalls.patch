@@ -13,5 +13,5 @@ index 0f31a9b..c8079ec 100644
  ## TrueNAS configuration
 --a always,exit -F arch=b64 -F dir=/data/ -F perm=r -F auid!=unset -F key=escalation
 +## awto-unvr: no perm=r - libaudit expands it to readlink,stat,open,... which arm64 lacks (augenrules fails).
-+## Explicit arm64-valid read syscalls (generic table; no open/stat/lstat/readlink).
-+-a always,exit -F arch=b64 -S openat,openat2,readlinkat,newfstatat,fstat,statx,listxattr,llistxattr,flistxattr,getxattr,lgetxattr,fgetxattr,quotactl -F dir=/data/ -F auid!=unset -F key=escalation
++## Explicit arm64-valid read syscalls (generic table; no open/stat/lstat/readlink; auditctl rejects fstat).
++-a always,exit -F arch=b64 -S openat,openat2,readlinkat,newfstatat,statx,listxattr,llistxattr,flistxattr,getxattr,lgetxattr,fgetxattr,quotactl -F dir=/data/ -F auid!=unset -F key=escalation
