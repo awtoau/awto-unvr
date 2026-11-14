@@ -1227,13 +1227,27 @@ def bench_pool_nfs(
     share_id = None
     mnt = Path("tmp/nfs-bench").resolve()
     mounted = False
+    started_nfs = False
     try:
+        # A share without a running nfs service makes the client mount hang (2026-11-15).
+        rc, out = run('midclt call service.query \'[["service","=","nfs"]]\'', 30)
+        if '"RUNNING"' not in out:
+            rc, out = run(
+                "midclt call -j service.control START nfs '{\"silent\": false}'", 60
+            )
+            if rc != 0:
+                report.add(
+                    tag, False, f"nfs service start failed: {out.strip()[-200:]}"
+                )
+                return
+            started_nfs = True
         spec = json.dumps(
             {
                 "path": f"/mnt/{ds}",
                 "networks": [f"{ip.rsplit('.', 1)[0]}.0/24"],
-                "maproot_user": "root",
-                "maproot_group": "root",
+                # fio runs unprivileged on the host; the temp dataset is root-owned.
+                "mapall_user": "root",
+                "mapall_group": "root",
                 "comment": "bench-all temporary",
             }
         )
@@ -1290,6 +1304,8 @@ def bench_pool_nfs(
             _run_local(["sudo", "-n", "umount", str(mnt)], 30)
         if share_id is not None:
             run(f"midclt call sharing.nfs.delete {share_id}", 30)
+        if started_nfs:
+            run("midclt call -j service.control STOP nfs '{\"silent\": false}'", 60)
         rc, out = run(f"zfs destroy -r {ds}", 120)
         if made_root:
             run(f"zfs destroy -r {root}", 120)
