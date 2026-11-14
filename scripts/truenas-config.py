@@ -88,6 +88,7 @@ class Api:
             ssl=ctx,
             open_timeout=CALL_TIMEOUT_S,
             max_size=64 * 2**20,
+            legacy=True,
         )
         self.n = 0
 
@@ -316,7 +317,10 @@ def step_user() -> None:
             "home_create": True,
             "home_mode": "700",
             "password": dan_password(create=not DRY) or "<generated on apply>",
-            **fields,
+            **{
+                **fields,
+                "home": HOME_PATH,
+            },  # create: home = PARENT dir, dan/ is made under it
         },
     )
 
