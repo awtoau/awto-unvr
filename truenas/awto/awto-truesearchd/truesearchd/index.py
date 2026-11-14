@@ -33,9 +33,21 @@ def target_id(dataset: str, share: str) -> str:
     return f"{dataset}\t{share}"
 
 
+# serve + index start together on a fresh DB; the WAL switch ignores the busy timeout and
+# fails "database is locked" while the other creates the schema (ms). 10 x 0.1 s = 1 s cap.
+WAL_TRIES, WAL_WAIT_S = 10, 0.1
+
+
 def connect(db_path: str) -> sqlite3.Connection:
     con = sqlite3.connect(db_path, timeout=30, check_same_thread=False)
-    con.execute("PRAGMA journal_mode=WAL")
+    for i in range(WAL_TRIES):
+        try:
+            con.execute("PRAGMA journal_mode=WAL")
+            break
+        except sqlite3.OperationalError as e:
+            if "locked" not in str(e) or i == WAL_TRIES - 1:
+                raise
+            time.sleep(WAL_WAIT_S)
     con.execute("PRAGMA synchronous=NORMAL")
     con.executescript(SCHEMA)
     return con

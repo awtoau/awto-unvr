@@ -7,7 +7,9 @@ Type=simple
 ExecStart=/usr/bin/truesearchd serve
 RuntimeDirectory=truesearchd
 StateDirectory=truesearchd
-ExecReload=/bin/kill -HUP $MAINPID
+# Nothing to re-read (targets self-register). A HUP before Python installs its handler killed
+# the daemon "cleanly", so Restart=on-failure never brought it back.
+ExecReload=/bin/true
 Restart=on-failure
 RestartSec=2
 

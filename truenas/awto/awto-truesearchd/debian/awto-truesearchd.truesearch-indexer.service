@@ -6,7 +6,8 @@ After=truesearchd.service
 Type=simple
 ExecStart=/usr/bin/truesearchd index
 StateDirectory=truesearchd
-ExecReload=/bin/kill -HUP $MAINPID
+# Same as truesearchd.service: nothing to re-read; an early HUP would kill it cleanly.
+ExecReload=/bin/true
 Restart=on-failure
 RestartSec=5
 
