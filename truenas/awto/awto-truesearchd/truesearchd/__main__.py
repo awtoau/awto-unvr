@@ -18,23 +18,26 @@ SOCKET = "/run/truesearchd/mdssvc.sock"
 DB = "/var/lib/truesearchd/index.db"
 
 
-def indexer_loop(index: Index, interval: float, stop: threading.Event) -> None:
-    """Rescan each registered target when older than `interval`.
+def scan_due(index: Index, interval: float) -> None:
+    """Rescan each registered target whose last scan is older than `interval` (<0: all)."""
+    for tid, _ds, _share, root, last in index.targets():
+        if time.time() - last > interval:
+            t0 = time.time()
+            n = index.scan(tid, root)
+            log.info(
+                "scanned %s: %d entries in %.1f s",
+                tid.replace("\t", ":"),
+                n,
+                time.time() - t0,
+            )
 
-    interval 600 s: walk is the only change detector (no inotify); a stale hit costs one failed stat.
+
+def indexer_loop(index: Index, interval: float, stop: threading.Event) -> None:
+    """interval 600 s: walk is the only change detector (no inotify); a stale hit costs one failed stat.
     Poll 5 s: pick up a newly registered target soon after the first OPEN.
     """
     while not stop.is_set():
-        for tid, _ds, _share, root, last in index.targets():
-            if time.time() - last > interval:
-                t0 = time.time()
-                n = index.scan(tid, root)
-                log.info(
-                    "scanned %s: %d entries in %.1f s",
-                    tid.replace("\t", ":"),
-                    n,
-                    time.time() - t0,
-                )
+        scan_due(index, interval)
         stop.wait(5)
 
 
@@ -44,11 +47,17 @@ def main() -> int:
     ap.add_argument("--socket", default=SOCKET)
     ap.add_argument("--db", default=DB)
     ap.add_argument("--interval", type=float, default=600.0)
+    ap.add_argument(
+        "--once", action="store_true", help="index: scan every target now, exit"
+    )
     a = ap.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(name)s: %(message)s")
     # `systemctl reload` (middleware truesearch.configure): targets register themselves, nothing to re-read
     signal.signal(signal.SIGHUP, lambda *_: None)
     index = Index(a.db)
+    if a.mode == "index" and a.once:
+        scan_due(index, -1.0)
+        return 0
     if a.mode == "index":
         indexer_loop(index, a.interval, threading.Event())
         return 0
