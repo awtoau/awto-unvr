@@ -1,0 +1,26 @@
+From 9418fd37951e2d64057ce14a1abc39d0c6aeda93 Mon Sep 17 00:00:00 2001
+From: awto <noreply@awto.au>
+Date: Sun, 15 Nov 2026 00:19:39 +1100
+Subject: [PATCH 11/12] Drop middlewared-docs from the build
+
+Dan's decision (awto-unvr #356): ~1 h of build-dep installs under qemu for API docs the appliance does not need; nginx /api/docs 404s.
+---
+ conf/build.manifest | 2 --
+ 1 file changed, 2 deletions(-)
+
+diff --git a/conf/build.manifest b/conf/build.manifest
+index 0742d58..bd6973c 100644
+--- a/conf/build.manifest
++++ b/conf/build.manifest
+@@ -602,8 +602,6 @@ sources:
+         - truenas_pydiscovery
+         - truenas_pyscstadmin
+       subdir: src/middlewared
+-    - name: middlewared-docs
+-      subdir: src/middlewared_docs
+     - name: truenas_files
+       subdir: src/freenas
+ - name: truenas_api_client
+-- 
+2.56.1
+

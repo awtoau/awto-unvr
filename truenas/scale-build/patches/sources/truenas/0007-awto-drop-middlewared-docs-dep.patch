@@ -1,0 +1,15 @@
+From: awto <noreply@awto.au>
+Subject: [PATCH] truenas: drop the middlewared-docs Depends (package no longer built, awto-unvr #356)
+---
+diff --git a/debian/debian/control b/debian/debian/control
+index f02cb46..9b9778b 100644
+--- a/debian/debian/control
++++ b/debian/debian/control
+@@ -30,7 +30,6 @@ Depends: acl,
+          manpages,
+          mc,
+          middlewared,
+-         middlewared-docs,
+          netcat-openbsd,
+          netdata,
+          netdata-plugin-chartsd,
