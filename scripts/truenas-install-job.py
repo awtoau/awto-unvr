@@ -204,6 +204,13 @@ def run_truenas_install(cfg: dict, upd: str, res: dict) -> None:
             # As called it runs on the LIVE env's python, which lacks libzfs/pyudev: ImportError,
             # rc 1, which the installer accepts - no initrd rebuilt. Run it in the new root instead.
             root = cmd[-1]
+            script = os.path.join(root, "usr/local/bin/truenas-initrd.py")
+            if not os.path.exists(
+                script
+            ):  # rc 127 would otherwise be capped to the tolerated 1
+                raise RuntimeError(
+                    f"{script} missing from the image (package truenas-initrd, #362)"
+                )
             kver = res["kver"] = inject_kernel(cfg, root)
             r = run(
                 ["chroot", root, "/usr/local/bin/truenas-initrd.py", "-f", "/"],
@@ -212,6 +219,10 @@ def run_truenas_install(cfg: dict, upd: str, res: dict) -> None:
             if not os.path.exists(os.path.join(root, f"boot/initrd.img-{kver}")):
                 run(["chroot", root, "update-initramfs", "-c", "-k", kver])
             res["truenas_initrd_rc"] = r.returncode
+            if r.returncode == 127:
+                raise RuntimeError(
+                    "chroot truenas-initrd.py: rc 127, command not found (#362)"
+                )
             return subprocess.CompletedProcess(
                 cmd, min(r.returncode, 1), r.stdout, r.stderr
             )
