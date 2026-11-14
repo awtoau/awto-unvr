@@ -10,6 +10,7 @@
 Usage: truenas-verify-ds-nfs.py {nfs|ldap|cleanup|all}
 Log: tmp/logs/truenas-verify-ds-nfs.log
 """
+
 import json
 import os
 import subprocess
@@ -17,9 +18,16 @@ import sys
 import time
 from pathlib import Path
 
-REPO = Path(os.environ.get("UNVR_REPO") or subprocess.run(
-    ["git", "rev-parse", "--show-toplevel"], capture_output=True, text=True,
-    cwd=Path(__file__).resolve().parent).stdout.strip() or Path(__file__).resolve().parents[1])
+REPO = Path(
+    os.environ.get("UNVR_REPO")
+    or subprocess.run(
+        ["git", "rev-parse", "--show-toplevel"],
+        capture_output=True,
+        text=True,
+        cwd=Path(__file__).resolve().parent,
+    ).stdout.strip()
+    or Path(__file__).resolve().parents[1]
+)
 LOG = REPO / "tmp/logs/truenas-verify-ds-nfs.log"
 MNT = REPO / "tmp/nfsmnt"
 IMG = "/var/tmp/awto-nfstest.img"
@@ -41,7 +49,13 @@ def log(msg):
 
 
 def run(cmd, **kw):
-    r = subprocess.run(cmd, capture_output=True, text=True, timeout=kw.pop("timeout", SSH_TIMEOUT), **kw)
+    r = subprocess.run(
+        cmd,
+        capture_output=True,
+        text=True,
+        timeout=kw.pop("timeout", SSH_TIMEOUT),
+        **kw,
+    )
     out = (r.stdout + r.stderr).strip()
     log(f"$ {' '.join(cmd)[:300]}\n{out}")
     return r.returncode, out
@@ -49,7 +63,11 @@ def run(cmd, **kw):
 
 def box(cmd):
     rc, out = run([str(REPO / "dev.py"), "ssh", "--", cmd], cwd=REPO)
-    return rc, "\n".join(l for l in out.splitlines() if "[dev.py]" not in l and not l.startswith("# woomera"))
+    return rc, "\n".join(
+        l
+        for l in out.splitlines()
+        if "[dev.py]" not in l and not l.startswith("# woomera")
+    )
 
 
 def mc(method, *args):
@@ -59,7 +77,11 @@ def mc(method, *args):
 
 def job(method, *args):
     rc, out = mc(method, *args)
-    return box(f"midclt call core.job_wait {out.splitlines()[-1].strip()}") if rc == 0 else (rc, out)  # job_wait rc!=0 on job failure
+    return (
+        box(f"midclt call core.job_wait {out.splitlines()[-1].strip()}")
+        if rc == 0
+        else (rc, out)
+    )  # job_wait rc!=0 on job failure
 
 
 def result(name, ok, evidence):
@@ -68,14 +90,27 @@ def result(name, ok, evidence):
 
 
 def nfs():
-    box(f"zpool list {POOL} >/dev/null 2>&1 || (truncate -s 2G {IMG} && zpool create -f -m /mnt/{POOL} {POOL} {IMG})")
-    box(f"zfs list {DS} >/dev/null 2>&1 || (zfs create {DS} && echo hello > /mnt/{DS}/f.txt && zfs snapshot {DS}@{SNAP})")
+    box(
+        f"zpool list {POOL} >/dev/null 2>&1 || (truncate -s 2G {IMG} && zpool create -f -m /mnt/{POOL} {POOL} {IMG})"
+    )
+    box(
+        f"zfs list {DS} >/dev/null 2>&1 || (zfs create {DS} && echo hello > /mnt/{DS}/f.txt && zfs snapshot {DS}@{SNAP})"
+    )
     # middleware only accepts share paths under pools in storage.volume; register the file pool by hand.
-    box("midclt call datastore.query storage.volume '[[\"vol_name\",\"=\",\"awtotest\"]]' | grep -q awtotest || "
-        "midclt call datastore.insert storage.volume '{\"vol_name\":\"awtotest\",\"vol_guid\":\"0\"}'")
-    rc, share = mc("sharing.nfs.create", {"path": f"/mnt/{DS}", "expose_snapshots": True,
-                                           "networks": ["192.168.25.0/24"], "maproot_user": "root",
-                                           "maproot_group": "root"})
+    box(
+        'midclt call datastore.query storage.volume \'[["vol_name","=","awtotest"]]\' | grep -q awtotest || '
+        'midclt call datastore.insert storage.volume \'{"vol_name":"awtotest","vol_guid":"0"}\''
+    )
+    rc, share = mc(
+        "sharing.nfs.create",
+        {
+            "path": f"/mnt/{DS}",
+            "expose_snapshots": True,
+            "networks": ["192.168.25.0/24"],
+            "maproot_user": "root",
+            "maproot_group": "root",
+        },
+    )
     ok_create = rc == 0 and '"expose_snapshots": true' in share
     result("nfs.create expose_snapshots (no licence error)", ok_create, share)
     job("service.control", "START", "nfs", {})
@@ -85,17 +120,55 @@ def nfs():
     MNT.mkdir(parents=True, exist_ok=True)
     run(["sudo", "mount", "-t", "nfs", f"192.168.25.40:/mnt/{DS}", str(MNT)])
     rc, ls = run(["ls", f"{MNT}/.zfs/snapshot/{SNAP}/"])
-    return ok_create and ok_exp and result("client .zfs/snapshot listing", "f.txt" in ls, ls)
+    return (
+        ok_create
+        and ok_exp
+        and result("client .zfs/snapshot listing", "f.txt" in ls, ls)
+    )
 
 
 def ldap():
     run(["podman", "rm", "-f", CT])
-    run(["podman", "run", "-d", "--name", CT, "-p", f"{LDAP_PORT}:389", "-e", "LDAP_ORGANISATION=awto",
-         "-e", "LDAP_DOMAIN=awto.test", "-e", "LDAP_ADMIN_PASSWORD=adminpw", "-e", "LDAP_TLS=false",
-         "docker.io/osixia/openldap:1.5.0"])
+    run(
+        [
+            "podman",
+            "run",
+            "-d",
+            "--name",
+            CT,
+            "-p",
+            f"{LDAP_PORT}:389",
+            "-e",
+            "LDAP_ORGANISATION=awto",
+            "-e",
+            "LDAP_DOMAIN=awto.test",
+            "-e",
+            "LDAP_ADMIN_PASSWORD=adminpw",
+            "-e",
+            "LDAP_TLS=false",
+            "docker.io/osixia/openldap:1.5.0",
+        ]
+    )
     for _ in range(30):  # container init ~5 s; poll 1 s steps via ldapsearch retry
-        rc, _o = run(["podman", "exec", CT, "ldapsearch", "-x", "-H", "ldap://localhost", "-b", BASE,
-                      "-D", f"cn=admin,{BASE}", "-w", "adminpw", "-s", "base"])
+        rc, _o = run(
+            [
+                "podman",
+                "exec",
+                CT,
+                "ldapsearch",
+                "-x",
+                "-H",
+                "ldap://localhost",
+                "-b",
+                BASE,
+                "-D",
+                f"cn=admin,{BASE}",
+                "-w",
+                "adminpw",
+                "-s",
+                "base",
+            ]
+        )
         if rc == 0:
             break
         time.sleep(1)
@@ -126,32 +199,87 @@ homeDirectory: /var/empty
 loginShell: /usr/sbin/nologin
 userPassword: {PW}
 """
-    p = subprocess.run(["podman", "exec", "-i", CT, "ldapadd", "-x", "-H", "ldap://localhost",
-                        "-D", f"cn=admin,{BASE}", "-w", "adminpw"], input=ldif, capture_output=True, text=True)
+    p = subprocess.run(
+        [
+            "podman",
+            "exec",
+            "-i",
+            CT,
+            "ldapadd",
+            "-x",
+            "-H",
+            "ldap://localhost",
+            "-D",
+            f"cn=admin,{BASE}",
+            "-w",
+            "adminpw",
+        ],
+        input=ldif,
+        capture_output=True,
+        text=True,
+    )
     log(f"ldapadd rc={p.returncode} {p.stdout}{p.stderr}")
 
     rc, out = mc("system.general.update", {"ds_auth": True})
     rc2, cfg = mc("system.general.config")
-    ok_auth = '"ds_auth": true' in cfg and "licen" not in out.lower() and "entitle" not in out.lower()
-    result("system.general.update ds_auth=true", ok_auth, f"update: {out[:200]} | config ds_auth true={'\"ds_auth\": true' in cfg}")
+    ok_auth = (
+        '"ds_auth": true' in cfg
+        and "licen" not in out.lower()
+        and "entitle" not in out.lower()
+    )
+    result(
+        "system.general.update ds_auth=true",
+        ok_auth,
+        f"update: {out[:200]} | config ds_auth true={'"ds_auth": true' in cfg}",
+    )
 
-    cfgd = {"service_type": "LDAP", "enable": True,
-            "credential": {"credential_type": "LDAP_PLAIN", "binddn": f"cn=admin,{BASE}", "bindpw": "adminpw"},
-            "configuration": {"server_urls": [f"ldap://{HOST_IP}:{LDAP_PORT}"], "basedn": BASE,
-                              "validate_certificates": False,
-                              # sssd refuses password auth over plain ldap:// without this
-                              "auxiliary_parameters": "ldap_auth_disable_tls_never_use_in_production = true"}}
+    cfgd = {
+        "service_type": "LDAP",
+        "enable": True,
+        "credential": {
+            "credential_type": "LDAP_PLAIN",
+            "binddn": f"cn=admin,{BASE}",
+            "bindpw": "adminpw",
+        },
+        "configuration": {
+            "server_urls": [f"ldap://{HOST_IP}:{LDAP_PORT}"],
+            "basedn": BASE,
+            "validate_certificates": False,
+            # sssd refuses password auth over plain ldap:// without this
+            "auxiliary_parameters": "ldap_auth_disable_tls_never_use_in_production = true",
+        },
+    }
     rc, out = job("directoryservices.update", cfgd)
     result("directoryservices.update LDAP", rc == 0, out[:300])
     _, st = mc("directoryservices.status")
     log(f"ds status: {st}")
-    _, gl = mc("group.query", [["name", "=", "tnadmins"]], {"extra": {"search_dscache": True}})
+    _, gl = mc(
+        "group.query", [["name", "=", "tnadmins"]], {"extra": {"search_dscache": True}}
+    )
     log(f"group lookup: {gl[:300]}")
-    rc, pv = mc("privilege.create", {"name": "awto-ldaptest", "ds_groups": [GID], "local_groups": [],
-                                      "roles": ["FULL_ADMIN"], "web_shell": False})
+    rc, pv = mc(
+        "privilege.create",
+        {
+            "name": "awto-ldaptest",
+            "ds_groups": [GID],
+            "local_groups": [],
+            "roles": ["FULL_ADMIN"],
+            "web_shell": False,
+        },
+    )
     log(f"privilege.create: {pv[:300]}")
     # login as LDAP user over the websocket API from this host (basic auth REST is fallback)
-    rc, me = run(["curl", "-sk", "-m", "20", "-u", f"{USER}:{PW}", "https://192.168.25.40/api/v2.0/auth/me"])
+    rc, me = run(
+        [
+            "curl",
+            "-sk",
+            "-m",
+            "20",
+            "-u",
+            f"{USER}:{PW}",
+            "https://192.168.25.40/api/v2.0/auth/me",
+        ]
+    )
     ok_login = rc == 0 and USER in me
     if not ok_login:
         rc, me = ws_login()
@@ -170,7 +298,8 @@ def ws_login():
         "   await w.send(json.dumps({'jsonrpc':'2.0','id':i,'method':meth,'params':p}));return json.loads(await w.recv())\n"
         f"  print(json.dumps(await call(1,'auth.login_ex',[{{'mechanism':'PASSWORD_PLAIN','username':'{USER}','password':'{PW}'}}])))\n"
         "  print(json.dumps(await call(2,'auth.me',[])))\n"
-        "asyncio.run(m())\n")
+        "asyncio.run(m())\n"
+    )
     return run([sys.executable, "-c", code])
 
 
@@ -182,8 +311,15 @@ def cleanup():
     except ValueError:
         pass
     mc("system.general.update", {"ds_auth": False})
-    job("directoryservices.update", {"service_type": None, "enable": False, "credential": None,
-                                      "configuration": None})
+    job(
+        "directoryservices.update",
+        {
+            "service_type": None,
+            "enable": False,
+            "credential": None,
+            "configuration": None,
+        },
+    )
     run(["podman", "rm", "-f", CT])
     _, shares = mc("sharing.nfs.query", [["path", "=", f"/mnt/{DS}"]])
     try:
@@ -192,17 +328,19 @@ def cleanup():
     except ValueError:
         pass
     run(["sudo", "umount", str(MNT)])
-    box("midclt call datastore.query storage.volume '[[\"vol_name\",\"=\",\"awtotest\"]]'")
+    box('midclt call datastore.query storage.volume \'[["vol_name","=","awtotest"]]\'')
     _, vol = mc("datastore.query", "storage.volume", [["vol_name", "=", POOL]])
     try:
         for v in json.loads(vol or "[]"):
             mc("datastore.delete", "storage.volume", v["id"])
     except ValueError:
         pass
-    box(f"zpool destroy -f {POOL} 2>/dev/null; rm -f {IMG}; zpool list; cat /etc/exports")
+    box(
+        f"zpool destroy -f {POOL} 2>/dev/null; rm -f {IMG}; zpool list; cat /etc/exports"
+    )
     _, g = mc("system.general.config")
     _, d = mc("directoryservices.config")
-    log(f"after cleanup: ds_auth false={'\"ds_auth\": false' in g}; ds={d[:200]}")
+    log(f"after cleanup: ds_auth false={'"ds_auth": false' in g}; ds={d[:200]}")
 
 
 if __name__ == "__main__":
