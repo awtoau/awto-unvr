@@ -1,0 +1,65 @@
+{
+  "timestamp": "2026-11-14T23:25:40+11:00",
+  "commit": "be26643",
+  "host": "192.168.25.127",
+  "kernel": "",
+  "checks": [
+    {
+      "name": "usbfio sata-Samsung_SSD_850_EVO_1TB seq-read-1M-qd1",
+      "ok": true,
+      "detail": "471.6 MB/s 450 iops clat 2117 us"
+    },
+    {
+      "name": "usbfio sata-Samsung_SSD_850_EVO_1TB seq-read-1M-qd32",
+      "ok": true,
+      "detail": "502.1 MB/s 479 iops clat 66719 us"
+    },
+    {
+      "name": "usbfio sata-Samsung_SSD_850_EVO_1TB randread-4k-qd1",
+      "ok": true,
+      "detail": "40.9 MB/s 9994 iops clat 70 us"
+    },
+    {
+      "name": "usbfio sata-Samsung_SSD_850_EVO_1TB randread-4k-qd32",
+      "ok": true,
+      "detail": "138.7 MB/s 33851 iops clat 918 us"
+    },
+    {
+      "name": "usbfio usb 0781:5572 link",
+      "ok": true,
+      "detail": "sde 0781:5572 480M driver=usb-storage trim=no"
+    },
+    {
+      "name": "usbfio usb 0781:5572 seq-read-1M-qd1",
+      "ok": true,
+      "detail": "15.2 MB/s 14 iops clat 4451 us"
+    },
+    {
+      "name": "usbfio usb 0781:5572 seq-read-1M-qd32",
+      "ok": true,
+      "detail": "15.3 MB/s 15 iops clat 1661844 us"
+    },
+    {
+      "name": "usbfio usb 0781:5572 randread-4k-qd1",
+      "ok": true,
+      "detail": "3.9 MB/s 959 iops clat 1011 us"
+    },
+    {
+      "name": "usbfio usb 0781:5572 randread-4k-qd32",
+      "ok": true,
+      "detail": "4.1 MB/s 1004 iops clat 30783 us"
+    }
+  ],
+  "metrics": {
+    "usbfio sata-Samsung_SSD_850_EVO_1TB seq-read-1M-qd1": 471.555173,
+    "usbfio sata-Samsung_SSD_850_EVO_1TB seq-read-1M-qd32": 502.123315,
+    "usbfio sata-Samsung_SSD_850_EVO_1TB randread-4k-qd1": 9994.20116,
+    "usbfio sata-Samsung_SSD_850_EVO_1TB randread-4k-qd32": 33850.829834,
+    "usbfio usb 0781:5572 link": 480.0,
+    "usbfio usb 0781:5572 seq-read-1M-qd1": 15.154632,
+    "usbfio usb 0781:5572 seq-read-1M-qd32": 15.340969,
+    "usbfio usb 0781:5572 randread-4k-qd1": 959.208158,
+    "usbfio usb 0781:5572 randread-4k-qd32": 1003.998401
+  },
+  "all_ok": true
+}
