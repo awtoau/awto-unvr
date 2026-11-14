@@ -39,10 +39,18 @@ SECRETS = Path(os.path.expanduser("~/.config/awto/secrets.yaml"))
 PUBKEYS = [Path.home() / ".ssh" / n for n in ("id_ed25519.pub", "id_rsa.pub")]
 # (name, cron minute/hour, lifetime) - hourly kept 2 days, daily kept 30 days
 SNAP_TASKS = [
-    {"naming_schema": "auto-%Y%m%d.%H%M-2d", "lifetime_value": 2, "lifetime_unit": "DAY",
-     "schedule": {"minute": "0", "hour": "*", "dom": "*", "month": "*", "dow": "*"}},
-    {"naming_schema": "auto-%Y%m%d.%H%M-30d", "lifetime_value": 30, "lifetime_unit": "DAY",
-     "schedule": {"minute": "30", "hour": "0", "dom": "*", "month": "*", "dow": "*"}},
+    {
+        "naming_schema": "auto-%Y%m%d.%H%M-2d",
+        "lifetime_value": 2,
+        "lifetime_unit": "DAY",
+        "schedule": {"minute": "0", "hour": "*", "dom": "*", "month": "*", "dow": "*"},
+    },
+    {
+        "naming_schema": "auto-%Y%m%d.%H%M-30d",
+        "lifetime_value": 30,
+        "lifetime_unit": "DAY",
+        "schedule": {"minute": "30", "hour": "0", "dom": "*", "month": "*", "dow": "*"},
+    },
 ]
 # One midclt call: local ssh + middleware round trip. Expected <2 s on the LAN; 30 s = 15x is
 # the host-process backstop for a stalled middleware. Expiry: raise with the method name.
@@ -64,7 +72,9 @@ def mc(method: str, *args, job: bool = False, write: bool = True):
     argv = _box.ssh_argv(ip, "root", [shlex.join(cmd)], batch=True)
     try:
         r = subprocess.run(
-            argv, capture_output=True, text=True,
+            argv,
+            capture_output=True,
+            text=True,
             timeout=JOB_TIMEOUT_S if job else CALL_TIMEOUT_S,
         )
     except subprocess.TimeoutExpired as e:
@@ -151,9 +161,13 @@ def step_user() -> None:
     mc(
         "user.create",
         {
-            "username": USER, "full_name": USER, "uid": UID,
-            "group": gid_row[0]["id"], "group_create": False,
-            "home_create": True, "home_mode": "700",
+            "username": USER,
+            "full_name": USER,
+            "uid": UID,
+            "group": gid_row[0]["id"],
+            "group_create": False,
+            "home_create": True,
+            "home_mode": "700",
             "password": dan_password(create=not DRY) or "<generated on apply>",
             **fields,
         },
@@ -162,14 +176,21 @@ def step_user() -> None:
 
 def step_smb() -> None:
     want = {
-        "name": SHARE, "path": HOME_PATH, "enabled": True, "browsable": True,
+        "name": SHARE,
+        "path": HOME_PATH,
+        "enabled": True,
+        "browsable": True,
         "purpose": "LEGACY_SHARE",
         "options": {"purpose": "LEGACY_SHARE", "shadowcopy": True, "path_suffix": "%U"},
     }
     row = q("sharing.smb.query", [["name", "=", SHARE]])
     if row:
         log(f"smb share {SHARE}: update")
-        mc("sharing.smb.update", row[0]["id"], {k: v for k, v in want.items() if k != "name"})
+        mc(
+            "sharing.smb.update",
+            row[0]["id"],
+            {k: v for k, v in want.items() if k != "name"},
+        )
     else:
         log(f"smb share {SHARE}: create")
         mc("sharing.smb.create", want)
@@ -177,8 +198,12 @@ def step_smb() -> None:
 
 def step_nfs() -> None:
     want = {
-        "path": HOME_PATH, "networks": [LAN_SUBNET], "enabled": True,
-        "mapall_user": USER, "mapall_group": USER, "expose_snapshots": True,
+        "path": HOME_PATH,
+        "networks": [LAN_SUBNET],
+        "enabled": True,
+        "mapall_user": USER,
+        "mapall_group": USER,
+        "expose_snapshots": True,
         "security": ["SYS"],
     }
     row = q("sharing.nfs.query", [["path", "=", HOME_PATH]])
@@ -201,8 +226,11 @@ def step_snapshots() -> None:
     have = q("pool.snapshottask.query", [["dataset", "=", DATASET]])
     for t in SNAP_TASKS:
         body = {
-            "dataset": DATASET, "recursive": True, "enabled": True,
-            "allow_empty": False, **t,
+            "dataset": DATASET,
+            "recursive": True,
+            "enabled": True,
+            "allow_empty": False,
+            **t,
         }
         row = [h for h in have if h["naming_schema"] == t["naming_schema"]]
         if row:
@@ -213,7 +241,15 @@ def step_snapshots() -> None:
             mc("pool.snapshottask.create", body)
 
 
-STEPS = [step_pool, step_dataset, step_user, step_smb, step_nfs, step_services, step_snapshots]
+STEPS = [
+    step_pool,
+    step_dataset,
+    step_user,
+    step_smb,
+    step_nfs,
+    step_services,
+    step_snapshots,
+]
 
 
 def cmd_apply(plan: bool) -> int:
@@ -246,8 +282,15 @@ def cmd_verify() -> int:
 
     for svc in ("cifs", "nfs"):
         r = q("service.query", [["service", "=", svc]])
-        check(f"service {svc} running+enabled", bool(r) and r[0]["state"] == "RUNNING" and r[0]["enable"])
-    check("snapshot tasks", len(q("pool.snapshottask.query", [["dataset", "=", DATASET]])) >= len(SNAP_TASKS))
+        check(
+            f"service {svc} running+enabled",
+            bool(r) and r[0]["state"] == "RUNNING" and r[0]["enable"],
+        )
+    check(
+        "snapshot tasks",
+        len(q("pool.snapshottask.query", [["dataset", "=", DATASET]]))
+        >= len(SNAP_TASKS),
+    )
     nfs = q("sharing.nfs.query", [["path", "=", HOME_PATH]])
     check("nfs expose_snapshots", bool(nfs) and nfs[0].get("expose_snapshots") is True)
 
@@ -256,7 +299,10 @@ def cmd_verify() -> int:
     mnt.mkdir(parents=True, exist_ok=True)
     marker = f"verify-{pysecrets.token_hex(4)}.txt"
     snap = f"{DATASET}@verify-{pysecrets.token_hex(3)}"
-    mounted = sh(["sudo", "mount", "-t", "nfs", f"{ip}:{HOME_PATH}", str(mnt)]).returncode == 0
+    mounted = (
+        sh(["sudo", "mount", "-t", "nfs", f"{ip}:{HOME_PATH}", str(mnt)]).returncode
+        == 0
+    )
     check("nfs mount", mounted)
     if mounted:
         try:
@@ -265,8 +311,15 @@ def cmd_verify() -> int:
                 p.write_text("nfs-ok")
                 check("nfs write+read", p.read_text() == "nfs-ok")
                 owner = subprocess.run(
-                    _box.ssh_argv(ip, "root", [f"stat -c %U {shlex.quote(f'{HOME_PATH}/{USER}/{marker}')}"], batch=True),
-                    capture_output=True, text=True, timeout=CALL_TIMEOUT_S,
+                    _box.ssh_argv(
+                        ip,
+                        "root",
+                        [f"stat -c %U {shlex.quote(f'{HOME_PATH}/{USER}/{marker}')}"],
+                        batch=True,
+                    ),
+                    capture_output=True,
+                    text=True,
+                    timeout=CALL_TIMEOUT_S,
                 ).stdout.strip()
                 check("nfs file owned by dan on box", owner == USER, owner)
             else:
@@ -295,8 +348,17 @@ def cmd_verify() -> int:
         try:
             base = ["smbclient", f"//{ip}/{SHARE}", "-A", str(auth)]
             check("smb list", sh(base + ["-c", "ls"]).returncode == 0)
-            r = sh(base + ["-c", f"put {local} smb-test.txt; get smb-test.txt {back}; del smb-test.txt"])
-            check("smb put/get", r.returncode == 0 and back.exists() and back.read_text() == "smb-ok")
+            r = sh(
+                base
+                + [
+                    "-c",
+                    f"put {local} smb-test.txt; get smb-test.txt {back}; del smb-test.txt",
+                ]
+            )
+            check(
+                "smb put/get",
+                r.returncode == 0 and back.exists() and back.read_text() == "smb-ok",
+            )
         finally:
             for f in (auth, local, back):
                 f.unlink(missing_ok=True)
@@ -305,7 +367,9 @@ def cmd_verify() -> int:
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawTextHelpFormatter)
+    ap = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawTextHelpFormatter
+    )
     ap.add_argument("cmd", choices=["plan", "apply", "verify"])
     a = ap.parse_args()
     if a.cmd == "verify":
