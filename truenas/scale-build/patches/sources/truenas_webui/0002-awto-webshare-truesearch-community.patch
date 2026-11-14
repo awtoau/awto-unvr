@@ -1,0 +1,283 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Dan on Selwyn <dan@awto.au>
+Date: Sat, 14 Nov 2026 12:00:00 +1000
+Subject: [PATCH] awto: ungate WebShare and TrueSearch in the UI (#357)
+
+- entitlements.service: WebShare/TrueSearch always entitled (shares card,
+  route guard, SMB Spotlight, service form)
+- license.service: hasTruenasConnect$ = true (WebShare-only users)
+- webshare.service/card/list/service form: drop TrueNAS Connect and
+  truenas.direct requirements; open via current host
+---
+diff --git a/src/app/pages/services/components/service-webshare/service-webshare.component.ts b/src/app/pages/services/components/service-webshare/service-webshare.component.ts
+index ae59ff9..2fb4b51 100644
+--- a/src/app/pages/services/components/service-webshare/service-webshare.component.ts
++++ b/src/app/pages/services/components/service-webshare/service-webshare.component.ts
+@@ -11,7 +11,6 @@ import { of } from 'rxjs';
+ import { RequiresRolesDirective } from 'app/directives/requires-roles/requires-roles.directive';
+ import { EntitlementFeature } from 'app/enums/entitlement-feature.enum';
+ import { Role } from 'app/enums/role.enum';
+-import { TruenasConnectStatus } from 'app/enums/truenas-connect-status.enum';
+ import { WebSharePasskey, webSharePasskeyLabels } from 'app/enums/webshare-passkey.enum';
+ import { mapToOptions } from 'app/helpers/options.helper';
+ import { helptextServiceWebshare } from 'app/helptext/services/components/service-webshare';
+@@ -26,7 +25,6 @@ import { ModalHeaderComponent } from 'app/modules/slide-ins/components/modal-hea
+ import { SlideInRef } from 'app/modules/slide-ins/slide-in-ref';
+ import { SnackbarService } from 'app/modules/snackbar/services/snackbar.service';
+ import { TestDirective } from 'app/modules/test-id/test.directive';
+-import { TruenasConnectService } from 'app/modules/truenas-connect/services/truenas-connect.service';
+ import { ApiService } from 'app/modules/websocket/api.service';
+ import { EntitlementsService } from 'app/services/entitlements.service';
+ 
+@@ -62,7 +60,6 @@ export class ServiceWebshareComponent implements OnInit {
+   private snackbar = inject(SnackbarService);
+   private translate = inject(TranslateService);
+   private destroyRef = inject(DestroyRef);
+-  private truenasConnectService = inject(TruenasConnectService);
+   private entitlements = inject(EntitlementsService);
+   slideInRef = inject(SlideInRef<undefined, boolean>);
+ 
+@@ -100,9 +97,7 @@ export class ServiceWebshareComponent implements OnInit {
+    * configured. Backed by the shared `tn_connect.config` signal, this reacts immediately
+    * when Connect is disabled without requiring a page refresh.
+    */
+-  protected readonly isTruenasConnectConfigured = computed(
+-    () => this.truenasConnectService.config()?.status === TruenasConnectStatus.Configured,
+-  );
++  protected readonly isTruenasConnectConfigured = computed(() => true); // awto: no Connect needed (#357)
+ 
+   /**
+    * A Connect connection is not a substitute for the entitlement: the two are separate
+diff --git a/src/app/pages/sharing/components/shares-dashboard/webshare-card/webshare-card.component.ts b/src/app/pages/sharing/components/shares-dashboard/webshare-card/webshare-card.component.ts
+index d2b9f3d..dbf3fb3 100644
+--- a/src/app/pages/sharing/components/shares-dashboard/webshare-card/webshare-card.component.ts
++++ b/src/app/pages/sharing/components/shares-dashboard/webshare-card/webshare-card.component.ts
+@@ -21,7 +21,6 @@ import { EmptyType } from 'app/enums/empty-type.enum';
+ import { Role } from 'app/enums/role.enum';
+ import { ServiceName } from 'app/enums/service-name.enum';
+ import { ServiceStatus } from 'app/enums/service-status.enum';
+-import { TruenasConnectStatus } from 'app/enums/truenas-connect-status.enum';
+ import { helptextSharingWebshare } from 'app/helptext/sharing/webshare/webshare';
+ import { EmptyConfig } from 'app/interfaces/empty-config.interface';
+ import { WebShare } from 'app/interfaces/webshare-config.interface';
+@@ -120,9 +119,8 @@ export class WebShareCardComponent implements OnInit {
+   protected readonly canOpenWebShare = this.webShareService.canOpenWebShare;
+   protected readonly hostnameChoices = this.webShareService.hostnameChoices;
+ 
+-  hasTruenasConnect$ = this.truenasConnectService.config$.pipe(
+-    map((config) => config?.status === TruenasConnectStatus.Configured),
+-  );
++  // awto: WebShare does not need TrueNAS Connect (#357).
++  hasTruenasConnect$ = of(true);
+ 
+   showNoWebshareUsersNotice$ = this.hasTruenasConnect$.pipe(
+     combineLatestWith(this.webShareService.hasWebshareUsers$),
+diff --git a/src/app/pages/sharing/webshare/webshare-list/webshare-list.component.ts b/src/app/pages/sharing/webshare/webshare-list/webshare-list.component.ts
+index 7444be3..e443dd3 100644
+--- a/src/app/pages/sharing/webshare/webshare-list/webshare-list.component.ts
++++ b/src/app/pages/sharing/webshare/webshare-list/webshare-list.component.ts
+@@ -11,7 +11,7 @@ import { Store } from '@ngrx/store';
+ import { TranslateService, TranslateModule } from '@ngx-translate/core';
+ import { tnIconMarker, TnIconComponent } from '@truenas/ui-components';
+ import {
+-  filter, switchMap, map,
++  filter, switchMap, map, of,
+ } from 'rxjs';
+ import { combineLatestWith } from 'rxjs/operators';
+ import { RequiresRolesDirective } from 'app/directives/requires-roles/requires-roles.directive';
+@@ -19,7 +19,6 @@ import { UiSearchDirective } from 'app/directives/ui-search.directive';
+ import { EmptyType } from 'app/enums/empty-type.enum';
+ import { Role } from 'app/enums/role.enum';
+ import { ServiceName } from 'app/enums/service-name.enum';
+-import { TruenasConnectStatus } from 'app/enums/truenas-connect-status.enum';
+ import { helptextSharingWebshare } from 'app/helptext/sharing/webshare/webshare';
+ import { EmptyConfig } from 'app/interfaces/empty-config.interface';
+ import { DialogService } from 'app/modules/dialog/dialog.service';
+@@ -103,9 +102,8 @@ export class WebShareListComponent implements OnInit {
+   searchQuery = '';
+   dataProvider: AsyncDataProvider<WebShareTableRow>;
+ 
+-  hasTruenasConnect$ = this.truenasConnectService.config$.pipe(
+-    map((config) => config?.status === TruenasConnectStatus.Configured),
+-  );
++  // awto: WebShare does not need TrueNAS Connect (#357).
++  hasTruenasConnect$ = of(true);
+ 
+   showNoWebshareUsersNotice$ = this.hasTruenasConnect$.pipe(
+     combineLatestWith(this.webShareService.hasWebshareUsers$),
+diff --git a/src/app/pages/sharing/webshare/webshare.service.ts b/src/app/pages/sharing/webshare/webshare.service.ts
+index daf6e3a..7c41758 100644
+--- a/src/app/pages/sharing/webshare/webshare.service.ts
++++ b/src/app/pages/sharing/webshare/webshare.service.ts
+@@ -7,7 +7,7 @@ import {
+   Observable, defer, of, forkJoin,
+ } from 'rxjs';
+ import {
+-  switchMap, take, map, catchError, shareReplay, tap,
++  map, catchError, shareReplay, tap,
+ } from 'rxjs/operators';
+ import { TruenasConnectStatus } from 'app/enums/truenas-connect-status.enum';
+ import { WINDOW } from 'app/helpers/window.helper';
+@@ -17,7 +17,6 @@ import { TranslatedString } from 'app/modules/translate/translate.helper';
+ import { TruenasConnectService } from 'app/modules/truenas-connect/services/truenas-connect.service';
+ import { ApiService } from 'app/modules/websocket/api.service';
+ import { WebShareTableRow } from 'app/pages/sharing/components/webshare-name-cell/webshare-name-cell.component';
+-import { LicenseService } from 'app/services/license.service';
+ import { WebShareSharesFormComponent, WebShareFormData } from './webshare-shares-form/webshare-shares-form.component';
+ 
+ export interface WebShareHostnameChoice {
+@@ -33,7 +32,6 @@ export class WebShareService {
+   private api = inject(ApiService);
+   private snackbar = inject(SnackbarService);
+   private translate = inject(TranslateService);
+-  private licenseService = inject(LicenseService);
+   private slideIn = inject(SlideIn);
+   private truenasConnectService = inject(TruenasConnectService);
+ 
+@@ -112,14 +110,7 @@ export class WebShareService {
+    * domain) rather than a tooltip that only ever blames the domain.
+    */
+   readonly webShareUnavailableReason = computed<TranslatedString | null>(() => {
+-    if (!this.isTruenasConnectConfigured()) {
+-      return this.translate.instant('WebShare is unavailable because TrueNAS Connect is disabled.');
+-    }
+-
+-    if (!this.isTruenasDirectDomain && !this.resolvedHostname() && !this.hostnameChoices().length) {
+-      return this.translate.instant('WebShare can only be opened when accessed via a .truenas.direct domain');
+-    }
+-
++    // awto: no TrueNAS Connect / truenas.direct requirement, falls back to the current host (#357).
+     return null;
+   });
+ 
+@@ -197,7 +188,7 @@ export class WebShareService {
+ 
+     const targetHostname = this.isTruenasDirectDomain
+       ? this.window.location.hostname
+-      : this.truenasConnectHostname() ?? this.pickHostnameChoice(hostname);
++      : this.truenasConnectHostname() ?? this.pickHostnameChoice(hostname) ?? this.window.location.hostname;
+     if (!targetHostname) {
+       return;
+     }
+@@ -229,18 +220,8 @@ export class WebShareService {
+    * @returns Observable that emits true if the form was submitted successfully, false otherwise
+    */
+   openWebShareForm(data: WebShareFormData): Observable<boolean> {
+-    return this.licenseService.hasTruenasConnect$.pipe(
+-      take(1),
+-      switchMap((hasAccess) => {
+-        if (!hasAccess) {
+-          this.truenasConnectService.openStatusModal();
+-          return of(false);
+-        }
+-
+-        return this.slideIn.open(WebShareSharesFormComponent, { data }).pipe(
+-          map((result) => !!result?.response),
+-        );
+-      }),
++    return this.slideIn.open(WebShareSharesFormComponent, { data }).pipe(
++      map((result) => !!result?.response),
+     );
+   }
+ 
+diff --git a/src/app/services/entitlements.service.ts b/src/app/services/entitlements.service.ts
+index 6071600..84b8eef 100644
+--- a/src/app/services/entitlements.service.ts
++++ b/src/app/services/entitlements.service.ts
+@@ -1,9 +1,9 @@
+ import {
+-  Injectable, Injector, Signal, inject,
++  Injectable, Injector, Signal, inject, signal,
+ } from '@angular/core';
+ import { toSignal } from '@angular/core/rxjs-interop';
+ import { MemoizedSelector, Store } from '@ngrx/store';
+-import { Observable } from 'rxjs';
++import { Observable, of } from 'rxjs';
+ import { filter } from 'rxjs/operators';
+ import { EntitlementFeature } from 'app/enums/entitlement-feature.enum';
+ import { EntitlementEntry } from 'app/interfaces/entitlement.interface';
+@@ -12,6 +12,10 @@ import {
+   selectEntitlement, selectIsEntitled, selectIsEntitledStrictly,
+ } from 'app/store/entitlements/entitlements.selectors';
+ 
++// awto: community build, WebShare and TrueSearch are never gated (#357).
++const awtoOpenFeatures = new Set<EntitlementFeature>([EntitlementFeature.Webshare, EntitlementFeature.TrueSearch]);
++const awtoEntitled = signal<boolean | undefined>(true).asReadonly();
++
+ /**
+  * Reads middleware's entitlement decisions; never recomputes them.
+  *
+@@ -42,6 +46,9 @@ export class EntitlementsService {
+   /** `undefined` while loading, deliberately not `false`. Check for it if a surface needs
+    * to tell "loading" from "denied". */
+   entitled(feature: EntitlementFeature): Signal<boolean | undefined> {
++    if (awtoOpenFeatures.has(feature)) {
++      return awtoEntitled;
++    }
+     return this.cached(this.entitledSignals, feature, () => toSignal(
+       this.store$.select(this.entitledSelector(feature)),
+       { injector: this.injector },
+@@ -54,6 +61,9 @@ export class EntitlementsService {
+    * `selectIsEntitledStrictly` for when this is the right one to reach for.
+    */
+   entitledStrictly(feature: EntitlementFeature): Signal<boolean | undefined> {
++    if (awtoOpenFeatures.has(feature)) {
++      return awtoEntitled;
++    }
+     return this.cached(this.strictSignals, feature, () => toSignal(
+       this.store$.select(this.strictSelector(feature)),
+       { injector: this.injector },
+@@ -62,6 +72,9 @@ export class EntitlementsService {
+ 
+   /** Emits nothing until the answer is real, so no consumer acts on a transient denial. */
+   entitled$(feature: EntitlementFeature): Observable<boolean> {
++    if (awtoOpenFeatures.has(feature)) {
++      return of(true);
++    }
+     return this.store$.select(this.entitledSelector(feature)).pipe(
+       filter((entitled): entitled is boolean => entitled !== undefined),
+     );
+diff --git a/src/app/services/license.service.ts b/src/app/services/license.service.ts
+index 2aeff9a..cde0db1 100644
+--- a/src/app/services/license.service.ts
++++ b/src/app/services/license.service.ts
+@@ -6,9 +6,7 @@ import {
+ import { map, switchMap } from 'rxjs/operators';
+ import { EntitlementFeature } from 'app/enums/entitlement-feature.enum';
+ import { HardwareType } from 'app/enums/hardware-type.enum';
+-import { TruenasConnectStatus } from 'app/enums/truenas-connect-status.enum';
+ import { selectNotNull } from 'app/helpers/operators/select-not-null.helper';
+-import { TruenasConnectService } from 'app/modules/truenas-connect/services/truenas-connect.service';
+ import { ApiService } from 'app/modules/websocket/api.service';
+ import { EntitlementsService } from 'app/services/entitlements.service';
+ import { AppState } from 'app/store';
+@@ -24,7 +22,6 @@ import {
+ export class LicenseService {
+   private store$ = inject<Store<AppState>>(Store);
+   private api = inject(ApiService);
+-  private truenasConnectService = inject(TruenasConnectService);
+   private entitlements = inject(EntitlementsService);
+ 
+   /** Seeded by `failover.licensed` at sign-in, then kept in step with the `HA` entitlement. */
+@@ -65,16 +62,6 @@ export class LicenseService {
+     shareReplay({ bufferSize: 1, refCount: true }),
+   );
+ 
+-  /**
+-   * Check if the system is configured with TrueNAS Connect.
+-   * This is used to determine if WebShare and other TrueNAS Connect features are available.
+-   * We check for `status === Configured` rather than just `enabled` because:
+-   * - `enabled: true` only means TrueNAS Connect is turned on
+-   * - The system might still be in intermediate states (e.g., CertGenerationInProgress)
+-   * - Only `status === Configured` means TrueNAS Connect is fully operational
+-   */
+-  readonly hasTruenasConnect$ = this.truenasConnectService.config$.pipe(
+-    map((config) => config?.status === TruenasConnectStatus.Configured),
+-    shareReplay({ bufferSize: 1, refCount: true }),
+-  );
++  /** awto: WebShare does not need TrueNAS Connect (#357). */
++  readonly hasTruenasConnect$ = of(true);
+ }
+-- 
+2.50.0
+
