@@ -9,7 +9,8 @@
 
 - Reinstall wipes the config DB: apply imports `tank` first when it is not imported.
 - dan password: ~/.config/awto/secrets.yaml section `woomera-truenas-dan`, generated once, never printed.
-- Everything goes through `midclt call` over ssh as root (_box.ssh_argv).
+- Transport: TrueNAS JSON-RPC over wss://<box>/api/current with an API key (secrets section
+  `woomera-truenas-api`); bootstrapped from truenas_admin's password when absent/rejected.
 """
 
 from __future__ import annotations
@@ -18,7 +19,6 @@ import argparse
 import json
 import os
 import secrets as pysecrets
-import shlex
 import subprocess
 import sys
 from pathlib import Path
@@ -26,7 +26,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import _box  # noqa: E402
 from _net import LAN_SUBNET  # noqa: E402
-from _repo import REPO, TMP, make_log  # noqa: E402
+from _repo import TMP, make_log  # noqa: E402
 
 log = make_log("truenas-config")
 
@@ -52,37 +52,186 @@ SNAP_TASKS = [
         "schedule": {"minute": "30", "hour": "0", "dom": "*", "month": "*", "dow": "*"},
     },
 ]
-# One midclt call: local ssh + middleware round trip. Expected <2 s on the LAN; 30 s = 15x is
-# the host-process backstop for a stalled middleware. Expiry: raise with the method name.
+# One API call: LAN websocket round trip, expected <1 s; 30 s = 30x is the backstop for a stalled
+# middleware. Expiry: raise naming the method.
 CALL_TIMEOUT_S = 30
-# Jobs (pool.import_pool, dataset create with chown): expected <10 s; 120 s backstop.
+# Jobs (pool.import_pool, service.control): expected <10 s; 120 s backstop, polled via core.get_jobs.
 JOB_TIMEOUT_S = 120
+# Job-state poll: jobs here finish in seconds, 0.5 s poll adds <0.5 s latency.
+JOB_POLL_S = 0.5
+KEY_NAME = "awto-truenas-config"
+KEY_SECTION = "woomera-truenas-api"
+ADMIN_SECTION = "truenas-woomera"
 
 DRY = False
+_api = None
+
+
+class AuthError(RuntimeError):
+    pass
+
+
+class Api:
+    """Minimal TrueNAS JSON-RPC 2.0 client over wss://<box>/api/current (self-signed: no verify).
+    truenas_api_client is not on PyPI, so this is a thin websockets.sync client."""
+
+    def __init__(self, ip: str):
+        import ssl
+
+        from websockets.sync.client import connect
+
+        ctx = ssl.create_default_context()
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl.CERT_NONE
+        self.ws = connect(
+            f"wss://{ip}/api/current",
+            ssl=ctx,
+            open_timeout=CALL_TIMEOUT_S,
+            max_size=64 * 2**20,
+        )
+        self.n = 0
+
+    def call(self, method: str, *params, job: bool = False):
+        self.n += 1
+        self.ws.send(
+            json.dumps(
+                {
+                    "jsonrpc": "2.0",
+                    "id": self.n,
+                    "method": method,
+                    "params": list(params),
+                }
+            )
+        )
+        while True:
+            try:
+                msg = json.loads(self.ws.recv(timeout=CALL_TIMEOUT_S))
+            except TimeoutError as e:
+                raise RuntimeError(
+                    f"{method}: no answer within {CALL_TIMEOUT_S}s"
+                ) from e
+            if msg.get("id") == self.n:
+                break
+        if "error" in msg:
+            err = msg["error"]
+            raise RuntimeError(
+                f"{method} failed: {err.get('data', {}).get('reason') or err.get('message')}"
+            )
+        res = msg.get("result")
+        return self.wait_job(method, res) if job else res
+
+    def wait_job(self, method: str, job_id: int):
+        import time
+
+        t0 = time.monotonic()
+        while time.monotonic() - t0 < JOB_TIMEOUT_S:
+            rows = self.call("core.get_jobs", [["id", "=", job_id]])
+            if rows and rows[0]["state"] in ("SUCCESS", "FAILED", "ABORTED"):
+                if rows[0]["state"] != "SUCCESS":
+                    raise RuntimeError(
+                        f"{method} job {rows[0]['state']}: {rows[0].get('error')}"
+                    )
+                return rows[0].get("result")
+            time.sleep(JOB_POLL_S)
+        raise RuntimeError(f"{method}: job {job_id} not done within {JOB_TIMEOUT_S}s")
+
+
+def secret(section: str) -> dict:
+    return (load_secrets().get(section)) or {}
+
+
+def append_section(section: str, fields: dict) -> None:
+    """Append a new section as text: safe_dump would rewrite the whole file and drop its comments."""
+    import yaml
+
+    text = SECRETS.read_text()
+    if not text.endswith("\n"):
+        text += "\n"
+    SECRETS.write_text(text + "\n" + yaml.safe_dump({section: fields}, sort_keys=False))
+    SECRETS.chmod(0o600)
+    log(f"secrets: created section {section}")
+
+
+def drop_section(section: str) -> None:
+    """Remove one top-level section by text (keeps the rest of the file byte-identical)."""
+    import re
+
+    text = SECRETS.read_text()
+    new = re.sub(
+        rf"^{re.escape(section)}:[^\n]*\n(?:[ \t]+[^\n]*\n|[ \t]*\n)*",
+        "",
+        text,
+        flags=re.M,
+    )
+    if new != text:
+        SECRETS.write_text(new)
+
+
+def connect() -> Api:
+    """API-key login; on failure (no key, or key gone after a reinstall) bootstrap a new key
+    with one truenas_admin password login. DRY (plan): session login only, no key created."""
+    ip = _box.require()
+    key = secret(KEY_SECTION)
+    if key.get("password"):
+        api = Api(ip)
+        r = api.call(
+            "auth.login_ex",
+            {
+                "mechanism": "API_KEY_PLAIN",
+                "username": key.get("username", "truenas_admin"),
+                "api_key": key["password"],
+            },
+        )
+        if r and r.get("response_type") == "SUCCESS":
+            log("api: logged in with API key")
+            return api
+        log("api: stored API key rejected (reinstall?), bootstrapping")
+    admin = secret(ADMIN_SECTION)
+    if not admin.get("password"):
+        raise AuthError(f"no API key and no [{ADMIN_SECTION}] password in secrets.yaml")
+    api = Api(ip)
+    r = api.call(
+        "auth.login_ex",
+        {
+            "mechanism": "PASSWORD_PLAIN",
+            "username": admin["username"],
+            "password": admin["password"],
+        },
+    )
+    if not r or r.get("response_type") != "SUCCESS":
+        raise AuthError(
+            f"password login as {admin['username']} failed: {r and r.get('response_type')}"
+        )
+    if DRY:
+        log("[plan] api_key.create (skipped, session login only)")
+        return api
+    for old in api.call("api_key.query", [["name", "=", KEY_NAME]]):
+        api.call("api_key.delete", old["id"])
+    created = api.call(
+        "api_key.create", {"name": KEY_NAME, "username": admin["username"]}
+    )
+    drop_section(KEY_SECTION)
+    append_section(
+        KEY_SECTION,
+        {
+            "url": f"wss://{ip}/api/current",
+            "purpose": f"woomera TrueNAS API key '{KEY_NAME}' for scripts/truenas-config.py (recreated on reinstall)",
+            "username": admin["username"],
+            "password": created["key"],
+        },
+    )
+    return api
 
 
 def mc(method: str, *args, job: bool = False, write: bool = True):
-    """midclt call over ssh -> parsed JSON (None for empty output)."""
-    cmd = ["midclt", "call"] + (["-job"] if job else []) + [method]
-    cmd += [json.dumps(a) for a in args]
+    """TrueNAS API call. DRY: writes are only logged."""
+    global _api
     if DRY and write:
         log(f"[plan] {method} {json.dumps(args)[:200]}")
         return None
-    ip = _box.require()
-    argv = _box.ssh_argv(ip, "root", [shlex.join(cmd)], batch=True)
-    try:
-        r = subprocess.run(
-            argv,
-            capture_output=True,
-            text=True,
-            timeout=JOB_TIMEOUT_S if job else CALL_TIMEOUT_S,
-        )
-    except subprocess.TimeoutExpired as e:
-        raise RuntimeError(f"{method}: no answer within {e.timeout}s") from e
-    if r.returncode:
-        raise RuntimeError(f"{method} failed: {r.stderr.strip()[-600:]}")
-    out = r.stdout.strip()
-    return json.loads(out) if out else None
+    if _api is None:
+        _api = connect()
+    return _api.call(method, *args, job=job)
 
 
 def q(method: str, filters: list):
@@ -97,24 +246,22 @@ def load_secrets() -> dict:
 
 
 def dan_password(create: bool) -> str | None:
-    import yaml
-
-    data = load_secrets()
-    sec = data.get(SECRET_SECTION)
+    sec = secret(SECRET_SECTION)
     if sec and sec.get("password"):
         return sec["password"]
     if not create:
         return None
-    data[SECRET_SECTION] = {
-        "url": "smb://woomera (LAN IP via ./dev.py ssh --print)",
-        "purpose": "woomera TrueNAS user dan (SMB/web); NFS uses uid 1000",
-        "username": USER,
-        "password": pysecrets.token_urlsafe(24),
-    }
-    SECRETS.write_text(yaml.safe_dump(data, sort_keys=False))
-    SECRETS.chmod(0o600)
-    log(f"secrets: created section {SECRET_SECTION}")
-    return data[SECRET_SECTION]["password"]
+    pw = pysecrets.token_urlsafe(24)
+    append_section(
+        SECRET_SECTION,
+        {
+            "url": "smb://woomera (LAN IP via ./dev.py ssh --print)",
+            "purpose": "woomera TrueNAS user dan (SMB/web); NFS uses uid 1000",
+            "username": USER,
+            "password": pw,
+        },
+    )
+    return pw
 
 
 # ---- steps ------------------------------------------------------------------------------
@@ -310,17 +457,8 @@ def cmd_verify() -> int:
             if os.getuid() == UID:
                 p.write_text("nfs-ok")
                 check("nfs write+read", p.read_text() == "nfs-ok")
-                owner = subprocess.run(
-                    _box.ssh_argv(
-                        ip,
-                        "root",
-                        [f"stat -c %U {shlex.quote(f'{HOME_PATH}/{USER}/{marker}')}"],
-                        batch=True,
-                    ),
-                    capture_output=True,
-                    text=True,
-                    timeout=CALL_TIMEOUT_S,
-                ).stdout.strip()
+                st = mc("filesystem.stat", f"{HOME_PATH}/{USER}/{marker}", write=False)
+                owner = st.get("user") if st else None
                 check("nfs file owned by dan on box", owner == USER, owner)
             else:
                 check("nfs write as uid 1000", False, f"running as uid {os.getuid()}")
