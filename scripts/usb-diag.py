@@ -38,6 +38,18 @@ for b in /sys/block/sd*; do readlink -f $b | grep -q /usb && \
   echo "$(basename $b) size=$(cat $b/size) removable=$(cat $b/removable)"; done
 dmesg | grep -iE 'usb [0-9]|uas|\[sd[e-z]\]|disconnect|over-current|xhci' | tail -n 15
 """
+# Dump the descriptor the moment it is read: the SSD enclosure stayed only 9 s (#360).
+# "New USB device found" is logged after the descriptor fetch, so sysfs already has it.
+WATCH = r"""
+dmesg -w --since now | grep --line-buffered -iE 'usb [0-9]|uas|sd[e-z]|disconnect|over-current' |
+while IFS= read -r l; do echo "$l"
+  case "$l" in *"New USB device found"*)
+    d=$(echo "$l" | grep -oE 'usb [0-9]+-[0-9.]+' | cut -d' ' -f2); s=/sys/bus/usb/devices/$d
+    echo "DESC $d $(cat $s/idVendor):$(cat $s/idProduct) speed=$(cat $s/speed) bMaxPower=$(cat $s/bMaxPower)" \
+      "selfpowered=$(( 0x$(cat $s/bmAttributes) >> 6 & 1 ))"
+    lsusb -v -s $(cat $s/busnum):$(cat $s/devnum) 2>/dev/null | grep -E "MaxPower|bmAttributes|Self Powered|bcdUSB";;
+  esac; done
+"""
 REBIND = f"""
 echo {XHCI} > /sys/bus/pci/drivers/xhci_hcd/unbind; echo {XHCI} > /sys/bus/pci/drivers/xhci_hcd/bind
 udevadm settle
@@ -82,11 +94,7 @@ def main() -> int:
     ip = _box.require()
     log(f"== usb-diag {a.action} on {ip}")
     if a.action == "watch":
-        return remote(
-            ip,
-            "dmesg -w | grep --line-buffered -iE 'usb [0-9]|uas|sd[e-z]|disconnect|over-current'",
-            stream=True,
-        )
+        return remote(ip, WATCH, stream=True)
     if a.action == "rebind":
         rc = remote(ip, REBIND)
     elif a.action == "pci-reset":
