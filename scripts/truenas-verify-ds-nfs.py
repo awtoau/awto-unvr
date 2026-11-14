@@ -18,6 +18,9 @@ import sys
 import time
 from pathlib import Path
 
+import _box
+from _net import LAN_SUBNET, detect_server_ip
+
 REPO = Path(
     os.environ.get("UNVR_REPO")
     or subprocess.run(
@@ -37,7 +40,8 @@ LDAP_PORT = 13389  # plain ldap; osixia ldaps cert is rejected by the box client
 BASE = "dc=awto,dc=test"
 USER, PW = "alice", "alicepw-test"
 GID = 20000
-HOST_IP = "192.168.25.31"
+BOX = _box.require(hint="boot TrueNAS 27 first")
+HOST_IP = detect_server_ip(BOX)  # LDAP container address the box can reach
 SSH_TIMEOUT = 120  # a midclt job (pool/nfs/ds join) finishes in <30 s; 4x
 
 
@@ -106,7 +110,7 @@ def nfs():
         {
             "path": f"/mnt/{DS}",
             "expose_snapshots": True,
-            "networks": ["192.168.25.0/24"],
+            "networks": [LAN_SUBNET],
             "maproot_user": "root",
             "maproot_group": "root",
         },
@@ -118,7 +122,7 @@ def nfs():
     ok_exp = "zfs_snapdir" in exports
     result("/etc/exports zfs_snapdir", ok_exp, exports.replace("\n", " "))
     MNT.mkdir(parents=True, exist_ok=True)
-    run(["sudo", "mount", "-t", "nfs", f"192.168.25.40:/mnt/{DS}", str(MNT)])
+    run(["sudo", "mount", "-t", "nfs", f"{BOX}:/mnt/{DS}", str(MNT)])
     rc, ls = run(["ls", f"{MNT}/.zfs/snapshot/{SNAP}/"])
     return (
         ok_create
@@ -277,7 +281,7 @@ userPassword: {PW}
             "20",
             "-u",
             f"{USER}:{PW}",
-            "https://192.168.25.40/api/v2.0/auth/me",
+            f"https://{BOX}/api/v2.0/auth/me",
         ]
     )
     ok_login = rc == 0 and USER in me
@@ -293,7 +297,7 @@ def ws_login():
         "import websockets\n"
         "async def m():\n"
         " c=ssl.create_default_context();c.check_hostname=False;c.verify_mode=ssl.CERT_NONE\n"
-        " async with websockets.connect('wss://192.168.25.40/api/current',ssl=c) as w:\n"
+        f" async with websockets.connect('wss://{BOX}/api/current',ssl=c) as w:\n"
         "  async def call(i,meth,p):\n"
         "   await w.send(json.dumps({'jsonrpc':'2.0','id':i,'method':meth,'params':p}));return json.loads(await w.recv())\n"
         f"  print(json.dumps(await call(1,'auth.login_ex',[{{'mechanism':'PASSWORD_PLAIN','username':'{USER}','password':'{PW}'}}])))\n"
