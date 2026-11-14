@@ -508,3 +508,100 @@ def test_v6_sent_parse():
     m = _mod()
     assert m.parse_v6_sent("junk\nSENT ctl=100 hbh=99\n") == {"ctl": 100, "hbh": 99}
     assert m.parse_v6_sent("Traceback...") is None
+
+
+# ---- usb-fio (#360) --------------------------------------------------------
+
+LSUSB_T = """/:  Bus 001.Port 001: Dev 001, Class=root_hub, Driver=xhci_hcd/1p, 480M
+/:  Bus 002.Port 001: Dev 001, Class=root_hub, Driver=xhci_hcd/1p, 10000M
+    |__ Port 001: Dev 003, If 0, Class=Mass Storage, Driver=uas, 5000M
+    |__ Port 002: Dev 004, If 0, Class=Vendor Specific Class, Driver=r8152, 5000M
+/:  Bus 003.Port 001: Dev 001, Class=root_hub, Driver=xhci_hcd/1p, 480M
+    |__ Port 001: Dev 002, If 0, Class=Mass Storage, Driver=usb-storage, 480M
+"""
+
+
+def test_parse_lsusb_t_mass_storage_only():
+    got = _mod().parse_lsusb_t(LSUSB_T)
+    assert got == [
+        {"bus": 2, "dev": 3, "driver": "uas", "speed": 5000.0},
+        {"bus": 3, "dev": 2, "driver": "usb-storage", "speed": 480.0},
+    ]
+
+
+def test_parse_lsusb_t_empty_bus():
+    assert _mod().parse_lsusb_t(LSUSB_T.splitlines()[0]) == []
+
+
+def test_parse_usb_sys_and_transport_fallback():
+    m = _mod()
+    sysinfo = m.parse_usb_sys(
+        "SYS sde 174c 1051 480 usb-storage 3 2\nSYS sdf 152d 0578 5000 - 2 3\njunk\n"
+    )
+    assert sysinfo["sde"]["vidpid"] == "174c:1051"
+    assert sysinfo["sde"]["speed"] == 480.0
+    assert sysinfo["sdf"]["driver"] is None
+    t = m.usb_transport(sysinfo["sdf"], m.parse_lsusb_t(LSUSB_T))
+    assert t["driver"] == "uas"
+    assert m.bot_quirk_hint("152d:0578") == "usb-storage.quirks=152d:0578:u"
+
+
+LSBLK_JSON = {
+    "blockdevices": [
+        {"name": "sdd", "path": "/dev/sdd", "tran": "sata", "type": "disk",
+         "rota": False, "disc-gran": 512, "disc-max": 2147450880, "model": "Samsung SSD 850"},
+        {"name": "sda", "path": "/dev/sda", "tran": "sata", "type": "disk",
+         "rota": True, "disc-gran": 0, "disc-max": 0},
+        {"name": "sde", "path": "/dev/sde", "tran": "usb", "type": "disk",
+         "rota": False, "disc-gran": "0", "disc-max": "0"},
+        {"name": "zram0", "type": "disk", "tran": None, "rota": False},
+        {"name": "sdd1", "type": "part"},
+    ]
+}  # fmt: skip
+
+
+def test_lsblk_helpers():
+    m = _mod()
+    disks = m.lsblk_disks(LSBLK_JSON)
+    assert [d["name"] for d in disks] == ["sdd", "sda", "sde", "zram0"]
+    assert m.sata_reference(disks)["name"] == "sdd"
+    assert m.trim_supported(disks[0]) and not m.trim_supported(disks[2])
+    assert m.sata_reference([disks[1]]) is None
+
+
+FIO_JSON = (
+    "fio: some banner\n"
+    '{"jobs":[{"read":{"bw_bytes":41000000,"iops":40.0,"clat_ns":{"mean":25000000.0}},'
+    '"write":{"bw_bytes":0,"iops":0.0,"clat_ns":{"mean":0.0}}}]}\n'
+)
+
+
+def test_parse_fio_json():
+    r = _mod().parse_fio_json(FIO_JSON)
+    assert r == {"mbps": 41.0, "iops": 40.0, "clat_us": 25000.0}
+    assert _mod().parse_fio_json("fio: error") is None
+    assert _mod().parse_fio_json('{"jobs": []}') is None
+
+
+def test_fio_cmd_read_is_readonly_write_is_bounded():
+    m = _mod()
+    rd = m.fio_cmd("/dev/sde", "randread", "4k", 32, 10, False)
+    assert "--readonly" in rd and "--size" not in rd and "--rw=randread" in rd
+    wr = m.fio_cmd("/dev/sde", "write", "1M", 32, 10, True)
+    assert "--readonly" not in wr and "--size=1G" in wr
+    assert all(not j[4] for j in m.FIO_READ_JOBS)
+    assert all(j[4] for j in m.FIO_WRITE_JOBS)
+
+
+def test_usb_fio_skips_with_no_usb_disk(monkeypatch):
+    m = _mod()
+    probe = (
+        "@@lsblk\n"
+        + __import__("json").dumps({"blockdevices": [LSBLK_JSON["blockdevices"][1]]})
+        + "\n@@lsusb\n/:  Bus 001.Port 001: Dev 001, Class=root_hub, Driver=xhci_hcd/1p, 480M\n@@sys\n"
+    )
+    monkeypatch.setattr(m, "run_remote", lambda *a, **k: (0, probe))
+    rep = m.Report(echo=False)
+    m.bench_usb_fio("h", "p", rep)
+    assert all(ok for _, ok, _ in rep.checks)
+    assert any("no USB mass-storage disk" in d for _, _, d in rep.checks)

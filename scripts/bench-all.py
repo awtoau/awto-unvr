@@ -25,6 +25,16 @@ Subtests (each is a function taking a Report; metrics land in the snapshot and
   (`in_use` > 0 with run=N) or an un-stoppable run is a SKIP, never a hang.
   The old "reload wedges the engine, so no dma" exclusion (#23) was our missing
   queue reset (#289).
+- usb-fio (opt-in, #360): per USB disk (TRAN=usb): bridge VID:PID, negotiated
+  speed, bound driver (uas / usb-storage, sysfs + `lsusb -t`), TRIM (`lsblk -D`);
+  fio --direct=1 --readonly on the raw device: seq 1M read QD1/QD32, 4k randread
+  QD1/QD32, 10 s each; same jobs on the SATA SSD. No USB disk = SKIP line.
+  --usb-fio-write adds write jobs (first 1G), only onto a disk passing
+  usb-ssd.py's guard + scripts/usb-ssd-devices.json; anything else is REFUSED.
+  Metric names use VID:PID, not sdX or driver, so UAS vs BOT snapshots --compare.
+  Forced BOT = kernel cmdline `usb-storage.quirks=<vid>:<pid>:u` + reboot; the
+  run only reports it (check `bot-rerun`). Flow: run, add quirk, reboot, run,
+  --compare. No cross-reboot automation here.
 - opt-in, never in --idle: --dma-reload (rmmod/modprobe al_dma; wedge risk until
   #289 is verified on hardware, reboot after), --dma-pq (#169), --ssm (al_ssm
   through dm-crypt: ops landed, cmp integrity, quiesce; drives #300/#182),
@@ -82,6 +92,7 @@ Not in here (standalone on purpose):
   ./scripts/bench-all.py --compare tmp/before.json tmp/after.json
   ./scripts/bench-all.py --skip-eth --skip-crypto --skip-disk --skip-usb   # health + dma
   ./scripts/bench-all.py --dma-reload --i-accept-a-reboot
+  ./scripts/bench-all.py --usb-fio --skip-health --skip-eth --skip-crypto --skip-disk --skip-usb --skip-dma
   ./scripts/bench-all.py --ssm                      # al_ssm through dm-crypt
   ./scripts/bench-all.py --save-baseline            # all-green run -> baseline.json
   ./scripts/bench-all.py --idle                     # unattended, errors only
@@ -735,6 +746,252 @@ def bench_disks(
                     f"{link:.0f} Mb/s negotiated",
                     metric=link,
                 )
+
+
+# ======== USB storage (fio --direct=1; read-only unless --usb-fio-write) ========
+
+# Per-job fio runtime. Expected: 10 s time_based + ~2 s open/teardown; a stuck
+# ssh/fio is killed at runtime + FIO_SLACK_S (1.5x), logged as FAIL with the limit.
+FIO_RUNTIME_S = 10
+FIO_SLACK_S = 5
+# Write jobs touch only the first FIO_WRITE_SIZE of the allow-listed USB SSD.
+FIO_WRITE_SIZE = "1G"
+# (label, fio rw, bs, iodepth, is_write)
+FIO_READ_JOBS = (
+    ("seq-read-1M-qd1", "read", "1M", 1, False),
+    ("seq-read-1M-qd32", "read", "1M", 32, False),
+    ("randread-4k-qd1", "randread", "4k", 1, False),
+    ("randread-4k-qd32", "randread", "4k", 32, False),
+)
+FIO_WRITE_JOBS = (
+    ("seq-write-1M-qd32", "write", "1M", 32, True),
+    ("randwrite-4k-qd1", "randwrite", "4k", 1, True),
+    ("randwrite-4k-qd32", "randwrite", "4k", 32, True),
+)
+USB_FIO_LSBLK = (
+    "lsblk -J -b -o NAME,PATH,TRAN,MODEL,VENDOR,SERIAL,SIZE,TYPE,ROTA,"
+    "MOUNTPOINTS,DISC-GRAN,DISC-MAX"
+)
+# Per USB disk: walk /sys/block/<d> up to its usb_device; the interface dir on
+# the way (`1-1:1.0`) names the bound driver (uas / usb-storage).
+USB_FIO_PROBE = (
+    "echo @@lsblk; " + USB_FIO_LSBLK + "; echo @@lsusb; lsusb -t; echo @@sys; "
+    "for d in $(lsblk -dno NAME,TRAN | awk '$2==\"usb\"{print $1}'); do "
+    "p=$(readlink -f /sys/block/$d); i=; "
+    'while [ "$p" != / ]; do '
+    'case "$(basename $p)" in *:*) i=$p;; esac; '
+    '[ -f "$p/idVendor" ] && { '
+    'drv=-; [ -n "$i" ] && [ -L "$i/driver" ] && drv=$(basename $(readlink -f $i/driver)); '
+    'echo "SYS $d $(cat $p/idVendor) $(cat $p/idProduct) $(cat $p/speed) $drv '
+    '$(cat $p/busnum) $(cat $p/devnum)"; break; }; '
+    'p=$(dirname "$p"); done; done'
+)
+_LSUSB_BUS = re.compile(r"^/:\s+Bus (\d+)\.Port")
+_LSUSB_IF = re.compile(r"Dev (\d+), If \d+, Class=([^,]+), Driver=([^,]+), ([\d.]+)M")
+
+
+def parse_lsusb_t(text: str) -> list[dict]:
+    """Mass-storage interfaces from `lsusb -t`: bus, dev, driver, speed (Mb/s)."""
+    out, bus = [], None
+    for line in text.splitlines():
+        if m := _LSUSB_BUS.match(line):
+            bus = int(m.group(1))
+        elif (m := _LSUSB_IF.search(line)) and m.group(2) == "Mass Storage":
+            out.append(
+                {
+                    "bus": bus,
+                    "dev": int(m.group(1)),
+                    "driver": m.group(3),
+                    "speed": float(m.group(4)),
+                }
+            )
+    return out
+
+
+def parse_usb_sys(text: str) -> dict[str, dict]:
+    """`SYS name vid pid speed driver bus dev` lines -> {name: {...}}."""
+    out = {}
+    for line in text.splitlines():
+        f = line.split()
+        if len(f) == 8 and f[0] == "SYS":
+            out[f[1]] = {
+                "vidpid": f"{f[2]}:{f[3]}",
+                "speed": float(f[4]),
+                "driver": None if f[5] == "-" else f[5],
+                "bus": int(f[6]),
+                "dev": int(f[7]),
+            }
+    return out
+
+
+def usb_transport(sysinfo: dict, lsusb: list[dict]) -> dict:
+    """sysfs record, driver/speed filled from `lsusb -t` (bus+dev) when sysfs lacks them."""
+    rec = dict(sysinfo)
+    for e in lsusb:
+        if (e["bus"], e["dev"]) == (rec["bus"], rec["dev"]):
+            rec["driver"] = rec["driver"] or e["driver"]
+            rec["lsusb_driver"] = e["driver"]
+    return rec
+
+
+def _num(v) -> int:
+    try:
+        return int(v)
+    except (TypeError, ValueError):
+        return 0
+
+
+def lsblk_disks(lsblk: dict) -> list[dict]:
+    return [d for d in lsblk.get("blockdevices", []) if d.get("type") == "disk"]
+
+
+def trim_supported(d: dict) -> bool:
+    """UNMAP/TRIM reaches the device when lsblk -D shows a non-zero DISC-MAX."""
+    return _num(d.get("disc-max")) > 0
+
+
+def bot_quirk_hint(vidpid: str) -> str:
+    return f"usb-storage.quirks={vidpid}:u"
+
+
+def fio_cmd(dev_path: str, rw: str, bs: str, qd: int, runtime: int, write: bool) -> str:
+    """One fio job on the raw device. Reads carry --readonly (fio refuses any write)."""
+    parts = [
+        "fio --name=usbfio",
+        f"--filename={dev_path}",
+        "--direct=1 --ioengine=libaio --group_reporting",
+        f"--rw={rw} --bs={bs} --iodepth={qd}",
+        f"--runtime={runtime} --time_based --output-format=json",
+    ]
+    parts.append(f"--size={FIO_WRITE_SIZE}" if write else "--readonly")
+    return " ".join(parts)
+
+
+def parse_fio_json(text: str, write: bool = False) -> dict | None:
+    """{mbps, iops, clat_us} of the first job; None when there is no JSON/job."""
+    start = text.find("{")
+    if start < 0:
+        return None
+    try:
+        data = json.JSONDecoder().raw_decode(text[start:])[0]
+        side = data["jobs"][0]["write" if write else "read"]
+        return {
+            "mbps": side["bw_bytes"] / 1e6,
+            "iops": float(side["iops"]),
+            "clat_us": side["clat_ns"]["mean"] / 1e3,
+        }
+    except (ValueError, KeyError, IndexError, TypeError):
+        return None
+
+
+def sata_reference(disks: list[dict]) -> dict | None:
+    """The SATA SSD to compare against: first non-rotational SATA disk."""
+    for d in disks:
+        if d.get("tran") == "sata" and str(d.get("rota")).lower() in ("0", "false"):
+            return d
+    return None
+
+
+def _usb_ssd_guard():
+    """usb-ssd.py's guard + allow-list (imported, not copied)."""
+    import importlib.util
+
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    spec = importlib.util.spec_from_file_location(
+        "usb_ssd", Path(__file__).resolve().parent / "usb-ssd.py"
+    )
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod, mod.load_devices()
+
+
+def _fio_jobs(
+    host: str, password: str, d: dict, tag: str, jobs, runtime: int, report: Report
+) -> None:
+    for label, rw, bs, qd, write in jobs:
+        rc, out = run_remote(
+            host,
+            password,
+            fio_cmd(d["path"], rw, bs, qd, runtime, write),
+            timeout=runtime + FIO_SLACK_S,
+        )
+        name = f"usbfio {tag} {label}"
+        if rc == 124:
+            report.add(name, False, f"{out} (limit {runtime + FIO_SLACK_S}s)")
+            continue
+        r = parse_fio_json(out, write)
+        if rc != 0 or r is None:
+            tail = out.strip().splitlines()[-1] if out.strip() else f"rc={rc}"
+            report.add(name, False, f"fio failed: {tail}")
+            continue
+        report.add(
+            name,
+            True,
+            f"{r['mbps']:.1f} MB/s {r['iops']:.0f} iops clat {r['clat_us']:.0f} us",
+            metric=r["mbps"] if bs == "1M" else r["iops"],
+        )
+
+
+def bench_usb_fio(
+    host: str,
+    password: str,
+    report: Report,
+    runtime: int = FIO_RUNTIME_S,
+    write: bool = False,
+) -> None:
+    rc, out = run_remote(host, password, USB_FIO_PROBE, timeout=30)
+    sec = parse_sections(out)
+    try:
+        disks = lsblk_disks(json.loads(sec.get("lsblk", "")))
+    except json.JSONDecodeError:
+        report.add("usbfio probe", False, f"no lsblk JSON (rc={rc})")
+        return
+    # SATA SSD reference: same read-only jobs.
+    ref = sata_reference(disks)
+    if ref is None:
+        report.add("usbfio sata", True, "SKIP: no non-rotational SATA disk to compare")
+    else:
+        tag = "sata-" + re.sub(r"\W+", "_", (ref.get("model") or ref["name"]).strip())
+        _fio_jobs(host, password, ref, tag, FIO_READ_JOBS, runtime, report)
+    usb = [d for d in disks if d.get("tran") == "usb"]
+    if not usb:
+        report.add(
+            "usbfio usb", True, "SKIP: no USB mass-storage disk attached (TRAN=usb)"
+        )
+        return
+    sysinfo = parse_usb_sys(sec.get("sys", ""))
+    lsusb = parse_lsusb_t(sec.get("lsusb", ""))
+    us, dev = _usb_ssd_guard() if write else (None, None)
+    for d in usb:
+        s = sysinfo.get(d["name"])
+        t = usb_transport(s, lsusb) if s else None
+        vidpid = t["vidpid"] if t else d["name"]
+        tag = f"usb {vidpid}"
+        drv = (t or {}).get("driver") or "unknown"
+        detail = (
+            f"{d['name']} {vidpid} {(t or {}).get('speed', 0):.0f}M driver={drv} "
+            f"trim={'yes' if trim_supported(d) else 'no'}"
+        )
+        report.add(f"usbfio {tag} link", True, detail, metric=(t or {}).get("speed"))
+        report.info[f"usbfio {tag}"] = detail
+        if t and drv == "uas":
+            report.add(
+                f"usbfio {tag} bot-rerun",
+                True,
+                f"force BOT: add `{bot_quirk_hint(vidpid)}` to the kernel cmdline "
+                "(reboot; not done here), re-run, then --compare the two snapshots",
+            )
+        _fio_jobs(host, password, d, tag, FIO_READ_JOBS, runtime, report)
+        if write:
+            errs = us.check_target(d, dev)
+            if errs:
+                report.add(
+                    f"usbfio {tag} write",
+                    False,
+                    f"REFUSED, not the allow-listed USB SSD: {'; '.join(errs)}",
+                )
+            else:
+                _fio_jobs(host, password, d, tag, FIO_WRITE_JOBS, runtime, report)
 
 
 # ======== Health (link, MAC counters, kernel log) ========
@@ -1861,6 +2118,11 @@ def run_subtests(
     if not args.skip_usb:
         check()
         bench_disks(host, pw, _box_disks(host, pw, "usb"), "usb", report)
+    if args.usb_fio:
+        check()
+        bench_usb_fio(
+            host, pw, report, runtime=args.usb_fio_runtime, write=args.usb_fio_write
+        )
     if not args.skip_dma:
         check()
         bench_dma(
@@ -2081,6 +2343,17 @@ def main() -> int:
     ap.add_argument("--skip-usb", action="store_true")
     ap.add_argument("--skip-dma", action="store_true")
     ap.add_argument(
+        "--usb-fio",
+        action="store_true",
+        help="fio --direct=1 on every USB disk + the SATA SSD, read-only (#360)",
+    )
+    ap.add_argument("--usb-fio-runtime", type=int, default=FIO_RUNTIME_S)
+    ap.add_argument(
+        "--usb-fio-write",
+        action="store_true",
+        help="with --usb-fio: also write jobs, only onto the allow-listed USB SSD",
+    )
+    ap.add_argument(
         "--dma-iterations",
         type=int,
         default=20000,
@@ -2184,6 +2457,10 @@ def main() -> int:
         sys.exit("--ssm-mib must split into whole 4 KiB blocks per --ssm-writers")
     if args.dma_pq and not args.dma_reload:
         sys.exit("--dma-pq needs --dma-reload (enable_pq is a module parameter)")
+    if args.usb_fio_write and not args.usb_fio:
+        sys.exit("--usb-fio-write needs --usb-fio")
+    if args.idle and args.usb_fio:
+        sys.exit("--usb-fio is not for --idle (fio load; not unattended)")
     if args.idle:
         heavy = [
             f
