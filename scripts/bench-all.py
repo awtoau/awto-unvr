@@ -35,6 +35,13 @@ Subtests (each is a function taking a Report; metrics land in the snapshot and
   Forced BOT = kernel cmdline `usb-storage.quirks=<vid>:<pid>:u` + reboot; the
   run only reports it (check `bot-rerun`). Flow: run, add quirk, reboot, run,
   --compare. No cross-reboot automation here.
+- pool-fio / pool-nfs (opt-in, never --idle): `--pool-fio POOL` creates POOL/bench
+  (seq: recordsize 1M, rnd: 16K), 8G files (> 2x RAM), O_DIRECT, incompressible
+  data; seq 1M QD1/16 read+write, 4k rand QD1/32; whole-box CPU busy % from
+  /proc/stat per job; destroys POOL/bench after. `--pool-nfs POOL` mounts a
+  temporary share of POOL/bench/nfs (box enp0s2 address, MAC checked in
+  ip neigh) on this host: seq 1M QD16 r/w + 4k randread QD1/32; share deleted
+  by id. Refuses if POOL/bench exists. Metrics follow usb-fio's (MB/s, iops).
 - opt-in, never in --idle: --dma-reload (rmmod/modprobe al_dma; wedge risk until
   #289 is verified on hardware, reboot after), --dma-pq (#169), --ssm (al_ssm
   through dm-crypt: ops landed, cmp integrity, quiesce; drives #300/#182),
@@ -165,6 +172,8 @@ def locate_woomera() -> str:
 
 
 def ssh_cmd(host: str, password: str) -> list[str]:
+    if not password:  # --password "": key auth (TrueNAS image has no root password)
+        return _box.ssh_argv(host, "root", batch=True)
     return [*_box.sshpass_argv(password, connect_timeout=8), f"root@{host}"]
 
 
@@ -992,6 +1001,303 @@ def bench_usb_fio(
                 )
             else:
                 _fio_jobs(host, password, d, tag, FIO_WRITE_JOBS, runtime, report)
+
+
+# ======== Pool fio + NFS (opt-in, never --idle) ========
+# Only ever touches <pool>/bench (own datasets, destroyed afterwards) and one
+# temporary NFS share on <pool>/bench/nfs. Never other datasets or shares.
+POOL_FIO_SIZE = "8G"  # > 2x RAM (3.9 GB box): ARC cannot serve the reads
+POOL_FIO_RUNTIME_S = 30
+POOL_FIO_SLACK_S = 15
+POOL_FIO_LAYOUT_LIMIT_S = 300  # 8G sequential write; limit = 1.25x a 25 MB/s floor
+NFS_FIO_LAYOUT_LIMIT_S = 400  # same file over NFS, 1.25x a 20 MB/s floor
+# (label, rw, bs, qd, is_write, dataset)
+POOL_FIO_JOBS = (
+    ("seq-write-1M-qd1", "write", "1M", 1, True, "seq"),
+    ("seq-write-1M-qd16", "write", "1M", 16, True, "seq"),
+    ("seq-read-1M-qd1", "read", "1M", 1, False, "seq"),
+    ("seq-read-1M-qd16", "read", "1M", 16, False, "seq"),
+    ("randread-4k-qd1", "randread", "4k", 1, False, "rnd"),
+    ("randread-4k-qd32", "randread", "4k", 32, False, "rnd"),
+    ("randwrite-4k-qd1", "randwrite", "4k", 1, True, "rnd"),
+    ("randwrite-4k-qd32", "randwrite", "4k", 32, True, "rnd"),
+)
+NFS_FIO_JOBS = (
+    ("seq-read-1M-qd16", "read", "1M", 16, False),
+    ("seq-write-1M-qd16", "write", "1M", 16, True),
+    ("randread-4k-qd1", "randread", "4k", 1, False),
+    ("randread-4k-qd32", "randread", "4k", 32, False),
+)
+
+
+def pool_fio_cmd(
+    path: str, rw: str, bs: str, qd: int, runtime: int | None, size: str = POOL_FIO_SIZE
+) -> str:
+    """fio on a file; incompressible data (lz4 must not flatter it). O_DIRECT
+    (ZFS 2.3+ Direct IO) bypasses ARC. runtime None = untimed layout pass."""
+    parts = [
+        "fio --name=poolfio",
+        f"--filename={path} --size={size}",
+        "--direct=1 --ioengine=libaio --group_reporting",
+        f"--rw={rw} --bs={bs} --iodepth={qd}",
+        "--refill_buffers --buffer_compress_percentage=0 --randrepeat=0",
+        "--output-format=json",
+    ]
+    if runtime is not None:
+        parts.append(f"--runtime={runtime} --time_based")
+    return " ".join(parts)
+
+
+def parse_cpu_busy(text: str) -> float | None:
+    """Whole-system busy % (not idle, not iowait) between two `@@cpu0/@@cpu1`
+    lines carrying /proc/stat's aggregate `cpu` line."""
+    vals = []
+    for tag in ("@@cpu0", "@@cpu1"):
+        m = re.search(rf"^{tag} cpu\s+([\d ]+)$", text, re.M)
+        if not m:
+            return None
+        vals.append([int(x) for x in m.group(1).split()])
+    if len(vals[0]) < 5 or len(vals[0]) != len(vals[1]):
+        return None
+    d = [b - a for a, b in zip(*vals)]
+    total = sum(d[:8])
+    if total <= 0:
+        return None
+    return 100.0 * (total - d[3] - d[4]) / total
+
+
+def _with_cpu(cmd: str) -> str:
+    return f'echo "@@cpu0 $(head -1 /proc/stat)"; {cmd}; echo; echo "@@cpu1 $(head -1 /proc/stat)"'
+
+
+def parse_fio_cpu_json(text: str, write: bool) -> dict | None:
+    r = parse_fio_json(text, write)
+    if r is not None:
+        r["cpu_busy"] = parse_cpu_busy(text)
+    return r
+
+
+def _pool_job(
+    run,
+    tag: str,
+    label: str,
+    cmd: str,
+    write: bool,
+    limit: int,
+    bs: str,
+    report: Report,
+) -> None:
+    rc, out = run(_with_cpu(cmd), limit)
+    name = f"{tag} {label}"
+    if rc == 124:
+        report.add(name, False, f"{out} (limit {limit}s)")
+        return
+    r = parse_fio_cpu_json(out, write)
+    if rc != 0 or r is None:
+        tail = out.strip().splitlines()[-1] if out.strip() else f"rc={rc}"
+        report.add(name, False, f"fio failed: {tail}")
+        return
+    cpu = f" cpu {r['cpu_busy']:.0f}%" if r["cpu_busy"] is not None else ""
+    report.add(
+        name,
+        True,
+        f"{r['mbps']:.1f} MB/s {r['iops']:.0f} iops clat {r['clat_us']:.0f} us{cpu}",
+        metric=r["mbps"] if bs == "1M" else r["iops"],
+    )
+
+
+def bench_pool_fio(
+    host: str,
+    password: str,
+    report: Report,
+    pool: str,
+    runtime: int = POOL_FIO_RUNTIME_S,
+    size: str = POOL_FIO_SIZE,
+) -> None:
+    root = f"{pool}/bench"
+    mnt = f"/mnt/{root}"
+    tag = f"poolfio {pool}"
+    run = lambda s, t: run_remote(host, password, s, timeout=t)  # noqa: E731
+    rc, out = run(f"zfs list -H -o name {root} 2>&1", 15)
+    if rc == 0:
+        report.add(
+            tag, False, f"{root} already exists; refusing to reuse or destroy it"
+        )
+        return
+    rc, out = run(
+        f"zfs create -o compression=lz4 -o recordsize=1M {root} && "
+        f"zfs create -o recordsize=1M {root}/seq && "
+        f"zfs create -o recordsize=16K {root}/rnd && "
+        f"zpool get -H -o value ashift {pool}; zfs get -H -o value compression {root}/seq",
+        60,
+    )
+    if rc != 0:
+        report.add(tag, False, f"dataset create failed: {out.strip()[-200:]}")
+        run(f"zfs destroy -r {root}", 60)
+        return
+    report.info[tag] = (
+        f"{root}/seq recordsize=1M, {root}/rnd recordsize=16K, size {size}"
+    )
+    try:
+        laid: set[str] = set()
+        for label, rw, bs, qd, write, ds in POOL_FIO_JOBS:
+            path = f"{mnt}/{ds}/f"
+            if ds not in laid:
+                laid.add(ds)
+                rc, out = run(
+                    pool_fio_cmd(path, "write", "1M", 16, None, size),
+                    POOL_FIO_LAYOUT_LIMIT_S,
+                )
+                if rc != 0:
+                    report.add(
+                        f"{tag} layout-{ds}", False, f"rc={rc} {out.strip()[-200:]}"
+                    )
+                    continue
+            _pool_job(
+                run,
+                tag,
+                label,
+                pool_fio_cmd(path, rw, bs, qd, runtime, size),
+                write,
+                runtime + POOL_FIO_SLACK_S,
+                bs,
+                report,
+            )
+    finally:
+        rc, out = run(f"zfs destroy -r {root}", 120)
+        report.add(
+            f"{tag} cleanup",
+            rc == 0,
+            f"zfs destroy -r {root}: rc={rc} {out.strip()[-120:]}",
+        )
+
+
+def _run_local(cmd: list[str], timeout: int = 60) -> tuple[int, str]:
+    try:
+        r = subprocess.run(
+            cmd, capture_output=True, text=True, timeout=timeout, check=False
+        )
+        return r.returncode, r.stdout + r.stderr
+    except subprocess.TimeoutExpired:
+        return 124, f"{cmd[0]} timed out after {timeout}s"
+
+
+def bench_pool_nfs(
+    host: str,
+    password: str,
+    report: Report,
+    pool: str,
+    iface: str = "enp0s2",
+    runtime: int = POOL_FIO_RUNTIME_S,
+    size: str = POOL_FIO_SIZE,
+) -> None:
+    """NFS over the box's `iface` address, mounted on this host. Own dataset
+    <pool>/bench/nfs, own share (deleted by id); other shares untouched."""
+    tag = f"nfsfio {pool}"
+    root = f"{pool}/bench"
+    ds = f"{root}/nfs"
+    run = lambda s, t: run_remote(host, password, s, timeout=t)  # noqa: E731
+    ip = _iface_ip(host, password, iface)
+    if not ip:
+        report.add(tag, False, f"no IPv4 on box {iface}")
+        return
+    rc, mac_box = run(f"cat /sys/class/net/{iface}/address", 10)
+    _, route = _run_local(["ip", "-o", "route", "get", ip])
+    m = re.search(r"dev (\S+)", route)
+    nic = m.group(1) if m else "?"
+    _run_local(["ping", "-c1", "-W1", ip], 5)
+    _, neigh = _run_local(["ip", "neigh", "show", ip])
+    if mac_box.strip().lower() not in neigh.lower():
+        report.add(
+            tag,
+            False,
+            f"ip neigh {ip} is not {iface} MAC {mac_box.strip()}: {neigh.strip()}",
+        )
+        return
+    rc, out = run(f"zfs list -H -o name {root} 2>&1", 15)
+    made_root = rc != 0
+    if made_root:
+        rc, out = run(f"zfs create -o compression=lz4 -o recordsize=1M {root}", 30)
+    rc, out = run(f"zfs create -o recordsize=1M {ds}", 30)
+    if rc != 0:
+        report.add(tag, False, f"dataset create failed: {out.strip()[-200:]}")
+        if made_root:
+            run(f"zfs destroy -r {root}", 60)
+        return
+    share_id = None
+    mnt = Path("tmp/nfs-bench").resolve()
+    mounted = False
+    try:
+        spec = json.dumps(
+            {
+                "path": f"/mnt/{ds}",
+                "networks": [f"{ip.rsplit('.', 1)[0]}.0/24"],
+                "maproot_user": "root",
+                "maproot_group": "root",
+                "comment": "bench-all temporary",
+            }
+        )
+        rc, out = run(f"midclt call sharing.nfs.create '{spec}'", 30)
+        try:
+            share_id = json.loads(out.strip().splitlines()[-1])["id"]
+        except (ValueError, KeyError, IndexError, TypeError):
+            report.add(tag, False, f"sharing.nfs.create failed: {out.strip()[-200:]}")
+            return
+        mnt.mkdir(parents=True, exist_ok=True)
+        rc, out = _run_local(
+            [
+                "sudo",
+                "-n",
+                "mount",
+                "-t",
+                "nfs",
+                "-o",
+                "vers=4.2,rsize=1048576,wsize=1048576",
+                f"{ip}:/mnt/{ds}",
+                str(mnt),
+            ],
+            30,
+        )
+        if rc != 0:
+            report.add(tag, False, f"mount failed: {out.strip()[-200:]}")
+            return
+        mounted = True
+        _, opts = _run_local(["findmnt", "-no", "OPTIONS", str(mnt)])
+        report.info[tag] = (
+            f"{ip} ({iface} {mac_box.strip()}) via host {nic}; {opts.strip()}"
+        )
+        lrun = lambda s, t: _run_local(["bash", "-c", s], t)  # noqa: E731
+        path = f"{mnt}/f"
+        rc, out = lrun(
+            pool_fio_cmd(path, "write", "1M", 16, None, size), NFS_FIO_LAYOUT_LIMIT_S
+        )
+        if rc != 0:
+            report.add(f"{tag} layout", False, f"rc={rc} {out.strip()[-200:]}")
+            return
+        for label, rw, bs, qd, write in NFS_FIO_JOBS:
+            _pool_job(
+                lrun,
+                tag,
+                label,
+                pool_fio_cmd(path, rw, bs, qd, runtime, size),
+                write,
+                runtime + POOL_FIO_SLACK_S,
+                bs,
+                report,
+            )
+    finally:
+        if mounted:
+            _run_local(["sudo", "-n", "umount", str(mnt)], 30)
+        if share_id is not None:
+            run(f"midclt call sharing.nfs.delete {share_id}", 30)
+        rc, out = run(f"zfs destroy -r {ds}", 120)
+        if made_root:
+            run(f"zfs destroy -r {root}", 120)
+        report.add(
+            f"{tag} cleanup",
+            rc == 0,
+            f"share {share_id} deleted, {ds} destroyed: rc={rc}",
+        )
 
 
 # ======== Health (link, MAC counters, kernel log) ========
@@ -2123,6 +2429,12 @@ def run_subtests(
         bench_usb_fio(
             host, pw, report, runtime=args.usb_fio_runtime, write=args.usb_fio_write
         )
+    if args.pool_fio:
+        check()
+        bench_pool_fio(host, pw, report, args.pool_fio, runtime=args.pool_fio_runtime)
+    if args.pool_nfs:
+        check()
+        bench_pool_nfs(host, pw, report, args.pool_nfs, runtime=args.pool_fio_runtime)
     if not args.skip_dma:
         check()
         bench_dma(
@@ -2335,7 +2647,11 @@ def main() -> int:
     ap.add_argument(
         "--host", help="woomera's address (default: auto-locate by MAC OUI)"
     )
-    ap.add_argument("--password", default=DEFAULT_ROOT_PASSWORD)
+    ap.add_argument(
+        "--password",
+        default=DEFAULT_ROOT_PASSWORD,
+        help='root password; "" = ssh key auth (TrueNAS)',
+    )
     ap.add_argument("--skip-health", action="store_true")
     ap.add_argument("--skip-eth", action="store_true")
     ap.add_argument("--skip-crypto", action="store_true")
@@ -2348,6 +2664,17 @@ def main() -> int:
         help="fio --direct=1 on every USB disk + the SATA SSD, read-only (#360)",
     )
     ap.add_argument("--usb-fio-runtime", type=int, default=FIO_RUNTIME_S)
+    ap.add_argument(
+        "--pool-fio",
+        metavar="POOL",
+        help="fio on temporary datasets POOL/bench (8G, incompressible), destroyed after",
+    )
+    ap.add_argument(
+        "--pool-nfs",
+        metavar="POOL",
+        help="fio over NFS (box 10G address) to a temporary POOL/bench/nfs share",
+    )
+    ap.add_argument("--pool-fio-runtime", type=int, default=POOL_FIO_RUNTIME_S)
     ap.add_argument(
         "--usb-fio-write",
         action="store_true",
@@ -2459,6 +2786,10 @@ def main() -> int:
         sys.exit("--dma-pq needs --dma-reload (enable_pq is a module parameter)")
     if args.usb_fio_write and not args.usb_fio:
         sys.exit("--usb-fio-write needs --usb-fio")
+    if args.idle and (args.pool_fio or args.pool_nfs):
+        sys.exit(
+            "--pool-fio/--pool-nfs are not for --idle (heavy load, creates datasets)"
+        )
     if args.idle and args.usb_fio:
         sys.exit("--usb-fio is not for --idle (fio load; not unattended)")
     if args.idle:

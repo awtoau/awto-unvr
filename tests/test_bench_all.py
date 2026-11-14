@@ -605,3 +605,57 @@ def test_usb_fio_skips_with_no_usb_disk(monkeypatch):
     m.bench_usb_fio("h", "p", rep)
     assert all(ok for _, ok, _ in rep.checks)
     assert any("no USB mass-storage disk" in d for _, _, d in rep.checks)
+
+
+# ---- pool fio / nfs --------------------------------------------------------
+
+CPU_PAIR = (
+    "@@cpu0 cpu  100 0 100 700 100 0 0 0 0 0\n"
+    "{}\n"
+    "@@cpu1 cpu  200 0 200 800 100 0 0 0 0 0\n"
+)
+
+
+def test_parse_cpu_busy_excludes_idle_and_iowait():
+    # delta: user 100 sys 100 idle 100 iowait 0 -> 200/300
+    assert abs(_mod().parse_cpu_busy(CPU_PAIR) - 66.667) < 0.01
+
+
+def test_parse_cpu_busy_none_on_missing_or_zero_delta():
+    m = _mod()
+    assert m.parse_cpu_busy("no markers") is None
+    same = "@@cpu0 cpu  1 0 1 1 1\n@@cpu1 cpu  1 0 1 1 1\n"
+    assert m.parse_cpu_busy(same) is None
+
+
+def test_parse_fio_cpu_json_carries_cpu():
+    fio = (
+        '{"jobs":[{"write":{"bw_bytes":150000000,"iops":143.0,'
+        '"clat_ns":{"mean":7000000}},"read":{}}]}'
+    )
+    text = CPU_PAIR.replace("{}", fio)
+    r = _mod().parse_fio_cpu_json(text, True)
+    assert r["mbps"] == 150.0 and round(r["cpu_busy"]) == 67
+
+
+def test_pool_fio_cmd_incompressible_and_layout_untimed():
+    m = _mod()
+    c = m.pool_fio_cmd("/mnt/t/bench/seq/f", "write", "1M", 16, None)
+    assert "--refill_buffers" in c and "--buffer_compress_percentage=0" in c
+    assert "--time_based" not in c and "--size=8G" in c
+    assert "--runtime=30 --time_based" in m.pool_fio_cmd("/x", "read", "4k", 1, 30)
+
+
+def test_pool_fio_refuses_existing_bench_dataset(monkeypatch):
+    m = _mod()
+    calls = []
+
+    def fake(host, pw, script, timeout=60):
+        calls.append(script)
+        return 0, "tank/bench\n"
+
+    monkeypatch.setattr(m, "run_remote", fake)
+    rep = m.Report(echo=False)
+    m.bench_pool_fio("h", "p", rep, "tank")
+    assert not rep.checks[0][1] and "already exists" in rep.checks[0][2]
+    assert not any("destroy" in c for c in calls)
