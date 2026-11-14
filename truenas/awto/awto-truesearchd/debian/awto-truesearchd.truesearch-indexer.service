@@ -1,0 +1,14 @@
+[Unit]
+Description=truesearch-indexer (periodic rescan of searched shares)
+After=truesearchd.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/truesearchd index
+StateDirectory=truesearchd
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

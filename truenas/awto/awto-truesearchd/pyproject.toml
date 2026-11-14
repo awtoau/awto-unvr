@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "awto-truesearchd"
+version = "27.0.0"
+description = "Filename search daemon for Samba's truesearch Spotlight backend (awto-unvr #357)"
+requires-python = ">=3.11"
+license = {text = "GPL-2.0-or-later"}
+
+[project.scripts]
+truesearchd = "truesearchd.__main__:main"
+
+[tool.setuptools]
+packages = ["truesearchd"]
+
+[tool.setuptools.package-data]
+truesearchd = ["proto/*.x"]

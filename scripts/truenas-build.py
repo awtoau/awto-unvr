@@ -49,6 +49,9 @@ LOCAL = WORK / "local"
 EXTERNAL_ALLOW = {"caddy"}
 # stand-ins for TrueNAS's closed packages, one Debian source package per dir
 STUBS = REPO / "truenas" / "stubs"
+AWTO = (
+    REPO / "truenas" / "awto"
+)  # our own services (real implementations, not stand-ins)
 KWORK = WORK / "kernel"
 KIMAGE = "localhost/awto-truenas-kbuild:trixie"
 KERNEL_DEBS = (
@@ -339,15 +342,22 @@ def invalidate_on_patch_change() -> None:
 
 
 def stub_dirs() -> list[Path]:
-    """Every truenas/stubs/<name>/ with a debian/control: one scale-build source each."""
+    """Every truenas/{stubs,awto}/<name>/ with a debian/control: one scale-build source each."""
     if not STUBS.is_dir():
         log(
             f"WARNING: {rel(STUBS)} absent - no stand-ins for TrueNAS's closed packages"
         )
-        return []
-    dirs = sorted(d for d in STUBS.iterdir() if (d / "debian" / "control").is_file())
-    for d in sorted(set(STUBS.iterdir()) - set(dirs)):
-        log(f"WARNING: {rel(d)} has no debian/control - skipped")
+    dirs: list[Path] = []
+    for base in (STUBS, AWTO):
+        if not base.is_dir():
+            continue
+        found = sorted(
+            d for d in base.iterdir() if (d / "debian" / "control").is_file()
+        )
+        for d in sorted(set(p for p in base.iterdir() if p.is_dir()) - set(found)):
+            if d.name != "__pycache__":
+                log(f"WARNING: {rel(d)} has no debian/control - skipped")
+        dirs += found
     return dirs
 
 

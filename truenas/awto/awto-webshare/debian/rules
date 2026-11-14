@@ -1,0 +1,16 @@
+#!/usr/bin/make -f
+
+export PYBUILD_NAME=awto-webshare
+export PYBUILD_SYSTEM=pyproject
+export PYBUILD_DISABLE=test
+
+%:
+	dh $@ --with python3 --buildsystem=pybuild
+
+# middleware's webshare service unit (plugins/service_/services/webshare.py) is truenas-webshare-auth
+override_dh_installsystemd:
+	dh_installsystemd --no-enable --no-start --name=truenas-webshare-auth
+
+# /etc/pam.d/webshare
+override_dh_installpam:
+	dh_installpam --name=webshare

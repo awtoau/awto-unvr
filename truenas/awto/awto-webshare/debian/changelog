@@ -1,0 +1,5 @@
+awto-webshare (27.0.0) unstable; urgency=medium
+
+  * Simple WebShare: login, list, download (Range), upload, mkdir, rename, delete (awto-unvr #357).
+
+ -- Awto <noreply@awto.au>  Sat, 14 Nov 2026 12:00:00 +1000

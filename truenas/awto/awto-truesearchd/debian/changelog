@@ -1,0 +1,5 @@
+awto-truesearchd (27.0.0) unstable; urgency=medium
+
+  * Filename-index truesearchd + truesearch-indexer (awto-unvr #357).
+
+ -- Awto <noreply@awto.au>  Sat, 14 Nov 2026 12:00:00 +1000

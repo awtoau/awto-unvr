@@ -1,0 +1,19 @@
+Source: awto-truesearchd
+Section: contrib/net
+Priority: optional
+Maintainer: Awto <noreply@awto.au>
+Build-Depends: debhelper-compat (= 13),
+               dh-python,
+               pybuild-plugin-pyproject,
+               python3-all,
+               python3-setuptools
+Standards-Version: 4.7.0
+Homepage: https://github.com/awtoau/awto-unvr
+
+Package: awto-truesearchd
+Architecture: all
+Depends: ${misc:Depends}, ${python3:Depends}, python3
+Description: filename search daemon for Samba Spotlight (truesearch backend)
+ Serves Samba's `spotlight backend = truesearch` unix socket protocol (rix v1)
+ from a SQLite filename index, trimmed per asking identity. Clean-room, written
+ from Samba's public mdssvc_truesearch.c and truenas_truesearch.x.

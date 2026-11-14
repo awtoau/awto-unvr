@@ -1,0 +1,15 @@
+[Unit]
+Description=truesearchd (Spotlight filename search for Samba)
+After=local-fs.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/truesearchd serve
+RuntimeDirectory=truesearchd
+StateDirectory=truesearchd
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target

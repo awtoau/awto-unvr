@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "awto-webshare"
+version = "27.0.0"
+description = "Simple web file browser for TrueNAS WebShare config (awto-unvr #357)"
+requires-python = ">=3.11"
+license = {text = "GPL-2.0-or-later"}
+
+[project.scripts]
+awto-webshare = "awto_webshare.__main__:main"
+
+[tool.setuptools]
+packages = ["awto_webshare"]
+
+[tool.setuptools.package-data]
+awto_webshare = ["static/*.html"]

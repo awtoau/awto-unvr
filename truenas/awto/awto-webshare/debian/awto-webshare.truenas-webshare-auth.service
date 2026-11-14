@@ -1,0 +1,14 @@
+[Unit]
+Description=WebShare (awto-webshare) file browser on port 755
+After=network-online.target local-fs.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/awto-webshare
+ExecReload=/bin/kill -HUP $MAINPID
+StateDirectory=awto-webshare
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

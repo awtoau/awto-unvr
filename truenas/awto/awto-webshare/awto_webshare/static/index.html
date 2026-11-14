@@ -1,0 +1,80 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WebShare</title>
+<style>
+  :root { color-scheme: light dark; font-family: system-ui, sans-serif; }
+  body { margin: 0 auto; max-width: 56rem; padding: 1rem; }
+  table { width: 100%; border-collapse: collapse; }
+  td, th { padding: .3rem .5rem; text-align: left; border-bottom: 1px solid #8884; }
+  td.n { text-align: right; white-space: nowrap; }
+  a { cursor: pointer; }
+  .row { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; margin: .5rem 0; }
+  #err { color: #c33; min-height: 1.2em; }
+</style>
+<h1>WebShare</h1>
+<div id="err"></div>
+<form id="login" class="row">
+  <input name="u" placeholder="username" autocomplete="username" required>
+  <input name="p" type="password" placeholder="password" autocomplete="current-password" required>
+  <button>Log in</button>
+</form>
+<div id="app" hidden>
+  <div class="row"><b id="crumb"></b><span style="flex:1"></span>
+    <button id="mk">New folder</button>
+    <label><input id="up" type="file" multiple hidden><button type="button" onclick="up.click()">Upload</button></label>
+    <button id="out">Log out</button></div>
+  <table><thead><tr><th>Name<th class="n">Size<th class="n">Modified<th></thead><tbody id="rows"></tbody></table>
+</div>
+<script>
+const H = {"X-WebShare": "1"}, $ = s => document.querySelector(s);
+let share = "", dir = "";
+const enc = p => p.split("/").map(encodeURIComponent).join("/");
+async function api(path, o = {}) {
+  const r = await fetch("/api/" + path, {...o, headers: {...H, ...(o.headers || {})}});
+  if (!r.ok) { $("#err").textContent = r.status + " " + await r.text(); if (r.status == 401) show(false); throw 0; }
+  $("#err").textContent = ""; return r;
+}
+function show(on) { $("#login").hidden = on; $("#app").hidden = !on; }
+async function shares() {
+  const l = await (await api("shares")).json();
+  if (!share) { share = l[0]?.name || ""; }
+  await ls(share ? dir : "");
+}
+async function ls(d) {
+  dir = d;
+  const j = await (await api("list/" + encodeURIComponent(share) + (d ? "/" + enc(d) : ""))).json();
+  $("#crumb").textContent = "/" + share + (d ? "/" + d : "");
+  const t = $("#rows"); t.textContent = "";
+  const add = (name, ent) => {
+    const tr = t.insertRow(), full = (dir ? dir + "/" : "") + name;
+    const a = document.createElement("a"); a.textContent = ent ? (ent.type == "dir" ? name + "/" : name) : "../";
+    a.onclick = () => ent ? (ent.type == "dir" ? ls(full) : location.href = "/api/dl/" + encodeURIComponent(share) + "/" + enc(full))
+                          : ls(dir.split("/").slice(0, -1).join("/"));
+    tr.insertCell().append(a);
+    tr.insertCell().textContent = ent && ent.type == "file" ? ent.size : ""; tr.cells[1].className = "n";
+    tr.insertCell().textContent = ent ? new Date(ent.mtime * 1000).toISOString().slice(0, 16).replace("T", " ") : ""; tr.cells[2].className = "n";
+    const c = tr.insertCell();
+    if (ent) {
+      const rn = document.createElement("a"); rn.textContent = "rename "; rn.onclick = async () => {
+        const to = prompt("New name", name); if (to) { await api("rename/" + encodeURIComponent(share) + "/" + enc(full), {method: "POST", body: JSON.stringify({to: (dir ? dir + "/" : "") + to})}); ls(dir); } };
+      const rm = document.createElement("a"); rm.textContent = "delete"; rm.onclick = async () => {
+        if (confirm("Delete " + name + "?")) { await api("rm/" + encodeURIComponent(share) + "/" + enc(full), {method: "DELETE"}); ls(dir); } };
+      c.append(rn, rm);
+    }
+  };
+  if (d) add("", null);
+  j.entries.forEach(e => add(e.name, e));
+}
+$("#login").onsubmit = async e => {
+  e.preventDefault();
+  try { await api("login", {method: "POST", body: JSON.stringify({username: e.target.u.value, password: e.target.p.value})}); show(true); e.target.p.value = ""; shares(); } catch {}
+};
+$("#out").onclick = async () => { await api("logout", {method: "POST"}); show(false); };
+$("#mk").onclick = async () => { const n = prompt("Folder name"); if (n) { await api("mkdir/" + encodeURIComponent(share) + "/" + enc((dir ? dir + "/" : "") + n), {method: "POST"}); ls(dir); } };
+$("#up").onchange = async e => {
+  for (const f of e.target.files) await api("ul/" + encodeURIComponent(share) + "/" + enc((dir ? dir + "/" : "") + f.name), {method: "PUT", body: f});
+  e.target.value = ""; ls(dir);
+};
+shares().then(() => show(true)).catch(() => show(false));
+</script>

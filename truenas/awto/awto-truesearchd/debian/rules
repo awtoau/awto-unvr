@@ -1,0 +1,13 @@
+#!/usr/bin/make -f
+
+export PYBUILD_NAME=awto-truesearchd
+export PYBUILD_SYSTEM=pyproject
+export PYBUILD_DISABLE=test
+
+%:
+	dh $@ --with python3 --buildsystem=pybuild
+
+# middleware starts/stops both units (services/truesearch.py)
+override_dh_installsystemd:
+	dh_installsystemd --no-enable --no-start --name=truesearchd
+	dh_installsystemd --no-enable --no-start --name=truesearch-indexer

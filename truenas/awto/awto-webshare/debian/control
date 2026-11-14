@@ -1,0 +1,19 @@
+Source: awto-webshare
+Section: contrib/net
+Priority: optional
+Maintainer: Awto <noreply@awto.au>
+Build-Depends: debhelper-compat (= 13),
+               dh-python,
+               pybuild-plugin-pyproject,
+               python3-all,
+               python3-setuptools
+Standards-Version: 4.7.0
+Homepage: https://github.com/awtoau/awto-unvr
+
+Package: awto-webshare
+Architecture: all
+Depends: ${misc:Depends}, ${python3:Depends}, python3-aiohttp, openssl, libpam0g
+Description: simple web file browser for TrueNAS WebShare
+ Serves the shares in middleware's rendered /etc/webshare/config.json on port 755
+ (HTTPS), PAM service `webshare`, group `truenas_webshare`. File I/O runs as the
+ logged-in user. Clean-room: no TrueNAS closed code.
