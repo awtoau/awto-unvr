@@ -1,0 +1,36 @@
+From: awto <noreply@awto.au>
+Subject: [PATCH] ix-vendor timeout 120 s; mask avahi-daemon, ndctl-monitor (awto-unvr #358)
+
+- ix-vendor imports middlewared (~17 s on 4xA57); 30 s limit hit at boot.
+- avahi-daemon: mDNS is truenas-discoveryd; no avahi-daemon.conf is rendered.
+- ndctl-monitor exits without NVDIMMs.
+---
+diff --git a/debian/debian/ix-vendor.service b/debian/debian/ix-vendor.service
+index 4489f09..e3b3aec 100644
+--- a/debian/debian/ix-vendor.service
++++ b/debian/debian/ix-vendor.service
+@@ -7,7 +7,8 @@ After=ix-postinit.service
+ [Service]
+ Type=oneshot
+ RemainAfterExit=yes
+-TimeoutStartSec=30
++# awto-unvr: middlewared import takes ~17 s on a 4xA57 (30 s limit hit at boot load); 120 s = ~2x loaded boot.
++TimeoutStartSec=120
+ RestartSec=10
+ ExecStart=-/usr/bin/start_vendor_service
+ StandardOutput=null
+diff --git a/debian/debian/postinst b/debian/debian/postinst
+index 8207969..96d88d4 100755
+--- a/debian/debian/postinst
++++ b/debian/debian/postinst
+@@ -98,6 +98,10 @@ systemctl mask mdadm.service mdmonitor.service
+ # on large disk systems
+ systemctl mask lvm2-monitor.service
+ 
++# awto-unvr: mDNS is truenas-discoveryd; nothing renders /etc/avahi/avahi-daemon.conf, so avahi-daemon
++# only fails. ndctl-monitor exits when there are no NVDIMMs.
++systemctl mask avahi-daemon.service avahi-daemon.socket ndctl-monitor.service
++
+ # ipa-epn.service is in conflict with our implementation of support for IPA
+ systemctl mask ipa-epn.service ipa-epn.timer
+ 

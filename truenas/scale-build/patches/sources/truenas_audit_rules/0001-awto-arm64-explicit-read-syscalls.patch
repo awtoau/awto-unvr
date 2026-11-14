@@ -1,0 +1,17 @@
+From: awto <noreply@awto.au>
+Subject: [PATCH] community rules: explicit arm64 read syscalls instead of perm=r (awto-unvr #358)
+
+libaudit expands perm=r to readlink,stat,open,...; arm64 has none of the legacy ones so augenrules fails and no rules load.
+---
+diff --git a/rules/truenas-community-edition.rules b/rules/truenas-community-edition.rules
+index 0f31a9b..c8079ec 100644
+--- a/rules/truenas-community-edition.rules
++++ b/rules/truenas-community-edition.rules
+@@ -12,4 +12,6 @@
+ -A exclude,always -F msgtype=SERVICE_STOP
+ 
+ ## TrueNAS configuration
+--a always,exit -F arch=b64 -F dir=/data/ -F perm=r -F auid!=unset -F key=escalation
++## awto-unvr: no perm=r - libaudit expands it to readlink,stat,open,... which arm64 lacks (augenrules fails).
++## Explicit arm64-valid read syscalls (generic table; no open/stat/lstat/readlink).
++-a always,exit -F arch=b64 -S openat,openat2,readlinkat,newfstatat,fstat,statx,listxattr,llistxattr,flistxattr,getxattr,lgetxattr,fgetxattr,quotactl -F dir=/data/ -F auid!=unset -F key=escalation
