@@ -1707,6 +1707,17 @@ def cmd_ssd_repartition(extra: list[str]) -> int:
 
 
 @command(
+    "prepare the USB SSD as the awto-uboot `usb` boot target (#360): inspect (read-only), "
+    "prepare [--go], verify, rehearse (loop device). Refuses anything that is not an "
+    "allow-listed USB-transport disk (scripts/usb-ssd.py)",
+    args="inspect|prepare [--go]|verify|rehearse [--dev sdX]",
+    kind="action",
+)
+def cmd_usb_ssd(extra: list[str]) -> int:
+    return _run_script("scripts/usb-ssd.py", extra)
+
+
+@command(
     "shell on woomera over the 1G port - a second terminal beside the serial "
     "console. Finds the box by its stable 1G MAC every time (DHCP moves the "
     "lease); pass `-- <cmd>` to run one command (scripts/ssh-woomera.py)",

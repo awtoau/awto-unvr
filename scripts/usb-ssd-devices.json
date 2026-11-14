@@ -1,0 +1,25 @@
+{
+  "_doc": "Allow-list for ./dev.py usb-ssd (#360). A target must be tran=usb AND match one entry. serial null = any serial; serial_required = entry is inert until a serial is recorded.",
+  "allow": [
+    {
+      "label": "Micron TFDDAK256TDL behind ASMT1051 (#137, #157)",
+      "model_re": "TFDDAK256TDL",
+      "serial": null,
+      "serial_required": false,
+      "max_bytes": 300000000000
+    },
+    {
+      "label": "ASMT1051 bridge reporting its own name (SSD model hidden)",
+      "model_re": "ASM.?1051",
+      "serial": null,
+      "serial_required": true,
+      "max_bytes": 300000000000
+    }
+  ],
+  "never_serials": [
+    "S21BNXAG501763W",
+    "VGG8B0LG",
+    "VGG8ASZG",
+    "WCT3LCS1"
+  ]
+}
