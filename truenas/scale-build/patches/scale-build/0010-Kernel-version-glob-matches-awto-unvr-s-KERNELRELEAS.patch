@@ -1,0 +1,27 @@
+From ab26d7daa2083d79058053acb6d920fa36baf895 Mon Sep 17 00:00:00 2001
+From: awto <noreply@awto.au>
+Date: Sat, 14 Nov 2026 12:01:46 +1100
+Subject: [PATCH] Kernel version glob matches awto-unvr's KERNELRELEASE
+
+Ours is <ver>-production-truenas-<sha>+, not <ver>-production+truenas; fail with the list if not exactly one.
+---
+ scale_build/utils/kernel.py | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/scale_build/utils/kernel.py b/scale_build/utils/kernel.py
+index 4472e16..6bfba48 100644
+--- a/scale_build/utils/kernel.py
++++ b/scale_build/utils/kernel.py
+@@ -3,4 +3,8 @@ import os
+ 
+ 
+ def get_kernel_version(rootfs_path):
+-    return glob.glob(os.path.join(rootfs_path, 'boot/vmlinuz-*-production+truenas'))[0].split('/')[-1][len('vmlinuz-'):]
++    # Upstream names it <ver>-production+truenas; awto-unvr's is <ver>-production-truenas-<sha>+.
++    found = glob.glob(os.path.join(rootfs_path, 'boot/vmlinuz-*-production*truenas*'))
++    if len(found) != 1:
++        raise RuntimeError(f'expected one production vmlinuz in {rootfs_path}/boot, found {found}')
++    return found[0].split('/')[-1][len('vmlinuz-'):]
+-- 
+2.56.1
+
