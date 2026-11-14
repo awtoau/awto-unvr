@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-2.0-or-later
 # Copyright (C) 2026 Awto / Daniel Tyrrell
-"""Idempotent TrueNAS config for woomera: tank/home, user dan, SMB + NFS, snapshots (#356, #358).
+"""Idempotent TrueNAS config for woomera: tank/home, user dan, SMB + NFS, snapshots,
+Spotlight (TrueSearch) + WebShare (#356, #357, #358).
 
   ./dev.py truenas-config plan     # print the steps, touch nothing on the box
   ./dev.py truenas-config apply    # converge the box (safe to re-run; run after every reinstall)
@@ -19,8 +20,11 @@ import argparse
 import json
 import os
 import secrets as pysecrets
+import ssl
 import subprocess
 import sys
+import time
+import urllib.request
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -35,6 +39,8 @@ HOME_PATH = f"/mnt/{DATASET}"
 USER, UID, GID = "dan", 1000, 1000
 SECRET_SECTION = "woomera-truenas-dan"
 SHARE = "home"
+WEBSHARE_GROUP = "truenas_webshare"  # built-in; awto-webshare's default allowed group
+WEBSHARE_PORT = 755
 SECRETS = Path(os.path.expanduser("~/.config/awto/secrets.yaml"))
 PUBKEYS = [Path.home() / ".ssh" / n for n in ("id_ed25519.pub", "id_rsa.pub")]
 # (name, cron minute/hour, lifetime) - hourly kept 2 days, daily kept 30 days
@@ -366,8 +372,37 @@ def step_nfs() -> None:
         mc("sharing.nfs.create", want)
 
 
+def step_search() -> None:
+    log("smb search_protocols: SPOTLIGHT (truesearchd)")
+    mc("smb.update", {"search_protocols": ["SPOTLIGHT"]})
+
+
+def step_webshare() -> None:
+    # user.update silently drops builtin groups (returns groups: []); group.update keeps them.
+    grp = q("group.query", [["group", "=", WEBSHARE_GROUP]])
+    user = q("user.query", [["username", "=", USER]])
+    if grp and user and user[0]["id"] not in grp[0]["users"]:
+        log(f"group {WEBSHARE_GROUP}: add {USER}")
+        mc("group.update", grp[0]["id"], {"users": [*grp[0]["users"], user[0]["id"]]})
+    want = {"name": SHARE, "path": HOME_PATH, "is_home_base": True}
+    row = q("sharing.webshare.query", [["name", "=", SHARE]])
+    if row:
+        log(f"webshare {SHARE}: update")
+        mc(
+            "sharing.webshare.update",
+            row[0]["id"],
+            {"path": HOME_PATH, "is_home_base": True},
+        )
+    else:
+        log(f"webshare {SHARE}: create")
+        mc("sharing.webshare.create", want)
+
+
+SERVICES = ("cifs", "nfs", "webshare")
+
+
 def step_services() -> None:
-    for svc in ("cifs", "nfs"):
+    for svc in SERVICES:
         mc("service.update", svc, {"enable": True})
         mc("service.control", "START", svc, {}, job=True)
         log(f"service {svc}: enabled + started")
@@ -398,6 +433,8 @@ STEPS = [
     step_user,
     step_smb,
     step_nfs,
+    step_search,
+    step_webshare,
     step_services,
     step_snapshots,
 ]
@@ -422,6 +459,55 @@ def sh(cmd: list[str], **kw) -> subprocess.CompletedProcess:
     return subprocess.run(cmd, capture_output=True, text=True, timeout=30, **kw)
 
 
+# Spotlight: `index --once` walks dan's home (a few files) well under 1 s, then exits.
+# Poll 0.5 s x 20 = 10 s cap; expiry -> FAIL naming the probe and the last mdsearch output.
+SPOTLIGHT_POLL_S, SPOTLIGHT_POLLS = 0.5, 20
+
+
+def spotlight_probe(
+    ip: str, base: list[str], auth: Path, local: Path
+) -> tuple[bool, str]:
+    """Put a probe via SMB, force a rescan (indexer otherwise walks every 600 s), mdsearch it."""
+    probe = f"awto-spotlight-{pysecrets.token_hex(4)}.txt"
+    sh(base + ["-c", f"put {local} {probe}"])
+    try:
+        sh(_box.ssh_argv(ip, cmd=["truesearchd", "index", "--once"], batch=True))
+        out = ""
+        for _ in range(SPOTLIGHT_POLLS):
+            r = sh(
+                ["mdsearch", "-A", str(auth), ip, SHARE, f'kMDItemFSName=="{probe}"']
+            )
+            out = (r.stdout + r.stderr).strip()
+            if probe in r.stdout:
+                return True, ""
+            time.sleep(SPOTLIGHT_POLL_S)
+        return (
+            False,
+            f"{probe} not found after {SPOTLIGHT_POLL_S * SPOTLIGHT_POLLS:.0f}s: {out[-200:]}",
+        )
+    finally:
+        sh(base + ["-c", f"del {probe}"])
+
+
+def webshare_shares(ip: str, pw: str) -> list[str]:
+    """Log in to awto-webshare as dan, return the share names it lists ([] on any failure)."""
+    ctx = ssl.create_default_context()
+    ctx.check_hostname, ctx.verify_mode = False, ssl.CERT_NONE  # self-signed on the box
+    url = f"https://{ip}:{WEBSHARE_PORT}"
+    hdr = {"X-WebShare": "1", "Content-Type": "application/json"}
+    body = json.dumps({"username": USER, "password": pw}).encode()
+    try:
+        req = urllib.request.Request(f"{url}/api/login", body, hdr, method="POST")
+        with urllib.request.urlopen(req, context=ctx, timeout=CALL_TIMEOUT_S) as r:
+            cookie = r.headers["Set-Cookie"].split(";")[0]
+        req = urllib.request.Request(f"{url}/api/shares", headers={"Cookie": cookie})
+        with urllib.request.urlopen(req, context=ctx, timeout=CALL_TIMEOUT_S) as r:
+            return [s["name"] for s in json.load(r)]
+    except (OSError, KeyError, ValueError) as e:
+        log(f"webshare: {e}")
+        return []
+
+
 def cmd_verify() -> int:
     ip = _box.require()
     fails: list[str] = []
@@ -431,7 +517,7 @@ def cmd_verify() -> int:
         if not ok:
             fails.append(name)
 
-    for svc in ("cifs", "nfs"):
+    for svc in SERVICES:
         r = q("service.query", [["service", "=", svc]])
         check(
             f"service {svc} running+enabled",
@@ -501,6 +587,10 @@ def cmd_verify() -> int:
                 "smb put/get",
                 r.returncode == 0 and back.exists() and back.read_text() == "smb-ok",
             )
+            hits = spotlight_probe(ip, base, auth, local)
+            check("spotlight (truesearchd) finds probe", hits[0], hits[1])
+            ws = webshare_shares(ip, pw)
+            check("webshare login + list", SHARE in ws, str(ws))
         finally:
             for f in (auth, local, back):
                 f.unlink(missing_ok=True)
