@@ -404,11 +404,53 @@ def snapshot_local_sources() -> None:
     mf.write_text(text)
 
 
+def container_git_running() -> bool | None:
+    """True/False: a git process runs in the build container; None = cannot tell.
+    Container not running -> False. pgrep missing or podman error -> None (callers skip)."""
+    ps = subprocess.run(
+        ["sudo", "podman", "ps", "-q", "--filter", f"name=^{CTR_NAME}$"],
+        capture_output=True, text=True, check=False, timeout=30,
+    )  # fmt: skip  # 30 s: podman ps is ~1 s; expiry raises
+    if ps.returncode:
+        return None
+    if not ps.stdout.strip():
+        return False
+    r = subprocess.run(
+        ["sudo", "podman", "exec", CTR_NAME, "pgrep", "-x", "git"],
+        capture_output=True, check=False, timeout=30,
+    )  # fmt: skip
+    return {0: True, 1: False}.get(r.returncode)
+
+
+def stale_git_locks() -> list[Path]:
+    """sources/*/.git/*.lock (root-owned, left by a guard-killed checkout)."""
+    return sorted((SB / "sources").glob("*/.git/*.lock"))
+
+
+def clean_stale_git_locks() -> int:
+    """Remove stale git locks (#356); only when no git runs in the build container."""
+    locks = stale_git_locks()
+    if not locks:
+        return 0
+    busy = container_git_running()
+    if busy is not False:
+        log(
+            f"git locks: {len(locks)} found, NOT removed (git running or unknown: {busy})"
+        )
+        return 0
+    for p in locks:
+        log(f"git locks: rm {p.relative_to(SB)}")
+    subprocess.run(["sudo", "rm", "-f", "--", *map(str, locks)], check=False)
+    return len(locks)
+
+
 def step_checkout(a) -> int:
+    clean_stale_git_locks()
     prepare_scale_build()
     snapshot_local_sources()
     rc = in_container(["make", "checkout"], "checkout", a.stall)
     if rc:
+        clean_stale_git_locks()  # guard-killed checkout leaves .git/*.lock behind
         return rc
     apply_source_patches(a.stall)
     log(f"sources: {tree_bytes(SB / 'sources') / 2**30:.1f} GB")
