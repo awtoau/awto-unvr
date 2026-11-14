@@ -60,10 +60,8 @@ async def serve(plain: bool) -> None:
     runner = web.AppRunner(make_app(State(loader, authenticate)))
     await runner.setup()
     ssl_ctx = None if plain else tls_context(cfg)
-    addrs = [
-        a for a in cfg.bind_addrs if not ("::" in cfg.bind_addrs and a == "0.0.0.0")
-    ]  # "::" is dual-stack
-    for a in addrs:
+    # asyncio sets IPV6_V6ONLY on "::", so IPv4 needs its own 0.0.0.0 listener.
+    for a in cfg.bind_addrs:
         await web.TCPSite(runner, a, cfg.port, ssl_context=ssl_ctx).start()
         log.info("listening on %s:%d", a, cfg.port)
     stop = asyncio.Event()
