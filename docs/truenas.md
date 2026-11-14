@@ -1,6 +1,6 @@
 # TrueNAS 27 on woomera (#356, #338)
 
-Our self-built arm64 image (`./dev.py truenas-build update`, scale-build `tmp/release/*.update`) with the image's own 6.18 kernel deb, on SSD p3 (`truenas-boot`). Fedora on p2 stays the default boot. The maint boot kernel is still `./dev.py build-truenas` ([build.md](build.md#truenas-618-338)).
+Our self-built arm64 image (`./dev.py truenas-build update`, scale-build `tmp/release/*.update`) with the image's own 6.18 kernel deb, on SSD p3 (`truenas-boot`). Fedora on p2 stays the default boot. The maint boot kernel + modules are the image's own (extracted rootfs), so zfs kmod and userland versions match (#356).
 
 ## Use
 
@@ -25,7 +25,7 @@ Our self-built arm64 image (`./dev.py truenas-build update`, scale-build `tmp/re
 ./dev.py truenas-install stage-boot     # profile truenas
 ```
 
-- Maint boot = TrueNAS kernel + `scripts/initramfs/truenas-maint-init`: mounts p2, runs `scripts/truenas-install-job.py` in the image's own rootfs as live env (`.update` -> `rootfs.squashfs`, nested loop mounts, + tmpfs overlay). Log: p2 `/srv/truenas-install/logs/`.
+- Maint boot = the image's own kernel (vmlinuz + modules from the extracted rootfs) + `scripts/initramfs/truenas-maint-init`: mounts p2, runs `scripts/truenas-install-job.py` in the image's own rootfs as live env (`.update` -> `rootfs.squashfs`, nested loop mounts, + tmpfs overlay). Log: p2 `/srv/truenas-install/logs/`.
 - Image = newest `tmp/release/*.update` under `/mnt/2tb/truenas-build/scale-build`; `TRUENAS_UPDATE=<path>` overrides. No ISO needed.
 - Job = the ISO installer's `zpool create` (26.04 copy of `truenas_installer/install.py`) + the update image's own `truenas_install.main()`, in-process, with:
   - `update-grub` / `grub-install` skipped (no GRUB, no ESP; U-Boot boots us),

@@ -235,9 +235,6 @@ def run_truenas_install(cfg: dict, upd: str, res: dict) -> None:
         "src": upd,
     }
     stdin, sys.stdin = sys.stdin, io.StringIO(json.dumps(params))
-    # Maint kernel's zfs kmod (2.4.0) != image userland (2.4.4): truenas_pylibzfs refuses to
-    # import in the installer's chroot steps. Install-only; the installed kernel has 2.4.4.
-    os.environ["_PYLIBZFS_ALLOW_VERSION_MISMATCH"] = "1"
     cwd = os.getcwd()
     os.chdir(upd)
     try:

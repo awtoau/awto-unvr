@@ -14,7 +14,8 @@
 
 - Image = scale-build's `.update` (tmp/release/*.update, or $TRUENAS_UPDATE); no ISO: the maint
   live env is the update's own rootfs.squashfs (nested loop mount in /init).
-- Installed kernel = the image's own deb; the maint boot kernel is the build-linux-truenas output.
+- Maint boot kernel + modules = the image's own (vmlinuz + usr/lib/modules from the extracted rootfs),
+  so the installer chroot's zfs/pylibzfs versions match by construction (#356).
 - p2 writes only under /srv/truenas-install and /boot/awto. p3 written only by commit-p3.
 """
 
@@ -39,7 +40,7 @@ from _kbuild import mkuimage  # noqa: E402
 
 import _box  # noqa: E402
 from _net import MAINT_1G_IPADDR  # noqa: E402
-from _repo import REPO, TMP, make_log, truenas_build_out  # noqa: E402
+from _repo import REPO, TMP, make_log  # noqa: E402
 
 log = make_log("truenas-install")
 
@@ -71,7 +72,6 @@ ROOT_DIR = (
 )  # sudo unsquashfs of the update rootfs: real ownership
 ROOT_STAMP = ROOT_DIR.parent / "rootfs.stamp"
 COPY_SRC = REPO / "scripts/truenas_p3_copy.py"
-OUT = truenas_build_out()
 
 JOB_DIR = "/srv/truenas-install"
 P2_PARTUUID = "dcdc291e-9956-48cd-9d7c-48219877881a"
@@ -117,10 +117,23 @@ SCP_BIG_TIMEOUT_S = 300
 
 
 def kver() -> str:
-    mods = sorted((OUT / "modroot/lib/modules").iterdir())
-    if len(mods) != 1:
-        raise RuntimeError(f"want one kernel in {OUT}/modroot, found {mods}")
-    return mods[0].name
+    """Maint kernel = the image's: the one /boot/vmlinuz-<kver> in the extracted rootfs."""
+    ensure_root()
+    return image_kver(ROOT_DIR)
+
+
+def image_uimage(vmlinuz: Path, kv: str) -> Path:
+    """Wrap an arm64 vmlinuz (Image or Image.gz) into STAGE/uImage-<kv>."""
+    raw = vmlinuz.read_bytes()
+    if raw[:2] == b"\x1f\x8b":  # Image.gz: mkuimage wants the raw Image
+        raw = gzip.decompress(raw)
+    if raw[56:60] != b"ARM\x64":
+        raise RuntimeError(f"{vmlinuz} is not an arm64 Image")
+    img = STAGE / f"Image-{kv}"
+    img.write_bytes(raw)
+    uimg = STAGE / f"uImage-{kv}"
+    mkuimage(str(img), str(uimg), f"truenas-{kv}"[:31], log)
+    return uimg
 
 
 def sh(cmd: list, **kw) -> subprocess.CompletedProcess:
@@ -200,7 +213,7 @@ def collect_userland() -> dict[str, Path]:
 
 
 def module_closure(kv: str) -> list[str]:
-    mdir = OUT / "modroot/lib/modules" / kv
+    mdir = ROOT_DIR / "usr/lib/modules" / kv
     dep = {}
     for line in (mdir / "modules.dep").read_text().splitlines():
         k, _, v = line.partition(":")
@@ -230,7 +243,6 @@ def netconsole_arg() -> str:
 
 def cmd_build(_a) -> int:
     kv = kver()
-    ensure_root()
     if TREE.exists():
         shutil.rmtree(TREE)
     for d in (
@@ -259,7 +271,7 @@ def cmd_build(_a) -> int:
             shutil.copy2(src, dst)
     for k in KMOD_LINKS:
         os.symlink("kmod", TREE / "usr/bin" / k)
-    mdir = OUT / "modroot/lib/modules" / kv
+    mdir = ROOT_DIR / "usr/lib/modules" / kv
     tdir = TREE / "usr/lib/modules" / kv
     tdir.mkdir(parents=True)
     for f in mdir.glob("modules.*"):
@@ -268,6 +280,7 @@ def cmd_build(_a) -> int:
     for m in mods:
         (tdir / m).parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(mdir / m, tdir / m)
+    image_uimage(ROOT_DIR / f"boot/vmlinuz-{kv}", f"maint-{kv}")
     shutil.copy2(INIT_SRC, TREE / "init")
     (TREE / "init").chmod(0o755)
     conf = {"KVER": kv, "MODULES": " ".join(MODULES), **CONF}
@@ -491,6 +504,13 @@ def p3_identity(ip: str) -> str:
     return dev
 
 
+def maint_uimage() -> Path:
+    ups = sorted(STAGE.glob("uImage-maint-*"), key=lambda p: p.stat().st_mtime)
+    if not ups:
+        raise RuntimeError("run `./dev.py truenas-install build` first")
+    return ups[-1]
+
+
 def cmd_stage(a) -> int:
     ip = _box.require()
     if not CPIO.exists():
@@ -529,7 +549,7 @@ def cmd_stage(a) -> int:
         cfg.unlink()
     ssh(ip, f"chmod 600 {JOB_DIR}/job.json && sync")
     dtb = TMP / "dtb/unvr-truenas.dtb"
-    bs.stage_profile(ip, "truenas-maint", uimage=next(OUT.glob("uImage-*-truenas")), dtb=dtb, initrd=CPIO,
+    bs.stage_profile(ip, "truenas-maint", uimage=maint_uimage(), dtb=dtb, initrd=CPIO,
                      bootargs="console=ttyS0,115200 rdinit=/init panic=15 reboot=cold ramoops.max_reason=3 printk.devkmsg=on netpoll.carrier_timeout=15 "
                               "ahci.mask_port_map=0x5 ahci_alpine.mask_port_map=0x5", log=log)  # fmt: skip
     log("stage: done")
@@ -643,15 +663,7 @@ def cmd_stage_boot(_a) -> int:
             != info[key]
         ):
             raise RuntimeError(f"{f.name} sha256 != info.json")
-    raw = vmz.read_bytes()
-    if raw[:2] == b"\x1f\x8b":  # Image.gz: mkuimage wants the raw Image
-        raw = gzip.decompress(raw)
-    if raw[56:60] != b"ARM\x64":
-        raise RuntimeError("vmlinuz is not an arm64 Image")
-    img = STAGE / f"Image-{kv}"
-    img.write_bytes(raw)
-    uimg = STAGE / f"uImage-{kv}"
-    mkuimage(str(img), str(uimg), f"truenas-{kv}"[:31], log)
+    uimg = image_uimage(vmz, kv)
     args = (
         f"console=ttyS0,115200 root=ZFS={info['bootfs']} ro zfsforce=1 libata.allow_tpm=1 "
         "nvme_core.multipath=N panic=15 reboot=cold ahci.mask_port_map=0x5 ahci_alpine.mask_port_map=0x5"
