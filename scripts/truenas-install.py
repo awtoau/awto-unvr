@@ -368,6 +368,22 @@ EXTRA_RH = (
 )
 
 
+def private_dev(dev: Path) -> None:
+    """tmpfs /dev for the rehearse chroot, never the host's: 27's auth script imports
+    truenas_pylibzfs, whose libzfs_init modprobes zfs unless /dev/zfs exists (host has no zfs)."""
+    sudo("mount", "-t", "tmpfs", "-o", "mode=755", "rehearse-dev", dev)
+    nodes = [
+        f"/dev/{n}"
+        for n in ("null", "zero", "full", "random", "urandom", "tty", "console")
+    ]
+    sudo("cp", "-a", *nodes, dev)
+    for name, target in (("fd", "/proc/self/fd"), ("stdin", "/proc/self/fd/0"),
+                         ("stdout", "/proc/self/fd/1"), ("stderr", "/proc/self/fd/2")):  # fmt: skip
+        sudo("ln", "-s", target, dev / name)
+    sudo("mkdir", dev / "pts", dev / "shm")
+    sudo("touch", dev / "zfs")
+
+
 def cmd_rehearse(_a) -> int:
     kv = kver()
     sh(["bash", "-n", INIT_SRC])
@@ -405,8 +421,9 @@ def cmd_rehearse(_a) -> int:
     sudo("mount", "-t", "overlay", "overlay", "-o",
          f"lowerdir={ROOT_DIR},upperdir={ovl / 'upper'},workdir={ovl / 'work'}", root)  # fmt: skip
     try:
-        for d in ("dev", "proc", "sys"):
+        for d in ("proc", "sys"):
             sudo("mount", "--bind", f"/{d}", root / d)
+        private_dev(root / "dev")
         r = sudo(sys.executable, "-I", JOB_SRC, "--rehearse-root", root, cfgf,
                  capture_output=True, text=True, check=False, timeout=1800)  # fmt: skip
     finally:
@@ -417,6 +434,7 @@ def cmd_rehearse(_a) -> int:
     log(f"installer-steps rehearsal rc={r.returncode} (log {STAGE / 'rehearse.log'})")
     if r.returncode:
         log((r.stdout + r.stderr)[-3000:])
+        sudo("umount", root, check=False)
         return 1
     ikv = image_kver(ROOT_DIR)
     initrd = root / f"boot/initrd.img-{ikv}"
@@ -424,7 +442,11 @@ def cmd_rehearse(_a) -> int:
         size = int(
             sudo("stat", "-c", "%s", initrd, capture_output=True, text=True).stdout
         )
-        lst = sh(["bash", "-c", f"sudo -n cat {shlex.quote(str(initrd))} | zstd -dc | cpio -t --quiet"],
+        magic = sudo("head", "-c", "4", initrd, capture_output=True).stdout
+        dec = (
+            "gzip -dc" if magic[:2] == b"\x1f\x8b" else "zstd -dc"
+        )  # 27: gzip, 26.04: zstd
+        lst = sh(["bash", "-c", f"sudo -n cat {shlex.quote(str(initrd))} | {dec} | cpio -t --quiet"],
                  capture_output=True, text=True).stdout.splitlines()  # fmt: skip
     finally:
         sudo("umount", root, check=False)
