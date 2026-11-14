@@ -1718,6 +1718,16 @@ def cmd_usb_ssd(extra: list[str]) -> int:
 
 
 @command(
+    "USB port/device diagnostics on woomera over SSH, logged to tmp/logs/usb-diag.log "
+    "(scripts/usb-diag.py, #360)",
+    args="status|rebind|pci-reset|watch",
+    kind="action",
+)
+def cmd_usb_diag(extra: list[str]) -> int:
+    return _run_script("scripts/usb-diag.py", extra)
+
+
+@command(
     "shell on woomera over the 1G port - a second terminal beside the serial "
     "console. Finds the box by its stable 1G MAC every time (DHCP moves the "
     "lease); pass `-- <cmd>` to run one command (scripts/ssh-woomera.py)",
