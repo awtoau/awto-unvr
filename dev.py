@@ -1210,6 +1210,16 @@ def cmd_truenas_install(extra: list[str]) -> int:
 
 
 @command(
+    "idempotent TrueNAS config on woomera: tank import, tank/home, user dan, SMB+NFS, snapshots; "
+    "re-run after a reinstall (scripts/truenas-config.py, #356)",
+    args="plan|apply|verify",
+    kind="action",
+)
+def cmd_truenas_config(extra: list[str]) -> int:
+    return _run_script("scripts/truenas-config.py", extra)
+
+
+@command(
     "receive the box's kernel log over netconsole UDP into tmp/logs/netconsole.log - "
     "the console when no serial is attached (scripts/netconsole-listen.py)",
     args="[--port 6666]",
