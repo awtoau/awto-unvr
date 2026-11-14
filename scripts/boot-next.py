@@ -6,6 +6,7 @@
   ./dev.py boot-next status                 # bootonce/bootdefault, bootcmd in sync?
   ./dev.py boot-next truenas [--reboot]     # ONE boot of /boot/awto/truenas, then back to default
   ./dev.py boot-next truenas --default      # every boot (until `fedora --default`)
+  ./dev.py boot-next usb [--reboot]         # ONE boot from /boot/awto/usb on the USB SSD p2 (#360)
   ./dev.py boot-next fedora [--default]     # clear bootonce (or bootdefault)
   ./dev.py boot-next sync-bootcmd           # saved bootcmd := defconfig CONFIG_BOOTCOMMAND
   ./dev.py boot-next deploy-dtb tmp/dtb/unvr-fedora.dtb   # Fedora /boot/unvr.dtb (.prev kept)
@@ -81,7 +82,8 @@ def select(ip: str, name: str, default: bool) -> None:
         env_set(ip, f"{key}=")
         return
     bs.check_profile_name(name)
-    if not bs.profile_present(ip, name):
+    # `usb` lives on the USB SSD's p2, not the SATA SSD this box is running from (#360).
+    if name != "usb" and not bs.profile_present(ip, name):
         raise RuntimeError(
             f"{bs.PROFILE_DIR}/{name} incomplete on the box - stage it first"
         )

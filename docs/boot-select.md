@@ -21,6 +21,7 @@ awto-uboot picks a **boot profile** from its saved env; Linux sets it over SSH. 
   - `bootsel = bootonce` if set (then `setenv bootonce; saveenv` **before** booting), else `bootdefault`.
   - `bootsel` set and not `fedora` -> from p2 `/boot/awto/<bootsel>/`: `uEnv.txt` (imports only `bootargs_alt`), `uImage`, `unvr.dtb`, `initrd` (raw); `bootm` with `bootargs_alt`.
   - Any load or `bootm` failure -> bootargs restored -> the unchanged Fedora path (`/boot/uImage`, `/boot/unvr.dtb`).
+- Profile `usb` (#360): `usb start`, then the same four files from `usb <d>:2` `/boot/awto/usb/` (stage onto the USB SSD, not the SATA one). No USB SSD / load failure -> Fedora path. `boot-next usb` skips the on-box presence check.
 - Load map: uImage `0x02000000`, uEnv/dtb `0x0f000000`, initrd `0x20000000`. Limits enforced by `scripts/_bootsel.py` at stage time.
 - U-Boot only **reads** filesystems (#347). Its only write is `saveenv` to NOR.
 - Profiles live on p2 (ext4), not the ESP: ESP has ~120 MiB free and holds UEFI experiments; U-Boot's ext4 read of p2 is the proven #216 path.

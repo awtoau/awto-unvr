@@ -120,6 +120,9 @@ def disk() -> Path:
         "boot/awto/test/initrd": b"070701" + b"\0" * 1024,
         "boot/awto/test/uEnv.txt": f"bootargs_alt={ALT_ARGS}\nbootcmd=echo HIJACK\n".encode(),
     }
+    files.update(
+        {k.replace("/test/", "/usb/"): v for k, v in files.items() if "/test/" in k}
+    )
     for rel, data in files.items():
         p = root / rel
         p.parent.mkdir(parents=True, exist_ok=True)
@@ -222,15 +225,17 @@ def main() -> int:
     hosted = (
         exact.replace("scsi scan", f"host bind 0 {img}")
         .replace("scsi ${d}", "host ${d}")
+        .replace("setenv bdev scsi", "setenv bdev host")
+        .replace("usb start; setenv bdev usb", "echo USBSTART; setenv bdev host")
         .replace("bootm ", "echo BOOTM bootargs=${bootargs} args ")
     )
     if (
-        exact.count("scsi ${d}") != 8
+        exact.count("scsi ${d}") != 3
         or exact.count("scsi scan") != 1
         or "scsi ${d}" in hosted
     ):
         log(
-            "FATAL: scsi -> host substitution did not hit the expected 6 loads + 2 echoes + scan"
+            "FATAL: scsi -> host substitution did not hit the expected 2 loads + 1 echo + scan"
         )
         return 1
     fed = "== booting from host 0:2 =="
@@ -243,7 +248,7 @@ def main() -> int:
             {"bootonce": "test"},
             "",
             [
-                "== boot profile test ==",
+                "== boot profile test on scsi ==",
                 "SAVEENV-REACHED",
                 "test did not boot - falling back",
                 "no /boot/uImage found",
@@ -275,7 +280,7 @@ def main() -> int:
             {"bootonce": "test"},
             "",
             [
-                "== boot profile test ==",
+                "== boot profile test on host ==",
                 "SAVEENV-REACHED",
                 "== booting test from host 0:2 ==",
                 bootm_alt,
@@ -314,9 +319,32 @@ def main() -> int:
             hosted,
             {"bootonce": "nosuch"},
             "",
-            ["== boot profile nosuch ==", "nosuch did not boot", fed, bootm_fed],
+            [
+                "== boot profile nosuch on host ==",
+                "nosuch did not boot",
+                fed,
+                bootm_fed,
+            ],
             ["booting nosuch", "BOOTM bootargs=console=ttyS0,115200 root=ZFS"],
             {"bootonce": None, "bootargs": BOOTARGS},
+        ),
+        (
+            "bootonce-usb",
+            hosted,
+            {"bootonce": "usb"},
+            "",
+            ["USBSTART", "== booting usb from host 0:2 ==", bootm_alt],
+            ["HIJACK", "Unknown command", "syntax error"],
+            {"bootonce": None, "bootargs": BOOTARGS},
+        ),
+        (
+            "bootonce-test-no-usb",
+            hosted,
+            {"bootonce": "test"},
+            "",
+            [],
+            ["USBSTART"],
+            {"bootonce": None},
         ),
         (
             "no-selection",
