@@ -1,0 +1,37 @@
+From ecf5b9f09d370b814481eabd2ff72c362f5d5e97 Mon Sep 17 00:00:00 2001
+From: awto <noreply@awto.au>
+Date: Sun, 15 Nov 2026 02:18:12 +1100
+Subject: [PATCH] Add truenas-initrd (upgrade_pyutils): truenas-initrd.py was
+ missing from the image
+
+27 split it out of truenas-files; middlewared plugins/boot.py calls /usr/local/bin/truenas-initrd.py. Public LGPL-3.0 source, release/27.0.0 like the other 27 sources.
+---
+ conf/build.manifest | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/conf/build.manifest b/conf/build.manifest
+index bd6973c..749ca99 100644
+--- a/conf/build.manifest
++++ b/conf/build.manifest
+@@ -191,6 +191,8 @@ base-packages:
+   install_recommends: false
+ - name: truenas-audit-rules
+   install_recommends: false
++- name: truenas-initrd
++  install_recommends: false
+ - name: restic
+   install_recommends: false
+ - name: parted
+@@ -654,6 +656,9 @@ sources:
+   repo: https://github.com/truenas/audit_rules.git
+   branch: release/27.0.0
+   generate_version: false
++- name: upgrade_pyutils
++  repo: https://github.com/truenas/upgrade_pyutils
++  branch: release/27.0.0
+ - name: nfs_utils
+   repo: https://github.com/truenas/nfs-utils.git
+   branch: release/27.0.0
+-- 
+2.56.1
+
