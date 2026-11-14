@@ -31,6 +31,11 @@ lsblk -d -o NAME,TRAN,SIZE,MODEL,SERIAL | awk 'NR==1 || $2=="usb"'
 for f in /sys/kernel/debug/usb/xhci/*/ports/*/portsc; do echo "$f: $(cat $f)"; done
 for p in /sys/bus/usb/devices/*-0:1.0/usb*-port*; do
   echo "$(basename $p) state=$(cat $p/state) over_current=$(cat $p/over_current_count)"; done
+for d in /sys/bus/usb/devices/[0-9]-[0-9]*; do [ -e $d/idVendor ] || continue
+  echo "$(basename $d) $(cat $d/idVendor):$(cat $d/idProduct) speed=$(cat $d/speed) maxpower=$(cat $d/bMaxPower)" \
+    "power/control=$(cat $d/power/control) runtime=$(cat $d/power/runtime_status)"; done
+for b in /sys/block/sd*; do readlink -f $b | grep -q /usb && \
+  echo "$(basename $b) size=$(cat $b/size) removable=$(cat $b/removable)"; done
 dmesg | grep -iE 'usb [0-9]|uas|\[sd[e-z]\]|disconnect|over-current|xhci' | tail -n 15
 """
 REBIND = f"""
