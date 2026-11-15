@@ -1,0 +1,5 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+# Native arm64 (qemu-user) toolchain for the ICP known-answer test (scripts/zfs-crypto-kat.py).
+FROM docker.io/library/debian:trixie
+RUN apt-get update && apt-get install -y --no-install-recommends gcc make libc6-dev \
+    && rm -rf /var/lib/apt/lists/*

@@ -1180,6 +1180,26 @@ def cmd_kfpu_test(extra: list[str]) -> int:
 
 
 @command(
+    "known-answer + differential test of the ICP AES-GCM/CCM impls (generic vs ARMv8 CE) in the arm64 "
+    "container (#368, scripts/zfs-crypto-kat.py)",
+    args="[--src OPENZFS_TREE] [--skip-build]",
+    kind="action",
+)
+def cmd_zfs_crypto_kat(extra: list[str]) -> int:
+    return _run_script("scripts/zfs-crypto-kat.py", extra)
+
+
+@command(
+    "cross-impl ZFS encryption test on woomera: write with generic ICP, read with ARMv8 CE and back, "
+    "then scrub (#368, scripts/zfs-crypt-xtest.py)",
+    args="[--pool tank]",
+    kind="action",
+)
+def cmd_zfs_crypt_xtest(extra: list[str]) -> int:
+    return _run_script("scripts/zfs-crypt-xtest.py", extra)
+
+
+@command(
     "check our truenas/stubs/ closed-lib stand-ins against public middleware 27: static usage, "
     "imports, CE entitlement column, middleware's licence unit tests (#356, scripts/check-truenas-stubs.py)",
     args="[--refresh] [--static-only]",
