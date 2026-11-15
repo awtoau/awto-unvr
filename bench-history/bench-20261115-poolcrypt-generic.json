@@ -1,0 +1,34 @@
+{
+  "timestamp": "2026-11-15T17:36:15+11:00",
+  "commit": "67de391-dirty",
+  "host": "192.168.25.40",
+  "kernel": "",
+  "checks": [
+    {
+      "name": "poolcrypt tank off write",
+      "ok": true,
+      "detail": "277.4 MB/s cpu 41%"
+    },
+    {
+      "name": "poolcrypt tank gcm write",
+      "ok": true,
+      "detail": "32.8 MB/s cpu 76%"
+    },
+    {
+      "name": "poolcrypt tank ccm write",
+      "ok": true,
+      "detail": "75.4 MB/s cpu 77%"
+    },
+    {
+      "name": "poolcrypt tank cleanup",
+      "ok": true,
+      "detail": "zfs destroy -r tank/benchcrypt: rc=0 "
+    }
+  ],
+  "metrics": {
+    "poolcrypt tank off write": 277.363080142073,
+    "poolcrypt tank gcm write": 32.813312573056976,
+    "poolcrypt tank ccm write": 75.35413724557915
+  },
+  "all_ok": true
+}
