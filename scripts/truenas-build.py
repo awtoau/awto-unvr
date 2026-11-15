@@ -9,6 +9,7 @@
   `make checkout` (which resets each tree to its branch head).
 - Build state: $AWTO_TRUENAS_BUILD (default /mnt/2tb/truenas-build), outside any repo.
 - Steps: container | kernel | inject | checkout | packages [--only a,b] | update | iso | status.
+  `update` only assembles the image from tmp/pkgdir: run `packages` after a source/patch change.
 - Guards: free space on the build fs < MIN_FREE_GB -> kill; no growth in stdout or
   scale-build's logs/ for --stall s -> kill. Max silence seen is logged (tune --stall).
 - Log: tmp/logs/truenas-build.log
@@ -458,7 +459,9 @@ def step_checkout(a) -> int:
 
 
 def step_packages(a) -> int:
-    args = ["packages"] + ([f"PACKAGES={a.only}"] if a.only else [])
+    # scale_build `--packages` is nargs='+': space-separated, not the comma list --only takes
+    only = " ".join(p for p in (a.only or "").split(",") if p)
+    args = ["packages"] + ([f"PACKAGES={only}"] if only else [])
     return in_container(["make", *args], "packages", a.stall)
 
 
