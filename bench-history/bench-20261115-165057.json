@@ -1,0 +1,228 @@
+{
+  "timestamp": "2026-11-15T16:50:57+11:00",
+  "commit": "913136b",
+  "host": "192.168.25.40",
+  "kernel": "6.18.60-production-truenas-a1e9273+",
+  "checks": [
+    {
+      "name": "health al_eth module",
+      "ok": true,
+      "detail": "vermagic=6.18.60-production-truenas-a1e9273+ running=6.18.60-production-truenas-a1e9273+"
+    },
+    {
+      "name": "health link enp0s1",
+      "ok": true,
+      "detail": "speed=1000 carrier=1 oper=up"
+    },
+    {
+      "name": "health link enp0s2",
+      "ok": true,
+      "detail": "speed=10000 carrier=1 oper=up"
+    },
+    {
+      "name": "health adaptive moderation off",
+      "ok": true,
+      "detail": "off on enp0s1, enp0s2"
+    },
+    {
+      "name": "health MAC counters",
+      "ok": true,
+      "detail": "all zero"
+    },
+    {
+      "name": "health queue drop counters",
+      "ok": true,
+      "detail": "no growth"
+    },
+    {
+      "name": "health kernel log",
+      "ok": true,
+      "detail": "no trouble lines"
+    },
+    {
+      "name": "eth 1G host->box",
+      "ok": true,
+      "detail": "7.84 Gbits/sec"
+    },
+    {
+      "name": "eth 1G box->host",
+      "ok": true,
+      "detail": "7.85 Gbits/sec"
+    },
+    {
+      "name": "eth 1G v6 control udp",
+      "ok": true,
+      "detail": "100/100 arrived"
+    },
+    {
+      "name": "eth 1G v6 hop-by-hop udp csum",
+      "ok": true,
+      "detail": "100/100 arrived (lost ones failed the checksum)"
+    },
+    {
+      "name": "eth 10G host->box",
+      "ok": true,
+      "detail": "7.68 Gbits/sec"
+    },
+    {
+      "name": "eth 10G box->host",
+      "ok": true,
+      "detail": "7.47 Gbits/sec"
+    },
+    {
+      "name": "eth 10G v6 control udp",
+      "ok": true,
+      "detail": "100/100 arrived"
+    },
+    {
+      "name": "eth 10G v6 hop-by-hop udp csum",
+      "ok": true,
+      "detail": "100/100 arrived (lost ones failed the checksum)"
+    },
+    {
+      "name": "crypto xts(aes) [xts-aes-ce]",
+      "ok": true,
+      "detail": "496.8 MB/s (32.0MB in 0.06s)"
+    },
+    {
+      "name": "sata sda",
+      "ok": true,
+      "detail": "190.5 MB/sec"
+    },
+    {
+      "name": "sata sdb",
+      "ok": true,
+      "detail": "238.4 MB/sec"
+    },
+    {
+      "name": "sata sdc",
+      "ok": true,
+      "detail": "436.4 MB/sec"
+    },
+    {
+      "name": "sata sdd",
+      "ok": true,
+      "detail": "267.4 MB/sec"
+    },
+    {
+      "name": "usb sde",
+      "ok": true,
+      "detail": "14.5 MB/sec"
+    },
+    {
+      "name": "usb sde link",
+      "ok": true,
+      "detail": "480 Mb/s negotiated"
+    },
+    {
+      "name": "poolfio tank seq-write-1M-qd1",
+      "ok": true,
+      "detail": "155.3 MB/s 148 iops clat 11 us cpu 12%"
+    },
+    {
+      "name": "poolfio tank seq-write-1M-qd16",
+      "ok": true,
+      "detail": "159.4 MB/s 152 iops clat 98520 us cpu 11%"
+    },
+    {
+      "name": "poolfio tank seq-read-1M-qd1",
+      "ok": true,
+      "detail": "141.2 MB/s 135 iops clat 5 us cpu 3%"
+    },
+    {
+      "name": "poolfio tank seq-read-1M-qd16",
+      "ok": true,
+      "detail": "141.9 MB/s 135 iops clat 110581 us cpu 3%"
+    },
+    {
+      "name": "poolfio tank randread-4k-qd1",
+      "ok": true,
+      "detail": "0.5 MB/s 122 iops clat 4 us cpu 1%"
+    },
+    {
+      "name": "poolfio tank randread-4k-qd32",
+      "ok": true,
+      "detail": "0.5 MB/s 123 iops clat 250590 us cpu 1%"
+    },
+    {
+      "name": "poolfio tank randwrite-4k-qd1",
+      "ok": true,
+      "detail": "0.5 MB/s 115 iops clat 5 us cpu 2%"
+    },
+    {
+      "name": "poolfio tank randwrite-4k-qd32",
+      "ok": true,
+      "detail": "0.5 MB/s 115 iops clat 267672 us cpu 2%"
+    },
+    {
+      "name": "poolfio tank cleanup",
+      "ok": true,
+      "detail": "zfs destroy -r tank/bench: rc=0 "
+    },
+    {
+      "name": "nfsfio tank seq-read-1M-qd16",
+      "ok": true,
+      "detail": "325.9 MB/s 311 iops clat 51434 us cpu 5%"
+    },
+    {
+      "name": "nfsfio tank seq-write-1M-qd16",
+      "ok": true,
+      "detail": "62.8 MB/s 60 iops clat 266716 us cpu 3%"
+    },
+    {
+      "name": "nfsfio tank randread-4k-qd1",
+      "ok": true,
+      "detail": "0.4 MB/s 104 iops clat 9598 us cpu 3%"
+    },
+    {
+      "name": "nfsfio tank randread-4k-qd32",
+      "ok": true,
+      "detail": "0.8 MB/s 196 iops clat 162858 us cpu 3%"
+    },
+    {
+      "name": "nfsfio tank cleanup",
+      "ok": true,
+      "detail": "share 2 deleted, tank/bench/nfs destroyed: rc=0"
+    },
+    {
+      "name": "dma copy+xor",
+      "ok": true,
+      "detail": "copy0 20000 tests 0 fail 74262 iops, xor0 20000 tests 0 fail 71153 iops"
+    },
+    {
+      "name": "dma oversize",
+      "ok": true,
+      "detail": "copy0 300 tests 157 fail 19 iops, xor0 300 tests 258 fail 11 iops"
+    }
+  ],
+  "metrics": {
+    "link enp0s1 speed Mbps": 1000.0,
+    "link enp0s2 speed Mbps": 10000.0,
+    "eth 1G host->box": 7840.0,
+    "eth 1G box->host": 7850.0,
+    "eth 10G host->box": 7680.0,
+    "eth 10G box->host": 7470.0,
+    "crypto xts(aes) [xts-aes-ce]": 496.84896060223247,
+    "sata sda": 190.49,
+    "sata sdb": 238.36,
+    "sata sdc": 436.37,
+    "sata sdd": 267.38,
+    "usb sde": 14.5,
+    "usb sde link": 480.0,
+    "poolfio tank seq-write-1M-qd1": 155.343298,
+    "poolfio tank seq-write-1M-qd16": 159.407877,
+    "poolfio tank seq-read-1M-qd1": 141.210238,
+    "poolfio tank seq-read-1M-qd16": 141.893096,
+    "poolfio tank randread-4k-qd1": 122.358509,
+    "poolfio tank randread-4k-qd32": 123.025132,
+    "poolfio tank randwrite-4k-qd1": 115.288471,
+    "poolfio tank randwrite-4k-qd32": 115.169288,
+    "nfsfio tank seq-read-1M-qd16": 325.932257,
+    "nfsfio tank seq-write-1M-qd16": 62.84173,
+    "nfsfio tank randread-4k-qd1": 104.109041,
+    "nfsfio tank randread-4k-qd32": 196.4499,
+    "dma dma0chan0 copy iops": 74261.65,
+    "dma dma0chan0 xor iops": 71152.85
+  },
+  "all_ok": true
+}
