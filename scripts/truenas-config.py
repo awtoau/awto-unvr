@@ -6,9 +6,13 @@ Spotlight (TrueSearch) + WebShare (#356, #357, #358).
 
   ./dev.py truenas-config plan     # print the steps, touch nothing on the box
   ./dev.py truenas-config apply    # converge the box (safe to re-run; run after every reinstall)
+  ./dev.py truenas-config key-init # create the tank/home key section in secrets.yaml if absent
   ./dev.py truenas-config verify   # NFS mount + SMB put/get + snapshot listing, cleans up
 
 - Reinstall wipes the config DB: apply imports `tank` first when it is not imported.
+- tank/home is ZFS-native encrypted (aes-256-gcm, hex key). The key lives ONLY in secrets section
+  `woomera-tank-home-key`; apply creates the dataset with it, or unlocks a locked one (reinstall
+  rotates TrueNAS's pwenc secret, so its stored copy of the key is not trusted) (#370).
 - dan password: ~/.config/awto/secrets.yaml section `woomera-truenas-dan`, generated once, never printed.
 - Transport: TrueNAS JSON-RPC over wss://<box>/api/current with an API key (secrets section
   `woomera-truenas-api`); bootstrapped from truenas_admin's password when absent/rejected.
@@ -68,6 +72,8 @@ JOB_POLL_S = 0.5
 KEY_NAME = "awto-truenas-config"
 KEY_SECTION = "woomera-truenas-api"
 ADMIN_SECTION = "truenas-woomera"
+HOME_KEY_SECTION = "woomera-tank-home-key"
+HOME_ALGO = "AES-256-GCM"
 
 DRY = False
 _api = None
@@ -271,6 +277,26 @@ def dan_password(create: bool) -> str | None:
     return pw
 
 
+def home_key(create: bool) -> str | None:
+    """64-hex-char (32-byte) tank/home key from secrets; create=True generates + stores it FIRST."""
+    sec = secret(HOME_KEY_SECTION)
+    if sec.get("password"):
+        return sec["password"]
+    if not create:
+        return None
+    key = pysecrets.token_hex(32)
+    append_section(
+        HOME_KEY_SECTION,
+        {
+            "url": f"zfs://{DATASET} on woomera (keyformat=hex, {HOME_ALGO})",
+            "purpose": f"ZFS native encryption key for {DATASET}; scripts/truenas-config.py unlocks with it (#370). LOSING IT LOSES THE DATA",
+            "username": DATASET,
+            "password": key,
+        },
+    )
+    return key
+
+
 # ---- steps ------------------------------------------------------------------------------
 def step_pool() -> None:
     if q("pool.query", [["name", "=", POOL]]):
@@ -284,12 +310,81 @@ def step_pool() -> None:
     mc("pool.import_pool", {"guid": match[0]["guid"]}, job=True)
 
 
+def home_row() -> dict | None:
+    rows = q("pool.dataset.query", [["name", "=", DATASET]])
+    return rows[0] if rows else None
+
+
 def step_dataset() -> None:
-    if q("pool.dataset.query", [["name", "=", DATASET]]):
-        log(f"dataset {DATASET}: exists")
+    row = home_row()
+    if row:
+        log(
+            f"dataset {DATASET}: exists, encrypted={row['encrypted']} locked={row['locked']}"
+        )
+        if not row["encrypted"]:
+            log(f"WARNING {DATASET} is not encrypted: migrate it (docs/truenas.md)")
         return
-    log(f"dataset {DATASET}: create")
-    mc("pool.dataset.create", {"name": DATASET, "share_type": "GENERIC"})
+    log(f"dataset {DATASET}: create encrypted {HOME_ALGO}")
+    key = home_key(create=not DRY) or "<generated on apply>"
+    mc(
+        "pool.dataset.create",
+        {
+            "name": DATASET,
+            "share_type": "GENERIC",
+            "encryption": True,
+            "inherit_encryption": False,
+            "encryption_options": {
+                "generate_key": False,
+                "key": key,
+                "algorithm": HOME_ALGO,
+            },
+        },
+    )
+
+
+def store_db_key(key: str) -> None:
+    """TrueNAS unlocks key-encrypted datasets at boot only from its own DB copy; keep one there so a
+    plain reboot needs no apply. Secrets stays the source of truth (a reinstall wipes the DB copy)."""
+    if mc(
+        "datastore.query",
+        "storage.encrypteddataset",
+        [["name", "=", DATASET]],
+        write=False,
+    ):
+        return
+    log(f"dataset {DATASET}: store key in TrueNAS DB (boot auto-unlock)")
+    mc("pool.dataset.change_key", DATASET, {"key": key, "generate_key": False})
+
+
+def step_unlock() -> None:
+    """Key from secrets.yaml, never from TrueNAS's DB (unreadable after a reinstall)."""
+    row = home_row()
+    if not row or not row["encrypted"]:
+        log(f"dataset {DATASET}: not encrypted, nothing to unlock")
+        return
+    if not row["locked"]:
+        key = home_key(create=False)
+        if key and not DRY:
+            store_db_key(key)
+        log(f"dataset {DATASET}: already unlocked")
+        return
+    key = home_key(create=False)
+    if not key:
+        raise RuntimeError(
+            f"{DATASET} is locked and secrets section {HOME_KEY_SECTION} is missing"
+        )
+    log(f"dataset {DATASET}: unlock with key from secrets")
+    res = mc(
+        "pool.dataset.unlock",
+        DATASET,
+        {"datasets": [{"name": DATASET, "key": key}], "recursive": True},
+        job=True,
+    )
+    if res and res.get("failed"):
+        raise RuntimeError(
+            f"unlock {DATASET} failed: {json.dumps(res['failed'])[:200]}"
+        )
+    store_db_key(key)
 
 
 def step_user() -> None:
@@ -430,6 +525,7 @@ def step_snapshots() -> None:
 STEPS = [
     step_pool,
     step_dataset,
+    step_unlock,
     step_user,
     step_smb,
     step_nfs,
@@ -528,6 +624,18 @@ def cmd_verify() -> int:
         len(q("pool.snapshottask.query", [["dataset", "=", DATASET]]))
         >= len(SNAP_TASKS),
     )
+    row = home_row()
+    algo = (row or {}).get("encryption_algorithm") or {}
+    check(
+        f"{DATASET} encrypted ({HOME_ALGO.lower()})",
+        bool(row) and row["encrypted"] and algo.get("value") == HOME_ALGO,
+        str(algo.get("value")),
+    )
+    check(
+        "key loaded (unlocked)",
+        bool(row) and row["key_loaded"] and not row["locked"],
+    )
+    check("secrets key section present", bool(home_key(create=False)))
     nfs = q("sharing.nfs.query", [["path", "=", HOME_PATH]])
     check("nfs expose_snapshots", bool(nfs) and nfs[0].get("expose_snapshots") is True)
 
@@ -602,17 +710,23 @@ def main() -> int:
     ap = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawTextHelpFormatter
     )
-    ap.add_argument("cmd", choices=["plan", "apply", "verify", "call"])
+    ap.add_argument("cmd", choices=["plan", "apply", "verify", "call", "key-init"])
     ap.add_argument(
         "args", nargs="*", help="call: METHOD [JSON param ...], e.g. system.info"
     )
+    ap.add_argument("--job", action="store_true", help="call: wait for the job result")
     a = ap.parse_args()
     if a.cmd == "verify":
         return cmd_verify()
+    if a.cmd == "key-init":  # key must be in secrets.yaml before it encrypts anything
+        log(
+            f"key section {HOME_KEY_SECTION}: {'present' if home_key(create=True) else 'MISSING'}"
+        )
+        return 0
     if a.cmd == "call":
         if not a.args:
             ap.error("call needs METHOD")
-        res = connect().call(a.args[0], *(json.loads(p) for p in a.args[1:]))
+        res = connect().call(a.args[0], *(json.loads(p) for p in a.args[1:]), job=a.job)
         log(json.dumps(res, indent=2, default=str))
         return 0
     return cmd_apply(plan=a.cmd == "plan")

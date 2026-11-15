@@ -40,3 +40,17 @@ Our self-built arm64 image (`./dev.py truenas-build update`, scale-build `tmp/re
 - p2: writes only under `/srv/truenas-install` and `/boot/awto`. 8 TB disks: never touched.
 - `truenas-initrd.py` (middleware, on config changes) rebuilds the initrd inside the root; U-Boot loads the copy in `/boot/awto/truenas/`. After such a change: `./dev.py truenas-install stage-boot` (reads `out/` - TODO if it diverges).
 - Unofficial arm64 userland: middleware/app failures are userland findings for #338, not kernel bugs by default.
+
+## tank/home encryption (#370)
+
+- `tank/home` is ZFS-native encrypted: aes-256-gcm, `keyformat=hex`, `keylocation=prompt`; ICP uses the aarch64 CE impls (#368).
+- Key: `~/.config/awto/secrets.yaml` section `woomera-tank-home-key` (32 bytes hex, `password` field). Losing it loses the data; no other copy.
+- `./dev.py truenas-config apply` after a reinstall (pool imported, locked):
+  - `step_dataset`: absent -> creates it encrypted with the key from secrets; present -> leaves it.
+  - `step_unlock`: locked -> `pool.dataset.unlock` with the key from secrets (never from TrueNAS's DB: reinstall rotates `/data/pwenc_secret`, #366), then stores the key in TrueNAS's DB so plain reboots auto-unlock.
+  - an unencrypted `tank/home` only logs a WARNING; `verify` fails (`tank/home encrypted`).
+- `./dev.py truenas-config key-init` creates the secrets section if absent (do this before encrypting anything).
+- `verify` checks: encrypted (aes-256-gcm), key loaded, secrets key section present.
+- `pool.dataset.lock` only works for passphrase datasets; to simulate a reinstall: stop cifs/nfs/webshare, `zfs unmount` + `zfs unload-key tank/home`, delete the `storage.encrypteddataset` row (`datastore.delete`), run `apply`.
+- Migration of an existing plain dataset (done 2026-11-16): `zfs snapshot -r`, `./dev.py home-manifest dump` (sha256/owner/mode/ACL/xattr), `./dev.py home-key-put put`, `zfs send -R | zfs recv -u -o encryption=aes-256-gcm -o keyformat=hex -o keylocation=file:///root/home.key tank/home-enc`, manifest diff, rename swap, `keylocation=prompt`, `home-key-put shred`.
+- The pre-migration dataset is kept as `tank/home-plain-<ts>` (readonly, `canmount=noauto`, not shared) until Dan decides to delete it.
