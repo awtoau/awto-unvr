@@ -42,6 +42,12 @@ Subtests (each is a function taking a Report; metrics land in the snapshot and
   temporary share of POOL/bench/nfs (box enp0s2 address, MAC checked in
   ip neigh) on this host: seq 1M QD16 r/w + 4k randread QD1/32; share deleted
   by id. Refuses if POOL/bench exists. Metrics follow usb-fio's (MB/s, iops).
+- pool-crypt (opt-in, never --idle, #368): `--pool-crypt POOL` writes a 4 GiB urandom file
+  (pre-cached in page cache from /var/tmp) with `dd bs=1M conv=fsync` into fresh datasets
+  POOL/benchcrypt/{off,gcm,ccm} (compression=off recordsize=1M; gcm/ccm =
+  encryption=aes-256-gcm/ccm, passphrase on stdin); MB/s + whole-box CPU busy %; datasets
+  destroyed after. Records the active icp_aes_impl / icp_gcm_impl in the snapshot info:
+  switch them in /sys/module/zfs/parameters/ between runs to compare impls.
 - opt-in, never in --idle: --dma-reload (rmmod/modprobe al_dma; wedge risk until
   #289 is verified on hardware, reboot after), --dma-pq (#169), --ssm (al_ssm
   through dm-crypt: ops landed, cmp integrity, quiesce; drives #300/#182),
@@ -1165,6 +1171,98 @@ def bench_pool_fio(
             )
     finally:
         rc, out = run(f"zfs destroy -r {root}", 120)
+        report.add(
+            f"{tag} cleanup",
+            rc == 0,
+            f"zfs destroy -r {root}: rc={rc} {out.strip()[-120:]}",
+        )
+
+
+POOL_CRYPT_BYTES = 4 << 30
+POOL_CRYPT_SRC = "/var/tmp/bench-crypt-4g.bin"
+# whole-run limit = 3x the slowest measured case (aes-256-gcm generic C, 31 MB/s = 138 s, #368);
+# on expiry the ssh call returns 124 and the mode is reported FAIL
+POOL_CRYPT_LIMIT_S = 420
+POOL_CRYPT_PASS = "awto-bench-crypt-test"  # throwaway datasets only
+POOL_CRYPT_MODES = (
+    ("off", ""),
+    ("gcm", "-o encryption=aes-256-gcm -o keyformat=passphrase -o keylocation=prompt"),
+    ("ccm", "-o encryption=aes-256-ccm -o keyformat=passphrase -o keylocation=prompt"),
+)
+
+
+def parse_dd_mbps(text: str) -> float | None:
+    """MB/s (1e6) from GNU dd's summary line: '<bytes> bytes (...) copied, <s> s, ...'."""
+    m = re.search(r"^(\d+) bytes .*?copied, ([\d.]+) s", text, re.M)
+    if not m or float(m.group(2)) <= 0:
+        return None
+    return int(m.group(1)) / float(m.group(2)) / 1e6
+
+
+def bench_pool_crypt(host: str, password: str, report: Report, pool: str) -> None:
+    root = f"{pool}/benchcrypt"
+    tag = f"poolcrypt {pool}"
+    run = lambda s, t: run_remote(host, password, s, timeout=t)  # noqa: E731
+    rc, out = run(f"zfs list -H -o name {root} 2>&1", 15)
+    if rc == 0:
+        report.add(
+            tag, False, f"{root} already exists; refusing to reuse or destroy it"
+        )
+        return
+    rc, out = run(
+        "cat /sys/module/zfs/parameters/icp_aes_impl /sys/module/zfs/parameters/icp_gcm_impl",
+        15,
+    )
+    report.info[tag + " impl"] = (
+        " | ".join(out.split("\n")[:2]) if rc == 0 else "unknown"
+    )
+    # the source file is made once; reading it back first keeps disk reads out of the timing
+    rc, out = run(
+        f'test "$(stat -c %s {POOL_CRYPT_SRC} 2>/dev/null)" = {POOL_CRYPT_BYTES} || '
+        f"head -c {POOL_CRYPT_BYTES} /dev/urandom > {POOL_CRYPT_SRC}; cat {POOL_CRYPT_SRC} > /dev/null",
+        POOL_CRYPT_LIMIT_S,
+    )
+    if rc != 0:
+        report.add(tag, False, f"source file: rc={rc} {out.strip()[-200:]}")
+        return
+    rc, out = run(f"zfs create -o compression=off -o recordsize=1M {root}", 30)
+    if rc != 0:
+        report.add(tag, False, f"parent create failed: {out.strip()[-200:]}")
+        return
+    try:
+        for mode, opts in POOL_CRYPT_MODES:
+            ds = f"{root}/{mode}"
+            rc, out = run(
+                f"printf '%s\\n' '{POOL_CRYPT_PASS}' | zfs create -o compression=off -o recordsize=1M {opts} {ds}",
+                60,
+            )
+            name = f"{tag} {mode} write"
+            if rc != 0:
+                report.add(name, False, f"create failed: {out.strip()[-200:]}")
+                continue
+            rc, out = run(
+                _with_cpu(
+                    f"dd if={POOL_CRYPT_SRC} of=/mnt/{ds}/f bs=1M conv=fsync 2>&1"
+                ),
+                POOL_CRYPT_LIMIT_S,
+            )
+            mbps, cpu = parse_dd_mbps(out), parse_cpu_busy(out)
+            if rc != 0 or mbps is None:
+                report.add(
+                    name,
+                    False,
+                    f"dd failed rc={rc}: {out.strip()[-200:]} (limit {POOL_CRYPT_LIMIT_S}s)",
+                )
+                continue
+            report.add(
+                name,
+                True,
+                f"{mbps:.1f} MB/s" + (f" cpu {cpu:.0f}%" if cpu is not None else ""),
+                metric=mbps,
+            )
+            run(f"rm -f /mnt/{ds}/f", 60)
+    finally:
+        rc, out = run(f"zfs destroy -r {root}", 180)
         report.add(
             f"{tag} cleanup",
             rc == 0,
@@ -2448,6 +2546,9 @@ def run_subtests(
     if args.pool_fio:
         check()
         bench_pool_fio(host, pw, report, args.pool_fio, runtime=args.pool_fio_runtime)
+    if args.pool_crypt:
+        check()
+        bench_pool_crypt(host, pw, report, args.pool_crypt)
     if args.pool_nfs:
         check()
         bench_pool_nfs(host, pw, report, args.pool_nfs, runtime=args.pool_fio_runtime)
@@ -2690,6 +2791,11 @@ def main() -> int:
         metavar="POOL",
         help="fio over NFS (box 10G address) to a temporary POOL/bench/nfs share",
     )
+    ap.add_argument(
+        "--pool-crypt",
+        metavar="POOL",
+        help="4 GiB dd write into temporary POOL/benchcrypt/{off,gcm,ccm} datasets (#368)",
+    )
     ap.add_argument("--pool-fio-runtime", type=int, default=POOL_FIO_RUNTIME_S)
     ap.add_argument(
         "--usb-fio-write",
@@ -2802,9 +2908,9 @@ def main() -> int:
         sys.exit("--dma-pq needs --dma-reload (enable_pq is a module parameter)")
     if args.usb_fio_write and not args.usb_fio:
         sys.exit("--usb-fio-write needs --usb-fio")
-    if args.idle and (args.pool_fio or args.pool_nfs):
+    if args.idle and (args.pool_fio or args.pool_nfs or args.pool_crypt):
         sys.exit(
-            "--pool-fio/--pool-nfs are not for --idle (heavy load, creates datasets)"
+            "--pool-fio/--pool-nfs/--pool-crypt are not for --idle (heavy load, creates datasets)"
         )
     if args.idle and args.usb_fio:
         sys.exit("--usb-fio is not for --idle (fio load; not unattended)")
