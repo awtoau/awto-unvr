@@ -1,5 +1,5 @@
 diff --git a/include/os/linux/kernel/linux/simd_aarch64.h b/include/os/linux/kernel/linux/simd_aarch64.h
-index 25fe4f9..7c9e343 100644
+index 25fe4f9..b113d9d 100644
 --- a/include/os/linux/kernel/linux/simd_aarch64.h
 +++ b/include/os/linux/kernel/linux/simd_aarch64.h
 @@ -48,6 +48,8 @@
@@ -11,7 +11,49 @@ index 25fe4f9..7c9e343 100644
   */
  
  #ifndef _LINUX_SIMD_AARCH64_H
-@@ -241,4 +243,25 @@ zfs_sha512_available(void)
+@@ -86,7 +88,7 @@
+ 
+ extern uint8_t **zfs_kfpu_fpregs;
+ 
+-#define	KFPU_AARCH64_SIZE	(32 * 16 + 3 * 8)	/* q0-31, fpsr, fpcr, irq flags */
++#define	KFPU_AARCH64_SIZE	(32 * 16 + 4 * 8)	/* q0-31, fpsr, fpcr, irq flags, depth */
+ 
+ /*
+  * Only the 128-bit V view is saved. With SVE/SME live state the upper Z
+@@ -145,8 +147,11 @@ kfpu_begin(void)
+ 	unsigned long flags;
+ 
+ 	preempt_disable();
+-	local_irq_save(flags);
+ 	s = zfs_kfpu_fpregs[smp_processor_id()];
++	/* nested: IRQs are already off and the registers already saved */
++	if (((uint64_t *)(s + 512))[3]++ != 0)
++		return;
++	local_irq_save(flags);
+ 	__asm__ __volatile__(
+ 	    "stp q0,  q1,  [%0, #0]\n\t"
+ 	    "stp q2,  q3,  [%0, #32]\n\t"
+@@ -176,9 +181,16 @@ static inline void
+ kfpu_end(void)
+ {
+ 	uint8_t *s = zfs_kfpu_fpregs[smp_processor_id()];
+-	uint64_t fpsr = ((uint64_t *)(s + 512))[0];
+-	uint64_t fpcr = ((uint64_t *)(s + 512))[1];
+-	unsigned long flags = ((unsigned long *)(s + 512))[2];
++	uint64_t fpsr, fpcr;
++	unsigned long flags;
++
++	if (--((uint64_t *)(s + 512))[3] != 0) {
++		preempt_enable();
++		return;
++	}
++	fpsr = ((uint64_t *)(s + 512))[0];
++	fpcr = ((uint64_t *)(s + 512))[1];
++	flags = ((unsigned long *)(s + 512))[2];
+ 
+ 	__asm__ __volatile__(
+ 	    "ldp q0,  q1,  [%0, #0]\n\t"
+@@ -241,4 +253,25 @@ zfs_sha512_available(void)
  	return (ftr & 0x2);
  }
  
@@ -230,11 +272,237 @@ index 0000000..84d5d4e
 +};
 +
 +#endif /* defined(__aarch64__) */
+diff --git a/module/icp/algs/modes/ccm.c b/module/icp/algs/modes/ccm.c
+index 0a7a509..0140825 100644
+--- a/module/icp/algs/modes/ccm.c
++++ b/module/icp/algs/modes/ccm.c
+@@ -26,6 +26,7 @@
+ 
+ #include <sys/zfs_context.h>
+ #include <modes/modes.h>
++#include <modes/simd_bulk.h>
+ #include <sys/crypto/common.h>
+ #include <sys/crypto/impl.h>
+ 
+@@ -38,9 +39,9 @@
+  * Encrypt multiple blocks of data in CCM mode.  Decrypt for CCM mode
+  * is done in another function.
+  */
+-int
+-ccm_mode_encrypt_contiguous_blocks(ccm_ctx_t *ctx, char *data, size_t length,
+-    crypto_data_t *out, size_t block_size,
++static int
++ccm_mode_encrypt_contiguous_blocks_one(ccm_ctx_t *ctx, char *data,
++    size_t length, crypto_data_t *out, size_t block_size,
+     int (*encrypt_block)(const void *, const uint8_t *, uint8_t *),
+     void (*copy_block)(uint8_t *, uint8_t *),
+     void (*xor_block)(uint8_t *, uint8_t *))
+@@ -167,6 +168,39 @@ out:
+ 	return (CRYPTO_SUCCESS);
+ }
+ 
++/*
++ * Streaming update, so it can be split anywhere: with the ARMv8 CE impl
++ * each ICP_BULK_CHUNK piece runs inside a single kfpu section.
++ */
++int
++ccm_mode_encrypt_contiguous_blocks(ccm_ctx_t *ctx, char *data, size_t length,
++    crypto_data_t *out, size_t block_size,
++    int (*encrypt_block)(const void *, const uint8_t *, uint8_t *),
++    void (*copy_block)(uint8_t *, uint8_t *),
++    void (*xor_block)(uint8_t *, uint8_t *))
++{
++#if defined(__aarch64__)
++	if (length > block_size && icp_bulk_simd(ctx->ccm_keysched, NULL)) {
++		int rv = CRYPTO_SUCCESS;
++
++		while (length > 0 && rv == CRYPTO_SUCCESS) {
++			size_t n = MIN(length, ICP_BULK_CHUNK);
++
++			kfpu_begin();
++			rv = ccm_mode_encrypt_contiguous_blocks_one(ctx, data,
++			    n, out, block_size, encrypt_block, copy_block,
++			    xor_block);
++			kfpu_end();
++			data += n;
++			length -= n;
++		}
++		return (rv);
++	}
++#endif
++	return (ccm_mode_encrypt_contiguous_blocks_one(ctx, data, length, out,
++	    block_size, encrypt_block, copy_block, xor_block));
++}
++
+ void
+ calculate_ccm_mac(ccm_ctx_t *ctx, uint8_t *ccm_mac,
+     int (*encrypt_block)(const void *, const uint8_t *, uint8_t *))
+@@ -356,7 +390,7 @@ ccm_mode_decrypt_contiguous_blocks(ccm_ctx_t *ctx, char *data, size_t length,
+ 	uint64_t counter;
+ 	size_t pt_len, total_decrypted_len, mac_len, pm_len, pd_len;
+ 	uint8_t *resultp;
+-
++	boolean_t bulk;
+ 
+ 	pm_len = ctx->ccm_processed_mac_len;
+ 
+@@ -432,13 +466,17 @@ ccm_mode_decrypt_contiguous_blocks(ccm_ctx_t *ctx, char *data, size_t length,
+ 		return (CRYPTO_SUCCESS);
+ 	}
+ 
++	bulk = icp_bulk_simd(ctx->ccm_keysched, NULL);
++	icp_bulk_begin(bulk);
+ 	do {
+ 		/* Unprocessed data from last call. */
+ 		if (ctx->ccm_remainder_len > 0) {
+ 			need = block_size - ctx->ccm_remainder_len;
+ 
+-			if (need > remainder)
++			if (need > remainder) {
++				icp_bulk_end(bulk);
+ 				return (CRYPTO_ENCRYPTED_DATA_LEN_RANGE);
++			}
+ 
+ 			memcpy(&((uint8_t *)ctx->ccm_remainder)
+ 			    [ctx->ccm_remainder_len], datap, need);
+@@ -476,6 +514,7 @@ ccm_mode_decrypt_contiguous_blocks(ccm_ctx_t *ctx, char *data, size_t length,
+ 		copy_block(cbp, resultp);
+ 
+ 		ctx->ccm_processed_data_len += block_size;
++		icp_bulk_tick(bulk, ctx->ccm_processed_data_len);
+ 
+ 		ctx->ccm_lastp = blockp;
+ 
+@@ -511,6 +550,7 @@ ccm_mode_decrypt_contiguous_blocks(ccm_ctx_t *ctx, char *data, size_t length,
+ 	} while (remainder > 0);
+ 
+ out:
++	icp_bulk_end(bulk);
+ 	return (CRYPTO_SUCCESS);
+ }
+ 
+@@ -523,6 +563,7 @@ ccm_decrypt_final(ccm_ctx_t *ctx, crypto_data_t *out, size_t block_size,
+ 	size_t mac_remain, pt_len;
+ 	uint8_t *pt, *mac_buf, *macp, *ccm_mac_p;
+ 	int rv;
++	boolean_t bulk;
+ 
+ 	pt_len = ctx->ccm_data_len;
+ 
+@@ -537,6 +578,8 @@ ccm_decrypt_final(ccm_ctx_t *ctx, crypto_data_t *out, size_t block_size,
+ 
+ 	macp = (uint8_t *)ctx->ccm_tmp;
+ 
++	bulk = icp_bulk_simd(ctx->ccm_keysched, NULL);
++	icp_bulk_begin(bulk);
+ 	while (mac_remain > 0) {
+ 		if (mac_remain < block_size) {
+ 			memset(macp, 0, block_size);
+@@ -551,7 +594,9 @@ ccm_decrypt_final(ccm_ctx_t *ctx, crypto_data_t *out, size_t block_size,
+ 		/* calculate the CBC MAC */
+ 		xor_block(macp, mac_buf);
+ 		encrypt_block(ctx->ccm_keysched, mac_buf, mac_buf);
++		icp_bulk_tick(bulk, pt - (uint8_t *)ctx->ccm_pt_buf);
+ 	}
++	icp_bulk_end(bulk);
+ 
+ 	/* Calculate the CCM MAC */
+ 	ccm_mac_p = (uint8_t *)ctx->ccm_tmp;
 diff --git a/module/icp/algs/modes/gcm.c b/module/icp/algs/modes/gcm.c
-index ab2c5a4..664166d 100644
+index ab2c5a4..eed6845 100644
 --- a/module/icp/algs/modes/gcm.c
 +++ b/module/icp/algs/modes/gcm.c
-@@ -717,6 +717,9 @@ static const gcm_impl_ops_t *gcm_all_impl[] = {
+@@ -32,6 +32,7 @@
+ #include <sys/byteorder.h>
+ #include <sys/simd.h>
+ #include <modes/gcm_impl.h>
++#include <modes/simd_bulk.h>
+ #ifdef CAN_USE_GCM_ASM
+ #include <aes/aes_impl.h>
+ #include <modes/gcm_asm_rename_funcs.h>
+@@ -84,9 +85,9 @@ static int gcm_init_avx(gcm_ctx_t *, const uint8_t *, size_t, const uint8_t *,
+  * Encrypt multiple blocks of data in GCM mode.  Decrypt for GCM mode
+  * is done in another function.
+  */
+-int
+-gcm_mode_encrypt_contiguous_blocks(gcm_ctx_t *ctx, char *data, size_t length,
+-    crypto_data_t *out, size_t block_size,
++static int
++gcm_mode_encrypt_contiguous_blocks_one(gcm_ctx_t *ctx, char *data,
++    size_t length, crypto_data_t *out, size_t block_size,
+     int (*encrypt_block)(const void *, const uint8_t *, uint8_t *),
+     void (*copy_block)(uint8_t *, uint8_t *),
+     void (*xor_block)(uint8_t *, uint8_t *))
+@@ -203,6 +204,40 @@ out:
+ 	return (CRYPTO_SUCCESS);
+ }
+ 
++/*
++ * Streaming update, so it can be split anywhere: with the ARMv8 CE impls
++ * each ICP_BULK_CHUNK piece runs inside a single kfpu section.
++ */
++int
++gcm_mode_encrypt_contiguous_blocks(gcm_ctx_t *ctx, char *data, size_t length,
++    crypto_data_t *out, size_t block_size,
++    int (*encrypt_block)(const void *, const uint8_t *, uint8_t *),
++    void (*copy_block)(uint8_t *, uint8_t *),
++    void (*xor_block)(uint8_t *, uint8_t *))
++{
++#if defined(__aarch64__)
++	if (length > block_size &&
++	    icp_bulk_simd(ctx->gcm_keysched, gcm_impl_get_ops())) {
++		int rv = CRYPTO_SUCCESS;
++
++		while (length > 0 && rv == CRYPTO_SUCCESS) {
++			size_t n = MIN(length, ICP_BULK_CHUNK);
++
++			kfpu_begin();
++			rv = gcm_mode_encrypt_contiguous_blocks_one(ctx, data,
++			    n, out, block_size, encrypt_block, copy_block,
++			    xor_block);
++			kfpu_end();
++			data += n;
++			length -= n;
++		}
++		return (rv);
++	}
++#endif
++	return (gcm_mode_encrypt_contiguous_blocks_one(ctx, data, length, out,
++	    block_size, encrypt_block, copy_block, xor_block));
++}
++
+ int
+ gcm_encrypt_final(gcm_ctx_t *ctx, crypto_data_t *out, size_t block_size,
+     int (*encrypt_block)(const void *, const uint8_t *, uint8_t *),
+@@ -390,6 +425,7 @@ gcm_decrypt_final(gcm_ctx_t *ctx, crypto_data_t *out, size_t block_size,
+ 	uint64_t counter;
+ 	uint64_t counter_mask = ntohll(0x00000000ffffffffULL);
+ 	int processed = 0, rv;
++	boolean_t bulk;
+ 
+ 	ASSERT(ctx->gcm_processed_data_len == ctx->gcm_pt_buf_len);
+ 
+@@ -398,6 +434,8 @@ gcm_decrypt_final(gcm_ctx_t *ctx, crypto_data_t *out, size_t block_size,
+ 	ghash = (uint8_t *)ctx->gcm_ghash;
+ 	blockp = ctx->gcm_pt_buf;
+ 	remainder = pt_len;
++	bulk = icp_bulk_simd(ctx->gcm_keysched, gops);
++	icp_bulk_begin(bulk);
+ 	while (remainder > 0) {
+ 		/* Incomplete last block */
+ 		if (remainder < block_size) {
+@@ -433,8 +471,10 @@ gcm_decrypt_final(gcm_ctx_t *ctx, crypto_data_t *out, size_t block_size,
+ 		processed += block_size;
+ 		blockp += block_size;
+ 		remainder -= block_size;
++		icp_bulk_tick(bulk, processed);
+ 	}
+ out:
++	icp_bulk_end(bulk);
+ 	ctx->gcm_len_a_len_c[1] = htonll(CRYPTO_BYTES2BITS(pt_len));
+ 	GHASH(ctx, ctx->gcm_len_a_len_c, ghash, gops);
+ 	encrypt_block(ctx->gcm_keysched, (uint8_t *)ctx->gcm_J0,
+@@ -717,6 +757,9 @@ static const gcm_impl_ops_t *gcm_all_impl[] = {
  #if defined(__x86_64) && defined(HAVE_PCLMULQDQ)
  	&gcm_pclmulqdq_impl,
  #endif
@@ -244,7 +512,7 @@ index ab2c5a4..664166d 100644
  };
  
  /* Indicate that benchmark has been completed */
-@@ -806,6 +809,12 @@ gcm_impl_init(void)
+@@ -806,6 +849,12 @@ gcm_impl_init(void)
  		memcpy(&gcm_fastest_impl, &gcm_pclmulqdq_impl,
  		    sizeof (gcm_fastest_impl));
  	} else
@@ -766,3 +1034,60 @@ index 238a4e2..94046cf 100644
  
  /*
   * Initializes fastest implementation
+diff --git a/module/icp/include/modes/simd_bulk.h b/module/icp/include/modes/simd_bulk.h
+new file mode 100644
+index 0000000..dfd9210
+--- /dev/null
++++ b/module/icp/include/modes/simd_bulk.h
+@@ -0,0 +1,51 @@
++// SPDX-License-Identifier: CDDL-1.0 OR GPL-2.0-or-later
++/*
++ * Copyright (C) 2026 Awto / Daniel Tyrrell
++ *
++ * Hold one kfpu section across a block loop instead of one per AES / GHASH
++ * block (aarch64 ARMv8 CE impls). kfpu_begin()/end() nest on aarch64, so the
++ * per-block sections inside the loop become counter bumps. The section is
++ * dropped every ICP_BULK_CHUNK bytes so IRQs are not held off for long.
++ */
++
++#ifndef	_MODES_SIMD_BULK_H
++#define	_MODES_SIMD_BULK_H
++
++#include <sys/simd.h>
++#include <aes/aes_impl.h>
++#include <modes/gcm_impl.h>
++
++#if defined(__aarch64__)
++
++#define	ICP_BULK_CHUNK	32768
++
++/* keysched: aes_key_t *, gops: GCM impl in use or NULL (CCM) */
++static inline boolean_t
++icp_bulk_simd(const void *keysched, const gcm_impl_ops_t *gops)
++{
++	return (kfpu_allowed() &&
++	    (((const aes_key_t *)keysched)->ops == &aes_armv8_impl ||
++	    (gops != NULL && gops == &gcm_pmull_impl)));
++}
++
++#define	icp_bulk_begin(on)	do { if (on) kfpu_begin(); } while (0)
++#define	icp_bulk_end(on)	do { if (on) kfpu_end(); } while (0)
++/* `done`: bytes processed so far, a multiple of the block size */
++#define	icp_bulk_tick(on, done)						\
++	do {								\
++		if ((on) && ((done) % ICP_BULK_CHUNK) == 0) {		\
++			kfpu_end();					\
++			kfpu_begin();					\
++		}							\
++	} while (0)
++
++#else
++
++#define	icp_bulk_simd(keysched, gops)	(B_FALSE)
++#define	icp_bulk_begin(on)	do { (void) (on); } while (0)
++#define	icp_bulk_end(on)	do { (void) (on); } while (0)
++#define	icp_bulk_tick(on, done)	do { (void) (on); } while (0)
++
++#endif
++
++#endif	/* _MODES_SIMD_BULK_H */
