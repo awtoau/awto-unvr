@@ -1,0 +1,768 @@
+diff --git a/include/os/linux/kernel/linux/simd_aarch64.h b/include/os/linux/kernel/linux/simd_aarch64.h
+index 25fe4f9..7c9e343 100644
+--- a/include/os/linux/kernel/linux/simd_aarch64.h
++++ b/include/os/linux/kernel/linux/simd_aarch64.h
+@@ -48,6 +48,8 @@
+  *   zfs_neon_available()
+  *   zfs_sha256_available()
+  *   zfs_sha512_available()
++ *   zfs_aes_available()
++ *   zfs_pmull_available()
+  */
+ 
+ #ifndef _LINUX_SIMD_AARCH64_H
+@@ -241,4 +243,25 @@ zfs_sha512_available(void)
+ 	return (ftr & 0x2);
+ }
+ 
++/*
++ * Check if the AES instructions (Crypto Extension) are available
++ */
++static inline boolean_t
++zfs_aes_available(void)
++{
++	unsigned long ftr = ((get_ftr(ID_AA64ISAR0_EL1)) >> 4) & 0xf;
++	return (ftr >= 1);
++}
++
++/*
++ * Check if the PMULL instructions (64x64->128 polynomial multiply) are
++ * available
++ */
++static inline boolean_t
++zfs_pmull_available(void)
++{
++	unsigned long ftr = ((get_ftr(ID_AA64ISAR0_EL1)) >> 4) & 0xf;
++	return (ftr >= 2);
++}
++
+ #endif /* _LINUX_SIMD_AARCH64_H */
+diff --git a/lib/libicp/Makefile.am b/lib/libicp/Makefile.am
+index 10c791b..1884d4a 100644
+--- a/lib/libicp/Makefile.am
++++ b/lib/libicp/Makefile.am
+@@ -41,8 +41,12 @@ nodist_libicp_la_SOURCES = \
+ 
+ if TARGET_CPU_AARCH64
+ nodist_libicp_la_SOURCES += \
++	module/icp/algs/aes/aes_impl_armv8.c \
++	module/icp/algs/modes/gcm_pmull.c \
++	module/icp/asm-aarch64/aes/aesv8-armx.S \
+ 	module/icp/asm-aarch64/blake3/b3_aarch64_sse2.S \
+ 	module/icp/asm-aarch64/blake3/b3_aarch64_sse41.S \
++	module/icp/asm-aarch64/modes/ghashv8-armx.S \
+ 	module/icp/asm-aarch64/sha2/sha256-armv8.S \
+ 	module/icp/asm-aarch64/sha2/sha512-armv8.S
+ endif
+diff --git a/lib/libspl/include/sys/simd.h b/lib/libspl/include/sys/simd.h
+index 4772a54..54b0646 100644
+--- a/lib/libspl/include/sys/simd.h
++++ b/lib/libspl/include/sys/simd.h
+@@ -543,6 +543,8 @@ zfs_sha256_available(void)
+ #define	kfpu_end()		do {} while (0)
+ 
+ #define	HWCAP_FP		0x00000001
++#define	HWCAP_AES		0x00000008
++#define	HWCAP_PMULL		0x00000010
+ #define	HWCAP_SHA2		0x00000040
+ #define	HWCAP_SHA512		0x00200000
+ 
+@@ -576,6 +578,26 @@ zfs_sha512_available(void)
+ 	return (hwcap & HWCAP_SHA512);
+ }
+ 
++/*
++ * Check if AES (Crypto Extension) is available
++ */
++static inline boolean_t
++zfs_aes_available(void)
++{
++	unsigned long hwcap = getauxval(AT_HWCAP);
++	return (hwcap & HWCAP_AES);
++}
++
++/*
++ * Check if PMULL is available
++ */
++static inline boolean_t
++zfs_pmull_available(void)
++{
++	unsigned long hwcap = getauxval(AT_HWCAP);
++	return (hwcap & HWCAP_PMULL);
++}
++
+ #elif defined(__powerpc__)
+ 
+ #define	kfpu_allowed()		0
+diff --git a/module/Kbuild.in b/module/Kbuild.in
+index d49c187..bd0d5c3 100644
+--- a/module/Kbuild.in
++++ b/module/Kbuild.in
+@@ -164,8 +164,12 @@ ICP_OBJS_ARM := \
+ 	asm-arm/sha2/sha512-armv7.o
+ 
+ ICP_OBJS_ARM64 := \
++	algs/aes/aes_impl_armv8.o \
++	algs/modes/gcm_pmull.o \
++	asm-aarch64/aes/aesv8-armx.o \
+ 	asm-aarch64/blake3/b3_aarch64_sse2.o \
+ 	asm-aarch64/blake3/b3_aarch64_sse41.o \
++	asm-aarch64/modes/ghashv8-armx.o \
+ 	asm-aarch64/sha2/sha256-armv8.o \
+ 	asm-aarch64/sha2/sha512-armv8.o
+ 
+diff --git a/module/icp/algs/aes/aes_impl.c b/module/icp/algs/aes/aes_impl.c
+index b652c8c..3aa0cbc 100644
+--- a/module/icp/algs/aes/aes_impl.c
++++ b/module/icp/algs/aes/aes_impl.c
+@@ -234,6 +234,9 @@ static const aes_impl_ops_t *aes_all_impl[] = {
+ #if defined(__x86_64) && defined(HAVE_AES)
+ 	&aes_aesni_impl,
+ #endif
++#if defined(__aarch64__)
++	&aes_armv8_impl,
++#endif
+ };
+ 
+ /* Indicate that benchmark has been completed */
+@@ -325,6 +328,14 @@ aes_impl_init(void)
+ 		memcpy(&aes_fastest_impl, &aes_x86_64_impl,
+ 		    sizeof (aes_fastest_impl));
+ 	}
++#elif defined(__aarch64__)
++	if (aes_armv8_impl.is_supported()) {
++		memcpy(&aes_fastest_impl, &aes_armv8_impl,
++		    sizeof (aes_fastest_impl));
++	} else {
++		memcpy(&aes_fastest_impl, &aes_generic_impl,
++		    sizeof (aes_fastest_impl));
++	}
+ #else
+ 	memcpy(&aes_fastest_impl, &aes_generic_impl,
+ 	    sizeof (aes_fastest_impl));
+diff --git a/module/icp/algs/aes/aes_impl_armv8.c b/module/icp/algs/aes/aes_impl_armv8.c
+new file mode 100644
+index 0000000..84d5d4e
+--- /dev/null
++++ b/module/icp/algs/aes/aes_impl_armv8.c
+@@ -0,0 +1,84 @@
++// SPDX-License-Identifier: CDDL-1.0 OR GPL-2.0-or-later
++/*
++ * Copyright (C) 2026 Awto / Daniel Tyrrell
++ *
++ * AES via the ARMv8 Crypto Extension, one block per call.
++ * Mirrors aes_impl_aesni.c; assembly in asm-aarch64/aes/aesv8-armx.S
++ * (derived from OpenSSL).
++ */
++
++#if defined(__aarch64__)
++
++#include <sys/simd.h>
++#include <sys/types.h>
++#include <sys/asm_linkage.h>
++
++extern ASMABI int zfs_aes_v8_set_encrypt_key(const uint8_t *userKey,
++	const int bits, uint32_t *rk_and_rounds);
++extern ASMABI int zfs_aes_v8_set_decrypt_key(const uint8_t *userKey,
++	const int bits, uint32_t *rk_and_rounds);
++extern ASMABI void zfs_aes_v8_encrypt(const uint32_t rk[], int Nr,
++	const uint32_t pt[4], uint32_t ct[4]);
++extern ASMABI void zfs_aes_v8_decrypt(const uint32_t rk[], int Nr,
++	const uint32_t ct[4], uint32_t pt[4]);
++
++#include <aes/aes_impl.h>
++
++/* the asm stores the round count in the word after the 60-word schedule */
++#define	AES_V8_KS_WORDS		(((MAX_AES_NR) + 1) * (MAX_AES_NB))
++
++static void
++aes_armv8_generate(aes_key_t *key, const uint32_t *keyarr32, int keybits)
++{
++	uint32_t enc[AES_V8_KS_WORDS + 4];
++	uint32_t dec[AES_V8_KS_WORDS + 4];
++	int nr;
++
++	kfpu_begin();
++	nr = zfs_aes_v8_set_encrypt_key((const uint8_t *)keyarr32, keybits,
++	    enc);
++	ASSERT0(nr);
++	(void) nr;
++	(void) zfs_aes_v8_set_decrypt_key((const uint8_t *)keyarr32, keybits,
++	    dec);
++	kfpu_end();
++
++	memcpy(&key->encr_ks.ks32[0], enc, sizeof (key->encr_ks.ks32));
++	memcpy(&key->decr_ks.ks32[0], dec, sizeof (key->decr_ks.ks32));
++	key->nr = (keybits >> 5) + 6;
++}
++
++static void
++aes_armv8_encrypt(const uint32_t rk[], int Nr, const uint32_t pt[4],
++    uint32_t ct[4])
++{
++	kfpu_begin();
++	zfs_aes_v8_encrypt(rk, Nr, pt, ct);
++	kfpu_end();
++}
++
++static void
++aes_armv8_decrypt(const uint32_t rk[], int Nr, const uint32_t ct[4],
++    uint32_t pt[4])
++{
++	kfpu_begin();
++	zfs_aes_v8_decrypt(rk, Nr, ct, pt);
++	kfpu_end();
++}
++
++static boolean_t
++aes_armv8_will_work(void)
++{
++	return (kfpu_allowed() && zfs_aes_available());
++}
++
++const aes_impl_ops_t aes_armv8_impl = {
++	.generate = &aes_armv8_generate,
++	.encrypt = &aes_armv8_encrypt,
++	.decrypt = &aes_armv8_decrypt,
++	.is_supported = &aes_armv8_will_work,
++	.needs_byteswap = B_FALSE,
++	.name = "armv8"
++};
++
++#endif /* defined(__aarch64__) */
+diff --git a/module/icp/algs/modes/gcm.c b/module/icp/algs/modes/gcm.c
+index ab2c5a4..664166d 100644
+--- a/module/icp/algs/modes/gcm.c
++++ b/module/icp/algs/modes/gcm.c
+@@ -717,6 +717,9 @@ static const gcm_impl_ops_t *gcm_all_impl[] = {
+ #if defined(__x86_64) && defined(HAVE_PCLMULQDQ)
+ 	&gcm_pclmulqdq_impl,
+ #endif
++#if defined(__aarch64__)
++	&gcm_pmull_impl,
++#endif
+ };
+ 
+ /* Indicate that benchmark has been completed */
+@@ -806,6 +809,12 @@ gcm_impl_init(void)
+ 		memcpy(&gcm_fastest_impl, &gcm_pclmulqdq_impl,
+ 		    sizeof (gcm_fastest_impl));
+ 	} else
++#endif
++#if defined(__aarch64__)
++	if (gcm_pmull_impl.is_supported()) {
++		memcpy(&gcm_fastest_impl, &gcm_pmull_impl,
++		    sizeof (gcm_fastest_impl));
++	} else
+ #endif
+ 	{
+ 		memcpy(&gcm_fastest_impl, &gcm_generic_impl,
+diff --git a/module/icp/algs/modes/gcm_pmull.c b/module/icp/algs/modes/gcm_pmull.c
+new file mode 100644
+index 0000000..f49fa72
+--- /dev/null
++++ b/module/icp/algs/modes/gcm_pmull.c
+@@ -0,0 +1,46 @@
++// SPDX-License-Identifier: CDDL-1.0 OR GPL-2.0-or-later
++/*
++ * Copyright (C) 2026 Awto / Daniel Tyrrell
++ *
++ * GHASH multiply via the ARMv8 PMULL instruction. Mirrors
++ * gcm_pclmulqdq.c; assembly in asm-aarch64/modes/ghashv8-armx.S
++ * (derived from OpenSSL).
++ */
++
++#if defined(__aarch64__)
++
++#include <sys/types.h>
++#include <sys/simd.h>
++#include <sys/asm_linkage.h>
++
++extern void ASMABI zfs_gcm_mul_pmull(const uint8_t *, const uint8_t *,
++    uint8_t *);
++
++#include <modes/gcm_impl.h>
++
++/*
++ * res = *x_in * *y in GF(2^128). All three are 16-byte blocks in GCM
++ * wire byte order, which is what the asm takes as-is (no byte swap).
++ */
++static void
++gcm_pmull_mul(uint64_t *x_in, uint64_t *y, uint64_t *res)
++{
++	kfpu_begin();
++	zfs_gcm_mul_pmull((const uint8_t *)x_in, (const uint8_t *)y,
++	    (uint8_t *)res);
++	kfpu_end();
++}
++
++static boolean_t
++gcm_pmull_will_work(void)
++{
++	return (kfpu_allowed() && zfs_pmull_available());
++}
++
++const gcm_impl_ops_t gcm_pmull_impl = {
++	.mul = &gcm_pmull_mul,
++	.is_supported = &gcm_pmull_will_work,
++	.name = "pmull"
++};
++
++#endif /* defined(__aarch64__) */
+diff --git a/module/icp/asm-aarch64/aes/aesv8-armx.S b/module/icp/asm-aarch64/aes/aesv8-armx.S
+new file mode 100644
+index 0000000..27ab652
+--- /dev/null
++++ b/module/icp/asm-aarch64/aes/aesv8-armx.S
+@@ -0,0 +1,323 @@
++// SPDX-License-Identifier: Apache-2.0
++/*
++ * Copyright 2014-2022 The OpenSSL Project Authors. All Rights Reserved.
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *     https://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++/*
++ * Portions Copyright (c) 2026 Awto / Daniel Tyrrell
++ * - modified assembly to fit into OpenZFS
++ */
++
++#if defined(__aarch64__)
++
++#define	AARCH64_VALID_CALL_TARGET	hint	34	/* bti c */
++#define	AARCH64_SIGN_LINK_REGISTER	hint	25	/* paciasp */
++#define	AARCH64_VALIDATE_LINK_REGISTER	hint	29	/* autiasp */
++
++.arch	armv8-a+crypto
++.text
++.section	.rodata
++.align	5
++.Lrcon:
++.long	0x01,0x01,0x01,0x01
++.long	0x0c0f0e0d,0x0c0f0e0d,0x0c0f0e0d,0x0c0f0e0d	// rotate-n-splat
++.long	0x1b,0x1b,0x1b,0x1b
++.previous
++.globl	zfs_aes_v8_set_encrypt_key
++.type	zfs_aes_v8_set_encrypt_key,%function
++.align	5
++zfs_aes_v8_set_encrypt_key:
++.Lenc_key:
++	AARCH64_VALID_CALL_TARGET
++	// Armv8.3-A PAuth: even though x30 is pushed to stack it is not popped later.
++	stp	x29,x30,[sp,#-16]!
++	add	x29,sp,#0
++	mov	x3,#-1
++	cmp	x0,#0
++	b.eq	.Lenc_key_abort
++	cmp	x2,#0
++	b.eq	.Lenc_key_abort
++	mov	x3,#-2
++	cmp	w1,#128
++	b.lt	.Lenc_key_abort
++	cmp	w1,#256
++	b.gt	.Lenc_key_abort
++	tst	w1,#0x3f
++	b.ne	.Lenc_key_abort
++
++	adrp	x3,.Lrcon
++	add	x3,x3,#:lo12:.Lrcon
++	cmp	w1,#192
++
++	eor	v0.16b,v0.16b,v0.16b
++	ld1	{v3.16b},[x0],#16
++	mov	w1,#8		// reuse w1
++	ld1	{v1.4s,v2.4s},[x3],#32
++
++	b.lt	.Loop128
++	b.eq	.L192
++	b	.L256
++
++.align	4
++.Loop128:
++	tbl	v6.16b,{v3.16b},v2.16b
++	ext	v5.16b,v0.16b,v3.16b,#12
++	st1	{v3.4s},[x2],#16
++	aese	v6.16b,v0.16b
++	subs	w1,w1,#1
++
++	eor	v3.16b,v3.16b,v5.16b
++	ext	v5.16b,v0.16b,v5.16b,#12
++	eor	v3.16b,v3.16b,v5.16b
++	ext	v5.16b,v0.16b,v5.16b,#12
++	eor	v6.16b,v6.16b,v1.16b
++	eor	v3.16b,v3.16b,v5.16b
++	shl	v1.16b,v1.16b,#1
++	eor	v3.16b,v3.16b,v6.16b
++	b.ne	.Loop128
++
++	ld1	{v1.4s},[x3]
++
++	tbl	v6.16b,{v3.16b},v2.16b
++	ext	v5.16b,v0.16b,v3.16b,#12
++	st1	{v3.4s},[x2],#16
++	aese	v6.16b,v0.16b
++
++	eor	v3.16b,v3.16b,v5.16b
++	ext	v5.16b,v0.16b,v5.16b,#12
++	eor	v3.16b,v3.16b,v5.16b
++	ext	v5.16b,v0.16b,v5.16b,#12
++	eor	v6.16b,v6.16b,v1.16b
++	eor	v3.16b,v3.16b,v5.16b
++	shl	v1.16b,v1.16b,#1
++	eor	v3.16b,v3.16b,v6.16b
++
++	tbl	v6.16b,{v3.16b},v2.16b
++	ext	v5.16b,v0.16b,v3.16b,#12
++	st1	{v3.4s},[x2],#16
++	aese	v6.16b,v0.16b
++
++	eor	v3.16b,v3.16b,v5.16b
++	ext	v5.16b,v0.16b,v5.16b,#12
++	eor	v3.16b,v3.16b,v5.16b
++	ext	v5.16b,v0.16b,v5.16b,#12
++	eor	v6.16b,v6.16b,v1.16b
++	eor	v3.16b,v3.16b,v5.16b
++	eor	v3.16b,v3.16b,v6.16b
++	st1	{v3.4s},[x2]
++	add	x2,x2,#0x50
++
++	mov	w12,#10
++	b	.Ldone
++
++.align	4
++.L192:
++	ld1	{v4.8b},[x0],#8
++	movi	v6.16b,#8			// borrow v6.16b
++	st1	{v3.4s},[x2],#16
++	sub	v2.16b,v2.16b,v6.16b	// adjust the mask
++
++.Loop192:
++	tbl	v6.16b,{v4.16b},v2.16b
++	ext	v5.16b,v0.16b,v3.16b,#12
++#ifdef __AARCH64EB__
++	st1	{v4.4s},[x2],#16
++	sub	x2,x2,#8
++#else
++	st1	{v4.8b},[x2],#8
++#endif
++	aese	v6.16b,v0.16b
++	subs	w1,w1,#1
++
++	eor	v3.16b,v3.16b,v5.16b
++	ext	v5.16b,v0.16b,v5.16b,#12
++	eor	v3.16b,v3.16b,v5.16b
++	ext	v5.16b,v0.16b,v5.16b,#12
++	eor	v3.16b,v3.16b,v5.16b
++
++	dup	v5.4s,v3.s[3]
++	eor	v5.16b,v5.16b,v4.16b
++	eor	v6.16b,v6.16b,v1.16b
++	ext	v4.16b,v0.16b,v4.16b,#12
++	shl	v1.16b,v1.16b,#1
++	eor	v4.16b,v4.16b,v5.16b
++	eor	v3.16b,v3.16b,v6.16b
++	eor	v4.16b,v4.16b,v6.16b
++	st1	{v3.4s},[x2],#16
++	b.ne	.Loop192
++
++	mov	w12,#12
++	add	x2,x2,#0x20
++	b	.Ldone
++
++.align	4
++.L256:
++	ld1	{v4.16b},[x0]
++	mov	w1,#7
++	mov	w12,#14
++	st1	{v3.4s},[x2],#16
++
++.Loop256:
++	tbl	v6.16b,{v4.16b},v2.16b
++	ext	v5.16b,v0.16b,v3.16b,#12
++	st1	{v4.4s},[x2],#16
++	aese	v6.16b,v0.16b
++	subs	w1,w1,#1
++
++	eor	v3.16b,v3.16b,v5.16b
++	ext	v5.16b,v0.16b,v5.16b,#12
++	eor	v3.16b,v3.16b,v5.16b
++	ext	v5.16b,v0.16b,v5.16b,#12
++	eor	v6.16b,v6.16b,v1.16b
++	eor	v3.16b,v3.16b,v5.16b
++	shl	v1.16b,v1.16b,#1
++	eor	v3.16b,v3.16b,v6.16b
++	st1	{v3.4s},[x2],#16
++	b.eq	.Ldone
++
++	dup	v6.4s,v3.s[3]		// just splat
++	ext	v5.16b,v0.16b,v4.16b,#12
++	aese	v6.16b,v0.16b
++
++	eor	v4.16b,v4.16b,v5.16b
++	ext	v5.16b,v0.16b,v5.16b,#12
++	eor	v4.16b,v4.16b,v5.16b
++	ext	v5.16b,v0.16b,v5.16b,#12
++	eor	v4.16b,v4.16b,v5.16b
++
++	eor	v4.16b,v4.16b,v6.16b
++	b	.Loop256
++
++.Ldone:
++	str	w12,[x2]
++	mov	x3,#0
++
++.Lenc_key_abort:
++	mov	x0,x3			// return value
++	ldr	x29,[sp],#16
++	ret
++.size	zfs_aes_v8_set_encrypt_key,.-zfs_aes_v8_set_encrypt_key
++
++.globl	zfs_aes_v8_set_decrypt_key
++.type	zfs_aes_v8_set_decrypt_key,%function
++.align	5
++zfs_aes_v8_set_decrypt_key:
++	AARCH64_SIGN_LINK_REGISTER
++	stp	x29,x30,[sp,#-16]!
++	add	x29,sp,#0
++	bl	.Lenc_key
++
++	cmp	x0,#0
++	b.ne	.Ldec_key_abort
++
++	sub	x2,x2,#240		// restore original x2
++	mov	x4,#-16
++	add	x0,x2,x12,lsl#4	// end of key schedule
++
++	ld1	{v0.4s},[x2]
++	ld1	{v1.4s},[x0]
++	st1	{v0.4s},[x0],x4
++	st1	{v1.4s},[x2],#16
++
++.Loop_imc:
++	ld1	{v0.4s},[x2]
++	ld1	{v1.4s},[x0]
++	aesimc	v0.16b,v0.16b
++	aesimc	v1.16b,v1.16b
++	st1	{v0.4s},[x0],x4
++	st1	{v1.4s},[x2],#16
++	cmp	x0,x2
++	b.hi	.Loop_imc
++
++	ld1	{v0.4s},[x2]
++	aesimc	v0.16b,v0.16b
++	st1	{v0.4s},[x0]
++
++	eor	x0,x0,x0		// return value
++.Ldec_key_abort:
++	ldp	x29,x30,[sp],#16
++	AARCH64_VALIDATE_LINK_REGISTER
++	ret
++.size	zfs_aes_v8_set_decrypt_key,.-zfs_aes_v8_set_decrypt_key
++
++// void zfs_aes_v8_encrypt(const uint32_t rk[], int nr, const uint8_t *in, uint8_t *out)
++// Same as OpenSSL aes_v8_encrypt() but takes rk and the round count as
++// arguments instead of an AES_KEY with the round count at offset 240.
++.globl	zfs_aes_v8_encrypt
++.type	zfs_aes_v8_encrypt,%function
++.align	5
++zfs_aes_v8_encrypt:
++	AARCH64_VALID_CALL_TARGET
++	mov	w5,w1
++	ld1	{v0.4s},[x0],#16
++	ld1	{v2.16b},[x2]
++	sub	w5,w5,#2
++	ld1	{v1.4s},[x0],#16
++
++.Loop_encrypt:
++	aese	v2.16b,v0.16b
++	aesmc	v2.16b,v2.16b
++	ld1	{v0.4s},[x0],#16
++	subs	w5,w5,#2
++	aese	v2.16b,v1.16b
++	aesmc	v2.16b,v2.16b
++	ld1	{v1.4s},[x0],#16
++	b.gt	.Loop_encrypt
++
++	aese	v2.16b,v0.16b
++	aesmc	v2.16b,v2.16b
++	ld1	{v0.4s},[x0]
++	aese	v2.16b,v1.16b
++	eor	v2.16b,v2.16b,v0.16b
++
++	st1	{v2.16b},[x3]
++	ret
++.size	zfs_aes_v8_encrypt,.-zfs_aes_v8_encrypt
++
++// void zfs_aes_v8_decrypt(const uint32_t rk[], int nr, const uint8_t *in, uint8_t *out)
++// Same as OpenSSL aes_v8_decrypt() but takes rk and the round count as
++// arguments instead of an AES_KEY with the round count at offset 240.
++.globl	zfs_aes_v8_decrypt
++.type	zfs_aes_v8_decrypt,%function
++.align	5
++zfs_aes_v8_decrypt:
++	AARCH64_VALID_CALL_TARGET
++	mov	w5,w1
++	ld1	{v0.4s},[x0],#16
++	ld1	{v2.16b},[x2]
++	sub	w5,w5,#2
++	ld1	{v1.4s},[x0],#16
++
++.Loop_decrypt:
++	aesd	v2.16b,v0.16b
++	aesimc	v2.16b,v2.16b
++	ld1	{v0.4s},[x0],#16
++	subs	w5,w5,#2
++	aesd	v2.16b,v1.16b
++	aesimc	v2.16b,v2.16b
++	ld1	{v1.4s},[x0],#16
++	b.gt	.Loop_decrypt
++
++	aesd	v2.16b,v0.16b
++	aesimc	v2.16b,v2.16b
++	ld1	{v0.4s},[x0]
++	aesd	v2.16b,v1.16b
++	eor	v2.16b,v2.16b,v0.16b
++
++	st1	{v2.16b},[x3]
++	ret
++.size	zfs_aes_v8_decrypt,.-zfs_aes_v8_decrypt
++
++#endif /* __aarch64__ */
+diff --git a/module/icp/asm-aarch64/modes/ghashv8-armx.S b/module/icp/asm-aarch64/modes/ghashv8-armx.S
+new file mode 100644
+index 0000000..a401094
+--- /dev/null
++++ b/module/icp/asm-aarch64/modes/ghashv8-armx.S
+@@ -0,0 +1,94 @@
++// SPDX-License-Identifier: Apache-2.0
++/*
++ * Copyright 2014-2022 The OpenSSL Project Authors. All Rights Reserved.
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *     https://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++/*
++ * Portions Copyright (c) 2026 Awto / Daniel Tyrrell
++ * - modified assembly to fit into OpenZFS
++ */
++
++#if defined(__aarch64__)
++
++#define	AARCH64_VALID_CALL_TARGET	hint	34	/* bti c */
++
++.arch	armv8-a+crypto
++.text
++
++// void zfs_gcm_mul_pmull(const uint8_t x[16], const uint8_t h[16], uint8_t res[16])
++// res = x * h in GF(2^128), all three in GCM wire byte order.
++// OpenSSL gcm_init_v8() (twisted H, no H^2..H^4) fused with gcm_gmult_v8().
++.globl	zfs_gcm_mul_pmull
++.type	zfs_gcm_mul_pmull,%function
++.align	4
++zfs_gcm_mul_pmull:
++	AARCH64_VALID_CALL_TARGET
++	ld1	{v17.2d},[x1]		//load input H
++#ifndef __AARCH64EB__
++	rev64	v17.16b,v17.16b		//OpenSSL byte-swaps H as two u64 before gcm_init_v8
++#endif
++	movi	v19.16b,#0xe1
++	shl	v19.2d,v19.2d,#57		//0xc2.0
++	ext	v3.16b,v17.16b,v17.16b,#8
++	ushr	v18.2d,v19.2d,#63
++	dup	v17.4s,v17.s[1]
++	ext	v16.16b,v18.16b,v19.16b,#8		//t0=0xc2....01
++	ushr	v18.2d,v3.2d,#63
++	sshr	v17.4s,v17.4s,#31		//broadcast carry bit
++	and	v18.16b,v18.16b,v16.16b
++	shl	v3.2d,v3.2d,#1
++	ext	v18.16b,v18.16b,v18.16b,#8
++	and	v16.16b,v16.16b,v17.16b
++	orr	v3.16b,v3.16b,v18.16b		//H<<<=1
++	eor	v20.16b,v3.16b,v16.16b		//twisted H
++	ext	v21.16b,v20.16b,v20.16b,#8	//Karatsuba pre-processing
++	eor	v21.16b,v21.16b,v20.16b
++
++	ld1	{v17.2d},[x0]		//load Xi
++#ifndef __AARCH64EB__
++	rev64	v17.16b,v17.16b
++#endif
++	ext	v3.16b,v17.16b,v17.16b,#8
++
++	pmull	v0.1q,v20.1d,v3.1d		//H.lo*Xi.lo
++	eor	v17.16b,v17.16b,v3.16b		//Karatsuba pre-processing
++	pmull2	v2.1q,v20.2d,v3.2d		//H.hi*Xi.hi
++	pmull	v1.1q,v21.1d,v17.1d		//(H.lo+H.hi)*(Xi.lo+Xi.hi)
++
++	ext	v17.16b,v0.16b,v2.16b,#8		//Karatsuba post-processing
++	eor	v18.16b,v0.16b,v2.16b
++	eor	v1.16b,v1.16b,v17.16b
++	eor	v1.16b,v1.16b,v18.16b
++	pmull	v18.1q,v0.1d,v19.1d		//1st phase of reduction
++
++	ins	v2.d[0],v1.d[1]
++	ins	v1.d[1],v0.d[0]
++	eor	v0.16b,v1.16b,v18.16b
++
++	ext	v18.16b,v0.16b,v0.16b,#8		//2nd phase of reduction
++	pmull	v0.1q,v0.1d,v19.1d
++	eor	v18.16b,v18.16b,v2.16b
++	eor	v0.16b,v0.16b,v18.16b
++
++#ifndef __AARCH64EB__
++	rev64	v0.16b,v0.16b
++#endif
++	ext	v0.16b,v0.16b,v0.16b,#8
++	st1	{v0.2d},[x2]		//write out result
++
++	ret
++.size	zfs_gcm_mul_pmull,.-zfs_gcm_mul_pmull
++
++#endif /* __aarch64__ */
+diff --git a/module/icp/include/aes/aes_impl.h b/module/icp/include/aes/aes_impl.h
+index 17cbbac..70bc870 100644
+--- a/module/icp/include/aes/aes_impl.h
++++ b/module/icp/include/aes/aes_impl.h
+@@ -196,6 +196,9 @@ extern ASMABI void aes_encrypt_amd64(const uint32_t rk[], int Nr,
+ extern ASMABI void aes_decrypt_amd64(const uint32_t rk[], int Nr,
+ 	const uint32_t ct[4], uint32_t pt[4]);
+ #endif
++#if defined(__aarch64__)
++extern const aes_impl_ops_t aes_armv8_impl;
++#endif
+ #if defined(__x86_64) && defined(HAVE_AES)
+ extern const aes_impl_ops_t aes_aesni_impl;
+ #endif
+diff --git a/module/icp/include/modes/gcm_impl.h b/module/icp/include/modes/gcm_impl.h
+index 238a4e2..94046cf 100644
+--- a/module/icp/include/modes/gcm_impl.h
++++ b/module/icp/include/modes/gcm_impl.h
+@@ -58,6 +58,9 @@ extern const gcm_impl_ops_t gcm_generic_impl;
+ #if defined(__x86_64) && defined(HAVE_PCLMULQDQ)
+ extern const gcm_impl_ops_t gcm_pclmulqdq_impl;
+ #endif
++#if defined(__aarch64__)
++extern const gcm_impl_ops_t gcm_pmull_impl;
++#endif
+ 
+ /*
+  * Initializes fastest implementation
