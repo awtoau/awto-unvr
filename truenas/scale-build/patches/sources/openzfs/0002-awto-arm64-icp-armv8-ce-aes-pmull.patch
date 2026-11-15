@@ -184,10 +184,10 @@ index b652c8c..3aa0cbc 100644
  	    sizeof (aes_fastest_impl));
 diff --git a/module/icp/algs/aes/aes_impl_armv8.c b/module/icp/algs/aes/aes_impl_armv8.c
 new file mode 100644
-index 0000000..d0ee763
+index 0000000..f0788f1
 --- /dev/null
 +++ b/module/icp/algs/aes/aes_impl_armv8.c
-@@ -0,0 +1,154 @@
+@@ -0,0 +1,166 @@
 +// SPDX-License-Identifier: CDDL-1.0 OR GPL-2.0-or-later
 +/*
 + * Copyright (C) 2026 Awto / Daniel Tyrrell
@@ -280,6 +280,14 @@ index 0000000..d0ee763
 +	.name = "armv8"
 +};
 +
++#ifndef _KERNEL
++/* userland KAT only: proves the multi-block helpers ran */
++uint64_t aes_armv8_fused_calls;
++#define	FUSED_COUNT()	(aes_armv8_fused_calls++)
++#else
++#define	FUSED_COUNT()	((void) 0)
++#endif
++
 +/*
 + * Multi-block helpers for the GCM / CCM mode loops. Callers hold a kfpu
 + * section (the begin/end here nest) and pass block counts of >= 1.
@@ -301,6 +309,7 @@ index 0000000..d0ee763
 +aes_armv8_ctr_blocks(const aes_key_t *key, const uint8_t *iv,
 +    const uint8_t *in, uint8_t *out, size_t nblocks)
 +{
++	FUSED_COUNT();
 +	kfpu_begin();
 +	zfs_aes_v8_ctr32_encrypt_blocks(in, out, nblocks,
 +	    &key->encr_ks.ks32[0], iv, key->nr);
@@ -313,6 +322,7 @@ index 0000000..d0ee763
 +    uint8_t *ghash, const uint8_t *h, const uint8_t *in, uint8_t *out,
 +    size_t nblocks)
 +{
++	FUSED_COUNT();
 +	kfpu_begin();
 +	zfs_aes_v8_ctr32_encrypt_blocks(in, out, nblocks,
 +	    &key->encr_ks.ks32[0], iv, key->nr);
@@ -325,6 +335,7 @@ index 0000000..d0ee763
 +aes_armv8_gcm_decrypt_blocks(const aes_key_t *key, const uint8_t *iv,
 +    uint8_t *ghash, const uint8_t *h, uint8_t *data, size_t nblocks)
 +{
++	FUSED_COUNT();
 +	kfpu_begin();
 +	gcm_armv8_ghash(ghash, h, data, nblocks);
 +	zfs_aes_v8_ctr32_encrypt_blocks(data, data, nblocks,
@@ -336,6 +347,7 @@ index 0000000..d0ee763
 +aes_armv8_cbcmac_blocks(const aes_key_t *key, uint8_t *mac,
 +    const uint8_t *in, size_t nblocks)
 +{
++	FUSED_COUNT();
 +	kfpu_begin();
 +	zfs_aes_v8_cbcmac(mac, in, nblocks, &key->encr_ks.ks32[0], key->nr);
 +	kfpu_end();
@@ -2259,15 +2271,18 @@ index 0000000..c4d3bb6
 +.size	zfs_gcm_ghash_v8_4x,.-zfs_gcm_ghash_v8_4x
 +#endif /* __aarch64__ */
 diff --git a/module/icp/include/aes/aes_impl.h b/module/icp/include/aes/aes_impl.h
-index 17cbbac..9bc5fc1 100644
+index 17cbbac..c679c74 100644
 --- a/module/icp/include/aes/aes_impl.h
 +++ b/module/icp/include/aes/aes_impl.h
-@@ -196,6 +196,21 @@ extern ASMABI void aes_encrypt_amd64(const uint32_t rk[], int Nr,
+@@ -196,6 +196,24 @@ extern ASMABI void aes_encrypt_amd64(const uint32_t rk[], int Nr,
  extern ASMABI void aes_decrypt_amd64(const uint32_t rk[], int Nr,
  	const uint32_t ct[4], uint32_t pt[4]);
  #endif
 +#if defined(__aarch64__)
 +extern const aes_impl_ops_t aes_armv8_impl;
++#ifndef _KERNEL
++extern uint64_t aes_armv8_fused_calls;	/* userland KAT coverage counter */
++#endif
 +
 +/* multi-block helpers for the GCM/CCM loops, see aes_impl_armv8.c */
 +extern void aes_armv8_ctr_blocks(const aes_key_t *key, const uint8_t *iv,
@@ -2300,10 +2315,10 @@ index 238a4e2..94046cf 100644
   * Initializes fastest implementation
 diff --git a/module/icp/include/modes/simd_bulk.h b/module/icp/include/modes/simd_bulk.h
 new file mode 100644
-index 0000000..c114973
+index 0000000..3bb5523
 --- /dev/null
 +++ b/module/icp/include/modes/simd_bulk.h
-@@ -0,0 +1,91 @@
+@@ -0,0 +1,100 @@
 +// SPDX-License-Identifier: CDDL-1.0 OR GPL-2.0-or-later
 +/*
 + * Copyright (C) 2026 Awto / Daniel Tyrrell
@@ -2326,13 +2341,23 @@ index 0000000..c114973
 +
 +#define	ICP_BULK_CHUNK	32768
 +
++/*
++ * The "fastest" selection is a copy of the winning ops (aes_fastest_impl),
++ * so identify an impl by its function pointers, not its address.
++ */
++static inline boolean_t
++icp_is_aes_armv8(const void *keysched)
++{
++	return (((const aes_key_t *)keysched)->ops->encrypt ==
++	    aes_armv8_impl.encrypt);
++}
++
 +/* keysched: aes_key_t *, gops: GCM impl in use or NULL (CCM) */
 +static inline boolean_t
 +icp_bulk_simd(const void *keysched, const gcm_impl_ops_t *gops)
 +{
-+	return (kfpu_allowed() &&
-+	    (((const aes_key_t *)keysched)->ops == &aes_armv8_impl ||
-+	    (gops != NULL && gops == &gcm_pmull_impl)));
++	return (kfpu_allowed() && (icp_is_aes_armv8(keysched) ||
++	    (gops != NULL && gops->mul == gcm_pmull_impl.mul)));
 +}
 +
 +/* bytes left in the output iovec the crypto_get_ptrs() cursor is in */
@@ -2361,14 +2386,13 @@ index 0000000..c114973
 +icp_fused_gcm(const void *keysched)
 +{
 +	return (kfpu_allowed() && zfs_pmull_available() &&
-+	    ((const aes_key_t *)keysched)->ops == &aes_armv8_impl);
++	    icp_is_aes_armv8(keysched));
 +}
 +
 +static inline boolean_t
 +icp_fused_ccm(const void *keysched)
 +{
-+	return (kfpu_allowed() &&
-+	    ((const aes_key_t *)keysched)->ops == &aes_armv8_impl);
++	return (kfpu_allowed() && icp_is_aes_armv8(keysched));
 +}
 +
 +#define	icp_bulk_begin(on)	do { if (on) kfpu_begin(); } while (0)

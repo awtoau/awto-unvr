@@ -19,6 +19,7 @@
 #include <string.h>
 #include <sys/zfs_context.h>
 #include <sys/simd.h>
+#include <aes/aes_impl.h>
 #include <sys/crypto/icp.h>
 #include <sys/crypto/api.h>
 #include <sys/crypto/common.h>
@@ -242,6 +243,10 @@ next:
 		free(key); free(iv); free(aad); free(pt); free(ct);
 		free(tag); free(buf); free(buf2);
 	}
+#if defined(__aarch64__)
+	printf("COVER fused_calls=%llu\n",
+	    (unsigned long long)aes_armv8_fused_calls);
+#endif
 	printf("SUMMARY aes=%s gcm=%s uio=%d pass=%d fail=%d unsup=%d\n", argv[1],
 	    argv[2], uio_mode, pass, fail, unsup);
 	return (fail != 0);

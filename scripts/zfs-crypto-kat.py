@@ -41,12 +41,13 @@ RUN_STALL_S = 120
 WYCHEPROOF = (
     "https://raw.githubusercontent.com/C2SP/wycheproof/main/testvectors_v1/{}_test.json"
 )
-UIO_COMBOS = [("generic", "generic"), ("armv8", "pmull")]
+UIO_COMBOS = [("generic", "generic"), ("armv8", "pmull"), ("fastest", "fastest")]
 COMBOS = [
     ("generic", "generic"),
     ("armv8", "generic"),
     ("generic", "pmull"),
     ("armv8", "pmull"),
+    ("fastest", "fastest"),  # what the module runs by default: a COPY of the armv8 ops
 ]
 
 BUILD_SH = r"""set -e
@@ -278,12 +279,19 @@ def main() -> int:
                     log(f"  {aes}/{gcm}/{mode}: {ln}")
         info = next((ln for ln in lines if ln.startswith("INFO")), "")
         summ = next((ln for ln in lines if ln.startswith("SUMMARY")), "no summary")
+        cover = next(
+            (ln for ln in lines if ln.startswith("COVER")), "COVER fused_calls=?"
+        )
+        summ += " " + cover
+        if aes in ("armv8", "fastest") and cover.endswith("=0"):
+            bad = True
+            log(f"FATAL: {aes}/{gcm}/{mode} never took the multi-block asm path")
         log(f"{aes}/{gcm}/{mode}: rc={rc} {info} {summ}")
         if rc or not res:
             bad = True
             for ln in lines[-5:]:
                 log("  " + ln)
-        if aes == "armv8" and "pmull_hwcap=1" not in info:
+        if aes in ("armv8", "fastest") and "pmull_hwcap=1" not in info:
             bad = True
             log("FATAL: PMULL not visible to the armv8 run; fused paths untested")
         results[(aes, gcm, mode)] = res
