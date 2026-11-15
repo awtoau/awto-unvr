@@ -69,7 +69,7 @@ def one(ip: str, pool: str, cipher: str, wr: tuple, rd: tuple) -> bool:
             ip,
             f"printf '%s\\n' '{PASS}' | zfs create -o encryption={cipher} -o keyformat=passphrase "
             f"-o keylocation=prompt -o compression=off {ds} && "
-            f"cp {SRC}/a.bin {SRC}/b.bin /mnt/{ds}/ && sync && zfs unload-key {ds} && "
+            f"cp {SRC}/a.bin {SRC}/b.bin /mnt/{ds}/ && sync && zfs unmount {ds} && zfs unload-key {ds} && "
             f"zfs get -H -o value keystatus {ds}",
         )
         if rc or out.splitlines()[-1] != "unavailable":
