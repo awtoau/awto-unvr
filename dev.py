@@ -1170,6 +1170,16 @@ def cmd_truenas_oot_deb(extra: list[str]) -> int:
 
 
 @command(
+    "stress the OpenZFS arm64 kfpu save/restore on woomera: kernel test module + per-CPU userspace "
+    "register checker (#364, scripts/kfpu-test.py)",
+    args="[--seconds N] [--build-only] [--skip-build]",
+    kind="action",
+)
+def cmd_kfpu_test(extra: list[str]) -> int:
+    return _run_script("scripts/kfpu-test.py", extra)
+
+
+@command(
     "check our truenas/stubs/ closed-lib stand-ins against public middleware 27: static usage, "
     "imports, CE entitlement column, middleware's licence unit tests (#356, scripts/check-truenas-stubs.py)",
     args="[--refresh] [--static-only]",

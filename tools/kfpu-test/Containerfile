@@ -1,0 +1,5 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+# Native arm64 (qemu-user) toolchain for the kfpu test module; same gcc 14 as the TrueNAS kernel build.
+FROM docker.io/library/debian:trixie
+RUN apt-get update && apt-get install -y --no-install-recommends gcc make libc6-dev perl bc kmod \
+    && rm -rf /var/lib/apt/lists/*
