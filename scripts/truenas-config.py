@@ -602,10 +602,19 @@ def main() -> int:
     ap = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawTextHelpFormatter
     )
-    ap.add_argument("cmd", choices=["plan", "apply", "verify"])
+    ap.add_argument("cmd", choices=["plan", "apply", "verify", "call"])
+    ap.add_argument(
+        "args", nargs="*", help="call: METHOD [JSON param ...], e.g. system.info"
+    )
     a = ap.parse_args()
     if a.cmd == "verify":
         return cmd_verify()
+    if a.cmd == "call":
+        if not a.args:
+            ap.error("call needs METHOD")
+        res = connect().call(a.args[0], *(json.loads(p) for p in a.args[1:]))
+        log(json.dumps(res, indent=2, default=str))
+        return 0
     return cmd_apply(plan=a.cmd == "plan")
 
 
