@@ -9,7 +9,7 @@
 - Vectors: Project Wycheproof aes_gcm/aes_ccm (Apache-2.0, includes the NIST/McGrew-Viega cases)
   + seeded random cases from python-cryptography (OpenSSL) for AES-128/192/256, lengths
   0..80 and up to 128 KiB, AAD 0..64, GCM IV 8/12/16/60, CCM nonce 7..13.
-- Each vector runs through every (aes, gcm) impl combination via crypto_encrypt/decrypt (the zio_crypt
+- Each vector runs through every (aes, gcm) impl combination (raw buffers, plus multi-iovec uios split at odd sizes for 2 combos) via crypto_encrypt/decrypt (the zio_crypt
   call path); verdict must match the expected ct+tag, and every combination must give identical
   per-vector results. Vectors in ZFS's shape (12-byte IV, 16-byte tag) may not be UNSUP.
 - Limits: build stall = no output for BUILD_STALL_S; one kat run (qemu, ~1000 vectors up to 128 KiB)
@@ -27,6 +27,7 @@ import sys
 import threading
 import time
 import urllib.request
+from concurrent.futures import ThreadPoolExecutor
 
 from _repo import REPO, TMP, make_log
 
@@ -40,6 +41,7 @@ RUN_STALL_S = 120
 WYCHEPROOF = (
     "https://raw.githubusercontent.com/C2SP/wycheproof/main/testvectors_v1/{}_test.json"
 )
+UIO_COMBOS = [("generic", "generic"), ("armv8", "pmull")]
 COMBOS = [
     ("generic", "generic"),
     ("armv8", "generic"),
@@ -238,33 +240,54 @@ def main() -> int:
     vecs = gen_vectors()
     (WORK / "vectors.txt").write_text("\n".join(vecs) + "\n")
     log(f"{len(vecs)} vectors")
-    results: dict[tuple[str, str], dict[str, str]] = {}
+    results: dict[tuple[str, str, str], dict[str, str]] = {}
     bad = False
-    for aes, gcm in COMBOS:
+    runs = [(a_, g_, "raw") for a_, g_ in COMBOS] + [
+        (a_, g_, "uio") for a_, g_ in UIO_COMBOS
+    ]
+
+    def one(run: tuple[str, str, str]) -> tuple[tuple[str, str, str], int, list[str]]:
+        aes, gcm, mode = run
         lines: list[str] = []
         rc = stream(
             podman(
-                ["-v", f"{WORK}:/work:ro"], ["/work/kat", aes, gcm, "/work/vectors.txt"]
+                ["-v", f"{WORK}:/work:ro"],
+                [
+                    "/work/kat",
+                    aes,
+                    gcm,
+                    "/work/vectors.txt",
+                    *(["uio"] if mode == "uio" else []),
+                ],
             ),
             RUN_STALL_S,
-            f"kat {aes}/{gcm}",
+            f"kat {aes}/{gcm}/{mode}",
             sink=lines,
         )
+        return run, rc, lines
+
+    with ThreadPoolExecutor(max_workers=len(runs)) as ex:
+        done = list(ex.map(one, runs))
+    for (aes, gcm, mode), rc, lines in done:
         res = {}
         for ln in lines:
             p = ln.split(" ", 2)
             if len(p) >= 2 and p[1] in ("PASS", "FAIL", "UNSUP"):
                 res[p[0]] = p[1]
                 if p[1] == "FAIL":
-                    log(f"  {aes}/{gcm}: {ln}")
+                    log(f"  {aes}/{gcm}/{mode}: {ln}")
+        info = next((ln for ln in lines if ln.startswith("INFO")), "")
         summ = next((ln for ln in lines if ln.startswith("SUMMARY")), "no summary")
-        log(f"{aes}/{gcm}: rc={rc} {summ}")
+        log(f"{aes}/{gcm}/{mode}: rc={rc} {info} {summ}")
         if rc or not res:
             bad = True
             for ln in lines[-5:]:
                 log("  " + ln)
-        results[(aes, gcm)] = res
-    base = results[COMBOS[0]]
+        if aes == "armv8" and "pmull_hwcap=1" not in info:
+            bad = True
+            log("FATAL: PMULL not visible to the armv8 run; fused paths untested")
+        results[(aes, gcm, mode)] = res
+    base = results[(*COMBOS[0], "raw")]
     for combo, res in results.items():
         diff = [k for k in base if res.get(k) != base[k]]
         if diff:
@@ -278,7 +301,7 @@ def main() -> int:
         log(f"UNSUP in ZFS shape (iv12/t16): {zfs_shape[:5]}")
     npass = sum(v == "PASS" for v in base.values())
     nuns = sum(v == "UNSUP" for v in base.values())
-    log(f"RESULT {'FAIL' if bad else 'PASS'}: {len(base)} vectors x {len(COMBOS)} impl combos, "
+    log(f"RESULT {'FAIL' if bad else 'PASS'}: {len(base)} vectors x {len(runs)} runs (impl combos, raw + multi-iovec uio), "
         f"{npass} pass, {nuns} unsupported-shape (identical across impls), all combos identical")  # fmt: skip
     return 1 if bad else 0
 

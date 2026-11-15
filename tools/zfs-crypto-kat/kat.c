@@ -6,7 +6,9 @@
  * Built against libicp sources (scripts/zfs-crypto-kat.py), driven through
  * the same crypto_encrypt()/crypto_decrypt() calls zio_crypt.c makes.
  *
- * usage: kat <aes_impl> <gcm_impl> <vectors>
+ * usage: kat <aes_impl> <gcm_impl> <vectors> [uio]
+ *   uio: input and output as multi-iovec uios split at odd sizes (as zio_crypt's
+ *   page-sized ABD iovecs), so mode update calls get split mid-block
  * vector line: MODE id key iv aad pt ct tag valid   (hex, "-" = empty)
  *   MODE = GCM | CCM, valid = 1 (tag good) | 0 (decrypt must fail)
  * output per vector: "<id> PASS|FAIL|UNSUP <detail>", then a summary.
@@ -16,6 +18,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/zfs_context.h>
+#include <sys/simd.h>
 #include <sys/crypto/icp.h>
 #include <sys/crypto/api.h>
 #include <sys/crypto/common.h>
@@ -34,6 +37,47 @@ unhex(const char *s, size_t *len)
 	}
 	*len = n;
 	return (b);
+}
+
+static int uio_mode;
+static int uio_seed;
+
+/* split [base, base+len) into iovecs of assorted odd sizes */
+static void
+split_uio(zfs_uio_t *uio, struct iovec *iov, int max, uint8_t *base,
+    size_t len)
+{
+	/* ICP assumes a block spans at most two iovecs: keep every one >= 16 B */
+	static const size_t sizes[] = { 4096, 100, 16, 4097, 33, 8192, 31, 255,
+	    17, 512, 48, 4000 };
+	int n = 0;
+	size_t off = 0;
+	unsigned k = (unsigned)uio_seed++;
+
+	while (off < len && n < max - 1) {
+		size_t c = sizes[(k++) % (sizeof (sizes) / sizeof (sizes[0]))];
+
+		if (c > len - off)
+			c = len - off;
+		iov[n].iov_base = base + off;
+		iov[n].iov_len = c;
+		off += c;
+		n++;
+	}
+	if (off < len) {
+		iov[n].iov_base = base + off;
+		iov[n].iov_len = len - off;
+		n++;
+	}
+	if (n == 0) {
+		iov[0].iov_base = base;
+		iov[0].iov_len = 0;
+		n = 1;
+	}
+	memset(uio, 0, sizeof (*uio));
+	uio->uio_iov = iov;
+	uio->uio_iovcnt = n;
+	uio->uio_resid = len;
 }
 
 static int
@@ -72,12 +116,25 @@ run(int gcm, const uint8_t *key, size_t keylen, const uint8_t *iv,
 	}
 	k.ck_data = (void *)key;
 	k.ck_length = keylen * 8;
-	din.cd_format = dout.cd_format = CRYPTO_DATA_RAW;
+	zfs_uio_t uin, uout;
+	struct iovec iin[4096], iout[4096];
+
 	din.cd_offset = dout.cd_offset = 0;
-	din.cd_raw.iov_base = (char *)in;
-	din.cd_raw.iov_len = din.cd_length = inlen;
-	dout.cd_raw.iov_base = (char *)out;
-	dout.cd_raw.iov_len = dout.cd_length = outlen;
+	din.cd_length = inlen;
+	dout.cd_length = outlen;
+	if (uio_mode) {
+		din.cd_format = dout.cd_format = CRYPTO_DATA_UIO;
+		split_uio(&uin, iin, 4096, in, inlen);
+		split_uio(&uout, iout, 4096, out, outlen);
+		din.cd_uio = &uin;
+		dout.cd_uio = &uout;
+	} else {
+		din.cd_format = dout.cd_format = CRYPTO_DATA_RAW;
+		din.cd_raw.iov_base = (char *)in;
+		din.cd_raw.iov_len = inlen;
+		dout.cd_raw.iov_base = (char *)out;
+		dout.cd_raw.iov_len = outlen;
+	}
 	return (enc ? crypto_encrypt(&mech, &din, &k, NULL, &dout) :
 	    crypto_decrypt(&mech, &din, &k, NULL, &dout));
 }
@@ -90,8 +147,8 @@ main(int argc, char **argv)
 	int pass = 0, fail = 0, unsup = 0;
 	FILE *f;
 
-	if (argc != 4) {
-		fprintf(stderr, "usage: kat aes_impl gcm_impl vectors\n");
+	if (argc != 4 && argc != 5) {
+		fprintf(stderr, "usage: kat aes_impl gcm_impl vectors [uio]\n");
 		return (2);
 	}
 	setvbuf(stdout, NULL, _IOLBF, 0);
@@ -101,6 +158,9 @@ main(int argc, char **argv)
 		    argv[2]);
 		return (2);
 	}
+	uio_mode = argc == 5 && strcmp(argv[4], "uio") == 0;
+	printf("INFO aes_hwcap=%d pmull_hwcap=%d uio=%d\n", zfs_aes_available(),
+	    zfs_pmull_available(), uio_mode);
 	f = fopen(argv[3], "r");
 	if (f == NULL) {
 		perror(argv[3]);
@@ -182,7 +242,7 @@ next:
 		free(key); free(iv); free(aad); free(pt); free(ct);
 		free(tag); free(buf); free(buf2);
 	}
-	printf("SUMMARY aes=%s gcm=%s pass=%d fail=%d unsup=%d\n", argv[1],
-	    argv[2], pass, fail, unsup);
+	printf("SUMMARY aes=%s gcm=%s uio=%d pass=%d fail=%d unsup=%d\n", argv[1],
+	    argv[2], uio_mode, pass, fail, unsup);
 	return (fail != 0);
 }
