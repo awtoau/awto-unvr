@@ -1250,6 +1250,26 @@ def cmd_truenas_config(extra: list[str]) -> int:
 
 
 @command(
+    "install/shred the tank/home ZFS key (from secrets.yaml) at /root/home.key on woomera "
+    "(scripts/home-key-put.py, #370)",
+    args="put|shred",
+    kind="action",
+)
+def cmd_home_key_put(extra: list[str]) -> int:
+    return _run_script("scripts/home-key-put.py", extra)
+
+
+@command(
+    "manifest (sha256/owner/mode/ACL/xattr) of a dataset tree on woomera, dump + diff "
+    "(scripts/home-manifest.py, #370 encryption migration)",
+    args="dump LABEL [--root PATH] | diff A B",
+    kind="action",
+)
+def cmd_home_manifest(extra: list[str]) -> int:
+    return _run_script("scripts/home-manifest.py", extra)
+
+
+@command(
     "receive the box's kernel log over netconsole UDP into tmp/logs/netconsole.log - "
     "the console when no serial is attached (scripts/netconsole-listen.py)",
     args="[--port 6666]",
