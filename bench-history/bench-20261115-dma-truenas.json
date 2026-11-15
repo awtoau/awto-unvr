@@ -1,0 +1,23 @@
+{
+  "timestamp": "2026-11-15T11:48:03+11:00",
+  "commit": "c0671c5",
+  "host": "192.168.25.40",
+  "kernel": "",
+  "checks": [
+    {
+      "name": "dma copy+xor",
+      "ok": true,
+      "detail": "copy0 20000 tests 0 fail 75384 iops, xor0 20000 tests 0 fail 70349 iops"
+    },
+    {
+      "name": "dma oversize",
+      "ok": true,
+      "detail": "copy0 300 tests 133 fail 22 iops, xor0 300 tests 258 fail 11 iops"
+    }
+  ],
+  "metrics": {
+    "dma dma0chan0 copy iops": 75384.07,
+    "dma dma0chan0 xor iops": 70349.21
+  },
+  "all_ok": true
+}
