@@ -3,7 +3,8 @@
 # Copyright (C) 2026 Awto / Daniel Tyrrell
 """Cross-implementation ZFS native-encryption test on woomera (#368).
 
-- Per cipher (aes-256-gcm, aes-256-ccm) and direction (generic -> new, new -> generic):
+- Per cipher (aes-256-gcm, aes-256-ccm), new impl (armv8/pmull, and the default `fastest`) and direction
+  (generic -> new, new -> generic):
   - set icp_aes_impl / icp_gcm_impl to the writer pair, create a throwaway encrypted dataset
     (passphrase on stdin), write known files, sync, `zfs unload-key` (drops decrypted state);
   - switch to the reader pair, load-key, read back, compare sha256 against the source files.
@@ -32,6 +33,10 @@ SRC = "/var/tmp/xtest"
 CIPHERS = ("aes-256-gcm", "aes-256-ccm")
 GENERIC = ("generic", "generic")
 NEW = ("armv8", "pmull")
+DEFAULT = (
+    "fastest",
+    "fastest",
+)  # the module default; runs a COPY of the armv8/pmull ops
 
 
 def sh(ip: str, cmd: str, timeout: int = SSH_S) -> tuple[int, str]:
@@ -118,8 +123,9 @@ def main() -> int:
     results = []
     try:
         for cipher in CIPHERS:
-            results.append(one(ip, a.pool, cipher, GENERIC, NEW))
-            results.append(one(ip, a.pool, cipher, NEW, GENERIC))
+            for new in (NEW, DEFAULT):
+                results.append(one(ip, a.pool, cipher, GENERIC, new))
+                results.append(one(ip, a.pool, cipher, new, GENERIC))
     finally:
         set_impl(ip, ("fastest", "fastest"))
         sh(ip, f"rm -rf {SRC}")
