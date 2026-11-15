@@ -1172,7 +1172,7 @@ def cmd_truenas_oot_deb(extra: list[str]) -> int:
 @command(
     "stress the OpenZFS arm64 kfpu save/restore on woomera: kernel test module + per-CPU userspace "
     "register checker (#364, scripts/kfpu-test.py)",
-    args="[--seconds N] [--build-only] [--skip-build]",
+    args="[--seconds N] [--build-only] [--skip-build] [--encrypted-load POOL]",
     kind="action",
 )
 def cmd_kfpu_test(extra: list[str]) -> int:

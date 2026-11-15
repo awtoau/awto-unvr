@@ -112,6 +112,13 @@ static void one_section(u64 seed, bool user)
 	clobber(seed);
 	if (max_udelay)
 		udelay(seed % (max_udelay + 1));
+	if ((seed & 3) == 0) {
+		/* nested section (#368): inner end must not restore or unmask */
+		kfpu_begin();
+		clobber(seed + 1);
+		kfpu_end();
+		clobber(seed + 2);
+	}
 	kfpu_end();
 }
 

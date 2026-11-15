@@ -3,7 +3,7 @@
 # Copyright (C) 2026 Awto / Daniel Tyrrell
 """Stress the OpenZFS arm64 kfpu_begin/end save/restore on woomera (#364).
 
-- Section code is extracted from the openzfs patch (truenas/scale-build/patches/sources/openzfs/0001-*),
+- Section code is extracted from the patched openzfs checkout (simd_aarch64.h),
   built into tools/kfpu-test/kfpu_test.ko against the TrueNAS kernel's headers deb.
 - Build: native arm64 rootless podman container (qemu-user), image localhost/awto-kfpu-cc.
 - Run: insmod, one kfpu_check per CPU (user regs + FPCR/FPSR verified across syscalls that run
@@ -23,16 +23,16 @@ import subprocess
 import sys
 import threading
 import time
+from pathlib import Path
 
 import _box
 from _repo import REPO, TMP, make_log
 
 log = make_log("kfpu-test")
 SRC = REPO / "tools" / "kfpu-test"
-PATCH = (
-    REPO
-    / "truenas/scale-build/patches/sources/openzfs"
-    / "0001-awto-arm64-kfpu-internal-neon-save-restore.patch"
+# the checked-out tree, i.e. with every openzfs patch applied (0001 save/restore, 0002 nesting)
+SIMD_H = Path(
+    "/mnt/2tb/truenas-build/scale-build/sources/openzfs/include/os/linux/kernel/linux/simd_aarch64.h"
 )
 KERNEL_DIR = "/mnt/2tb/truenas-build/kernel"
 HDR = TMP / "truenas-oot" / "hdr"
@@ -56,16 +56,16 @@ cat $H/include/config/kernel.release
 def gen_header() -> None:
     """The HAVE_KERNEL_FPU_INTERNAL block of the patch, verbatim."""
     out, on = [], False
-    for ln in PATCH.read_text().splitlines():
-        if ln.startswith("+#elif defined(HAVE_KERNEL_FPU_INTERNAL)"):
+    for ln in SIMD_H.read_text().splitlines():
+        if ln.startswith("#elif defined(HAVE_KERNEL_FPU_INTERNAL)"):
             on = True
             continue
-        if on and ln[1:].startswith("#else"):
+        if on and ln.startswith("#else"):
             break
         if on:
-            out.append(ln[1:])
+            out.append(ln)
     if not out:
-        sys.exit(f"FATAL: no FPU_INTERNAL block in {PATCH}")
+        sys.exit(f"FATAL: no FPU_INTERNAL block in {SIMD_H}")
     (BUILD / "kfpu_arm64_gen.h").write_text("\n".join(out) + "\n")
 
 
@@ -138,7 +138,40 @@ def ssh(ip: str, cmd: str, timeout: int) -> subprocess.CompletedProcess:
         return subprocess.CompletedProcess(argv, 124, e.stdout or "", "timeout")
 
 
-def run(seconds: int, kr: str, sabotage: bool = False) -> int:
+LOAD_PASS = "awto-kfpu-load"  # throwaway dataset only
+
+
+def load_start(ip: str, pool: str, secs: int) -> bool:
+    """Encrypted-write load (#368): aes-256-gcm dataset, 256 MiB file rewritten in a loop for
+    `secs` s (self-terminating, so a dead ssh cannot leave it running)."""
+    r = ssh(
+        ip,
+        f"zfs list -H {pool}/kfpu-load >/dev/null 2>&1 && echo EXISTS && exit 1; "
+        f"test -f /var/tmp/kfpu-load.bin || head -c 268435456 /dev/urandom > /var/tmp/kfpu-load.bin; "
+        f"printf '%s\\n' '{LOAD_PASS}' | zfs create -o encryption=aes-256-gcm -o keyformat=passphrase "
+        f"-o keylocation=prompt -o compression=off {pool}/kfpu-load && "
+        f"(nohup sh -c ': kfpu-load-loop; end=$(( $(date +%s) + {secs} )); "
+        f"while [ $(date +%s) -lt $end ]; do cp /var/tmp/kfpu-load.bin /mnt/{pool}/kfpu-load/f && sync; done' "
+        f">/dev/null 2>&1 &)",
+        60,
+    )
+    log(f"encrypted load start rc={r.returncode} {r.stdout.strip()} {r.stderr.strip()}")
+    return r.returncode == 0
+
+
+def load_stop(ip: str, pool: str) -> None:
+    r = ssh(
+        ip,
+        f"pkill -f '[k]fpu-load-loop'; while pgrep -f '[k]fpu-load-loop' >/dev/null; do :; done; "
+        f"pkill -x cp; zfs destroy -rf {pool}/kfpu-load 2>&1 || (zfs unmount -f {pool}/kfpu-load; zfs destroy -rf {pool}/kfpu-load 2>&1); rm -f /var/tmp/kfpu-load.bin; zfs list -H {pool}/kfpu-load 2>&1 | tail -1",
+        120,
+    )
+    log(f"encrypted load stop rc={r.returncode} {r.stdout.strip()}")
+
+
+def run(
+    seconds: int, kr: str, sabotage: bool = False, load_pool: str | None = None
+) -> int:
     ip = _box.require()
     r = ssh(ip, "uname -r; nproc", 20)
     box_kr, ncpu = r.stdout.split()
@@ -153,6 +186,8 @@ def run(seconds: int, kr: str, sabotage: bool = False) -> int:
             check=True, timeout=60,
         )  # fmt: skip
     ssh(ip, "dmesg -C >/dev/null 2>&1; true", 20)
+    if load_pool and not load_start(ip, load_pool, seconds + 2 * RUN_SLACK_S):
+        return 2
     # module self-stops at the run limit, so a broken ssh can't leave it running (#365)
     stop_s = seconds + RUN_SLACK_S
     r = ssh(
@@ -172,6 +207,8 @@ def run(seconds: int, kr: str, sabotage: bool = False) -> int:
         log("checker: " + ln)
     checker_bad = r.returncode != 0 or "mismatches 0" not in r.stdout
     checker_bad |= r.stdout.count("mismatches 0") != int(ncpu)
+    if load_pool:
+        load_stop(ip, load_pool)
     r2 = ssh(
         ip,
         "rmmod kfpu_test; dmesg | grep -iE 'kfpu|BUG|Oops|WARNING|Call trace' | tail -20",
@@ -210,16 +247,27 @@ def main() -> int:
         action="store_true",
         help="negative control: no save/restore, must FAIL",
     )
+    ap.add_argument(
+        "--encrypted-load",
+        metavar="POOL",
+        help="run an aes-256-gcm write loop on throwaway POOL/kfpu-load meanwhile (#368)",
+    )
+    ap.add_argument(
+        "--simd-h", help="simd_aarch64.h to test instead of the scale-build checkout's"
+    )
     ap.add_argument("--build-only", action="store_true")
     ap.add_argument(
         "--skip-build", action="store_true", help="reuse tmp/kfpu-test/build"
     )
     a = ap.parse_args()
+    if a.simd_h:
+        global SIMD_H
+        SIMD_H = Path(a.simd_h)
     if a.skip_build:
         kr = (HDR / HDR_REL / "include/config/kernel.release").read_text().strip()
     else:
         kr = build()
-    return 0 if a.build_only else run(a.seconds, kr, a.sabotage)
+    return 0 if a.build_only else run(a.seconds, kr, a.sabotage, a.encrypted_load)
 
 
 if __name__ == "__main__":
