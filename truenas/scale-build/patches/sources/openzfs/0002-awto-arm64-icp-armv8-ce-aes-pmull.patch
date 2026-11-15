@@ -184,10 +184,10 @@ index b652c8c..3aa0cbc 100644
  	    sizeof (aes_fastest_impl));
 diff --git a/module/icp/algs/aes/aes_impl_armv8.c b/module/icp/algs/aes/aes_impl_armv8.c
 new file mode 100644
-index 0000000..84d5d4e
+index 0000000..d0ee763
 --- /dev/null
 +++ b/module/icp/algs/aes/aes_impl_armv8.c
-@@ -0,0 +1,84 @@
+@@ -0,0 +1,154 @@
 +// SPDX-License-Identifier: CDDL-1.0 OR GPL-2.0-or-later
 +/*
 + * Copyright (C) 2026 Awto / Daniel Tyrrell
@@ -216,6 +216,15 @@ index 0000000..84d5d4e
 +
 +/* the asm stores the round count in the word after the 60-word schedule */
 +#define	AES_V8_KS_WORDS		(((MAX_AES_NR) + 1) * (MAX_AES_NB))
++
++extern ASMABI void zfs_aes_v8_ctr32_encrypt_blocks(const uint8_t *in,
++	uint8_t *out, size_t blocks, const uint32_t rk[], const uint8_t *iv,
++	int nr);
++extern ASMABI void zfs_aes_v8_cbcmac(uint8_t *mac, const uint8_t *in,
++	size_t blocks, const uint32_t rk[], int nr);
++extern ASMABI void zfs_gcm_init_v8(uint64_t htable[24], const uint8_t *h);
++extern ASMABI void zfs_gcm_ghash_v8(uint8_t *xi, const uint64_t htable[24],
++	const uint8_t *in, size_t len);
 +
 +static void
 +aes_armv8_generate(aes_key_t *key, const uint32_t *keyarr32, int keybits)
@@ -271,9 +280,70 @@ index 0000000..84d5d4e
 +	.name = "armv8"
 +};
 +
++/*
++ * Multi-block helpers for the GCM / CCM mode loops. Callers hold a kfpu
++ * section (the begin/end here nest) and pass block counts of >= 1.
++ * `key` was expanded by this impl; iv is the counter block of the FIRST block.
++ */
++
++/* GCM: ghash over the blocks in `data` (ciphertext) */
++static void
++gcm_armv8_ghash(uint8_t *ghash, const uint8_t *h, const uint8_t *data,
++    size_t nblocks)
++{
++	uint64_t htab[24];
++
++	zfs_gcm_init_v8(htab, h);
++	zfs_gcm_ghash_v8(ghash, htab, data, nblocks * AES_BLOCK_LEN);
++}
++
++void
++aes_armv8_ctr_blocks(const aes_key_t *key, const uint8_t *iv,
++    const uint8_t *in, uint8_t *out, size_t nblocks)
++{
++	kfpu_begin();
++	zfs_aes_v8_ctr32_encrypt_blocks(in, out, nblocks,
++	    &key->encr_ks.ks32[0], iv, key->nr);
++	kfpu_end();
++}
++
++/* encrypt: CTR in -> out, then GHASH the ciphertext (out) */
++void
++aes_armv8_gcm_encrypt_blocks(const aes_key_t *key, const uint8_t *iv,
++    uint8_t *ghash, const uint8_t *h, const uint8_t *in, uint8_t *out,
++    size_t nblocks)
++{
++	kfpu_begin();
++	zfs_aes_v8_ctr32_encrypt_blocks(in, out, nblocks,
++	    &key->encr_ks.ks32[0], iv, key->nr);
++	gcm_armv8_ghash(ghash, h, out, nblocks);
++	kfpu_end();
++}
++
++/* decrypt in place: GHASH the ciphertext, then CTR */
++void
++aes_armv8_gcm_decrypt_blocks(const aes_key_t *key, const uint8_t *iv,
++    uint8_t *ghash, const uint8_t *h, uint8_t *data, size_t nblocks)
++{
++	kfpu_begin();
++	gcm_armv8_ghash(ghash, h, data, nblocks);
++	zfs_aes_v8_ctr32_encrypt_blocks(data, data, nblocks,
++	    &key->encr_ks.ks32[0], iv, key->nr);
++	kfpu_end();
++}
++
++void
++aes_armv8_cbcmac_blocks(const aes_key_t *key, uint8_t *mac,
++    const uint8_t *in, size_t nblocks)
++{
++	kfpu_begin();
++	zfs_aes_v8_cbcmac(mac, in, nblocks, &key->encr_ks.ks32[0], key->nr);
++	kfpu_end();
++}
++
 +#endif /* defined(__aarch64__) */
 diff --git a/module/icp/algs/modes/ccm.c b/module/icp/algs/modes/ccm.c
-index 0a7a509..0140825 100644
+index 0a7a509..70f915f 100644
 --- a/module/icp/algs/modes/ccm.c
 +++ b/module/icp/algs/modes/ccm.c
 @@ -26,6 +26,7 @@
@@ -297,7 +367,64 @@ index 0a7a509..0140825 100644
      int (*encrypt_block)(const void *, const uint8_t *, uint8_t *),
      void (*copy_block)(uint8_t *, uint8_t *),
      void (*xor_block)(uint8_t *, uint8_t *))
-@@ -167,6 +168,39 @@ out:
+@@ -57,6 +58,8 @@ ccm_mode_encrypt_contiguous_blocks(ccm_ctx_t *ctx, char *data, size_t length,
+ 	size_t out_data_1_len;
+ 	uint64_t counter;
+ 	uint8_t *mac_buf;
++	boolean_t fused = icp_fused_ccm(ctx->ccm_keysched);
++	(void) fused;
+ 
+ 	if (length + ctx->ccm_remainder_len < block_size) {
+ 		/* accumulate bytes here and return */
+@@ -73,6 +76,37 @@ ccm_mode_encrypt_contiguous_blocks(ccm_ctx_t *ctx, char *data, size_t length,
+ 	mac_buf = (uint8_t *)ctx->ccm_mac_buf;
+ 
+ 	do {
++#if defined(__aarch64__)
++		/* whole blocks straight into one output iovec: CE CBC-MAC + CTR */
++		if (fused && ctx->ccm_remainder_len == 0) {
++			size_t nb = remainder / block_size;
++			size_t av = icp_out_contig(out, iov_or_mp, offset) /
++			    block_size;
++
++			if (av < nb)
++				nb = av;
++			if (nb >= ICP_FUSED_MIN_BLOCKS) {
++				crypto_get_ptrs(out, &iov_or_mp, &offset,
++				    &out_data_1, &out_data_1_len, &out_data_2,
++				    nb * block_size);
++				aes_armv8_cbcmac_blocks(ctx->ccm_keysched,
++				    mac_buf, datap, nb);
++				aes_armv8_ctr_blocks(ctx->ccm_keysched,
++				    (uint8_t *)ctx->ccm_cb, datap, out_data_1,
++				    nb);
++				counter = ntohll(ctx->ccm_cb[1] &
++				    ctx->ccm_counter_mask);
++				counter = htonll(counter + nb);
++				counter &= ctx->ccm_counter_mask;
++				ctx->ccm_cb[1] = (ctx->ccm_cb[1] &
++				    ~(ctx->ccm_counter_mask)) | counter;
++				ctx->ccm_processed_data_len += nb * block_size;
++				out->cd_offset += nb * block_size;
++				datap += nb * block_size;
++				goto next_block;
++			}
++		}
++#endif
+ 		/* Unprocessed data from last call. */
+ 		if (ctx->ccm_remainder_len > 0) {
+ 			need = block_size - ctx->ccm_remainder_len;
+@@ -150,6 +184,9 @@ ccm_mode_encrypt_contiguous_blocks(ccm_ctx_t *ctx, char *data, size_t length,
+ 			datap += block_size;
+ 		}
+ 
++#if defined(__aarch64__)
++next_block:
++#endif
+ 		remainder = (size_t)&data[length] - (size_t)datap;
+ 
+ 		/* Incomplete last block. */
+@@ -167,6 +204,39 @@ out:
  	return (CRYPTO_SUCCESS);
  }
  
@@ -337,22 +464,50 @@ index 0a7a509..0140825 100644
  void
  calculate_ccm_mac(ccm_ctx_t *ctx, uint8_t *ccm_mac,
      int (*encrypt_block)(const void *, const uint8_t *, uint8_t *))
-@@ -356,7 +390,7 @@ ccm_mode_decrypt_contiguous_blocks(ccm_ctx_t *ctx, char *data, size_t length,
+@@ -356,7 +426,7 @@ ccm_mode_decrypt_contiguous_blocks(ccm_ctx_t *ctx, char *data, size_t length,
  	uint64_t counter;
  	size_t pt_len, total_decrypted_len, mac_len, pm_len, pd_len;
  	uint8_t *resultp;
 -
-+	boolean_t bulk;
++	boolean_t bulk, fused;
  
  	pm_len = ctx->ccm_processed_mac_len;
  
-@@ -432,13 +466,17 @@ ccm_mode_decrypt_contiguous_blocks(ccm_ctx_t *ctx, char *data, size_t length,
+@@ -432,13 +502,45 @@ ccm_mode_decrypt_contiguous_blocks(ccm_ctx_t *ctx, char *data, size_t length,
  		return (CRYPTO_SUCCESS);
  	}
  
 +	bulk = icp_bulk_simd(ctx->ccm_keysched, NULL);
++	fused = icp_fused_ccm(ctx->ccm_keysched);
++	(void) fused;
 +	icp_bulk_begin(bulk);
  	do {
++#if defined(__aarch64__)
++		/* whole blocks: CE CTR straight into the plaintext holding buffer */
++		/* `remainder` is stale on the first pass when the MAC was cut off */
++		if (fused && ctx->ccm_remainder_len == 0 &&
++		    (size_t)&data[length] - (size_t)datap >=
++		    ICP_FUSED_MIN_BLOCKS * block_size) {
++			size_t nb = MIN(((size_t)&data[length] - (size_t)datap) /
++			    block_size, ICP_BULK_CHUNK / block_size);
++
++			resultp = (uint8_t *)ctx->ccm_pt_buf +
++			    ctx->ccm_processed_data_len;
++			aes_armv8_ctr_blocks(ctx->ccm_keysched,
++			    (uint8_t *)ctx->ccm_cb, datap, resultp, nb);
++			counter = ntohll(ctx->ccm_cb[1] &
++			    ctx->ccm_counter_mask);
++			counter = htonll(counter + nb);
++			counter &= ctx->ccm_counter_mask;
++			ctx->ccm_cb[1] = (ctx->ccm_cb[1] &
++			    ~(ctx->ccm_counter_mask)) | counter;
++			ctx->ccm_processed_data_len += nb * block_size;
++			ctx->ccm_lastp = datap + (nb - 1) * block_size;
++			datap += nb * block_size;
++			icp_bulk_tick(bulk, ctx->ccm_processed_data_len);
++			goto next_block_dec;
++		}
++#endif
  		/* Unprocessed data from last call. */
  		if (ctx->ccm_remainder_len > 0) {
  			need = block_size - ctx->ccm_remainder_len;
@@ -365,7 +520,7 @@ index 0a7a509..0140825 100644
  
  			memcpy(&((uint8_t *)ctx->ccm_remainder)
  			    [ctx->ccm_remainder_len], datap, need);
-@@ -476,6 +514,7 @@ ccm_mode_decrypt_contiguous_blocks(ccm_ctx_t *ctx, char *data, size_t length,
+@@ -476,6 +578,7 @@ ccm_mode_decrypt_contiguous_blocks(ccm_ctx_t *ctx, char *data, size_t length,
  		copy_block(cbp, resultp);
  
  		ctx->ccm_processed_data_len += block_size;
@@ -373,7 +528,17 @@ index 0a7a509..0140825 100644
  
  		ctx->ccm_lastp = blockp;
  
-@@ -511,6 +550,7 @@ ccm_mode_decrypt_contiguous_blocks(ccm_ctx_t *ctx, char *data, size_t length,
+@@ -487,6 +590,9 @@ ccm_mode_decrypt_contiguous_blocks(ccm_ctx_t *ctx, char *data, size_t length,
+ 			datap += block_size;
+ 		}
+ 
++#if defined(__aarch64__)
++next_block_dec:
++#endif
+ 		remainder = (size_t)&data[length] - (size_t)datap;
+ 
+ 		/* Incomplete last block */
+@@ -511,6 +617,7 @@ ccm_mode_decrypt_contiguous_blocks(ccm_ctx_t *ctx, char *data, size_t length,
  	} while (remainder > 0);
  
  out:
@@ -381,7 +546,7 @@ index 0a7a509..0140825 100644
  	return (CRYPTO_SUCCESS);
  }
  
-@@ -523,6 +563,7 @@ ccm_decrypt_final(ccm_ctx_t *ctx, crypto_data_t *out, size_t block_size,
+@@ -523,6 +630,7 @@ ccm_decrypt_final(ccm_ctx_t *ctx, crypto_data_t *out, size_t block_size,
  	size_t mac_remain, pt_len;
  	uint8_t *pt, *mac_buf, *macp, *ccm_mac_p;
  	int rv;
@@ -389,16 +554,30 @@ index 0a7a509..0140825 100644
  
  	pt_len = ctx->ccm_data_len;
  
-@@ -537,6 +578,8 @@ ccm_decrypt_final(ccm_ctx_t *ctx, crypto_data_t *out, size_t block_size,
+@@ -537,6 +645,22 @@ ccm_decrypt_final(ccm_ctx_t *ctx, crypto_data_t *out, size_t block_size,
  
  	macp = (uint8_t *)ctx->ccm_tmp;
  
 +	bulk = icp_bulk_simd(ctx->ccm_keysched, NULL);
++	if (icp_fused_ccm(ctx->ccm_keysched)) {
++		/* whole blocks via the CE CBC-MAC, a kfpu section per chunk */
++		size_t nb = mac_remain / block_size;
++
++		while (nb > 0) {
++			size_t n = MIN(nb, ICP_BULK_CHUNK / block_size);
++
++			aes_armv8_cbcmac_blocks(ctx->ccm_keysched, mac_buf, pt,
++			    n);
++			pt += n * block_size;
++			mac_remain -= n * block_size;
++			nb -= n;
++		}
++	}
 +	icp_bulk_begin(bulk);
  	while (mac_remain > 0) {
  		if (mac_remain < block_size) {
  			memset(macp, 0, block_size);
-@@ -551,7 +594,9 @@ ccm_decrypt_final(ccm_ctx_t *ctx, crypto_data_t *out, size_t block_size,
+@@ -551,7 +675,9 @@ ccm_decrypt_final(ccm_ctx_t *ctx, crypto_data_t *out, size_t block_size,
  		/* calculate the CBC MAC */
  		xor_block(macp, mac_buf);
  		encrypt_block(ctx->ccm_keysched, mac_buf, mac_buf);
@@ -409,7 +588,7 @@ index 0a7a509..0140825 100644
  	/* Calculate the CCM MAC */
  	ccm_mac_p = (uint8_t *)ctx->ccm_tmp;
 diff --git a/module/icp/algs/modes/gcm.c b/module/icp/algs/modes/gcm.c
-index ab2c5a4..eed6845 100644
+index ab2c5a4..17ca962 100644
 --- a/module/icp/algs/modes/gcm.c
 +++ b/module/icp/algs/modes/gcm.c
 @@ -32,6 +32,7 @@
@@ -433,7 +612,66 @@ index ab2c5a4..eed6845 100644
      int (*encrypt_block)(const void *, const uint8_t *, uint8_t *),
      void (*copy_block)(uint8_t *, uint8_t *),
      void (*xor_block)(uint8_t *, uint8_t *))
-@@ -203,6 +204,40 @@ out:
+@@ -110,6 +111,8 @@ gcm_mode_encrypt_contiguous_blocks(gcm_ctx_t *ctx, char *data, size_t length,
+ 	size_t out_data_1_len;
+ 	uint64_t counter;
+ 	uint64_t counter_mask = ntohll(0x00000000ffffffffULL);
++	boolean_t fused = icp_fused_gcm(ctx->gcm_keysched);
++	(void) fused;
+ 
+ 	if (length + ctx->gcm_remainder_len < block_size) {
+ 		/* accumulate bytes here and return */
+@@ -127,6 +130,39 @@ gcm_mode_encrypt_contiguous_blocks(gcm_ctx_t *ctx, char *data, size_t length,
+ 
+ 	gops = gcm_impl_get_ops();
+ 	do {
++#if defined(__aarch64__)
++		/* whole blocks straight into one output iovec: CE CTR + GHASH */
++		if (fused && ctx->gcm_remainder_len == 0) {
++			size_t nb = remainder / block_size;
++			size_t av = icp_out_contig(out, iov_or_mp, offset) /
++			    block_size;
++
++			if (av < nb)
++				nb = av;
++			if (nb >= ICP_FUSED_MIN_BLOCKS) {
++				uint64_t c = ntohll(ctx->gcm_cb[1] &
++				    counter_mask);
++				uint64_t iv[2] = { ctx->gcm_cb[0],
++				    (ctx->gcm_cb[1] & ~counter_mask) |
++				    (htonll(c + 1) & counter_mask) };
++
++				crypto_get_ptrs(out, &iov_or_mp, &offset,
++				    &out_data_1, &out_data_1_len, &out_data_2,
++				    nb * block_size);
++				aes_armv8_gcm_encrypt_blocks(ctx->gcm_keysched,
++				    (uint8_t *)iv, (uint8_t *)ctx->gcm_ghash,
++				    (uint8_t *)ctx->gcm_H, datap, out_data_1,
++				    nb);
++				ctx->gcm_cb[1] = (ctx->gcm_cb[1] &
++				    ~counter_mask) |
++				    (htonll(c + nb) & counter_mask);
++				ctx->gcm_processed_data_len += nb * block_size;
++				out->cd_offset += nb * block_size;
++				datap += nb * block_size;
++				goto next_block;
++			}
++		}
++#endif
+ 		/* Unprocessed data from last call. */
+ 		if (ctx->gcm_remainder_len > 0) {
+ 			need = block_size - ctx->gcm_remainder_len;
+@@ -187,6 +223,9 @@ gcm_mode_encrypt_contiguous_blocks(gcm_ctx_t *ctx, char *data, size_t length,
+ 			datap += block_size;
+ 		}
+ 
++#if defined(__aarch64__)
++next_block:
++#endif
+ 		remainder = (size_t)&data[length] - (size_t)datap;
+ 
+ 		/* Incomplete last block. */
+@@ -203,6 +242,40 @@ out:
  	return (CRYPTO_SUCCESS);
  }
  
@@ -474,24 +712,48 @@ index ab2c5a4..eed6845 100644
  int
  gcm_encrypt_final(gcm_ctx_t *ctx, crypto_data_t *out, size_t block_size,
      int (*encrypt_block)(const void *, const uint8_t *, uint8_t *),
-@@ -390,6 +425,7 @@ gcm_decrypt_final(gcm_ctx_t *ctx, crypto_data_t *out, size_t block_size,
+@@ -390,6 +463,7 @@ gcm_decrypt_final(gcm_ctx_t *ctx, crypto_data_t *out, size_t block_size,
  	uint64_t counter;
  	uint64_t counter_mask = ntohll(0x00000000ffffffffULL);
  	int processed = 0, rv;
-+	boolean_t bulk;
++	boolean_t bulk, fused;
  
  	ASSERT(ctx->gcm_processed_data_len == ctx->gcm_pt_buf_len);
  
-@@ -398,6 +434,8 @@ gcm_decrypt_final(gcm_ctx_t *ctx, crypto_data_t *out, size_t block_size,
+@@ -398,7 +472,32 @@ gcm_decrypt_final(gcm_ctx_t *ctx, crypto_data_t *out, size_t block_size,
  	ghash = (uint8_t *)ctx->gcm_ghash;
  	blockp = ctx->gcm_pt_buf;
  	remainder = pt_len;
 +	bulk = icp_bulk_simd(ctx->gcm_keysched, gops);
++	fused = icp_fused_gcm(ctx->gcm_keysched);
++	(void) fused;
 +	icp_bulk_begin(bulk);
  	while (remainder > 0) {
++#if defined(__aarch64__)
++		if (fused && remainder >= ICP_FUSED_MIN_BLOCKS * block_size) {
++			size_t nb = MIN(remainder / block_size,
++			    ICP_BULK_CHUNK / block_size);
++			uint64_t c = ntohll(ctx->gcm_cb[1] & counter_mask);
++			uint64_t iv[2] = { ctx->gcm_cb[0],
++			    (ctx->gcm_cb[1] & ~counter_mask) |
++			    (htonll(c + 1) & counter_mask) };
++
++			aes_armv8_gcm_decrypt_blocks(ctx->gcm_keysched,
++			    (uint8_t *)iv, ghash, (uint8_t *)ctx->gcm_H,
++			    blockp, nb);
++			ctx->gcm_cb[1] = (ctx->gcm_cb[1] & ~counter_mask) |
++			    (htonll(c + nb) & counter_mask);
++			processed += nb * block_size;
++			blockp += nb * block_size;
++			remainder -= nb * block_size;
++			icp_bulk_tick(bulk, processed);
++			continue;
++		}
++#endif
  		/* Incomplete last block */
  		if (remainder < block_size) {
-@@ -433,8 +471,10 @@ gcm_decrypt_final(gcm_ctx_t *ctx, crypto_data_t *out, size_t block_size,
+ 			memcpy(ctx->gcm_remainder, blockp, remainder);
+@@ -433,8 +532,10 @@ gcm_decrypt_final(gcm_ctx_t *ctx, crypto_data_t *out, size_t block_size,
  		processed += block_size;
  		blockp += block_size;
  		remainder -= block_size;
@@ -502,7 +764,7 @@ index ab2c5a4..eed6845 100644
  	ctx->gcm_len_a_len_c[1] = htonll(CRYPTO_BYTES2BITS(pt_len));
  	GHASH(ctx, ctx->gcm_len_a_len_c, ghash, gops);
  	encrypt_block(ctx->gcm_keysched, (uint8_t *)ctx->gcm_J0,
-@@ -717,6 +757,9 @@ static const gcm_impl_ops_t *gcm_all_impl[] = {
+@@ -717,6 +818,9 @@ static const gcm_impl_ops_t *gcm_all_impl[] = {
  #if defined(__x86_64) && defined(HAVE_PCLMULQDQ)
  	&gcm_pclmulqdq_impl,
  #endif
@@ -512,7 +774,7 @@ index ab2c5a4..eed6845 100644
  };
  
  /* Indicate that benchmark has been completed */
-@@ -806,6 +849,12 @@ gcm_impl_init(void)
+@@ -806,6 +910,12 @@ gcm_impl_init(void)
  		memcpy(&gcm_fastest_impl, &gcm_pclmulqdq_impl,
  		    sizeof (gcm_fastest_impl));
  	} else
@@ -579,10 +841,10 @@ index 0000000..f49fa72
 +#endif /* defined(__aarch64__) */
 diff --git a/module/icp/asm-aarch64/aes/aesv8-armx.S b/module/icp/asm-aarch64/aes/aesv8-armx.S
 new file mode 100644
-index 0000000..27ab652
+index 0000000..fba497d
 --- /dev/null
 +++ b/module/icp/asm-aarch64/aes/aesv8-armx.S
-@@ -0,0 +1,323 @@
+@@ -0,0 +1,715 @@
 +// SPDX-License-Identifier: Apache-2.0
 +/*
 + * Copyright 2014-2022 The OpenSSL Project Authors. All Rights Reserved.
@@ -905,13 +1167,405 @@ index 0000000..27ab652
 +	ret
 +.size	zfs_aes_v8_decrypt,.-zfs_aes_v8_decrypt
 +
++// void zfs_aes_v8_ctr32_encrypt_blocks(const uint8_t *in, uint8_t *out, size_t blocks,
++//     const uint32_t rk[], const uint8_t iv[16], int nr)
++// OpenSSL aes_v8_ctr32_encrypt_blocks() with the round count passed in w5 instead of
++// read from an AES_KEY; iv is not updated.
++.globl	zfs_aes_v8_ctr32_encrypt_blocks
++.type	zfs_aes_v8_ctr32_encrypt_blocks,%function
++.align	5
++zfs_aes_v8_ctr32_encrypt_blocks:
++	AARCH64_VALID_CALL_TARGET
++	// Armv8.3-A PAuth: even though x30 is pushed to stack it is not popped later.
++	stp	x29,x30,[sp,#-16]!
++	add	x29,sp,#0
++
++	ldr	w8, [x4, #12]
++#ifdef __AARCH64EB__
++	ld1	{v0.16b},[x4]
++#else
++	ld1	{v0.4s},[x4]
++#endif
++	ld1	{v16.4s,v17.4s},[x3]		// load key schedule...
++	sub	w5,w5,#4
++	mov	x12,#16
++	cmp	x2,#2
++	add	x7,x3,x5,lsl#4	// pointer to last 5 round keys
++	sub	w5,w5,#2
++	ld1	{v20.4s,v21.4s},[x7],#32
++	ld1	{v22.4s,v23.4s},[x7],#32
++	ld1	{v7.4s},[x7]
++	add	x7,x3,#32
++	mov	w6,w5
++	csel	x12,xzr,x12,lo
++#ifndef __AARCH64EB__
++	rev	w8, w8
++#endif
++	orr	v1.16b,v0.16b,v0.16b
++	add	w10, w8, #1
++	orr	v18.16b,v0.16b,v0.16b
++	add	w8, w8, #2
++	orr	v6.16b,v0.16b,v0.16b
++	rev	w10, w10
++	mov	v1.s[3],w10
++	b.ls	.Lctr32_tail
++	rev	w12, w8
++	sub	x2,x2,#3		// bias
++	mov	v18.s[3],w12
++	cmp	x2,#32
++	b.lo	.Loop3x_ctr32
++
++	add	w13,w8,#1
++	add	w14,w8,#2
++	orr	v24.16b,v0.16b,v0.16b
++	rev	w13,w13
++	orr	v25.16b,v0.16b,v0.16b
++	rev	w14,w14
++	mov	v24.s[3],w13
++	sub	x2,x2,#2		// bias
++	mov	v25.s[3],w14
++	add	w8,w8,#2
++	b	.Loop5x_ctr32
++
++.align	4
++.Loop5x_ctr32:
++	aese	v0.16b,v16.16b
++	aesmc	v0.16b,v0.16b
++	aese	v1.16b,v16.16b
++	aesmc	v1.16b,v1.16b
++	aese	v18.16b,v16.16b
++	aesmc	v18.16b,v18.16b
++	aese	v24.16b,v16.16b
++	aesmc	v24.16b,v24.16b
++	aese	v25.16b,v16.16b
++	aesmc	v25.16b,v25.16b
++	ld1	{v16.4s},[x7],#16
++	subs	w6,w6,#2
++	aese	v0.16b,v17.16b
++	aesmc	v0.16b,v0.16b
++	aese	v1.16b,v17.16b
++	aesmc	v1.16b,v1.16b
++	aese	v18.16b,v17.16b
++	aesmc	v18.16b,v18.16b
++	aese	v24.16b,v17.16b
++	aesmc	v24.16b,v24.16b
++	aese	v25.16b,v17.16b
++	aesmc	v25.16b,v25.16b
++	ld1	{v17.4s},[x7],#16
++	b.gt	.Loop5x_ctr32
++
++	mov	x7,x3
++	aese	v0.16b,v16.16b
++	aesmc	v0.16b,v0.16b
++	aese	v1.16b,v16.16b
++	aesmc	v1.16b,v1.16b
++	aese	v18.16b,v16.16b
++	aesmc	v18.16b,v18.16b
++	aese	v24.16b,v16.16b
++	aesmc	v24.16b,v24.16b
++	aese	v25.16b,v16.16b
++	aesmc	v25.16b,v25.16b
++	ld1	{v16.4s},[x7],#16	// re-pre-load rndkey[0]
++
++	aese	v0.16b,v17.16b
++	aesmc	v0.16b,v0.16b
++	aese	v1.16b,v17.16b
++	aesmc	v1.16b,v1.16b
++	aese	v18.16b,v17.16b
++	aesmc	v18.16b,v18.16b
++	aese	v24.16b,v17.16b
++	aesmc	v24.16b,v24.16b
++	aese	v25.16b,v17.16b
++	aesmc	v25.16b,v25.16b
++	ld1	{v17.4s},[x7],#16	// re-pre-load rndkey[1]
++
++	aese	v0.16b,v20.16b
++	aesmc	v0.16b,v0.16b
++	add	w9,w8,#1
++	add	w10,w8,#2
++	aese	v1.16b,v20.16b
++	aesmc	v1.16b,v1.16b
++	add	w12,w8,#3
++	add	w13,w8,#4
++	aese	v18.16b,v20.16b
++	aesmc	v18.16b,v18.16b
++	add	w14,w8,#5
++	rev	w9,w9
++	aese	v24.16b,v20.16b
++	aesmc	v24.16b,v24.16b
++	rev	w10,w10
++	rev	w12,w12
++	aese	v25.16b,v20.16b
++	aesmc	v25.16b,v25.16b
++	rev	w13,w13
++	rev	w14,w14
++
++	aese	v0.16b,v21.16b
++	aesmc	v0.16b,v0.16b
++	aese	v1.16b,v21.16b
++	aesmc	v1.16b,v1.16b
++	aese	v18.16b,v21.16b
++	aesmc	v18.16b,v18.16b
++	aese	v24.16b,v21.16b
++	aesmc	v24.16b,v24.16b
++	aese	v25.16b,v21.16b
++	aesmc	v25.16b,v25.16b
++
++	aese	v0.16b,v22.16b
++	aesmc	v0.16b,v0.16b
++	ld1	{v2.16b},[x0],#16
++	aese	v1.16b,v22.16b
++	aesmc	v1.16b,v1.16b
++	ld1	{v3.16b},[x0],#16
++	aese	v18.16b,v22.16b
++	aesmc	v18.16b,v18.16b
++	ld1	{v19.16b},[x0],#16
++	aese	v24.16b,v22.16b
++	aesmc	v24.16b,v24.16b
++	ld1	{v26.16b},[x0],#16
++	aese	v25.16b,v22.16b
++	aesmc	v25.16b,v25.16b
++	ld1	{v27.16b},[x0],#16
++
++	aese	v0.16b,v23.16b
++	eor	v2.16b,v2.16b,v7.16b
++	aese	v1.16b,v23.16b
++	eor	v3.16b,v3.16b,v7.16b
++	aese	v18.16b,v23.16b
++	eor	v19.16b,v19.16b,v7.16b
++	aese	v24.16b,v23.16b
++	eor	v26.16b,v26.16b,v7.16b
++	aese	v25.16b,v23.16b
++	eor	v27.16b,v27.16b,v7.16b
++
++	eor	v2.16b,v2.16b,v0.16b
++	orr	v0.16b,v6.16b,v6.16b
++	eor	v3.16b,v3.16b,v1.16b
++	orr	v1.16b,v6.16b,v6.16b
++	eor	v19.16b,v19.16b,v18.16b
++	orr	v18.16b,v6.16b,v6.16b
++	eor	v26.16b,v26.16b,v24.16b
++	orr	v24.16b,v6.16b,v6.16b
++	eor	v27.16b,v27.16b,v25.16b
++	orr	v25.16b,v6.16b,v6.16b
++
++	st1	{v2.16b},[x1],#16
++	mov	v0.s[3],w9
++	st1	{v3.16b},[x1],#16
++	mov	v1.s[3],w10
++	st1	{v19.16b},[x1],#16
++	mov	v18.s[3],w12
++	st1	{v26.16b},[x1],#16
++	mov	v24.s[3],w13
++	st1	{v27.16b},[x1],#16
++	mov	v25.s[3],w14
++
++	mov	w6,w5
++	cbz	x2,.Lctr32_done
++
++	add	w8,w8,#5
++	subs	x2,x2,#5
++	b.hs	.Loop5x_ctr32
++
++	add	x2,x2,#5
++	sub	w8,w8,#5
++
++	cmp	x2,#2
++	mov	x12,#16
++	csel	x12,xzr,x12,lo
++	b.ls	.Lctr32_tail
++
++	sub	x2,x2,#3		// bias
++	add	w8,w8,#3
++	b	.Loop3x_ctr32
++
++.align	4
++.Loop3x_ctr32:
++	aese	v0.16b,v16.16b
++	aesmc	v0.16b,v0.16b
++	aese	v1.16b,v16.16b
++	aesmc	v1.16b,v1.16b
++	aese	v18.16b,v16.16b
++	aesmc	v18.16b,v18.16b
++	ld1	{v16.4s},[x7],#16
++	subs	w6,w6,#2
++	aese	v0.16b,v17.16b
++	aesmc	v0.16b,v0.16b
++	aese	v1.16b,v17.16b
++	aesmc	v1.16b,v1.16b
++	aese	v18.16b,v17.16b
++	aesmc	v18.16b,v18.16b
++	ld1	{v17.4s},[x7],#16
++	b.gt	.Loop3x_ctr32
++
++	aese	v0.16b,v16.16b
++	aesmc	v4.16b,v0.16b
++	aese	v1.16b,v16.16b
++	aesmc	v5.16b,v1.16b
++	ld1	{v2.16b},[x0],#16
++	orr	v0.16b,v6.16b,v6.16b
++	aese	v18.16b,v16.16b
++	aesmc	v18.16b,v18.16b
++	ld1	{v3.16b},[x0],#16
++	orr	v1.16b,v6.16b,v6.16b
++	aese	v4.16b,v17.16b
++	aesmc	v4.16b,v4.16b
++	aese	v5.16b,v17.16b
++	aesmc	v5.16b,v5.16b
++	ld1	{v19.16b},[x0],#16
++	mov	x7,x3
++	aese	v18.16b,v17.16b
++	aesmc	v17.16b,v18.16b
++	orr	v18.16b,v6.16b,v6.16b
++	add	w9,w8,#1
++	aese	v4.16b,v20.16b
++	aesmc	v4.16b,v4.16b
++	aese	v5.16b,v20.16b
++	aesmc	v5.16b,v5.16b
++	eor	v2.16b,v2.16b,v7.16b
++	add	w10,w8,#2
++	aese	v17.16b,v20.16b
++	aesmc	v17.16b,v17.16b
++	eor	v3.16b,v3.16b,v7.16b
++	add	w8,w8,#3
++	aese	v4.16b,v21.16b
++	aesmc	v4.16b,v4.16b
++	aese	v5.16b,v21.16b
++	aesmc	v5.16b,v5.16b
++	eor	v19.16b,v19.16b,v7.16b
++	rev	w9,w9
++	aese	v17.16b,v21.16b
++	aesmc	v17.16b,v17.16b
++	mov	v0.s[3], w9
++	rev	w10,w10
++	aese	v4.16b,v22.16b
++	aesmc	v4.16b,v4.16b
++	aese	v5.16b,v22.16b
++	aesmc	v5.16b,v5.16b
++	mov	v1.s[3], w10
++	rev	w12,w8
++	aese	v17.16b,v22.16b
++	aesmc	v17.16b,v17.16b
++	mov	v18.s[3], w12
++	subs	x2,x2,#3
++	aese	v4.16b,v23.16b
++	aese	v5.16b,v23.16b
++	aese	v17.16b,v23.16b
++
++	eor	v2.16b,v2.16b,v4.16b
++	ld1	{v16.4s},[x7],#16	// re-pre-load rndkey[0]
++	st1	{v2.16b},[x1],#16
++	eor	v3.16b,v3.16b,v5.16b
++	mov	w6,w5
++	st1	{v3.16b},[x1],#16
++	eor	v19.16b,v19.16b,v17.16b
++	ld1	{v17.4s},[x7],#16	// re-pre-load rndkey[1]
++	st1	{v19.16b},[x1],#16
++	b.hs	.Loop3x_ctr32
++
++	adds	x2,x2,#3
++	b.eq	.Lctr32_done
++	cmp	x2,#1
++	mov	x12,#16
++	csel	x12,xzr,x12,eq
++
++.Lctr32_tail:
++	aese	v0.16b,v16.16b
++	aesmc	v0.16b,v0.16b
++	aese	v1.16b,v16.16b
++	aesmc	v1.16b,v1.16b
++	ld1	{v16.4s},[x7],#16
++	subs	w6,w6,#2
++	aese	v0.16b,v17.16b
++	aesmc	v0.16b,v0.16b
++	aese	v1.16b,v17.16b
++	aesmc	v1.16b,v1.16b
++	ld1	{v17.4s},[x7],#16
++	b.gt	.Lctr32_tail
++
++	aese	v0.16b,v16.16b
++	aesmc	v0.16b,v0.16b
++	aese	v1.16b,v16.16b
++	aesmc	v1.16b,v1.16b
++	aese	v0.16b,v17.16b
++	aesmc	v0.16b,v0.16b
++	aese	v1.16b,v17.16b
++	aesmc	v1.16b,v1.16b
++	ld1	{v2.16b},[x0],x12
++	aese	v0.16b,v20.16b
++	aesmc	v0.16b,v0.16b
++	aese	v1.16b,v20.16b
++	aesmc	v1.16b,v1.16b
++	ld1	{v3.16b},[x0]
++	aese	v0.16b,v21.16b
++	aesmc	v0.16b,v0.16b
++	aese	v1.16b,v21.16b
++	aesmc	v1.16b,v1.16b
++	eor	v2.16b,v2.16b,v7.16b
++	aese	v0.16b,v22.16b
++	aesmc	v0.16b,v0.16b
++	aese	v1.16b,v22.16b
++	aesmc	v1.16b,v1.16b
++	eor	v3.16b,v3.16b,v7.16b
++	aese	v0.16b,v23.16b
++	aese	v1.16b,v23.16b
++
++	cmp	x2,#1
++	eor	v2.16b,v2.16b,v0.16b
++	eor	v3.16b,v3.16b,v1.16b
++	st1	{v2.16b},[x1],#16
++	b.eq	.Lctr32_done
++	st1	{v3.16b},[x1]
++
++.Lctr32_done:
++	ldr	x29,[sp],#16
++	ret
++.size	zfs_aes_v8_ctr32_encrypt_blocks,.-zfs_aes_v8_ctr32_encrypt_blocks
++
++// void zfs_aes_v8_cbcmac(uint8_t mac[16], const uint8_t *in, size_t blocks,
++//     const uint32_t rk[], int nr)
++// mac = E(mac ^ in[i]) for each 16-byte block (CCM CBC-MAC).
++.globl	zfs_aes_v8_cbcmac
++.type	zfs_aes_v8_cbcmac,%function
++.align	5
++zfs_aes_v8_cbcmac:
++	AARCH64_VALID_CALL_TARGET
++	ld1	{v2.16b},[x0]
++.Lcbcmac_blk:
++	ld1	{v3.16b},[x1],#16
++	eor	v2.16b,v2.16b,v3.16b
++	mov	x5,x3
++	sub	w6,w4,#2
++	ld1	{v0.4s,v1.4s},[x5],#32
++
++.Loop_cbcmac:
++	aese	v2.16b,v0.16b
++	aesmc	v2.16b,v2.16b
++	ld1	{v0.4s},[x5],#16
++	subs	w6,w6,#2
++	aese	v2.16b,v1.16b
++	aesmc	v2.16b,v2.16b
++	ld1	{v1.4s},[x5],#16
++	b.gt	.Loop_cbcmac
++
++	aese	v2.16b,v0.16b
++	aesmc	v2.16b,v2.16b
++	ld1	{v0.4s},[x5]
++	aese	v2.16b,v1.16b
++	eor	v2.16b,v2.16b,v0.16b
++	subs	x2,x2,#1
++	b.ne	.Lcbcmac_blk
++	st1	{v2.16b},[x0]
++	ret
++.size	zfs_aes_v8_cbcmac,.-zfs_aes_v8_cbcmac
++
 +#endif /* __aarch64__ */
 diff --git a/module/icp/asm-aarch64/modes/ghashv8-armx.S b/module/icp/asm-aarch64/modes/ghashv8-armx.S
 new file mode 100644
-index 0000000..a401094
+index 0000000..c4d3bb6
 --- /dev/null
 +++ b/module/icp/asm-aarch64/modes/ghashv8-armx.S
-@@ -0,0 +1,94 @@
+@@ -0,0 +1,692 @@
 +// SPDX-License-Identifier: Apache-2.0
 +/*
 + * Copyright 2014-2022 The OpenSSL Project Authors. All Rights Reserved.
@@ -1005,17 +1659,627 @@ index 0000000..a401094
 +	ret
 +.size	zfs_gcm_mul_pmull,.-zfs_gcm_mul_pmull
 +
++// void zfs_gcm_init_v8(uint64_t Htable[12*2], const uint8_t H[16])  (H in GCM wire byte order)
++.globl	zfs_gcm_init_v8
++.type	zfs_gcm_init_v8,%function
++.align	4
++zfs_gcm_init_v8:
++	AARCH64_VALID_CALL_TARGET
++	ld1	{v17.2d},[x1]		//load input H
++#ifndef __AARCH64EB__
++	rev64	v17.16b,v17.16b		//OpenSSL byte-swaps H as two u64 before gcm_init_v8
++#endif
++	movi	v19.16b,#0xe1
++	shl	v19.2d,v19.2d,#57		//0xc2.0
++	ext	v3.16b,v17.16b,v17.16b,#8
++	ushr	v18.2d,v19.2d,#63
++	dup	v17.4s,v17.s[1]
++	ext	v16.16b,v18.16b,v19.16b,#8		//t0=0xc2....01
++	ushr	v18.2d,v3.2d,#63
++	sshr	v17.4s,v17.4s,#31		//broadcast carry bit
++	and	v18.16b,v18.16b,v16.16b
++	shl	v3.2d,v3.2d,#1
++	ext	v18.16b,v18.16b,v18.16b,#8
++	and	v16.16b,v16.16b,v17.16b
++	orr	v3.16b,v3.16b,v18.16b		//H<<<=1
++	eor	v20.16b,v3.16b,v16.16b		//twisted H
++	st1	{v20.2d},[x0],#16		//store Htable[0]
++
++	//calculate H^2
++	ext	v16.16b,v20.16b,v20.16b,#8		//Karatsuba pre-processing
++	pmull	v0.1q,v20.1d,v20.1d
++	eor	v16.16b,v16.16b,v20.16b
++	pmull2	v2.1q,v20.2d,v20.2d
++	pmull	v1.1q,v16.1d,v16.1d
++
++	ext	v17.16b,v0.16b,v2.16b,#8		//Karatsuba post-processing
++	eor	v18.16b,v0.16b,v2.16b
++	eor	v1.16b,v1.16b,v17.16b
++	eor	v1.16b,v1.16b,v18.16b
++	pmull	v18.1q,v0.1d,v19.1d		//1st phase
++
++	ins	v2.d[0],v1.d[1]
++	ins	v1.d[1],v0.d[0]
++	eor	v0.16b,v1.16b,v18.16b
++
++	ext	v18.16b,v0.16b,v0.16b,#8		//2nd phase
++	pmull	v0.1q,v0.1d,v19.1d
++	eor	v18.16b,v18.16b,v2.16b
++	eor	v22.16b,v0.16b,v18.16b
++
++	ext	v17.16b,v22.16b,v22.16b,#8		//Karatsuba pre-processing
++	eor	v17.16b,v17.16b,v22.16b
++	ext	v21.16b,v16.16b,v17.16b,#8		//pack Karatsuba pre-processed
++	st1	{v21.2d,v22.2d},[x0],#32	//store Htable[1..2]
++	//calculate H^3 and H^4
++	pmull	v0.1q,v20.1d, v22.1d
++	pmull	v5.1q,v22.1d,v22.1d
++	pmull2	v2.1q,v20.2d, v22.2d
++	pmull2	v7.1q,v22.2d,v22.2d
++	pmull	v1.1q,v16.1d,v17.1d
++	pmull	v6.1q,v17.1d,v17.1d
++
++	ext	v16.16b,v0.16b,v2.16b,#8		//Karatsuba post-processing
++	ext	v17.16b,v5.16b,v7.16b,#8
++	eor	v18.16b,v0.16b,v2.16b
++	eor	v1.16b,v1.16b,v16.16b
++	eor	v4.16b,v5.16b,v7.16b
++	eor	v6.16b,v6.16b,v17.16b
++	eor	v1.16b,v1.16b,v18.16b
++	pmull	v18.1q,v0.1d,v19.1d		//1st phase
++	eor	v6.16b,v6.16b,v4.16b
++	pmull	v4.1q,v5.1d,v19.1d
++
++	ins	v2.d[0],v1.d[1]
++	ins	v7.d[0],v6.d[1]
++	ins	v1.d[1],v0.d[0]
++	ins	v6.d[1],v5.d[0]
++	eor	v0.16b,v1.16b,v18.16b
++	eor	v5.16b,v6.16b,v4.16b
++
++	ext	v18.16b,v0.16b,v0.16b,#8		//2nd phase
++	ext	v4.16b,v5.16b,v5.16b,#8
++	pmull	v0.1q,v0.1d,v19.1d
++	pmull	v5.1q,v5.1d,v19.1d
++	eor	v18.16b,v18.16b,v2.16b
++	eor	v4.16b,v4.16b,v7.16b
++	eor	v23.16b, v0.16b,v18.16b		//H^3
++	eor	v25.16b,v5.16b,v4.16b		//H^4
++
++	ext	v16.16b,v23.16b, v23.16b,#8		//Karatsuba pre-processing
++	ext	v17.16b,v25.16b,v25.16b,#8
++	ext	v18.16b,v22.16b,v22.16b,#8
++	eor	v16.16b,v16.16b,v23.16b
++	eor	v17.16b,v17.16b,v25.16b
++	eor	v18.16b,v18.16b,v22.16b
++	ext	v24.16b,v16.16b,v17.16b,#8		//pack Karatsuba pre-processed
++	st1	{v23.2d,v24.2d,v25.2d},[x0],#48		//store Htable[3..5]
++
++	//calculate H^5 and H^6
++	pmull	v0.1q,v22.1d, v23.1d
++	pmull	v5.1q,v23.1d,v23.1d
++	pmull2	v2.1q,v22.2d, v23.2d
++	pmull2	v7.1q,v23.2d,v23.2d
++	pmull	v1.1q,v16.1d,v18.1d
++	pmull	v6.1q,v16.1d,v16.1d
++
++	ext	v16.16b,v0.16b,v2.16b,#8		//Karatsuba post-processing
++	ext	v17.16b,v5.16b,v7.16b,#8
++	eor	v18.16b,v0.16b,v2.16b
++	eor	v1.16b,v1.16b,v16.16b
++	eor	v4.16b,v5.16b,v7.16b
++	eor	v6.16b,v6.16b,v17.16b
++	eor	v1.16b,v1.16b,v18.16b
++	pmull	v18.1q,v0.1d,v19.1d		//1st phase
++	eor	v6.16b,v6.16b,v4.16b
++	pmull	v4.1q,v5.1d,v19.1d
++
++	ins	v2.d[0],v1.d[1]
++	ins	v7.d[0],v6.d[1]
++	ins	v1.d[1],v0.d[0]
++	ins	v6.d[1],v5.d[0]
++	eor	v0.16b,v1.16b,v18.16b
++	eor	v5.16b,v6.16b,v4.16b
++
++	ext	v18.16b,v0.16b,v0.16b,#8		//2nd phase
++	ext	v4.16b,v5.16b,v5.16b,#8
++	pmull	v0.1q,v0.1d,v19.1d
++	pmull	v5.1q,v5.1d,v19.1d
++	eor	v18.16b,v18.16b,v2.16b
++	eor	v4.16b,v4.16b,v7.16b
++	eor	v26.16b,v0.16b,v18.16b		//H^5
++	eor	v28.16b,v5.16b,v4.16b		//H^6
++
++	ext	v16.16b,v26.16b, v26.16b,#8		//Karatsuba pre-processing
++	ext	v17.16b,v28.16b,v28.16b,#8
++	ext	v18.16b,v22.16b,v22.16b,#8
++	eor	v16.16b,v16.16b,v26.16b
++	eor	v17.16b,v17.16b,v28.16b
++	eor	v18.16b,v18.16b,v22.16b
++	ext	v27.16b,v16.16b,v17.16b,#8		//pack Karatsuba pre-processed
++	st1	{v26.2d,v27.2d,v28.2d},[x0],#48		//store Htable[6..8]
++
++	//calculate H^7 and H^8
++	pmull	v0.1q,v22.1d,v26.1d
++	pmull	v5.1q,v22.1d,v28.1d
++	pmull2	v2.1q,v22.2d,v26.2d
++	pmull2	v7.1q,v22.2d,v28.2d
++	pmull	v1.1q,v16.1d,v18.1d
++	pmull	v6.1q,v17.1d,v18.1d
++
++	ext	v16.16b,v0.16b,v2.16b,#8		//Karatsuba post-processing
++	ext	v17.16b,v5.16b,v7.16b,#8
++	eor	v18.16b,v0.16b,v2.16b
++	eor	v1.16b,v1.16b,v16.16b
++	eor	v4.16b,v5.16b,v7.16b
++	eor	v6.16b,v6.16b,v17.16b
++	eor	v1.16b,v1.16b,v18.16b
++	pmull	v18.1q,v0.1d,v19.1d		//1st phase
++	eor	v6.16b,v6.16b,v4.16b
++	pmull	v4.1q,v5.1d,v19.1d
++
++	ins	v2.d[0],v1.d[1]
++	ins	v7.d[0],v6.d[1]
++	ins	v1.d[1],v0.d[0]
++	ins	v6.d[1],v5.d[0]
++	eor	v0.16b,v1.16b,v18.16b
++	eor	v5.16b,v6.16b,v4.16b
++
++	ext	v18.16b,v0.16b,v0.16b,#8		//2nd phase
++	ext	v4.16b,v5.16b,v5.16b,#8
++	pmull	v0.1q,v0.1d,v19.1d
++	pmull	v5.1q,v5.1d,v19.1d
++	eor	v18.16b,v18.16b,v2.16b
++	eor	v4.16b,v4.16b,v7.16b
++	eor	v29.16b,v0.16b,v18.16b		//H^7
++	eor	v31.16b,v5.16b,v4.16b		//H^8
++
++	ext	v16.16b,v29.16b,v29.16b,#8		//Karatsuba pre-processing
++	ext	v17.16b,v31.16b,v31.16b,#8
++	eor	v16.16b,v16.16b,v29.16b
++	eor	v17.16b,v17.16b,v31.16b
++	ext	v30.16b,v16.16b,v17.16b,#8		//pack Karatsuba pre-processed
++	st1	{v29.2d,v30.2d,v31.2d},[x0]		//store Htable[9..11]
++	ret
++.size	zfs_gcm_init_v8,.-zfs_gcm_init_v8
++// void zfs_gcm_ghash_v8(uint8_t Xi[16], const uint64_t Htable[12*2], const uint8_t *in, size_t len)
++// len: multiple of 16
++.globl	zfs_gcm_ghash_v8
++.type	zfs_gcm_ghash_v8,%function
++.align	4
++zfs_gcm_ghash_v8:
++	AARCH64_VALID_CALL_TARGET
++	cmp	x3,#64
++	b.hs	.Lzfs_gcm_ghash_v8_4x
++	ld1	{v0.2d},[x0]		//load [rotated] Xi
++						//"[rotated]" means that
++						//loaded value would have
++						//to be rotated in order to
++						//make it appear as in
++						//algorithm specification
++	subs	x3,x3,#32		//see if x3 is 32 or larger
++	mov	x12,#16		//x12 is used as post-
++						//increment for input pointer;
++						//as loop is modulo-scheduled
++						//x12 is zeroed just in time
++						//to preclude overstepping
++						//inp[len], which means that
++						//last block[s] are actually
++						//loaded twice, but last
++						//copy is not processed
++	ld1	{v20.2d,v21.2d},[x1],#32	//load twisted H, ..., H^2
++	movi	v19.16b,#0xe1
++	ld1	{v22.2d},[x1]
++	csel	x12,xzr,x12,eq			//is it time to zero x12?
++	ext	v0.16b,v0.16b,v0.16b,#8		//rotate Xi
++	ld1	{v16.2d},[x2],#16	//load [rotated] I[0]
++	shl	v19.2d,v19.2d,#57		//compose 0xc2.0 constant
++#ifndef __AARCH64EB__
++	rev64	v16.16b,v16.16b
++	rev64	v0.16b,v0.16b
++#endif
++	ext	v3.16b,v16.16b,v16.16b,#8		//rotate I[0]
++	b.lo	.Lodd_tail_v8		//x3 was less than 32
++	ld1	{v17.2d},[x2],x12	//load [rotated] I[1]
++#ifndef __AARCH64EB__
++	rev64	v17.16b,v17.16b
++#endif
++	ext	v7.16b,v17.16b,v17.16b,#8
++	eor	v3.16b,v3.16b,v0.16b		//I[i]^=Xi
++	pmull	v4.1q,v20.1d,v7.1d		//H*Ii+1
++	eor	v17.16b,v17.16b,v7.16b		//Karatsuba pre-processing
++	pmull2	v6.1q,v20.2d,v7.2d
++	b	.Loop_mod2x_v8
++
++.align	4
++.Loop_mod2x_v8:
++	ext	v18.16b,v3.16b,v3.16b,#8
++	subs	x3,x3,#32		//is there more data?
++	pmull	v0.1q,v22.1d,v3.1d		//H^2.lo*Xi.lo
++	csel	x12,xzr,x12,lo			//is it time to zero x12?
++
++	pmull	v5.1q,v21.1d,v17.1d
++	eor	v18.16b,v18.16b,v3.16b		//Karatsuba pre-processing
++	pmull2	v2.1q,v22.2d,v3.2d		//H^2.hi*Xi.hi
++	eor	v0.16b,v0.16b,v4.16b		//accumulate
++	pmull2	v1.1q,v21.2d,v18.2d		//(H^2.lo+H^2.hi)*(Xi.lo+Xi.hi)
++	ld1	{v16.2d},[x2],x12	//load [rotated] I[i+2]
++
++	eor	v2.16b,v2.16b,v6.16b
++	csel	x12,xzr,x12,eq			//is it time to zero x12?
++	eor	v1.16b,v1.16b,v5.16b
++
++	ext	v17.16b,v0.16b,v2.16b,#8		//Karatsuba post-processing
++	eor	v18.16b,v0.16b,v2.16b
++	eor	v1.16b,v1.16b,v17.16b
++	ld1	{v17.2d},[x2],x12	//load [rotated] I[i+3]
++#ifndef __AARCH64EB__
++	rev64	v16.16b,v16.16b
++#endif
++	eor	v1.16b,v1.16b,v18.16b
++	pmull	v18.1q,v0.1d,v19.1d		//1st phase of reduction
++
++#ifndef __AARCH64EB__
++	rev64	v17.16b,v17.16b
++#endif
++	ins	v2.d[0],v1.d[1]
++	ins	v1.d[1],v0.d[0]
++	ext	v7.16b,v17.16b,v17.16b,#8
++	ext	v3.16b,v16.16b,v16.16b,#8
++	eor	v0.16b,v1.16b,v18.16b
++	pmull	v4.1q,v20.1d,v7.1d		//H*Ii+1
++	eor	v3.16b,v3.16b,v2.16b		//accumulate v3.16b early
++
++	ext	v18.16b,v0.16b,v0.16b,#8		//2nd phase of reduction
++	pmull	v0.1q,v0.1d,v19.1d
++	eor	v3.16b,v3.16b,v18.16b
++	eor	v17.16b,v17.16b,v7.16b		//Karatsuba pre-processing
++	eor	v3.16b,v3.16b,v0.16b
++	pmull2	v6.1q,v20.2d,v7.2d
++	b.hs	.Loop_mod2x_v8		//there was at least 32 more bytes
++
++	eor	v2.16b,v2.16b,v18.16b
++	ext	v3.16b,v16.16b,v16.16b,#8		//re-construct v3.16b
++	adds	x3,x3,#32		//re-construct x3
++	eor	v0.16b,v0.16b,v2.16b		//re-construct v0.16b
++	b.eq	.Ldone_v8		//is x3 zero?
++.Lodd_tail_v8:
++	ext	v18.16b,v0.16b,v0.16b,#8
++	eor	v3.16b,v3.16b,v0.16b		//inp^=Xi
++	eor	v17.16b,v16.16b,v18.16b		//v17.16b is rotated inp^Xi
++
++	pmull	v0.1q,v20.1d,v3.1d		//H.lo*Xi.lo
++	eor	v17.16b,v17.16b,v3.16b		//Karatsuba pre-processing
++	pmull2	v2.1q,v20.2d,v3.2d		//H.hi*Xi.hi
++	pmull	v1.1q,v21.1d,v17.1d		//(H.lo+H.hi)*(Xi.lo+Xi.hi)
++
++	ext	v17.16b,v0.16b,v2.16b,#8		//Karatsuba post-processing
++	eor	v18.16b,v0.16b,v2.16b
++	eor	v1.16b,v1.16b,v17.16b
++	eor	v1.16b,v1.16b,v18.16b
++	pmull	v18.1q,v0.1d,v19.1d		//1st phase of reduction
++
++	ins	v2.d[0],v1.d[1]
++	ins	v1.d[1],v0.d[0]
++	eor	v0.16b,v1.16b,v18.16b
++
++	ext	v18.16b,v0.16b,v0.16b,#8		//2nd phase of reduction
++	pmull	v0.1q,v0.1d,v19.1d
++	eor	v18.16b,v18.16b,v2.16b
++	eor	v0.16b,v0.16b,v18.16b
++
++.Ldone_v8:
++#ifndef __AARCH64EB__
++	rev64	v0.16b,v0.16b
++#endif
++	ext	v0.16b,v0.16b,v0.16b,#8
++	st1	{v0.2d},[x0]		//write out Xi
++
++	ret
++.size	zfs_gcm_ghash_v8,.-zfs_gcm_ghash_v8
++.type	zfs_gcm_ghash_v8_4x,%function
++.align	4
++zfs_gcm_ghash_v8_4x:
++.Lzfs_gcm_ghash_v8_4x:
++	ld1	{v0.2d},[x0]		//load [rotated] Xi
++	ld1	{v20.2d,v21.2d,v22.2d},[x1],#48	//load twisted H, ..., H^2
++	movi	v19.16b,#0xe1
++	ld1	{v26.2d,v27.2d,v28.2d},[x1]	//load twisted H^3, ..., H^4
++	shl	v19.2d,v19.2d,#57		//compose 0xc2.0 constant
++
++	ld1	{v4.2d,v5.2d,v6.2d,v7.2d},[x2],#64
++#ifndef __AARCH64EB__
++	rev64	v0.16b,v0.16b
++	rev64	v5.16b,v5.16b
++	rev64	v6.16b,v6.16b
++	rev64	v7.16b,v7.16b
++	rev64	v4.16b,v4.16b
++#endif
++	ext	v25.16b,v7.16b,v7.16b,#8
++	ext	v24.16b,v6.16b,v6.16b,#8
++	ext	v23.16b,v5.16b,v5.16b,#8
++
++	pmull	v29.1q,v20.1d,v25.1d		//H*Ii+3
++	eor	v7.16b,v7.16b,v25.16b
++	pmull2	v31.1q,v20.2d,v25.2d
++	pmull	v30.1q,v21.1d,v7.1d
++
++	pmull	v16.1q,v22.1d,v24.1d		//H^2*Ii+2
++	eor	v6.16b,v6.16b,v24.16b
++	pmull2	v24.1q,v22.2d,v24.2d
++	pmull2	v6.1q,v21.2d,v6.2d
++
++	eor	v29.16b,v29.16b,v16.16b
++	eor	v31.16b,v31.16b,v24.16b
++	eor	v30.16b,v30.16b,v6.16b
++
++	pmull	v7.1q,v26.1d,v23.1d		//H^3*Ii+1
++	eor	v5.16b,v5.16b,v23.16b
++	pmull2	v23.1q,v26.2d,v23.2d
++	pmull	v5.1q,v27.1d,v5.1d
++
++	eor	v29.16b,v29.16b,v7.16b
++	eor	v31.16b,v31.16b,v23.16b
++	eor	v30.16b,v30.16b,v5.16b
++
++	subs	x3,x3,#128
++	b.lo	.Ltail4x
++
++	b	.Loop4x
++
++.align	4
++.Loop4x:
++	eor	v16.16b,v4.16b,v0.16b
++	ld1	{v4.2d,v5.2d,v6.2d,v7.2d},[x2],#64
++	ext	v3.16b,v16.16b,v16.16b,#8
++#ifndef __AARCH64EB__
++	rev64	v5.16b,v5.16b
++	rev64	v6.16b,v6.16b
++	rev64	v7.16b,v7.16b
++	rev64	v4.16b,v4.16b
++#endif
++
++	pmull	v0.1q,v28.1d,v3.1d		//H^4*(Xi+Ii)
++	eor	v16.16b,v16.16b,v3.16b
++	pmull2	v2.1q,v28.2d,v3.2d
++	ext	v25.16b,v7.16b,v7.16b,#8
++	pmull2	v1.1q,v27.2d,v16.2d
++
++	eor	v0.16b,v0.16b,v29.16b
++	eor	v2.16b,v2.16b,v31.16b
++	ext	v24.16b,v6.16b,v6.16b,#8
++	eor	v1.16b,v1.16b,v30.16b
++	ext	v23.16b,v5.16b,v5.16b,#8
++
++	ext	v17.16b,v0.16b,v2.16b,#8		//Karatsuba post-processing
++	eor	v18.16b,v0.16b,v2.16b
++	pmull	v29.1q,v20.1d,v25.1d		//H*Ii+3
++	eor	v7.16b,v7.16b,v25.16b
++	eor	v1.16b,v1.16b,v17.16b
++	pmull2	v31.1q,v20.2d,v25.2d
++	eor	v1.16b,v1.16b,v18.16b
++	pmull	v30.1q,v21.1d,v7.1d
++
++	pmull	v18.1q,v0.1d,v19.1d		//1st phase of reduction
++	ins	v2.d[0],v1.d[1]
++	ins	v1.d[1],v0.d[0]
++	pmull	v16.1q,v22.1d,v24.1d		//H^2*Ii+2
++	eor	v6.16b,v6.16b,v24.16b
++	pmull2	v24.1q,v22.2d,v24.2d
++	eor	v0.16b,v1.16b,v18.16b
++	pmull2	v6.1q,v21.2d,v6.2d
++
++	eor	v29.16b,v29.16b,v16.16b
++	eor	v31.16b,v31.16b,v24.16b
++	eor	v30.16b,v30.16b,v6.16b
++
++	ext	v18.16b,v0.16b,v0.16b,#8		//2nd phase of reduction
++	pmull	v0.1q,v0.1d,v19.1d
++	pmull	v7.1q,v26.1d,v23.1d		//H^3*Ii+1
++	eor	v5.16b,v5.16b,v23.16b
++	eor	v18.16b,v18.16b,v2.16b
++	pmull2	v23.1q,v26.2d,v23.2d
++	pmull	v5.1q,v27.1d,v5.1d
++
++	eor	v0.16b,v0.16b,v18.16b
++	eor	v29.16b,v29.16b,v7.16b
++	eor	v31.16b,v31.16b,v23.16b
++	ext	v0.16b,v0.16b,v0.16b,#8
++	eor	v30.16b,v30.16b,v5.16b
++
++	subs	x3,x3,#64
++	b.hs	.Loop4x
++
++.Ltail4x:
++	eor	v16.16b,v4.16b,v0.16b
++	ext	v3.16b,v16.16b,v16.16b,#8
++
++	pmull	v0.1q,v28.1d,v3.1d		//H^4*(Xi+Ii)
++	eor	v16.16b,v16.16b,v3.16b
++	pmull2	v2.1q,v28.2d,v3.2d
++	pmull2	v1.1q,v27.2d,v16.2d
++
++	eor	v0.16b,v0.16b,v29.16b
++	eor	v2.16b,v2.16b,v31.16b
++	eor	v1.16b,v1.16b,v30.16b
++
++	adds	x3,x3,#64
++	b.eq	.Ldone4x
++
++	cmp	x3,#32
++	b.lo	.Lone
++	b.eq	.Ltwo
++.Lthree:
++	ext	v17.16b,v0.16b,v2.16b,#8		//Karatsuba post-processing
++	eor	v18.16b,v0.16b,v2.16b
++	eor	v1.16b,v1.16b,v17.16b
++	ld1	{v4.2d,v5.2d,v6.2d},[x2]
++	eor	v1.16b,v1.16b,v18.16b
++#ifndef	__AARCH64EB__
++	rev64	v5.16b,v5.16b
++	rev64	v6.16b,v6.16b
++	rev64	v4.16b,v4.16b
++#endif
++
++	pmull	v18.1q,v0.1d,v19.1d		//1st phase of reduction
++	ins	v2.d[0],v1.d[1]
++	ins	v1.d[1],v0.d[0]
++	ext	v24.16b,v6.16b,v6.16b,#8
++	ext	v23.16b,v5.16b,v5.16b,#8
++	eor	v0.16b,v1.16b,v18.16b
++
++	pmull	v29.1q,v20.1d,v24.1d		//H*Ii+2
++	eor	v6.16b,v6.16b,v24.16b
++
++	ext	v18.16b,v0.16b,v0.16b,#8		//2nd phase of reduction
++	pmull	v0.1q,v0.1d,v19.1d
++	eor	v18.16b,v18.16b,v2.16b
++	pmull2	v31.1q,v20.2d,v24.2d
++	pmull	v30.1q,v21.1d,v6.1d
++	eor	v0.16b,v0.16b,v18.16b
++	pmull	v7.1q,v22.1d,v23.1d		//H^2*Ii+1
++	eor	v5.16b,v5.16b,v23.16b
++	ext	v0.16b,v0.16b,v0.16b,#8
++
++	pmull2	v23.1q,v22.2d,v23.2d
++	eor	v16.16b,v4.16b,v0.16b
++	pmull2	v5.1q,v21.2d,v5.2d
++	ext	v3.16b,v16.16b,v16.16b,#8
++
++	eor	v29.16b,v29.16b,v7.16b
++	eor	v31.16b,v31.16b,v23.16b
++	eor	v30.16b,v30.16b,v5.16b
++
++	pmull	v0.1q,v26.1d,v3.1d		//H^3*(Xi+Ii)
++	eor	v16.16b,v16.16b,v3.16b
++	pmull2	v2.1q,v26.2d,v3.2d
++	pmull	v1.1q,v27.1d,v16.1d
++
++	eor	v0.16b,v0.16b,v29.16b
++	eor	v2.16b,v2.16b,v31.16b
++	eor	v1.16b,v1.16b,v30.16b
++	b	.Ldone4x
++
++.align	4
++.Ltwo:
++	ext	v17.16b,v0.16b,v2.16b,#8		//Karatsuba post-processing
++	eor	v18.16b,v0.16b,v2.16b
++	eor	v1.16b,v1.16b,v17.16b
++	ld1	{v4.2d,v5.2d},[x2]
++	eor	v1.16b,v1.16b,v18.16b
++#ifndef	__AARCH64EB__
++	rev64	v5.16b,v5.16b
++	rev64	v4.16b,v4.16b
++#endif
++
++	pmull	v18.1q,v0.1d,v19.1d		//1st phase of reduction
++	ins	v2.d[0],v1.d[1]
++	ins	v1.d[1],v0.d[0]
++	ext	v23.16b,v5.16b,v5.16b,#8
++	eor	v0.16b,v1.16b,v18.16b
++
++	ext	v18.16b,v0.16b,v0.16b,#8		//2nd phase of reduction
++	pmull	v0.1q,v0.1d,v19.1d
++	eor	v18.16b,v18.16b,v2.16b
++	eor	v0.16b,v0.16b,v18.16b
++	ext	v0.16b,v0.16b,v0.16b,#8
++
++	pmull	v29.1q,v20.1d,v23.1d		//H*Ii+1
++	eor	v5.16b,v5.16b,v23.16b
++
++	eor	v16.16b,v4.16b,v0.16b
++	ext	v3.16b,v16.16b,v16.16b,#8
++
++	pmull2	v31.1q,v20.2d,v23.2d
++	pmull	v30.1q,v21.1d,v5.1d
++
++	pmull	v0.1q,v22.1d,v3.1d		//H^2*(Xi+Ii)
++	eor	v16.16b,v16.16b,v3.16b
++	pmull2	v2.1q,v22.2d,v3.2d
++	pmull2	v1.1q,v21.2d,v16.2d
++
++	eor	v0.16b,v0.16b,v29.16b
++	eor	v2.16b,v2.16b,v31.16b
++	eor	v1.16b,v1.16b,v30.16b
++	b	.Ldone4x
++
++.align	4
++.Lone:
++	ext	v17.16b,v0.16b,v2.16b,#8		//Karatsuba post-processing
++	eor	v18.16b,v0.16b,v2.16b
++	eor	v1.16b,v1.16b,v17.16b
++	ld1	{v4.2d},[x2]
++	eor	v1.16b,v1.16b,v18.16b
++#ifndef	__AARCH64EB__
++	rev64	v4.16b,v4.16b
++#endif
++
++	pmull	v18.1q,v0.1d,v19.1d		//1st phase of reduction
++	ins	v2.d[0],v1.d[1]
++	ins	v1.d[1],v0.d[0]
++	eor	v0.16b,v1.16b,v18.16b
++
++	ext	v18.16b,v0.16b,v0.16b,#8		//2nd phase of reduction
++	pmull	v0.1q,v0.1d,v19.1d
++	eor	v18.16b,v18.16b,v2.16b
++	eor	v0.16b,v0.16b,v18.16b
++	ext	v0.16b,v0.16b,v0.16b,#8
++
++	eor	v16.16b,v4.16b,v0.16b
++	ext	v3.16b,v16.16b,v16.16b,#8
++
++	pmull	v0.1q,v20.1d,v3.1d
++	eor	v16.16b,v16.16b,v3.16b
++	pmull2	v2.1q,v20.2d,v3.2d
++	pmull	v1.1q,v21.1d,v16.1d
++
++.Ldone4x:
++	ext	v17.16b,v0.16b,v2.16b,#8		//Karatsuba post-processing
++	eor	v18.16b,v0.16b,v2.16b
++	eor	v1.16b,v1.16b,v17.16b
++	eor	v1.16b,v1.16b,v18.16b
++
++	pmull	v18.1q,v0.1d,v19.1d		//1st phase of reduction
++	ins	v2.d[0],v1.d[1]
++	ins	v1.d[1],v0.d[0]
++	eor	v0.16b,v1.16b,v18.16b
++
++	ext	v18.16b,v0.16b,v0.16b,#8		//2nd phase of reduction
++	pmull	v0.1q,v0.1d,v19.1d
++	eor	v18.16b,v18.16b,v2.16b
++	eor	v0.16b,v0.16b,v18.16b
++	ext	v0.16b,v0.16b,v0.16b,#8
++
++#ifndef __AARCH64EB__
++	rev64	v0.16b,v0.16b
++#endif
++	st1	{v0.2d},[x0]		//write out Xi
++
++	ret
++.size	zfs_gcm_ghash_v8_4x,.-zfs_gcm_ghash_v8_4x
 +#endif /* __aarch64__ */
 diff --git a/module/icp/include/aes/aes_impl.h b/module/icp/include/aes/aes_impl.h
-index 17cbbac..70bc870 100644
+index 17cbbac..9bc5fc1 100644
 --- a/module/icp/include/aes/aes_impl.h
 +++ b/module/icp/include/aes/aes_impl.h
-@@ -196,6 +196,9 @@ extern ASMABI void aes_encrypt_amd64(const uint32_t rk[], int Nr,
+@@ -196,6 +196,21 @@ extern ASMABI void aes_encrypt_amd64(const uint32_t rk[], int Nr,
  extern ASMABI void aes_decrypt_amd64(const uint32_t rk[], int Nr,
  	const uint32_t ct[4], uint32_t pt[4]);
  #endif
 +#if defined(__aarch64__)
 +extern const aes_impl_ops_t aes_armv8_impl;
++
++/* multi-block helpers for the GCM/CCM loops, see aes_impl_armv8.c */
++extern void aes_armv8_ctr_blocks(const aes_key_t *key, const uint8_t *iv,
++    const uint8_t *in, uint8_t *out, size_t nblocks);
++extern void aes_armv8_gcm_encrypt_blocks(const aes_key_t *key,
++    const uint8_t *iv, uint8_t *ghash, const uint8_t *h, const uint8_t *in,
++    uint8_t *out, size_t nblocks);
++extern void aes_armv8_gcm_decrypt_blocks(const aes_key_t *key,
++    const uint8_t *iv, uint8_t *ghash, const uint8_t *h, uint8_t *data,
++    size_t nblocks);
++extern void aes_armv8_cbcmac_blocks(const aes_key_t *key, uint8_t *mac,
++    const uint8_t *in, size_t nblocks);
 +#endif
  #if defined(__x86_64) && defined(HAVE_AES)
  extern const aes_impl_ops_t aes_aesni_impl;
@@ -1036,10 +2300,10 @@ index 238a4e2..94046cf 100644
   * Initializes fastest implementation
 diff --git a/module/icp/include/modes/simd_bulk.h b/module/icp/include/modes/simd_bulk.h
 new file mode 100644
-index 0000000..dfd9210
+index 0000000..c114973
 --- /dev/null
 +++ b/module/icp/include/modes/simd_bulk.h
-@@ -0,0 +1,51 @@
+@@ -0,0 +1,91 @@
 +// SPDX-License-Identifier: CDDL-1.0 OR GPL-2.0-or-later
 +/*
 + * Copyright (C) 2026 Awto / Daniel Tyrrell
@@ -1056,6 +2320,7 @@ index 0000000..dfd9210
 +#include <sys/simd.h>
 +#include <aes/aes_impl.h>
 +#include <modes/gcm_impl.h>
++#include <sys/crypto/common.h>
 +
 +#if defined(__aarch64__)
 +
@@ -1068,6 +2333,42 @@ index 0000000..dfd9210
 +	return (kfpu_allowed() &&
 +	    (((const aes_key_t *)keysched)->ops == &aes_armv8_impl ||
 +	    (gops != NULL && gops == &gcm_pmull_impl)));
++}
++
++/* bytes left in the output iovec the crypto_get_ptrs() cursor is in */
++static inline size_t
++icp_out_contig(crypto_data_t *out, void *iov_or_mp, offset_t offset)
++{
++	if (out->cd_format == CRYPTO_DATA_RAW) {
++		return (out->cd_raw.iov_len > (size_t)offset ?
++		    out->cd_raw.iov_len - offset : 0);
++	} else {
++		void *base;
++		uint64_t len;
++		uint_t idx = (uint_t)(uintptr_t)iov_or_mp;
++
++		if (idx >= zfs_uio_iovcnt(out->cd_uio))
++			return (0);
++		zfs_uio_iov_at_index(out->cd_uio, idx, &base, &len);
++		return (len > (uint64_t)offset ? len - offset : 0);
++	}
++}
++
++/* fused asm multi-block helpers usable: CE AES (+ PMULL for GCM) */
++#define	ICP_FUSED_MIN_BLOCKS	4
++
++static inline boolean_t
++icp_fused_gcm(const void *keysched)
++{
++	return (kfpu_allowed() && zfs_pmull_available() &&
++	    ((const aes_key_t *)keysched)->ops == &aes_armv8_impl);
++}
++
++static inline boolean_t
++icp_fused_ccm(const void *keysched)
++{
++	return (kfpu_allowed() &&
++	    ((const aes_key_t *)keysched)->ops == &aes_armv8_impl);
 +}
 +
 +#define	icp_bulk_begin(on)	do { if (on) kfpu_begin(); } while (0)
@@ -1084,6 +2385,9 @@ index 0000000..dfd9210
 +#else
 +
 +#define	icp_bulk_simd(keysched, gops)	(B_FALSE)
++#define	icp_fused_gcm(keysched)	(B_FALSE)
++#define	icp_fused_ccm(keysched)	(B_FALSE)
++#define	icp_out_contig(out, iov, off)	(0)
 +#define	icp_bulk_begin(on)	do { (void) (on); } while (0)
 +#define	icp_bulk_end(on)	do { (void) (on); } while (0)
 +#define	icp_bulk_tick(on, done)	do { (void) (on); } while (0)
