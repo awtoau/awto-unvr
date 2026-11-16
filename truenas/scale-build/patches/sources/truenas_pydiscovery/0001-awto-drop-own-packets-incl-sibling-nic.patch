@@ -1,0 +1,114 @@
+From: awto <noreply@awto.au>
+Subject: [PATCH] Drop our own mDNS/NBNS packets, incl. a sibling NIC on the same subnet (awto-unvr #367)
+
+- Two NICs on one segment hear each other's probes with different A/AAAA rdata and read it as a peer name conflict.
+- Each rename retry costs ~7 s; 20 renames = ~3 min, and a reload waits for startup to finish.
+- Local-source check generalises the existing single-IP echo check (avahi does the same).
+---
+diff --git a/src/truenas_pydiscovery_utils/local_addr.py b/src/truenas_pydiscovery_utils/local_addr.py
+new file mode 100644
+index 0000000..2b8b384
+--- /dev/null
++++ b/src/truenas_pydiscovery_utils/local_addr.py
+@@ -0,0 +1,24 @@
++"""True if an address belongs to this host (any interface)."""
++from __future__ import annotations
++
++import socket
++
++
++def is_local_address(addr: tuple) -> bool:
++    """*addr* is a ``recvfrom`` source tuple (v4: ip, port; v6: ip, port, flow, scope).
++
++    A socket can only bind a non-wildcard address the host owns, so a
++    successful bind(ip, 0) means the packet came from this host - e.g. a
++    sibling NIC on the same subnet echoing our own multicast.
++    """
++    ip = addr[0]
++    try:
++        if ":" in ip:
++            family, target = socket.AF_INET6, (ip.split("%")[0], 0, 0, addr[3] if len(addr) > 3 else 0)
++        else:
++            family, target = socket.AF_INET, (ip, 0)
++        with socket.socket(family, socket.SOCK_DGRAM) as s:
++            s.bind(target)
++        return True
++    except (OSError, ValueError):
++        return False
+diff --git a/src/truenas_pymdns/server/net/transport.py b/src/truenas_pymdns/server/net/transport.py
+index a60b02e..df63560 100644
+--- a/src/truenas_pymdns/server/net/transport.py
++++ b/src/truenas_pymdns/server/net/transport.py
+@@ -16,6 +16,7 @@ from truenas_pymdns.protocol.constants import (
+     MDNS_TTL,
+ )
+ from truenas_pymdns.protocol.message import MDNSMessage
++from truenas_pydiscovery_utils.local_addr import is_local_address
+ from .multicast import (
+     IP_RECVTTL,
+     create_v4_socket,
+@@ -197,6 +198,11 @@ class MDNSTransport:
+         except (OSError, BlockingIOError):
+             return
+ 
++        # Drop our own packets, incl. a sibling NIC's on the same segment: they
++        # carry different A/AAAA rdata and read as a peer name conflict.
++        if addr[1] == MDNS_PORT and is_local_address(addr):
++            return
++
+         try:
+             message = MDNSMessage.from_wire(data)
+         except (ValueError, IndexError) as e:
+diff --git a/src/truenas_pynetbiosns/server/net/global_receiver.py b/src/truenas_pynetbiosns/server/net/global_receiver.py
+index f1b9500..5bea96d 100644
+--- a/src/truenas_pynetbiosns/server/net/global_receiver.py
++++ b/src/truenas_pynetbiosns/server/net/global_receiver.py
+@@ -39,6 +39,7 @@ from truenas_pynetbiosns.protocol.constants import (
+     NBNS_PORT,
+ )
+ from truenas_pynetbiosns.protocol.message import NBNSMessage
++from truenas_pydiscovery_utils.local_addr import is_local_address
+ 
+ from .subnet import NbnsSubnet
+ 
+@@ -207,9 +208,7 @@ class NBNSGlobalReceiver:
+             src_ip = IPv4Address(src_ip_str)
+         except ValueError:
+             return False
+-        return any(
+-            subnet.my_ip == src_ip for subnet in self._subnets
+-        )
++        return is_local_address((src_ip_str, src_port))
+ 
+     # -- Socket creation ----------------------------------------------------
+ 
+diff --git a/src/truenas_pynetbiosns/server/net/transport.py b/src/truenas_pynetbiosns/server/net/transport.py
+index 55a8164..cd27d3a 100644
+--- a/src/truenas_pynetbiosns/server/net/transport.py
++++ b/src/truenas_pynetbiosns/server/net/transport.py
+@@ -31,6 +31,7 @@ from typing import Callable
+ 
+ from truenas_pynetbiosns.protocol.constants import DGRAM_PORT, NBNS_MAX_PACKET_SIZE, NBNS_PORT
+ from truenas_pynetbiosns.protocol.message import NBNSMessage
++from truenas_pydiscovery_utils.local_addr import is_local_address
+ 
+ logger = logging.getLogger(__name__)
+ 
+@@ -264,7 +265,7 @@ class NBNSTransport:
+         # legitimate queries from co-located clients (e.g.
+         # ``nbt-status`` on the same host uses an ephemeral
+         # source port).
+-        if addr[0] == self._ifaddr and addr[1] == NBNS_PORT:
++        if addr[1] == NBNS_PORT and is_local_address(addr):
+             return
+ 
+         try:
+@@ -286,7 +287,7 @@ class NBNSTransport:
+ 
+         # Same (src_ip, src_port) echo check as the NBNS path — see
+         # ``_recv_and_dispatch_nmb`` for rationale.
+-        if addr[0] == self._ifaddr and addr[1] == DGRAM_PORT:
++        if addr[1] == DGRAM_PORT and is_local_address(addr):
+             return
+ 
+         self._dgram_handler(data, addr, self._ifname)
