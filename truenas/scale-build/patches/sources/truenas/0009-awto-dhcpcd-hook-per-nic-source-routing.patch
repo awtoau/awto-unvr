@@ -1,0 +1,37 @@
+From: awto <noreply@awto.au>
+Subject: [PATCH] dhcpcd exit-hook: strict ARP + per-NIC source routing (awto-unvr #363)
+
+- Both al_eth ports sit on one subnet; weak-host replies left the wrong port (bench "eth 1G" ran on the 10G port).
+- Same scheme as scripts/fix-multihome-routing.py (#170), driven by dhcpcd events.
+---
+diff --git a/src/freenas/etc/dhcpcd.exit-hook b/src/freenas/etc/dhcpcd.exit-hook
+index 4e88a70..4fe1855 100644
+--- a/src/freenas/etc/dhcpcd.exit-hook
++++ b/src/freenas/etc/dhcpcd.exit-hook
+@@ -3,3 +3,26 @@ BOUND|BOUND6)
+ 	sleep 3 && midclt call dns.sync &
+ ;;
+ esac
++
++# awto-unvr #363: two NICs on one subnet (weak-host). Strict ARP + one route table and
++# `ip rule from <addr>` per interface, so a reply leaves the port that owns the address.
++# Table id = rule priority = 100 + ifindex. Runs on every dhcpcd event, so a lease change or link flap re-applies it.
++if [ -n "$interface" ] && [ -r "/sys/class/net/$interface/ifindex" ]; then
++	mh_table=$((100 + $(cat "/sys/class/net/$interface/ifindex")))
++	case "$reason" in
++	BOUND|RENEW|REBIND|REBOOT)
++		if [ -n "$new_ip_address" ] && [ -n "$new_network_number" ] && [ -n "$new_subnet_cidr" ]; then
++			sysctl -qw net.ipv4.conf.all.arp_ignore=1 net.ipv4.conf.all.arp_announce=2
++			ip rule del priority "$mh_table" 2>/dev/null
++			ip route flush table "$mh_table" 2>/dev/null
++			ip route add "$new_network_number/$new_subnet_cidr" dev "$interface" src "$new_ip_address" table "$mh_table"
++			[ -n "$new_routers" ] && ip route add default via "${new_routers%% *}" dev "$interface" table "$mh_table"
++			ip rule add from "$new_ip_address" lookup "$mh_table" priority "$mh_table"
++		fi
++	;;
++	EXPIRE|STOP|STOPPED|RELEASE|NOCARRIER|FAIL)
++		ip rule del priority "$mh_table" 2>/dev/null
++		ip route flush table "$mh_table" 2>/dev/null
++	;;
++	esac
++fi
