@@ -329,7 +329,9 @@ def box(*cmd: str, check: bool = True) -> str:
 def step_sysdataset() -> None:
     """#366: a reinstall rotates the pwenc secret, so the pool's pwenc-encrypted truesearchd dataset
     never unlocks again (EACCES every boot). It is index-only: destroy it, middleware recreates it."""
-    ks = box("zfs", "get", "-H", "-o", "value", "keystatus", TRUESEARCHD_DS, check=False)
+    ks = box(
+        "zfs", "get", "-H", "-o", "value", "keystatus", TRUESEARCHD_DS, check=False
+    )
     if ks != "unavailable":
         log(f"{TRUESEARCHD_DS}: keystatus {ks or 'absent'}, ok")
         return
@@ -337,8 +339,12 @@ def step_sysdataset() -> None:
     if DRY:
         return
     box("zfs", "destroy", "-r", TRUESEARCHD_DS)
-    box("midclt", "call", "systemdataset.setup")  # private method: reachable via local midclt only
-    ks = box("zfs", "get", "-H", "-o", "value", "keystatus", TRUESEARCHD_DS, check=False)
+    box(
+        "midclt", "call", "systemdataset.setup"
+    )  # private method: reachable via local midclt only
+    ks = box(
+        "zfs", "get", "-H", "-o", "value", "keystatus", TRUESEARCHD_DS, check=False
+    )
     if ks != "available":
         raise RuntimeError(f"{TRUESEARCHD_DS} recreated with keystatus {ks!r}")
 
@@ -654,7 +660,9 @@ def cmd_verify() -> int:
             bool(r) and r[0]["state"] == "RUNNING" and r[0]["enable"],
             f"{svc} enabled but {r[0]['state']}" if r and r[0]["enable"] else "",
         )
-    ks = box("zfs", "get", "-H", "-o", "value", "keystatus", TRUESEARCHD_DS, check=False)
+    ks = box(
+        "zfs", "get", "-H", "-o", "value", "keystatus", TRUESEARCHD_DS, check=False
+    )
     check(f"{TRUESEARCHD_DS} unlocked", ks == "available", ks)
     check(
         "snapshot tasks",
