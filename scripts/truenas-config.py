@@ -310,6 +310,39 @@ def step_pool() -> None:
     mc("pool.import_pool", {"guid": match[0]["guid"]}, job=True)
 
 
+TRUESEARCHD_DS = f"{POOL}/.system/truesearchd"
+
+
+def box(*cmd: str, check: bool = True) -> str:
+    """Run a command on the box over ssh (for what the public API does not expose)."""
+    r = subprocess.run(
+        _box.ssh_argv(_box.require(), cmd=list(cmd), batch=True),
+        capture_output=True,
+        text=True,
+        timeout=60,  # zfs get/destroy + midclt setup: a few s on the A57; 60 s = backstop
+    )
+    if check and r.returncode:
+        raise RuntimeError(f"box {' '.join(cmd)}: {r.stderr.strip()[:300]}")
+    return r.stdout.strip()
+
+
+def step_sysdataset() -> None:
+    """#366: a reinstall rotates the pwenc secret, so the pool's pwenc-encrypted truesearchd dataset
+    never unlocks again (EACCES every boot). It is index-only: destroy it, middleware recreates it."""
+    ks = box("zfs", "get", "-H", "-o", "value", "keystatus", TRUESEARCHD_DS, check=False)
+    if ks != "unavailable":
+        log(f"{TRUESEARCHD_DS}: keystatus {ks or 'absent'}, ok")
+        return
+    log(f"{TRUESEARCHD_DS}: key unavailable (stale pwenc), destroy + recreate")
+    if DRY:
+        return
+    box("zfs", "destroy", "-r", TRUESEARCHD_DS)
+    box("midclt", "call", "systemdataset.setup")  # private method: reachable via local midclt only
+    ks = box("zfs", "get", "-H", "-o", "value", "keystatus", TRUESEARCHD_DS, check=False)
+    if ks != "available":
+        raise RuntimeError(f"{TRUESEARCHD_DS} recreated with keystatus {ks!r}")
+
+
 def home_row() -> dict | None:
     rows = q("pool.dataset.query", [["name", "=", DATASET]])
     return rows[0] if rows else None
@@ -524,6 +557,7 @@ def step_snapshots() -> None:
 
 STEPS = [
     step_pool,
+    step_sysdataset,
     step_dataset,
     step_unlock,
     step_user,
@@ -618,7 +652,10 @@ def cmd_verify() -> int:
         check(
             f"service {svc} running+enabled",
             bool(r) and r[0]["state"] == "RUNNING" and r[0]["enable"],
+            f"{svc} enabled but {r[0]['state']}" if r and r[0]["enable"] else "",
         )
+    ks = box("zfs", "get", "-H", "-o", "value", "keystatus", TRUESEARCHD_DS, check=False)
+    check(f"{TRUESEARCHD_DS} unlocked", ks == "available", ks)
     check(
         "snapshot tasks",
         len(q("pool.snapshottask.query", [["dataset", "=", DATASET]]))
