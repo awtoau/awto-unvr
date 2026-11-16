@@ -54,3 +54,11 @@ Our self-built arm64 image (`./dev.py truenas-build update`, scale-build `tmp/re
 - `pool.dataset.lock` only works for passphrase datasets; to simulate a reinstall: stop cifs/nfs/webshare, `zfs unmount` + `zfs unload-key tank/home`, delete the `storage.encrypteddataset` row (`datastore.delete`), run `apply`.
 - Migration of an existing plain dataset (done 2026-11-16): `zfs snapshot -r`, `./dev.py home-manifest dump` (sha256/owner/mode/ACL/xattr), `./dev.py home-key-put put`, `zfs send -R | zfs recv -u -o encryption=aes-256-gcm -o keyformat=hex -o keylocation=file:///root/home.key tank/home-enc`, manifest diff, rename swap, `keylocation=prompt`, `home-key-put shred`.
 - The pre-migration dataset is kept as `tank/home-plain-<ts>` (readonly, `canmount=noauto`, not shared) until Dan decides to delete it.
+
+## Boot-time fixes carried as patches (#363, #367, #369)
+
+- `patches/sources/truenas_pydiscovery`: drop our own mDNS/NBNS packets incl. a sibling NIC's (two NICs on one subnet read each other as a name conflict; 20 renames blocked the discovery reload cifs waits on, smbd left stopped) (#367).
+- `patches/sources/truenas/0008`: `dhparam_setup` writes fixed RFC 7919 ffdhe2048 (`openssl dhparam 2048` = ~6 min on the A57) (#369).
+- `patches/sources/truenas/0009`: `/etc/dhcpcd.exit-hook` sets strict ARP + per-NIC table (100+ifindex) and `ip rule from <addr>` on each lease event (#363).
+- Package names for `truenas-build packages --only`: `middlewared`, `truenas_files` (the `truenas` name builds only the meta package).
+- `truenas-config apply` destroys a `tank/.system/truesearchd` whose key is unavailable (stale pwenc after reinstall) and recreates it (#366); `verify` waits for the boot-time `directoryservices.setup` restart to settle.
