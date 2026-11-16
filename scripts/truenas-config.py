@@ -644,8 +644,41 @@ def webshare_shares(ip: str, pw: str) -> list[str]:
         return []
 
 
+# Boot settle: directoryservices.setup restarts smbd ~1 min after boot (~5 s on this box since #367).
+# Poll 2 s; 2 consecutive settled polls; 60 s cap (>10x the restart). Expiry: verify proceeds and
+# its checks name the stuck state.
+SETTLE_POLL_S, SETTLE_CAP_S = 2, 60
+
+
+def wait_settled() -> None:
+    t0, ok = time.monotonic(), 0
+    while time.monotonic() - t0 < SETTLE_CAP_S:
+        ready = mc("system.ready", write=False)
+        busy = q(
+            "core.get_jobs",
+            [
+                ["method", "=", "directoryservices.setup"],
+                ["state", "in", ["RUNNING", "WAITING"]],
+            ],
+        )
+        cifs = q("service.query", [["service", "=", "cifs"]])
+        ok = (
+            ok + 1
+            if ready and not busy and cifs and cifs[0]["state"] == "RUNNING"
+            else 0
+        )
+        if ok >= 2:
+            log(f"boot settled after {time.monotonic() - t0:.0f}s")
+            return
+        time.sleep(SETTLE_POLL_S)
+    log(
+        f"WARNING boot not settled after {SETTLE_CAP_S}s (ready={ready}, ds_setup_busy={bool(busy)})"
+    )
+
+
 def cmd_verify() -> int:
     ip = _box.require()
+    wait_settled()
     fails: list[str] = []
 
     def check(name: str, ok: bool, detail: str = "") -> None:
