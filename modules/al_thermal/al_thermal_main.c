@@ -37,12 +37,11 @@
 
 /*
  * get_temp wait for a fresh conversion (T_VALID, set per completed conversion).
- *   expected:   not documented for this sensor; armada_thermal.c uses 1 ms /
- *               100 ms (STATUS_POLL_PERIOD_US / _TIMEOUT_US) for its own
+ *   limit:      1.25x worst measured wait, #316 (not a datasheet value)
  *   on expiry:  -EIO, logged
  */
 #define AL_THERMAL_VALID_POLL_US	1000
-#define AL_THERMAL_VALID_TIMEOUT_US	100000
+#define AL_THERMAL_VALID_TIMEOUT_US	42000
 
 /* thermal_hwmon.h is private to drivers/thermal; the symbol is exported. */
 int devm_thermal_add_hwmon_sysfs(struct device *dev,
