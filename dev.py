@@ -1260,6 +1260,15 @@ def cmd_fedora_shares(extra: list[str]) -> int:
 
 
 @command(
+    "mount woomera's NFS + SMB shares on this workstation under /mnt/woomera (Nautilus bookmarks)",
+    args="up|down|status",
+    kind="action",
+)
+def cmd_mount_woomera(extra: list[str]) -> int:
+    return _run_script("scripts/mount-woomera.py", extra)
+
+
+@command(
     "install/shred the tank/home ZFS key (from secrets.yaml) at /root/home.key on woomera "
     "(scripts/home-key-put.py, #370)",
     args="put|shred",
