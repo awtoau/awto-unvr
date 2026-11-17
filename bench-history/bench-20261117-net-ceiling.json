@@ -1,0 +1,39 @@
+{
+  "timestamp": "2026-11-17T14:03:23+11:00",
+  "commit": "db9c83f-dirty",
+  "host": "192.168.25.127",
+  "kernel": "",
+  "checks": [
+    {
+      "name": "net-ceiling 1x host->box",
+      "ok": true,
+      "detail": "9293 Mb/s (1162 MB/s) cpu host 12% box 83%"
+    },
+    {
+      "name": "net-ceiling 1x box->host",
+      "ok": true,
+      "detail": "4660 Mb/s (582 MB/s) cpu host 20% box 22%"
+    },
+    {
+      "name": "net-ceiling 4x host->box",
+      "ok": true,
+      "detail": "9317 Mb/s (1165 MB/s) cpu host 13% box 125%"
+    },
+    {
+      "name": "net-ceiling 4x box->host",
+      "ok": true,
+      "detail": "6574 Mb/s (822 MB/s) cpu host 38% box 43%"
+    }
+  ],
+  "metrics": {
+    "net-ceiling 1x host->box": 1161.6833075592451,
+    "net-ceiling 1x box->host": 582.4849012655637,
+    "net-ceiling 4x host->box": 1164.6799543070706,
+    "net-ceiling 4x box->host": 821.7340053313729
+  },
+  "info": {
+    "net-ceiling": "box enp0s2 192.168.25.127 74:ac:b9:41:a8:12 10000 Mb/s <-> host enp8s0 10000 Mb/s, neigh: 192.168.25.127 dev enp8s0 lladdr 74:ac:b9:41:a8:12 DELAY",
+    "net-ceiling nic-bytes": "host enp8s0 rx +14.9 GB tx +24.9 GB; box enp0s2 rx +24.2 GB tx +14.7 GB"
+  },
+  "all_ok": true
+}
