@@ -28,3 +28,26 @@ def test_hysteresis_holds_until_50():
 
 def test_unreadable_soc_fails_safe():
     assert fand.target_pwm(None, False) == (255, True)
+
+
+def _hwmon(root, n, name, temp, usb=False):
+    d = root / f"hwmon{n}"
+    d.mkdir()
+    (d / "name").write_text(name + "\n")
+    (d / "temp1_input").write_text(f"{temp}\n")
+    dev = root / f"dev{n}" / ("usb1" if usb else "ata1")
+    dev.mkdir(parents=True)
+    (d / "device").symlink_to(dev)
+
+
+def test_drivetemp_reads_internal_drives_only(tmp_path):
+    _hwmon(tmp_path, 0, "adt7475", 1000)
+    _hwmon(tmp_path, 1, "drivetemp", 58000)
+    _hwmon(tmp_path, 2, "drivetemp", 59500)
+    _hwmon(tmp_path, 3, "drivetemp", 30000, usb=True)
+    assert fand.drivetemp_temps(str(tmp_path)) == [58.0, 59.5]
+
+
+def test_drivetemp_absent_returns_empty(tmp_path):
+    _hwmon(tmp_path, 0, "adt7475", 1000)
+    assert fand.drivetemp_temps(str(tmp_path)) == []

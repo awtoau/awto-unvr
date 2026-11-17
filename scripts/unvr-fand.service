@@ -5,6 +5,7 @@ After=multi-user.target
 
 [Service]
 Type=simple
+ExecStartPre=-/usr/sbin/modprobe drivetemp
 ExecStart=/usr/local/bin/unvr-fand.py
 Restart=always
 RestartSec=5

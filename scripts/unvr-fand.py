@@ -2,7 +2,7 @@
 """UNVR (woomera) fan daemon: ADT7475 fans OFF unless the SoC is hot.
 
 - Policy (Dan, 2026-11-17): all fans off; full speed at SoC >= SOC_ON_C, off again at <= SOC_OFF_C.
-- Drive / board temps are logged only, not used for control (drives reach 58-66 C: #361, #373).
+- Drive temps: kernel drivetemp hwmon, smartctl fallback (#373). Drive / board temps are logged only, not used for control (drives reach 58-66 C: #361, #373).
 - Fail SAFE = 255 on an unreadable SoC temp / write failure / SIGTERM.
 - Tach is only logged (fan4 is not populated); control never depends on it.
 - Chip fallback: pwm_use_point2_pwm_at_crit=1 forces full speed at temp*_crit with no daemon.
@@ -20,9 +20,9 @@ from pathlib import Path
 OFF_PWM, MAX_PWM = 0, 255
 SOC_ON_C, SOC_OFF_C = 80, 50  # stock-era thresholds (7674ee4); hysteresis stops hunting
 
-# 10 s: SoC thermal mass is seconds-minutes; 1 smartctl per disk per poll is cheap
+# 10 s: SoC thermal mass is seconds-minutes; drive reads are cheap
 POLL_S = 10
-# smartctl normally returns in <1 s; 8 s under heavy I/O (log only, not control)
+# smartctl fallback (no drivetemp hwmon) normally returns in <1 s; 8 s under heavy I/O (log only, not control)
 SMART_TIMEOUT_S = 8
 TACH_GRACE_POLLS = 3  # 30 s for spin-up before a 0 RPM fan is reported
 TACH_FANS = (1, 2, 3)  # fan4 is not populated on this board
@@ -89,6 +89,22 @@ def sata_disks():
     return out
 
 
+def drivetemp_temps(root="/sys/class/hwmon"):
+    """C per internal drive from kernel drivetemp hwmon; [] if none (-> smartctl)."""
+    out = []
+    for h in sorted(glob.glob(f"{root}/hwmon*")):
+        try:
+            if Path(h, "name").read_text().strip() != "drivetemp":
+                continue
+            if "/usb" in str(Path(h, "device").resolve()):
+                continue
+        except OSError:
+            continue
+        v = read_int(Path(h, "temp1_input"))
+        out.append(None if v is None else v / 1000)
+    return out
+
+
 def drive_temp(dev):
     """C, or None on failure. A drive in standby is cold: floor (-inf -> 0)."""
     try:
@@ -147,7 +163,7 @@ def main():
     while True:
         disks = sata_disks()
         readings = {
-            "drive": [drive_temp(d) for d in disks] or [None],
+            "drive": drivetemp_temps() or [drive_temp(d) for d in disks] or [None],
             "soc": [soc_temp()],
             "board": board_temps(h),
         }
