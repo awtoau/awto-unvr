@@ -10,7 +10,7 @@
   ./dev.py boot-next fedora [--default]     # clear bootonce (or bootdefault)
   ./dev.py boot-next sync-bootcmd           # saved bootcmd := defconfig CONFIG_BOOTCOMMAND
   ./dev.py boot-next deploy-dtb tmp/dtb/unvr-fedora.dtb   # Fedora /boot/unvr.dtb (.prev kept)
-  ./dev.py boot-next stage NAME --uimage F --dtb F --initrd F --bootargs '...'
+  ./dev.py boot-next stage NAME --uimage F --dtb F --initrd F --bootargs '...' [--base DIR]
 
 - A hung profile: power-cycle (./dev.py power-cycle) -> bootonce already cleared -> default.
 - --reboot waits --wait seconds (default 120: Fedora reset -> sshd, worst ~80 s x1.5, #352).
@@ -133,6 +133,11 @@ def main() -> int:
     ap.add_argument("--dtb", type=Path)
     ap.add_argument("--initrd", type=Path)
     ap.add_argument("--bootargs")
+    ap.add_argument(
+        "--base",
+        default=bs.PROFILE_DIR,
+        help="stage: box dir holding profiles (USB p2 mounted: <mnt>/boot/awto, #360)",
+    )
     a = ap.parse_args()
     ip = _box.require()
     try:
@@ -152,6 +157,7 @@ def main() -> int:
                 initrd=a.initrd,
                 bootargs=a.bootargs,
                 log=log,
+                base=a.base,
             )
         else:
             select(ip, a.what, a.default)

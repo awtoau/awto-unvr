@@ -116,9 +116,18 @@ def sha256(b: bytes) -> str:
 
 
 def stage_profile(
-    ip: str, name: str, *, uimage: Path, dtb: Path, initrd: Path, bootargs: str, log
+    ip: str,
+    name: str,
+    *,
+    uimage: Path,
+    dtb: Path,
+    initrd: Path,
+    bootargs: str,
+    log,
+    base: str = PROFILE_DIR,
 ) -> None:
-    """Copy one profile into /boot/awto/<name>/ via a .new dir; sha256-verified; then swap."""
+    """Copy one profile into <base>/<name>/ via a .new dir; sha256-verified; then swap.
+    base = box path of the target's /boot/awto (USB stick p2 mounted: #360)."""
     check_profile_name(name)
     files = {
         "uImage": uimage.read_bytes(),
@@ -144,8 +153,8 @@ def stage_profile(
     log(
         f"stage {name}: uImage '{info['name']}' {len(files['uImage'])} B, initrd {len(files['initrd'])} B"
     )
-    d, new = f"{PROFILE_DIR}/{name}", f"{PROFILE_DIR}/{name}.new"
-    ssh(ip, f"rm -rf {new} && mkdir -p {new}")
+    d, new = f"{base}/{name}", f"{base}/{name}.new"
+    ssh(ip, f"rm -rf {new} && mkdir -p {new}")  # base must already exist
     for f, data in files.items():
         tmp = REPO / "tmp" / "bootsel" / f"{name}-{f}"
         tmp.parent.mkdir(parents=True, exist_ok=True)
