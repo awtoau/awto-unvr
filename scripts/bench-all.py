@@ -1470,23 +1470,26 @@ def bench_btrfs(
     data: str = "incompressible",
     runtime: int = BTRFS_RUNTIME_S,
     buffered: bool = False,
+    mnt: str = BTRFS_MNT,
 ) -> None:
     run = lambda s, t: run_remote(host, password, s, timeout=t)  # noqa: E731
-    label, detail = _btrfs_fs_label(host, password)
+    label, detail = _btrfs_fs_label(host, password, mnt)
     if label is None:
         report.add(
             "btrfs-mirror",
             True,
-            f"SKIP: no btrfs mounted at {BTRFS_MNT} ({detail}); "
+            f"SKIP: no btrfs mounted at {mnt} ({detail}); "
             "make one with --btrfs-config C --btrfs-serials A B --i-accept-wipe",
         )
         return
     # btrfs O_DIRECT never compresses: compression runs need --btrfs-buffered
     direct = 0 if buffered else 1
     tag = f"btrfs {label} {data[:6]}" + (" buf" if buffered else "")
+    if mnt != BTRFS_MNT:
+        tag += f" {mnt.rsplit('/', 1)[-1]}"
     pct = 0 if data == "incompressible" else 100  # 100 = zero-filled, upper bound
     report.info[tag] = detail
-    path = f"{BTRFS_MNT}/fio.dat"
+    path = f"{mnt}/fio.dat"
     try:
         for name, rw, bs, qd, write, rt in BTRFS_JOBS:
             if not write:
@@ -1504,7 +1507,7 @@ def bench_btrfs(
                 report,
             )
             if name == "seq-write-1M":
-                _, df = run(f"btrfs filesystem df -b {BTRFS_MNT} | grep -E '^Data'", 15)
+                _, df = run(f"btrfs filesystem df -b {mnt} | grep -E '^Data'", 15)
                 report.info[tag + " data-df"] = df.strip()
     finally:
         run(f"rm -f {path}; sync", 120)
@@ -3484,7 +3487,13 @@ def run_subtests(
             )
     if args.btrfs_mirror and not args.btrfs_config:
         bench_btrfs(
-            host, pw, report, args.btrfs_data, args.btrfs_runtime, args.btrfs_buffered
+            host,
+            pw,
+            report,
+            args.btrfs_data,
+            args.btrfs_runtime,
+            args.btrfs_buffered,
+            args.btrfs_mnt,
         )
     if args.net_ceiling:
         bench_net_ceiling(host, pw, report)
@@ -3748,6 +3757,11 @@ def main() -> int:
         "--btrfs-mirror",
         action="store_true",
         help=f"fio on the btrfs RAID1 mounted at {BTRFS_MNT} (SKIP if none)",
+    )
+    ap.add_argument(
+        "--btrfs-mnt",
+        default=BTRFS_MNT,
+        help="with --btrfs-mirror: mounted btrfs to bench (e.g. /srv/single)",
     )
     ap.add_argument(
         "--btrfs-config",
