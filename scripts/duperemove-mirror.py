@@ -7,6 +7,7 @@
 - Hashfile on the system SSD, not the data. Output -> tmp/logs/duperemove-mirror.log.
 - Stall guard: no output for STALL_S = kill (host-process rule, awto-dan#53).
 """
+
 import argparse
 import select
 import subprocess
@@ -19,7 +20,9 @@ LOG = REPO / "tmp/logs/duperemove-mirror.log"
 BIN = "/srv/mirror/awto-music-duplicates/.tools/usr/bin/duperemove"
 ROOT = "/srv/mirror/awto-music-duplicates"
 HASHFILE = "/var/tmp/duperemove-mirror.hash"
-STALL_S = 120  # hashing prints progress per file/second; 2x the 60 s default for big files
+STALL_S = (
+    120  # hashing prints progress per file/second; 2x the 60 s default for big files
+)
 
 
 def main() -> int:

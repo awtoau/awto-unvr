@@ -5,6 +5,7 @@
 Sums length*(copies-1) over every "Showing N identical extents of length X" line.
 Lengths are rounded by duperemove -h, so the total is approximate.
 """
+
 import re
 import sys
 from pathlib import Path
