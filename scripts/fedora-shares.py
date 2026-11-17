@@ -42,8 +42,8 @@ SECRETS = Path(os.path.expanduser("~/.config/awto/secrets.yaml"))
 SMB_SECTION = "woomera-fedora-smb"
 EXPORTS_FILE = "/etc/exports.d/awto.exports"
 SHARES = {"mirror": MIRROR_MNT, "single": SINGLE_MNT}  # SMB: data drives only
-# NFS: path -> fsid. Explicit fsids keep file handles stable across fs re-creation order.
-NFS_EXPORTS = {"/": 1, MIRROR_MNT: 2, SINGLE_MNT: 3}
+# NFS: path -> fsid. "/" is fsid=0 = the NFSv4 root (v4 mounts fail ENOENT without one).
+NFS_EXPORTS = {"/": 0, MIRROR_MNT: 2, SINGLE_MNT: 3}
 NFS_OPTS = "rw,sync,no_subtree_check,root_squash"
 DRY = False
 
