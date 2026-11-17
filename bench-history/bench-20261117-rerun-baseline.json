@@ -1,0 +1,226 @@
+{
+  "timestamp": "2026-11-17T15:17:45+11:00",
+  "commit": "77941c1-dirty",
+  "host": "192.168.25.127",
+  "kernel": "7.4.0-rc2-perf-e374a48-dirty+",
+  "checks": [
+    {
+      "name": "health al_eth module",
+      "ok": true,
+      "detail": "vermagic=7.4.0-rc2-perf-e374a48-dirty+ running=7.4.0-rc2-perf-e374a48-dirty+"
+    },
+    {
+      "name": "health link enp0s1",
+      "ok": false,
+      "detail": "speed=-1 carrier=0 oper=down"
+    },
+    {
+      "name": "health link enp0s2",
+      "ok": true,
+      "detail": "speed=10000 carrier=1 oper=up"
+    },
+    {
+      "name": "health adaptive moderation off",
+      "ok": true,
+      "detail": "off on enp0s1, enp0s2"
+    },
+    {
+      "name": "health MAC counters",
+      "ok": false,
+      "detail": "enp0s2 rx_errors 0->18"
+    },
+    {
+      "name": "health queue drop counters",
+      "ok": false,
+      "detail": "enp0s2 rx_dropped 0->17"
+    },
+    {
+      "name": "health kernel log",
+      "ok": true,
+      "detail": "no trouble lines"
+    },
+    {
+      "name": "eth 1G",
+      "ok": false,
+      "detail": "couldn't get IP for enp0s1"
+    },
+    {
+      "name": "eth 1G v6 control udp",
+      "ok": false,
+      "detail": "sender rc=0: SENDERR [Errno 101] Network is unreachable\nSENT ctl=0 hbh=0"
+    },
+    {
+      "name": "eth 10G host->box",
+      "ok": true,
+      "detail": "7.69 Gbits/sec"
+    },
+    {
+      "name": "eth 10G box->host",
+      "ok": true,
+      "detail": "7.19 Gbits/sec"
+    },
+    {
+      "name": "eth 10G v6 control udp",
+      "ok": true,
+      "detail": "100/100 arrived"
+    },
+    {
+      "name": "eth 10G v6 hop-by-hop udp csum",
+      "ok": true,
+      "detail": "100/100 arrived (lost ones failed the checksum)"
+    },
+    {
+      "name": "crypto xts(aes) [xts-aes-ce]",
+      "ok": true,
+      "detail": "534.1 MB/s (32.0MB in 0.06s)"
+    },
+    {
+      "name": "sata sda",
+      "ok": true,
+      "detail": "169.1 MB/sec"
+    },
+    {
+      "name": "sata sdb",
+      "ok": true,
+      "detail": "381.6 MB/sec"
+    },
+    {
+      "name": "sata sdc",
+      "ok": true,
+      "detail": "111.7 MB/sec"
+    },
+    {
+      "name": "sata sdd",
+      "ok": true,
+      "detail": "60.7 MB/sec"
+    },
+    {
+      "name": "usb sde",
+      "ok": true,
+      "detail": "14.4 MB/sec"
+    },
+    {
+      "name": "usb sde link",
+      "ok": true,
+      "detail": "480 Mb/s negotiated"
+    },
+    {
+      "name": "hash crc32c [crc32c-lib] 128k",
+      "ok": true,
+      "detail": "n/a: AF_ALG bind refused ([Errno 2] No such file or directory)"
+    },
+    {
+      "name": "hash crc32c [crc32c-lib] 4k",
+      "ok": true,
+      "detail": "n/a: AF_ALG bind refused ([Errno 2] No such file or directory)"
+    },
+    {
+      "name": "hash xxhash64 [xxhash64-generic] 128k",
+      "ok": true,
+      "detail": "n/a: AF_ALG bind refused ([Errno 2] No such file or directory)"
+    },
+    {
+      "name": "hash xxhash64 [xxhash64-generic] 4k",
+      "ok": true,
+      "detail": "n/a: AF_ALG bind refused ([Errno 2] No such file or directory)"
+    },
+    {
+      "name": "hash sha256 [sha256-lib] 128k",
+      "ok": true,
+      "detail": "674 MB/s (prio 300)"
+    },
+    {
+      "name": "hash sha256 [sha256-lib] 4k",
+      "ok": true,
+      "detail": "340 MB/s (prio 300)"
+    },
+    {
+      "name": "hash blake2b-256 [blake2b-256-lib] 128k",
+      "ok": true,
+      "detail": "n/a: AF_ALG bind refused ([Errno 2] No such file or directory)"
+    },
+    {
+      "name": "hash blake2b-256 [blake2b-256-lib] 4k",
+      "ok": true,
+      "detail": "n/a: AF_ALG bind refused ([Errno 2] No such file or directory)"
+    },
+    {
+      "name": "btrfs-ram crc32c seq-write-1M",
+      "ok": true,
+      "detail": "207.0 MB/s 197 iops clat 35285 us cpu 26%"
+    },
+    {
+      "name": "btrfs-ram crc32c seq-read-1M",
+      "ok": true,
+      "detail": "1478.0 MB/s 1410 iops clat 4926 us cpu 48%"
+    },
+    {
+      "name": "btrfs-ram xxhash seq-write-1M",
+      "ok": true,
+      "detail": "196.1 MB/s 187 iops clat 37239 us cpu 26%"
+    },
+    {
+      "name": "btrfs-ram xxhash seq-read-1M",
+      "ok": true,
+      "detail": "1493.8 MB/s 1425 iops clat 4873 us cpu 42%"
+    },
+    {
+      "name": "btrfs-ram sha256 seq-write-1M",
+      "ok": true,
+      "detail": "169.2 MB/s 161 iops clat 43086 us cpu 26%"
+    },
+    {
+      "name": "btrfs-ram sha256 seq-read-1M",
+      "ok": true,
+      "detail": "1368.2 MB/s 1305 iops clat 5319 us cpu 68%"
+    },
+    {
+      "name": "btrfs-ram blake2b seq-write-1M",
+      "ok": true,
+      "detail": "118.6 MB/s 113 iops clat 61451 us cpu 26%"
+    },
+    {
+      "name": "btrfs-ram blake2b seq-read-1M",
+      "ok": true,
+      "detail": "798.9 MB/s 762 iops clat 9283 us cpu 88%"
+    },
+    {
+      "name": "dma copy+xor",
+      "ok": true,
+      "detail": "copy0 20000 tests 0 fail 67149 iops, xor0 20000 tests 0 fail 63130 iops"
+    },
+    {
+      "name": "dma oversize",
+      "ok": true,
+      "detail": "copy0 300 tests 152 fail 19 iops, xor0 300 tests 263 fail 11 iops"
+    }
+  ],
+  "metrics": {
+    "link enp0s2 speed Mbps": 10000.0,
+    "eth 10G host->box": 7690.0,
+    "eth 10G box->host": 7190.0,
+    "crypto xts(aes) [xts-aes-ce]": 534.0614460049046,
+    "sata sda": 169.14,
+    "sata sdb": 381.63,
+    "sata sdc": 111.71,
+    "sata sdd": 60.7,
+    "usb sde": 14.4,
+    "usb sde link": 480.0,
+    "hash sha256 [sha256-lib] 128k": 673.7870662391575,
+    "hash sha256 [sha256-lib] 4k": 339.7231027097764,
+    "btrfs-ram crc32c seq-write-1M": 207.012536,
+    "btrfs-ram crc32c seq-read-1M": 1478.024119,
+    "btrfs-ram xxhash seq-write-1M": 196.076958,
+    "btrfs-ram xxhash seq-read-1M": 1493.816224,
+    "btrfs-ram sha256 seq-write-1M": 169.155475,
+    "btrfs-ram sha256 seq-read-1M": 1368.203552,
+    "btrfs-ram blake2b seq-write-1M": 118.617194,
+    "btrfs-ram blake2b seq-read-1M": 798.915047,
+    "dma dma0chan0 copy iops": 67148.79,
+    "dma dma0chan0 xor iops": 63130.31
+  },
+  "info": {
+    "kernel": "7.4.0-rc2-perf-e374a48-dirty+"
+  },
+  "all_ok": false
+}

@@ -1,0 +1,52 @@
+{
+  "timestamp": "2026-11-17T15:20:38+11:00",
+  "commit": "77941c1-dirty",
+  "host": "192.168.25.127",
+  "kernel": "",
+  "checks": [
+    {
+      "name": "share-nfs mirror seq-write-1M",
+      "ok": true,
+      "detail": "289.6 MB/s 276 iops clat 14374 us cpu box 30% host 4%"
+    },
+    {
+      "name": "share-nfs mirror seq-read-1M",
+      "ok": true,
+      "detail": "263.1 MB/s 251 iops clat 15899 us cpu box 13% host 8%"
+    },
+    {
+      "name": "share-nfs mirror randread-4k",
+      "ok": true,
+      "detail": "1.9 MB/s 457 iops clat 35016 us cpu box 2% host 6%"
+    },
+    {
+      "name": "share-nfs mirror randwrite-4k",
+      "ok": true,
+      "detail": "72.9 MB/s 17788 iops clat 897 us cpu box 72% host 7%"
+    },
+    {
+      "name": "share-nfs mirror small-create-4k",
+      "ok": true,
+      "detail": "2245 files/s (2.2 s) cpu box 55% host 4%"
+    },
+    {
+      "name": "share-nfs mirror small-read-4k",
+      "ok": true,
+      "detail": "2320 files/s (2.2 s) cpu box 17% host 6%"
+    }
+  ],
+  "metrics": {
+    "share-nfs mirror seq-write-1M": 289.554863,
+    "share-nfs mirror seq-read-1M": 263.139768,
+    "share-nfs mirror randread-4k": 456.790739,
+    "share-nfs mirror randwrite-4k": 17787.771223,
+    "share-nfs mirror small-create-4k": 2244.8688654115113,
+    "share-nfs mirror small-read-4k": 2320.131450818923
+  },
+  "info": {
+    "share-nfs mirror temps": "{'/dev/sda': 46, '/dev/sdb': 31, '/dev/sdc': 58, '/dev/sdd': 57}",
+    "share-nfs mirror": "192.168.25.127 rw,relatime,vers=4.2,rsize=524288,wsize=524288,namlen=255,hard,fatal_neterrors=none,proto=tcp,timeo=600,retrans=2,sec=sys,clientaddr=192.168.25.30,local_lock=none,addr=192.168.25.127",
+    "share-nfs mirror pre-small temps": "{'/dev/sda': 46, '/dev/sdb': 31, '/dev/sdc': 58, '/dev/sdd': 57}"
+  },
+  "all_ok": true
+}

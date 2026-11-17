@@ -1,0 +1,77 @@
+{
+  "timestamp": "2026-11-17T15:37:16+11:00",
+  "commit": "77941c1-dirty",
+  "host": "192.168.25.127",
+  "kernel": "",
+  "checks": [
+    {
+      "name": "readspread n=1 run1",
+      "ok": true,
+      "detail": "268.8 MB/s aggregate; per-disk MB/s sdc=0 sdd=269; cpu 3%"
+    },
+    {
+      "name": "readspread n=1 run2",
+      "ok": true,
+      "detail": "269.0 MB/s aggregate; per-disk MB/s sdc=0 sdd=269; cpu 3%"
+    },
+    {
+      "name": "readspread n=1 run3",
+      "ok": true,
+      "detail": "273.2 MB/s aggregate; per-disk MB/s sdc=0 sdd=273; cpu 3%"
+    },
+    {
+      "name": "readspread n=2 run1",
+      "ok": true,
+      "detail": "468.8 MB/s aggregate; per-disk MB/s sdc=229 sdd=241; cpu 6%"
+    },
+    {
+      "name": "readspread n=2 run2",
+      "ok": true,
+      "detail": "460.4 MB/s aggregate; per-disk MB/s sdc=200 sdd=261; cpu 6%"
+    },
+    {
+      "name": "readspread n=2 run3",
+      "ok": true,
+      "detail": "511.6 MB/s aggregate; per-disk MB/s sdc=241 sdd=271; cpu 6%"
+    },
+    {
+      "name": "readspread n=4 run1",
+      "ok": true,
+      "detail": "93.2 MB/s aggregate; per-disk MB/s sdc=34 sdd=60; cpu 2%"
+    },
+    {
+      "name": "readspread n=4 run2",
+      "ok": true,
+      "detail": "85.1 MB/s aggregate; per-disk MB/s sdc=47 sdd=39; cpu 2%"
+    },
+    {
+      "name": "readspread n=4 run3",
+      "ok": true,
+      "detail": "101.0 MB/s aggregate; per-disk MB/s sdc=42 sdd=59; cpu 2%"
+    }
+  ],
+  "metrics": {
+    "readspread n=1 run1": 268.837428,
+    "readspread n=1 run2": 268.981172,
+    "readspread n=1 run3": 273.161095,
+    "readspread n=2 run1": 468.799194,
+    "readspread n=2 run2": 460.388763,
+    "readspread n=2 run3": 511.552895,
+    "readspread n=4 run1": 93.206755,
+    "readspread n=4 run2": 85.097137,
+    "readspread n=4 run3": 101.028865
+  },
+  "info": {
+    "readspread": "/dev/sdc rw,noatime,space_cache=v2,subvolid=5,subvol=/; read_policy [pid]",
+    "readspread n=1 run1 temps": "{'/dev/sda': 46, '/dev/sdb': 32, '/dev/sdc': 58, '/dev/sdd': 58}",
+    "readspread n=1 run2 temps": "{'/dev/sda': 46, '/dev/sdb': 32, '/dev/sdc': 58, '/dev/sdd': 58}",
+    "readspread n=1 run3 temps": "{'/dev/sda': 46, '/dev/sdb': 32, '/dev/sdc': 58, '/dev/sdd': 58}",
+    "readspread n=2 run1 temps": "{'/dev/sda': 46, '/dev/sdb': 32, '/dev/sdc': 58, '/dev/sdd': 58}",
+    "readspread n=2 run2 temps": "{'/dev/sda': 46, '/dev/sdb': 32, '/dev/sdc': 58, '/dev/sdd': 58}",
+    "readspread n=2 run3 temps": "{'/dev/sda': 46, '/dev/sdb': 32, '/dev/sdc': 58, '/dev/sdd': 58}",
+    "readspread n=4 run1 temps": "{'/dev/sda': 46, '/dev/sdb': 32, '/dev/sdc': 58, '/dev/sdd': 58}",
+    "readspread n=4 run2 temps": "{'/dev/sda': 46, '/dev/sdb': 32, '/dev/sdc': 58, '/dev/sdd': 58}",
+    "readspread n=4 run3 temps": "{'/dev/sda': 46, '/dev/sdb': 32, '/dev/sdc': 58, '/dev/sdd': 58}"
+  },
+  "all_ok": true
+}

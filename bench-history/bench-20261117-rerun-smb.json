@@ -1,0 +1,91 @@
+{
+  "timestamp": "2026-11-17T15:31:19+11:00",
+  "commit": "77941c1-dirty",
+  "host": "192.168.25.127",
+  "kernel": "",
+  "checks": [
+    {
+      "name": "share-smb mirror seq-write-1M",
+      "ok": true,
+      "detail": "243.2 MB/s 232 iops clat 14665 us cpu box 23% host 5%"
+    },
+    {
+      "name": "share-smb mirror seq-read-1M",
+      "ok": true,
+      "detail": "261.9 MB/s 250 iops clat 15974 us cpu box 20% host 17%"
+    },
+    {
+      "name": "share-smb mirror randread-4k",
+      "ok": true,
+      "detail": "1.9 MB/s 455 iops clat 35123 us cpu box 2% host 21%"
+    },
+    {
+      "name": "share-smb mirror randwrite-4k",
+      "ok": true,
+      "detail": "47.0 MB/s 11465 iops clat 1127 us cpu box 57% host 16%"
+    },
+    {
+      "name": "share-smb mirror small-create-4k",
+      "ok": true,
+      "detail": "374 files/s (13.4 s) cpu box 29% host 16%"
+    },
+    {
+      "name": "share-smb mirror small-read-4k",
+      "ok": true,
+      "detail": "740 files/s (6.8 s) cpu box 22% host 18%"
+    },
+    {
+      "name": "share-smb single seq-write-1M",
+      "ok": true,
+      "detail": "183.3 MB/s 175 iops clat 18163 us cpu box 17% host 17%"
+    },
+    {
+      "name": "share-smb single seq-read-1M",
+      "ok": true,
+      "detail": "188.5 MB/s 180 iops clat 22198 us cpu box 16% host 21%"
+    },
+    {
+      "name": "share-smb single randread-4k",
+      "ok": true,
+      "detail": "1.4 MB/s 341 iops clat 46896 us cpu box 2% host 13%"
+    },
+    {
+      "name": "share-smb single randwrite-4k",
+      "ok": true,
+      "detail": "45.2 MB/s 11035 iops clat 1171 us cpu box 58% host 15%"
+    },
+    {
+      "name": "share-smb single small-create-4k",
+      "ok": true,
+      "detail": "374 files/s (13.4 s) cpu box 27% host 7%"
+    },
+    {
+      "name": "share-smb single small-read-4k",
+      "ok": true,
+      "detail": "704 files/s (7.1 s) cpu box 21% host 7%"
+    }
+  ],
+  "metrics": {
+    "share-smb mirror seq-write-1M": 243.216903,
+    "share-smb mirror seq-read-1M": 261.872281,
+    "share-smb mirror randread-4k": 455.166567,
+    "share-smb mirror randwrite-4k": 11465.235878,
+    "share-smb mirror small-create-4k": 373.65613371123686,
+    "share-smb mirror small-read-4k": 740.1770425200484,
+    "share-smb single seq-write-1M": 183.294951,
+    "share-smb single seq-read-1M": 188.549422,
+    "share-smb single randread-4k": 340.990632,
+    "share-smb single randwrite-4k": 11035.310792,
+    "share-smb single small-create-4k": 373.8367928283568,
+    "share-smb single small-read-4k": 704.3102462976024
+  },
+  "info": {
+    "share-smb mirror temps": "{'/dev/sda': 46, '/dev/sdb': 36, '/dev/sdc': 58, '/dev/sdd': 57}",
+    "share-smb mirror": "192.168.25.127 rw,relatime,vers=3.1.1,cache=strict,upcall_target=app,username=dan,uid=1000,forceuid,gid=1000,forcegid,addr=192.168.25.127,file_mode=0664,dir_mode=0775,soft,nounix,serverino,mapposix,reparse=nfs,nativesocket,symlink=native,rsize=4194304,wsize=4194304,bsize=1048576,echo_interval=60,actimeo=1,closetimeo=1",
+    "share-smb mirror pre-small temps": "{'/dev/sda': 46, '/dev/sdb': 35, '/dev/sdc': 58, '/dev/sdd': 58}",
+    "share-smb single temps": "{'/dev/sda': 46, '/dev/sdb': 34, '/dev/sdc': 58, '/dev/sdd': 57}",
+    "share-smb single": "192.168.25.127 rw,relatime,vers=3.1.1,cache=strict,upcall_target=app,username=dan,uid=1000,forceuid,gid=1000,forcegid,addr=192.168.25.127,file_mode=0664,dir_mode=0775,soft,nounix,serverino,mapposix,reparse=nfs,nativesocket,symlink=native,rsize=4194304,wsize=4194304,bsize=1048576,echo_interval=60,actimeo=1,closetimeo=1",
+    "share-smb single pre-small temps": "{'/dev/sda': 46, '/dev/sdb': 34, '/dev/sdc': 58, '/dev/sdd': 57}"
+  },
+  "all_ok": true
+}

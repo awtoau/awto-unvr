@@ -1,0 +1,91 @@
+{
+  "timestamp": "2026-11-17T15:24:57+11:00",
+  "commit": "77941c1-dirty",
+  "host": "192.168.25.127",
+  "kernel": "",
+  "checks": [
+    {
+      "name": "share-nfs single seq-write-1M",
+      "ok": true,
+      "detail": "228.9 MB/s 218 iops clat 18209 us cpu box 24% host 4%"
+    },
+    {
+      "name": "share-nfs single seq-read-1M",
+      "ok": true,
+      "detail": "196.4 MB/s 187 iops clat 21321 us cpu box 11% host 4%"
+    },
+    {
+      "name": "share-nfs single randread-4k",
+      "ok": true,
+      "detail": "0.8 MB/s 205 iops clat 78172 us cpu box 2% host 7%"
+    },
+    {
+      "name": "share-nfs single randwrite-4k",
+      "ok": true,
+      "detail": "66.5 MB/s 16242 iops clat 983 us cpu box 73% host 5%"
+    },
+    {
+      "name": "share-nfs single small-create-4k",
+      "ok": true,
+      "detail": "695 files/s (7.2 s) cpu box 46% host 6%"
+    },
+    {
+      "name": "share-nfs single small-read-4k",
+      "ok": true,
+      "detail": "2365 files/s (2.1 s) cpu box 16% host 5%"
+    },
+    {
+      "name": "share-nfs system seq-write-1M",
+      "ok": true,
+      "detail": "192.9 MB/s 184 iops clat 21612 us cpu box 18% host 6%"
+    },
+    {
+      "name": "share-nfs system seq-read-1M",
+      "ok": true,
+      "detail": "394.0 MB/s 376 iops clat 10595 us cpu box 21% host 17%"
+    },
+    {
+      "name": "share-nfs system randread-4k",
+      "ok": true,
+      "detail": "78.2 MB/s 19084 iops clat 836 us cpu box 59% host 11%"
+    },
+    {
+      "name": "share-nfs system randwrite-4k",
+      "ok": true,
+      "detail": "6.0 MB/s 1461 iops clat 10950 us cpu box 9% host 5%"
+    },
+    {
+      "name": "share-nfs system small-create-4k",
+      "ok": true,
+      "detail": "129 files/s (38.8 s) cpu box 3% host 5%"
+    },
+    {
+      "name": "share-nfs system small-read-4k",
+      "ok": true,
+      "detail": "2243 files/s (2.2 s) cpu box 14% host 5%"
+    }
+  ],
+  "metrics": {
+    "share-nfs single seq-write-1M": 228.894014,
+    "share-nfs single seq-read-1M": 196.39523,
+    "share-nfs single randread-4k": 204.615691,
+    "share-nfs single randwrite-4k": 16241.775822,
+    "share-nfs single small-create-4k": 695.1944587523398,
+    "share-nfs single small-read-4k": 2365.161725590056,
+    "share-nfs system seq-write-1M": 192.910855,
+    "share-nfs system seq-read-1M": 393.96141,
+    "share-nfs system randread-4k": 19083.895805,
+    "share-nfs system randwrite-4k": 1460.757848,
+    "share-nfs system small-create-4k": 128.95957170748994,
+    "share-nfs system small-read-4k": 2242.5325786523745
+  },
+  "info": {
+    "share-nfs single temps": "{'/dev/sda': 46, '/dev/sdb': 31, '/dev/sdc': 58, '/dev/sdd': 57}",
+    "share-nfs single": "192.168.25.127 rw,relatime,vers=4.2,rsize=524288,wsize=524288,namlen=255,hard,fatal_neterrors=none,proto=tcp,timeo=600,retrans=2,sec=sys,clientaddr=192.168.25.30,local_lock=none,addr=192.168.25.127",
+    "share-nfs single pre-small temps": "{'/dev/sda': 46, '/dev/sdb': 31, '/dev/sdc': 58, '/dev/sdd': 57}",
+    "share-nfs system temps": "{'/dev/sda': 46, '/dev/sdb': 31, '/dev/sdc': 58, '/dev/sdd': 57}",
+    "share-nfs system": "192.168.25.127 rw,relatime,vers=4.2,rsize=524288,wsize=524288,namlen=255,hard,fatal_neterrors=none,proto=tcp,timeo=600,retrans=2,sec=sys,clientaddr=192.168.25.30,local_lock=none,addr=192.168.25.127",
+    "share-nfs system pre-small temps": "{'/dev/sda': 46, '/dev/sdb': 35, '/dev/sdc': 58, '/dev/sdd': 57}"
+  },
+  "all_ok": true
+}
