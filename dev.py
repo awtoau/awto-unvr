@@ -1260,8 +1260,8 @@ def cmd_fedora_shares(extra: list[str]) -> int:
 
 
 @command(
-    "mount woomera's NFS + SMB shares on this workstation under /mnt/woomera (Nautilus bookmarks)",
-    args="up|down|status",
+    "mount woomera's NFS + SMB shares on this workstation under /mnt/woomera; install = fstab + systemd automount, survives reboot",
+    args="install|uninstall|up|down|status",
     kind="action",
 )
 def cmd_mount_woomera(extra: list[str]) -> int:
