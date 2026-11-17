@@ -87,11 +87,25 @@ asyncio.run(set_and_verify())
 """
 
 
+class NoOutletError(RuntimeError):
+    pass
+
+
+def _refuse_no_outlet() -> None:
+    """woomera is not on so-th-1 (Dan 2026-11-18, #339, #365): cycling that outlet reports success
+    while the box keeps running. Recovery is the serial console / <Esc><Esc> at stock."""
+    raise NoOutletError(
+        "woomera has no smart outlet: power-cycle is disabled (#339). "
+        "Recover via ./dev.py console-peek / the console, not power."
+    )
+
+
 def power_set_verified(state: bool, log=print) -> None:
     """Turn the outlet on or off, VERIFYING the resulting state - same
     verify-don't-trust discipline as power_cycle_verified(). For a plain
     on/off (not a full cycle), e.g. holding the box off while someone
     reseats a cable."""
+    _refuse_no_outlet()
     log(f"power: setting {'ON' if state else 'OFF'} via so-th-1")
     r = subprocess.run(
         [AWTO_TERMINAL_PY, "-c", _POWER_SET_SCRIPT_TEMPLATE.format(state=state)],
@@ -110,6 +124,7 @@ def power_cycle_verified(log=print) -> None:
     """Cut and restore power via the Sonoff TH outlet, VERIFYING the final
     state - this project was bitten once by trusting the ON command without
     checking, and the box sat dark until the user noticed."""
+    _refuse_no_outlet()
     log("power: cycling via so-th-1")
     r = subprocess.run(
         [AWTO_TERMINAL_PY, "-c", _POWER_CYCLE_SCRIPT],
