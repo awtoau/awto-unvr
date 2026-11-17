@@ -534,6 +534,13 @@ def configure():
     # RAID6_PQ_BENCHMARK from the same block does, so it is --module in a mixed
     # chain that gets lost. Re-assert it on its own; olddefconfig preserves it.
     run([cfg, "--file", os.path.join(KOUT, ".config"), "--module", "MD_RAID456"])
+    # #372: NFS server + client. localmodconfig drops them (build host has no
+    # nfsd loaded); SUNRPC/LOCKD/GRACE_PERIOD are selected by these.
+    run(
+        [cfg, "--file", os.path.join(KOUT, ".config")]
+        + ["--module", "NFSD", "--enable", "NFSD_V4", "--enable", "NFSD_V3_ACL"]
+        + ["--module", "NFS_FS", "--module", "NFS_V3", "--module", "NFS_V4"]
+    )
     # al_ssm's only in-kernel consumer (#267: AF_ALG and fscrypt mask ASYNC
     # drivers out; dm-crypt does not). localmodconfig drops DM_CRYPT (the build
     # host has no dm-crypt volume loaded); `bench-all --ssm` needs it.
@@ -573,6 +580,14 @@ def configure():
         "CONFIG_MD_RAID456=m",
         # al_ssm's only in-kernel consumer (see the force-enable above).
         "CONFIG_DM_CRYPT=m",
+        # #372: NFS server/client for the woomera shares.
+        "CONFIG_NFSD=m",
+        "CONFIG_NFSD_V4=y",
+        "CONFIG_NFS_FS=m",
+        "CONFIG_NFS_V4=m",
+        "CONFIG_SUNRPC=m",
+        "CONFIG_LOCKD=m",
+        "CONFIG_GRACE_PERIOD=m",
         # #258: the build's own identity. olddefconfig has been seen to drop
         # a --set-str, and a silently-empty LOCALVERSION puts us straight
         # back to "every build looks identical".
