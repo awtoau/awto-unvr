@@ -100,8 +100,18 @@ static void ubnt_hdd_poll_work(struct work_struct *work)
 
 	for (i = 0; i < pwrctl->nbays; i++) {
 		struct ubnt_hdd_bay *bay = &pwrctl->bay[i];
-		bool now = gpiod_get_value_cansleep(bay->present) > 0;
+		int val = gpiod_get_value_cansleep(bay->present);
+		bool now;
 
+		/* Read error: skip the sample, never change state (as gpio_keys_polled). */
+		if (val < 0) {
+			dev_err_ratelimited(pwrctl->dev,
+					    "bay %u: presence read failed: %d\n",
+					    bay->slot, val);
+			continue;
+		}
+
+		now = val > 0;
 		if (now != bay->present_state) {
 			bay->present_state = now;
 			changed = true;
@@ -136,15 +146,20 @@ static int ubnt_hdd_probe_bay(struct ubnt_hdd_pwrctl *pwrctl,
 		return dev_err_probe(pwrctl->dev, PTR_ERR(bay->present),
 				     "bay %u: no present gpio\n", bay->slot);
 
-	bay->present_state = gpiod_get_value_cansleep(bay->present) > 0;
+	rc = gpiod_get_value_cansleep(bay->present);
+	if (rc < 0)
+		dev_warn(pwrctl->dev, "bay %u: initial presence read failed: %d\n",
+			 bay->slot, rc);
+	bay->present_state = rc > 0;
 
 	/* Fault LED is optional: a bay may legitimately have none. */
 	led = devm_fwnode_gpiod_get_index(pwrctl->dev, of_fwnode_handle(np),
 					  "fault-led", 0, GPIOD_OUT_LOW,
 					  "hdd-fault-led");
 	if (IS_ERR(led)) {
-		if (PTR_ERR(led) == -EPROBE_DEFER)
-			return -EPROBE_DEFER;
+		if (PTR_ERR(led) != -ENOENT)
+			return dev_err_probe(pwrctl->dev, PTR_ERR(led),
+					     "bay %u: fault-led gpio\n", bay->slot);
 		return 0;
 	}
 	bay->fault_led = led;
