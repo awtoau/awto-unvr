@@ -1358,6 +1358,13 @@ def btrfs_mkfs(
     """Unmount, wipe the two named disks, mkfs.btrfs RAID1 --csum, mount at
     BTRFS_MNT. crypt = dm-crypt cipher spec under each disk ("" = none)."""
     tag = f"btrfs-mkfs {csum}"
+    run_remote(  # our own previous test mount must not trip the in-use guard
+        host,
+        password,
+        f"umount {BTRFS_MNT} 2>/dev/null; "
+        f"for m in {BTRFS_CRYPT_MAP}0 {BTRFS_CRYPT_MAP}1; do dmsetup remove $m 2>/dev/null; done; true",
+        timeout=60,
+    )
     try:
         devs = btrfs_resolve(host, password, serials)
     except RuntimeError as e:
@@ -1366,11 +1373,6 @@ def btrfs_mkfs(
     run = lambda s, t: run_remote(host, password, s, timeout=t)  # noqa: E731
     rc, out = run("lsblk -o NAME,SIZE,MODEL,SERIAL,MOUNTPOINTS,FSTYPE", 30)
     log_line(f"btrfs-mkfs targets {serials} -> {devs}\n{out}")
-    run(
-        f"umount {BTRFS_MNT} 2>/dev/null; "
-        f"for m in {BTRFS_CRYPT_MAP}0 {BTRFS_CRYPT_MAP}1; do dmsetup remove $m 2>/dev/null; done; true",
-        60,
-    )
     members = devs
     script = "".join(_btrfs_wipe_script(d) for d in devs)
     if crypt:

@@ -1,0 +1,156 @@
+{
+  "timestamp": "2026-11-17T11:27:21+11:00",
+  "commit": "5a91309-dirty",
+  "host": "192.168.25.127",
+  "kernel": "",
+  "checks": [
+    {
+      "name": "btrfs-mkfs crc32c",
+      "ok": true,
+      "detail": "['VGG8B0LG', 'VGG8ASZG'] csum=crc32c opts=- crypt=-"
+    },
+    {
+      "name": "btrfs crc32c incomp seq-write-1M",
+      "ok": true,
+      "detail": "253.7 MB/s 242 iops clat 15071 us cpu 7%"
+    },
+    {
+      "name": "btrfs crc32c incomp seq-read-1M",
+      "ok": true,
+      "detail": "271.0 MB/s 258 iops clat 15256 us cpu 2%"
+    },
+    {
+      "name": "btrfs crc32c incomp randread-4k",
+      "ok": true,
+      "detail": "1.3 MB/s 326 iops clat 48847 us cpu 1%"
+    },
+    {
+      "name": "btrfs crc32c incomp randwrite-4k",
+      "ok": true,
+      "detail": "66.8 MB/s 16314 iops clat 878 us cpu 55%"
+    },
+    {
+      "name": "btrfs-mkfs xxhash",
+      "ok": true,
+      "detail": "['VGG8B0LG', 'VGG8ASZG'] csum=xxhash opts=- crypt=-"
+    },
+    {
+      "name": "btrfs xxhash64 incomp seq-write-1M",
+      "ok": true,
+      "detail": "252.2 MB/s 241 iops clat 15141 us cpu 7%"
+    },
+    {
+      "name": "btrfs xxhash64 incomp seq-read-1M",
+      "ok": true,
+      "detail": "271.0 MB/s 258 iops clat 15264 us cpu 2%"
+    },
+    {
+      "name": "btrfs xxhash64 incomp randread-4k",
+      "ok": true,
+      "detail": "1.3 MB/s 329 iops clat 48442 us cpu 1%"
+    },
+    {
+      "name": "btrfs xxhash64 incomp randwrite-4k",
+      "ok": true,
+      "detail": "68.0 MB/s 16592 iops clat 866 us cpu 55%"
+    },
+    {
+      "name": "btrfs-mkfs sha256",
+      "ok": true,
+      "detail": "['VGG8B0LG', 'VGG8ASZG'] csum=sha256 opts=- crypt=-"
+    },
+    {
+      "name": "btrfs sha256 incomp seq-write-1M",
+      "ok": true,
+      "detail": "251.1 MB/s 239 iops clat 14197 us cpu 13%"
+    },
+    {
+      "name": "btrfs sha256 incomp seq-read-1M",
+      "ok": true,
+      "detail": "268.2 MB/s 256 iops clat 15286 us cpu 9%"
+    },
+    {
+      "name": "btrfs sha256 incomp randread-4k",
+      "ok": true,
+      "detail": "1.3 MB/s 324 iops clat 48699 us cpu 1%"
+    },
+    {
+      "name": "btrfs sha256 incomp randwrite-4k",
+      "ok": true,
+      "detail": "63.3 MB/s 15443 iops clat 929 us cpu 53%"
+    },
+    {
+      "name": "btrfs-mkfs blake2b",
+      "ok": true,
+      "detail": "['VGG8B0LG', 'VGG8ASZG'] csum=blake2b opts=- crypt=-"
+    },
+    {
+      "name": "btrfs blake2b incomp seq-write-1M",
+      "ok": true,
+      "detail": "207.8 MB/s 198 iops clat 15085 us cpu 26%"
+    },
+    {
+      "name": "btrfs blake2b incomp seq-read-1M",
+      "ok": true,
+      "detail": "252.8 MB/s 241 iops clat 16218 us cpu 24%"
+    },
+    {
+      "name": "btrfs blake2b incomp randread-4k",
+      "ok": true,
+      "detail": "1.3 MB/s 311 iops clat 50722 us cpu 1%"
+    },
+    {
+      "name": "btrfs blake2b incomp randwrite-4k",
+      "ok": true,
+      "detail": "54.6 MB/s 13325 iops clat 1079 us cpu 49%"
+    },
+    {
+      "name": "btrfs-mkfs crc32c",
+      "ok": true,
+      "detail": "['VGG8B0LG', 'VGG8ASZG'] csum=crc32c opts=nodatasum crypt=-"
+    },
+    {
+      "name": "btrfs crc32c+nodatasum incomp seq-write-1M",
+      "ok": true,
+      "detail": "254.1 MB/s 242 iops clat 15556 us cpu 3%"
+    },
+    {
+      "name": "btrfs crc32c+nodatasum incomp seq-read-1M",
+      "ok": true,
+      "detail": "257.2 MB/s 245 iops clat 16226 us cpu 1%"
+    },
+    {
+      "name": "btrfs crc32c+nodatasum incomp randread-4k",
+      "ok": true,
+      "detail": "1.3 MB/s 328 iops clat 48736 us cpu 1%"
+    },
+    {
+      "name": "btrfs crc32c+nodatasum incomp randwrite-4k",
+      "ok": true,
+      "detail": "72.6 MB/s 17717 iops clat 803 us cpu 55%"
+    }
+  ],
+  "metrics": {
+    "btrfs crc32c incomp seq-write-1M": 253.674756,
+    "btrfs crc32c incomp seq-read-1M": 270.992484,
+    "btrfs crc32c incomp randread-4k": 326.105753,
+    "btrfs crc32c incomp randwrite-4k": 16313.864681,
+    "btrfs xxhash64 incomp seq-write-1M": 252.237104,
+    "btrfs xxhash64 incomp seq-read-1M": 271.000334,
+    "btrfs xxhash64 incomp randread-4k": 328.807694,
+    "btrfs xxhash64 incomp randwrite-4k": 16591.657659,
+    "btrfs sha256 incomp seq-write-1M": 251.072241,
+    "btrfs sha256 incomp seq-read-1M": 268.240372,
+    "btrfs sha256 incomp randread-4k": 324.150078,
+    "btrfs sha256 incomp randwrite-4k": 15442.939793,
+    "btrfs blake2b incomp seq-write-1M": 207.772406,
+    "btrfs blake2b incomp seq-read-1M": 252.843158,
+    "btrfs blake2b incomp randread-4k": 311.210912,
+    "btrfs blake2b incomp randwrite-4k": 13325.353368,
+    "btrfs crc32c+nodatasum incomp seq-write-1M": 254.132557,
+    "btrfs crc32c+nodatasum incomp seq-read-1M": 257.235459,
+    "btrfs crc32c+nodatasum incomp randread-4k": 327.520218,
+    "btrfs crc32c+nodatasum incomp randwrite-4k": 17717.101741
+  },
+  "all_ok": true
+}
