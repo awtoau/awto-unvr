@@ -1,0 +1,214 @@
+{
+  "timestamp": "2026-11-17T14:41:41+11:00",
+  "commit": "2691834-dirty",
+  "host": "192.168.25.127",
+  "kernel": "7.4.0-rc2-perf-e374a48-dirty+",
+  "checks": [
+    {
+      "name": "health al_eth module",
+      "ok": true,
+      "detail": "vermagic=7.4.0-rc2-perf-e374a48-dirty+ running=7.4.0-rc2-perf-e374a48-dirty+"
+    },
+    {
+      "name": "health link enp0s1",
+      "ok": false,
+      "detail": "speed=-1 carrier=0 oper=down"
+    },
+    {
+      "name": "health link enp0s2",
+      "ok": true,
+      "detail": "speed=10000 carrier=1 oper=up"
+    },
+    {
+      "name": "health adaptive moderation off",
+      "ok": true,
+      "detail": "off on enp0s1, enp0s2"
+    },
+    {
+      "name": "health MAC counters",
+      "ok": false,
+      "detail": "enp0s2 rx_errors 0->14"
+    },
+    {
+      "name": "health queue drop counters",
+      "ok": false,
+      "detail": "enp0s2 rx_dropped 0->13"
+    },
+    {
+      "name": "health kernel log",
+      "ok": true,
+      "detail": "no trouble lines"
+    },
+    {
+      "name": "eth 1G",
+      "ok": false,
+      "detail": "couldn't get IP for enp0s1"
+    },
+    {
+      "name": "eth 1G v6 control udp",
+      "ok": false,
+      "detail": "sender rc=0: SENDERR [Errno 101] Network is unreachable\nSENT ctl=0 hbh=0"
+    },
+    {
+      "name": "eth 10G host->box",
+      "ok": true,
+      "detail": "7.61 Gbits/sec"
+    },
+    {
+      "name": "eth 10G box->host",
+      "ok": true,
+      "detail": "7.78 Gbits/sec"
+    },
+    {
+      "name": "eth 10G v6 control udp",
+      "ok": true,
+      "detail": "100/100 arrived"
+    },
+    {
+      "name": "eth 10G v6 hop-by-hop udp csum",
+      "ok": true,
+      "detail": "100/100 arrived (lost ones failed the checksum)"
+    },
+    {
+      "name": "crypto xts(aes) [xts-aes-ce]",
+      "ok": true,
+      "detail": "534.0 MB/s (32.0MB in 0.06s)"
+    },
+    {
+      "name": "sata sda",
+      "ok": true,
+      "detail": "190.4 MB/sec"
+    },
+    {
+      "name": "sata sdb",
+      "ok": true,
+      "detail": "437.7 MB/sec"
+    },
+    {
+      "name": "sata sdc",
+      "ok": true,
+      "detail": "238.1 MB/sec"
+    },
+    {
+      "name": "sata sdd",
+      "ok": true,
+      "detail": "128.0 MB/sec"
+    },
+    {
+      "name": "usb sde",
+      "ok": true,
+      "detail": "14.4 MB/sec"
+    },
+    {
+      "name": "usb sde link",
+      "ok": true,
+      "detail": "480 Mb/s negotiated"
+    },
+    {
+      "name": "share-nfs mirror seq-write-1M",
+      "ok": true,
+      "detail": "252.7 MB/s 241 iops clat 16466 us cpu box 26% host 6%"
+    },
+    {
+      "name": "share-nfs mirror seq-read-1M",
+      "ok": true,
+      "detail": "278.0 MB/s 265 iops clat 15054 us cpu box 14% host 3%"
+    },
+    {
+      "name": "share-nfs mirror randread-4k",
+      "ok": true,
+      "detail": "1.9 MB/s 458 iops clat 34932 us cpu box 3% host 2%"
+    },
+    {
+      "name": "share-nfs mirror randwrite-4k",
+      "ok": true,
+      "detail": "70.3 MB/s 17171 iops clat 930 us cpu box 69% host 3%"
+    },
+    {
+      "name": "share-nfs mirror small-create-4k",
+      "ok": true,
+      "detail": "2163 files/s (2.3 s) cpu box 53% host 2%"
+    },
+    {
+      "name": "share-nfs mirror small-read-4k",
+      "ok": true,
+      "detail": "2765 files/s (1.8 s) cpu box 18% host 2%"
+    },
+    {
+      "name": "share-nfs single seq-write-1M",
+      "ok": true,
+      "detail": "231.7 MB/s 221 iops clat 17976 us cpu box 23% host 2%"
+    },
+    {
+      "name": "share-nfs single seq-read-1M",
+      "ok": true,
+      "detail": "193.6 MB/s 185 iops clat 21623 us cpu box 10% host 9%"
+    },
+    {
+      "name": "share-nfs single randread-4k",
+      "ok": true,
+      "detail": "0.7 MB/s 166 iops clat 96358 us cpu box 2% host 2%"
+    },
+    {
+      "name": "share-nfs single randwrite-4k",
+      "ok": true,
+      "detail": "74.5 MB/s 18180 iops clat 878 us cpu box 69% host 3%"
+    },
+    {
+      "name": "share-nfs single small-create-4k",
+      "ok": true,
+      "detail": "1693 files/s (3.0 s) cpu box 50% host 4%"
+    },
+    {
+      "name": "share-nfs single small-read-4k",
+      "ok": true,
+      "detail": "1347 files/s (3.7 s) cpu box 42% host 4%"
+    },
+    {
+      "name": "dma copy+xor",
+      "ok": true,
+      "detail": "copy0 20000 tests 0 fail 64606 iops, xor0 20000 tests 0 fail 62834 iops"
+    },
+    {
+      "name": "dma oversize",
+      "ok": true,
+      "detail": "copy0 300 tests 143 fail 20 iops, xor0 300 tests 258 fail 11 iops"
+    }
+  ],
+  "metrics": {
+    "link enp0s2 speed Mbps": 10000.0,
+    "eth 10G host->box": 7610.0,
+    "eth 10G box->host": 7780.0,
+    "crypto xts(aes) [xts-aes-ce]": 533.9934649543417,
+    "sata sda": 190.43,
+    "sata sdb": 437.67,
+    "sata sdc": 238.08,
+    "sata sdd": 127.95,
+    "usb sde": 14.39,
+    "usb sde link": 480.0,
+    "share-nfs mirror seq-write-1M": 252.704594,
+    "share-nfs mirror seq-read-1M": 277.99141,
+    "share-nfs mirror randread-4k": 457.905237,
+    "share-nfs mirror randwrite-4k": 17171.332867,
+    "share-nfs mirror small-create-4k": 2162.5354845199795,
+    "share-nfs mirror small-read-4k": 2764.6455088669436,
+    "share-nfs single seq-write-1M": 231.7095,
+    "share-nfs single seq-read-1M": 193.597804,
+    "share-nfs single randread-4k": 165.955547,
+    "share-nfs single randwrite-4k": 18179.59102,
+    "share-nfs single small-create-4k": 1692.5609266601557,
+    "share-nfs single small-read-4k": 1347.4657648355644,
+    "dma dma0chan0 copy iops": 64606.16,
+    "dma dma0chan0 xor iops": 62834.19
+  },
+  "info": {
+    "kernel": "7.4.0-rc2-perf-e374a48-dirty+",
+    "share-nfs mirror temps": "{'/dev/sda': 46, '/dev/sdb': 38, '/dev/sdc': 58, '/dev/sdd': 58}",
+    "share-nfs mirror": "192.168.25.127 rw,relatime,vers=4.2,rsize=524288,wsize=524288,namlen=255,hard,fatal_neterrors=none,proto=tcp,timeo=600,retrans=2,sec=sys,clientaddr=192.168.25.30,local_lock=none,addr=192.168.25.127",
+    "share-nfs mirror pre-small temps": "{'/dev/sda': 46, '/dev/sdb': 36, '/dev/sdc': 58, '/dev/sdd': 58}",
+    "share-nfs single temps": "{'/dev/sda': 46, '/dev/sdb': 36, '/dev/sdc': 58, '/dev/sdd': 58}",
+    "share-nfs single": "192.168.25.127 rw,relatime,vers=4.2,rsize=524288,wsize=524288,namlen=255,hard,fatal_neterrors=none,proto=tcp,timeo=600,retrans=2,sec=sys,clientaddr=192.168.25.30,local_lock=none,addr=192.168.25.127",
+    "share-nfs single pre-small temps": "{'/dev/sda': 46, '/dev/sdb': 35, '/dev/sdc': 58, '/dev/sdd': 58}"
+  },
+  "all_ok": false
+}
