@@ -3,7 +3,7 @@
 # Copyright (C) 2026 Awto / Daniel Tyrrell
 """Make woomera reply on the port a packet arrived on, not whatever the route picks (#170).
 
-All 4 NICs sit on one /24 with DHCP leases. Linux's default weak-host
+All 4 NICs sit on one /24 (static registry addresses, scripts/_net.py). Linux's default weak-host
 behaviour means an address is answered by whichever interface the route table
 prefers - so enp0s1's address gets answered from the 10G MAC, iperf3
 `-B <addr>` measures a different port than intended, and `tcpdump` on a MAC
@@ -27,7 +27,7 @@ strict reverse-path would drop legitimate asymmetric traffic during a link
 flap, and the ARP changes already stop the address confusion.
 
 Idempotent - re-running replaces the rules and tables it owns. Nothing else
-is touched; DHCP keeps managing the addresses.
+is touched; NetworkManager owns the addresses.
 
     ./scripts/fix-multihome-routing.py            # show what would change
     ./scripts/fix-multihome-routing.py --apply    # apply now (not persistent)
@@ -47,13 +47,12 @@ sys.path.insert(0, str(REPO / "scripts"))
 os.environ.setdefault("AWTO_ALLOW_DIRECT_SCRIPT", "1")
 
 from _box import require, ssh_argv  # noqa: E402
-from _net import LAN_SUBNET  # noqa: E402
+from _net import LAN_GATEWAY, LAN_SUBNET, WOOMERA_NIC_IPS  # noqa: E402
 from _repo import make_log  # noqa: E402
 
 log = make_log("fix-multihome-routing")
 
-# Subnet from the one home (#260). Gateway is read off the box rather than
-# hardcoded: it is a property of the LAN, not of this repo.
+# Subnet, gateway and per-port addresses come from scripts/_net.py (registry, #260).
 SUBNET = LAN_SUBNET
 
 # Table ids per NIC. 100+ to stay clear of the reserved local/main/default.
@@ -88,33 +87,28 @@ def box_sh(host: str, cmd: str, timeout: int = 60) -> str:
         return ""
 
 
-def live_addrs(host: str) -> dict[str, str]:
-    """iface -> its IPv4, for the NICs in TABLES that are up with an address."""
-    out = {}
-    raw = box_sh(host, "ip -4 -br addr show")
-    for line in raw.splitlines():
-        f = line.split()
-        if len(f) >= 3 and f[0] in TABLES and "UP" in f[1]:
-            out[f[0]] = f[2].split("/")[0]
-    return out
+def plan(gateway: str) -> list[str]:
+    """Shell lines that make replies leave the ingress port.
 
-
-def plan(addrs: dict[str, str], gateway: str) -> list[str]:
-    """The commands that make replies leave the ingress port."""
+    One guarded block per registry address: it applies only when that iface
+    currently owns that address, so absent NICs (no carrier, no USB) are
+    skipped and the same script is safe on every interface event.
+    """
     cmds = [
-        # Strict ARP, system-wide. all.* is the floor; per-iface values are
-        # max(all, iface) for these two, so setting all is sufficient.
+        # all.* is the floor for both; setting all is sufficient.
         "sysctl -qw net.ipv4.conf.all.arp_ignore=1",
         "sysctl -qw net.ipv4.conf.all.arp_announce=2",
     ]
-    for iface, ip in sorted(addrs.items()):
+    for iface, ip in WOOMERA_NIC_IPS.items():
         t = TABLES[iface]
         cmds += [
-            f"ip route flush table {t} 2>/dev/null || true",
-            f"ip route add {SUBNET} dev {iface} src {ip} table {t}",
-            f"ip route add default via {gateway} dev {iface} table {t}",
-            f"ip rule del from {ip} table {t} 2>/dev/null || true",
-            f"ip rule add from {ip} table {t}",
+            f"if ip -o -4 addr show dev {iface} 2>/dev/null | grep -q ' {ip}/'; then",
+            f"  ip route flush table {t} 2>/dev/null || true",
+            f"  ip route add {SUBNET} dev {iface} src {ip} table {t}",
+            f"  ip route add default via {gateway} dev {iface} table {t}",
+            f"  ip rule del from {ip} table {t} 2>/dev/null || true",
+            f"  ip rule add from {ip} table {t}",
+            "fi",
         ]
     return cmds
 
@@ -126,18 +120,11 @@ def main() -> int:
     a = ap.parse_args()
 
     host = require(hint="is woomera up?")
-    addrs = live_addrs(host)
-    if not addrs:
-        log("no NICs from the table are up with an address - nothing to do")
-        return 1
-    log(f"box {host}; NICs: " + ", ".join(f"{k}={v}" for k, v in sorted(addrs.items())))
-
-    gw = box_sh(host, "ip route show default | head -1 | awk '{print $3}'")
-    if not gw:
-        log("no default gateway on the box - cannot build per-iface tables")
-        return 1
-    log(f"gateway {gw}")
-    cmds = plan(addrs, gw)
+    log(
+        f"box {host}; registry NICs: "
+        + ", ".join(f"{k}={v}" for k, v in WOOMERA_NIC_IPS.items())
+    )
+    cmds = plan(LAN_GATEWAY)
     if not (a.apply or a.persist):
         log("DRY RUN - would run on the box:")
         for c in cmds:
@@ -145,7 +132,7 @@ def main() -> int:
         log("pass --apply (now) or --persist (survives reboot)")
         return 0
 
-    box_sh(host, " && ".join(cmds), timeout=120)
+    box_sh(host, "sh <<'EOF'\n" + "\n".join(cmds) + "\nEOF", timeout=120)
     log("applied")
 
     if a.persist:

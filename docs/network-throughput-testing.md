@@ -130,6 +130,6 @@ investigation). Checks the box's routing (#170) before running and warns if
 the test won't exercise the interface you think it will.
 
 ```
-./scripts/eth-tx-capture-diag.py --box-ip 192.168.25.133 --box-iface enp0s2 \
+./scripts/eth-tx-capture-diag.py --box-ip 192.168.25.41 --box-iface enp0s2 \
     --bind-ip 192.168.25.147 --bind-iface enp7s0 --port 5603 --direction tx
 ```

@@ -18,6 +18,16 @@ UNVR_IPADDR = "192.168.25.140"
 # Static 1G (enp0s1) address the TrueNAS maint initramfs gives itself for netconsole: no
 # DHCP there. Same as woomera-enp0s1's reservation (awto-dan docs/network/ip-registry.toml).
 MAINT_1G_IPADDR = "192.168.25.40"
+# woomera's address per port, from awto-dan docs/network/ip-registry.toml (block .40-.47).
+# Static on the box (NetworkManager) + DHCP reservation. Keyed by Linux iface name.
+WOOMERA_NIC_IPS = {
+    "enp0s1": MAINT_1G_IPADDR,  # 1G
+    "enp0s2": "192.168.25.41",  # 10G, the data port
+    "enP1p1s0u1u1": "192.168.25.42",  # USB NIC 1
+    "enP1p1s0u1u3": "192.168.25.43",  # USB NIC 3
+}
+WOOMERA_DATA_IP = WOOMERA_NIC_IPS["enp0s2"]
+LAN_GATEWAY = "192.168.25.254"  # ER605; also DNS (registry rules)
 
 
 def detect_server_ip(peer: str = UNVR_IPADDR, port: int = 69) -> str:
