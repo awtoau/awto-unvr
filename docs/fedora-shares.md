@@ -10,6 +10,7 @@
 | `/srv/mirror` | btrfs RAID1 data+meta, crc32c, label btrfs-test | WD82PURZ VGG8B0LG + VGG8ASZG | `noatime,space_cache=v2,nofail,x-systemd.device-timeout=30s` |
 | `/srv/single` | btrfs `-d single -m dup`, crc32c, label single-5t | ST6000VX001 WCT3LCS1 (ZFS `tank` wiped) | same |
 - Mirror UUID changes on every `bench-all --btrfs-config`; re-run `fedora-shares apply` afterwards (replaces the fstab line by mount point).
+- **Holds user data (2026-11-17):** `/srv/mirror/awto-music-duplicates` (subvolume, awto-music#22) is the only copy of those files. Never `bench-all --btrfs-config`, mkfs or wipe sda/sdb while it exists, without Dan's explicit say-so.
 - Top dirs owned `dan:dan` (uid 1000; box user `dan` has no shell/home).
 - `/mnt/btrfs-test` is retired; `bench-all` default is `/srv/mirror`.
 
