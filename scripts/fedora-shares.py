@@ -255,7 +255,7 @@ def cmd_apply(plan: bool, accept_wipe: bool) -> int:
     log(f"== fedora-shares {'plan' if plan else 'apply'} on {b.ip}")
     if not plan and b.sh("rpm -q nfs-utils samba >/dev/null", check=False).returncode:
         raise RuntimeError(
-            "dnf install nfs-utils samba samba-client first (box has no default route: ip route add default via 192.168.25.254 metric 500 + a nameserver, temporary)"
+            "dnf install nfs-utils samba samba-client cifs-utils first (docs/fedora-shares.md: box needs a temporary default route + nameserver)"
         )
     unmount_old_test(b)
     if not plan:

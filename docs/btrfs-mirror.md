@@ -2,7 +2,7 @@
 
 - Measured 2026-11-17, Fedora, kernel 7.4.0-rc2-perf-9b19c94+, 4x A57 (CE aes/pmull/sha2/crc32), 3.8G RAM.
 - Disks: 2x WD82PURZ (serials VGG8B0LG, VGG8ASZG) on SATA; whole-disk btrfs, no partitions.
-- `-d raid1 -m raid1`, default nodesize, `noatime`; mounted at `/mnt/btrfs-test` (not in fstab).
+- `-d raid1 -m raid1`, default nodesize, `noatime`; mounted at `/srv/mirror` via fstab by UUID (docs/fedora-shares.md).
 - Previous tank ZFS pool on these disks is gone (Dan's decision; rebuild later).
 - Decisions + raw data: #372, `bench-history/bench-20261117-*.json`, harness `scripts/bench-all.py`.
 
