@@ -1,6 +1,6 @@
 # Fedora shares, persistent mounts, network benches (#372)
 
-- Measured 2026-11-17, woomera Fedora 7.4.0-rc2-perf-9b19c94+, box 10G `enp0s2` (74:ac:b9:41:a8:12, .127) <-> workstation `enp8s0` (Mellanox mlx4, 10000 Mb/s, 00:02:c9:56:ff:e2, .30).
+- Measured 2026-11-17, woomera Fedora 7.4.0-rc2-perf-9b19c94+, box 10G `enp0s2` (74:ac:b9:41:a8:12, then .127, now .41) <-> workstation `enp8s0` (Mellanox mlx4, 10000 Mb/s, 00:02:c9:56:ff:e2, .30).
 - Setup is code: `./dev.py fedora-shares plan|apply [--i-accept-wipe]|verify` (`scripts/fedora-shares.py`). Idempotent; owns fstab lines, `/etc/exports.d/awto.exports`, `/etc/samba/smb.conf`, user `dan`.
 - Box has no default route in the main table and no resolv.conf (multihome policy routing, #170): `dnf` needs a temporary `ip route add default via 192.168.25.254 metric 500` + `/run/NetworkManager/resolv.conf`. Packages: `nfs-utils samba samba-client cifs-utils`.
 
@@ -13,6 +13,18 @@
 - **Holds user data (2026-11-17):** `/srv/mirror/awto-music-duplicates` (subvolume, awto-music#22) is the only copy of those files. Never `bench-all --btrfs-config`, mkfs or wipe sda/sdb while it exists, without Dan's explicit say-so.
 - Top dirs owned `dan:dan` (uid 1000; box user `dan` has no shell/home).
 - `/mnt/btrfs-test` is retired; `bench-all` default is `/srv/mirror`.
+
+## Addresses (awto-dan `docs/network/ip-registry.toml`, woomera block .40-.47)
+- Static in NetworkManager, bound by iface + MAC: `enp0s1` (1G) 192.168.25.40, `enp0s2` (10G) 192.168.25.41; gateway/DNS .254. enp0s1 route metric 200, enp0s2 100.
+- Shares and mounts use the 10G address `.41` (`WOOMERA_DATA_IP` in `scripts/_net.py`). The old DHCP-pool address .127 is gone from the persistent config.
+- `scripts/fix-multihome-routing.py --persist` builds the per-NIC source rules from `_net.WOOMERA_NIC_IPS`; a block applies only when that iface owns its address.
+- U-Boot `ipaddr` (.140, in the DHCP pool) is a separate NOR env value, not yet moved.
+
+## Workstation mounts (survive a reboot)
+- `./dev.py mount-woomera install` writes the `# BEGIN awto-woomera` block in `/etc/fstab` (backup in `tmp/`, `findmnt --verify` first), `/etc/samba/woomera.creds` (root 0600, secrets.yaml section `woomera-fedora-smb`), `/mnt/woomera/<proto>-<share>` and starts the `.automount` units. `uninstall` reverses it.
+- Entries: `nfs-system` (`/`), `nfs-mirror`, `nfs-single`, `smb-mirror`, `smb-single`; host = `.41`.
+- Options: `noauto,x-systemd.automount,x-systemd.idle-timeout=60,x-systemd.mount-timeout=15,_netdev,x-gvfs-show,x-gvfs-name=woomera-<proto>-<share>`; NFS adds `nosharecache` (a second mount of the same export via another address fails EBUSY otherwise), SMB adds `credentials=,uid=1000,gid=1000,vers=3.1.1`.
+- Mount-timeout 15 s: box off => `ls` fails after <=15 s, boot and Nautilus are not blocked. Idle unmount after 60 s.
 
 ## Firewall / SELinux
 - SELinux: Disabled. No firewalld, no nftables/iptables binaries, no `nf_tables`/`ip_tables` in the kernel: nothing filters. Access control = smb `hosts allow` + export subnet only.
@@ -28,7 +40,7 @@
 - `/etc/exports.d/awto.exports` (written by apply): `/` (`fsid=0`), `/srv/mirror` (`fsid=2`), `/srv/single` (`fsid=3`) to `192.168.25.0/24`, `rw,no_subtree_check,root_squash`; data drives `async` (Dan, 2026-11-17), `/` stays `sync`, no `crossmnt`. NFS 3, 4.0, 4.1, 4.2 served (`/proc/fs/nfsd/versions`).
   - `fsid=0` on `/` is the NFSv4 pseudo-root: without one, v4 mounts fail `No such file or directory` (v3 works). The exported `/srv/*` filesystems appear under `host:/srv/...` and are crossed automatically (each is exported itself), so `crossmnt` is not needed.
   - `root_squash` (tested from the workstation, client uid 1000 = box `dan`): client root writing `/`, `/etc`, `/srv/mirror` -> `Permission denied`; client root listing `/root` -> denied (mapped to nobody). Client uid 1000 can create files under `/var/tmp` (owner 1000 on the box) and `/srv/*`, nothing else root-owned (`/etc` denied). World-readable files under `/` are readable by any host in the /24 (no auth: `sec=sys`).
-- Mount from the client: `mount -t nfs4 -o vers=4.2 192.168.25.127:/srv/mirror <dir>` (rsize/wsize negotiate to 512 KiB).
+- Mount from the client: `mount -t nfs4 -o vers=4.2 192.168.25.41:/srv/mirror <dir>` (rsize/wsize negotiate to 512 KiB).
 - `sync` (only `/`, the live root): the server commits every write to disk before replying; on btrfs over HDD that is a barrier flush per commit.
 - `bench-all --nfs --share-targets mirror single system` (`scripts/bench-all.py`).
 
