@@ -1269,6 +1269,16 @@ def cmd_mount_woomera(extra: list[str]) -> int:
 
 
 @command(
+    "hourly btrfs dedupe on woomera: systemd timers + duperemove for /srv/mirror and /srv/single "
+    "(scripts/dedupe-schedule.py, #372)",
+    args="plan|apply|status",
+    kind="action",
+)
+def cmd_dedupe_schedule(extra: list[str]) -> int:
+    return _run_script("scripts/dedupe-schedule.py", extra)
+
+
+@command(
     "install/shred the tank/home ZFS key (from secrets.yaml) at /root/home.key on woomera "
     "(scripts/home-key-put.py, #370)",
     args="put|shred",
