@@ -48,6 +48,12 @@ Subtests (each is a function taking a Report; metrics land in the snapshot and
   encryption=aes-256-gcm/ccm, passphrase on stdin); MB/s + whole-box CPU busy %; datasets
   destroyed after. Records the active icp_aes_impl / icp_gcm_impl in the snapshot info:
   switch them in /sys/module/zfs/parameters/ between runs to compare impls.
+- btrfs-mirror (opt-in, never --idle, #372): `--btrfs-mirror` fio (8G, direct=1) on the btrfs
+  RAID1 at /mnt/btrfs-test: seq 1M w/r, 4k rand r/w, whole-box CPU %; SKIP if nothing mounted.
+  `--btrfs-config CSUM[:mountopts] --btrfs-serials A B --i-accept-wipe` wipes exactly those
+  two WD82PURZ serials (refuses protected/mounted/other), mkfs raid1, mounts, benches;
+  repeatable. `--btrfs-raw SERIAL` = single-disk ceiling. `--hash` = AF_ALG hash MB/s per
+  driver; `--crypt-impls` = dm-crypt aes-xts per driver on zram. docs/btrfs-mirror.md.
 - opt-in, never in --idle: --dma-reload (rmmod/modprobe al_dma; wedge risk until
   #289 is verified on hardware, reboot after), --dma-pq (#169), --ssm (al_ssm
   through dm-crypt: ops landed, cmp integrity, quiesce; drives #300/#182),
@@ -1267,6 +1273,427 @@ def bench_pool_crypt(host: str, password: str, report: Report, pool: str) -> Non
             f"{tag} cleanup",
             rc == 0,
             f"zfs destroy -r {root}: rc={rc} {out.strip()[-120:]}",
+        )
+
+
+# ======== Btrfs RAID1 mirror (opt-in, never --idle) ========
+# Benchmarks a mounted btrfs test fs. The destructive step (wipe + mkfs) is
+# explicit: --btrfs-config + --btrfs-serials A B + --i-accept-wipe, by-id serials only.
+BTRFS_MNT = "/mnt/btrfs-test"
+BTRFS_MODEL = "WD82PURZ"
+# serials that must never be wiped: ST6000VX001, Samsung 850 EVO (root), Cruzer
+BTRFS_PROTECTED = ("WCT3LCS1", "S21BNXAG501763W", "20054862301644D34A3D")
+BTRFS_CSUMS = ("crc32c", "xxhash", "sha256", "blake2b")
+BTRFS_SIZE = "8G"  # > 2x RAM (3.9 GB)
+BTRFS_RUNTIME_S = 30
+BTRFS_WRITE_LIMIT_S = 420  # 8G at a 20 MB/s floor
+BTRFS_MKFS_LIMIT_S = 120  # mkfs + 4 MiB zeroing on two disks: seconds
+BTRFS_CRYPT_MAP = "btcrypt"
+BTRFS_JOBS = (
+    ("seq-write-1M", "write", "1M", 4, True, None),
+    ("seq-read-1M", "read", "1M", 4, False, BTRFS_RUNTIME_S),
+    ("randread-4k", "randread", "4k", 16, False, BTRFS_RUNTIME_S),
+    ("randwrite-4k", "randwrite", "4k", 16, True, BTRFS_RUNTIME_S),
+)
+
+
+def btrfs_resolve(host: str, password: str, serials: list[str]) -> list[str]:
+    """by-id path per serial; raises RuntimeError unless each is an unmounted,
+    unprotected WD82PURZ that is not `/`."""
+    if not 1 <= len(serials) <= 2 or len(set(serials)) != len(serials):
+        raise RuntimeError("need one or two distinct serials")
+    rc, out = run_remote(
+        host,
+        password,
+        "lsblk -J -o NAME,PATH,SERIAL,MODEL,MOUNTPOINTS,FSTYPE,TYPE",
+        timeout=30,
+    )
+    if rc != 0:
+        raise RuntimeError(f"lsblk failed: {out[-200:]}")
+    tree = json.loads(out[out.find("{") :])["blockdevices"]
+    paths = []
+    for s in serials:
+        if s in BTRFS_PROTECTED:
+            raise RuntimeError(f"{s} is protected")
+        d = next((x for x in tree if x.get("serial") == s), None)
+        if d is None or BTRFS_MODEL not in (d.get("model") or ""):
+            raise RuntimeError(f"{s}: no {BTRFS_MODEL} disk with that serial")
+        stack, mounts = [d], []
+        while stack:
+            n = stack.pop()
+            mounts += [m for m in (n.get("mountpoints") or []) if m]
+            stack += n.get("children") or []
+        if mounts:
+            raise RuntimeError(f"{s}: mounted/in use at {mounts}")
+        rc, p = run_remote(host, password, f"ls /dev/disk/by-id/ata-*_{s}", timeout=15)
+        paths.append(p.split()[0] if rc == 0 and p.strip() else d["path"])
+    return paths
+
+
+def _btrfs_wipe_script(dev: str) -> str:
+    """Zero first/last 4 MiB of every partition then the disk (ZFS labels sit at
+    both ends); blkdiscard is not for HDD."""
+    return f"""set -e
+D=$(readlink -f {dev})
+for p in $(lsblk -nlo PATH "$D" | tail -n +2) "$D"; do
+  sz=$(blockdev --getsz "$p")
+  wipefs -a "$p" >/dev/null
+  dd if=/dev/zero of="$p" bs=1M count=4 oflag=direct status=none
+  dd if=/dev/zero of="$p" bs=512 seek=$((sz-8192)) count=8192 oflag=direct status=none
+done
+partprobe "$D" || true
+udevadm settle
+"""
+
+
+def btrfs_mkfs(
+    host: str,
+    password: str,
+    serials: list[str],
+    csum: str,
+    mopts: str,
+    report: Report,
+    crypt: str = "",
+) -> bool:
+    """Unmount, wipe the two named disks, mkfs.btrfs RAID1 --csum, mount at
+    BTRFS_MNT. crypt = dm-crypt cipher spec under each disk ("" = none)."""
+    tag = f"btrfs-mkfs {csum}"
+    try:
+        devs = btrfs_resolve(host, password, serials)
+    except RuntimeError as e:
+        report.add(tag, False, f"REFUSED: {e}")
+        return False
+    run = lambda s, t: run_remote(host, password, s, timeout=t)  # noqa: E731
+    rc, out = run("lsblk -o NAME,SIZE,MODEL,SERIAL,MOUNTPOINTS,FSTYPE", 30)
+    log_line(f"btrfs-mkfs targets {serials} -> {devs}\n{out}")
+    run(
+        f"umount {BTRFS_MNT} 2>/dev/null; "
+        f"for m in {BTRFS_CRYPT_MAP}0 {BTRFS_CRYPT_MAP}1; do dmsetup remove $m 2>/dev/null; done; true",
+        60,
+    )
+    members = devs
+    script = "".join(_btrfs_wipe_script(d) for d in devs)
+    if crypt:
+        key = secrets.token_hex(64)  # throwaway: xts-aes 512-bit
+        for i, d in enumerate(devs):
+            script += (
+                f'dmsetup create {BTRFS_CRYPT_MAP}{i} --table "0 $(blockdev --getsz $(readlink -f {d})) '
+                f'crypt {crypt} {key} 0 $(readlink -f {d}) 0"\n'
+            )
+        members = [f"/dev/mapper/{BTRFS_CRYPT_MAP}{i}" for i in range(2)]
+    script += (
+        f"mkfs.btrfs -f -L btrfs-test -d raid1 -m raid1 --csum {csum} {' '.join(members)}\n"
+        f"mkdir -p {BTRFS_MNT}\n"
+        f"mount -o noatime{',' + mopts if mopts else ''} {members[0]} {BTRFS_MNT}\n"
+    )
+    rc, out = run("set -e\n" + script, BTRFS_MKFS_LIMIT_S)
+    ok = rc == 0
+    rc2, after = run("lsblk -o NAME,SIZE,SERIAL,MOUNTPOINTS,FSTYPE", 30)
+    log_line(f"btrfs-mkfs after:\n{after}")
+    report.add(
+        tag,
+        ok,
+        f"{serials} csum={csum} opts={mopts or '-'} crypt={crypt or '-'}"
+        + ("" if ok else f" failed rc={rc}: {out.strip()[-200:]}"),
+    )
+    return ok
+
+
+def btrfs_fio_cmd(
+    path: str, rw: str, bs: str, qd: int, runtime: int | None, compress_pct: int
+) -> str:
+    parts = [
+        "fio --name=btrfsfio",
+        f"--filename={path} --size={BTRFS_SIZE}",
+        "--direct=1 --ioengine=libaio --group_reporting --end_fsync=1",
+        f"--rw={rw} --bs={bs} --iodepth={qd}",
+        f"--refill_buffers --buffer_compress_percentage={compress_pct} --randrepeat=0",
+        "--output-format=json",
+    ]
+    if runtime is not None:
+        parts.append(f"--runtime={runtime} --time_based")
+    return " ".join(parts)
+
+
+def _btrfs_fs_label(host: str, password: str) -> tuple[str | None, str]:
+    """(label, detail) of the btrfs mounted at BTRFS_MNT, None if absent."""
+    rc, out = run_remote(
+        host,
+        password,
+        f"findmnt -n -o FSTYPE,SOURCE,OPTIONS {BTRFS_MNT}",
+        timeout=15,
+    )
+    parts = out.split()
+    if rc != 0 or len(parts) < 3 or parts[0] != "btrfs":
+        return None, out.strip()
+    rc, sb = run_remote(
+        host,
+        password,
+        f"btrfs inspect-internal dump-super {parts[1]} | grep -E '^csum_type'",
+        timeout=15,
+    )
+    m = re.search(r"\((\w+)\)", sb)
+    csum = m.group(1).lower() if m else "?"
+    opts = parts[2]
+    lab = csum
+    if "nodatasum" in opts:
+        lab += "+nodatasum"
+    mc = re.search(r"compress(?:-force)?=([\w:]+)", opts)
+    if mc:
+        lab += "+" + mc.group(1).replace(":", "")
+    if "/dev/mapper/" in parts[1]:
+        lab += "+crypt"
+    return lab, f"{parts[1]} {opts}"
+
+
+def bench_btrfs(
+    host: str,
+    password: str,
+    report: Report,
+    data: str = "incompressible",
+    runtime: int = BTRFS_RUNTIME_S,
+) -> None:
+    run = lambda s, t: run_remote(host, password, s, timeout=t)  # noqa: E731
+    label, detail = _btrfs_fs_label(host, password)
+    if label is None:
+        report.add(
+            "btrfs-mirror",
+            True,
+            f"SKIP: no btrfs mounted at {BTRFS_MNT} ({detail}); "
+            "make one with --btrfs-config C --btrfs-serials A B --i-accept-wipe",
+        )
+        return
+    tag = f"btrfs {label} {data[:6]}"
+    pct = 0 if data == "incompressible" else 90
+    report.info[tag] = detail
+    path = f"{BTRFS_MNT}/fio.dat"
+    try:
+        for name, rw, bs, qd, write, rt in BTRFS_JOBS:
+            if not write:
+                run("sync; echo 3 > /proc/sys/vm/drop_caches", 60)
+            _pool_job(
+                run,
+                tag,
+                name,
+                btrfs_fio_cmd(path, rw, bs, qd, rt if rt is None else runtime, pct),
+                write,
+                BTRFS_WRITE_LIMIT_S if rt is None else runtime + POOL_FIO_SLACK_S + 60,
+                bs,
+                report,
+            )
+    finally:
+        run(f"rm -f {path}; sync", 120)
+
+
+def bench_btrfs_raw(host: str, password: str, report: Report, serial: str) -> None:
+    """Single-disk ceiling: same jobs on the raw disk by serial (destroys its
+    content; guarded by btrfs_resolve; needs --i-accept-wipe)."""
+    run = lambda s, t: run_remote(host, password, s, timeout=t)  # noqa: E731
+    tag = f"rawdisk {serial}"
+    try:
+        dev = btrfs_resolve(host, password, [serial])[0]
+    except RuntimeError as e:
+        report.add(tag, False, f"REFUSED: {e}")
+        return
+    for name, rw, bs, qd, write, rt in BTRFS_JOBS:
+        if not write:
+            run("sync; echo 3 > /proc/sys/vm/drop_caches", 60)
+        _pool_job(
+            run,
+            tag,
+            name,
+            btrfs_fio_cmd(dev, rw, bs, qd, rt if rt is None else BTRFS_RUNTIME_S, 0),
+            write,
+            BTRFS_WRITE_LIMIT_S
+            if rt is None
+            else BTRFS_RUNTIME_S + POOL_FIO_SLACK_S + 60,
+            bs,
+            report,
+        )
+
+
+# ---- raw hash speed (AF_ALG), the btrfs checksum algorithms ----
+_HASH_REMOTE_SCRIPT = """
+import socket, os, time, json
+ALGS = ["crc32c", "xxhash64", "sha256", "blake2b-256"]
+def drivers(name):
+    out = []
+    for blk in open("/proc/crypto").read().split("\\n\\n"):
+        d = dict(l.split(":", 1) for l in blk.splitlines() if ":" in l)
+        d = {k.strip(): v.strip() for k, v in d.items()}
+        if d.get("name") == name and d.get("type") in ("shash", "ahash"):
+            out.append((d["driver"], int(d["priority"])))
+    return sorted(out, key=lambda x: -x[1])
+def run(sel, chunk, total):
+    s = socket.socket(socket.AF_ALG, socket.SOCK_SEQPACKET, 0)
+    try:
+        s.bind(("hash", sel))
+    except OSError as e:
+        return {"error": str(e)}
+    op, _ = s.accept()
+    buf = os.urandom(chunk)
+    n = total // chunk
+    t0 = time.monotonic()
+    for _ in range(n):
+        op.send(buf)
+        op.recv(64)
+    dt = time.monotonic() - t0
+    return {"mbps": n * chunk / dt / 1e6}
+def run_stream(sel, chunk, total):
+    s = socket.socket(socket.AF_ALG, socket.SOCK_SEQPACKET, 0)
+    try:
+        s.bind(("hash", sel))
+    except OSError as e:
+        return {"error": str(e)}
+    op, _ = s.accept()
+    buf = os.urandom(chunk)
+    n = total // chunk
+    t0 = time.monotonic()
+    for _ in range(n - 1):
+        op.send(buf, socket.MSG_MORE)
+    op.send(buf)
+    op.recv(64)
+    dt = time.monotonic() - t0
+    return {"mbps": n * chunk / dt / 1e6}
+res = []
+for a in ALGS:
+    for drv, prio in drivers(a):
+        r = {"alg": a, "driver": drv, "prio": prio}
+        # AF_ALG binds by generic name only (driver names give ENOENT): top priority wins
+        r["128k"] = run_stream(a, 128 << 10, 512 << 20)
+        r["4k"] = run(a, 4096, 64 << 20)
+        res.append(r)
+        break
+print(json.dumps(res))
+"""
+
+
+def bench_hash(host: str, password: str, report: Report) -> None:
+    payload = base64.b64encode(_HASH_REMOTE_SCRIPT.encode()).decode()
+    rc, out = run_remote(
+        host,
+        password,
+        f"echo {payload} | base64 -d > /var/tmp/_bench_hash.py && python3 /var/tmp/_bench_hash.py; rm -f /var/tmp/_bench_hash.py",
+        timeout=180,
+    )
+    try:
+        rows = json.loads(out.strip().splitlines()[-1])
+    except (json.JSONDecodeError, IndexError):
+        report.add("hash", False, f"rc={rc} no JSON: {out.strip()[-300:]}")
+        return
+    for r in rows:
+        for k in ("128k", "4k"):
+            v = r[k]
+            name = f"hash {r['alg']} [{r['driver']}] {k}"
+            if "mbps" in v:
+                report.add(
+                    name,
+                    True,
+                    f"{v['mbps']:.0f} MB/s (prio {r['prio']})",
+                    metric=v["mbps"],
+                )
+            else:
+                report.add(name, True, f"n/a: AF_ALG bind refused ({v['error']})")
+
+
+# no loop device in this kernel: RAM-backed block devices are zram (incompressible data
+# is stored raw; the failed-compress attempt is a constant CPU cost across csums)
+_ZRAM_ADD = (
+    "for n in 0 1; do i=$(cat /sys/class/zram-control/hot_add); "
+    "echo 1200M > /sys/block/zram$i/disksize; echo /dev/zram$i; done > /dev/shm/btram.devs"
+)
+_ZRAM_DEL = (
+    "for d in $(cat /dev/shm/btram.devs); do "
+    "echo ${d#/dev/zram} > /sys/class/zram-control/hot_remove; done; rm -f /dev/shm/btram.devs"
+)
+
+
+def bench_btrfs_ram(host: str, password: str, report: Report) -> None:
+    """btrfs RAID1 on two zram devices, per csum: the in-kernel checksum
+    cost with the disks out of the picture (AF_ALG exposes only sha256)."""
+    run = lambda s, t: run_remote(host, password, s, timeout=t)  # noqa: E731
+    mnt = "/mnt/btrfs-ram"
+    for csum in BTRFS_CSUMS:
+        rc, out = run(
+            f"set -e; umount {mnt} 2>/dev/null || true; mkdir -p {mnt}; {_ZRAM_ADD}; "
+            f"mkfs.btrfs -q -f -d raid1 -m raid1 --csum {csum} $(cat /dev/shm/btram.devs); "
+            f"mount -o noatime $(head -1 /dev/shm/btram.devs) {mnt}",
+            60,
+        )
+        tag = f"btrfs-ram {csum}"
+        if rc != 0:
+            report.add(tag, False, f"setup failed rc={rc}: {out.strip()[-200:]}")
+        else:
+            for name, rw, write in (
+                ("seq-write-1M", "write", True),
+                ("seq-read-1M", "read", False),
+            ):
+                if not write:
+                    run("sync; echo 3 > /proc/sys/vm/drop_caches", 60)
+                _pool_job(
+                    run,
+                    tag,
+                    name,
+                    f"fio --name=r --filename={mnt}/f --size=900M --loops=4 --direct=1 --ioengine=libaio "
+                    f"--rw={rw} --bs=1M --iodepth=8 --numjobs=1 --end_fsync=1 --refill_buffers "
+                    "--randrepeat=0 --group_reporting --output-format=json",
+                    write,
+                    90,
+                    "1M",
+                    report,
+                )
+        run(
+            f"umount {mnt}; {_ZRAM_DEL}",
+            60,
+        )
+
+
+# ---- dm-crypt aes-xts per implementation, RAM-backed so the disk is out of it ----
+CRYPT_IMPLS = (
+    ("default", "capi:xts(aes)-plain64"),
+    ("xts-aes-al-ssm", "capi:xts-aes-al-ssm-plain64"),
+    ("xts-aes-ce", "capi:xts-aes-ce-plain64"),
+    ("xts-aes-neon", "capi:xts-aes-neon-plain64"),
+    ("xts-aes-lib", "capi:xts-aes-lib-plain64"),
+)
+CRYPT_STATE = "/dev/shm/bench-crypt.zram"
+CRYPT_MIB = 1024
+CRYPT_RUNTIME_S = 10
+
+
+def bench_crypt_impls(host: str, password: str, report: Report) -> None:
+    run = lambda s, t: run_remote(host, password, s, timeout=t)  # noqa: E731
+    for name, spec in CRYPT_IMPLS:
+        key = secrets.token_hex(64)
+        rc, out = run(
+            f"set -e; i=$(cat /sys/class/zram-control/hot_add); echo $i > {CRYPT_STATE}; "
+            f"echo {CRYPT_MIB}M > /sys/block/zram$i/disksize; "
+            f'dmsetup create btbench --table "0 {CRYPT_MIB * 2048} crypt {spec} {key} 0 /dev/zram$i 0"; echo ok',
+            60,
+        )
+        tag = f"crypt {name}"
+        if rc != 0:
+            report.add(
+                tag, True, f"n/a: dm-crypt rejected {spec}: {out.strip()[-150:]}"
+            )
+        else:
+            for rw, write in (("write", True), ("read", False)):
+                _pool_job(
+                    run,
+                    tag,
+                    f"seq-{rw}-1M",
+                    f"fio --name=c --filename=/dev/mapper/btbench --direct=1 --ioengine=libaio "
+                    f"--rw={rw} --bs=1M --iodepth=8 --size={CRYPT_MIB}M --runtime={CRYPT_RUNTIME_S} "
+                    "--time_based --group_reporting --output-format=json",
+                    write,
+                    CRYPT_RUNTIME_S + POOL_FIO_SLACK_S,
+                    "1M",
+                    report,
+                )
+        run(
+            "dmsetup remove btbench 2>&1; "
+            f"echo $(cat {CRYPT_STATE}) > /sys/class/zram-control/hot_remove; rm -f {CRYPT_STATE}",
+            60,
         )
 
 
@@ -2552,6 +2979,24 @@ def run_subtests(
     if args.pool_nfs:
         check()
         bench_pool_nfs(host, pw, report, args.pool_nfs, runtime=args.pool_fio_runtime)
+    if args.btrfs_raw:
+        for ser in args.btrfs_raw:
+            bench_btrfs_raw(host, pw, report, ser)
+    for cfg in args.btrfs_config or []:
+        csum, _, mopts = cfg.partition(":")
+        if csum not in BTRFS_CSUMS:
+            report.add("btrfs-mkfs", False, f"unknown csum {csum}")
+        elif btrfs_mkfs(
+            host, pw, args.btrfs_serials, csum, mopts, report, args.btrfs_crypt
+        ):
+            bench_btrfs(host, pw, report, args.btrfs_data, args.btrfs_runtime)
+    if args.btrfs_mirror and not args.btrfs_config:
+        bench_btrfs(host, pw, report, args.btrfs_data, args.btrfs_runtime)
+    if args.hash:
+        bench_hash(host, pw, report)
+        bench_btrfs_ram(host, pw, report)
+    if args.crypt_impls:
+        bench_crypt_impls(host, pw, report)
     if not args.skip_dma:
         check()
         bench_dma(
@@ -2798,6 +3243,57 @@ def main() -> int:
     )
     ap.add_argument("--pool-fio-runtime", type=int, default=POOL_FIO_RUNTIME_S)
     ap.add_argument(
+        "--btrfs-mirror",
+        action="store_true",
+        help=f"fio on the btrfs RAID1 mounted at {BTRFS_MNT} (SKIP if none)",
+    )
+    ap.add_argument(
+        "--btrfs-config",
+        action="append",
+        metavar="CSUM[:MOUNTOPTS]",
+        help="WIPES --btrfs-serials, mkfs.btrfs raid1 --csum CSUM (crc32c|xxhash|sha256|"
+        "blake2b), mounts with MOUNTOPTS, then runs --btrfs-mirror; repeatable",
+    )
+    ap.add_argument(
+        "--btrfs-serials",
+        nargs=2,
+        metavar="SERIAL",
+        help="the two WD82PURZ serials --btrfs-config wipes (by-id; sdX never used)",
+    )
+    ap.add_argument(
+        "--btrfs-raw",
+        action="append",
+        metavar="SERIAL",
+        help="single-disk fio on the raw disk with this serial (WRITES to it)",
+    )
+    ap.add_argument(
+        "--btrfs-crypt",
+        default="",
+        metavar="CIPHER",
+        help="with --btrfs-config: dm-crypt under each disk, e.g. capi:xts(aes)-plain64",
+    )
+    ap.add_argument(
+        "--btrfs-data",
+        choices=("incompressible", "compressible"),
+        default="incompressible",
+    )
+    ap.add_argument("--btrfs-runtime", type=int, default=BTRFS_RUNTIME_S)
+    ap.add_argument(
+        "--i-accept-wipe",
+        action="store_true",
+        help="required with --btrfs-config / --btrfs-raw: destroys the named disks",
+    )
+    ap.add_argument(
+        "--hash",
+        action="store_true",
+        help="AF_ALG throughput of crc32c/xxhash64/sha256/blake2b-256 per driver",
+    )
+    ap.add_argument(
+        "--crypt-impls",
+        action="store_true",
+        help="dm-crypt aes-xts per kernel driver on a zram device (no disk)",
+    )
+    ap.add_argument(
         "--usb-fio-write",
         action="store_true",
         help="with --usb-fio: also write jobs, only onto the allow-listed USB SSD",
@@ -2906,12 +3402,26 @@ def main() -> int:
         sys.exit("--ssm-mib must split into whole 4 KiB blocks per --ssm-writers")
     if args.dma_pq and not args.dma_reload:
         sys.exit("--dma-pq needs --dma-reload (enable_pq is a module parameter)")
+    if args.btrfs_config and not (args.btrfs_serials and args.i_accept_wipe):
+        sys.exit(
+            "--btrfs-config wipes disks: needs --btrfs-serials A B --i-accept-wipe"
+        )
+    if args.btrfs_raw and not args.i_accept_wipe:
+        sys.exit("--btrfs-raw writes to the disk: needs --i-accept-wipe")
     if args.usb_fio_write and not args.usb_fio:
         sys.exit("--usb-fio-write needs --usb-fio")
     if args.idle and (args.pool_fio or args.pool_nfs or args.pool_crypt):
         sys.exit(
             "--pool-fio/--pool-nfs/--pool-crypt are not for --idle (heavy load, creates datasets)"
         )
+    if args.idle and (
+        args.btrfs_mirror
+        or args.btrfs_config
+        or args.btrfs_raw
+        or args.hash
+        or args.crypt_impls
+    ):
+        sys.exit("--btrfs-*/--hash/--crypt-impls are not for --idle")
     if args.idle and args.usb_fio:
         sys.exit("--usb-fio is not for --idle (fio load; not unattended)")
     if args.idle:
