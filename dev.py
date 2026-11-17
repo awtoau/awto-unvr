@@ -1250,6 +1250,16 @@ def cmd_truenas_config(extra: list[str]) -> int:
 
 
 @command(
+    "woomera Fedora: persistent btrfs mounts (/srv/mirror, /srv/single), NFS exports, SMB shares "
+    "(scripts/fedora-shares.py, docs/fedora-shares.md, #372)",
+    args="plan|apply [--i-accept-wipe]|verify",
+    kind="action",
+)
+def cmd_fedora_shares(extra: list[str]) -> int:
+    return _run_script("scripts/fedora-shares.py", extra)
+
+
+@command(
     "install/shred the tank/home ZFS key (from secrets.yaml) at /root/home.key on woomera "
     "(scripts/home-key-put.py, #370)",
     args="put|shred",
