@@ -541,6 +541,8 @@ def configure():
         + ["--module", "NFSD", "--enable", "NFSD_V4", "--enable", "NFSD_V3_ACL"]
         + ["--module", "NFS_FS", "--module", "NFS_V3", "--module", "NFS_V4"]
     )
+    # #373: SATA drive temps via hwmon (needs HWMON+ATA+SCSI, all already on).
+    run([cfg, "--file", os.path.join(KOUT, ".config"), "--module", "SENSORS_DRIVETEMP"])
     # al_ssm's only in-kernel consumer (#267: AF_ALG and fscrypt mask ASYNC
     # drivers out; dm-crypt does not). localmodconfig drops DM_CRYPT (the build
     # host has no dm-crypt volume loaded); `bench-all --ssm` needs it.
@@ -588,6 +590,7 @@ def configure():
         "CONFIG_SUNRPC=m",
         "CONFIG_LOCKD=m",
         "CONFIG_GRACE_PERIOD=m",
+        "CONFIG_SENSORS_DRIVETEMP=m",
         # #258: the build's own identity. olddefconfig has been seen to drop
         # a --set-str, and a silently-empty LOCALVERSION puts us straight
         # back to "every build looks identical".
