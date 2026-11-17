@@ -1,0 +1,162 @@
+{
+  "timestamp": "2026-11-17T15:51:36+11:00",
+  "commit": "39c004f-dirty",
+  "host": "192.168.25.127",
+  "kernel": "7.4.0-rc2-perf-e374a48-dirty+",
+  "checks": [
+    {
+      "name": "health al_eth module",
+      "ok": true,
+      "detail": "vermagic=7.4.0-rc2-perf-e374a48-dirty+ running=7.4.0-rc2-perf-e374a48-dirty+"
+    },
+    {
+      "name": "health link enp0s1",
+      "ok": false,
+      "detail": "speed=-1 carrier=0 oper=down"
+    },
+    {
+      "name": "health link enp0s2",
+      "ok": true,
+      "detail": "speed=10000 carrier=1 oper=up"
+    },
+    {
+      "name": "health adaptive moderation off",
+      "ok": true,
+      "detail": "off on enp0s1, enp0s2"
+    },
+    {
+      "name": "health MAC counters",
+      "ok": false,
+      "detail": "enp0s2 rx_errors 0->22"
+    },
+    {
+      "name": "health queue drop counters",
+      "ok": false,
+      "detail": "enp0s2 rx_dropped 0->21"
+    },
+    {
+      "name": "health kernel log",
+      "ok": true,
+      "detail": "no trouble lines"
+    },
+    {
+      "name": "eth 1G",
+      "ok": false,
+      "detail": "couldn't get IP for enp0s1"
+    },
+    {
+      "name": "eth 1G v6 control udp",
+      "ok": false,
+      "detail": "sender rc=0: SENDERR [Errno 101] Network is unreachable\nSENT ctl=0 hbh=0"
+    },
+    {
+      "name": "eth 10G host->box",
+      "ok": true,
+      "detail": "7.86 Gbits/sec"
+    },
+    {
+      "name": "eth 10G box->host",
+      "ok": true,
+      "detail": "6.99 Gbits/sec"
+    },
+    {
+      "name": "eth 10G v6 control udp",
+      "ok": true,
+      "detail": "100/100 arrived"
+    },
+    {
+      "name": "eth 10G v6 hop-by-hop udp csum",
+      "ok": true,
+      "detail": "100/100 arrived (lost ones failed the checksum)"
+    },
+    {
+      "name": "crypto xts(aes) [xts-aes-ce]",
+      "ok": true,
+      "detail": "533.0 MB/s (32.0MB in 0.06s)"
+    },
+    {
+      "name": "sata sda",
+      "ok": true,
+      "detail": "175.7 MB/sec"
+    },
+    {
+      "name": "sata sdb",
+      "ok": true,
+      "detail": "392.6 MB/sec"
+    },
+    {
+      "name": "sata sdc",
+      "ok": true,
+      "detail": "239.6 MB/sec"
+    },
+    {
+      "name": "sata sdd",
+      "ok": true,
+      "detail": "177.3 MB/sec"
+    },
+    {
+      "name": "usb sde",
+      "ok": true,
+      "detail": "14.4 MB/sec"
+    },
+    {
+      "name": "usb sde link",
+      "ok": true,
+      "detail": "480 Mb/s negotiated"
+    },
+    {
+      "name": "btrfs crc32c incomp single seq-write-1M",
+      "ok": true,
+      "detail": "194.8 MB/s 186 iops clat 19962 us cpu 6%"
+    },
+    {
+      "name": "btrfs crc32c incomp single seq-read-1M",
+      "ok": true,
+      "detail": "196.5 MB/s 187 iops clat 20649 us cpu 2%"
+    },
+    {
+      "name": "btrfs crc32c incomp single randread-4k",
+      "ok": true,
+      "detail": "1.3 MB/s 319 iops clat 49854 us cpu 1%"
+    },
+    {
+      "name": "btrfs crc32c incomp single randwrite-4k",
+      "ok": true,
+      "detail": "67.0 MB/s 16347 iops clat 845 us cpu 51%"
+    },
+    {
+      "name": "dma copy+xor",
+      "ok": true,
+      "detail": "copy0 20000 tests 0 fail 66638 iops, xor0 20000 tests 0 fail 63455 iops"
+    },
+    {
+      "name": "dma oversize",
+      "ok": true,
+      "detail": "copy0 300 tests 159 fail 18 iops, xor0 300 tests 264 fail 11 iops"
+    }
+  ],
+  "metrics": {
+    "link enp0s2 speed Mbps": 10000.0,
+    "eth 10G host->box": 7860.0,
+    "eth 10G box->host": 6990.0,
+    "crypto xts(aes) [xts-aes-ce]": 532.9749787206283,
+    "sata sda": 175.66,
+    "sata sdb": 392.63,
+    "sata sdc": 239.63,
+    "sata sdd": 177.31,
+    "usb sde": 14.4,
+    "usb sde link": 480.0,
+    "btrfs crc32c incomp single seq-write-1M": 194.809602,
+    "btrfs crc32c incomp single seq-read-1M": 196.477015,
+    "btrfs crc32c incomp single randread-4k": 318.691185,
+    "btrfs crc32c incomp single randwrite-4k": 16347.201072,
+    "dma dma0chan0 copy iops": 66638.23,
+    "dma dma0chan0 xor iops": 63455.19
+  },
+  "info": {
+    "kernel": "7.4.0-rc2-perf-e374a48-dirty+",
+    "btrfs crc32c incomp single": "/dev/sda rw,noatime,space_cache=v2,subvolid=5,subvol=/",
+    "btrfs crc32c incomp single data-df": "Data, single: total=9663676416, used=8589934592"
+  },
+  "all_ok": false
+}
