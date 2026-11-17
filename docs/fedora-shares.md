@@ -24,11 +24,11 @@
 
 ## NFS (kernel 7.4.0-rc2-perf, NFSD=m, 2026-11-17)
 - Kernel: `build-linux-fedora.py` force-enables `NFSD=m NFSD_V4=y NFSD_V3_ACL NFS_FS=m NFS_V3 NFS_V4` after localmodconfig (which drops them) and FATAL-checks them after olddefconfig; SUNRPC/LOCKD/GRACE_PERIOD follow as `=m` (#372). Boots via the normal `build-fedora --kernel perf` -> `publish-fedora` -> `deploy-ssd`. Rollback profile: `./dev.py boot-next fedora-alt` (previous kernel + dtb in `/boot/awto/fedora-alt`).
-- `/etc/exports.d/awto.exports` (written by apply): `/` (`fsid=0`), `/srv/mirror` (`fsid=2`), `/srv/single` (`fsid=3`) to `192.168.25.0/24`, `rw,sync,no_subtree_check,root_squash`, no `crossmnt`. NFS 3, 4.0, 4.1, 4.2 served (`/proc/fs/nfsd/versions`).
+- `/etc/exports.d/awto.exports` (written by apply): `/` (`fsid=0`), `/srv/mirror` (`fsid=2`), `/srv/single` (`fsid=3`) to `192.168.25.0/24`, `rw,no_subtree_check,root_squash`; data drives `async` (Dan, 2026-11-17), `/` stays `sync`, no `crossmnt`. NFS 3, 4.0, 4.1, 4.2 served (`/proc/fs/nfsd/versions`).
   - `fsid=0` on `/` is the NFSv4 pseudo-root: without one, v4 mounts fail `No such file or directory` (v3 works). The exported `/srv/*` filesystems appear under `host:/srv/...` and are crossed automatically (each is exported itself), so `crossmnt` is not needed.
   - `root_squash` (tested from the workstation, client uid 1000 = box `dan`): client root writing `/`, `/etc`, `/srv/mirror` -> `Permission denied`; client root listing `/root` -> denied (mapped to nobody). Client uid 1000 can create files under `/var/tmp` (owner 1000 on the box) and `/srv/*`, nothing else root-owned (`/etc` denied). World-readable files under `/` are readable by any host in the /24 (no auth: `sec=sys`).
 - Mount from the client: `mount -t nfs4 -o vers=4.2 192.168.25.127:/srv/mirror <dir>` (rsize/wsize negotiate to 512 KiB).
-- `exports sync` (default, kept): the server commits every write to disk before replying; on btrfs over HDD that is a barrier flush per commit.
+- `sync` (only `/`, the live root): the server commits every write to disk before replying; on btrfs over HDD that is a barrier flush per commit.
 - `bench-all --nfs --share-targets mirror single system` (`scripts/bench-all.py`).
 
 ## Network ceiling (iperf3 3.x, `--bind-dev enp8s0`, 10 s, 2026-11-17)
@@ -75,7 +75,7 @@
 | system SSD | small create / read | 128 / 3097 files/s | not run | not shared | - |
 - Host cpu 2-18% across runs; network ceiling not the limit for any target (reuse of the iperf3 table above: 9.3 Gbit/s host->box, 4.7-6.6 Gbit/s box->host, measured earlier today, same NIC/MAC `a8:12` re-confirmed after the reboot; box kernel changed since, not re-measured).
 - Sync export: sequential writes 25-35% of local, random 4k writes ~300 iops, small creates 24-70 files/s: every WRITE/COMMIT waits for a btrfs flush on the HDD. Reads are not affected (mirror 258 vs local 271 MB/s).
-- Async export: matches SMB on writes (mirror 253 vs 241 MB/s), 1.3-1.5x SMB on random write, 4-5x SMB on small creates (SMB 390 files/s is latency-bound; NFS async batches). Async loses acknowledged data if the box crashes or power-fails before writeback: a decision for Dan (not applied; `sync` stays).
+- Async export: matches SMB on writes (mirror 253 vs 241 MB/s), 1.3-1.5x SMB on random write, 4-5x SMB on small creates (SMB 390 files/s is latency-bound; NFS async batches). Async loses acknowledged data if the box crashes or power-fails before writeback: Dan chose async for /srv/mirror and /srv/single (2026-11-17); `/` stays sync.
 - Small reads: NFS 2100-3100 files/s vs SMB 700-750 (attribute/dentry caching, fewer round trips). Single-disk `read_policy` caveat above applies: one stream = one disk.
 - System SSD over NFS: reads 63-65% of local seq, 65% of local randread iops (box cpu 64%); write 39% of local with `sync`.
 

@@ -44,7 +44,10 @@ EXPORTS_FILE = "/etc/exports.d/awto.exports"
 SHARES = {"mirror": MIRROR_MNT, "single": SINGLE_MNT}  # SMB: data drives only
 # NFS: path -> fsid. "/" is fsid=0 = the NFSv4 root (v4 mounts fail ENOENT without one).
 NFS_EXPORTS = {"/": 0, MIRROR_MNT: 2, SINGLE_MNT: 3}
-NFS_OPTS = "rw,sync,no_subtree_check,root_squash"
+# async on the data drives (Dan 2026-11-17: ~4x write speed, loses acked writes on a crash/power loss);
+# the system SSD export stays sync: it is the live root.
+NFS_OPTS = "rw,no_subtree_check,root_squash"
+NFS_SYNC = {"/": "sync"}
 DRY = False
 
 
@@ -53,7 +56,8 @@ def exports_text() -> str:
         "# managed by scripts/fedora-shares.py (docs/fedora-shares.md); no crossmnt on purpose",
     ]
     lines += [
-        f"{p:<12} {LAN}({NFS_OPTS},fsid={fsid})" for p, fsid in NFS_EXPORTS.items()
+        f"{p:<12} {LAN}({NFS_SYNC.get(p, 'async')},{NFS_OPTS},fsid={fsid})"
+        for p, fsid in NFS_EXPORTS.items()
     ]
     return "\n".join(lines) + "\n"
 
