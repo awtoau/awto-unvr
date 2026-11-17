@@ -69,7 +69,7 @@ def smb_conf() -> str:
     server min protocol = SMB3
     map to guest = Never
     restrict anonymous = 2
-    hosts allow = 127. {LAN.rsplit('.', 2)[0]}.
+    hosts allow = 127. {LAN.rsplit(".", 2)[0]}.
     hosts deny = ALL
     disable netbios = yes
     smb ports = 445
@@ -115,7 +115,9 @@ def smb_password(create: bool) -> str | None:
     text = SECRETS.read_text()
     if not text.endswith("\n"):
         text += "\n"
-    SECRETS.write_text(text + "\n" + yaml.safe_dump({SMB_SECTION: sec}, sort_keys=False))
+    SECRETS.write_text(
+        text + "\n" + yaml.safe_dump({SMB_SECTION: sec}, sort_keys=False)
+    )
     SECRETS.chmod(0o600)
     log(f"secrets: created section {SMB_SECTION}")
     return pw
@@ -152,7 +154,10 @@ class Box:
         if cur == text.strip():
             log(f"  {path}: up to date")
             return
-        self.sh(f"mkdir -p $(dirname {path}) && cat > {path} && chmod {mode} {path}", stdin=text)
+        self.sh(
+            f"mkdir -p $(dirname {path}) && cat > {path} && chmod {mode} {path}",
+            stdin=text,
+        )
         log(f"  {path}: written")
 
 
@@ -177,7 +182,10 @@ def nfsd_available(b: Box) -> bool:
     """nfsd registers in /proc/filesystems once built in or after modprobe nfsd."""
     if DRY:
         return True
-    return b.sh("grep -qw nfsd /proc/filesystems || modprobe nfsd", check=False).returncode == 0
+    return (
+        b.sh("grep -qw nfsd /proc/filesystems || modprobe nfsd", check=False).returncode
+        == 0
+    )
 
 
 def ensure_fstab(b: Box, uuid: str, mnt: str, label: str) -> None:
@@ -215,7 +223,9 @@ def make_single(b: Box, accept: bool) -> None:
         return
     log(b.out("lsblk -o NAME,SIZE,MODEL,SERIAL,FSTYPE,LABEL,MOUNTPOINTS"))
     if not accept:
-        raise RuntimeError(f"single drive needs wipe: rerun with --i-accept-wipe ({dev})")
+        raise RuntimeError(
+            f"single drive needs wipe: rerun with --i-accept-wipe ({dev})"
+        )
     mounted = b.out(f"lsblk -nlo MOUNTPOINTS {dev} | grep -v '^$'")
     if mounted:
         raise RuntimeError(f"{dev} in use: {mounted}")
@@ -243,13 +253,17 @@ def cmd_apply(plan: bool, accept_wipe: bool) -> int:
     DRY = plan
     b = Box()
     log(f"== fedora-shares {'plan' if plan else 'apply'} on {b.ip}")
-    if not plan and (rc := b.sh("rpm -q nfs-utils samba >/dev/null", check=False).returncode):
-        raise RuntimeError("dnf install nfs-utils samba samba-client first (box has no default route: ip route add default via 192.168.25.254 metric 500 + a nameserver, temporary)")
+    if not plan and b.sh("rpm -q nfs-utils samba >/dev/null", check=False).returncode:
+        raise RuntimeError(
+            "dnf install nfs-utils samba samba-client first (box has no default route: ip route add default via 192.168.25.254 metric 500 + a nameserver, temporary)"
+        )
     unmount_old_test(b)
     if not plan:
         make_single(b, accept_wipe)
     else:
-        log("  single: would wipe+mkfs only if no btrfs label single-5t (needs --i-accept-wipe)")
+        log(
+            "  single: would wipe+mkfs only if no btrfs label single-5t (needs --i-accept-wipe)"
+        )
     mdev = by_id(b, MIRROR_SERIALS[0]) if not plan else "<mirror>"
     for mnt, dev, label in (
         (MIRROR_MNT, mdev, "mirror RAID1"),
@@ -258,7 +272,7 @@ def cmd_apply(plan: bool, accept_wipe: bool) -> int:
         uuid = fs_uuid(b, dev) if not plan else "<uuid>"
         ensure_fstab(b, uuid, mnt, label)
         ensure_mount(b, mnt)
-        b.sh(f"[ \"$(stat -c %u {mnt})\" = {UID} ] || chown {UID}:{UID} {mnt}")
+        b.sh(f'[ "$(stat -c %u {mnt})" = {UID} ] || chown {UID}:{UID} {mnt}')
     # user dan: no login shell (box is root-ssh only); uid matches the LAN workstation
     b.sh(f"id {USER} >/dev/null 2>&1 || useradd -M -u {UID} -s /sbin/nologin {USER}")
     # NFS
@@ -266,8 +280,13 @@ def cmd_apply(plan: bool, accept_wipe: bool) -> int:
     if nfsd_available(b):
         b.sh("systemctl enable --now nfs-server && exportfs -ra")
     else:
-        log("  NFS SKIPPED: kernel has no NFSD/SUNRPC (CONFIG_NFSD not set in the Fedora config); exports file staged only")
-        b.sh("systemctl disable nfs-server >/dev/null 2>&1; systemctl reset-failed", check=False)
+        log(
+            "  NFS SKIPPED: kernel has no NFSD/SUNRPC (CONFIG_NFSD not set in the Fedora config); exports file staged only"
+        )
+        b.sh(
+            "systemctl disable nfs-server >/dev/null 2>&1; systemctl reset-failed",
+            check=False,
+        )
     # SMB
     pw = smb_password(create=not plan) if not plan else "x"
     b.put("/etc/samba/smb.conf", smb_conf())
@@ -300,20 +319,30 @@ def cmd_verify() -> int:
     if not nfs:
         log("  SKIP nfs checks: kernel has no NFSD")
     for unit in ("nfs-server", "smb", "unvr-fand") if nfs else ("smb", "unvr-fand"):
-        check(f"{unit} active+enabled", b.out(f"systemctl is-active {unit}") == "active"
-              and b.out(f"systemctl is-enabled {unit}") == "enabled")
+        check(
+            f"{unit} active+enabled",
+            b.out(f"systemctl is-active {unit}") == "active"
+            and b.out(f"systemctl is-enabled {unit}") == "enabled",
+        )
     ex = b.out("exportfs -v") if nfs else ""
     for p in NFS_EXPORTS if nfs else ():
         check(f"exported {p}", any(ln.startswith(p) for ln in ex.splitlines()))
     check("no crossmnt", "crossmnt" not in ex)
-    log("box MAC for traffic: " + b.out(f"ip -br link show; ip neigh | grep {LAN.rsplit('.', 2)[0]}"))
+    log(
+        "box MAC for traffic: "
+        + b.out(f"ip -br link show; ip neigh | grep {LAN.rsplit('.', 2)[0]}")
+    )
     mnt_root = TMP / "shares-mnt"
     me = os.getuid()
     marker = f"awto-verify-{pysecrets.token_hex(3)}.txt"
-    for path, sub in (("/", "/var/tmp"), (MIRROR_MNT, ""), (SINGLE_MNT, "")) if nfs else ():
+    for path, sub in (
+        (("/", "/var/tmp"), (MIRROR_MNT, ""), (SINGLE_MNT, "")) if nfs else ()
+    ):
         m = mnt_root / (path.strip("/").replace("/", "_") or "root")
         m.mkdir(parents=True, exist_ok=True)
-        r = sh(["sudo", "mount", "-t", "nfs4", "-o", "vers=4.2", f"{b.ip}:{path}", str(m)])
+        r = sh(
+            ["sudo", "mount", "-t", "nfs4", "-o", "vers=4.2", f"{b.ip}:{path}", str(m)]
+        )
         check(f"nfs mount {path}", r.returncode == 0, r.stderr.strip()[-120:])
         if r.returncode:
             continue
@@ -340,8 +369,17 @@ def cmd_verify() -> int:
         try:
             for name in SHARES:
                 base = ["smbclient", f"//{b.ip}/{name}", "-A", str(auth), "-m", "SMB3"]
-                r = sh(base + ["-c", f"put {src} {marker}; get {marker} {back}; del {marker}"])
-                check(f"smb put/get {name}", r.returncode == 0 and back.exists() and back.read_text() == "smb-ok", "" if r.returncode == 0 else r.stderr.strip()[-100:])
+                r = sh(
+                    base
+                    + ["-c", f"put {src} {marker}; get {marker} {back}; del {marker}"]
+                )
+                check(
+                    f"smb put/get {name}",
+                    r.returncode == 0
+                    and back.exists()
+                    and back.read_text() == "smb-ok",
+                    "" if r.returncode == 0 else r.stderr.strip()[-100:],
+                )
                 back.unlink(missing_ok=True)
             r = sh(["smbclient", f"//{b.ip}/mirror", "-N", "-c", "ls"])
             check("smb anonymous refused", r.returncode != 0)
@@ -353,9 +391,15 @@ def cmd_verify() -> int:
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawTextHelpFormatter)
+    ap = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawTextHelpFormatter
+    )
     ap.add_argument("cmd", choices=["plan", "apply", "verify"])
-    ap.add_argument("--i-accept-wipe", action="store_true", help=f"allow wiping {SINGLE_SERIAL} (only that serial)")
+    ap.add_argument(
+        "--i-accept-wipe",
+        action="store_true",
+        help=f"allow wiping {SINGLE_SERIAL} (only that serial)",
+    )
     a = ap.parse_args()
     if a.cmd == "verify":
         return cmd_verify()

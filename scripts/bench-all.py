@@ -49,7 +49,7 @@ Subtests (each is a function taking a Report; metrics land in the snapshot and
   destroyed after. Records the active icp_aes_impl / icp_gcm_impl in the snapshot info:
   switch them in /sys/module/zfs/parameters/ between runs to compare impls.
 - btrfs-mirror (opt-in, never --idle, #372): `--btrfs-mirror` fio (8G, direct=1) on the btrfs
-  RAID1 at /mnt/btrfs-test: seq 1M w/r, 4k rand r/w, whole-box CPU %; SKIP if nothing mounted.
+  RAID1 at /srv/mirror: seq 1M w/r, 4k rand r/w, whole-box CPU %; SKIP if nothing mounted.
   `--btrfs-config CSUM[:mountopts] --btrfs-serials A B --i-accept-wipe` wipes exactly those
   two WD82PURZ serials (refuses protected/mounted/other), mkfs raid1, mounts, benches;
   repeatable. `--btrfs-raw SERIAL` = single-disk ceiling. `--hash` = AF_ALG hash MB/s per
@@ -1279,7 +1279,7 @@ def bench_pool_crypt(host: str, password: str, report: Report, pool: str) -> Non
 # ======== Btrfs RAID1 mirror (opt-in, never --idle) ========
 # Benchmarks a mounted btrfs test fs. The destructive step (wipe + mkfs) is
 # explicit: --btrfs-config + --btrfs-serials A B + --i-accept-wipe, by-id serials only.
-BTRFS_MNT = "/mnt/btrfs-test"
+BTRFS_MNT = "/srv/mirror"  # fstab by UUID, scripts/fedora-shares.py
 BTRFS_MODEL = "WD82PURZ"
 # serials that must never be wiped: ST6000VX001, Samsung 850 EVO (root), Cruzer
 BTRFS_PROTECTED = ("WCT3LCS1", "S21BNXAG501763W", "20054862301644D34A3D")
@@ -1430,12 +1430,14 @@ def btrfs_fio_cmd(
     return " ".join(parts)
 
 
-def _btrfs_fs_label(host: str, password: str) -> tuple[str | None, str]:
-    """(label, detail) of the btrfs mounted at BTRFS_MNT, None if absent."""
+def _btrfs_fs_label(
+    host: str, password: str, mnt: str = BTRFS_MNT
+) -> tuple[str | None, str]:
+    """(label, detail) of the btrfs mounted at `mnt`, None if absent."""
     rc, out = run_remote(
         host,
         password,
-        f"findmnt -n -o FSTYPE,SOURCE,OPTIONS {BTRFS_MNT}",
+        f"findmnt -n -o FSTYPE,SOURCE,OPTIONS {mnt}",
         timeout=15,
     )
     parts = out.split()
@@ -1862,6 +1864,466 @@ def bench_pool_nfs(
             rc == 0,
             f"share {share_id} deleted, {ds} destroyed: rc={rc}",
         )
+
+
+# ======== Fedora shares: network ceiling, SMB/NFS, btrfs read spreading (#372) ========
+# Opt-in, never --idle. Disks are addressed by serial; only files named awto-bench* are written.
+SHARES_MNT = Path("tmp/shares-bench")
+SHARES_BOX_IFACE = "enp0s2"
+SHARES_SMB_SECTION = "woomera-fedora-smb"
+SHARES_TARGETS = {"mirror": "/srv/mirror", "single": "/srv/single", "system": "/"}
+SHARES_SEQ_SIZE = "4G"  # >= box RAM (3.8 GB); box cache dropped before every read pass
+SHARES_RAND_RUNTIME_S = 20
+SHARES_SMALL_FILES = 5000
+SHARES_SEQ_LIMIT_S = (
+    250  # 4 GiB at a 20 MB/s floor = 205 s, x1.25; expiry = job FAIL with this limit
+)
+SHARES_FS_STOP_C = 63  # Dan: stop and report at >= 63 C drive temperature
+IPERF_PORT = 5710
+IPERF_SECS = (
+    10  # past TCP ramp-up (~1 s); expiry of the client = 25 s (+15 s connect slack)
+)
+READSPREAD_SERIALS = ("VGG8B0LG", "VGG8ASZG")
+READSPREAD_RUNTIME_S = 20
+READSPREAD_REPEATS = 3
+READSPREAD_COUNTS = (1, 2, 4)
+READSPREAD_FILE = "4G"
+
+
+def box_drive_temps(host: str, password: str) -> dict[str, int]:
+    """Hottest of SMART 194/190 per sd? disk (raw value column)."""
+    rc, out = run_remote(
+        host,
+        password,
+        "for d in /dev/sd?; do echo \"@@$d\"; smartctl -A $d | grep -E '^(190|194) '; done",
+        timeout=40,
+    )
+    temps: dict[str, int] = {}
+    cur = None
+    for ln in out.splitlines():
+        if ln.startswith("@@"):
+            cur = ln[2:]
+        elif cur and len(ln.split()) >= 10 and ln.split()[9].isdigit():
+            temps[cur] = max(temps.get(cur, 0), int(ln.split()[9]))
+    return temps
+
+
+def temp_ok(host: str, password: str, report: Report, tag: str) -> bool:
+    temps = box_drive_temps(host, password)
+    hot = {d: t for d, t in temps.items() if t >= SHARES_FS_STOP_C}
+    if hot:
+        report.add(
+            f"{tag} temp-guard", False, f"STOP: drive >= {SHARES_FS_STOP_C} C {hot}"
+        )
+        return False
+    report.info[f"{tag} temps"] = str(temps)
+    return True
+
+
+def _stat_busy(a: str, b: str) -> float | None:
+    """Whole-system busy % between two /proc/stat `cpu ...` lines."""
+    try:
+        x = [int(v) for v in a.split()[1:]]
+        y = [int(v) for v in b.split()[1:]]
+    except ValueError:
+        return None
+    d = [q - p for p, q in zip(x, y)]
+    tot = sum(d[:8])
+    return None if tot <= 0 else 100.0 * (tot - d[3] - d[4]) / tot
+
+
+def _local_stat() -> str:
+    return Path("/proc/stat").read_text().splitlines()[0]
+
+
+def _box_stat(host: str, password: str) -> str:
+    return run_remote(host, password, "head -1 /proc/stat", timeout=15)[1].strip()
+
+
+def _drop_all(host: str, password: str) -> None:
+    """Page cache gone on both ends before a read pass (box 3.8 GB, workstation 62 GB)."""
+    _run_local(
+        ["sudo", "-n", "sh", "-c", "sync; echo 3 > /proc/sys/vm/drop_caches"], 60
+    )
+    run_remote(host, password, "sync; echo 3 > /proc/sys/vm/drop_caches", timeout=60)
+
+
+def bench_net_ceiling(host: str, password: str, report: Report) -> dict | None:
+    """iperf3 box<->this host on the box's 10G address, both directions, 1 and 4 streams.
+    Records which workstation NIC, the MAC in `ip neigh`, link speed and NIC counter deltas."""
+    tag = "net-ceiling"
+    ip = _iface_ip(host, password, SHARES_BOX_IFACE)
+    if not ip:
+        report.add(tag, False, f"no IPv4 on box {SHARES_BOX_IFACE}")
+        return None
+    _, mac_box = run_remote(
+        host, password, f"cat /sys/class/net/{SHARES_BOX_IFACE}/address", 10
+    )
+    _run_local(["ping", "-c1", "-W1", ip], 5)
+    _, route = _run_local(["ip", "-o", "route", "get", ip])
+    m = re.search(r"dev (\S+)", route)
+    nic = m.group(1) if m else ""
+    _, neigh = _run_local(["ip", "neigh", "show", ip])
+    if not nic or mac_box.strip().lower() not in neigh.lower():
+        report.add(
+            tag,
+            False,
+            f"ip neigh {ip} is not {SHARES_BOX_IFACE} {mac_box.strip()}: {neigh.strip()}",
+        )
+        return None
+    try:
+        speed = int(Path(f"/sys/class/net/{nic}/speed").read_text())
+    except (OSError, ValueError):
+        speed = 0
+    _, box_speed = run_remote(
+        host, password, f"cat /sys/class/net/{SHARES_BOX_IFACE}/speed", 10
+    )
+
+    def counters() -> tuple[int, int, int, int]:
+        lrx = int(Path(f"/sys/class/net/{nic}/statistics/rx_bytes").read_text())
+        ltx = int(Path(f"/sys/class/net/{nic}/statistics/tx_bytes").read_text())
+        _, o = run_remote(
+            host,
+            password,
+            f"cat /sys/class/net/{SHARES_BOX_IFACE}/statistics/rx_bytes /sys/class/net/{SHARES_BOX_IFACE}/statistics/tx_bytes",
+            15,
+        )
+        v = [int(x) for x in o.split()[:2]]
+        return lrx, ltx, v[0], v[1]
+
+    report.info[tag] = (
+        f"box {SHARES_BOX_IFACE} {ip} {mac_box.strip()} {box_speed.strip()} Mb/s <-> host {nic} "
+        f"{speed} Mb/s, neigh: {neigh.strip()}"
+    )
+    run_remote(
+        host,
+        password,
+        f"pkill -f '^iperf3 -s -p {IPERF_PORT}' 2>/dev/null; iperf3 -s -p {IPERF_PORT} -D; true",
+        15,
+    )
+    out: dict = {"nic": nic, "ip": ip}
+    c0 = counters()
+    try:
+        for streams in (1, 4):
+            for rev in (False, True):
+                name = f"{tag} {streams}x {'box->host' if rev else 'host->box'}"
+                cmd = [
+                    "iperf3", "-c", ip, "-p", str(IPERF_PORT), "-t", str(IPERF_SECS),
+                    "-P", str(streams), "--bind-dev", nic, "-J",
+                ] + (["-R"] if rev else [])  # fmt: skip
+                rc, txt = _run_local(cmd, IPERF_SECS + 15)
+                try:
+                    j = json.loads(txt[txt.find("{") :])
+                    mbps = j["end"]["sum_received"]["bits_per_second"] / 1e6
+                    cpu = j["end"]["cpu_utilization_percent"]
+                except (ValueError, KeyError):
+                    report.add(name, False, f"iperf3 rc={rc}: {txt.strip()[-160:]}")
+                    continue
+                report.add(
+                    name,
+                    True,
+                    f"{mbps:.0f} Mb/s ({mbps / 8:.0f} MB/s) cpu host {cpu['host_total']:.0f}% box {cpu['remote_total']:.0f}%",
+                    metric=mbps / 8,
+                )
+                out[f"{streams}x{'r' if rev else 'f'}"] = mbps / 8
+    finally:
+        run_remote(
+            host,
+            password,
+            f"pkill -f '^iperf3 -s -p {IPERF_PORT}' 2>/dev/null; true",
+            15,
+        )
+    c1 = counters()
+    report.info[tag + " nic-bytes"] = (
+        f"host {nic} rx +{(c1[0] - c0[0]) / 1e9:.1f} GB tx +{(c1[1] - c0[1]) / 1e9:.1f} GB; "
+        f"box {SHARES_BOX_IFACE} rx +{(c1[2] - c0[2]) / 1e9:.1f} GB tx +{(c1[3] - c0[3]) / 1e9:.1f} GB"
+    )
+    return out
+
+
+def _share_fio(
+    path: str, rw: str, bs: str, qd: int, size: str, runtime: int | None
+) -> str:
+    parts = [
+        "fio --name=awto-bench-share",
+        f"--filename={path} --size={size}",
+        "--direct=1 --ioengine=libaio --group_reporting",
+        f"--rw={rw} --bs={bs} --iodepth={qd}",
+        "--refill_buffers --buffer_compress_percentage=0 --randrepeat=0",
+        "--output-format=json",
+    ]
+    if rw in ("write", "randwrite"):
+        parts.append("--end_fsync=1")
+    if runtime is not None:
+        parts.append(f"--runtime={runtime} --time_based")
+    return " ".join(parts)
+
+
+def _share_job(
+    host: str,
+    password: str,
+    report: Report,
+    tag: str,
+    name: str,
+    cmd: str,
+    write: bool,
+    bs: str,
+    limit: int,
+) -> None:
+    b0, l0 = _box_stat(host, password), _local_stat()
+    rc, out = _run_local(["bash", "-c", cmd], limit)
+    b1, l1 = _box_stat(host, password), _local_stat()
+    r = parse_fio_json(out, write)
+    if rc != 0 or r is None:
+        report.add(
+            f"{tag} {name}",
+            False,
+            f"fio rc={rc} (limit {limit}s): {out.strip()[-160:]}",
+        )
+        return
+    bc, lc = _stat_busy(b0, b1), _stat_busy(l0, l1)
+    report.add(
+        f"{tag} {name}",
+        True,
+        f"{r['mbps']:.1f} MB/s {r['iops']:.0f} iops clat {r['clat_us']:.0f} us cpu box "
+        f"{bc if bc is None else round(bc)}% host {lc if lc is None else round(lc)}%",
+        metric=r["mbps"] if bs == "1M" else r["iops"],
+    )
+
+
+def _small_files(host: str, password: str, report: Report, tag: str, d: Path) -> None:
+    d.mkdir(exist_ok=True)
+    blob = os.urandom(4096)
+    names = [d / f"f{i:05d}" for i in range(SHARES_SMALL_FILES)]
+    b0, l0 = _box_stat(host, password), _local_stat()
+    t0 = time.monotonic()
+    for p in names:
+        with open(p, "wb") as fh:
+            fh.write(blob)
+    tc = time.monotonic() - t0
+    b1, l1 = _box_stat(host, password), _local_stat()
+    report.add(
+        f"{tag} small-create-4k",
+        True,
+        f"{SHARES_SMALL_FILES / tc:.0f} files/s ({tc:.1f} s) cpu box {_stat_busy(b0, b1) or 0:.0f}% host {_stat_busy(l0, l1) or 0:.0f}%",
+        metric=SHARES_SMALL_FILES / tc,
+    )
+    _drop_all(host, password)
+    b0, l0 = _box_stat(host, password), _local_stat()
+    t0 = time.monotonic()
+    for p in names:
+        with open(p, "rb") as fh:
+            fh.read()
+    tr = time.monotonic() - t0
+    b1, l1 = _box_stat(host, password), _local_stat()
+    report.add(
+        f"{tag} small-read-4k",
+        True,
+        f"{SHARES_SMALL_FILES / tr:.0f} files/s ({tr:.1f} s) cpu box {_stat_busy(b0, b1) or 0:.0f}% host {_stat_busy(l0, l1) or 0:.0f}%",
+        metric=SHARES_SMALL_FILES / tr,
+    )
+    for p in names:
+        p.unlink(missing_ok=True)
+    d.rmdir()
+
+
+def _mount_share(proto: str, ip: str, target: str, mnt: Path) -> tuple[bool, str]:
+    mnt.mkdir(parents=True, exist_ok=True)
+    if proto == "nfs":
+        opts = "vers=4.2,rsize=1048576,wsize=1048576"
+        rc, out = _run_local(
+            [
+                "sudo",
+                "-n",
+                "mount",
+                "-t",
+                "nfs4",
+                "-o",
+                opts,
+                f"{ip}:{SHARES_TARGETS[target]}",
+                str(mnt),
+            ],
+            30,
+        )
+        return rc == 0, out
+    import yaml
+
+    sec = (
+        yaml.safe_load(
+            Path(os.path.expanduser("~/.config/awto/secrets.yaml")).read_text()
+        )
+        or {}
+    ).get(SHARES_SMB_SECTION) or {}
+    if not sec.get("password"):
+        return False, f"no secrets section {SHARES_SMB_SECTION}"
+    cred = Path("tmp/smb-bench-cred")
+    cred.write_text(f"username={sec['username']}\npassword={sec['password']}\n")
+    cred.chmod(0o600)
+    try:
+        opts = f"credentials={cred.resolve()},vers=3.1.1,uid={os.getuid()},gid={os.getgid()},file_mode=0664,dir_mode=0775"
+        rc, out = _run_local(
+            [
+                "sudo",
+                "-n",
+                "mount",
+                "-t",
+                "cifs",
+                f"//{ip}/{target}",
+                str(mnt),
+                "-o",
+                opts,
+            ],
+            30,
+        )
+    finally:
+        cred.unlink(missing_ok=True)
+    return rc == 0, out
+
+
+def bench_shares(
+    host: str,
+    password: str,
+    report: Report,
+    proto: str,
+    targets: list[str],
+    size: str = SHARES_SEQ_SIZE,
+) -> None:
+    """fio + small-file test from this host onto a mounted box share (nfs4.2 or cifs 3.1.1)."""
+    tag0 = f"share-{proto}"
+    ip = _iface_ip(host, password, SHARES_BOX_IFACE)
+    if not ip:
+        report.add(tag0, False, f"no IPv4 on box {SHARES_BOX_IFACE}")
+        return
+    if proto == "nfs":
+        rc, _ = run_remote(host, password, "grep -qw nfsd /proc/filesystems", 15)
+        if rc != 0:
+            report.add(
+                tag0,
+                True,
+                "SKIP: box kernel has no NFSD (CONFIG_NFSD unset in the Fedora config)",
+            )
+            return
+    _run_local(["ping", "-c1", "-W1", ip], 5)
+    for target in targets:
+        if proto == "smb" and target == "system":
+            continue  # data drives only over SMB
+        tag = f"{tag0} {target}"
+        if not temp_ok(host, password, report, tag):
+            return
+        mnt = SHARES_MNT / f"{proto}-{target}"
+        ok, msg = _mount_share(proto, ip, target, mnt)
+        if not ok:
+            report.add(tag, False, f"mount failed: {msg.strip()[-200:]}")
+            continue
+        try:
+            _, opts = _run_local(["findmnt", "-no", "OPTIONS", str(mnt)])
+            report.info[tag] = f"{ip} {opts.strip()}"
+            base = mnt if target == "system" else mnt
+            wd = base / "var/tmp" if target == "system" else base
+            fpath = str(wd / "awto-bench-share.dat")
+            jobs = (
+                ("seq-write-1M", "write", "1M", 4, True, None, SHARES_SEQ_LIMIT_S),
+                ("seq-read-1M", "read", "1M", 4, False, None, SHARES_SEQ_LIMIT_S),
+                ("randread-4k", "randread", "4k", 16, False, SHARES_RAND_RUNTIME_S, SHARES_RAND_RUNTIME_S + 30),
+                ("randwrite-4k", "randwrite", "4k", 16, True, SHARES_RAND_RUNTIME_S, SHARES_RAND_RUNTIME_S + 60),
+            )  # fmt: skip
+            for name, rw, bs, qd, write, rt, limit in jobs:
+                if not write:
+                    _drop_all(host, password)
+                _share_job(
+                    host,
+                    password,
+                    report,
+                    tag,
+                    name,
+                    _share_fio(fpath, rw, bs, qd, size, rt),
+                    write,
+                    bs,
+                    limit,
+                )
+            Path(fpath).unlink(missing_ok=True)
+            if not temp_ok(host, password, report, tag + " pre-small"):
+                return
+            _small_files(host, password, report, tag, wd / "awto-bench-small")
+        finally:
+            _run_local(["sudo", "-n", "umount", str(mnt)], 30)
+
+
+def bench_btrfs_readspread(
+    host: str, password: str, report: Report, mnt: str = BTRFS_MNT
+) -> None:
+    """1/2/4 parallel direct 1M sequential readers (separate files, each READSPREAD_FILE) on the
+    btrfs RAID1; aggregate MB/s + per-disk MB/s from /proc/diskstats (sectors read / fio runtime)."""
+    tag = "readspread"
+    run = lambda s, t: run_remote(host, password, s, timeout=t)  # noqa: E731
+    label, detail = _btrfs_fs_label(host, password, mnt)
+    if label is None:
+        report.add(tag, True, f"SKIP: no btrfs mounted at {mnt} ({detail})")
+        return
+    rc, pol = run(f"cat /sys/fs/btrfs/$(findmnt -n -o UUID {mnt})/read_policy", 15)
+    report.info[tag] = f"{detail}; read_policy {pol.strip()}"
+    names = " ".join(
+        f"$(basename $(readlink -f /dev/disk/by-id/ata-*_{s}))"
+        for s in READSPREAD_SERIALS
+    )
+    nmax = max(READSPREAD_COUNTS)
+    lay = " ".join(
+        f"--name=awto-bench-l{i} --filename={mnt}/awto-bench-rs{i}.dat"
+        for i in range(nmax)
+    )
+    rc, out = run(
+        f"fio --size={READSPREAD_FILE} --direct=1 --ioengine=libaio --rw=write --bs=1M --iodepth=4 "
+        f"--end_fsync=1 --refill_buffers --buffer_compress_percentage=0 --output-format=normal {lay} | tail -3",
+        BTRFS_WRITE_LIMIT_S,
+    )
+    if rc != 0:
+        report.add(f"{tag} layout", False, f"rc={rc} {out.strip()[-200:]}")
+        return
+    try:
+        for n in READSPREAD_COUNTS:
+            for rep in range(READSPREAD_REPEATS):
+                name = f"{tag} n={n} run{rep + 1}"
+                if not temp_ok(host, password, report, name):
+                    return
+                jobs = " ".join(
+                    f"--name=awto-bench-r{i} --filename={mnt}/awto-bench-rs{i}.dat"
+                    for i in range(n)
+                )
+                script = f"""sync; echo 3 > /proc/sys/vm/drop_caches
+ds() {{ for d in {names}; do echo "@@$1 $d $(awk -v d=$d '$3==d {{print $6}}' /proc/diskstats)"; done; }}
+ds a; echo "@@c0 $(head -1 /proc/stat)"
+fio --size={READSPREAD_FILE} --direct=1 --ioengine=libaio --rw=read --bs=1M --iodepth=4 --group_reporting \
+ --runtime={READSPREAD_RUNTIME_S} --time_based --output-format=json {jobs}
+echo; echo "@@c1 $(head -1 /proc/stat)"; ds b"""
+                rc, out = run(script, READSPREAD_RUNTIME_S + 60)
+                try:
+                    j = json.JSONDecoder().raw_decode(out[out.find("{") :])[0]["jobs"][
+                        0
+                    ]["read"]
+                except (ValueError, KeyError, IndexError):
+                    report.add(name, False, f"fio rc={rc}: {out.strip()[-160:]}")
+                    continue
+                secs = j["runtime"] / 1000.0
+                sec = {"a": {}, "b": {}}
+                for m in re.finditer(r"^@@([ab]) (\S+) (\d+)", out, re.M):
+                    sec[m.group(1)][m.group(2)] = int(m.group(3))
+                per = {
+                    d: (sec["b"][d] - sec["a"][d]) * 512 / 1e6 / secs
+                    for d in sec["a"]
+                    if d in sec["b"]
+                }
+                c0 = re.search(r"^@@c0 (cpu .*)$", out, re.M)
+                c1 = re.search(r"^@@c1 (cpu .*)$", out, re.M)
+                cpu = _stat_busy(c0.group(1), c1.group(1)) if c0 and c1 else None
+                disks = " ".join(f"{d}={v:.0f}" for d, v in per.items())
+                report.add(
+                    name,
+                    True,
+                    f"{j['bw_bytes'] / 1e6:.1f} MB/s aggregate; per-disk MB/s {disks}; cpu {cpu if cpu is None else round(cpu)}%",
+                    metric=j["bw_bytes"] / 1e6,
+                )
+    finally:
+        run(f"rm -f {mnt}/awto-bench-rs*.dat; sync", 120)
 
 
 # ======== Health (link, MAC counters, kernel log) ========
@@ -3024,6 +3486,13 @@ def run_subtests(
         bench_btrfs(
             host, pw, report, args.btrfs_data, args.btrfs_runtime, args.btrfs_buffered
         )
+    if args.net_ceiling:
+        bench_net_ceiling(host, pw, report)
+    if args.btrfs_readspread:
+        bench_btrfs_readspread(host, pw, report)
+    for proto in ("nfs", "smb"):
+        if getattr(args, proto):
+            bench_shares(host, pw, report, proto, args.share_targets, args.shares_size)
     if args.hash:
         bench_hash(host, pw, report)
         bench_btrfs_ram(host, pw, report)
@@ -3322,6 +3791,36 @@ def main() -> int:
         help="required with --btrfs-config / --btrfs-raw: destroys the named disks",
     )
     ap.add_argument(
+        "--btrfs-readspread",
+        action="store_true",
+        help="1/2/4 parallel readers on the mirror + per-disk MB/s (#372)",
+    )
+    ap.add_argument(
+        "--net-ceiling",
+        action="store_true",
+        help="iperf3 box 10G <-> this host, both directions (#372)",
+    )
+    ap.add_argument(
+        "--smb",
+        action="store_true",
+        help="fio + small files over cifs 3.1.1 to the Fedora Samba shares (#372)",
+    )
+    ap.add_argument(
+        "--nfs",
+        action="store_true",
+        help="fio + small files over NFSv4.2 to the Fedora exports (#372)",
+    )
+    ap.add_argument(
+        "--share-targets",
+        nargs="+",
+        default=["mirror", "single", "system"],
+        choices=sorted(SHARES_TARGETS),
+        help="with --smb/--nfs (system is NFS only)",
+    )
+    ap.add_argument(
+        "--shares-size", default=SHARES_SEQ_SIZE, help="seq file size for --smb/--nfs"
+    )
+    ap.add_argument(
         "--hash",
         action="store_true",
         help="AF_ALG throughput of crc32c/xxhash64/sha256/blake2b-256 per driver",
@@ -3454,6 +3953,10 @@ def main() -> int:
         )
     if args.idle and (
         args.btrfs_mirror
+        or args.btrfs_readspread
+        or args.net_ceiling
+        or args.smb
+        or args.nfs
         or args.btrfs_config
         or args.btrfs_raw
         or args.hash
