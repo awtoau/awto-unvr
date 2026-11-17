@@ -140,7 +140,7 @@ matte-black QFP **U1** in the SATA area is unread.
 |---|---|---|
 | Temperature (board) | ADT7475 temp1/2/3 — **live on Fedora** `hwmon0`; temp2≈34.5°C temp3≈36.5°C at idle. temp3 is the stock fan-curve sensor | ✅ Fedora verified |
 | Temperature (SoC die) | al-thermal `@fd860a00` node in DTS, but `al_thermal` driver **NOT built** → no die temp / no kernel thermal zones | ⚠ #44 |
-| Fans | 2 × spinning (fan1/fan3 ~4500 RPM; fan2/fan4 absent), ADT7475 PWM. **Auto curve live** via `unvr-fancontrol.service` (temp3, Tmin30/Tmax55°C, hw mode 2). Proper SoC-temp control needs al_thermal (#44) | ✅ Fedora verified |
+| Fans | 3 x fan (fan1-3 ~8800 RPM at pwm 255; fan4 not populated), ADT7475 PWM. `unvr-fand.service`: max(drives, SoC, board) curve, floor ~35 %, never off - [chips/adt7475.md](chips/adt7475.md) | ✅ Fedora verified |
 | I2C | SPD at 0x57; `Setting bus to 4` at boot — at least 5 buses. adt7475/s35390a on the PCA9546 mux (ch3/ch0) | ✅ |
 | GPIO 37 | **`ulogo_white` front LED** (gpio4.5, active-low); U-Boot `resetled=gpio clear 37`. See [gpio-switches-leds.md](gpio-switches-leds.md) | ✅ RE-resolved |
 | GPIO expander | PCA9575 @0x20/0x21/0x29 — @0x21 = HDD bay pwren (gpio-hog); pins 4,5,8 known | 📄 linux-alpine-v2 |
