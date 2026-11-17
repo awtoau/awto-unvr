@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
-"""UNVR (woomera) fan daemon: ADT7475 PWM driven by the HOTTEST of drives / SoC / board.
+"""UNVR (woomera) fan daemon: ADT7475 fans OFF unless the SoC is hot.
 
-- Never 0 PWM: floor FLOOR_PWM (stock curve floor, scripts/unvr-fancontrol.py, ~35 %).
-- Per-source linear ramp floor -> 255; fan = max over sources (curve()).
-- Ramp up at once, ramp down slowly with a deadband (next_pwm()).
-- Fail SAFE = 255 on any unreadable source / write failure / SIGTERM.
+- Policy (Dan, 2026-11-17): all fans off; full speed at SoC >= SOC_ON_C, off again at <= SOC_OFF_C.
+- Drive / board temps are logged only, not used for control (drives reach 58-66 C: #361, #373).
+- Fail SAFE = 255 on an unreadable SoC temp / write failure / SIGTERM.
 - Tach is only logged (fan4 is not populated); control never depends on it.
 - Chip fallback: pwm_use_point2_pwm_at_crit=1 forces full speed at temp*_crit with no daemon.
 Decisions: #361 (drives), #44 (SoC), #373 (fans-off regression).
@@ -18,51 +17,26 @@ import sys
 import time
 from pathlib import Path
 
-FLOOR_PWM, MAX_PWM = 90, 255
+OFF_PWM, MAX_PWM = 0, 255
+SOC_ON_C, SOC_OFF_C = 80, 50  # stock-era thresholds (7674ee4); hysteresis stops hunting
 
-# source -> (temp at floor, temp at 255) in C
-CURVES = {
-    # WD Purple limit 65 C (datasheet); full speed 10 C below it
-    "drive": (40, 55),
-    # die idles ~60 C under load; Alpine V2 has no published Tj below 100 C
-    "soc": (60, 85),
-    # ADT7475 diodes ~45 C with fans on; stock curve used temp3 30..55 C
-    "board": (40, 60),
-}
-
-# 10 s: HDD thermal mass is minutes; 1 smartctl per disk per poll is cheap
+# 10 s: SoC thermal mass is seconds-minutes; 1 smartctl per disk per poll is cheap
 POLL_S = 10
-# smartctl normally returns in <1 s; 8 s under heavy I/O, then fail safe
+# smartctl normally returns in <1 s; 8 s under heavy I/O (log only, not control)
 SMART_TIMEOUT_S = 8
-DOWN_STEP, DOWN_DEADBAND = 8, 8  # counts/poll; ~3 %: no hunting around a threshold
 TACH_GRACE_POLLS = 3  # 30 s for spin-up before a 0 RPM fan is reported
 TACH_FANS = (1, 2, 3)  # fan4 is not populated on this board
 
 
-def curve(src, temp_c):
-    lo, hi = CURVES[src]
-    if temp_c <= lo:
-        return FLOOR_PWM
-    if temp_c >= hi:
-        return MAX_PWM
-    return round(FLOOR_PWM + (MAX_PWM - FLOOR_PWM) * (temp_c - lo) / (hi - lo))
-
-
-def target_pwm(readings):
-    """readings: {src: [temp_c | None, ...]}; None (unreadable) -> MAX_PWM."""
-    out = FLOOR_PWM
-    for src, temps in readings.items():
-        for t in temps:
-            out = max(out, MAX_PWM if t is None else curve(src, t))
-    return out
-
-
-def next_pwm(cur, target):
-    if cur is None or target >= cur:
-        return target
-    if cur - target < DOWN_DEADBAND:
-        return cur
-    return max(target, cur - DOWN_STEP)
+def target_pwm(soc_c, on):
+    """-> (pwm, on). soc_c None (unreadable) -> full speed."""
+    if soc_c is None:
+        return MAX_PWM, True
+    if soc_c >= SOC_ON_C:
+        return MAX_PWM, True
+    if on and soc_c > SOC_OFF_C:
+        return MAX_PWM, True
+    return OFF_PWM, False
 
 
 def log(msg):
@@ -169,7 +143,7 @@ def main():
     signal.signal(signal.SIGTERM, bye)
     signal.signal(signal.SIGINT, bye)
     set_pwm(h, MAX_PWM)  # until the first complete reading
-    cur, stalled = MAX_PWM, {}
+    on, stalled = True, {}
     while True:
         disks = sata_disks()
         readings = {
@@ -177,19 +151,18 @@ def main():
             "soc": [soc_temp()],
             "board": board_temps(h),
         }
-        tgt = target_pwm(readings)
-        new = next_pwm(cur, tgt)
+        new, on = target_pwm(readings["soc"][0], on)
+        tgt = new
         if not set_pwm(h, new):
             new = MAX_PWM
             set_pwm(h, new)
         for n in TACH_FANS:
             rpm = read_int(h / f"fan{n}_input")
             stalled[n] = stalled.get(n, 0) + 1 if not rpm else 0
-            if new >= FLOOR_PWM and stalled[n] == TACH_GRACE_POLLS:
+            if new > OFF_PWM and stalled[n] == TACH_GRACE_POLLS:
                 log(f"ERROR fan{n} reads {rpm} RPM at pwm {new}: stalled/unplugged?")
         rpms = [read_int(h / f"fan{n}_input") for n in (1, 2, 3, 4)]
         log(f"pwm={new} target={tgt} {readings} rpm={rpms}")
-        cur = new
         time.sleep(POLL_S)
 
 

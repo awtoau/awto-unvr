@@ -1,5 +1,5 @@
 [Unit]
-Description=UNVR fan control - PWM from hottest of drives/SoC/board, never off (#44, #361, #373)
+Description=UNVR fan control - off unless SoC >= 80 C (#44, #361, #373)
 Documentation=https://github.com/awtoau/awto-unvr/issues/373
 After=multi-user.target
 
