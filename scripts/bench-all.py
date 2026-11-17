@@ -1402,14 +1402,27 @@ def btrfs_mkfs(
 
 
 def btrfs_fio_cmd(
-    path: str, rw: str, bs: str, qd: int, runtime: int | None, compress_pct: int
+    path: str,
+    rw: str,
+    bs: str,
+    qd: int,
+    runtime: int | None,
+    compress_pct: int,
+    direct: int = 1,
 ) -> str:
     parts = [
         "fio --name=btrfsfio",
         f"--filename={path} --size={BTRFS_SIZE}",
-        "--direct=1 --ioengine=libaio --group_reporting --end_fsync=1",
+        f"--direct={direct} --ioengine=libaio --group_reporting --end_fsync=1",
+        # fio's default fallocate makes prealloc extents, which btrfs never compresses
+        "--fallocate=none" if direct == 0 else "--fallocate=posix",
         f"--rw={rw} --bs={bs} --iodepth={qd}",
-        f"--refill_buffers --buffer_compress_percentage={compress_pct} --randrepeat=0",
+        (
+            "--zero_buffers"
+            if compress_pct == 100
+            else f"--refill_buffers --buffer_compress_percentage={compress_pct}"
+        )
+        + " --randrepeat=0",
         "--output-format=json",
     ]
     if runtime is not None:
@@ -1454,6 +1467,7 @@ def bench_btrfs(
     report: Report,
     data: str = "incompressible",
     runtime: int = BTRFS_RUNTIME_S,
+    buffered: bool = False,
 ) -> None:
     run = lambda s, t: run_remote(host, password, s, timeout=t)  # noqa: E731
     label, detail = _btrfs_fs_label(host, password)
@@ -1465,8 +1479,10 @@ def bench_btrfs(
             "make one with --btrfs-config C --btrfs-serials A B --i-accept-wipe",
         )
         return
-    tag = f"btrfs {label} {data[:6]}"
-    pct = 0 if data == "incompressible" else 90
+    # btrfs O_DIRECT never compresses: compression runs need --btrfs-buffered
+    direct = 0 if buffered else 1
+    tag = f"btrfs {label} {data[:6]}" + (" buf" if buffered else "")
+    pct = 0 if data == "incompressible" else 100  # 100 = zero-filled, upper bound
     report.info[tag] = detail
     path = f"{BTRFS_MNT}/fio.dat"
     try:
@@ -1477,12 +1493,17 @@ def bench_btrfs(
                 run,
                 tag,
                 name,
-                btrfs_fio_cmd(path, rw, bs, qd, rt if rt is None else runtime, pct),
+                btrfs_fio_cmd(
+                    path, rw, bs, qd, rt if rt is None else runtime, pct, direct
+                ),
                 write,
                 BTRFS_WRITE_LIMIT_S if rt is None else runtime + POOL_FIO_SLACK_S + 60,
                 bs,
                 report,
             )
+            if name == "seq-write-1M":
+                _, df = run(f"btrfs filesystem df -b {BTRFS_MNT} | grep -E '^Data'", 15)
+                report.info[tag + " data-df"] = df.strip()
     finally:
         run(f"rm -f {path}; sync", 120)
 
@@ -2991,9 +3012,18 @@ def run_subtests(
         elif btrfs_mkfs(
             host, pw, args.btrfs_serials, csum, mopts, report, args.btrfs_crypt
         ):
-            bench_btrfs(host, pw, report, args.btrfs_data, args.btrfs_runtime)
+            bench_btrfs(
+                host,
+                pw,
+                report,
+                args.btrfs_data,
+                args.btrfs_runtime,
+                args.btrfs_buffered,
+            )
     if args.btrfs_mirror and not args.btrfs_config:
-        bench_btrfs(host, pw, report, args.btrfs_data, args.btrfs_runtime)
+        bench_btrfs(
+            host, pw, report, args.btrfs_data, args.btrfs_runtime, args.btrfs_buffered
+        )
     if args.hash:
         bench_hash(host, pw, report)
         bench_btrfs_ram(host, pw, report)
@@ -3040,6 +3070,7 @@ def snapshot_of(report: Report, host: str) -> dict:
         "kernel": report.info.get("kernel", ""),
         "checks": [{"name": n, "ok": ok, "detail": d} for n, ok, d in report.checks],
         "metrics": report.metrics,
+        "info": report.info,
         "all_ok": all(ok for _, ok, _ in report.checks),
     }
 
@@ -3278,6 +3309,11 @@ def main() -> int:
         "--btrfs-data",
         choices=("incompressible", "compressible"),
         default="incompressible",
+    )
+    ap.add_argument(
+        "--btrfs-buffered",
+        action="store_true",
+        help="fio direct=0 (needed for compression: btrfs O_DIRECT is never compressed)",
     )
     ap.add_argument("--btrfs-runtime", type=int, default=BTRFS_RUNTIME_S)
     ap.add_argument(

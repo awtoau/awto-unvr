@@ -1,0 +1,75 @@
+{
+  "timestamp": "2026-11-17T13:37:38+11:00",
+  "commit": "3bd8f99-dirty",
+  "host": "192.168.25.127",
+  "kernel": "",
+  "checks": [
+    {
+      "name": "btrfs-mkfs crc32c",
+      "ok": true,
+      "detail": "['VGG8B0LG', 'VGG8ASZG'] csum=crc32c opts=- crypt=-"
+    },
+    {
+      "name": "btrfs crc32c incomp buf seq-write-1M",
+      "ok": true,
+      "detail": "241.7 MB/s 230 iops clat 12051 us cpu 9%"
+    },
+    {
+      "name": "btrfs crc32c incomp buf seq-read-1M",
+      "ok": true,
+      "detail": "270.4 MB/s 258 iops clat 11620 us cpu 7%"
+    },
+    {
+      "name": "btrfs crc32c incomp buf randread-4k",
+      "ok": true,
+      "detail": "0.7 MB/s 173 iops clat 86389 us cpu 1%"
+    },
+    {
+      "name": "btrfs crc32c incomp buf randwrite-4k",
+      "ok": true,
+      "detail": "43.0 MB/s 10496 iops clat 1056 us cpu 29%"
+    },
+    {
+      "name": "btrfs-mkfs crc32c",
+      "ok": true,
+      "detail": "['VGG8B0LG', 'VGG8ASZG'] csum=crc32c opts=compress=zstd:1 crypt=-"
+    },
+    {
+      "name": "btrfs crc32c+zstd1 incomp buf seq-write-1M",
+      "ok": true,
+      "detail": "243.9 MB/s 233 iops clat 11921 us cpu 9%"
+    },
+    {
+      "name": "btrfs crc32c+zstd1 incomp buf seq-read-1M",
+      "ok": true,
+      "detail": "267.0 MB/s 255 iops clat 11772 us cpu 7%"
+    },
+    {
+      "name": "btrfs crc32c+zstd1 incomp buf randread-4k",
+      "ok": true,
+      "detail": "0.7 MB/s 172 iops clat 86953 us cpu 1%"
+    },
+    {
+      "name": "btrfs crc32c+zstd1 incomp buf randwrite-4k",
+      "ok": true,
+      "detail": "42.2 MB/s 10304 iops clat 1131 us cpu 28%"
+    }
+  ],
+  "metrics": {
+    "btrfs crc32c incomp buf seq-write-1M": 241.663654,
+    "btrfs crc32c incomp buf seq-read-1M": 270.421128,
+    "btrfs crc32c incomp buf randread-4k": 173.255116,
+    "btrfs crc32c incomp buf randwrite-4k": 10495.795013,
+    "btrfs crc32c+zstd1 incomp buf seq-write-1M": 243.893656,
+    "btrfs crc32c+zstd1 incomp buf seq-read-1M": 267.041684,
+    "btrfs crc32c+zstd1 incomp buf randread-4k": 172.137977,
+    "btrfs crc32c+zstd1 incomp buf randwrite-4k": 10304.433294
+  },
+  "info": {
+    "btrfs crc32c incomp buf": "/dev/disk/by-id/ata-WDC_WD82PURZ-85TEUY0_VGG8B0LG rw,noatime,space_cache=v2,subvolid=5,subvol=/",
+    "btrfs crc32c incomp buf data-df": "Data, RAID1: total=8589934592, used=6845104128",
+    "btrfs crc32c+zstd1 incomp buf": "/dev/disk/by-id/ata-WDC_WD82PURZ-85TEUY0_VGG8B0LG rw,noatime,compress=zstd:1,space_cache=v2,subvolid=5,subvol=/",
+    "btrfs crc32c+zstd1 incomp buf data-df": "Data, RAID1: total=8589934592, used=6979321856"
+  },
+  "all_ok": true
+}
