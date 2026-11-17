@@ -2,7 +2,7 @@
 """UNVR (woomera) fan daemon: ADT7475 fans OFF unless the SoC is hot.
 
 - Policy (Dan, 2026-11-17): all fans off; full speed at SoC >= SOC_ON_C, off again at <= SOC_OFF_C.
-- Drive temps: kernel drivetemp hwmon, smartctl fallback (#373). Drive / board temps are logged only, not used for control (drives reach 58-66 C: #361, #373).
+- Drive temps: kernel drivetemp hwmon, smartctl fallback (#373). Control: SoC >= 80 C or any drive >= 60 C (Dan 2026-11-18); board temps are logged only.
 - Fail SAFE = 255 on an unreadable SoC temp / write failure / SIGTERM.
 - Tach is only logged (fan4 is not populated); control never depends on it.
 - Chip fallback: pwm_use_point2_pwm_at_crit=1 forces full speed at temp*_crit with no daemon.
@@ -19,6 +19,7 @@ from pathlib import Path
 
 OFF_PWM, MAX_PWM = 0, 255
 SOC_ON_C, SOC_OFF_C = 80, 50  # stock-era thresholds (7674ee4); hysteresis stops hunting
+DRIVE_ON_C, DRIVE_OFF_C = 60, 55  # Dan 2026-11-18: any drive >= 60 C -> fans on
 
 # 10 s: SoC thermal mass is seconds-minutes; drive reads are cheap
 POLL_S = 10
@@ -28,13 +29,17 @@ TACH_GRACE_POLLS = 3  # 30 s for spin-up before a 0 RPM fan is reported
 TACH_FANS = (1, 2, 3)  # fan4 is not populated on this board
 
 
-def target_pwm(soc_c, on):
-    """-> (pwm, on). soc_c None (unreadable) -> full speed."""
-    if soc_c is None:
+def target_pwm(soc_c, on, drives=()):
+    """-> (pwm, on). soc_c None (unreadable) -> full speed.
+
+    Also on if any drive >= DRIVE_ON_C; off again only below DRIVE_OFF_C (None/failed reads ignored).
+    """
+    hot = [t for t in drives if t is not None]
+    drive_hot = bool(hot) and max(hot) >= DRIVE_ON_C
+    drive_warm = bool(hot) and max(hot) >= DRIVE_OFF_C
+    if soc_c is None or soc_c >= SOC_ON_C or drive_hot:
         return MAX_PWM, True
-    if soc_c >= SOC_ON_C:
-        return MAX_PWM, True
-    if on and soc_c > SOC_OFF_C:
+    if on and (soc_c > SOC_OFF_C or drive_warm):
         return MAX_PWM, True
     return OFF_PWM, False
 
@@ -167,7 +172,7 @@ def main():
             "soc": [soc_temp()],
             "board": board_temps(h),
         }
-        new, on = target_pwm(readings["soc"][0], on)
+        new, on = target_pwm(readings["soc"][0], on, readings["drive"])
         tgt = new
         if not set_pwm(h, new):
             new = MAX_PWM

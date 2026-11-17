@@ -51,3 +51,17 @@ def test_drivetemp_reads_internal_drives_only(tmp_path):
 def test_drivetemp_absent_returns_empty(tmp_path):
     _hwmon(tmp_path, 0, "adt7475", 1000)
     assert fand.drivetemp_temps(str(tmp_path)) == []
+
+
+def test_drive_60_turns_fans_on_soc_cool():
+    assert fand.target_pwm(40, False, [59.0, 30.0]) == (0, False)
+    assert fand.target_pwm(40, False, [60.0, 30.0]) == (255, True)
+
+
+def test_drive_hysteresis_holds_until_55():
+    assert fand.target_pwm(40, True, [57.0]) == (255, True)
+    assert fand.target_pwm(40, True, [54.0]) == (0, False)
+
+
+def test_failed_drive_read_is_ignored():
+    assert fand.target_pwm(40, False, [None]) == (0, False)
