@@ -26,7 +26,8 @@ from _repo import make_log  # noqa: E402
 
 log = make_log("dedupe-schedule")
 
-FILESYSTEMS = ("mirror", "single")
+# mirror is deduped by bees (#372, Dan 2026-11-18); duperemove only covers single.
+FILESYSTEMS = ("single",)
 SERVICE = "/etc/systemd/system/awto-dedupe@.service"
 TIMER = "/etc/systemd/system/awto-dedupe@.timer"
 # Hourly cadence: a pass must end before the next trigger. 50 min = 5/6 of the period; on expiry
