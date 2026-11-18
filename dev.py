@@ -1279,6 +1279,16 @@ def cmd_dedupe_schedule(extra: list[str]) -> int:
 
 
 @command(
+    "lazy SHA-256 cache in user.* xattrs on woomera's data filesystems; install timers, status, get "
+    "(scripts/file-hash-cache.py, #378)",
+    args="install|uninstall|status|get PATH",
+    kind="action",
+)
+def cmd_file_hash(extra: list[str]) -> int:
+    return _run_script("scripts/file-hash-cache.py", extra)
+
+
+@command(
     "poll-based hotplug for the empty SATA ports 2/4/6/8 on woomera: 10 s rescan timer "
     "(scripts/sata-hotplug.py, #377)",
     args="install|uninstall|status|scan",
