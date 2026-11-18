@@ -91,3 +91,8 @@
 ## Final configuration
 - crc32c, raid1/raid1, no compression, no `nodatasum` (lowest CPU at disk speed, default).
 - sha256 is a free upgrade for disk-bound loads if stronger checksums are wanted; remake with `--btrfs-config sha256`.
+
+## Never wipe the mirror
+- `/srv/mirror` (sda+sdb) holds the music consolidation data (awto-music#22); no mkfs/wipefs/`--i-accept-wipe` on it.
+- Wipe path above is for benchmark disks only, by serial; the mirror serials are protected.
+- Dedupe: bees owns the mirror (#372); duperemove timer covers `single` only.

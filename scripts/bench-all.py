@@ -1281,8 +1281,14 @@ def bench_pool_crypt(host: str, password: str, report: Report, pool: str) -> Non
 # explicit: --btrfs-config + --btrfs-serials A B + --i-accept-wipe, by-id serials only.
 BTRFS_MNT = "/srv/mirror"  # fstab by UUID, scripts/fedora-shares.py
 BTRFS_MODEL = "WD82PURZ"
-# serials that must never be wiped: ST6000VX001, Samsung 850 EVO (root), Cruzer
-BTRFS_PROTECTED = ("WCT3LCS1", "S21BNXAG501763W", "20054862301644D34A3D")
+# never wiped: ST6000VX001, Samsung 850 EVO (root), Cruzer, mirror pair sda+sdb (music data)
+BTRFS_PROTECTED = (
+    "WCT3LCS1",
+    "S21BNXAG501763W",
+    "20054862301644D34A3D",
+    "VGG8B0LG",
+    "VGG8ASZG",
+)
 BTRFS_CSUMS = ("crc32c", "xxhash", "sha256", "blake2b")
 BTRFS_SIZE = "8G"  # > 2x RAM (3.9 GB)
 BTRFS_RUNTIME_S = 30
