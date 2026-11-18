@@ -1279,6 +1279,16 @@ def cmd_dedupe_schedule(extra: list[str]) -> int:
 
 
 @command(
+    "poll-based hotplug for the empty SATA ports 2/4/6/8 on woomera: 10 s rescan timer "
+    "(scripts/sata-hotplug.py, #377)",
+    args="install|uninstall|status|scan",
+    kind="action",
+)
+def cmd_sata_hotplug(extra: list[str]) -> int:
+    return _run_script("scripts/sata-hotplug.py", extra)
+
+
+@command(
     "install/shred the tank/home ZFS key (from secrets.yaml) at /root/home.key on woomera "
     "(scripts/home-key-put.py, #370)",
     args="put|shred",

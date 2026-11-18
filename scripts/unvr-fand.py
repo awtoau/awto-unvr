@@ -19,7 +19,10 @@ from pathlib import Path
 
 OFF_PWM, MAX_PWM = 0, 255
 SOC_ON_C, SOC_OFF_C = 80, 50  # stock-era thresholds (7674ee4); hysteresis stops hunting
-DRIVE_ON_C, DRIVE_OFF_C = 60, 60  # Dan 2026-11-18: any drive >= 60 C on, < 60 C off (no hysteresis)
+DRIVE_ON_C, DRIVE_OFF_C = (
+    60,
+    60,
+)  # Dan 2026-11-18: any drive >= 60 C on, < 60 C off (no hysteresis)
 
 # 10 s: SoC thermal mass is seconds-minutes; drive reads are cheap
 POLL_S = 10
