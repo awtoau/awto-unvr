@@ -11,6 +11,7 @@
 | `/srv/single` | btrfs `-d single -m dup`, crc32c, label single-5t | ST6000VX001 WCT3LCS1 (ZFS `tank` wiped) | same |
 - Mirror UUID changes on every `bench-all --btrfs-config`; re-run `fedora-shares apply` afterwards (replaces the fstab line by mount point).
 - **Holds user data (2026-11-17):** `/srv/mirror/awto-music-duplicates` (subvolume, awto-music#22) is the only copy of those files. Never `bench-all --btrfs-config`, mkfs or wipe sda/sdb while it exists, without Dan's explicit say-so.
+- **Dedupe: bees** (`beesd@<mirror UUID>`, Fedora `bees-0.10`, enabled). Config `/etc/bees/<UUID>.conf`: `DB_SIZE=128M`, `--thread-count 1 --thread-min 0 --loadavg-target 1`; unit already runs idle IO class, nice 19. Hash/state in `/srv/mirror/.beeshome`. Replaced one-shot duperemove (`scripts/duperemove-mirror.py`, stopped 2026-11-18).
 - Top dirs owned `dan:dan` (uid 1000; box user `dan` has no shell/home).
 - `/mnt/btrfs-test` is retired; `bench-all` default is `/srv/mirror`.
 
