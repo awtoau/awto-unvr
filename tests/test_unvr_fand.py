@@ -58,9 +58,9 @@ def test_drive_60_turns_fans_on_soc_cool():
     assert fand.target_pwm(40, False, [60.0, 30.0]) == (255, True)
 
 
-def test_drive_hysteresis_holds_until_55():
-    assert fand.target_pwm(40, True, [57.0]) == (255, True)
-    assert fand.target_pwm(40, True, [54.0]) == (0, False)
+def test_drive_off_below_60_no_hysteresis():
+    assert fand.target_pwm(40, True, [60.0]) == (255, True)
+    assert fand.target_pwm(40, True, [59.0]) == (0, False)
 
 
 def test_failed_drive_read_is_ignored():

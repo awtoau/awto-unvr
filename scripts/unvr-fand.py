@@ -19,7 +19,7 @@ from pathlib import Path
 
 OFF_PWM, MAX_PWM = 0, 255
 SOC_ON_C, SOC_OFF_C = 80, 50  # stock-era thresholds (7674ee4); hysteresis stops hunting
-DRIVE_ON_C, DRIVE_OFF_C = 60, 55  # Dan 2026-11-18: any drive >= 60 C -> fans on
+DRIVE_ON_C, DRIVE_OFF_C = 60, 60  # Dan 2026-11-18: any drive >= 60 C on, < 60 C off (no hysteresis)
 
 # 10 s: SoC thermal mass is seconds-minutes; drive reads are cheap
 POLL_S = 10
@@ -32,7 +32,7 @@ TACH_FANS = (1, 2, 3)  # fan4 is not populated on this board
 def target_pwm(soc_c, on, drives=()):
     """-> (pwm, on). soc_c None (unreadable) -> full speed.
 
-    Also on if any drive >= DRIVE_ON_C; off again only below DRIVE_OFF_C (None/failed reads ignored).
+    Also on if any drive >= DRIVE_ON_C; off again below DRIVE_OFF_C (None/failed reads ignored).
     """
     hot = [t for t in drives if t is not None]
     drive_hot = bool(hot) and max(hot) >= DRIVE_ON_C
