@@ -14,8 +14,7 @@ Lazy SHA-256 of every file on woomera's data filesystems, stored in the file's o
   - modified < 60 s ago → "settling", skipped (still being written).
   - changed while being hashed → "settling", retried next pass.
 - Skipped dirs: `#recycle`, `.tools`, `.snapshots`. Symlinks and non-regular files ignored.
-- Pass stops after the time budget; the next pass resumes (fresh files cost a stat). First pass over 8 TB takes days.
-- Runs at `Nice=19`, `IOSchedulingClass=idle`; shares the mirror with bees and any job a session starts.
+- Pass stops after the time budget; the next pass resumes (fresh files cost a stat).- Runs at `Nice=19`, `IOSchedulingClass=idle`; shares the mirror with bees and any job a session starts.
 
 | Setting | Value | Why |
 |---|---|---|

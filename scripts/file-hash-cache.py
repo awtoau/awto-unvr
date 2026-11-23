@@ -13,7 +13,7 @@
 - Heartbeat /var/lib/awto-filehash/NAME.json: pass start/end, counts, backlog, oldest-unhashed age.
 - status flags a heartbeat older than STALL_FACTOR x the pass interval (daemon stopped or starved).
 - Files modified < SETTLE_S ago are skipped (still being written).
-- Passes stop at the time budget and resume next run; first pass over 8 TB takes days.
+- Passes stop at the time budget and resume next run.
 """
 
 from __future__ import annotations
