@@ -1,0 +1,200 @@
+{
+  "timestamp": "2026-11-24T10:23:58+11:00",
+  "commit": "1840ce7-dirty",
+  "host": "192.168.25.41",
+  "kernel": "7.4.0-rc2-perf-1840ce7-dirty+",
+  "checks": [
+    {
+      "name": "health al_eth module",
+      "ok": true,
+      "detail": "vermagic=7.4.0-rc2-perf-1840ce7-dirty+ running=7.4.0-rc2-perf-1840ce7-dirty+"
+    },
+    {
+      "name": "health link enp0s1",
+      "ok": false,
+      "detail": "speed=-1 carrier=0 oper=down"
+    },
+    {
+      "name": "health link enp0s2",
+      "ok": true,
+      "detail": "speed=10000 carrier=1 oper=up"
+    },
+    {
+      "name": "health adaptive moderation off",
+      "ok": true,
+      "detail": "off on enp0s1, enp0s2"
+    },
+    {
+      "name": "health MAC counters",
+      "ok": false,
+      "detail": "enp0s2 rx_errors 0->4"
+    },
+    {
+      "name": "health queue drop counters",
+      "ok": false,
+      "detail": "enp0s2 rx_dropped 0->4"
+    },
+    {
+      "name": "health kernel log",
+      "ok": true,
+      "detail": "no trouble lines"
+    },
+    {
+      "name": "eth 1G",
+      "ok": false,
+      "detail": "couldn't get IP for enp0s1"
+    },
+    {
+      "name": "eth 1G v6 control udp",
+      "ok": false,
+      "detail": "sender rc=0: SENDERR [Errno 101] Network is unreachable\nSENT ctl=0 hbh=0"
+    },
+    {
+      "name": "eth 10G host->box",
+      "ok": true,
+      "detail": "6.68 Gbits/sec"
+    },
+    {
+      "name": "eth 10G box->host",
+      "ok": true,
+      "detail": "8.00 Gbits/sec"
+    },
+    {
+      "name": "eth 10G v6 control udp",
+      "ok": true,
+      "detail": "100/100 arrived"
+    },
+    {
+      "name": "eth 10G v6 hop-by-hop udp csum",
+      "ok": true,
+      "detail": "100/100 arrived (lost ones failed the checksum)"
+    },
+    {
+      "name": "crypto xts(aes) [xts-aes-ce]",
+      "ok": true,
+      "detail": "521.0 MB/s (32.0MB in 0.06s)"
+    },
+    {
+      "name": "sata sda",
+      "ok": true,
+      "detail": "190.8 MB/sec"
+    },
+    {
+      "name": "sata sdb",
+      "ok": true,
+      "detail": "357.2 MB/sec"
+    },
+    {
+      "name": "sata sdc",
+      "ok": true,
+      "detail": "148.3 MB/sec"
+    },
+    {
+      "name": "sata sdd",
+      "ok": true,
+      "detail": "242.4 MB/sec"
+    },
+    {
+      "name": "usb sde",
+      "ok": true,
+      "detail": "14.4 MB/sec"
+    },
+    {
+      "name": "usb sde link",
+      "ok": true,
+      "detail": "480 Mb/s negotiated"
+    },
+    {
+      "name": "readspread n=1 run1",
+      "ok": true,
+      "detail": "187.2 MB/s aggregate; per-disk MB/s sdc=99 sdd=88; cpu 3%"
+    },
+    {
+      "name": "readspread n=1 run2",
+      "ok": true,
+      "detail": "188.2 MB/s aggregate; per-disk MB/s sdc=96 sdd=93; cpu 2%"
+    },
+    {
+      "name": "readspread n=1 run3",
+      "ok": true,
+      "detail": "190.7 MB/s aggregate; per-disk MB/s sdc=96 sdd=95; cpu 2%"
+    },
+    {
+      "name": "readspread n=2 run1",
+      "ok": true,
+      "detail": "189.5 MB/s aggregate; per-disk MB/s sdc=98 sdd=92; cpu 2%"
+    },
+    {
+      "name": "readspread n=2 run2",
+      "ok": true,
+      "detail": "192.0 MB/s aggregate; per-disk MB/s sdc=97 sdd=96; cpu 2%"
+    },
+    {
+      "name": "readspread n=2 run3",
+      "ok": true,
+      "detail": "190.6 MB/s aggregate; per-disk MB/s sdc=96 sdd=95; cpu 2%"
+    },
+    {
+      "name": "readspread n=4 run1",
+      "ok": true,
+      "detail": "188.1 MB/s aggregate; per-disk MB/s sdc=95 sdd=94; cpu 2%"
+    },
+    {
+      "name": "readspread n=4 run2",
+      "ok": true,
+      "detail": "194.0 MB/s aggregate; per-disk MB/s sdc=101 sdd=94; cpu 2%"
+    },
+    {
+      "name": "readspread n=4 run3",
+      "ok": true,
+      "detail": "199.2 MB/s aggregate; per-disk MB/s sdc=98 sdd=102; cpu 2%"
+    },
+    {
+      "name": "dma copy+xor",
+      "ok": true,
+      "detail": "copy0 20000 tests 0 fail 66271 iops, xor0 20000 tests 0 fail 62711 iops"
+    },
+    {
+      "name": "dma oversize",
+      "ok": true,
+      "detail": "copy0 300 tests 144 fail 20 iops, xor0 300 tests 262 fail 11 iops"
+    }
+  ],
+  "metrics": {
+    "link enp0s2 speed Mbps": 10000.0,
+    "eth 10G host->box": 6680.0,
+    "eth 10G box->host": 8000.0,
+    "crypto xts(aes) [xts-aes-ce]": 520.9537445332555,
+    "sata sda": 190.77,
+    "sata sdb": 357.2,
+    "sata sdc": 148.27,
+    "sata sdd": 242.42,
+    "usb sde": 14.44,
+    "usb sde link": 480.0,
+    "readspread n=1 run1": 187.230746,
+    "readspread n=1 run2": 188.211312,
+    "readspread n=1 run3": 190.664471,
+    "readspread n=2 run1": 189.48971,
+    "readspread n=2 run2": 192.000153,
+    "readspread n=2 run3": 190.578884,
+    "readspread n=4 run1": 188.143123,
+    "readspread n=4 run2": 194.034196,
+    "readspread n=4 run3": 199.191483,
+    "dma dma0chan0 copy iops": 66271.24,
+    "dma dma0chan0 xor iops": 62711.45
+  },
+  "info": {
+    "kernel": "7.4.0-rc2-perf-1840ce7-dirty+",
+    "readspread": "/dev/sdc rw,noatime,space_cache=v2,subvolid=5,subvol=/; read_policy pid [round-robin:262144] devid:1",
+    "readspread n=1 run1 temps": "{'/dev/sda': 43, '/dev/sdb': 33, '/dev/sdc': 55, '/dev/sdd': 56}",
+    "readspread n=1 run2 temps": "{'/dev/sda': 43, '/dev/sdb': 33, '/dev/sdc': 55, '/dev/sdd': 56}",
+    "readspread n=1 run3 temps": "{'/dev/sda': 43, '/dev/sdb': 33, '/dev/sdc': 55, '/dev/sdd': 56}",
+    "readspread n=2 run1 temps": "{'/dev/sda': 43, '/dev/sdb': 33, '/dev/sdc': 55, '/dev/sdd': 56}",
+    "readspread n=2 run2 temps": "{'/dev/sda': 43, '/dev/sdb': 32, '/dev/sdc': 55, '/dev/sdd': 56}",
+    "readspread n=2 run3 temps": "{'/dev/sda': 43, '/dev/sdb': 32, '/dev/sdc': 55, '/dev/sdd': 56}",
+    "readspread n=4 run1 temps": "{'/dev/sda': 43, '/dev/sdb': 32, '/dev/sdc': 55, '/dev/sdd': 56}",
+    "readspread n=4 run2 temps": "{'/dev/sda': 43, '/dev/sdb': 32, '/dev/sdc': 55, '/dev/sdd': 56}",
+    "readspread n=4 run3 temps": "{'/dev/sda': 43, '/dev/sdb': 31, '/dev/sdc': 55, '/dev/sdd': 56}"
+  },
+  "all_ok": false
+}
