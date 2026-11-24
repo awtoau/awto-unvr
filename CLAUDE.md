@@ -53,6 +53,10 @@ stock U-Boot → NAND 0x1300000 (awto-uboot, raw, `go`) → ext4load /boot/uImag
 - **`hdparm -t` understates by ~4x.** Use `fio --direct=1`.
 - **An IP that answers doesn't tell you which NIC answered** — check the MAC in `ip neigh` (see #170 block: produced a 94 Mb/s "10G" reading, a phantom TX asymmetry, and a "1G on an unreachable segment" that was simply weak-host routing).
 - **A true observation is not a conclusion.** `tcpdump` really showed zero frames from the 1G MAC; the port was fine. State what was measured, then what it does and does not establish.
+- **A box that stops responding is not a reproduction** (#243). Another agent may have rebooted it.
+  - Before recording a hang/crash/disappearance: `./dev.py boot-id snapshot` before the test, `./dev.py boot-id check` after (0 same boot, 1 rebooted, 2 unreachable).
+  - Exit 2: look for a boot banner in `tmp/logs/unvr-console.log` first (`U-Boot 2015.07`, `U-Boot 2026.07`, `Starting kernel`).
+  - Unrelated buses failing together (USB NIC + al_eth) = reboot, not a driver fault.
 - **Console timestamps lag the command** — use `time` on the box (read 250 MB/s off timestamps where `time` said 43).
 
 ## Where things live

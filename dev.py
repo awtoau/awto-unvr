@@ -1299,6 +1299,16 @@ def cmd_sata_hotplug(extra: list[str]) -> int:
 
 
 @command(
+    "record woomera's boot ID before a test, check it after: tells a reboot from a hang "
+    "(scripts/boot-id.py, #243)",
+    args="snapshot|check",
+    kind="action",
+)
+def cmd_boot_id(extra: list[str]) -> int:
+    return _run_script("scripts/boot-id.py", extra)
+
+
+@command(
     "install/shred the tank/home ZFS key (from secrets.yaml) at /root/home.key on woomera "
     "(scripts/home-key-put.py, #370)",
     args="put|shred",
