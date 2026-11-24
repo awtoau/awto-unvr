@@ -83,12 +83,21 @@ def stage_dts(src: str, log, port: str | None = None) -> None:
     log(f"staged DTS/DTSI from repo dts/: {', '.join(staged)}")
 
 
-def build_oot_modules(run, log, kout: str, out: str, extra: str, sign=None) -> None:
+# UniFi OS shim modules (#383): one dir, several .ko; 7.x builds only (opt-in).
+SHIM_DIR = "ubnt_shim"
+SHIM_KOS = ("ubnt_common", "ubnthal", "ui_hdd_pwrctl")
+
+
+def build_oot_modules(
+    run, log, kout: str, out: str, extra: str, sign=None, shims: bool = False
+) -> None:
     """Build OOT_MODULES with M= against KOUT (the kbuild dir is $KDIR for an O= build),
-    copy each .ko into `extra`. `sign(ko_path)` is called per .ko when given."""
+    copy each .ko into `extra`. `sign(ko_path)` is called per .ko when given.
+    `shims` also builds SHIM_DIR (needs ubnt_hdd_pwrctl's Module.symvers)."""
     os.makedirs(extra, exist_ok=True)
 
     def one(m, mpath, ko_name, make_vars=()):
+        kos = (ko_name,) if isinstance(ko_name, str) else ko_name
         if os.path.exists(mpath):
             shutil.rmtree(mpath)
         shutil.copytree(os.path.join(REPO, "modules", m), mpath)
@@ -104,15 +113,16 @@ def build_oot_modules(run, log, kout: str, out: str, extra: str, sign=None) -> N
                 "modules",
             ]
         )
-        ko = os.path.join(mpath, f"{ko_name}.ko")
-        if sign:
-            sign(ko)
-        shutil.copy(ko, extra)
-        # A run once printed ok with extra/ empty; cause never found, so check.
-        if not os.path.exists(os.path.join(extra, f"{ko_name}.ko")):
-            log(f"FATAL: {extra}/{ko_name}.ko missing right after copying it")
-            sys.exit(1)
-        log(f"OOT {ko_name}: ok")
+        for ko_name in kos:
+            ko = os.path.join(mpath, f"{ko_name}.ko")
+            if sign:
+                sign(ko)
+            shutil.copy(ko, extra)
+            # A run once printed ok with extra/ empty; cause never found, so check.
+            if not os.path.exists(os.path.join(extra, f"{ko_name}.ko")):
+                log(f"FATAL: {extra}/{ko_name}.ko missing right after copying it")
+                sys.exit(1)
+            log(f"OOT {ko_name}: ok")
 
     for m in OOT_MODULES:
         if m == "al_eth":
@@ -125,6 +135,14 @@ def build_oot_modules(run, log, kout: str, out: str, extra: str, sign=None) -> N
                 )
         else:
             one(m, os.path.join(out, m), m)
+    if shims:
+        syms = os.path.join(out, "ubnt_hdd_pwrctl", "Module.symvers")
+        one(
+            SHIM_DIR,
+            os.path.join(out, SHIM_DIR),
+            SHIM_KOS,
+            [f"KBUILD_EXTRA_SYMBOLS={syms}"],
+        )
 
 
 def mkuimage(image_path: str, out_path: str, name: str, log) -> None:

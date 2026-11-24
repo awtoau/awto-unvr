@@ -763,7 +763,12 @@ def build():
     )
 
     _kbuild.build_oot_modules(
-        run, log, KOUT, OUT, os.path.join(modroot, f"lib/modules/{kv}/extra")
+        run,
+        log,
+        KOUT,
+        OUT,
+        os.path.join(modroot, f"lib/modules/{kv}/extra"),
+        shims=True,
     )
     _repo.run(["depmod", "-b", modroot, kv], log=log, check=False)
 
