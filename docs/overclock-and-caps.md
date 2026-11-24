@@ -92,7 +92,7 @@ Treat 1.8–2.0 GHz as the low-risk target, above that per the "challenge the ma
 
 | reg | addr | field | now (inferred) | change to | how |
 |---|---|---|---|---|---|
-| setup_0 | `0xfd860d40` | post/pre/out/ref | `0x01030111` {ref1,pre3,post17,out3}=1700 | see targets | write new, then set bit31 |
+| setup_0 | `0xfd860d40` | fb[7:0], ref_div[29:24] | live `0x01000021`, ch0 `0x00080001` = 1700 MHz (`scripts/read-pll.py`, #29); targets below use a different layout, re-derive before writing | see targets | write new, then set bit31 |
 | status_7 | `0xfd860d1c` | PLL_LOCK | — | poll=1 after relock | read |
 | setup_6 | `0xfd860d58` | BYPASS b31 | 0 | set→bypass while switching | optional safety |
 
