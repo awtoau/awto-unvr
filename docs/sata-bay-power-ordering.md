@@ -77,3 +77,8 @@ hardware: both controllers now report `2/4 ports implemented (port mask
 0x5)`, the two dead ports show as `ata2`/`ata4`/`ata6`/`ata8: DUMMY`
 (instantly skipped, no probe attempt), and all 3 real drives (2 bay HDDs +
 boot SSD) still detected correctly via `ata1`/`ata3`/`ata7`.
+
+## Unmasked default (Dan 2026-11-24, #377)
+
+- `CONFIG_BOOTARGS` no longer carries `ahci.mask_port_map`; all 8 ports probe at boot.
+- Takes effect when the saved U-Boot env `bootargs` is rewritten (env overrides the compiled value, #229) or U-Boot is reflashed.

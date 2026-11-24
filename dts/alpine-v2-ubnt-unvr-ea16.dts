@@ -954,6 +954,7 @@
 		led-ulogo-white {
 			label = "ulogo_white";
 			gpios = <&gpio4 5 GPIO_ACTIVE_LOW>;
+			default-state = "on"; /* power-on indicator (Dan 2026-11-24, #123) */
 		};
 
 		/* PCA9575 #0 (0x20) pin 2 - SFP+ 1G link LED, active-low
