@@ -23,11 +23,15 @@
 #include <linux/leds.h>
 #include <linux/mod_devicetable.h>
 #include <linux/module.h>
+#include <linux/mutex.h>
+#include <linux/notifier.h>
 #include <linux/of.h>
 #include <linux/platform_device.h>
 #include <linux/slab.h>
 #include <linux/sysfs.h>
 #include <linux/workqueue.h>
+
+#include "ubnt_hdd_pwrctl.h"
 
 #define UBNT_HDD_MAX_BAYS	4
 
@@ -57,6 +61,78 @@ struct ubnt_hdd_pwrctl {
 	unsigned int		nbays;
 	struct ubnt_hdd_bay	bay[UBNT_HDD_MAX_BAYS];
 };
+
+/* Single instance, for the in-kernel API used by modules/ubnt_shim. */
+static DEFINE_MUTEX(ubnt_hdd_lock);
+static struct ubnt_hdd_pwrctl *ubnt_hdd_instance;
+static BLOCKING_NOTIFIER_HEAD(ubnt_hdd_chain);
+
+int ubnt_hdd_pwrctl_register_notifier(struct notifier_block *nb)
+{
+	return blocking_notifier_chain_register(&ubnt_hdd_chain, nb);
+}
+EXPORT_SYMBOL_GPL(ubnt_hdd_pwrctl_register_notifier);
+
+int ubnt_hdd_pwrctl_unregister_notifier(struct notifier_block *nb)
+{
+	return blocking_notifier_chain_unregister(&ubnt_hdd_chain, nb);
+}
+EXPORT_SYMBOL_GPL(ubnt_hdd_pwrctl_unregister_notifier);
+
+int ubnt_hdd_pwrctl_nbays(void)
+{
+	int n = -ENODEV;
+
+	mutex_lock(&ubnt_hdd_lock);
+	if (ubnt_hdd_instance)
+		n = ubnt_hdd_instance->nbays;
+	mutex_unlock(&ubnt_hdd_lock);
+	return n;
+}
+EXPORT_SYMBOL_GPL(ubnt_hdd_pwrctl_nbays);
+
+int ubnt_hdd_pwrctl_bay_info(unsigned int idx, u32 *slot, bool *present,
+			     bool *fault)
+{
+	struct ubnt_hdd_bay *bay;
+	int rc = 0;
+
+	mutex_lock(&ubnt_hdd_lock);
+	if (!ubnt_hdd_instance || idx >= ubnt_hdd_instance->nbays) {
+		rc = -ENODEV;
+		goto out;
+	}
+	bay = &ubnt_hdd_instance->bay[idx];
+	*slot = bay->slot;
+	*present = bay->present_state;
+	*fault = bay->fault_registered && bay->fault_cdev.brightness;
+out:
+	mutex_unlock(&ubnt_hdd_lock);
+	return rc;
+}
+EXPORT_SYMBOL_GPL(ubnt_hdd_pwrctl_bay_info);
+
+int ubnt_hdd_pwrctl_set_fault(u32 slot, bool on)
+{
+	unsigned int i;
+	int rc = -ENOENT;
+
+	mutex_lock(&ubnt_hdd_lock);
+	if (!ubnt_hdd_instance)
+		goto out;
+	for (i = 0; i < ubnt_hdd_instance->nbays; i++) {
+		struct ubnt_hdd_bay *bay = &ubnt_hdd_instance->bay[i];
+
+		if (bay->slot == slot && bay->fault_registered) {
+			rc = led_set_brightness_sync(&bay->fault_cdev, on);
+			break;
+		}
+	}
+out:
+	mutex_unlock(&ubnt_hdd_lock);
+	return rc;
+}
+EXPORT_SYMBOL_GPL(ubnt_hdd_pwrctl_set_fault);
 
 /* _blocking: the LEDs hang off a PCA9575 over i2c, so the setter sleeps. */
 static int ubnt_hdd_fault_set(struct led_classdev *cdev,
@@ -120,8 +196,10 @@ static void ubnt_hdd_poll_work(struct work_struct *work)
 		}
 	}
 
-	if (changed)
+	if (changed) {
 		kobject_uevent(&pwrctl->dev->kobj, KOBJ_CHANGE);
+		blocking_notifier_call_chain(&ubnt_hdd_chain, 0, NULL);
+	}
 
 	schedule_delayed_work(&pwrctl->poll,
 			      msecs_to_jiffies(UBNT_HDD_POLL_MS));
@@ -213,6 +291,10 @@ static int ubnt_hdd_pwrctl_probe(struct platform_device *pdev)
 	schedule_delayed_work(&pwrctl->poll,
 			      msecs_to_jiffies(UBNT_HDD_POLL_MS));
 
+	mutex_lock(&ubnt_hdd_lock);
+	ubnt_hdd_instance = pwrctl;
+	mutex_unlock(&ubnt_hdd_lock);
+
 	dev_info(&pdev->dev, "%u bays, presence polled every %u ms\n",
 		 pwrctl->nbays, UBNT_HDD_POLL_MS);
 	return 0;
@@ -222,6 +304,9 @@ static void ubnt_hdd_pwrctl_remove(struct platform_device *pdev)
 {
 	struct ubnt_hdd_pwrctl *pwrctl = platform_get_drvdata(pdev);
 
+	mutex_lock(&ubnt_hdd_lock);
+	ubnt_hdd_instance = NULL;
+	mutex_unlock(&ubnt_hdd_lock);
 	cancel_delayed_work_sync(&pwrctl->poll);
 }
 
