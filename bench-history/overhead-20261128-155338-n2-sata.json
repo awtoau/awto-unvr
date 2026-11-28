@@ -1,0 +1,146 @@
+{
+ "name": "n2-sata",
+ "loads": [
+  "sata"
+ ],
+ "knobs": [],
+ "secs": 15,
+ "stamp": "20261128-155338",
+ "diff": {
+  "dt_s": 15.45,
+  "bg_noise_pct_of_400": 0.1,
+  "busy_pct": {
+   "cpu": 1.2,
+   "cpu0": 2.1,
+   "cpu1": 1.0,
+   "cpu2": 1.0,
+   "cpu3": 0.8
+  },
+  "busy_of_400": 4.8,
+  "split_pct": {
+   "user": 0.3,
+   "nice": 0.0,
+   "sys": 0.3,
+   "idle": 97.8,
+   "iowait": 0.9,
+   "irq": 0.4,
+   "softirq": 0.3,
+   "steal": 0.0
+  },
+  "ctxt_s": 3741,
+  "irq_s_per_cpu": [
+   1155,
+   290,
+   501,
+   688
+  ],
+  "irq_s_total": 2635,
+  "irq_top": {
+   "11 GICv3 30 Level arch_timer": [
+    556,
+    288,
+    500,
+    684
+   ],
+   "37 ALPINE-PCI-MSIX-0000:00:08.0 5 Edge ahci-al": [
+    533,
+    0,
+    0,
+    0
+   ],
+   "15 GICv3 53 Level fd880000.i2c": [
+    54,
+    0,
+    0,
+    0
+   ],
+   "58 ALPINE-PCI-MSIX-0000:00:02.0 3 Edge al-eth-rx-comp-0@pci:0000:00:02.0": [
+    8,
+    0,
+    0,
+    0
+   ],
+   "61 ALPINE-PCI-MSIX-0000:00:02.0 6 Edge al-eth-rx-comp-3@pci:0000:00:02.0": [
+    0,
+    0,
+    0,
+    4
+   ],
+   "62 ALPINE-PCI-MSIX-0000:00:02.0 7 Edge al-eth-tx-comp-0@pci:0000:00:02.0": [
+    2,
+    0,
+    0,
+    0
+   ],
+   "40 ALPINE-PCI-MSIX-0000:00:09.0 3 Edge ahci-al": [
+    1,
+    0,
+    0,
+    0
+   ],
+   "42 ALPINE-PCI-MSIX-0000:00:09.0 5 Edge ahci-al": [
+    1,
+    0,
+    0,
+    0
+   ],
+   "59 ALPINE-PCI-MSIX-0000:00:02.0 4 Edge al-eth-rx-comp-1@pci:0000:00:02.0": [
+    0,
+    1,
+    0,
+    0
+   ],
+   "60 ALPINE-PCI-MSIX-0000:00:02.0 5 Edge al-eth-rx-comp-2@pci:0000:00:02.0": [
+    0,
+    0,
+    1,
+    0
+   ],
+   "63 ALPINE-PCI-MSIX-0000:00:02.0 8 Edge al-eth-tx-comp-1@pci:0000:00:02.0": [
+    0,
+    1,
+    0,
+    0
+   ],
+   "35 ALPINE-PCI-MSIX-0000:00:08.0 3 Edge ahci-al": [
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "softirq_s_per_cpu": {
+   "TIMER": [
+    64,
+    36,
+    26,
+    123
+   ],
+   "BLOCK": [
+    534,
+    0,
+    0,
+    0
+   ],
+   "SCHED": [
+    134,
+    92,
+    112,
+    100
+   ],
+   "RCU": [
+    282,
+    60,
+    276,
+    287
+   ]
+  },
+  "net_rx_MBps": 0.0,
+  "net_tx_MBps": 0.0,
+  "disk_MBps": {
+   "sdd": 550.7
+  }
+ },
+ "total_MBps": 550.7,
+ "cpu_s_per_GB": 0.09
+}

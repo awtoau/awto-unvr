@@ -1,0 +1,150 @@
+{
+ "name": "Ba-net-rx4",
+ "loads": [
+  "net-rx4"
+ ],
+ "knobs": [],
+ "secs": 15,
+ "stamp": "20261128-155553",
+ "diff": {
+  "dt_s": 15.88,
+  "bg_noise_pct_of_400": 0.1,
+  "busy_pct": {
+   "cpu": 68.6,
+   "cpu0": 67.3,
+   "cpu1": 69.3,
+   "cpu2": 47.7,
+   "cpu3": 90.4
+  },
+  "busy_of_400": 274.4,
+  "split_pct": {
+   "user": 1.0,
+   "nice": 0.0,
+   "sys": 28.7,
+   "idle": 31.3,
+   "iowait": 0.1,
+   "irq": 6.6,
+   "softirq": 32.3,
+   "steal": 0.0
+  },
+  "ctxt_s": 42922,
+  "irq_s_per_cpu": [
+   18773,
+   26977,
+   17840,
+   33685
+  ],
+  "irq_s_total": 97276,
+  "irq_top": {
+   "61 ALPINE-PCI-MSIX-0000:00:02.0 6 Edge al-eth-rx-comp-3@pci:0000:00:02.0": [
+    0,
+    0,
+    0,
+    25268
+   ],
+   "59 ALPINE-PCI-MSIX-0000:00:02.0 4 Edge al-eth-rx-comp-1@pci:0000:00:02.0": [
+    0,
+    17916,
+    0,
+    0
+   ],
+   "58 ALPINE-PCI-MSIX-0000:00:02.0 3 Edge al-eth-rx-comp-0@pci:0000:00:02.0": [
+    17725,
+    0,
+    0,
+    0
+   ],
+   "64 ALPINE-PCI-MSIX-0000:00:02.0 9 Edge al-eth-tx-comp-2@pci:0000:00:02.0": [
+    0,
+    0,
+    16835,
+    0
+   ],
+   "63 ALPINE-PCI-MSIX-0000:00:02.0 8 Edge al-eth-tx-comp-1@pci:0000:00:02.0": [
+    0,
+    8062,
+    0,
+    0
+   ],
+   "65 ALPINE-PCI-MSIX-0000:00:02.0 10 Edge al-eth-tx-comp-3@pci:0000:00:02.0": [
+    0,
+    0,
+    0,
+    7416
+   ],
+   "11 GICv3 30 Level arch_timer": [
+    999,
+    999,
+    1003,
+    1001
+   ],
+   "15 GICv3 53 Level fd880000.i2c": [
+    44,
+    0,
+    0,
+    0
+   ],
+   "37 ALPINE-PCI-MSIX-0000:00:08.0 5 Edge ahci-al": [
+    3,
+    0,
+    0,
+    0
+   ],
+   "60 ALPINE-PCI-MSIX-0000:00:02.0 5 Edge al-eth-rx-comp-2@pci:0000:00:02.0": [
+    0,
+    0,
+    2,
+    0
+   ],
+   "40 ALPINE-PCI-MSIX-0000:00:09.0 3 Edge ahci-al": [
+    1,
+    0,
+    0,
+    0
+   ],
+   "42 ALPINE-PCI-MSIX-0000:00:09.0 5 Edge ahci-al": [
+    1,
+    0,
+    0,
+    0
+   ]
+  },
+  "softirq_s_per_cpu": {
+   "TIMER": [
+    50,
+    46,
+    52,
+    73
+   ],
+   "NET_RX": [
+    8728,
+    13912,
+    16815,
+    12094
+   ],
+   "SCHED": [
+    333,
+    335,
+    353,
+    417
+   ],
+   "RCU": [
+    41,
+    52,
+    45,
+    52
+   ]
+  },
+  "net_rx_MBps": 1217.4,
+  "net_tx_MBps": 1.7,
+  "disk_MBps": {}
+ },
+ "total_MBps": 1219.1,
+ "cpu_s_per_GB": 2.25,
+ "iperf": {
+  "net-rx4": {
+   "Mbps": 9397,
+   "retr": 1891
+  }
+ }
+}

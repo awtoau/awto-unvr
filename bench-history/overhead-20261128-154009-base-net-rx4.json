@@ -1,0 +1,172 @@
+{
+ "name": "base-net-rx4",
+ "loads": [
+  "net-rx4"
+ ],
+ "knobs": [],
+ "secs": 15,
+ "stamp": "20261128-154009",
+ "perf_stat": "24608390975      cycles                                                                \n       26096469211      instructions                                                          \n      15.478208330 seconds time elapsed",
+ "perf_top": [
+  "7.03%  [k] __arch_copy_to_user                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     -      -            ",
+  "     5.54%  [.] __aarch64_ldadd4_acq_rel                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                -      -            ",
+  "     5.24%  [.] __aarch64_swp4_rel                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      -      -            ",
+  "     4.61%  [.] __aarch64_cas4_acq                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      -      -            ",
+  "     3.07%  [.] crucible::BtrfsIoctlSearchKey::do_ioctl(int)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            -      -            ",
+  "     2.35%  [k] copy_to_user_nofault                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    -      -            ",
+  "     2.10%  [k] btrfs_get_32                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            -      -            ",
+  "     2.06%  [k] btrfs_bin_search                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        -      -            ",
+  "     1.95%  [.] pthread_mutex_lock@@GLIBC_2.17                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          -      -            ",
+  "     1.82%  [k] __check_object_size.part.0                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              -      -            ",
+  "     1.79%  [.] malloc                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  -      -            ",
+  "     1.62%  [.] BeesBlockData::hash() const                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             -      -            ",
+  "     1.59%  [k] __pi_memset_generic                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     -      -            ",
+  "     1.50%  [k] el0_svc                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 -      -            ",
+  "     1.44%  [k] memblock_search                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         -      -            ",
+  "     1.42%  [.] __GI___pthread_mutex_unlock_usercnt                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     -      -            ",
+  "     1.35%  [k] copy_to_sk.isra.0                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       -      -            ",
+  "     1.25%  [k] read_extent_buffer_to_user_nofault                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      -      -            ",
+  "     1.20%  [k] key_in_sk                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               -      -            ",
+  "     1.19%  [k] xas_load                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                -      -            ",
+  "     1.19%  [k] check_heap_object                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       -      -            ",
+  "     1.10%  [k] read_extent_buffer                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      -      -"
+ ],
+ "cycles_per_s": 1613664981.9672132,
+ "diff": {
+  "dt_s": 15.25,
+  "busy_pct": {
+   "cpu": 23.1,
+   "cpu0": 1.6,
+   "cpu1": 30.8,
+   "cpu2": 52.5,
+   "cpu3": 7.4
+  },
+  "busy_of_400": 92.4,
+  "split_pct": {
+   "user": 0.5,
+   "nice": 9.5,
+   "sys": 12.6,
+   "idle": 72.9,
+   "iowait": 4.0,
+   "irq": 0.4,
+   "softirq": 0.1,
+   "steal": 0.0
+  },
+  "ctxt_s": 370,
+  "irq_s_per_cpu": [
+   218,
+   508,
+   824,
+   146
+  ],
+  "irq_s_total": 1696,
+  "irq_top": {
+   "11 GICv3 30 Level arch_timer": [
+    81,
+    346,
+    567,
+    114
+   ],
+   "32 GICv3 138 Level arm-pmu": [
+    0,
+    0,
+    254,
+    0
+   ],
+   "31 GICv3 137 Level arm-pmu": [
+    0,
+    161,
+    0,
+    0
+   ],
+   "15 GICv3 53 Level fd880000.i2c": [
+    54,
+    0,
+    0,
+    0
+   ],
+   "33 GICv3 139 Level arm-pmu": [
+    0,
+    0,
+    0,
+    31
+   ],
+   "37 ALPINE-PCI-MSIX-0000:00:08.0 5 Edge ahci-al": [
+    26,
+    0,
+    0,
+    0
+   ],
+   "40 ALPINE-PCI-MSIX-0000:00:09.0 3 Edge ahci-al": [
+    24,
+    0,
+    0,
+    0
+   ],
+   "30 GICv3 136 Level arm-pmu": [
+    23,
+    0,
+    0,
+    0
+   ],
+   "58 ALPINE-PCI-MSIX-0000:00:02.0 3 Edge al-eth-rx-comp-0@pci:0000:00:02.0": [
+    5,
+    0,
+    0,
+    0
+   ],
+   "42 ALPINE-PCI-MSIX-0000:00:09.0 5 Edge ahci-al": [
+    4,
+    0,
+    0,
+    0
+   ],
+   "59 ALPINE-PCI-MSIX-0000:00:02.0 4 Edge al-eth-rx-comp-1@pci:0000:00:02.0": [
+    0,
+    2,
+    0,
+    0
+   ],
+   "60 ALPINE-PCI-MSIX-0000:00:02.0 5 Edge al-eth-rx-comp-2@pci:0000:00:02.0": [
+    0,
+    0,
+    2,
+    0
+   ]
+  },
+  "softirq_s_per_cpu": {
+   "TIMER": [
+    14,
+    19,
+    30,
+    14
+   ],
+   "BLOCK": [
+    51,
+    0,
+    0,
+    0
+   ],
+   "SCHED": [
+    74,
+    25,
+    27,
+    23
+   ],
+   "RCU": [
+    22,
+    26,
+    39,
+    20
+   ]
+  },
+  "net_rx_MBps": 0.0,
+  "net_tx_MBps": 0.0,
+  "disk_MBps": {
+   "sdf": 14.4
+  }
+ },
+ "total_MBps": 14.4,
+ "cpu_s_per_GB": 64.17,
+ "Mcycles_per_MB": 112.06
+}

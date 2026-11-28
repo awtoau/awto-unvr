@@ -1,0 +1,169 @@
+{
+ "name": "n1-sata",
+ "loads": [
+  "sata"
+ ],
+ "knobs": [],
+ "secs": 15,
+ "stamp": "20261128-155150",
+ "diff": {
+  "dt_s": 16.15,
+  "bg_noise_pct_of_400": 0.1,
+  "busy_pct": {
+   "cpu": 61.8,
+   "cpu0": 58.3,
+   "cpu1": 73.6,
+   "cpu2": 53.2,
+   "cpu3": 62.1
+  },
+  "busy_of_400": 247.2,
+  "split_pct": {
+   "user": 3.9,
+   "nice": 0.5,
+   "sys": 29.6,
+   "idle": 20.5,
+   "iowait": 17.7,
+   "irq": 5.3,
+   "softirq": 22.4,
+   "steal": 0.0
+  },
+  "ctxt_s": 31955,
+  "irq_s_per_cpu": [
+   9893,
+   25454,
+   7429,
+   20665
+  ],
+  "irq_s_total": 63441,
+  "irq_top": {
+   "59 ALPINE-PCI-MSIX-0000:00:02.0 4 Edge al-eth-rx-comp-1@pci:0000:00:02.0": [
+    0,
+    18773,
+    0,
+    0
+   ],
+   "61 ALPINE-PCI-MSIX-0000:00:02.0 6 Edge al-eth-rx-comp-3@pci:0000:00:02.0": [
+    0,
+    0,
+    0,
+    14235
+   ],
+   "62 ALPINE-PCI-MSIX-0000:00:02.0 7 Edge al-eth-tx-comp-0@pci:0000:00:02.0": [
+    6476,
+    0,
+    0,
+    0
+   ],
+   "64 ALPINE-PCI-MSIX-0000:00:02.0 9 Edge al-eth-tx-comp-2@pci:0000:00:02.0": [
+    0,
+    0,
+    6406,
+    0
+   ],
+   "63 ALPINE-PCI-MSIX-0000:00:02.0 8 Edge al-eth-tx-comp-1@pci:0000:00:02.0": [
+    0,
+    5654,
+    0,
+    0
+   ],
+   "65 ALPINE-PCI-MSIX-0000:00:02.0 10 Edge al-eth-tx-comp-3@pci:0000:00:02.0": [
+    0,
+    0,
+    0,
+    5417
+   ],
+   "11 GICv3 30 Level arch_timer": [
+    1033,
+    1027,
+    1020,
+    1013
+   ],
+   "25 ALPINE-PCI-MSIX-0001:01:00.0 0 Edge xhci_hcd": [
+    1712,
+    0,
+    0,
+    0
+   ],
+   "37 ALPINE-PCI-MSIX-0000:00:08.0 5 Edge ahci-al": [
+    307,
+    0,
+    0,
+    0
+   ],
+   "42 ALPINE-PCI-MSIX-0000:00:09.0 5 Edge ahci-al": [
+    178,
+    0,
+    0,
+    0
+   ],
+   "40 ALPINE-PCI-MSIX-0000:00:09.0 3 Edge ahci-al": [
+    133,
+    0,
+    0,
+    0
+   ],
+   "15 GICv3 53 Level fd880000.i2c": [
+    43,
+    0,
+    0,
+    0
+   ]
+  },
+  "softirq_s_per_cpu": {
+   "TIMER": [
+    149,
+    101,
+    126,
+    127
+   ],
+   "NET_RX": [
+    6482,
+    9897,
+    6416,
+    12415
+   ],
+   "BLOCK": [
+    1177,
+    0,
+    0,
+    0
+   ],
+   "TASKLET": [
+    1675,
+    0,
+    0,
+    0
+   ],
+   "SCHED": [
+    359,
+    256,
+    348,
+    357
+   ],
+   "HRTIMER": [
+    21,
+    99,
+    26,
+    66
+   ],
+   "RCU": [
+    497,
+    503,
+    412,
+    444
+   ]
+  },
+  "net_rx_MBps": 681.0,
+  "net_tx_MBps": 1.6,
+  "disk_MBps": {
+   "sdc": 110.4,
+   "sdd": 509.2,
+   "sdb": 102.6,
+   "sdf": 138.7,
+   "sde": 100.8,
+   "sdg": 166.3
+  }
+ },
+ "total_MBps": 1810.6,
+ "cpu_s_per_GB": 1.36
+}

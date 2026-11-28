@@ -1,0 +1,175 @@
+{
+ "name": "Ba-net-rx4,sata,usb",
+ "loads": [
+  "net-rx4",
+  "sata",
+  "usb"
+ ],
+ "knobs": [],
+ "secs": 15,
+ "stamp": "20261128-160039",
+ "diff": {
+  "dt_s": 16.44,
+  "bg_noise_pct_of_400": 4.1,
+  "busy_pct": {
+   "cpu": 81.1,
+   "cpu0": 67.1,
+   "cpu1": 85.0,
+   "cpu2": 91.9,
+   "cpu3": 80.3
+  },
+  "busy_of_400": 324.4,
+  "split_pct": {
+   "user": 1.1,
+   "nice": 0.3,
+   "sys": 40.7,
+   "idle": 7.2,
+   "iowait": 11.8,
+   "irq": 6.5,
+   "softirq": 32.4,
+   "steal": 0.0
+  },
+  "ctxt_s": 26258,
+  "irq_s_per_cpu": [
+   9812,
+   30330,
+   27442,
+   17315
+  ],
+  "irq_s_total": 84900,
+  "irq_top": {
+   "60 ALPINE-PCI-MSIX-0000:00:02.0 5 Edge al-eth-rx-comp-2@pci:0000:00:02.0": [
+    0,
+    0,
+    21638,
+    0
+   ],
+   "59 ALPINE-PCI-MSIX-0000:00:02.0 4 Edge al-eth-rx-comp-1@pci:0000:00:02.0": [
+    0,
+    18571,
+    0,
+    0
+   ],
+   "61 ALPINE-PCI-MSIX-0000:00:02.0 6 Edge al-eth-rx-comp-3@pci:0000:00:02.0": [
+    0,
+    0,
+    0,
+    16172
+   ],
+   "63 ALPINE-PCI-MSIX-0000:00:02.0 8 Edge al-eth-tx-comp-1@pci:0000:00:02.0": [
+    0,
+    10666,
+    0,
+    0
+   ],
+   "62 ALPINE-PCI-MSIX-0000:00:02.0 7 Edge al-eth-tx-comp-0@pci:0000:00:02.0": [
+    5789,
+    0,
+    0,
+    0
+   ],
+   "64 ALPINE-PCI-MSIX-0000:00:02.0 9 Edge al-eth-tx-comp-2@pci:0000:00:02.0": [
+    0,
+    0,
+    4698,
+    0
+   ],
+   "11 GICv3 30 Level arch_timer": [
+    1094,
+    1093,
+    1107,
+    1143
+   ],
+   "25 ALPINE-PCI-MSIX-0001:01:00.0 0 Edge xhci_hcd": [
+    2365,
+    0,
+    0,
+    0
+   ],
+   "37 ALPINE-PCI-MSIX-0000:00:08.0 5 Edge ahci-al": [
+    511,
+    0,
+    0,
+    0
+   ],
+   "15 GICv3 53 Level fd880000.i2c": [
+    48,
+    0,
+    0,
+    0
+   ],
+   "58 ALPINE-PCI-MSIX-0000:00:02.0 3 Edge al-eth-rx-comp-0@pci:0000:00:02.0": [
+    4,
+    0,
+    0,
+    0
+   ],
+   "35 ALPINE-PCI-MSIX-0000:00:08.0 3 Edge ahci-al": [
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "softirq_s_per_cpu": {
+   "TIMER": [
+    113,
+    123,
+    78,
+    93
+   ],
+   "NET_RX": [
+    5788,
+    20215,
+    16207,
+    11868
+   ],
+   "BLOCK": [
+    1309,
+    0,
+    0,
+    0
+   ],
+   "TASKLET": [
+    2324,
+    0,
+    0,
+    0
+   ],
+   "SCHED": [
+    499,
+    485,
+    404,
+    484
+   ],
+   "HRTIMER": [
+    23,
+    42,
+    90,
+    100
+   ],
+   "RCU": [
+    461,
+    418,
+    448,
+    410
+   ]
+  },
+  "net_rx_MBps": 1083.7,
+  "net_tx_MBps": 1.5,
+  "disk_MBps": {
+   "sdc": 152.1,
+   "sdd": 539.4,
+   "sdb": 141.9,
+   "sde": 138.0
+  }
+ },
+ "total_MBps": 2056.6,
+ "cpu_s_per_GB": 1.56,
+ "iperf": {
+  "net-rx4": {
+   "Mbps": 8329,
+   "retr": 43507
+  }
+ }
+}
