@@ -1,6 +1,35 @@
-# Improvements over stock (ledger)
+# Improvements over stock
 
-Every deliberate difference from Ubiquiti's stock firmware, one row each: what, why, evidence, effect. Stock = vendor kernel 4.1.37 (UNVR 1.3.35) / 4.19.152 (5.1.25) with U-Boot 2015.07-alpine_db-2.21-HAL. Ours = mainline Linux 7.4.0-rc4 + awto-uboot (chained from NAND, #216).
+Stock = vendor kernel 4.1.37 (UNVR 1.3.35) / 4.19.152 (5.1.25) with U-Boot 2015.07-alpine_db-2.21-HAL. Ours = mainline Linux 7.4.0-rc4 + awto-uboot (chained from NAND, #216). Same hardware.
+
+## Headline: speeds
+| Path | Stock | Ours | Source |
+|---|---|---|---|
+| 10G Ethernet (iperf3, TCP) | not measured; vendor ships the same optic equalisation value that gave us 34-594 Mbit/s | **9.3-9.4 Gbit/s**, 0 retransmits | #121, bench-20261117 |
+| 1G Ethernet | not measured (stock link was 100M) | **941 Mbit/s** | #354 baseline 2026-11-13 |
+| SATA SSD sequential read | not measured | **~500-550 MB/s** | bench-history/overhead-20261128-* |
+| USB 3 SSDs (3 behind one hub) | not measured | **413 MB/s total** (373 before `pci=pcie_bus_perf`) | #384, 2026-11-28 |
+
+Stock numbers need one run of the same iperf3 / fio tests on a stock-firmware unit (#381). Public stock numbers: none found.
+
+## Headline: bugs squashed (present in the vendor code, confirmed in source)
+| Bug | Effect on stock | Fix |
+|---|---|---|
+| 10G optic equalisation never calibrated for optics (stock board config also assumes a 3 m DAC) | 10G link collapses to hundreds of Mbit/s with retransmits | #121, #199, #200 |
+| RX poll completes without `napi_complete` (4.1.37) | receive queue stalls under memory pressure until ifdown/ifup | #305 |
+| Ethernet stop does not flush RX before waiting for idle | teardown fails -110, poisons next init | #343 |
+| Crypto engine truncates buffers over 64 KiB | silently corrupt output | #332 |
+| NAND treats parity-less pages as erased | corrupt pages read back clean, UBI never scrubs | #274 |
+| NAND timing mode set without read-back | chip may sit in the wrong timing mode | #281 |
+| Thermal sensor keeps converting a stale reading | wrong temperature after the first sample | #294 |
+| Thermal driver leaks a mapping and busy-waits up to 1 s | CPU held on a sysfs read | #280 |
+| ~62 hardware drop/error counters never collected (empty stub) | no visibility into drops | #212, #235 |
+
+9 groups confirmed in vendor source with file:line (#381 comment of 2026-11-24); about 85 further bugs were ours from the port and are not counted.
+
+## Detail
+
+Every deliberate difference from stock, one row each: what, why, evidence, effect.
 
 - Add a row whenever a setting, patch or config differs from stock. Link the issue and the measurement file.
 - "Stock" column: `same` = vendor has the identical value/code, `differs` = shown in vendor source, `NM` = not measured on stock (no stock benchmark exists yet, #381).
