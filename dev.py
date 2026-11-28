@@ -1250,6 +1250,25 @@ def cmd_truenas_config(extra: list[str]) -> int:
 
 
 @command(
+    "house NAS truenas (192.168.25.64): pools/disks/alerts/shares/upgrade via WebSocket API "
+    "(scripts/truenas.py, awto-terminal#69)",
+    args="info|pools|disks|datasets|shares|network|alerts|apps|update-status|upgrade|call METHOD JSON",
+    kind="action",
+)
+def cmd_truenas(extra: list[str]) -> int:
+    return _run_script("scripts/truenas.py", extra)
+
+
+@command(
+    "reset truenas' BCM57810 10G port via PCI re-probe (scripts/truenas-10g-reset.py, awto-terminal#48)",
+    args="--check | --reset [--address]",
+    kind="action",
+)
+def cmd_truenas_10g_reset(extra: list[str]) -> int:
+    return _run_script("scripts/truenas-10g-reset.py", extra)
+
+
+@command(
     "woomera Fedora: persistent btrfs mounts (/srv/mirror, /srv/single), NFS exports, SMB shares "
     "(scripts/fedora-shares.py, docs/fedora-shares.md, #372)",
     args="plan|apply [--i-accept-wipe]|verify",
