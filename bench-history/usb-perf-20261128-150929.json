@@ -1,0 +1,34 @@
+{
+ "disks": [
+  {
+   "serial": "173818F08383",
+   "dev": "/dev/sdh",
+   "lsblk": "sdh   173818F08383    MK000480GWEZH               usb",
+   "usb": [
+    "usb2/2-1/2-1.4/2-1.4.1/2-1.4.1:1.0/host11/target11:0:0/11:0:0:0",
+    "uas",
+    "5000"
+   ]
+  }
+ ],
+ "alone": {
+  "173818F08383": {
+   "seq1M_qd32": {
+    "bw_MBps": 370.4,
+    "iops": 370,
+    "lat_us_mean": 83662.4
+   },
+   "rand4k_qd32": {
+    "bw_MBps": 159.1,
+    "iops": 40741,
+    "lat_us_mean": 773.5
+   },
+   "rand4k_qd1": {
+    "bw_MBps": 29.2,
+    "iops": 7487,
+    "lat_us_mean": 93.8
+   }
+  }
+ },
+ "together": {}
+}

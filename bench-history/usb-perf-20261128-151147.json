@@ -1,0 +1,34 @@
+{
+ "disks": [
+  {
+   "serial": "S5GENJ0NB02962Z",
+   "dev": "/dev/sdg",
+   "lsblk": "sdg   S5GENJ0NB02962Z Samsung SSD 860 EVO M.2 1TB usb",
+   "usb": [
+    "usb2/2-1/2-1.4/2-1.4.1/2-1.4.1:1.0/host10/target10:0:0/10:0:0:0",
+    "uas",
+    "5000"
+   ]
+  }
+ ],
+ "alone": {
+  "S5GENJ0NB02962Z": {
+   "seq1M_qd32": {
+    "bw_MBps": 370.3,
+    "iops": 370,
+    "lat_us_mean": 83687.2
+   },
+   "rand4k_qd32": {
+    "bw_MBps": 134.3,
+    "iops": 34372,
+    "lat_us_mean": 916.1
+   },
+   "rand4k_qd1": {
+    "bw_MBps": 18.6,
+    "iops": 4757,
+    "lat_us_mean": 169.5
+   }
+  }
+ },
+ "together": {}
+}
