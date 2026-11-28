@@ -85,3 +85,5 @@ Full verified list with file:line: issue #381 comment of 2026-11-24.
 - 10G receive costs 2-2.6 of 4 cores at ~1.2 GB/s with ~100k interrupts/s (interrupt moderation off, MTU 1500); with SATA + USB running together 10G receive falls 1218 -> 884 MB/s (2026-11-28 baselines, bench-history/overhead-*.json).
 - AHCI and xHCI interrupts all land on CPU0.
 - Payload/read-request size on the internal endpoints (all 128 B, capability 256 B).
+- Measured 2026-11-28, #386 (bench-history/overhead-20261128-*-T-rxus*.json, 1 run each, not yet repeated 3x): `ethtool -C enp0s2 rx-usecs 128` takes 4-stream 10G receive from ~98k to ~50k IRQ/s and 264% to 243% of 400% busy at the same 1218 MB/s; rx-usecs 8-32 no gain. GRO off: 398% busy (worse). RPS, netdev_budget 150/600, busy_poll, larger tcp_rmem: no gain (busy_poll worse, 342%).
+- Measured 2026-11-28, #386: DevCtl MaxPayload/MaxReadReq bits on 00:05.0 (al_dma) do not stick (write 0x1020, 0x2000, 0x0020 read back 0000; only bit 11 NoSnoop-enable sticks); 00:04.0 same. A setpci/PCI-fixup for MPS/MRRS on these endpoints is not a lever. 00:08.0/00:01.0/00:02.0/00:09.0 not written.
