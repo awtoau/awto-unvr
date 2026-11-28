@@ -1309,6 +1309,15 @@ def cmd_usb_perf(extra: list[str]) -> int:
 
 
 @command(
+    "I/O overhead bench: CPU per GB, IRQ/softirq rates, concurrent loads, knob A/B (scripts/overhead-bench.py, #386)",
+    args="run NAME LOADS [--knob K=V] [--perf] | knobs",
+    kind="action",
+)
+def cmd_overhead_bench(extra: list[str]) -> int:
+    return _run_script("scripts/overhead-bench.py", extra)
+
+
+@command(
     "record woomera's boot ID before a test, check it after: tells a reboot from a hang "
     "(scripts/boot-id.py, #243)",
     args="snapshot|check",
