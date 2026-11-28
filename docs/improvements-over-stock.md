@@ -8,7 +8,7 @@ Stock = vendor kernel 4.1.37 (UNVR 1.3.35) / 4.19.152 (5.1.25) with U-Boot 2015.
 | 10G Ethernet (iperf3, TCP) | **TBA** (measuring; vendor ships the same optic equalisation value that gave us 34-594 Mbit/s) | **9.3-9.4 Gbit/s**, 0 retransmits | #121, bench-20261117 |
 | 1G Ethernet | **TBA** (measuring) | **941 Mbit/s** | #354 baseline 2026-11-13 |
 | SATA SSD sequential read | **TBA** (measuring) | **~500-550 MB/s** | bench-history/overhead-20261128-* |
-| USB 3 SSDs (3 behind one hub) | **TBA** (measuring) | **413 MB/s total** (373 before `pci=pcie_bus_perf`) | #384, 2026-11-28 |
+| USB 3 SSDs (3 behind one hub) | **TBA** (measuring) | **413 MB/s total** (stock cmdline has the same `pci=pcie_bus_perf`; our Fedora args had dropped it, 373 without) | #384, 2026-11-28 |
 
 Stock numbers: same iperf3 / fio tests on the stock 4.19 kernel on this unit, in progress (#381). Public stock numbers: none found.
 
@@ -50,7 +50,7 @@ Every deliberate difference from stock, one row each: what, why, evidence, effec
 ## USB
 | Change | Stock | Evidence / effect |
 |---|---|---|
-| `pci=pcie_bus_perf`: xHCI link payload 128 -> 256 B | NM | #384, 2026-11-28 (3 USB SSDs behind one hub, read-only fio 1M QD32): each 355-372 -> 407-412 MB/s, total 373 -> 413 MB/s (+11 %) |
+| `pci=pcie_bus_perf`: xHCI link payload 128 -> 256 B | `same` (stock cmdline `pci=pcie_bus_perf`, docs/hw-reference/20260816-104601/live.dts:14): parity, not an improvement; restored after our bootargs omitted it | #384, 2026-11-28 (3 USB SSDs behind one hub, read-only fio 1M QD32): each 355-372 -> 407-412 MB/s, total 373 -> 413 MB/s (+11 %) |
 | UAS on both SSD bridges (JMicron, ASMedia) at 5 Gbps | NM | #384: both enumerate 5000M driver `uas` |
 
 ## Storage, thermal, power
