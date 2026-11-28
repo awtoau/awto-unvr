@@ -1,0 +1,72 @@
+{
+ "disks": [
+  {
+   "serial": "S1F1NYAG145808",
+   "dev": "/dev/sdd",
+   "lsblk": "sdd   S1F1NYAG145808       SAMSUNG MZMTE256HMHP-000MV usb",
+   "usb": [
+    "usb2/2-1/2-1.2/2-1.2:1.0/host8/target8:0:0/8:0:0:0",
+    "uas",
+    "5000"
+   ]
+  },
+  {
+   "serial": "S3YBNB0M621787E",
+   "dev": "/dev/sdf",
+   "lsblk": "sdf   S3YBNB0M621787E      Samsung SSD 860 EVO 1TB    usb",
+   "usb": [
+    "usb2/2-1/2-1.1/2-1.1:1.0/host10/target10:0:0/10:0:0:0",
+    "uas",
+    "5000"
+   ]
+  }
+ ],
+ "alone": {
+  "S1F1NYAG145808": {
+   "seq1M_qd32": {
+    "bw_MBps": 16.6,
+    "iops": 17,
+    "lat_us_mean": 1866176.6
+   },
+   "rand4k_qd32": {
+    "bw_MBps": 2.2,
+    "iops": 574,
+    "lat_us_mean": 55745.8
+   },
+   "rand4k_qd1": {
+    "bw_MBps": 0.6,
+    "iops": 155,
+    "lat_us_mean": 6390.5
+   }
+  },
+  "S3YBNB0M621787E": {
+   "seq1M_qd32": {
+    "bw_MBps": 359.1,
+    "iops": 359,
+    "lat_us_mean": 86198.7
+   },
+   "rand4k_qd32": {
+    "bw_MBps": 156.0,
+    "iops": 39936,
+    "lat_us_mean": 788.6
+   },
+   "rand4k_qd1": {
+    "bw_MBps": 24.5,
+    "iops": 6261,
+    "lat_us_mean": 119.7
+   }
+  }
+ },
+ "together": {
+  "j0": {
+   "bw_MBps": 14.4,
+   "iops": 14,
+   "lat_us_mean": 2131522.4
+  },
+  "j1": {
+   "bw_MBps": 356.6,
+   "iops": 357,
+   "lat_us_mean": 86886.5
+  }
+ }
+}

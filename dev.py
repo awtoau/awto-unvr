@@ -1299,6 +1299,16 @@ def cmd_sata_hotplug(extra: list[str]) -> int:
 
 
 @command(
+    "read-only throughput test of USB-attached disks on woomera: seq/rand, alone and together "
+    "(scripts/usb-perf.py, #384)",
+    args="SERIAL [SERIAL ...]",
+    kind="action",
+)
+def cmd_usb_perf(extra: list[str]) -> int:
+    return _run_script("scripts/usb-perf.py", extra)
+
+
+@command(
     "record woomera's boot ID before a test, check it after: tells a reboot from a hang "
     "(scripts/boot-id.py, #243)",
     args="snapshot|check",
