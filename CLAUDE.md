@@ -33,12 +33,12 @@ stock U-Boot → NAND 0x1300000 (awto-uboot, raw, `go`) → ext4load /boot/uImag
 - Console timestamps lag the command; use `time` on the box for real durations.
 
 ## Reaching the box
-- `./dev.py ssh [-- cmd]` — resolves by **MAC**, never a hardcoded IP. DHCP has moved this box across .129/.136/.140. All four NICs (both al_eth, both USB) are in `scripts/_box.py`, so it finds the box even when only a USB NIC is up. A guard test fails on any IP/MAC literal elsewhere (#260).
+- `./dev.py ssh [-- cmd]` — resolves by **MAC**, never a hardcoded IP. Static `.41` on the 10G port since the registry move (was DHCP: .129/.136/.140). `scripts/_box.py` holds both al_eth MACs plus the two retired r8152 USB NIC MACs (kept so old logs resolve). A guard test fails on any IP/MAC literal elsewhere (#260).
 - "No route to host": `ping -c1 <ip>` to re-ARP, then retry. Both al_eth ports on one subnet → neighbour entries go stale (#170).
 - Recovery if it won't boot: `<Esc><Esc>` at stock, then netboot — stock is the only stage with working networking. **`run bootnand` is NOT a recovery path**: the NAND recovery image at `0x300000` isn't genuine stock firmware and doesn't boot (#166). Pristine MTD backups: `git_debris/woomera-mtd/...-164356/`.
 
-### All four NICs on ONE subnet (#170)
-4 NICs (`enp0s1` 1G, `enp0s2` 10G, two USB r8152) all on `192.168.25.0/24`, all with DHCP leases. Linux weak-host made the box reply on whichever interface the ROUTE picked, not the one owning the address — three wrong conclusions in one day.
+### Several NICs on ONE subnet (#170)
+Checked 2026-11-28: box has `enp0s1` 1G (cable out) + `enp0s2` 10G (static .41, up); the two USB r8152 NICs are gone. The weak-host rule below applies whenever >1 NIC shares the subnet. Historically 4 NICs, all DHCP. Linux weak-host made the box reply on whichever interface the ROUTE picked, not the one owning the address — three wrong conclusions in one day.
 - **FIXED 2026-10-10: `scripts/fix-multihome-routing.py --persist`.** Strict ARP (`arp_ignore=1`, `arp_announce=2`) + one route table per NIC with `ip rule from <addr>`. Persisted via `/etc/NetworkManager/dispatcher.d/90-awto-multihome`, re-applied on every interface up, survives a DHCP renew/link flap. Verified: `.133` answers from `a8:11` (1G), `.127` from `a8:12` (10G). `-B <addr>` now selects the right port, read 6.64 Gbit/s on the 10G.
 - On a box WITHOUT the fix applied:
   - **`ip neigh show <ip>` and CHECK THE MAC.** An IP that pings proves nothing about which port carried it.
