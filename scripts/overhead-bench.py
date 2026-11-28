@@ -26,6 +26,7 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
+from _net import WOOMERA_DATA_IP  # noqa: E402
 from _repo import make_log  # noqa: E402
 
 _log = make_log("overhead-bench")
@@ -35,6 +36,7 @@ class log:  # noqa: N801 - printf-style shim over the repo logger
     @staticmethod
     def info(fmt: str, *a) -> None:
         _log(fmt % a if a else fmt)
+
 
 REPO = HERE.parent
 BOX_IF = "enp0s2"
@@ -55,7 +57,9 @@ def box(cmd: str, timeout: int = SSH_S) -> str:
         timeout=timeout,
     )
     return "\n".join(
-        ln for ln in (r.stdout + r.stderr).splitlines() if not ln.startswith("# woomera")
+        ln
+        for ln in (r.stdout + r.stderr).splitlines()
+        if not ln.startswith("# woomera")
     )
 
 
@@ -72,7 +76,9 @@ def _irq_ids(pattern: str) -> list[str]:
 
 def knob_cmds(name: str, val: str) -> list[tuple[str, str, str]]:
     """-> [(read_cmd, write_cmd, value_for_write)]; restore re-runs write with the read value."""
-    if name == "irq-spread":  # val = "ahci" | "xhci" | "ahci:08" ; vectors round-robin over CPUs 0-3
+    if (
+        name == "irq-spread"
+    ):  # val = "ahci" | "xhci" | "ahci:08" ; vectors round-robin over CPUs 0-3
         pat = {"ahci": "ahci-al", "xhci": "xhci_hcd"}.get(val, val)
         ids = _irq_ids(pat)
         return [
@@ -87,7 +93,11 @@ def knob_cmds(name: str, val: str) -> list[tuple[str, str, str]]:
         pat, cpu = val.split("=")
         pat = {"ahci": "ahci-al", "xhci": "xhci_hcd"}.get(pat, pat)
         return [
-            (f"cat /proc/irq/{n}/smp_affinity_list", f"echo {{v}} > /proc/irq/{n}/smp_affinity_list", cpu)
+            (
+                f"cat /proc/irq/{n}/smp_affinity_list",
+                f"echo {{v}} > /proc/irq/{n}/smp_affinity_list",
+                cpu,
+            )
             for n in _irq_ids(pat)
         ]
     if name == "rx-usecs":
@@ -125,7 +135,7 @@ def knob_cmds(name: str, val: str) -> list[tuple[str, str, str]]:
     if name in ("gro", "tso", "gso", "rx-checksumming", "lro"):
         return [
             (
-                f"ethtool -k {BOX_IF} | awk '/^{ {'gro':'generic-receive-offload','tso':'tcp-segmentation-offload','gso':'generic-segmentation-offload','rx-checksumming':'rx-checksumming','lro':'large-receive-offload'}[name] }:/{{print $2}}'",
+                f"ethtool -k {BOX_IF} | awk '/^{ {'gro': 'generic-receive-offload', 'tso': 'tcp-segmentation-offload', 'gso': 'generic-segmentation-offload', 'rx-checksumming': 'rx-checksumming', 'lro': 'large-receive-offload'}[name] }:/{{print $2}}'",
                 f"ethtool -K {BOX_IF} {name} {{v}}",
                 val,
             )
@@ -158,18 +168,26 @@ def knob_cmds(name: str, val: str) -> list[tuple[str, str, str]]:
         ]
     if name == "sysctl":  # val = key=value (value may contain spaces)
         k, v = val.split("=", 1)
-        return [(f"sysctl -n {k}", f"sysctl -w {k}=\"{{v}}\"", v)]
+        return [(f"sysctl -n {k}", f'sysctl -w {k}="{{v}}"', v)]
     if name == "file":  # val = path=value
         p, v = val.split("=", 1)
         return [(f"cat {p}", f"echo {{v}} > {p}", v)]
-    if name == "sd-queue":  # val = attr=value on all SATA/USB disks used: e.g. read_ahead_kb=4096
+    if (
+        name == "sd-queue"
+    ):  # val = attr=value on all SATA/USB disks used: e.g. read_ahead_kb=4096
         a, v = val.split("=")
         return [
-            (f"cat /sys/block/{d}/queue/{a}", f"echo {{v}} > /sys/block/{d}/queue/{a}", v)
+            (
+                f"cat /sys/block/{d}/queue/{a}",
+                f"echo {{v}} > /sys/block/{d}/queue/{a}",
+                v,
+            )
             for d in ("sda", "sdd", "sdf", "sdg")
         ]
     if name == "mtu-box":
-        return [(f"cat /sys/class/net/{BOX_IF}/mtu", f"ip link set {BOX_IF} mtu {{v}}", val)]
+        return [
+            (f"cat /sys/class/net/{BOX_IF}/mtu", f"ip link set {BOX_IF} mtu {{v}}", val)
+        ]
     raise SystemExit(f"unknown knob {name}")
 
 
@@ -186,22 +204,38 @@ class Knobs:
         for s in self.specs:
             name, _, val = s.partition("=")
             if name == "mtu-host":
-                self.mtu_host_orig = Path(f"/sys/class/net/{HOST_IF}/mtu").read_text().strip()
-                rc, o = local(["sudo", "-n", "ip", "link", "set", HOST_IF, "mtu", val], 10)
-                log.info("host mtu %s -> %s rc=%s %s", self.mtu_host_orig, val, rc, o.strip())
+                self.mtu_host_orig = (
+                    Path(f"/sys/class/net/{HOST_IF}/mtu").read_text().strip()
+                )
+                rc, o = local(
+                    ["sudo", "-n", "ip", "link", "set", HOST_IF, "mtu", val], 10
+                )
+                log.info(
+                    "host mtu %s -> %s rc=%s %s", self.mtu_host_orig, val, rc, o.strip()
+                )
                 continue
             for rd, wr, v in knob_cmds(name, val):
                 orig = box(rd).strip()
                 self.items.append((s, wr, orig))
                 out = box(wr.format(v=v))
-                log.info("knob %s: %r -> %r (%s) %s", s, orig, v, wr.split()[0], out.strip()[:100])
+                log.info(
+                    "knob %s: %r -> %r (%s) %s",
+                    s,
+                    orig,
+                    v,
+                    wr.split()[0],
+                    out.strip()[:100],
+                )
 
     def restore(self) -> None:
         for s, wr, orig in reversed(self.items):
             out = box(wr.format(v=orig))
             log.info("restore %s -> %r %s", s, orig, out.strip()[:100])
         if self.mtu_host_orig:
-            local(["sudo", "-n", "ip", "link", "set", HOST_IF, "mtu", self.mtu_host_orig], 10)
+            local(
+                ["sudo", "-n", "ip", "link", "set", HOST_IF, "mtu", self.mtu_host_orig],
+                10,
+            )
             log.info("host mtu restored %s", self.mtu_host_orig)
 
 
@@ -246,7 +280,9 @@ def parse_snap(text: str) -> dict:
             d["disk"][f[2]] = int(f[5]) * 512  # sectors read
         elif sec == "up":
             d["up"] = float(f[0])
-        elif sec == "noise":  # bees / hash-cache / duperemove: utime+stime ticks (100 Hz), summed
+        elif (
+            sec == "noise"
+        ):  # bees / hash-cache / duperemove: utime+stime ticks (100 Hz), summed
             r = ln.rsplit(")", 1)[1].split()
             d["noise"] = d.get("noise", 0) + int(r[11]) + int(r[12])
     return d
@@ -261,8 +297,12 @@ def diff(a: dict, b: dict) -> dict:
         dd = [q - p for p, q in zip(x, y)]
         tot = sum(dd[:8])
         busy[cpu] = round(100.0 * (tot - dd[3] - dd[4]) / tot, 1) if tot else 0.0
-    noise = (b.get("noise", 0) - a.get("noise", 0)) / 100.0 / dt * 100.0  # % of one core
-    out["bg_noise_pct_of_400"] = round(noise, 1)  # bees etc; NOT subtracted from busy, reported next to it
+    noise = (
+        (b.get("noise", 0) - a.get("noise", 0)) / 100.0 / dt * 100.0
+    )  # % of one core
+    out["bg_noise_pct_of_400"] = round(
+        noise, 1
+    )  # bees etc; NOT subtracted from busy, reported next to it
     out["busy_pct"] = busy  # per-CPU 0-100 each; "cpu" = whole system 0-100
     out["busy_of_400"] = round(busy.get("cpu", 0) * 4, 1)
     y = b["stat"]["cpu"]
@@ -276,7 +316,10 @@ def diff(a: dict, b: dict) -> dict:
     irqs = {}
     for n, (cb, lab) in b["irq"].items():
         ca = a["irq"].get(n, ([0] * 4, ""))[0]
-        dl = [(cb[i] if i < len(cb) else 0) - (ca[i] if i < len(ca) else 0) for i in range(4)]
+        dl = [
+            (cb[i] if i < len(cb) else 0) - (ca[i] if i < len(ca) else 0)
+            for i in range(4)
+        ]
         for i in range(4):
             irq_cpu[i] += dl[i]
         if sum(dl) > 0:
@@ -321,35 +364,51 @@ def fio_cmd(devs: list[str], secs: int) -> str:
 
 
 def guard() -> None:
-    out = box("ss -tn state established '( sport = :2049 or sport = :445 )' | tail -n +2")
+    out = box(
+        "ss -tn state established '( sport = :2049 or sport = :445 )' | tail -n +2"
+    )
     busy = box("cut -d' ' -f1-3 /proc/loadavg")
     if out.strip():
         raise SystemExit(f"STOP: active NFS/SMB clients:\n{out}")
     log.info("guard ok: no NFS/SMB clients, loadavg %s", busy.strip())
 
 
-def run_once(name: str, loads: list[str], secs: int, perf: bool, knobs: list[str]) -> dict:
+def run_once(
+    name: str, loads: list[str], secs: int, perf: bool, knobs: list[str]
+) -> dict:
     guard()
     disks = resolve_disks()
     stamp = time.strftime("%Y%m%d-%H%M%S")
     k = Knobs(knobs)
-    res: dict = {"name": name, "loads": loads, "knobs": knobs, "secs": secs, "stamp": stamp}
+    res: dict = {
+        "name": name,
+        "loads": loads,
+        "knobs": knobs,
+        "secs": secs,
+        "stamp": stamp,
+    }
     total = secs + RAMP_S + 4
     threads: list[threading.Thread] = []
     iperf: dict = {}
     procs: list[subprocess.Popen] = []
     try:
         k.apply()
-        box(f"pkill -f '[i]perf3 -s -p {IPERF_PORT}'; true")  # own call: the pattern text must not be in the starter's cmdline
+        box(
+            f"pkill -f '[i]perf3 -s -p {IPERF_PORT}'; true"
+        )  # own call: the pattern text must not be in the starter's cmdline
         box(f"iperf3 -s -p {IPERF_PORT} -D")
-        local(["ping", "-c1", "-W1", "-I", HOST_IF, "192.168.25.41"], 5)
+        local(["ping", "-c1", "-W1", "-I", HOST_IF, WOOMERA_DATA_IP], 5)
         for ld in loads:
             m = re.fullmatch(r"net-(rx|tx)(\d*)", ld)
             if m:
                 n = m.group(2) or "4"
-                cmd = ["iperf3", "-c", "192.168.25.41", "-p", str(IPERF_PORT), "-t", str(total),
+                cmd = ["iperf3", "-c", WOOMERA_DATA_IP, "-p", str(IPERF_PORT), "-t", str(total),
                        "-P", n, "--bind-dev", HOST_IF, "-J"] + (["-R"] if m.group(1) == "tx" else [])  # fmt: skip
-                procs.append(subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True))
+                procs.append(
+                    subprocess.Popen(
+                        cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True
+                    )
+                )
                 iperf[ld] = procs[-1]
             else:
                 devs = {
@@ -357,7 +416,9 @@ def run_once(name: str, loads: list[str], secs: int, perf: bool, knobs: list[str
                     "hdd": [disks[s] for s in HDDS],
                     "usb": [disks[s] for s in USB_SSDS],
                 }[ld]
-                t = threading.Thread(target=lambda c=fio_cmd(devs, total): box(c, total + 30))
+                t = threading.Thread(
+                    target=lambda c=fio_cmd(devs, total): box(c, total + 30)
+                )
                 t.start()
                 threads.append(t)
         threading.Event().wait(RAMP_S)  # ramp: see RAMP_S
@@ -376,11 +437,17 @@ def run_once(name: str, loads: list[str], secs: int, perf: bool, knobs: list[str
         if perf:
             box("kill -INT $(cat /dev/shm/ovh.spid) $(cat /dev/shm/ovh.rpid); true")
             threading.Event().wait(2)  # perf flushes data file on SIGINT
-            res["perf_stat"] = box("cat /dev/shm/ovh.stat | grep -E 'cycles|instr|elapsed'").strip()
-            res["perf_top"] = box(
-                "perf report -i /dev/shm/ovh.data --no-children --sort symbol --stdio 2>/dev/null | grep -v '^#' | grep -v '^$' | head -22",
-                90,
-            ).strip().splitlines()
+            res["perf_stat"] = box(
+                "cat /dev/shm/ovh.stat | grep -E 'cycles|instr|elapsed'"
+            ).strip()
+            res["perf_top"] = (
+                box(
+                    "perf report -i /dev/shm/ovh.data --no-children --sort symbol --stdio 2>/dev/null | grep -v '^#' | grep -v '^$' | head -22",
+                    90,
+                )
+                .strip()
+                .splitlines()
+            )
             m = re.search(r"([\d,]+)\s+cycles", res["perf_stat"])
             if m:
                 cyc = int(m.group(1).replace(",", ""))
@@ -390,7 +457,9 @@ def run_once(name: str, loads: list[str], secs: int, perf: bool, knobs: list[str
         res["total_MBps"] = round(moved, 1)
         if moved > 0:
             net = max(d["busy_of_400"] - d["bg_noise_pct_of_400"], 0)
-            res["cpu_s_per_GB"] = round(net / 100 * 1000 / moved, 2)  # busy cores (bg noise removed) / (MB/s) * 1000
+            res["cpu_s_per_GB"] = round(
+                net / 100 * 1000 / moved, 2
+            )  # busy cores (bg noise removed) / (MB/s) * 1000
             if "cycles_per_s" in res:
                 res["Mcycles_per_MB"] = round(res["cycles_per_s"] / 1e6 / moved, 2)
     finally:
@@ -398,7 +467,9 @@ def run_once(name: str, loads: list[str], secs: int, perf: bool, knobs: list[str
             try:
                 out, _ = p.communicate(timeout=total + 20)
                 j = json.loads(out[out.find("{") :])
-                res.setdefault("iperf", {})[f"{iperf and [k2 for k2, v in iperf.items() if v is p][0]}"] = {
+                res.setdefault("iperf", {})[
+                    f"{iperf and [k2 for k2, v in iperf.items() if v is p][0]}"
+                ] = {
                     "Mbps": round(j["end"]["sum_received"]["bits_per_second"] / 1e6),
                     "retr": j["end"].get("sum_sent", {}).get("retransmits"),
                 }
@@ -418,11 +489,19 @@ def run_once(name: str, loads: list[str], secs: int, perf: bool, knobs: list[str
 def show(res: dict) -> None:
     d = res["diff"]
     print(f"== {res['name']} loads={res['loads']} knobs={res['knobs']}")
-    print(f"  moved {res['total_MBps']} MB/s  rx {d['net_rx_MBps']} tx {d['net_tx_MBps']} disks {d['disk_MBps']}")
-    print(f"  busy {d['busy_of_400']}%/400  per-cpu {[d['busy_pct'].get(f'cpu{i}') for i in range(4)]}  split {d['split_pct']}")
-    print(f"  irq/s {d['irq_s_total']} per-cpu {d['irq_s_per_cpu']}  ctxt/s {d['ctxt_s']}")
+    print(
+        f"  moved {res['total_MBps']} MB/s  rx {d['net_rx_MBps']} tx {d['net_tx_MBps']} disks {d['disk_MBps']}"
+    )
+    print(
+        f"  busy {d['busy_of_400']}%/400  per-cpu {[d['busy_pct'].get(f'cpu{i}') for i in range(4)]}  split {d['split_pct']}"
+    )
+    print(
+        f"  irq/s {d['irq_s_total']} per-cpu {d['irq_s_per_cpu']}  ctxt/s {d['ctxt_s']}"
+    )
     print(f"  softirq/s {d['softirq_s_per_cpu']}")
-    print(f"  cpu-s/GB {res.get('cpu_s_per_GB')}  Mcycles/MB {res.get('Mcycles_per_MB')}  iperf {res.get('iperf')}")
+    print(
+        f"  cpu-s/GB {res.get('cpu_s_per_GB')}  Mcycles/MB {res.get('Mcycles_per_MB')}  iperf {res.get('iperf')}"
+    )
     for k, v in d["irq_top"].items():
         print(f"    irq {k}: {v}")
     for ln in res.get("perf_top", [])[:14]:
@@ -439,7 +518,9 @@ def main() -> None:
     r.add_argument("--secs", type=int, default=15)
     r.add_argument("--perf", action="store_true")
     sub.add_parser("knobs")
-    t = sub.add_parser("table", help="one line per bench-history/overhead-<stamp>-*.json from today")
+    t = sub.add_parser(
+        "table", help="one line per bench-history/overhead-<stamp>-*.json from today"
+    )
     t.add_argument("pattern", nargs="?", default="")
     a = ap.parse_args()
     if a.cmd == "table":
