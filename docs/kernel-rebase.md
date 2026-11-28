@@ -10,7 +10,8 @@ network check). It reports `ours` / `theirs` per tree and names what is behind.
 
 | tree | role |
 |---|---|
-| `tmp/refs/linux-v7.3-fresh` | what we build (`AWTO_KERNEL_SRC`). Store worktree on branch `latest` (our port series), so `.git` is a file. |
+| `tmp/refs/linux-v7.4-rc4` | what we build (`AWTO_KERNEL_SRC`). Store worktree on branch `unvr/port-7.4-rc4` (v7.4-rc4 + our port series), so `.git` is a file. |
+| `tmp/refs/linux-v7.3-fresh` | previous build tree (torvalds/master at 7.4-rc2 + 479, branch `latest`); source of the pushed `unvr/board-support-7.3-v2`. |
 | `tmp/refs/truenas-unvr` | TrueNAS 6.18 build tree, regenerated from `latest` by `./dev.py truenas-series apply` ([build.md](build.md#truenas-618-338)). |
 | `tmp/refs/truenas-linux`, `linux-qnap-tsx32x`, `urnvr-kernel-4.19.152` | comparison kernels, store worktrees detached at a pinned commit (`scripts/kernel-store.py` `TREES`). |
 | `linux-6.12`, `linux-v6.18*`, `linux-v7.1.8` | old bases kept for bisect. Pinned - being behind is their job. |

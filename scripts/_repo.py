@@ -247,9 +247,7 @@ def kernel_src() -> Path:
     (docs/build.md). Single source of truth so kernel_build_ver() below
     reads the same tree the actual build ran against. Resolved, so kbuild
     sees the real path, not the tmp/refs symlink."""
-    return Path(
-        os.environ.get("AWTO_KERNEL_SRC") or REFS / "linux-v7.3-fresh"
-    ).resolve()
+    return Path(os.environ.get("AWTO_KERNEL_SRC") or REFS / "linux-v7.4-rc4").resolve()
 
 
 # Source-level patch markers: file -> (string that must be present, patch,

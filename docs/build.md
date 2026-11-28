@@ -5,7 +5,7 @@ index; each linked doc covers the version-specific deltas in depth.
 
 ## Inventory
 
-Kernel target is `tmp/refs/linux-v7.3-fresh` (a Linux-store worktree,
+Kernel target is `tmp/refs/linux-v7.4-rc4` (v7.4-rc4 + our 9 board commits, branch `unvr/port-7.4-rc4`; was linux-v7.3-fresh, a torvalds/master tip at 7.4-rc2 + 479) (a Linux-store worktree,
 [kernel-rebase.md](kernel-rebase.md#linux-store-350)), tracking
 `torvalds/linux` mainline directly (this repo's own methodology: pull
 forward, port whatever breaks). Board support (DTS, `pcie-al-internal.c`,

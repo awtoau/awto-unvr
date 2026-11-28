@@ -79,7 +79,7 @@ EDK2_SHIM_FILES = {"al_hal_plat_services.h", "al_hal_plat_types.h"}
 SHARED_HEADER = "hal/pcie-al-alpine-regs.h"
 SHARED_HEADER_CANONICAL = (
     Path(os.environ.get("UNVR_REFS") or REPO / "tmp/refs")  # = _repo.REFS (#350)
-    / "linux-v7.3-fresh/drivers/pci/controller/pcie-al-alpine-regs.h"
+    / "linux-v7.4-rc4/drivers/pci/controller/pcie-al-alpine-regs.h"
 )
 SHARED_HEADER_CONSUMERS = [
     "uboot-port/board/annapurna/alpine/alpine.c",

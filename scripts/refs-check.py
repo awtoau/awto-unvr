@@ -42,6 +42,7 @@ log = make_log("refs-check")
 # branch delta, so report newest matching tag instead of a commit count.
 UPSTREAM = {
     "linux-v7.3-fresh": "torvalds/master",
+    "linux-v7.4-rc4": "tag:v7.4*",
     "edk2": "tag:edk2-stable*",
     "u-boot-v2026.07": "tag:v20*",
     "linux-alpine-v2": "origin/main",
