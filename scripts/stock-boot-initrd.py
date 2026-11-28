@@ -39,7 +39,7 @@ LINK_WAIT_S = 20
 LOG_PORT = 9999
 # Timing-channel delays (s) added before the reboot when the stock kernel sees a block device / an ethN / carrier.
 D_DISK, D_NIC, D_LINK = 25, 50, 100
-HOST_NIC = "enp8s0"  # dev host 10G NIC; same subnet as the box
+HOST_NIC = "enp7s0f0"  # dev host NIC on the box subnet
 
 INIT = r"""#!/bin/sh
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin

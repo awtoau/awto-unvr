@@ -7,8 +7,8 @@ Stock = vendor kernel 4.1.37 (UNVR 1.3.35) / 4.19.152 (5.1.25) with U-Boot 2015.
 |---|---|---|---|
 | 10G Ethernet (iperf3, TCP) | **TBA** (measuring; vendor ships the same optic equalisation value that gave us 34-594 Mbit/s) | **9.3-9.4 Gbit/s**, 0 retransmits | #121, bench-20261117 |
 | 1G Ethernet | **TBA** (measuring) | **941 Mbit/s** | #354 baseline 2026-11-13 |
-| SATA SSD sequential read | **TBA** (measuring) | **~500-550 MB/s** | bench-history/overhead-20261128-* |
-| USB 3 SSDs (3 behind one hub) | **TBA** (measuring) | **413 MB/s total** (stock cmdline has the same `pci=pcie_bus_perf`; our Fedora args had dropped it, 373 without) | #384, 2026-11-28 |
+| SATA SSD sequential read | **492 MB/s** (stock 4.19.152, fio 1M direct, 15 s, 100% of one core; 2026-11-28, #381) | **~500-550 MB/s** | bench-history/overhead-20261128-* |
+| USB 3 SSDs (3 behind one hub) | **393 MB/s** for ONE M.2 SSD on stock 4.19.152 (usb-storage, no UAS; combined run not completed; 2026-11-28, #381) | **413 MB/s total** (stock cmdline has the same `pci=pcie_bus_perf`; our Fedora args had dropped it, 373 without) | #384, 2026-11-28 |
 
 Stock numbers: same iperf3 / fio tests on the stock 4.19 kernel on this unit, in progress (#381). Public stock numbers: none found.
 
