@@ -1318,12 +1318,31 @@ def cmd_overhead_bench(extra: list[str]) -> int:
 
 
 @command(
+    "turn woomera's unused Seagate (ata5, `single`) into the stock-kernel boot disk: DESTROYS single "
+    "(scripts/stock-boot-disk.py, #381)",
+    args="--i-accept-wipe",
+    kind="action",
+)
+def cmd_stock_boot_disk(extra: list[str]) -> int:
+    return _run_script("scripts/stock-boot-disk.py", extra)
+
+
+@command(
     "prepare the Debian rootfs on woomera's SSD used to boot the stock kernel: tools, keys, masks, watchdog "
     "(scripts/stock-boot-prep.py, #381)",
     kind="action",
 )
 def cmd_stock_boot_prep(extra: list[str]) -> int:
     return _run_script("scripts/stock-boot-prep.py", extra)
+
+
+@command(
+    "install the on-box stock benchmark + SysRq-b reset into the stock-boot Seagate rootfs "
+    "(scripts/stock-bench-install.py, #381)",
+    kind="action",
+)
+def cmd_stock_bench_install(extra: list[str]) -> int:
+    return _run_script("scripts/stock-bench-install.py", extra)
 
 
 @command(

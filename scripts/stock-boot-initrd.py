@@ -10,10 +10,10 @@
   initramfs, so the stock static busybox is used; the stock `ubnt` init scripts never run (they can mkfs).
 - Brings up the 10G port (stock kernel has the NIC driver built in) and sends each step plus the kernel
   log to the listener with `nc`, so a failure is visible with no console or disk.
-- Probes each ext4 partition for the Debian tree, mounts the SSD's Fedora root, overlays a tmpfs on
-  /var/lib/stock4/root and switch_roots to it (the stock run writes nothing but one breadcrumb file).
+- Loads ui-hdd-pwrctl/al_nand like the stock initramfs, finds the ext4 partition holding /STOCK4 (the
+  Seagate made by stock-boot-disk) and switch_roots to it.
 - On failure: sends dmesg, partitions, USB list, then `reboot -f` (U-Boot's one-shot flag is already
-  cleared, so the box returns to Fedora). The stock kernel has no vfat; the file goes to the ext4 root.
+  cleared, so the box returns to Fedora).
 """
 
 from __future__ import annotations
@@ -32,7 +32,6 @@ from _repo import make_log  # noqa: E402
 
 log = make_log("stock-boot-initrd")
 
-ROOT_SUBDIR = "/var/lib/stock4/root"  # Debian 11 rootfs (5.1.25) on the SSD root; writes go to a tmpfs overlay
 # SATA link-up is ~1 s after boot on 7.4; stock 4.19 untested here. 30 s = 30x, then diagnostics + reboot.
 ROOT_WAIT_S = 30
 # 10G optic link-up takes ~4 s on 7.4; 20 s = 5x, then carry on without network.
@@ -40,7 +39,6 @@ LINK_WAIT_S = 20
 LOG_PORT = 9999
 # Timing-channel delays (s) added before the reboot when the stock kernel sees a block device / an ethN / carrier.
 D_DISK, D_NIC, D_LINK = 25, 50, 100
-SIGNATURE_DELAY_S = 40  # proves our /init ran (diagnostic only)
 HOST_NIC = "enp8s0"  # dev host 10G NIC; same subnet as the box
 
 INIT = r"""#!/bin/sh
@@ -48,9 +46,7 @@ export PATH=/sbin:/bin:/usr/sbin:/usr/bin
 mount -t proc proc /proc
 mount -t sysfs sysfs /sys
 mount -t devtmpfs devtmpfs /dev 2>/dev/null || mdev -s
-mkdir -p /tmp /probe /base /ovl /newroot
-# Signature delay: the box returning ~@SIG@ s later than a plain failure proves THIS init ran.
-sleep @SIG@
+mkdir -p /tmp /probe /newroot
 L=/tmp/awto-stock4-diag.txt
 : > $L
 say() {
@@ -58,6 +54,13 @@ say() {
     echo "$M" >> $L
     echo "$M" | nc -w 2 @LOGHOST@ @PORT@ 2>/dev/null
 }
+# The stock initramfs loads these (conf/modules) before it touches disks: ui-hdd-pwrctl powers the bays.
+# Backgrounded: a vendor module that hangs in the kernel must not hang this init. 5 s = ~10x a module probe.
+for m in ui-hdd-pwrctl al_nand; do
+    echo "modprobe $m start" >> $L
+    ( modprobe $m 2>>$L; echo "modprobe $m rc=$?" >> $L ) &
+done
+sleep 5
 NIC=
 for n in /sys/class/net/*; do
     [ "$(cat $n/address 2>/dev/null)" = "@MAC@" ] && NIC=${n##*/}
@@ -71,12 +74,13 @@ if [ -n "$NIC" ]; then
     done
 fi
 say "stock4 init: kernel $(uname -r) nic=${NIC:-NONE} carrier=$(cat /sys/class/net/$NIC/carrier 2>/dev/null) ifaces=$(ls /sys/class/net | tr '\n' ' ')"
-say "cmdline: $(cat /proc/cmdline)"
+say "modules: $(sed -n 1,3p $L | tr '\n' ' ')"
+# Stock-boot disk = the ext4 partition holding the marker file /STOCK4 (scripts/stock-boot-disk.py).
 find_root() {
     for d in /dev/sd[a-z][0-9]*; do
         [ -b "$d" ] || continue
         mount -t ext4 -o ro,noload $d /probe 2>/dev/null || continue
-        if [ -x /probe@SUBDIR@/sbin/init ]; then umount /probe; echo $d; return 0; fi
+        if [ -f /probe/STOCK4 ]; then umount /probe; echo $d; return 0; fi
         umount /probe
     done
     return 1
@@ -90,17 +94,8 @@ while [ $i -lt @ROOT_WAIT@ ]; do
     i=$((i+1))
 done
 say "root search: ${ROOT:-NOT FOUND} after ${i}s; partitions: $(tr '\n' ';' < /proc/partitions)"
-if [ -n "$ROOT" ] && mount -t ext4 -o rw $ROOT /base 2>>$L; then
-    cp $L /base/var/log/awto-stock4-diag.txt 2>/dev/null
-    sync
-    mount -o remount,ro /base 2>>$L
-else
-    say "rw mount of '$ROOT' failed"
-fi
-if [ -x /base@SUBDIR@/sbin/init ] \
-   && mount -t tmpfs -o size=1500m tmpfs /ovl 2>>$L && mkdir -p /ovl/up /ovl/work \
-   && mount -t overlay overlay -o lowerdir=/base@SUBDIR@,upperdir=/ovl/up,workdir=/ovl/work /newroot 2>>$L; then
-    say "overlay root ready; switch_root"
+if [ -n "$ROOT" ] && mount -t ext4 -o rw $ROOT /newroot 2>>$L; then
+    say "root mounted rw; switch_root"
     cp $L /newroot/var/log/awto-stock4-init.txt 2>/dev/null
     mkdir -p /newroot/dev
     mount -n -o move /dev /newroot/dev 2>/dev/null || umount /dev
@@ -109,7 +104,7 @@ if [ -x /base@SUBDIR@/sbin/init ] \
 fi
 say "ROOT FAILED, sending diagnostics"
 # Timing channel for a console-less box: each fact adds a distinct delay before the reboot, so the
-# time the box takes to return to Fedora says what the stock kernel saw (docs/stock-boot.md).
+# time the box takes to return to Fedora says what the stock kernel saw.
 CARRY=$(cat /sys/class/net/$NIC/carrier 2>/dev/null)
 [ "$(ls /sys/block | grep -c '^sd')" -gt 0 ] && sleep @D_DISK@
 [ "$(ls /sys/class/net | grep -c '^eth')" -gt 0 ] && sleep @D_NIC@
@@ -118,11 +113,11 @@ CARRY=$(cat /sys/class/net/$NIC/carrier 2>/dev/null)
     echo "--- dmesg"; dmesg
     echo "--- /proc/partitions"; cat /proc/partitions
     echo "--- /proc/mounts"; cat /proc/mounts
+    echo "--- lsmod"; cat /proc/modules
     echo "--- usb"; for d in /sys/bus/usb/devices/*; do echo "$d $(cat $d/product 2>/dev/null) $(cat $d/speed 2>/dev/null)"; done
     echo "--- scsi"; cat /proc/scsi/scsi 2>/dev/null
     echo "--- init log"; cat $L
 } 2>&1 | nc -w 5 @LOGHOST@ @PORT@ 2>/dev/null
-cp $L /base/var/log/awto-stock4-diag.txt 2>/dev/null && sync
 sync
 reboot -f
 """
@@ -144,10 +139,8 @@ def init_script() -> str:
         .replace("@PORT@", str(LOG_PORT))
         .replace("@MAC@", MAC_10G)
         .replace("@IP@", WOOMERA_DATA_IP)
-        .replace("@SUBDIR@", ROOT_SUBDIR)
         .replace("@ROOT_WAIT@", str(ROOT_WAIT_S))
         .replace("@LINK_WAIT@", str(LINK_WAIT_S))
-        .replace("@SIG@", str(SIGNATURE_DELAY_S))
         .replace("@D_DISK@", str(D_DISK))
         .replace("@D_NIC@", str(D_NIC))
         .replace("@D_LINK@", str(D_LINK))
