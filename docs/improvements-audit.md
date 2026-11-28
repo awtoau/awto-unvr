@@ -1,5 +1,7 @@
 # UNVR (Alpine V2 / AL-324, ea16, "woomera") — improvements audit
 
+Changes already made versus stock, with measurements: [improvements-over-stock.md](improvements-over-stock.md).
+
 Scope: audit of the running 7.1.8 kernel config
 (`build-out-71/unvr-ea16-7.1.config`), netboot bootargs, and the Fedora-on-SSD
 plan (`docs/fedora-on-ssd.md`). Every finding is issue-ready: title, body
