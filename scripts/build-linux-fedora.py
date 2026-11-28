@@ -543,6 +543,14 @@ def configure():
     )
     # #373: SATA drive temps via hwmon (needs HWMON+ATA+SCSI, all already on).
     run([cfg, "--file", os.path.join(KOUT, ".config"), "--module", "SENSORS_DRIVETEMP"])
+    # #384: USB devices on the hub (BT dongles, ANT+ stick, USB serial/ACM) had no driver.
+    run(
+        [cfg, "--file", os.path.join(KOUT, ".config")]
+        + ["--module", "BT", "--module", "BT_HCIBTUSB", "--module", "USB_ACM"]
+        + ["--module", "USB_SERIAL_SIMPLE", "--module", "USB_SERIAL_CP210X"]
+        + ["--module", "USB_SERIAL_FTDI_SIO", "--module", "USB_SERIAL_CH341"]
+        + ["--module", "USB_SERIAL_PL2303"]
+    )
     # al_ssm's only in-kernel consumer (#267: AF_ALG and fscrypt mask ASYNC
     # drivers out; dm-crypt does not). localmodconfig drops DM_CRYPT (the build
     # host has no dm-crypt volume loaded); `bench-all --ssm` needs it.
@@ -591,6 +599,10 @@ def configure():
         "CONFIG_LOCKD=m",
         "CONFIG_GRACE_PERIOD=m",
         "CONFIG_SENSORS_DRIVETEMP=m",
+        "CONFIG_BT_HCIBTUSB=m",
+        "CONFIG_USB_SERIAL_SIMPLE=m",
+        "CONFIG_USB_SERIAL_CP210X=m",
+        "CONFIG_USB_ACM=m",
         # #258: the build's own identity. olddefconfig has been seen to drop
         # a --set-str, and a silently-empty LOCALVERSION puts us straight
         # back to "every build looks identical".

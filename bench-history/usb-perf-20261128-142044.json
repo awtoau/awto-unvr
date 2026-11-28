@@ -1,0 +1,72 @@
+{
+ "disks": [
+  {
+   "serial": "S5GENJ0NB03022H",
+   "dev": "/dev/sdd",
+   "lsblk": "sdd   S5GENJ0NB03022H      Samsung SSD 860 EVO M.2 1TB usb",
+   "usb": [
+    "usb2/2-1/2-1.2/2-1.2:1.0/host8/target8:0:0/8:0:0:0",
+    "uas",
+    "5000"
+   ]
+  },
+  {
+   "serial": "S3YBNB0M621787E",
+   "dev": "/dev/sdf",
+   "lsblk": "sdf   S3YBNB0M621787E      Samsung SSD 860 EVO 1TB     usb",
+   "usb": [
+    "usb2/2-1/2-1.1/2-1.1:1.0/host10/target10:0:0/10:0:0:0",
+    "uas",
+    "5000"
+   ]
+  }
+ ],
+ "alone": {
+  "S5GENJ0NB03022H": {
+   "seq1M_qd32": {
+    "bw_MBps": 354.4,
+    "iops": 354,
+    "lat_us_mean": 87436.5
+   },
+   "rand4k_qd32": {
+    "bw_MBps": 152.3,
+    "iops": 38977,
+    "lat_us_mean": 807.1
+   },
+   "rand4k_qd1": {
+    "bw_MBps": 21.0,
+    "iops": 5382,
+    "lat_us_mean": 143.3
+   }
+  },
+  "S3YBNB0M621787E": {
+   "seq1M_qd32": {
+    "bw_MBps": 342.3,
+    "iops": 342,
+    "lat_us_mean": 90333.5
+   },
+   "rand4k_qd32": {
+    "bw_MBps": 152.9,
+    "iops": 39152,
+    "lat_us_mean": 803.8
+   },
+   "rand4k_qd1": {
+    "bw_MBps": 24.3,
+    "iops": 6217,
+    "lat_us_mean": 120.6
+   }
+  }
+ },
+ "together": {
+  "j0": {
+   "bw_MBps": 206.5,
+   "iops": 206,
+   "lat_us_mean": 149995.9
+  },
+  "j1": {
+   "bw_MBps": 155.5,
+   "iops": 156,
+   "lat_us_mean": 199250.6
+  }
+ }
+}
