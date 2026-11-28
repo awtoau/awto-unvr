@@ -7,6 +7,7 @@
 
 - Per disk alone: 1M seq read QD32, 4k rand read QD32, 4k rand read QD1; then all disks together (1M seq).
 - fio --readonly --direct=1 on the whole device: nothing is written. Results -> bench-history/usb-perf-<stamp>.json.
+- `sweep [--knobs a,b+c] SERIAL...`: one runtime knob at a time (KNOBS), alone + together, mpstat per CPU; sysfs originals restored after each.
 - Also reports bus speed, driver (uas vs usb-storage) and USB hub path per disk.
 """
 
@@ -76,7 +77,131 @@ def fio(devs: list[str], args: str) -> dict:
     }
 
 
+# ---- sweep: one runtime knob at a time, originals recorded and restored (#384) ----
+# knob = {"blk": {path under /sys/block/<dev>/: value}, "irq": cpulist, "fio": extra fio args}
+KNOBS = {
+    "baseline": {},
+    "sched_none": {"blk": {"queue/scheduler": "none"}},
+    "sched_mq-deadline": {"blk": {"queue/scheduler": "mq-deadline"}},
+    "sched_kyber": {"blk": {"queue/scheduler": "kyber"}},
+    "nr_requests_256": {"blk": {"queue/scheduler": "none", "queue/nr_requests": "256"}},
+    "rq_affinity_2": {"blk": {"queue/rq_affinity": "2"}},
+    "nomerges_2": {"blk": {"queue/nomerges": "2"}},
+    "add_random_0": {"blk": {"queue/add_random": "0"}},
+    "qdepth_16": {"blk": {"device/queue_depth": "16"}},
+    "qdepth_8": {"blk": {"device/queue_depth": "8"}},
+    "max_sectors_256k": {"blk": {"queue/max_sectors_kb": "256"}},
+    "max_sectors_128k": {"blk": {"queue/max_sectors_kb": "128"}},
+    "irq_cpu1": {"irq": "1"},
+    "irq_cpu3": {"irq": "3"},
+    "fio_cpu1": {"fio": "--cpus_allowed=1"},
+    "fio_cpu0": {"fio": "--cpus_allowed=0"},
+    "fio_io_uring": {"fio": "--ioengine=io_uring"},
+    "fio_bs512k": {"fio": "--bs=512k"},
+    "fio_bs128k": {"fio": "--bs=128k"},
+    "fio_qd8": {"fio": "--iodepth=8"},
+    "fio_qd64": {"fio": "--iodepth=64"},
+}
+
+
+def sysfs_read(path: str) -> str:
+    v = box(f"cat {path}").strip()
+    if "[" in v:  # scheduler: "none mq-deadline [bfq]"
+        v = v.split("[")[1].split("]")[0]
+    return v
+
+
+def sysfs_write(path: str, val: str) -> None:
+    box(f"echo {val} > {path}")
+
+
+def mpstat_summary(txt: str) -> str:
+    cpus = {}
+    for ln in txt.splitlines():
+        f = ln.split()
+        if len(f) > 10 and f[0] == "Average:" and f[1].isdigit():
+            cpus[f[1]] = 100 - float(f[-1])  # busy% = 100 - idle
+    return " ".join(f"c{c}:{b:.0f}" for c, b in sorted(cpus.items()))
+
+
+def fio_cpu(devs: list[str], args: str) -> tuple[dict, str]:
+    jobs = " ".join(f"--name=j{i} --filename={d}" for i, d in enumerate(devs))
+    cmd = (
+        "mpstat -P ALL 12 1 > /dev/shm/mp.txt & "
+        f"fio --readonly --direct=1 --ioengine=libaio --runtime={RUNTIME_S} --time_based "
+        f"--group_reporting=0 --output-format=json {args} {jobs}; wait; cat /dev/shm/mp.txt"
+    )
+    out = box(cmd, SSH_TIMEOUT_S + 15)
+    start = out.find("{")
+    j, end = json.JSONDecoder().raw_decode(out[start:])
+    bw = {jb["jobname"]: round(jb["read"]["bw"] / 1024, 1) for jb in j["jobs"]}
+    return bw, mpstat_summary(out[start + end :])
+
+
+def sweep(args: list[str]) -> int:
+    names = list(KNOBS)
+    if "--knobs" in args:
+        i = args.index("--knobs")
+        names = args[i + 1].split(",")
+        args = args[:i] + args[i + 2 :]
+    disks = [resolve(s) for s in args]
+    irq = box('awk \'/xhci_hcd/{sub(":","",$1);print $1}\' /proc/interrupts').strip()
+    rows = []
+    for name in names:
+        spec: dict = {"blk": {}, "irq": None, "fio": ""}
+        for part in name.split("+"):  # combos: a+b
+            k = KNOBS[part]
+            spec["blk"].update(k.get("blk", {}))
+            spec["irq"] = k.get("irq", spec["irq"])
+            spec["fio"] = f"{spec['fio']} {k.get('fio', '')}".strip()
+        fa = spec["fio"]
+        fio_args = TESTS["seq1M_qd32"]
+        for opt in ("--iodepth", "--bs"):  # fio-side overrides replace the base option
+            if opt in fa:
+                fio_args = " ".join(
+                    t for t in fio_args.split() if not t.startswith(opt + "=")
+                )
+        orig: list[tuple[str, str]] = []
+        try:
+            for d in disks:
+                for rel, val in spec["blk"].items():
+                    path = f"/sys/block/{d['dev'][5:]}/{rel}"
+                    orig.append((path, sysfs_read(path)))
+                    sysfs_write(path, val)
+            if spec["irq"]:
+                path = f"/proc/irq/{irq}/smp_affinity_list"
+                orig.append((path, sysfs_read(path)))
+                sysfs_write(path, spec["irq"])
+            row = {"knob": name, "orig": dict(orig), "alone": {}, "cpu": {}}
+            for d in disks:
+                bw, mp = fio_cpu([d["dev"]], f"{fio_args} {fa}")
+                row["alone"][d["serial"]] = bw["j0"]
+                row["cpu"][d["serial"]] = mp
+            bw, mp = fio_cpu([d["dev"] for d in disks], f"{fio_args} {fa}")
+            row["together"] = list(bw.values())
+            row["cpu"]["together"] = mp
+            log(
+                f"SWEEP {name}: alone={row['alone']} together={row['together']} sum={sum(bw.values()):.1f} cpu_together={mp} orig={row['orig']}"
+            )
+            rows.append(row)
+        finally:
+            for path, val in reversed(orig):
+                sysfs_write(path, val)
+            if orig:
+                log(f"  restored {name}: {dict(orig)}")
+    out = (
+        HERE.parent
+        / "bench-history"
+        / f"usb-perf-sweep-{time.strftime('%Y%m%d-%H%M%S')}.json"
+    )
+    out.write_text(json.dumps(rows, indent=1))
+    log(f"saved {out}")
+    return 0
+
+
 def main() -> int:
+    if sys.argv[1:2] == ["sweep"]:
+        return sweep(sys.argv[2:])
     serials = sys.argv[1:]
     if not serials:
         print(__doc__)
