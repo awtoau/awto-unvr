@@ -2,17 +2,27 @@
 # Stage TrueNAS-image ZFS userland (zdb/zpool/zfs + shared-lib closure, incl. Debian ld.so)
 # into a dir, then rsync to woomera /opt/zfs. Run via ld.so --library-path, no chroot.
 # Source rootfs: tmp/truenas-install/rootfs (extracted .update). See docs/zfs-p3.md.
-import os, re, shutil, subprocess, sys
+import os
+import re
+import shutil
+import subprocess
+import sys
 from pathlib import Path
 
-SRC = Path(os.environ.get("TRUENAS_ROOTFS", "/mnt/2tb/git/awto-unvr/tmp/truenas-install/rootfs"))
+SRC = Path(
+    os.environ.get(
+        "TRUENAS_ROOTFS", "/mnt/2tb/git/awto-unvr/tmp/truenas-install/rootfs"
+    )
+)
 DST = Path(sys.argv[1] if len(sys.argv) > 1 else "tmp/zfs-stage")
 BINS = ["usr/sbin/zdb", "usr/sbin/zpool", "usr/sbin/zfs"]
 LIBDIRS = ["usr/lib/aarch64-linux-gnu", "lib/aarch64-linux-gnu", "usr/lib", "lib"]
 
 
 def needed(p):
-    out = subprocess.run(["readelf", "-d", str(p)], capture_output=True, text=True).stdout
+    out = subprocess.run(
+        ["readelf", "-d", str(p)], capture_output=True, text=True
+    ).stdout
     return re.findall(r"NEEDED.*\[(.+?)\]", out)
 
 
