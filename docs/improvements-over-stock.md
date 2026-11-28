@@ -5,12 +5,12 @@ Stock = vendor kernel 4.1.37 (UNVR 1.3.35) / 4.19.152 (5.1.25) with U-Boot 2015.
 ## Headline: speeds
 | Path | Stock | Ours | Source |
 |---|---|---|---|
-| 10G Ethernet (iperf3, TCP) | not measured; vendor ships the same optic equalisation value that gave us 34-594 Mbit/s | **9.3-9.4 Gbit/s**, 0 retransmits | #121, bench-20261117 |
-| 1G Ethernet | not measured (stock link was 100M) | **941 Mbit/s** | #354 baseline 2026-11-13 |
-| SATA SSD sequential read | not measured | **~500-550 MB/s** | bench-history/overhead-20261128-* |
-| USB 3 SSDs (3 behind one hub) | not measured | **413 MB/s total** (373 before `pci=pcie_bus_perf`) | #384, 2026-11-28 |
+| 10G Ethernet (iperf3, TCP) | **TBA** (measuring; vendor ships the same optic equalisation value that gave us 34-594 Mbit/s) | **9.3-9.4 Gbit/s**, 0 retransmits | #121, bench-20261117 |
+| 1G Ethernet | **TBA** (measuring) | **941 Mbit/s** | #354 baseline 2026-11-13 |
+| SATA SSD sequential read | **TBA** (measuring) | **~500-550 MB/s** | bench-history/overhead-20261128-* |
+| USB 3 SSDs (3 behind one hub) | **TBA** (measuring) | **413 MB/s total** (373 before `pci=pcie_bus_perf`) | #384, 2026-11-28 |
 
-Stock numbers need one run of the same iperf3 / fio tests on a stock-firmware unit (#381). Public stock numbers: none found.
+Stock numbers: same iperf3 / fio tests on the stock 4.19 kernel on this unit, in progress (#381). Public stock numbers: none found.
 
 ## Headline: bugs squashed (present in the vendor code, confirmed in source)
 | Bug | Effect on stock | Fix |
