@@ -60,6 +60,7 @@ stock U-Boot → NAND 0x1300000 (awto-uboot, raw, `go`) → ext4load /boot/uImag
 - **Console timestamps lag the command** — use `time` on the box (read 250 MB/s off timestamps where `time` said 43).
 
 ## Where things live
+- `docs/improvements-over-stock.md` — ledger of every deliberate difference from stock firmware. Any setting, patch or tuning that differs from stock gets a row (issue + measurement file).
 - `dts/alpine-v2-ubnt-unvr-ea16.dts` — Linux DT, built to `/boot/unvr.dtb` on the SSD.
 - `uboot-port/arch/dts/awto-alpine-v2-unvr-uboot.dts` — compiled **into** `u-boot.bin`.
 - `modules/al_hal/` — the one copy of every HAL file ≥2 modules share; modules symlink to it (`modules/<m>/<f> -> ../al_hal/<f>`). A same-named regular file in another module is a fork, needs a reason in `scripts/hal-forks.json` (`./dev.py hal-drift`).
