@@ -1318,6 +1318,15 @@ def cmd_overhead_bench(extra: list[str]) -> int:
 
 
 @command(
+    "prepare the Debian rootfs on woomera's SSD used to boot the stock kernel: tools, keys, masks, watchdog "
+    "(scripts/stock-boot-prep.py, #381)",
+    kind="action",
+)
+def cmd_stock_boot_prep(extra: list[str]) -> int:
+    return _run_script("scripts/stock-boot-prep.py", extra)
+
+
+@command(
     "build the diagnostic initrd for booting the stock 4.19 kernel without a console "
     "(scripts/stock-boot-initrd.py, #381)",
     args="[OUT]",
