@@ -1318,6 +1318,16 @@ def cmd_overhead_bench(extra: list[str]) -> int:
 
 
 @command(
+    "build the diagnostic initrd for booting the stock 4.19 kernel without a console "
+    "(scripts/stock-boot-initrd.py, #381)",
+    args="[OUT]",
+    kind="action",
+)
+def cmd_stock_boot_initrd(extra: list[str]) -> int:
+    return _run_script("scripts/stock-boot-initrd.py", extra)
+
+
+@command(
     "record woomera's boot ID before a test, check it after: tells a reboot from a hang "
     "(scripts/boot-id.py, #243)",
     args="snapshot|check",
